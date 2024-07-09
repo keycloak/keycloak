@@ -22,12 +22,7 @@ public class ChromeWebDriverSupplier implements Supplier<WebDriver, TestWebDrive
     @Override
     public InstanceWrapper<WebDriver, TestWebDriver> getValue(Registry registry, TestWebDriver annotation) {
         final var driver = new ChromeDriver();
-        return new InstanceWrapper<>(this, annotation, driver);
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
+        return new InstanceWrapper<>(this, annotation, driver, LifeCycle.GLOBAL);
     }
 
     @Override
