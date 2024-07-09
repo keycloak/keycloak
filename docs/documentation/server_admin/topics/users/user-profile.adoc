@@ -285,6 +285,7 @@ The list below provides a list of all the built-in validators:
 
 |username-prohibited-characters
 | Check if the value is a valid username as an additional barrier for attacks such as script injection. The validation is based on a default RegEx pattern that blocks characters not common in usernames.
+When the realm setting `Email as username` is enabled, this validator is skipped to allow email values.
 |
 
 *error-message*: the key of the error message in i18n bundle. If not set a generic message is used.

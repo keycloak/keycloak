@@ -68,12 +68,14 @@ public class UsernameProhibitedCharactersValidator extends AbstractStringValidat
     protected void doValidate(String value, String inputHint, ValidationContext context, ValidatorConfig config) {
         KeycloakSession session = context.getSession();
 
-        if (session != null)  {
+        if (session != null) {
             RealmModel realm = session.getContext().getRealm();
-            if (realm != null && realm.isRegistrationEmailAsUsername()) {
+
+            if (realm.isRegistrationEmailAsUsername()) {
                 return;
             }
         }
+
         if (!PATTERN.matcher(value).matches()) {
             context.addError(new ValidationError(ID, inputHint, config.getStringOrDefault(CFG_ERROR_MESSAGE, MESSAGE_NO_MATCH)));
         }
