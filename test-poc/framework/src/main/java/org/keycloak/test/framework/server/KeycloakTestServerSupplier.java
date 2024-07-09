@@ -28,12 +28,7 @@ public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, 
 
         keycloakTestServer.start(serverConfig);
 
-        return new InstanceWrapper<>(this, annotation, keycloakTestServer);
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
+        return new InstanceWrapper<>(this, annotation, keycloakTestServer, LifeCycle.GLOBAL);
     }
 
     @Override

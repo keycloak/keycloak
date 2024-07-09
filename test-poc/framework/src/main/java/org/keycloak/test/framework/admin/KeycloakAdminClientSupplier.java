@@ -27,14 +27,9 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, TestAdmin
         KeycloakTestServer testServer = registry.getDependency(KeycloakTestServer.class, wrapper);
 
         Keycloak keycloak = Keycloak.getInstance(testServer.getBaseUrl(), "master", "admin", "admin", "admin-cli");
-        wrapper.setValue(keycloak);
+        wrapper.setValue(keycloak, LifeCycle.GLOBAL);
 
         return wrapper;
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
     }
 
     @Override

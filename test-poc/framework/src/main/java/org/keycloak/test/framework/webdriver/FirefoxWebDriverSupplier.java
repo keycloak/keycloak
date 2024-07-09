@@ -22,12 +22,7 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
     @Override
     public InstanceWrapper<WebDriver, TestWebDriver> getValue(Registry registry, TestWebDriver annotation) {
         final var driver = new FirefoxDriver();
-        return new InstanceWrapper<>(this, annotation, driver);
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
+        return new InstanceWrapper<>(this, annotation, driver, LifeCycle.GLOBAL);
     }
 
     @Override

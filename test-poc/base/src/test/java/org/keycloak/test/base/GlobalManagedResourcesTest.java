@@ -13,9 +13,9 @@ import org.keycloak.test.framework.injection.LifeCycle;
 import java.util.List;
 
 @KeycloakIntegrationTest
-public class ManagedResourcesTest {
+public class GlobalManagedResourcesTest {
 
-    @TestRealm(lifecycle = LifeCycle.CLASS)
+    @TestRealm(lifecycle = LifeCycle.GLOBAL)
     RealmResource realmResource;
 
     @TestClient
@@ -23,14 +23,14 @@ public class ManagedResourcesTest {
 
     @Test
     public void testCreatedRealm() {
-        Assertions.assertEquals("ManagedResourcesTest", realmResource.toRepresentation().getRealm());
+        Assertions.assertEquals("DefaultRealmConfig", realmResource.toRepresentation().getRealm());
     }
 
     @Test
     public void testCreatedClient() {
-        Assertions.assertEquals("ManagedResourcesTest", clientResource.toRepresentation().getClientId());
+        Assertions.assertEquals("GlobalManagedResourcesTest", clientResource.toRepresentation().getClientId());
 
-        List<ClientRepresentation> clients = realmResource.clients().findByClientId("ManagedResourcesTest");
+        List<ClientRepresentation> clients = realmResource.clients().findByClientId("GlobalManagedResourcesTest");
         Assertions.assertEquals(1, clients.size());
     }
 

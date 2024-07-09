@@ -1,24 +1,24 @@
 package org.keycloak.test.framework;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.keycloak.test.framework.injection.Registry;
 
-public class KeycloakIntegrationTestExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
-
-    @Override
-    public void beforeAll(ExtensionContext context) {
-        if (isExtensionEnabled(context)) {
-            getRegistry(context).beforeAll(context.getRequiredTestClass());
-        }
-    }
+public class KeycloakIntegrationTestExtension implements BeforeEachCallback, AfterEachCallback, AfterAllCallback {
 
     @Override
     public void beforeEach(ExtensionContext context) {
         if (isExtensionEnabled(context)) {
             getRegistry(context).beforeEach(context.getRequiredTestInstance());
+        }
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        if (isExtensionEnabled(context)) {
+            getRegistry(context).afterEach();
         }
     }
 

@@ -27,6 +27,7 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
     @Override
     public InstanceWrapper<RealmResource, TestRealm> getValue(Registry registry, TestRealm annotation) {
         InstanceWrapper<RealmResource, TestRealm> wrapper = new InstanceWrapper<>(this, annotation);
+        LifeCycle lifecycle = annotation.lifecycle();
 
         Keycloak adminClient = registry.getDependency(Keycloak.class, wrapper);
 
@@ -34,7 +35,8 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
         RealmRepresentation realmRepresentation = config.getRepresentation();
 
         if (realmRepresentation.getRealm() == null) {
-            realmRepresentation.setRealm(registry.getCurrentContext().getRequiredTestClass().getSimpleName());
+            String realmName = lifecycle.equals(LifeCycle.GLOBAL) ? config.getClass().getSimpleName() : registry.getCurrentContext().getRequiredTestClass().getSimpleName();
+            realmRepresentation.setRealm(realmName);
         }
 
         String realmName = realmRepresentation.getRealm();
@@ -43,14 +45,9 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
         adminClient.realms().create(realmRepresentation);
 
         RealmResource realmResource = adminClient.realm(realmRepresentation.getRealm());
-        wrapper.setValue(realmResource);
+        wrapper.setValue(realmResource, lifecycle);
 
         return wrapper;
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.CLASS;
     }
 
     @Override
