@@ -321,6 +321,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     public void testValidation() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::failValidationWhenEmptyAttributes);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAsUsernameValidation);
     }
 
     private static void failValidationWhenEmptyAttributes(KeycloakSession session) {
@@ -398,7 +399,30 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertFalse(profile.getAttributes().validate(UserModel.EMAIL, (Consumer<ValidationError>) errors::add));
         assertTrue(containsErrorMessage(errors, EmailValidator.MESSAGE_INVALID_EMAIL));
     }
-    
+
+    private static void testEmailAsUsernameValidation(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        provider.setConfiguration(null);
+        UserProfile profile;
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.clear();
+            attributes.put(UserModel.FIRST_NAME, "Joe");
+            attributes.put(UserModel.LAST_NAME, "Doe");
+            // valid email but invalid as username
+            attributes.put(UserModel.EMAIL, "foo%bar@example.com");
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            profile.validate();
+        } catch (ValidationException ve) {
+            Assert.fail("Should be OK email as username");
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
+
     private static boolean containsErrorMessage(List<ValidationError> errors, String message){
     	for(ValidationError err : errors) {
     		if(err.getMessage().equals(message)) {
@@ -407,7 +431,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     	}
     	return false;
     }
-    
+
 
     @Test
     public void testValidateComplianceWithUserProfile() {
@@ -516,14 +540,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         assertThat(attributes.nameSet(),
                 containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE, "address", "second"));
-        
-        
+
+
         AttributeGroupMetadata companyAddressGroup = attributes.getMetadata("address").getAttributeGroupMetadata();
         assertEquals("companyaddress", companyAddressGroup.getName());
         assertEquals("header", companyAddressGroup.getDisplayHeader());
         assertEquals("description", companyAddressGroup.getDisplayDescription());
         assertNull(companyAddressGroup.getAnnotations());
-        
+
         AttributeGroupMetadata groupwithannoGroup = attributes.getMetadata("second").getAttributeGroupMetadata();
         assertEquals("groupwithanno", groupwithannoGroup.getName());
         assertNull(groupwithannoGroup.getDisplayHeader());
@@ -572,9 +596,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributesUpdatedOldValues.put(UserModel.FIRST_NAME, "Joe");
         attributesUpdatedOldValues.put(UserModel.LAST_NAME, "Doe");
         attributesUpdatedOldValues.put(UserModel.EMAIL, "user@keycloak.org");
-        
+
         profile.update((attributeName, userModel, oldValue) -> {
-            assertTrue(attributesUpdated.add(attributeName)); 
+            assertTrue(attributesUpdated.add(attributeName));
             assertEquals(attributesUpdatedOldValues.get(attributeName), getSingleValue(oldValue));
             assertEquals(attributes.get(attributeName), userModel.getFirstAttribute(attributeName));
             });
@@ -593,13 +617,13 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         assertEquals("fixed-business-address", user.getFirstAttribute("business.address"));
     }
-    
+
     private static String getSingleValue(List<String> vals) {
         if(vals==null || vals.isEmpty())
             return null;
         return vals.get(0);
     }
-    
+
     @Test
     public void testReadonlyUpdates() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadonlyUpdates);
