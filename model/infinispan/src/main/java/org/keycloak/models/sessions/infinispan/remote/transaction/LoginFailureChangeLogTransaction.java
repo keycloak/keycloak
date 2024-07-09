@@ -18,7 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import org.infinispan.client.hotrod.RemoteCache;
-import org.keycloak.models.sessions.infinispan.changes.remote.remover.iteration.ByRealmIdConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ByRealmIdQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures.LoginFailuresUpdater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
@@ -29,10 +29,10 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
  * {@code RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater,
  * ByRealmIdConditionalRemover<LoginFailureKey, LoginFailureEntity>>}
  */
-public class LoginFailureChangeLogTransaction extends RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater, ByRealmIdConditionalRemover<LoginFailureKey, LoginFailureEntity>> {
+public class LoginFailureChangeLogTransaction extends RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater, ByRealmIdQueryConditionalRemover<LoginFailureKey, LoginFailureEntity>> {
 
-    public LoginFailureChangeLogTransaction(UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> factory, RemoteCache<LoginFailureKey, LoginFailureEntity> cache) {
-        super(factory, cache, new ByRealmIdConditionalRemover<>());
+    public LoginFailureChangeLogTransaction(UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> factory, RemoteCache<LoginFailureKey, LoginFailureEntity> cache, ByRealmIdQueryConditionalRemover<LoginFailureKey, LoginFailureEntity> conditionalRemover) {
+        super(factory, cache, conditionalRemover);
     }
 
     public void removeByRealmId(String realmId) {

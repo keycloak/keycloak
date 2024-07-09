@@ -20,30 +20,32 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ByRealmIdQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteCacheAndExecutor;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.getRemoteCache;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.DEFAULT_AUTH_SESSIONS_LIMIT;
 
 public class RemoteInfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<RemoteInfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
+    private static final String PROTO_ENTITY = Marshalling.protoEntity(RootAuthenticationSessionEntity.class);
 
     private int authSessionsLimit;
-    private volatile RemoteCache<String, RootAuthenticationSessionEntity> cache;
+    private volatile RemoteCacheAndExecutor<String, RootAuthenticationSessionEntity> cacheHolder;
 
     @Override
     public boolean isSupported(Config.Scope config) {
@@ -62,13 +64,13 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        cache = getRemoteCache(factory, AUTHENTICATION_SESSIONS_CACHE_NAME);
+        cacheHolder = RemoteCacheAndExecutor.create(factory, AUTHENTICATION_SESSIONS_CACHE_NAME);
         logger.debugf("Provided initialized. session limit=%s", authSessionsLimit);
     }
 
     @Override
     public void close() {
-        cache = null;
+        cacheHolder = null;
     }
 
     @Override
@@ -94,8 +96,8 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
     }
 
     private AuthenticationSessionTransaction createAndEnlistTransaction(KeycloakSession session) {
-        var tx = new AuthenticationSessionTransaction(cache);
-        session.getTransactionManager().enlist(tx);
+        var tx = new AuthenticationSessionTransaction(cacheHolder.cache(), new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY, cacheHolder.executor()));
+        session.getTransactionManager().enlistAfterCompletion(tx);
         return tx;
     }
 }

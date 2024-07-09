@@ -43,6 +43,8 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
  */
 public final class Marshalling {
 
+    public static final String PROTO_SCHEMA_PACKAGE = "keycloak";
+
     private Marshalling() {
     }
 
@@ -154,5 +156,9 @@ public final class Marshalling {
 
     public static void configure(ConfigurationBuilder builder) {
         builder.addContextInitializer(KeycloakModelSchema.INSTANCE);
+    }
+
+    public static String protoEntity(Class<?> clazz) {
+        return PROTO_SCHEMA_PACKAGE + "." + clazz.getSimpleName();
     }
 }
