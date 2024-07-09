@@ -85,7 +85,7 @@ export const RealmSettingsThemesTab = ({
                     key={`login-theme-${idx}`}
                     value={theme.name}
                   >
-                    {t(theme.name)}
+                    {theme.name}
                   </SelectOption>
                 ))}
               </KeycloakSelect>
