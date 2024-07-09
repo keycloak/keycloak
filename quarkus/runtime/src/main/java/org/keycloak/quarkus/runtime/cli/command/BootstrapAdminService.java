@@ -78,6 +78,9 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
             if (!clientSecret.equals(confirmClientSecret)) {
                 throw new PropertyException("Client secrets do not match");
             }
+            if (clientSecret.isBlank()) {
+                throw new PropertyException("Client secret must not be blank");
+            }
         } else {
             clientSecret = getFromEnv(clientSecretEnv);
         }
