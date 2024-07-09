@@ -3,6 +3,7 @@ package org.keycloak.testsuite.updaters;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -91,6 +92,23 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setEditUserNameAllowed(Boolean value) {
         rep.setEditUsernameAllowed(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setPermanentLockout(Boolean value) {
+        rep.setPermanentLockout(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setEventsListeners(List<String> eventListanets) {
+        rep.setEventsListeners(eventListanets);
+        return this;
+    }
+
+    public RealmAttributeUpdater addEventsListener(String value) {
+        List<String> list = new ArrayList<>(rep.getEventsListeners());
+        list.add(value);
+        rep.setEventsListeners(list);
         return this;
     }
 
