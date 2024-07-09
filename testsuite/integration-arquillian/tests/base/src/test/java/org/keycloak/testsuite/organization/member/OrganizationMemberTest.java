@@ -40,12 +40,13 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
-import org.hamcrest.Matchers;
+
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -90,7 +91,6 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         testRealm().users().userProfile().update(upConfig);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization);
-        List<String> expectedOrganizations = expected.getAttributes().get(ORGANIZATION_ATTRIBUTE);
 
         expected.singleAttribute(ORGANIZATION_ATTRIBUTE, "invalid");
 
@@ -109,11 +109,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         expected.getAttributes().remove(ORGANIZATION_ATTRIBUTE);
         userResource.update(expected);
         expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertNull(expected.getAttributes());
+        getTestingClient().server(TEST_REALM_NAME).run(OrganizationMemberTest::assertMembersHaveOrgAttribute);
+    }
 
-        userResource.update(expected);
-        expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+    private static void assertMembersHaveOrgAttribute(KeycloakSession session) {
+        OrganizationModel organization = session.getProvider(OrganizationProvider.class).getByDomainName("neworg.org");
+        assertTrue(session.getProvider(OrganizationProvider.class).getMembersStream(organization, null, false, -1, -1).
+                anyMatch(userModel -> userModel.getAttributes().getOrDefault(ORGANIZATION_ATTRIBUTE, List.of()).contains(organization.getId())));
     }
 
     @Test
@@ -281,7 +284,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization);
         assertNotNull(expected.getAttributes());
-        assertTrue(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE).contains(organization.toRepresentation().getId()));
+        assertNull(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE));
         OrganizationMemberResource member = organization.members().member(expected.getId());
 
         try (Response response = member.delete()) {
