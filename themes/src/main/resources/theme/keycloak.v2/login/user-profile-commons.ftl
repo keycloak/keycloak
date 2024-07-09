@@ -41,9 +41,6 @@
 				<#if attribute.required>*</#if>
 			</div>
 			<div class="${properties.kcInputWrapperClass!}">
-		<#else>
-		  x-data="{
-			</#if>
 				<#if attribute.annotations.inputHelperTextBefore??>
 					<div class="${properties.kcInputHelperTextBeforeClass!}" id="form-help-text-before-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextBefore))?no_esc}</div>
 				</#if>
