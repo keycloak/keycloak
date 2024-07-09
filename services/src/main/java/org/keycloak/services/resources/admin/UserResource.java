@@ -49,6 +49,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -1075,6 +1076,7 @@ public class UserResource {
 
         attributes.remove(UserModel.USERNAME);
         attributes.remove(UserModel.EMAIL);
+        attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
 
         return attributes.entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
