@@ -25,6 +25,7 @@ public class Registry {
 
     public Registry() {
         loadSuppliers();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
     }
 
     public ExtensionContext getCurrentContext() {
@@ -82,7 +83,8 @@ public class Registry {
         throw new RuntimeException("Dependency not found: " + typeClass);
     }
 
-    public void beforeAll(Class testClass) {
+    public void beforeEach(Object testInstance) {
+        Class testClass = testInstance.getClass();
         InstanceWrapper requestedServerInstance = createInstanceWrapper(testClass.getAnnotations());
         requestedInstances.add(requestedServerInstance);
 
@@ -137,9 +139,6 @@ public class Registry {
             itr.remove();
         }
 
-    }
-
-    public void beforeEach(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
             InstanceWrapper<?, ?> instance = getDeployedInstance(f.getAnnotations());
             try {
@@ -152,7 +151,20 @@ public class Registry {
     }
 
     public void afterAll() {
-        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getSupplier().getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        LOGGER.trace("Closing instances with class lifecycle");
+        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        destroy.forEach(this::destroy);
+    }
+
+    public void afterEach() {
+        LOGGER.trace("Closing instances with method lifecycle");
+        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
+        destroy.forEach(this::destroy);
+    }
+
+    public void onShutdown() {
+        LOGGER.trace("Closing instances with global lifecycle");
+        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.GLOBAL)).toList();
         destroy.forEach(this::destroy);
     }
 
