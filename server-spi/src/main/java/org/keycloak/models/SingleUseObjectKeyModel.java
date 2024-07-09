@@ -16,6 +16,7 @@
  */
 package org.keycloak.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -45,6 +46,7 @@ public interface SingleUseObjectKeyModel {
      * @deprecated int will overflow with values after 2038. Use {@link #getExp()} instead.
      */
     @Deprecated
+    @JsonIgnore
     default int getExpiration() {
         return getExp().intValue();
     }
