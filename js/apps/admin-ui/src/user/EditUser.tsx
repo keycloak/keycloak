@@ -318,6 +318,7 @@ export default function EditUser() {
                     user={user}
                     bruteForce={bruteForced}
                     userProfileMetadata={userProfileMetadata}
+                    refresh={refresh}
                     save={save}
                   />
                 </PageSection>
