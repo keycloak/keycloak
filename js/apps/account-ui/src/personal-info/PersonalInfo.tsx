@@ -8,6 +8,7 @@ import {
 import {
   ActionGroup,
   Alert,
+  AlertVariant,
   Button,
   ExpandableSection,
   Form,
@@ -42,7 +43,7 @@ export const PersonalInfo = () => {
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
   const { handleSubmit, reset, setValue, setError } = form;
-  const { addAlert, addError } = useAccountAlerts();
+  const { addAlert } = useAccountAlerts();
 
   usePromise(
     (signal) =>
@@ -79,7 +80,7 @@ export const PersonalInfo = () => {
       context.keycloak.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
-      addError("accountUpdatedError", error);
+      addAlert(t("accountUpdatedError"), AlertVariant.danger);
 
       setUserProfileServerError(
         { responseData: { errors: error as any } },

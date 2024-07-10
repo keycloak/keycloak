@@ -26,6 +26,10 @@ export function getErrorDescription(error: unknown) {
 
   const data = error.responseData;
 
+  return getNetworkErrorDescription(data);
+}
+
+export function getNetworkErrorDescription(data: unknown) {
   if (
     typeof data === "object" &&
     data !== null &&
@@ -36,7 +40,7 @@ export function getErrorDescription(error: unknown) {
   }
 }
 
-function getNetworkErrorMessage(data: unknown) {
+export function getNetworkErrorMessage(data: unknown) {
   if (typeof data !== "object" || data === null) {
     return;
   }

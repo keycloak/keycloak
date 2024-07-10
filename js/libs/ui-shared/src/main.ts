@@ -60,7 +60,12 @@ export {
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { createNamedContext } from "./utils/createNamedContext";
-export { getErrorDescription, getErrorMessage } from "./utils/errors";
+export {
+  getErrorDescription,
+  getErrorMessage,
+  getNetworkErrorMessage,
+  getNetworkErrorDescription,
+} from "./utils/errors";
 export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";

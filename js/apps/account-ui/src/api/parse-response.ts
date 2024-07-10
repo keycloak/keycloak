@@ -1,6 +1,6 @@
 import {
-  getErrorDescription,
-  getErrorMessage,
+  getNetworkErrorMessage,
+  getNetworkErrorDescription,
 } from "@keycloak/keycloak-ui-shared";
 import { CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON } from "./constants";
 
@@ -26,8 +26,8 @@ export async function parseResponse<T>(response: Response): Promise<T> {
   const data = await parseJSON(response);
 
   if (!response.ok) {
-    const message = getErrorMessage(data);
-    const description = getErrorDescription(data);
+    const message = getNetworkErrorMessage(data);
+    const description = getNetworkErrorDescription(data);
 
     if (!message) {
       throw new Error(
