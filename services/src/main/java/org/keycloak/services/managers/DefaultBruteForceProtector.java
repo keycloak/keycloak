@@ -181,10 +181,12 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     private void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, boolean success) {
-        KeycloakSession session = factory.create();
-        ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-        ExecutorService executor = provider.getExecutor("bruteforce");
+        ExecutorService executor = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
+            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
+            return provider.getExecutor("bruteforce");
+        });
         executor.execute(() -> KeycloakModelUtils.runJobInTransaction(factory, s -> {
+            s.getContext().setRealm(s.realms().getRealm(realm.getId()));
             if (success) {
                 success(s, realm, user.getId());
             } else {
