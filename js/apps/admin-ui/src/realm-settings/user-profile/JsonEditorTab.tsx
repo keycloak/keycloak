@@ -3,7 +3,7 @@ import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import type { editor } from "monaco-editor";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { prettyPrintJSON } from "../../util";
 import { useUserProfile } from "./UserProfileContext";
 

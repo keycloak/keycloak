@@ -162,19 +162,16 @@ describe("Clients SAML tests", () => {
         "http://localhost:8180/realms/master/protocol/" +
         clientId +
         "/clients/";
-      const rootUrlError =
-        "Client could not be updated: Root URL is not a valid URL";
-      const homeUrlError =
-        "Client could not be updated: Base URL is not a valid URL";
+      const invalidUrlError = "Client could not be updated: invalid_input";
 
       cy.findByTestId("rootUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
-      masthead.checkNotificationMessage(rootUrlError);
+      masthead.checkNotificationMessage(invalidUrlError);
       cy.findByTestId("rootUrl").clear();
 
       cy.findByTestId("baseUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
-      masthead.checkNotificationMessage(homeUrlError);
+      masthead.checkNotificationMessage(invalidUrlError);
       cy.findByTestId("baseUrl").clear();
 
       cy.findByTestId("rootUrl").type(validUrl);

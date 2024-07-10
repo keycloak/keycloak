@@ -35,7 +35,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent
  * Page fragments seem not to be working after migration from CGlib to ByteBuddy in Graphene
  */
 public class ContentAlert {
-    private static final String ROOT_ID = "//ul[@data-testid='alerts']/li[1]//div";
+    private static final String ROOT_ID = "//ul[@data-testid='global-alerts']/li[1]//div";
 
     //The first alert from the alert group is what we are interested in.
     @FindBy(xpath = ROOT_ID)

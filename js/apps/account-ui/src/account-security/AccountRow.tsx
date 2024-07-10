@@ -1,3 +1,4 @@
+import { IconMapper, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   DataListAction,
@@ -12,13 +13,10 @@ import {
 } from "@patternfly/react-core";
 import { LinkIcon, UnlinkIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import {
-  IconMapper,
-  useAlerts,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
 import { linkAccount, unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type AccountRowProps = {
   account: LinkedAccountRepresentation;
@@ -33,7 +31,7 @@ export const AccountRow = ({
 }: AccountRowProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
+  const { addAlert, addError } = useAccountAlerts();
 
   const unLink = async (account: LinkedAccountRepresentation) => {
     try {
@@ -41,7 +39,7 @@ export const AccountRow = ({
       addAlert(t("unLinkSuccess"));
       refresh();
     } catch (error) {
-      addError(t("unLinkError", { error }).toString());
+      addError("unLinkError", error);
     }
   };
 
@@ -50,7 +48,7 @@ export const AccountRow = ({
       const { accountLinkUri } = await linkAccount(context, account);
       location.href = accountLinkUri;
     } catch (error) {
-      addError(t("linkError", { error }).toString());
+      addError("linkError", error);
     }
   };
 
