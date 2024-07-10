@@ -3,12 +3,12 @@ import {
   beerify,
   debeerify,
   setUserProfileServerError,
-  useAlerts,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Alert,
+  AlertVariant,
   Button,
   ExpandableSection,
   Form,
@@ -32,6 +32,7 @@ import {
 import { Page } from "../components/page/Page";
 import type { Environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
@@ -42,7 +43,7 @@ export const PersonalInfo = () => {
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
   const { handleSubmit, reset, setValue, setError } = form;
-  const { addAlert, addError } = useAlerts();
+  const { addAlert } = useAccountAlerts();
 
   usePromise(
     (signal) =>
@@ -79,7 +80,7 @@ export const PersonalInfo = () => {
       context.keycloak.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
-      addError(t("accountUpdatedError").toString());
+      addAlert(t("accountUpdatedError"), AlertVariant.danger);
 
       setUserProfileServerError(
         { responseData: { errors: error as any } },
