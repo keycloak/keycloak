@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 To safeguard registration against bots, {project_name} has integration with Google reCAPTCHA (see <<procedure_recaptcha>>) and reCAPTCHA Enterprise (see <<procedure_recaptcha_enterprise>>).
-The default theme (`register.ftl`) supports both v2 (visible, checkbox-based) and v3 (score-based, invisible) reCAPTCHA (see https://cloud.google.com/recaptcha-enterprise/docs/choose-key-type[Choose the appropriate reCAPTCHA key type]).
+The default theme (`register.ftl`) supports both v2 (visible, checkbox-based) and v3 (score-based, invisible) reCAPTCHA (see https://cloud.google.com/recaptcha/docs/choose-key-type[Choose the appropriate reCAPTCHA key type]).
 
 [[procedure_recaptcha]]
 == Setting up Google reCAPTCHA
@@ -85,7 +85,7 @@ image:images/recaptcha-enterprise-config.png[]
 .. Enter the *Recaptcha Site Key* generated at the beginning of the procedure.
 .. Enter the *Recaptcha API Key* generated at the beginning of the procedure.
 .. Toggle **reCAPTCHA v3** according to your Site Key type: on for score-based reCAPTCHA (v3), off for challenge reCAPTCHA (v2).
-.. (Optional) Customize the *Min. Score Threshold* as you see fit. Set it to the minimum score, between 0.0 and 1.0, that a user should achieve on reCAPTCHA to be allowed to register. See https://cloud.google.com/recaptcha-enterprise/docs/interpret-assessment-website#interpret_scores[interpret scores].
+.. (Optional) Customize the *Min. Score Threshold* as you see fit. Set it to the minimum score, between 0.0 and 1.0, that a user should achieve on reCAPTCHA to be allowed to register. See https://cloud.google.com/recaptcha/docs/interpret-assessment-website#interpret_scores[interpret scores].
 .. (Optional) Toggle *Use recaptcha.net* to use `www.recatcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
 . Authorize Google to use the registration page as an iframe. See the last steps of <<procedure_recaptcha>> for a detailed procedure.
 
