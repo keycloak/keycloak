@@ -1,6 +1,6 @@
 import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { expect, test } from "@playwright/test";
+import { Page, expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
 import {
@@ -96,13 +96,18 @@ test.describe("Account linking", () => {
   });
 });
 
-async function updateProfile(page, firstName, lastName, email) {
+async function updateProfile(
+  page: Page,
+  firstName: string,
+  lastName: string,
+  email: string,
+) {
   await expect(
     page.getByRole("heading", { name: "Update Account Information" }),
   ).toBeVisible();
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("First name", { exact: true }).fill(firstName);
-  await page.getByLabel("Last name", { exact: true }).fill(lastName);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("First name").fill(firstName);
+  await page.getByLabel("Last name").fill(lastName);
   await page.getByRole("button", { name: "Submit" }).click();
 }
 
