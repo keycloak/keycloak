@@ -17,7 +17,7 @@ import { Link, useMatch, useNavigate } from "react-router-dom";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";

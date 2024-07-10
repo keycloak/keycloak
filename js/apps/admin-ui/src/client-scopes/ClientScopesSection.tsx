@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AllClientScopeType,
   AllClientScopes,

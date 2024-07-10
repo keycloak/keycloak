@@ -1,4 +1,8 @@
 import {
+  ContinueCancelModal,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   DataList,
   DataListContent,
@@ -23,11 +27,7 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ContinueCancelModal,
-  useAlerts,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -37,12 +37,13 @@ import {
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { formatDate } from "../utils/formatDate";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
 export const DeviceActivity = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
+  const { addAlert, addError } = useAccountAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
   const [key, setKey] = useState(0);
@@ -82,7 +83,7 @@ export const DeviceActivity = () => {
       );
       refresh();
     } catch (error) {
-      addError(t("errorSignOutMessage", { error }).toString());
+      addError("errorSignOutMessage", error);
     }
   };
 

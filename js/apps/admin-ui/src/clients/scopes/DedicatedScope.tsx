@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { useAccess } from "../../context/access/Access";

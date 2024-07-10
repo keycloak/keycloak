@@ -56,9 +56,6 @@ export {
   unLinkAccount,
 } from "./api/methods";
 export type { Environment as AccountEnvironment } from "./environment";
-export {
-  KeycloakProvider,
-  useEnvironment,
-  useAlerts,
-} from "@keycloak/keycloak-ui-shared";
+export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
+export { useAccountAlerts } from "./utils/useAccountAlerts";
 export { usePromise } from "./utils/usePromise";

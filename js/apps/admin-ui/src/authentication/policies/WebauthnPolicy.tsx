@@ -21,7 +21,7 @@ import {
   TextControl,
   useHelp,
 } from "@keycloak/keycloak-ui-shared";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";

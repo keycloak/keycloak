@@ -1,15 +1,16 @@
+import {
+  SelectControl,
+  TextControl,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Form, Modal } from "@patternfly/react-core";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  SelectControl,
-  TextControl,
-  useAlerts,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type EditTheResourceProps = {
   resource: Resource;
@@ -28,7 +29,7 @@ export const EditTheResource = ({
 }: EditTheResourceProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
+  const { addAlert, addError } = useAccountAlerts();
 
   const form = useForm<FormValues>();
   const { control, reset, handleSubmit } = form;
@@ -50,7 +51,7 @@ export const EditTheResource = ({
       addAlert(t("updateSuccess"));
       onClose();
     } catch (error) {
-      addError(t("updateError", { error }).toString());
+      addError("updateError", error);
     }
   };
 

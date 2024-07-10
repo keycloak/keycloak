@@ -1,4 +1,5 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -10,8 +11,8 @@ import {
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
 import { NameDescription } from "./form/NameDescription";
 
 type EditFlowModalProps = {
