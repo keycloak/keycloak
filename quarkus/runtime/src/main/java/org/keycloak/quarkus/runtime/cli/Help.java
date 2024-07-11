@@ -157,9 +157,13 @@ public final class Help extends CommandLine.Help {
     }
 
     private boolean isVisible(OptionSpec option) {
-        if (option.description().length == 0) {
-            // do not show options without a description
+        if (option.description().length == 0 || option.hidden()) {
+            // do not show options without a description nor hidden
             return false;
+        }
+        
+        if (ALL_OPTIONS) {
+            return true;
         }
 
         String optionName = undecorateDuplicitOptionName(option.longestName());
@@ -172,30 +176,13 @@ public final class Help extends CommandLine.Help {
 
         if (mapper == null) {
             final var disabledMapper = PropertyMappers.getDisabledMapper(optionName);
-            final var isDisabledMapper = disabledMapper.isPresent();
-
+            
             // Show disabled mappers, which do not have a description when they're enabled
-            final var isEnabledWhenEmpty = isDisabledMapper && disabledMapper.get().getEnabledWhen().isEmpty();
-            if (isEnabledWhenEmpty) {
-                return true;
-            }
-
-            if (ALL_OPTIONS && isDisabledMapper) {
-                return true;
-            }
-
-            // only filter mapped options, defaults to the hidden marker
-            return !option.hidden() && !isDisabledMapper;
+            return disabledMapper.flatMap(PropertyMapper::getEnabledWhen).isEmpty();
         }
 
-        boolean isUnsupportedOption = !PropertyMappers.isSupported(mapper);
-
-        if (isUnsupportedOption) {
-            // unsupported options removed from help if all options are not requested
-            return !option.hidden() && ALL_OPTIONS;
-        }
-
-        return !option.hidden();
+        // unsupported options removed from help if all options are not requested
+        return PropertyMappers.isSupported(mapper);
     }
 
     public static void setAllOptions(boolean allOptions) {
