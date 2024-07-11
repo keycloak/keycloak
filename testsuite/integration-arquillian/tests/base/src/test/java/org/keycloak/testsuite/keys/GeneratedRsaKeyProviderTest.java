@@ -102,6 +102,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(priority, key.getProviderPriority());
         assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
         assertEquals(keyUse, key.getUse());
+        assertFalse(key.getKid().isBlank());
     }
 
     @Test
@@ -140,6 +141,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(priority, key.getProviderPriority());
         assertEquals(4096, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
         assertEquals(keyUse, key.getUse());
+        assertFalse(key.getKid().isBlank());
     }
 
     @Test
@@ -221,6 +223,38 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(publicKey)).getModulus().bitLength());
         assertEquals(4096, ((RSAPublicKey) PemUtils.decodePublicKey(publicKey2)).getModulus().bitLength());
         assertEquals(keyUse, keys.getKeys().get(0).getUse());
+    }
+
+    @Test
+    public void customKidForSig() {
+        long priority = System.currentTimeMillis();
+        String kid = "my-custom-kid";
+
+        ComponentRepresentation rep = createRep("valid", GeneratedRsaKeyProviderFactory.ID);
+        rep.setConfig(new MultivaluedHashMap<>());
+        rep.getConfig().putSingle("priority", Long.toString(priority));
+        rep.getConfig().putSingle("kid", kid);
+
+        Response response = adminClient.realm("test").components().add(rep);
+        String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
+        response.close();
+
+        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        assertEquals(2, createdRep.getConfig().size());
+        assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
+        assertEquals(kid, createdRep.getConfig().getFirst("kid"));
+
+        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
+
+        assertEquals(id, key.getProviderId());
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
+        assertEquals(priority, key.getProviderPriority());
+        assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
+        assertEquals(KeyUse.SIG, key.getUse());
+        assertEquals(kid, key.getKid());
     }
 
     @Test

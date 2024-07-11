@@ -36,6 +36,7 @@ public class ImportedRsaKeyProviderFactory extends AbstractImportedRsaKeyProvide
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractImportedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
             .property(Attributes.RS_ALGORITHM_PROPERTY)
+            .property(Attributes.KID_PROPERTY)
             .build();
 
     @Override
