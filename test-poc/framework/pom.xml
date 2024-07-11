@@ -35,6 +35,21 @@
         <selenium.version>4.21.0</selenium.version>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <kc.test.browser>${kc.test.browser}</kc.test.browser>
+                        <kc.test.database>${kc.test.database}</kc.test.database>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

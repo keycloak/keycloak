@@ -5,9 +5,12 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -20,10 +23,17 @@ public class Registry {
 
     private ExtensionContext currentContext;
     private final List<Supplier<?, ?>> suppliers = new LinkedList<>();
+    private final Map<SupplierType, Map<String, Supplier>> mappedSuppliers = new HashMap<SupplierType, Map<String, Supplier>>();
+    enum SupplierType {
+        BROWSER,
+        DATABASE,
+        UNMAPPED
+    }
     private final List<InstanceWrapper<?, ?>> deployedInstances = new LinkedList<>();
     private final List<InstanceWrapper<?, ?>> requestedInstances = new LinkedList<>();
 
     public Registry() {
+        setMappedSuppliers();
         loadSuppliers();
     }
 
@@ -197,11 +207,63 @@ public class Registry {
     }
 
     private void loadSuppliers() {
-        ServiceLoader.load(Supplier.class).iterator().forEachRemaining(suppliers::add);
+        Map<String, Supplier> browserSuppliers = mappedSuppliers.get(SupplierType.BROWSER);
+        Map<String, Supplier> databaseSuppliers = mappedSuppliers.get(SupplierType.DATABASE);
+        String browser = System.getProperty("kc.test.browser");
+        String database = System.getProperty("kc.test.database");
+
+        if (browser != null){
+            for (String key : browserSuppliers.keySet()) {
+                if (key.toString().toLowerCase().contains(browser.toLowerCase())) {
+                    suppliers.add(browserSuppliers.get(key));
+                    break;
+                }
+            }
+        }else{ //Set default one
+            suppliers.add(browserSuppliers.get(browserSuppliers.keySet().stream().findFirst().get()));
+        }
+
+        if (database != null){
+
+            for (String key : databaseSuppliers.keySet()) {
+                if (key.toString().toLowerCase().contains(browser.toLowerCase())) {
+                    suppliers.add(databaseSuppliers.get(key));
+                    break;
+                }
+            }
+        }else{ //Set default one
+            if (databaseSuppliers != null) //TODO: to avoid exception as currently not available any database supplier
+                suppliers.add(databaseSuppliers.get(databaseSuppliers.keySet().stream().findFirst().get()));
+        }
+        Map<String, Supplier> unmappedSupplier = mappedSuppliers.get(SupplierType.UNMAPPED);
+        unmappedSupplier.forEach( (k, v) -> {
+            suppliers.add(v);
+        });
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.tracev("Suppliers: {0}", suppliers.stream().map(s -> s.getClass().getSimpleName()).collect(Collectors.joining(", ")));
         }
+    }
+
+    private void setMappedSuppliers(){
+        ServiceLoader.load(Supplier.class).iterator().forEachRemaining(supplier -> {
+            SupplierType supplierType = this.getSupplierType(supplier);
+            Map<String, Supplier> supplierTypeMap = mappedSuppliers.get(supplierType);
+            if(supplierTypeMap == null){
+                supplierTypeMap = new HashMap<String, Supplier>();
+            }
+            supplierTypeMap.put(supplier.getClass().getSimpleName(), supplier);
+            mappedSuppliers.put(supplierType, supplierTypeMap);
+        });
+    }
+
+    private SupplierType getSupplierType(Supplier supplier){
+        if(supplier.getClass().getSimpleName().contains("database")){
+            return SupplierType.DATABASE;
+        }else if(supplier.getClass().getSimpleName().contains("WebDriver")){
+            return SupplierType.BROWSER;
+        }
+        return SupplierType.UNMAPPED;
     }
 
     private InstanceWrapper getDeployedInstance(Class typeClass) {
