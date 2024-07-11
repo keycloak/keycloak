@@ -62,7 +62,7 @@
     <main class="pf-v5-c-login__main">
       <header class="pf-v5-c-login__main-header">
         <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><#nested "header"></h1>
-        <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
+        <#if realm.internationalizationEnabled && locale.supported?size gt 1>
         <div class="pf-v5-c-login__main-header-utilities">
           <div class="pf-v5-c-form-control">
             <select
@@ -160,25 +160,23 @@
         <#nested "form">
 
         <#if auth?has_content && auth.showTryAnotherWayLink()>
-          <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
-              <div class="${properties.kcFormGroupClass!}">
+          <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate" class="pf-v5-c-form">
+              <div class="pf-v5-c-form__group pf-v5-u-mt-md">
                   <input type="hidden" name="tryAnotherWay" value="on"/>
-                  <a href="#" id="try-another-way"
-                      onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                  <button class="pf-v5-c-button pf-m-secondary pf-m-block" type="button"
+                      onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}
+                  </button>
               </div>
           </form>
         </#if>
 
         <#if displayInfo>
-          <div id="kc-info" class="${properties.kcSignUpClass!}">
+          <div id="kc-info" class="${properties.kcSignUpClass!} pf-v5-u-mt-md">
               <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
                   <#nested "info">
               </div>
           </div>
         </#if>
-      </div>
-      <footer class="pf-v5-c-login__main-footer">
-        <#nested "socialProviders">
       </footer>
 
       <@loginFooter.content/>
