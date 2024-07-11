@@ -45,6 +45,7 @@ export const GroupToolbar = ({
       </ToolbarItem>
       <ToolbarItem>
         <Dropdown
+          onOpenChange={toggleKebab}
           toggle={(ref) => (
             <MenuToggle
               ref={ref}

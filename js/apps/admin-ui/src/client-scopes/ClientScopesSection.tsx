@@ -257,6 +257,7 @@ export default function ClientScopesSection() {
               <ToolbarItem>
                 <Dropdown
                   shouldFocusToggleOnSelect
+                  onOpenChange={(isOpen) => setKebabOpen(isOpen)}
                   toggle={(ref) => (
                     <MenuToggle
                       data-testid="kebab"
