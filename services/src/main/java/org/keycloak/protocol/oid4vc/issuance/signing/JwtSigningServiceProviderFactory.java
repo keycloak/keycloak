@@ -38,7 +38,7 @@ import java.util.Optional;
  */
 public class JwtSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
 
-    public static final Format SUPPORTED_FORMAT = Format.JWT_VC;
+    public static final String SUPPORTED_FORMAT = Format.JWT_VC;
     private static final String HELP_TEXT = "Issues JWT-VCs following the specification of https://identity.foundation/jwt-vc-presentation-profile/.";
 
     @Override
@@ -83,7 +83,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
     }
 
     @Override
-    public Format supportedFormat() {
+    public String supportedFormat() {
         return SUPPORTED_FORMAT;
     }
 }
