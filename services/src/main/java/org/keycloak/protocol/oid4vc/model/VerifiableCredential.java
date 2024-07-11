@@ -38,8 +38,16 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VerifiableCredential {
 
+    public static final String VC_CONTEXT_V1 = "https://www.w3.org/ns/credentials/v1";
+    public static final String VC_CONTEXT_V2 = "https://www.w3.org/ns/credentials/v2";
+
+    /**
+     * @context: The value of the @context property MUST be an ordered set where the first item is a URL with the
+     * value https://www.w3.org/ns/credentials/v2. Subsequent items in the ordered set MUST be composed of any
+     * combination of URLs and/or objects, where each is processable as a JSON-LD Context.
+     */
     @JsonProperty("@context")
-    private List<String> context;
+    private List<String> context = new ArrayList<>(List.of(VC_CONTEXT_V1));
     private List<String> type = new ArrayList<>();
     private URI issuer;
     private Date issuanceDate;
