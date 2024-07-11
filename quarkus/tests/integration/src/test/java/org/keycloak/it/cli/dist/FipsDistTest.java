@@ -50,8 +50,8 @@ public class FipsDistTest {
     @Test
     void testFipsApprovedModePasswordFails(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
-            dist.setEnvVar("KEYCLOAK_ADMIN", "admin");
-            dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "admin");
+            dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
+            dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin");
 
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();
@@ -65,8 +65,8 @@ public class FipsDistTest {
     @Test
     void testFipsApprovedModePasswordSucceeds(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
-            dist.setEnvVar("KEYCLOAK_ADMIN", "admin");
-            dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "adminadminadmin");
+            dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
+            dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
 
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();

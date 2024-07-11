@@ -37,8 +37,8 @@ async function startServer() {
   await downloadServer(scriptArgs.local);
 
   const env = {
-    KEYCLOAK_ADMIN: ADMIN_USERNAME,
-    KEYCLOAK_ADMIN_PASSWORD: ADMIN_PASSWORD,
+    KC_BOOTSTRAP_ADMIN_USERNAME: ADMIN_USERNAME,
+    KC_BOOTSTRAP_ADMIN_PASSWORD: ADMIN_PASSWORD,
     ...process.env,
   };
 
