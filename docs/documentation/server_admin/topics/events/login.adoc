@@ -77,6 +77,32 @@ image:images/search-user-event.png[Search user event]
 
 |===
 
+*Identity Brokering:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Federated identity link override
+|An existing Federated identity link was overridden
+
+|Federated identity link override error
+|Error occurred when trying to override an existing Federated identity link
+
+|===
+
+*OAuth:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Oauth2 extension grant
+|Oauth2 grant was executed
+
+|Oauth2 extension grant error
+|Error occurred during Oauth2 grant execution
+
+|===
+
 *Account events:*
 
 [cols="2",options="header"]
