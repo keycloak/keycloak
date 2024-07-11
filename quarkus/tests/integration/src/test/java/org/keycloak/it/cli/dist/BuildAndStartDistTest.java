@@ -69,14 +69,14 @@ public class BuildAndStartDistTest {
     }
 
     @Test
-    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
     void testCreateAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertAdminCreation(dist, result, "admin123", "admin123", "admin123");
     }
 
     @Test
-    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
     void testCreateDifferentAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertAdminCreation(dist, result, "admin123", "new-admin", "new-admin");
@@ -86,8 +86,8 @@ public class BuildAndStartDistTest {
         assertTrue(result.getOutput().contains("Created temporary admin user with username " + initialUsername),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
-        dist.setEnvVar("KEYCLOAK_ADMIN", nextUsername);
-        dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", password);
+        dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", nextUsername);
+        dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", password);
         CLIResult cliResult = dist.run("start-dev", "--log-level=org.keycloak.services:debug");
 
         cliResult.assertNoMessage("Added temporary admin user '");
