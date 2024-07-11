@@ -84,22 +84,20 @@ public class XMLTimeUtil {
      * back to
      * "GMT"
      *
-     * @param timezone
+     * @param timezone timezone id
      *
      * @return
      */
-    public static XMLGregorianCalendar getIssueInstant(String timezone) {
+    public static XMLGregorianCalendar getIssueInstant(String timezone, GregorianCalendar gc) {
         TimeZone tz = TimeZone.getTimeZone(timezone);
         DatatypeFactory dtf;
         dtf = DATATYPE_FACTORY.get();
-
-        GregorianCalendar gc = new GregorianCalendar(tz);
         XMLGregorianCalendar xgc = dtf.newXMLGregorianCalendar(gc);
 
-        Long offsetMilis = TimeUnit.MILLISECONDS.convert(Time.getOffset(), TimeUnit.SECONDS);
-        if (offsetMilis != 0) {
-            if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " timeOffset: " + offsetMilis);
-            xgc.add(parseAsDuration(offsetMilis.toString()));
+        Long offsetMillis = TimeUnit.MILLISECONDS.convert(Time.getOffset(), TimeUnit.SECONDS);
+        if (offsetMillis != 0) {
+            if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " timeOffset: " + offsetMillis);
+            xgc.add(parseAsDuration(offsetMillis.toString()));
         }
         if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " issueInstant: " + xgc.toString());
         return xgc;
@@ -111,7 +109,20 @@ public class XMLTimeUtil {
      * @return
      */
     public static XMLGregorianCalendar getIssueInstant() {
-        return getIssueInstant(getCurrentTimeZoneID());
+        return getIssueInstant(getCurrentTimeZoneID(), new GregorianCalendar());
+    }
+
+    /**
+     * Get the instant of the provided time specified in milliseconds
+     *
+     * @param millis milliseconds entered in a positive value
+     *
+     * @return
+     */
+    public static XMLGregorianCalendar getIssueInstant(long millis) {
+        GregorianCalendar gc = new GregorianCalendar();
+        gc.setTimeInMillis(millis);
+        return getIssueInstant(getCurrentTimeZoneID(), gc);
     }
 
     public static String getCurrentTimeZoneID() {

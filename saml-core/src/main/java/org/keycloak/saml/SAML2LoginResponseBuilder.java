@@ -71,11 +71,17 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
     protected String authMethod;
     protected String requestIssuer;
     protected String sessionIndex;
+    protected long sessionStartedAt;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
     protected boolean includeOneTimeUseCondition;
 
     public SAML2LoginResponseBuilder sessionIndex(String sessionIndex) {
         this.sessionIndex = sessionIndex;
+        return this;
+    }
+
+    public SAML2LoginResponseBuilder sessionStartedAt(long millis) {
+        this.sessionStartedAt = millis;
         return this;
     }
 
@@ -234,8 +240,9 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
             if (isNotNull(authMethod))
                 authContextRef = authMethod;
 
-            AuthnStatementType authnStatement = StatementUtil.createAuthnStatement(XMLTimeUtil.getIssueInstant(),
-                    authContextRef);
+            AuthnStatementType authnStatement = StatementUtil.createAuthnStatement(
+                    XMLTimeUtil.getIssueInstant(sessionStartedAt), authContextRef
+            );
 
             if (sessionExpiration > 0)
                 authnStatement.setSessionNotOnOrAfter(XMLTimeUtil.add(authnStatement.getAuthnInstant(), sessionExpiration * 1000L));

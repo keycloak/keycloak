@@ -485,6 +485,8 @@ public class SamlProtocol implements LoginProtocol {
 
         if (!samlClient.includeAuthnStatement()) {
             builder.disableAuthnStatement(true);
+        } else {
+            builder.sessionStartedAt(clientSession.getStarted() * 1000L);
         }
 
         builder.includeOneTimeUseCondition(samlClient.includeOneTimeUseCondition());
@@ -679,7 +681,7 @@ public class SamlProtocol implements LoginProtocol {
             return null;
         return ResourceAdminManager.resolveUri(session, client.getRootUrl(), logoutServiceUrl);
     }
-    
+
     public static boolean useArtifactForLogout(ClientModel client) {
         return new SamlClient(client).forceArtifactBinding()
                 && client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE) != null;
@@ -1024,7 +1026,7 @@ public class SamlProtocol implements LoginProtocol {
             throw new ProcessingException(e);
         }
     }
-    
+
     protected String buildArtifactAndStoreResponse(SAML2Object statusResponseType, UserSessionModel userSession) throws ArtifactResolverProcessingException, ConfigurationException, ProcessingException {
         String clientIdThatInitiatedLogout = userSession.getNote(SAML_LOGOUT_INITIATOR_CLIENT_ID);
         userSession.removeNote(SAML_LOGOUT_INITIATOR_CLIENT_ID);
@@ -1036,7 +1038,7 @@ public class SamlProtocol implements LoginProtocol {
 
         return buildArtifactAndStoreResponse(statusResponseType, clientSessionModel);
     }
-    
+
     protected String buildArtifactAndStoreResponse(SAML2Object saml2Object, AuthenticatedClientSessionModel clientSessionModel) throws ArtifactResolverProcessingException, ProcessingException, ConfigurationException {
         String entityId = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString();
         ArtifactResponseType artifactResponseType = SamlProtocolUtils.buildArtifactResponse(saml2Object, SAML2NameIDBuilder.value(getResponseIssuer(realm)).build());
@@ -1049,7 +1051,7 @@ public class SamlProtocol implements LoginProtocol {
         notes.put(USER_SESSION_ID, clientSessionModel.getUserSession().getId());
         notes.put(CLIENT_SESSION_ID, clientSessionModel.getClient().getId());
         getSingleUseStore().put(artifact, realm.getAccessCodeLifespan(), notes);
-        
+
         return artifact;
     }
 
