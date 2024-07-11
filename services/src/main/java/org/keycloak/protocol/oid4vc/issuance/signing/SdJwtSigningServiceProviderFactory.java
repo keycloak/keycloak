@@ -39,7 +39,7 @@ import java.util.Optional;
  */
 public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
 
-    public static final Format SUPPORTED_FORMAT = Format.SD_JWT_VC;
+    public static final String SUPPORTED_FORMAT = Format.SD_JWT_VC;
     private static final String HELP_TEXT = "Issues SD-JWT-VCs following the specification of https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html.";
 
     @Override
@@ -97,7 +97,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
     }
 
     @Override
-    public Format supportedFormat() {
+    public String supportedFormat() {
         return SUPPORTED_FORMAT;
     }
 }

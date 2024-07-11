@@ -99,7 +99,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         return builtins;
     }
 
-    private void addServiceFromComponent(Map<Format, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
+    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
         ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
                 .getKeycloakSessionFactory()
                 .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
@@ -114,7 +114,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     @Override
     public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
 
-        Map<Format, VerifiableCredentialsSigningService> signingServices = new EnumMap<>(Format.class);
+        Map<String, VerifiableCredentialsSigningService> signingServices = new HashMap<>();
         RealmModel realm = keycloakSession.getContext().getRealm();
         realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
                 .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
