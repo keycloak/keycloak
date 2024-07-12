@@ -43,3 +43,9 @@ https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Confi
 In this release, the LDAP connection pool configuration relies solely on system properties.
 
 For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= The `java-keystore` key provider supports more algorithms and vault secrets
+
+The `java-keystore` key provider, which allows loading a realm key from an external java keystore file, has been modified to manage all {project_name} algorithms. Besides, the keystore and key secrets, needed to retrieve the actual key from the store, can be configured using the link:{adminguide_link}#_vault-administration[vault]. Therefore a {project_name} realm can externalize any key to the encrypted file without sensitive data stored in the database.
+
+For more information about this subject, see link:{adminguide_link}#realm_keys[Configuring realm keys].

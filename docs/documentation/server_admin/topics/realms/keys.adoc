@@ -138,7 +138,7 @@ For the associated certificate chain to be loaded it must be imported to the Jav
 
 [WARNING]
 ====
-Not all the keystore types support all types of keys. `JKS` and `PKCS12` in fips modes (provider `BCFIPS`) cannot store secret key entries.
+Not all the keystore types support all types of keys. For example, `JKS` in all modes and `PKCS12` in fips mode (`BCFIPS` provider) cannot store secret key entries.
 ====
 
 ==== Making keys passive
