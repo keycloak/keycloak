@@ -18,13 +18,15 @@
 package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
-
+import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 import jakarta.inject.Inject;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,11 +38,12 @@ import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2alpha1.realmimport.PlaceholderSecret;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -71,6 +74,12 @@ public class RealmImportTest extends BaseOperatorTest {
         k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).delete();
         deleteDB();
         deployDB();
+    }
+    
+    @Override
+    public void afterEach(QuarkusTestMethodContext context) {
+        super.afterEach(context);
+        k8sclient.resource(getResourceFromFile("example-smtp-secret.yaml", Secret.class)).delete();
     }
 
     private String getJobArgs() {
@@ -108,7 +117,7 @@ public class RealmImportTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
-        assertWorkingRealmImport(kc, false);
+        assertWorkingRealmImport(kc);
     }
 
     @Test
@@ -123,13 +132,23 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm-with-placeholders.yaml"));
-
+        k8sclient.getKubernetesSerialization().registerKubernetesResource(KeycloakRealmImport.class);
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
+            KeycloakRealmImport realmImport = (KeycloakRealmImport) obj;
+            realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}"));
+            realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new PlaceholderSecret(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
+                            "MY_SMTP_SERVER", new PlaceholderSecret(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
+            return realmImport;
+        });
+        
         // Assert
-        assertWorkingRealmImport(kc, true);
+        var envvars = assertWorkingRealmImport(kc);
+        
+        assertThat(envvars.stream().filter(e -> e.getName().equals("MY_SMTP_PORT")).findAny().get().getValueFrom().getSecretKeyRef().getKey()).isEqualTo("SMTP_PORT");
+        assertThat(envvars.stream().filter(e -> e.getName().equals("MY_SMTP_SERVER")).findAny().get().getValueFrom().getSecretKeyRef().getKey()).isEqualTo("SMTP_SERVER");
     }
 
-    private void assertWorkingRealmImport(Keycloak kc, boolean checkPlaceholders) {
+    private List<EnvVar> assertWorkingRealmImport(Keycloak kc) {
         var crSelector = k8sclient
                 .resources(KeycloakRealmImport.class)
                 .inNamespace(namespace)
@@ -163,15 +182,6 @@ public class RealmImportTest extends BaseOperatorTest {
         assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("cache"))).findAny().get().getValue()).isEqualTo("local");
         assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("health-enabled"))).findAny().get().getValue()).isEqualTo("false");
 
-        if (checkPlaceholders) {
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_PORT"))).findAny().get().getName()).isEqualTo("KC_SMTP_PORT");
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_SERVER"))).findAny().get().getName()).isEqualTo("KC_SMTP_SERVER");
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_FROM"))).findAny().get().getName()).isEqualTo("KC_SMTP_FROM");
-        } else {
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_PORT"))).findAny().isEmpty()).isEqualTo(true);
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_SERVER"))).findAny().isEmpty()).isEqualTo(true);
-            assertThat(envvars.stream().filter(e -> e.getName().equals(getKeycloakOptionEnvVarName("SMTP_FROM"))).findAny().isEmpty()).isEqualTo(true);
-        }
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo("my-empty-secret");
 
@@ -189,6 +199,8 @@ public class RealmImportTest extends BaseOperatorTest {
         });
 
         assertThat(getJobArgs()).contains("build");
+        
+        return envvars;
     }
 
     @Test

@@ -16,15 +16,19 @@
  */
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Required;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.sundr.builder.annotations.Buildable;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.List;
 import java.util.Map;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class KeycloakRealmImportSpec {
 
     @Required
