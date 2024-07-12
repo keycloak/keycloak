@@ -174,10 +174,9 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        String htmlFormId = "kc-update-profile-form";
 
         //assert fields and groups location in form, attributes without a group appear first
-        List<WebElement> element = driver.findElements(By.cssSelector("form#" + htmlFormId + " label"));
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form label"));
         String[] labelOrder = new String[]{"lastName", "username", "firstName", "header-company", "description-company", "department", "header-contact", "email"};
         for (int i = 0; i < element.size(); i++) {
             WebElement webElement = element.get(i);
@@ -217,7 +216,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         for (int i = 0; i < labelOrder.length; i++) {
             WebElement webElement = element.get(i);
             String id = webElement.getAttribute("id");
-            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+            assertThat("Field at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
         }
     }
 
