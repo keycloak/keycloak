@@ -140,7 +140,7 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     @JsonProperty(S_HASH)
-    protected String stateHash; 
+    protected String stateHash;
 
     public String getNonce() {
         return nonce;
@@ -172,7 +172,7 @@ public class IDToken extends JsonWebToken {
     @Deprecated
     @JsonIgnore
     public String getSessionState() {
-        return sessionId;
+        return getSessionId();
     }
 
     public String getAccessTokenHash() {
