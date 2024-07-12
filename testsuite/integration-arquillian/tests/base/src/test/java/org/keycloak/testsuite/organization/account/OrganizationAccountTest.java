@@ -67,7 +67,7 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
     public void testFailUnlinkIdentityProvider() throws IOException {
         // federate user
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        assertBrokerRegistration(organization, bc.getUserEmail());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         // reset password to obtain a token and access the account api
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
         ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);

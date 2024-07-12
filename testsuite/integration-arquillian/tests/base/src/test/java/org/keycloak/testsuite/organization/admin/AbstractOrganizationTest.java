@@ -183,11 +183,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         }
     }
 
-    protected void assertBrokerRegistration(OrganizationResource organization, String email) {
+    protected void assertBrokerRegistration(OrganizationResource organization, String username, String email) {
         // login with email only
         openIdentityFirstLoginPage(email, true, null, false, false);
 
-        loginOrgIdp(email, email, true, true);
+        loginOrgIdp(username, email, true, true);
 
         assertIsMember(email, organization);
     }

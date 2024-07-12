@@ -187,7 +187,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        super.assertBrokerRegistration(organization, bc.getUserEmail());
+        super.assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
 
         // disable the organization and check that fetching its representation has it disabled.
         orgRep.setEnabled(false);
@@ -246,7 +246,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        super.assertBrokerRegistration(organization, bc.getUserEmail());
+        super.assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
 
         // now fetch all users from the realm
         List<UserRepresentation> members = testRealm().users().search("*neworg*", null, null);
