@@ -289,41 +289,13 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         //assert fields location in form
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(1) input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(2) input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(3) input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("#password")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("#password-confirm")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(6) input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(7) input#email")
-                ).isDisplayed()
-        );
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-register-form input"));
+        String[] labelOrder = new String[]{"lastName", "department", "username", "password", "password-confirm", "firstName", "email"};
+        for (int i = 0; i < labelOrder.length; i++) {
+            WebElement webElement = element.get(i);
+            String id = webElement.getAttribute("id");
+            assertThat("Field at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     public static final String UP_CONFIG_PART_INPUT_TYPES = "{\"name\": \"defaultType\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"

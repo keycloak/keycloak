@@ -261,31 +261,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         verifyProfilePage.assertCurrent();
 
         //assert fields location in form
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(2) div > span.pf-v5-c-form-control > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(3) div > span.pf-v5-c-form-control > input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(4) div > span.pf-v5-c-form-control > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) div > span.pf-v5-c-form-control > input#email")
-                ).isDisplayed()
-        );
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form input"));
+        String[] labelOrder = new String[]{"lastName", "department", "username", "firstName", "email"};
+        for (int i = 0; i < labelOrder.length; i++) {
+            WebElement webElement = element.get(i);
+            String id = webElement.getAttribute("id");
+            assertThat("Field at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     @Test
