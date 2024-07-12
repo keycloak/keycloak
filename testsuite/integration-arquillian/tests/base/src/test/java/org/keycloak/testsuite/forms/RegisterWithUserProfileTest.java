@@ -55,6 +55,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 /**
  * Test user registration with customized user-profile configurations
@@ -290,17 +291,17 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         //assert fields location in form
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
+                        By.cssSelector("form#kc-register-form > div:nth-child(1) input#lastName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(2) div > span.pf-v5-c-form-control > input#department")
+                        By.cssSelector("form#kc-register-form > div:nth-child(2) input#department")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(3) div > span.pf-v5-c-form-control > input#username")
+                        By.cssSelector("form#kc-register-form > div:nth-child(3) input#username")
                 ).isDisplayed()
         );
         Assert.assertTrue(
@@ -315,12 +316,12 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(6) div > span.pf-v5-c-form-control > input#firstName")
+                        By.cssSelector("form#kc-register-form > div:nth-child(6) input#firstName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(7) div > span.pf-v5-c-form-control > input#email")
+                        By.cssSelector("form#kc-register-form > div:nth-child(7) input#email")
                 ).isDisplayed()
         );
     }
@@ -440,50 +441,22 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
-        String htmlFormId="kc-register-form";
 
         //assert fields and groups location in form, attributes without a group appear first
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) div > span.pf-v5-c-form-control > input#username")
-                ).isDisplayed()
-        );
-        // password and password confirmation fields appear after the username field, in positions 3 and 4
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) div > span.pf-v5-c-form-control > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div > label#header-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div > label#description-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) div > span.pf-v5-c-form-control > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(8) div > label#header-contact")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(9) div > span.pf-v5-c-form-control > input#email")
-                ).isDisplayed()
-        );
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-register-form label"));
+        String[] labelOrder = new String[]{"lastName", "username", "password", "password-confirm", "firstName", "header-company", "description-company", "department", "header-contact", "email"};
+        for (int i = 0; i < element.size(); i++) {
+            WebElement webElement = element.get(i);
+            String id;
+            if (webElement.getAttribute("for") != null) {
+                id = webElement.getAttribute("for");
+                // see that the label has an element it belongs to
+                assertThat("Label with id: " + id + " should have component it belongs to", driver.findElement(By.id(id)).isDisplayed(), is(true));
+            } else {
+                id = webElement.getAttribute("id");
+            }
+            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     @Test

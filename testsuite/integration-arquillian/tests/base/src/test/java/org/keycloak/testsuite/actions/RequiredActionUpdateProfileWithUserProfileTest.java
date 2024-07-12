@@ -188,7 +188,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
             } else {
                 id = webElement.getAttribute("id");
             }
-            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", labelOrder[i], is(id));
+            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
         }
     }
 
