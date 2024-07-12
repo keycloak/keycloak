@@ -433,6 +433,35 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testOnlyShowBrokersAssociatedWithResolvedOrganization() {
+        String org0Name = "org-0";
+        OrganizationResource org0 = testRealm().organizations().get(createOrganization(org0Name).getId());
+        IdentityProviderRepresentation org0Broker = org0.identityProviders().getIdentityProviders().get(0);
+        org0Broker.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        org0Broker.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+        String org1Name = "org-1";
+        OrganizationResource org1 = testRealm().organizations().get(createOrganization(org1Name).getId());
+        IdentityProviderRepresentation org1Broker = org1.identityProviders().getIdentityProviders().get(0);
+        org1Broker.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        org1Broker.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+        testRealm().identityProviders().get(org1Broker.getAlias()).update(org1Broker);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org0Name + " organization but you don't have an account yet."));
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
+
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-1.org");
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org1Name + " organization but you don't have an account yet."));
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+    }
+
+    @Test
     public void testLoginUsingBrokerWithoutDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();

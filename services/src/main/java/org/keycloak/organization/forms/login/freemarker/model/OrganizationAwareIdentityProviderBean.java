@@ -74,6 +74,12 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             return false;
         }
 
+        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+
+        if (organization != null && !organization.getId().equals(model.getOrganizationId())) {
+            return false;
+        }
+
         return Boolean.parseBoolean(model.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString()));
     }
 
