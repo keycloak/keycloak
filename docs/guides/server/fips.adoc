@@ -62,6 +62,8 @@ keytool -genkeypair -sigalg SHA512withRSA -keyalg RSA -storepass passwordpasswor
   -dname CN=localhost -keypass passwordpassword
 ----
 
+The `pkcs12` keystores in FIPS mode *do not* manage secret (symmetric) keys. This limitation is imposed by the `BCFIPS` provider which does not allow this type of keys inside the `pkcs12` keystore type.
+
 When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore, you can store PBE (password-based encryption) keys simply by using the keytool command, which makes it ideal for using it with {project_name} KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
 
 === BCFKS keystore
@@ -179,6 +181,8 @@ property above for adding XMLDSig provider into that file. Then start your {proj
 For Kerberos/SPNEGO, the security provider `SunJGSS` is not yet fully FIPS compliant. Hence it is not recommended to add it to your list of security providers
 if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in {project_name} when it is executed on FIPS platform and when security provider is not
 available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=2051628[bugzilla].
+
+The algorithm `EdDSA` cannot be used in FIPS mode. Although the current `BCFIPS` provider supports `Ed25519` and `Ed448` curves, the resulting keys do not implement the standard JDK interfaces to manage them (`EdECKey`, `EdECPublicKey`, `EdECPrivateKey`,...), and {project_name} cannot use them for signatures.
 
 == Run the CLI on the FIPS host
 
