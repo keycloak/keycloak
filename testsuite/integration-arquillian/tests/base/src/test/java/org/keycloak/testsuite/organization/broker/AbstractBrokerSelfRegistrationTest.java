@@ -53,7 +53,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testRegistrationRedirectWhenSingleBroker() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        assertBrokerRegistration(organization, bc.getUserEmail());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
     }
 
     @Test
@@ -276,16 +276,27 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
         // add the member for the first time
-        assertBrokerRegistration(organization, bc.getUserEmail());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
 
         // logout to force the user to authenticate again
         UserRepresentation account = getUserRepresentation(bc.getUserEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
+        openIdentityFirstLoginPage(bc.getUserLogin(), true, null, false, false);
+
+        // login to the organization identity provider by username and automatically redirects to the app as the account already exists
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        appPage.assertCurrent();
+        assertIsMember(bc.getUserEmail(), organization);
+
+        // logout to force the user to authenticate again
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
         openIdentityFirstLoginPage(bc.getUserEmail(), true, null, false, false);
 
-        // login to the organization identity provider and automatically redirects to the app as the account already exists
+        // login to the organization identity provider by email and automatically redirects to the app as the account already exists
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
         appPage.assertCurrent();
         assertIsMember(bc.getUserEmail(), organization);
@@ -316,7 +327,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
 
-        assertBrokerRegistration(organization, email);
+        assertBrokerRegistration(organization, bc.getUserLogin(), email);
 
         // logout to force the user to authenticate again
         UserRepresentation account = getUserRepresentation(email);
@@ -349,7 +360,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         // add the member for the first time
-        assertBrokerRegistration(organization, bc.getUserEmail());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         UserRepresentation member = getUserRepresentation(bc.getUserEmail());
 
         member.setEmail(KeycloakModelUtils.generateId() + "@user.org");
@@ -373,7 +384,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
         // add the member for the first time
-        assertBrokerRegistration(organization, bc.getUserEmail());
+        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         UserRepresentation member = getUserRepresentation(bc.getUserEmail());
         OrganizationMemberResource organizationMember = organization.members().member(member.getId());
 
@@ -635,7 +646,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     public void testAllowUpdateEmailWithDifferentDomainThanOrgIfBrokerHasNoDomainSet() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         String email = bc.getUserEmail();
-        assertBrokerRegistration(organization, email);
+        assertBrokerRegistration(organization, bc.getUserLogin(), email);
 
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
@@ -649,7 +660,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     public void testFailUpdateEmailWithDifferentDomainThanOrgIfBrokerHasDomainSet() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         String email = bc.getUserEmail();
-        assertBrokerRegistration(organization, email);
+        assertBrokerRegistration(organization, bc.getUserLogin(), email);
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
         assertEquals(email.substring(email.indexOf('@') + 1), idpRep.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE));
         UserRepresentation user = getUserRepresentation(email);
