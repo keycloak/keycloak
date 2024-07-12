@@ -177,42 +177,42 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         //assert fields and groups location in form, attributes without a group appear first
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
+                        By.cssSelector("form#"+htmlFormId+" input#lastName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) div > span.pf-v5-c-form-control > input#username")
+                        By.cssSelector("form#"+htmlFormId+" input#username")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) div > span.pf-v5-c-form-control > input#firstName")
+                        By.cssSelector("form#"+htmlFormId+" input#firstName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div > label#header-company")
+                        By.cssSelector("form#"+htmlFormId+" label#header-company")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div > label#description-company")
+                        By.cssSelector("form#"+htmlFormId+" label#description-company")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) div > span.pf-v5-c-form-control > input#department")
+                        By.cssSelector("form#"+htmlFormId+" input#department")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) div > label#header-contact")
+                        By.cssSelector("form#"+htmlFormId+" label#header-contact")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) div > span.pf-v5-c-form-control > input#email")
+                        By.cssSelector("form#"+htmlFormId+" input#email")
                 ).isDisplayed()
         );
     }
@@ -237,27 +237,27 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         //assert fields location in form
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
+                        By.cssSelector("form#kc-update-profile-form input#lastName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(2) div > span.pf-v5-c-form-control > input#department")
+                        By.cssSelector("form#kc-update-profile-form input#department")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(3) div > span.pf-v5-c-form-control > input#username")
+                        By.cssSelector("form#kc-update-profile-form input#username")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(4) div > span.pf-v5-c-form-control > input#firstName")
+                        By.cssSelector("form#kc-update-profile-form input#firstName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) div > span.pf-v5-c-form-control > input#email")
+                        By.cssSelector("form#kc-update-profile-form input#email")
                 ).isDisplayed()
         );
     }
