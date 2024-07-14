@@ -222,7 +222,7 @@ public class Registry {
             Class supplierValueType = supplier.getValueType();
 
             if (!loadedValueTypes.contains(supplierValueType)) {
-                String requestedSupplier = Config.getInstance().getSelectedSupplier(supplierValueType);
+                String requestedSupplier = Config.getSelectedSupplier(supplierValueType);
                 if (requestedSupplier != null) {
                     if (requestedSupplier.equals(supplier.getAlias())) {
                         shouldAdd = true;

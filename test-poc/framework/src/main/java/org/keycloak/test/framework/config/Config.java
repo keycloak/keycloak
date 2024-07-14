@@ -1,54 +1,40 @@
 package org.keycloak.test.framework.config;
 
+import io.smallrye.config.DotEnvConfigSourceProvider;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.test.framework.injection.ValueTypeAlias;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Config {
 
-    private final static Config instance = new Config();
+    private static final SmallRyeConfig config;
 
-    private Properties localEnv = new Properties();
+    private static final String kcTestConfigPath = System.getProperty("kc.test.config");
 
-    private Config() {
-        File envFile = new File(".env");
-        if (envFile.isFile()) {
-            try {
-                localEnv.load(new FileInputStream(envFile));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
+    static {
+        List<ConfigSource> configSources = new ArrayList<>();
 
-    public static Config getInstance() {
-        return instance;
-    }
-
-    public String getSelectedSupplier(Class valueType) {
-        return getString("kc-test-" + ValueTypeAlias.getAlias(valueType));
-    }
-
-    public String getString(String key) {
-        String propKey = key.replace('-', '.');
-        String envKey = key.replace('-', '_').toUpperCase();
-
-        String value = System.getProperty(propKey);
-        if (value != null) {
-            return value;
+        if (kcTestConfigPath != null) {
+            configSources.add(new FileConfigSource());
         }
 
-        value = System.getenv(envKey);
-        if (value != null) {
-            return value;
-        }
+        config = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(configSources)
+                .withSources(new DotEnvConfigSourceProvider())
+                .build();
+    }
 
-        value = localEnv.getProperty(envKey);
-        if (value != null) {
-            return value;
+    public static String getSelectedSupplier(Class valueType) {
+        String key = "kc.test." + ValueTypeAlias.getAlias(valueType);
+
+        if (config.isPropertyPresent(key)) {
+            return config.getValue(key, String.class);
         }
 
         return null;
