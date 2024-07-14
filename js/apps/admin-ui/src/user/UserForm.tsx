@@ -52,6 +52,7 @@ export type UserFormProps = {
   bruteForce?: BruteForced;
   userProfileMetadata?: UserProfileMetadata;
   save: (user: UserFormFields) => void;
+  refresh?: () => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
@@ -65,6 +66,7 @@ export const UserForm = ({
   },
   userProfileMetadata,
   save,
+  refresh,
   onGroupsUpdate,
 }: UserFormProps) => {
   const { adminClient } = useAdminClient();
@@ -94,8 +96,11 @@ export const UserForm = ({
 
   const unLockUser = async () => {
     try {
-      await adminClient.attackDetection.del({ id: user!.id! });
+      await adminClient.users.update({ id: user!.id! }, { enabled: true });
       addAlert(t("unlockSuccess"), AlertVariant.success);
+      if (refresh) {
+        refresh();
+      }
     } catch (error) {
       addError("unlockError", error);
     }
@@ -279,9 +284,6 @@ export const UserForm = ({
               onChange={(_event, value) => {
                 unLockUser();
                 setLocked(value);
-                save({
-                  enabled: !value,
-                });
               }}
               isChecked={locked}
               isDisabled={!locked}

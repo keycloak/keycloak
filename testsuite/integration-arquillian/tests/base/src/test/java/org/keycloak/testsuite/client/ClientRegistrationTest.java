@@ -27,6 +27,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -38,6 +39,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -50,16 +53,24 @@ import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -90,14 +101,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     	ClientRepresentation client = new ClientRepresentation();
         client.setClientId(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
-        
+
         return client;
     }
-    
+
     private ClientRepresentation registerClient() throws ClientRegistrationException {
     	return registerClient(buildClient());
     }
-    
+
     private ClientRepresentation registerClient(ClientRepresentation client) throws ClientRegistrationException {
         ClientRepresentation createdClient = reg.create(client);
         assertEquals(CLIENT_ID, createdClient.getClientId());
@@ -222,7 +233,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     	ClientRepresentation client = buildClient();
     	String name = "Cli\u00EBnt";
 		client.setName(name);
-    	
+
     	ClientRepresentation createdClient = registerClient(client);
     	assertEquals(name, createdClient.getName());
     }
@@ -657,12 +668,12 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void updateClientWithNonAsciiChars() throws ClientRegistrationException {
     	authCreateClients();
     	registerClient();
-    	
+
     	authManageClients();
     	ClientRepresentation client = reg.get(CLIENT_ID);
     	String name = "Cli\u00EBnt";
 		client.setName(name);
-    	
+
     	ClientRepresentation updatedClient = reg.update(client);
     	assertEquals(name, updatedClient.getName());
     }
@@ -797,5 +808,47 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                 assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
             }
         }
+    }
+
+    @Test
+    public void registerMultipleClients() {
+
+        int concurrentThreads = 5;
+        int iterations = 10;
+        int initialTokenCounts = 2;
+
+        ClientInitialAccessCreatePresentation clientInitialAccessCreatePresentation = new ClientInitialAccessCreatePresentation();
+        clientInitialAccessCreatePresentation.setCount(initialTokenCounts);
+        clientInitialAccessCreatePresentation.setExpiration(10000);
+        ClientInitialAccessPresentation response = adminClient.realm(REALM_NAME).clientInitialAccess().create(clientInitialAccessCreatePresentation);
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(concurrentThreads);
+        AtomicInteger createdCount = new AtomicInteger();
+        try {
+            Collection<Callable<Void>> futures = new LinkedList<>();
+            for (int i = 0; i < iterations; i ++) {
+                final int j = i;
+
+                Callable<Void> f = () -> {
+                    ClientRegistration client = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
+                    client.auth(Auth.token(response));
+                    ClientRepresentation rep = new ClientRepresentation();
+                    rep.setClientId("test-" + j);
+                    rep = client.create(rep);
+                    if(rep.getId() != null && rep.getClientId().equals("test-" + j)) {
+                        createdCount.getAndIncrement();
+                    }
+                    return null;
+                };
+                futures.add(f);
+            }
+            threadPool.invokeAll(futures);
+
+        } catch (Exception ex) {
+            fail(ex.getMessage());
+        }
+
+        //controls the number of uses of the initial access token
+        assertEquals(initialTokenCounts, createdCount.get());
     }
 }

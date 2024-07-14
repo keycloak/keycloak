@@ -421,13 +421,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
         varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
-        // TODO remove this once the --proxy option is finally removed from Keycloak
-        // not strictly necessary as --proxy-headers take precedence over --proxy but at least removes the warning
-        // about deprecated --proxy option in use
-        if (varMap.containsKey(getKeycloakOptionEnvVarName("proxy-headers"))) {
-            varMap.remove(getKeycloakOptionEnvVarName("proxy"));
-        }
-
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 

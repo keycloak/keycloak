@@ -9,6 +9,10 @@ Consequently, all caches are cleared when upgrading to this version.
 
 To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
 
+= Operator no longer defaults to proxy=passthrough
+
+The Operator will no longer default to the hostname v1 setting of proxy=passthrough. This allows deployments using hostname v2 for a fixed edge hostname to work as desired without additional options.
+
 = New method in `ClusterProvider` API
 
 The following method was added to `org.keycloak.cluster.ClusterProvider`:
@@ -71,3 +75,7 @@ If you are migrating from previous versions where any of the following settings 
 * `connectionPoolingDebug`
 
 For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= Admin Bootstrapping
+
+The environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`.

@@ -186,9 +186,15 @@ public class UserResource {
 
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
-                if (failureModel != null) {
-                    failureModel.clearFailures();
+                if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                    UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
+                    if (failureModel != null) {
+                        session.loginFailures().removeUserLoginFailure(realm, user.getId());
+                        adminEvent.clone(session).resource(ResourceType.USER_LOGIN_FAILURE)
+                                .resourcePath(session.getContext().getUri())
+                                .operation(OperationType.DELETE)
+                                .success();
+                    }
                 }
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }

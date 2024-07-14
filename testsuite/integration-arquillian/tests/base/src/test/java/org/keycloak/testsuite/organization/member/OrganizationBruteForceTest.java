@@ -15,28 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.model;
+package org.keycloak.testsuite.organization.member;
+
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.BruteForceTest;
 
 /**
- * Enum of supported credential formats
- *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * Remove this test class once the {@link Feature#ORGANIZATION} is supported
  */
-public class Format {
-
-    /**
-     * LD-Credentials {@see https://www.w3.org/TR/vc-data-model/}
-     */
-    public static final String LDP_VC = "ldp_vc";
-
-    /**
-     * JWT-Credentials {@see https://identity.foundation/jwt-vc-presentation-profile/}
-     */
-    public static final String JWT_VC = "jwt_vc";
-
-    /**
-     * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
-     */
-    public static final String SD_JWT_VC = "vc+sd-jwt";
+@EnableFeature(Feature.ORGANIZATION)
+public class OrganizationBruteForceTest extends BruteForceTest {
 
 }

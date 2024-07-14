@@ -104,38 +104,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .anyMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()) && "xforwarded".equals(e.getValue()));
     }
 
-    // TODO remove this test once the --proxy option is finally removed from Keycloak
-    @Test
-    public void testFallbackToDefaultProxySettings() {
-        var kc = getTestKeycloakDeployment(false);
-        var hostnameSpecBuilder = new HostnameSpecBuilder()
-                .withStrict(false)
-                .withStrictBackchannel(false);
-        if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
-        }
-        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
-        kc.getSpec().setProxySpec(null);
-
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-
-        String testHostname;
-        if (isOpenShift) {
-            testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
-        } else {
-            testHostname = kubernetesIp;
-        }
-
-        testIngressURLs("https://" + testHostname + ":443");
-
-        // just check we really have proxy set correctly
-        var envVars = k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).get().getSpec()
-                .getTemplate().getSpec().getContainers().get(0).getEnv();
-        assertThat(envVars)
-                .anyMatch(e -> "KC_PROXY".equals(e.getName()) && "passthrough".equals(e.getValue()))
-                .noneMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()));
-    }
-
     private void testIngressURLs(String baseUrl) {
         Awaitility.await()
                 .ignoreExceptions()
@@ -238,7 +206,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
                     assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
                     assertEquals("true", i.getMetadata().getAnnotations().get("haproxy.router.openshift.io/disable_cookies"));
-                    assertEquals(Constants.KEYCLOAK_HTTPS_PORT, i.getSpec().getDefaultBackend().getService().getPort().getNumber());
+                    assertEquals(Constants.KEYCLOAK_HTTPS_PORT_NAME, i.getSpec().getDefaultBackend().getService().getPort().getName());
                 });
 
         // Delete the ingress

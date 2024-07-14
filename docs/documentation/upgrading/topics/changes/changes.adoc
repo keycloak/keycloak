@@ -464,7 +464,7 @@ Cross-Datacenter Replication changes::
   not guaranteed as we don't test it anymore.
 
 ==== New optional client scope
-We have added a new `microprofile-jwt` optional client scope to handle the claims defined in the https://wiki.eclipse.org/MicroProfile/JWT_Auth[MicroProfile/JWT Auth Specification].
+We have added a new `microprofile-jwt` optional client scope to handle the claims defined in the https://github.com/eclipse/microprofile/wiki/JWT_Auth[MicroProfile/JWT Auth Specification].
 This new client scope defines protocol mappers to set the username of the authenticated user to the `upn` claim and to
 set the realm roles to the `groups` claim.
 

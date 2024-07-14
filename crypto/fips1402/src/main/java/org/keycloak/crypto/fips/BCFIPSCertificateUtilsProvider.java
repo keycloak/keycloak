@@ -49,6 +49,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
+import org.keycloak.crypto.JavaAlgorithm;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -193,7 +194,12 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithECDSA")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-
+                }
+                case JavaAlgorithm.Ed25519:
+                case JavaAlgorithm.Ed448: {
+                    signerBuilder = new JcaContentSignerBuilder(privateKey.getAlgorithm())
+                            .setProvider(BouncyIntegration.PROVIDER);
+                    break;
                 }
                 default: {
                     throw new RuntimeException(String.format("Keytype %s is not supported.", privateKey.getAlgorithm()));
