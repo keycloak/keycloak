@@ -29,6 +29,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 
+import static org.keycloak.services.managers.ApplianceBootstrap.TEMP_ADMIN_ATTR_NAME;
+
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
@@ -167,6 +169,7 @@ public class BruteForceUsersResource {
                     ModelToRepresentation.toBriefRepresentation(user) :
                     ModelToRepresentation.toRepresentation(session, realm, user);
             userRep.setAccess(usersEvaluator.getAccess(user));
+            ModelToRepresentation.addAttributeToBriefRep(user, userRep, TEMP_ADMIN_ATTR_NAME);
             return userRep;
         }).map(this::getBruteForceStatus);
     }

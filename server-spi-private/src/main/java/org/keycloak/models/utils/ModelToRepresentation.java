@@ -269,6 +269,16 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static void addAttributeToBriefRep(UserModel user, UserRepresentation userRep, String attributeName) {
+        String userAttributeValue = user.getFirstAttribute(attributeName);
+        if (Boolean.parseBoolean(userAttributeValue)) {
+            if (userRep.getAttributes() == null) {
+                userRep.setAttributes(new HashMap<>());
+            }
+            userRep.getAttributes().put(attributeName, Collections.singletonList(user.getFirstAttribute(attributeName)));
+        }
+    }
+
     public static EventRepresentation toRepresentation(Event event) {
         EventRepresentation rep = new EventRepresentation();
         rep.setTime(event.getTime());

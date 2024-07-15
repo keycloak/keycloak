@@ -7,7 +7,7 @@ const WarnBanner = (msg: string) => {
   const { t } = useTranslation();
 
   return (
-    <Banner screenReaderText={t(msg)} variant="gold" isSticky>
+    <Banner screenReaderText={t(msg)} isSticky>
       <Flex spaceItems={{ default: "spaceItemsSm" }}>
         <FlexItem>
           <ExclamationTriangleIcon />

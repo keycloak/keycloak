@@ -10,7 +10,9 @@ import {
   Tab,
   TabTitleText,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
+import { WarningTriangleIcon } from "@patternfly/react-icons";
 import {
   IFormatter,
   IFormatterValueType,
@@ -71,6 +73,13 @@ const ClientDetailLink = (client: ClientRepresentation) => {
           </Badge>
         )}
       </Link>
+      {client.attributes?.["temporary_admin"] === "true" && (
+        <Tooltip content={t("temporaryService")}>
+          <WarningTriangleIcon
+            className="pf-v5-u-ml-sm"
+          />
+        </Tooltip>
+      )}
     </TableText>
   );
 };

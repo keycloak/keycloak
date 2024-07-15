@@ -48,11 +48,22 @@ export type UserAttribute = {
 };
 
 const UserDetailLink = (user: BruteUser) => {
+  const { t } = useTranslation();
   const { realm } = useRealm();
   return (
-    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username} <StatusRow user={user} />
-    </Link>
+    <>
+      <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+        {user.username}
+        <StatusRow user={user} />
+      </Link>
+      {user.attributes?.["temporary_admin"][0] === "true" && (
+        <Tooltip content={t("temporaryAdmin")}>
+          <WarningTriangleIcon
+            className="pf-v5-u-ml-sm"
+          />
+        </Tooltip>
+      )}
+    </>
   );
 };
 

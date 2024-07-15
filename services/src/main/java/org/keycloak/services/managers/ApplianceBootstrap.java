@@ -183,7 +183,7 @@ public class ApplianceBootstrap {
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             serviceAccount.grantRole(adminRole);
 
-            serviceAccount.setSingleAttribute(TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
+            adminClientModel.setAttribute(TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
             // also set the expiration - could be relative to a creation timestamp, or computed
 
             ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
