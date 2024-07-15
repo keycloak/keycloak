@@ -102,14 +102,13 @@ public class LDAPServerCapabilitiesManager {
      * @param config
      * @param ldapConfig
      * @return
-     * @throws ModelValidationException if an invalid URL is provided
      */
     private static boolean checkLdapConnectionUrl(TestLdapConnectionRepresentation config, LDAPConfig ldapConfig) {
         // There could be multiple connection URIs separated via spaces.
         String[] configConnectionUrls = config.getConnectionUrl().trim().split(" ");
         String[] ldapConfigConnectionUrls = ldapConfig.getConnectionUrl().trim().split(" ");
         if (configConnectionUrls.length != ldapConfigConnectionUrls.length) {
-            throw new ModelValidationException("LDAP Connection URL mismatch. Number of provided URLs does not match stored URLs.");
+            return false;
         }
         boolean urlsMatch = true;
         for (int i = 0; i < configConnectionUrls.length && urlsMatch; i++) {
