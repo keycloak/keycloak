@@ -12,4 +12,8 @@ public class RemoteKeycloakTestServerSupplier extends AbstractKeycloakTestServer
         return false;
     }
 
+    @Override
+    public String getAlias() {
+        return "remote";
+    }
 }

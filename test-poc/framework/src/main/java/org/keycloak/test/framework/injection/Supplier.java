@@ -14,4 +14,8 @@ public interface Supplier<T, S extends Annotation> {
 
     default void close(T instance) {}
 
+    default String getAlias() {
+        return getClass().getSimpleName();
+    }
+
 }

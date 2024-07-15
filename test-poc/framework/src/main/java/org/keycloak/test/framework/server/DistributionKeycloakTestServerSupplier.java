@@ -12,4 +12,8 @@ public class DistributionKeycloakTestServerSupplier extends AbstractKeycloakTest
         return true;
     }
 
+    @Override
+    public String getAlias() {
+        return "distribution";
+    }
 }

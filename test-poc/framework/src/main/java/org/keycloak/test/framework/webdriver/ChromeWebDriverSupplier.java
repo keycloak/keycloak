@@ -34,4 +34,10 @@ public class ChromeWebDriverSupplier implements Supplier<WebDriver, TestWebDrive
     public void close(WebDriver instance) {
         instance.quit();
     }
+
+    @Override
+    public String getAlias() {
+        return "chrome";
+    }
+
 }
