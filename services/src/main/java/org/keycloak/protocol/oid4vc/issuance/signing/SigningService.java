@@ -69,7 +69,7 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
     protected KeyWrapper getKey(String kid, String algorithm) {
         // Allow the service to work with the active key if keyId is null
         // And we still have to figure out how to proceed with key rotation
-        if(keyId==null){
+        if (keyId == null) {
             return keycloakSession.keys().getActiveKey(keycloakSession.getContext().getRealm(), KeyUse.SIG, algorithm);
         }
         return keycloakSession.keys().getKey(keycloakSession.getContext().getRealm(), kid, KeyUse.SIG, algorithm);
@@ -93,7 +93,7 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
             keyWrapper.setCurve((String) jwk.getOtherClaims().get(OKPPublicJWK.CRV));
         }
 
-        keyWrapper.setUse(KeyUse.SIG);
+        keyWrapper.setUse(keyUse);
         JWKParser parser = JWKParser.create(jwk);
         keyWrapper.setPublicKey(parser.toPublicKey());
         return keyWrapper;

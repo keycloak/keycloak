@@ -106,7 +106,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
             kw.setPrivateKey(keyPair.getPrivate());
             kw.setPublicKey(keyPair.getPublic());
             kw.setUse(KeyUse.SIG);
-            if(keyId!=null) {
+            if (keyId != null) {
                 kw.setKid(keyId);
             } else {
                 kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));

@@ -21,7 +21,6 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.Provider;
 
 /**

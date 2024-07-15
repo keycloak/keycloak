@@ -463,7 +463,7 @@ public class OID4VCIssuerEndpoint {
 
         return Optional.ofNullable(signingService)
                 .map(service -> service.signCredential(vcIssuanceContext))
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new BadRequestException(
                         String.format("No signer found for specific config '%s' or '%s' or format '%s'.", fullyQualifiedConfigKey, formatAndTypeKey, formatOnlyKey)
                 ));
     }
