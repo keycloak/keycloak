@@ -101,18 +101,28 @@
 	/>
 </#macro>
 
-<#macro inputTagType attribute>
-	<#compress>
-	<#if attribute.annotations.inputType??>
-		<#if attribute.annotations.inputType?starts_with("html5-")>
-			${attribute.annotations.inputType[6..]}
+<#macro inputFieldByType attribute>
+	<#switch attribute.annotations.inputType!''>
+	<#case 'textarea'>
+		<@textareaTag attribute=attribute/>
+		<#break>
+	<#case 'select'>
+	<#case 'multiselect'>
+		<@selectTag attribute=attribute/>
+		<#break>
+	<#case 'select-radiobuttons'>
+	<#case 'multiselect-checkboxes'>
+		<@inputTagSelects attribute=attribute/>
+		<#break>
+	<#default>
+		<#if attribute.multivalued && attribute.values?has_content>
+			<#list attribute.values as value>
+				<@inputTag attribute=attribute value=value!''/>
+			</#list>
 		<#else>
-			${attribute.annotations.inputType}
+			<@inputTag attribute=attribute value=attribute.value!''/>
 		</#if>
-	<#else>
-	text
-	</#if>
-	</#compress>
+	</#switch>
 </#macro>
 
 <#macro textareaTag attribute>
