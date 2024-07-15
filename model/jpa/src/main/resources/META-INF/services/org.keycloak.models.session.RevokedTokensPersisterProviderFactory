@@ -1,5 +1,5 @@
 #
-# Copyright 2022 Red Hat, Inc. and/or its affiliates
+# Copyright 2024 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.cache.CacheUserProviderSpi
-org.keycloak.models.cache.CacheRealmProviderSpi
-org.keycloak.models.cache.CachePublicKeyProviderSpi
-org.keycloak.models.dblock.DBLockSpi
-org.keycloak.storage.client.ClientStorageProviderSpi
-org.keycloak.storage.group.GroupStorageProviderSpi
-org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
-org.keycloak.models.session.UserSessionPersisterSpi
-org.keycloak.models.session.RevokedTokenPersisterSpi
-org.keycloak.cluster.ClusterSpi
+org.keycloak.models.jpa.session.JpaRevokedTokensPersisterProviderFactory

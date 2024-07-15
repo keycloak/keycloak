@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +28,9 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSp
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.models.dblock.DBLockSpi;
+import org.keycloak.models.jpa.session.JpaRevokedTokensPersisterProviderFactory;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
+import org.keycloak.models.session.RevokedTokenPersisterSpi;
 import org.keycloak.models.session.UserSessionPersisterSpi;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
@@ -61,6 +63,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaUpdaterSpi.class)
       .add(LiquibaseConnectionSpi.class)
       .add(UserSessionPersisterSpi.class)
+      .add(RevokedTokenPersisterSpi.class)
 
       .add(DatastoreSpi.class)
 
@@ -92,6 +95,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(LiquibaseConnectionProviderFactory.class)
       .add(LiquibaseDBLockProviderFactory.class)
       .add(JpaUserSessionPersisterProviderFactory.class)
+      .add(JpaRevokedTokensPersisterProviderFactory.class)
 
       //required for migrateModel
       .add(MigrationProviderFactory.class)

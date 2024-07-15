@@ -19,7 +19,9 @@ package org.keycloak.testsuite.model.singleUseObject;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
@@ -27,9 +29,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -161,6 +165,49 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             Assert.assertNull(singleUseStore.get(key));
         });
+    }
+
+    @Test
+    public void testRevokedTokenIsPresentAfterRestartAndEventuallyExpires() {
+        Assume.assumeTrue(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS));
+
+        String revokedKey = UUID.randomUUID() + SingleUseObjectProvider.REVOKED_KEY;
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            singleUseStore.put(revokedKey,  60, Collections.emptyMap());
+        });
+
+        // simulate restart
+        reinitializeKeycloakSessionFactory();
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            assertThat(singleUseStore.get(revokedKey), Matchers.notNullValue());
+        });
+
+        setTimeOffset(120);
+
+        // simulate restart
+        reinitializeKeycloakSessionFactory();
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            // not loaded as it is too old
+            assertThat(singleUseStore.get(revokedKey), Matchers.nullValue());
+
+            // remove it from the database
+            new ClearExpiredRevokedTokens().run(session);
+        });
+
+        setTimeOffset(0);
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            // not loaded as it has been removed from the database
+            assertThat(singleUseStore.get(revokedKey), Matchers.nullValue());
+        });
+
     }
 
     @Test

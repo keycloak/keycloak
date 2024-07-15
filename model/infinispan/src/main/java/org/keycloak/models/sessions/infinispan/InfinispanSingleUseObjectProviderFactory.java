@@ -26,6 +26,7 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -38,18 +39,18 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory, EnvironmentDependentProviderFactory {
+public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
-    private volatile Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
+    protected volatile Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
 
     @Override
     public InfinispanSingleUseObjectProvider create(KeycloakSession session) {
         return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache);
     }
 
-    static Supplier getSingleUseObjectCache(KeycloakSession session) {
+    static Supplier<BasicCache<String, SingleUseObjectValueEntity>> getSingleUseObjectCache(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
 
@@ -95,6 +96,6 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS);
     }
 }
