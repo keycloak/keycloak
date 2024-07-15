@@ -1,5 +1,6 @@
 package org.keycloak.test.framework;
 
+import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.realm.DefaultRealmConfig;
 import org.keycloak.test.framework.realm.RealmConfig;
 
@@ -13,5 +14,7 @@ import java.lang.annotation.Target;
 public @interface TestRealm {
 
     Class<? extends RealmConfig> config() default DefaultRealmConfig.class;
+
+    LifeCycle lifecycle() default LifeCycle.CLASS;
 
 }

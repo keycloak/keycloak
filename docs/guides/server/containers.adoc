@@ -134,7 +134,7 @@ To start the image, run:
 [source, bash]
 ----
 podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
         start --optimized
 ----
@@ -155,7 +155,7 @@ If you want to expose the container using a different port, you need to set the 
 [source, bash]
 ----
 podman|docker run --name mykeycloak -p 3000:8443 \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
         start --optimized --hostname-port=3000
 ----
@@ -169,7 +169,7 @@ You use the `start-dev` command:
 [source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
 ----
@@ -188,7 +188,7 @@ For example:
 [source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start \
         --db=postgres --features=token-exchange \
@@ -208,10 +208,10 @@ This approach significantly increases startup time and creates an image that is 
 [source, bash]
 ----
 # setting the admin username
--e KEYCLOAK_ADMIN=<admin-user-name>
+-e KC_BOOTSTRAP_ADMIN_USERNAME=<admin-user-name>
 
 # setting the initial password
--e KEYCLOAK_ADMIN_PASSWORD=change_me
+-e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me
 ----
 
 == Importing A Realm On Startup
@@ -221,7 +221,7 @@ The {project_name} containers have a directory `/opt/keycloak/data/import`. If y
 [source,bash,subs="attributes+"]
 ----
 podman|docker run --name keycloak_unoptimized -p 8080:8080 \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -v /path/to/realm/data:/opt/keycloak/data/import \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev --import-realm
@@ -250,7 +250,7 @@ For example, you can specify the environment variable and memory limit as follow
 [source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 -m 1g \
-        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -e JAVA_OPTS_KC_HEAP="-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65" \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev

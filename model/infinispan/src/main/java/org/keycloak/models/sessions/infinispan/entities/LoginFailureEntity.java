@@ -51,7 +51,7 @@ public class LoginFailureEntity extends SessionEntity {
         this.numFailures = numFailures;
         this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
-        this.lastIPFailure = Marshalling.emptyStringToNull(lastIPFailure);
+        this.lastIPFailure = lastIPFailure;
     }
 
     @ProtoField(2)

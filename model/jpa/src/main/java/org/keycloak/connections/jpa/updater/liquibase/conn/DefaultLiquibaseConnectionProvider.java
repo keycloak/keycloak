@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import liquibase.Liquibase;
 import liquibase.Scope;
 import liquibase.ScopeManager;
 import liquibase.ThreadLocalScopeManager;
@@ -114,7 +113,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     }
 
     @Override
-    public Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
+    public KeycloakLiquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
@@ -126,11 +125,11 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
 
         ((AbstractJdbcDatabase) database).set(INDEX_CREATION_THRESHOLD_PARAM, indexCreationThreshold);
-        return new Liquibase(changelog, resourceAccessor, database);
+        return new KeycloakLiquibase(changelog, resourceAccessor, database);
     }
 
     @Override
-    public Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    public KeycloakLiquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
@@ -141,7 +140,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
 
-        return new Liquibase(changelogLocation, resourceAccessor, database);
+        return new KeycloakLiquibase(changelogLocation, resourceAccessor, database);
     }
 
 }

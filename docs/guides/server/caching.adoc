@@ -18,7 +18,7 @@ By default, caches are using a UDP transport stack so that nodes are discovered 
 
 To explicitly enable distributed infinispan caching, enter this command:
 
-<@kc.build parameters="--cache=ispn"/>
+<@kc.start parameters="--cache=ispn"/>
 
 When you start {project_name} in development mode, by using the `start-dev` command, {project_name} uses only local caches and distributed caches are completely disabled by implicitly setting the `--cache=local` option.
 The `local` cache mode is intended only for development and testing purposes.
@@ -176,7 +176,7 @@ to change the number of owners accordingly to better fit into your availability 
 
 To specify your own cache configuration file, enter this command:
 
-<@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
+<@kc.start parameters="--cache-config-file=my-cache-file.xml"/>
 
 The configuration file is relative to the `conf/` directory.
 
@@ -204,7 +204,7 @@ Transport stacks ensure that distributed cache nodes in a cluster communicate in
 
 To apply a specific cache stack, enter this command:
 
-<@kc.build parameters="--cache-stack=<stack>"/>
+<@kc.start parameters="--cache-stack=<stack>"/>
 
 The default stack is set to `udp` when distributed caches are enabled.
 
@@ -220,7 +220,7 @@ The following table shows transport stacks that are available without any furthe
 |udp|UDP|UDP multicast
 |===
 
-The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
+The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
 [%autowidth]
 |===
@@ -249,7 +249,7 @@ For more information and links to repositories with these dependencies, see the 
 
 To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build {project_name} by entering this command:
 
-<@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
+<@kc.start parameters="--cache-stack=<ec2|google|azure>"/>
 
 === Custom transport stacks
 If none of the available transport stacks are enough for your deployment, you are able to change your cache configuration file

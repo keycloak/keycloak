@@ -32,7 +32,7 @@ public class ResourceRemovedEvent extends BaseResourceEvent {
 
     @ProtoFactory
     static ResourceRemovedEvent protoFactory(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {
-        return new ResourceRemovedEvent(id, name, owner, serverId, Marshalling.emptyStringToNull(type), uris, scopes);
+        return new ResourceRemovedEvent(id, name, owner, serverId, type, uris, scopes);
     }
 
     private ResourceRemovedEvent(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {

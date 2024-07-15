@@ -496,13 +496,13 @@ spec:
         containers:
           - env:
               # We want to have an externally provided username and password, therefore, we override those two environment variables
-              - name: KEYCLOAK_ADMIN
+              - name: KC_BOOTSTRAP_ADMIN_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: keycloak-preconfigured-admin
                     key: username
                     optional: false
-              - name: KEYCLOAK_ADMIN_PASSWORD
+              - name: KC_BOOTSTRAP_ADMIN_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: keycloak-preconfigured-admin

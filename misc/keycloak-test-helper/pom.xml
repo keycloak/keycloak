@@ -35,7 +35,8 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <scope>provided</scope>
+            <version>2.35.0</version>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -49,6 +49,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -60,6 +61,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -184,9 +186,15 @@ public class UserResource {
 
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
-                if (failureModel != null) {
-                    failureModel.clearFailures();
+                if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                    UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
+                    if (failureModel != null) {
+                        session.loginFailures().removeUserLoginFailure(realm, user.getId());
+                        adminEvent.clone(session).resource(ResourceType.USER_LOGIN_FAILURE)
+                                .resourcePath(session.getContext().getUri())
+                                .operation(OperationType.DELETE)
+                                .success();
+                    }
                 }
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
@@ -1074,6 +1082,7 @@ public class UserResource {
 
         attributes.remove(UserModel.USERNAME);
         attributes.remove(UserModel.EMAIL);
+        attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
 
         return attributes.entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
@@ -1112,11 +1121,8 @@ public class UserResource {
             throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
         }
 
-        if (clientId == null) {
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
 
-        ClientModel client = realm.getClientByClientId(clientId);
+        ClientModel client = clientId != null ? realm.getClientByClientId(clientId) : SystemClientUtil.getSystemClient(realm);
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
             throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);

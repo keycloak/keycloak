@@ -43,7 +43,7 @@ public class SystemClientUtil {
     public static ClientModel getSystemClient(RealmModel realm) {
         // Try to return builtin "account" client first
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client != null) {
+        if (client != null && client.isEnabled()) {
             return client;
         }
 

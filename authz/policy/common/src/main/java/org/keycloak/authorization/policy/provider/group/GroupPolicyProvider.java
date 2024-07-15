@@ -59,6 +59,10 @@ public class GroupPolicyProvider implements PolicyProvider {
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
             GroupModel allowedGroup = realm.getGroupById(definition.getId());
 
+            if (allowedGroup == null) {
+                continue;
+            }
+
             for (int i = 0; i < groupsClaim.size(); i++) {
                 String group = groupsClaim.asString(i);
 

@@ -7,7 +7,7 @@ import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
-public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
+public abstract class AbstractKeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
 
     @Override
     public Class<KeycloakTestServer> getValueType() {
@@ -23,17 +23,11 @@ public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, 
     public InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> getValue(Registry registry, KeycloakIntegrationTest annotation) {
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-//        RemoteKeycloakTestServer keycloakTestServer = new RemoteKeycloakTestServer();
-        EmbeddedKeycloakTestServer keycloakTestServer = new EmbeddedKeycloakTestServer();
+        KeycloakTestServer keycloakTestServer = getServer();
 
         keycloakTestServer.start(serverConfig);
 
-        return new InstanceWrapper<>(this, annotation, keycloakTestServer);
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
+        return new InstanceWrapper<>(this, annotation, keycloakTestServer, LifeCycle.GLOBAL);
     }
 
     @Override
@@ -42,8 +36,10 @@ public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, 
     }
 
     @Override
-    public void close(KeycloakTestServer remoteKeycloakTestServer) {
-        remoteKeycloakTestServer.stop();
+    public void close(KeycloakTestServer keycloakTestServer) {
+        keycloakTestServer.stop();
     }
+
+    public abstract KeycloakTestServer getServer();
 
 }

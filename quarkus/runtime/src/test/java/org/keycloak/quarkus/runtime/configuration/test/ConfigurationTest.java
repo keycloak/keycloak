@@ -595,7 +595,7 @@ public class ConfigurationTest {
 
     @Test
     public void testResolvePropertyFromDefaultProfile() {
-        Environment.setProfile("import_export");
+        Environment.setProfile(Environment.NON_SERVER_MODE);
         assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
 
         Environment.setProfile("prod");

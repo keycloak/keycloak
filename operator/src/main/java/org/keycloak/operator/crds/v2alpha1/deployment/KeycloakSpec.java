@@ -28,6 +28,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -109,6 +110,10 @@ public class KeycloakSpec {
     @JsonProperty("httpManagement")
     @JsonPropertyDescription("In this section you can configure Keycloak's management interface setting.")
     private HttpManagementSpec httpManagementSpec;
+
+    @JsonProperty("scheduling")
+    @JsonPropertyDescription("In this section you can configure Keycloak's scheduling")
+    private SchedulingSpec schedulingSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -250,5 +255,13 @@ public class KeycloakSpec {
 
     public void setProxySpec(ProxySpec proxySpec) {
         this.proxySpec = proxySpec;
+    }
+
+    public SchedulingSpec getSchedulingSpec() {
+        return schedulingSpec;
+    }
+
+    public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
+        this.schedulingSpec = schedulingSpec;
     }
 }

@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,7 @@ import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -85,8 +87,11 @@ import io.smallrye.config.ConfigValue;
 
 import picocli.CommandLine;
 import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.ParseResult;
+import picocli.CommandLine.DuplicateOptionAnnotationsException;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Model.ISetter;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.ArgGroupSpec;
 
@@ -106,15 +111,30 @@ public final class Picocli {
     }
 
     public static void parseAndRun(List<String> cliArgs) {
-        CommandLine cmd = createCommandLine(cliArgs);
+        // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
+        CommandLine cmd = createCommandLine(spec -> spec
+                .addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
+                    @Override
+                    public <T> T set(T value) throws Exception {
+                        return null; // just ignore
+                    }
+                })));
         String[] argArray = cliArgs.toArray(new String[0]);
 
         try {
-            cmd.parseArgs(argArray); // process the cli args first to init the config file and perform validation
+            ParseResult result = cmd.parseArgs(argArray); // process the cli args first to init the config file and perform validation
+            var commandLineList = result.asCommandLineList();
+
+            // recreate the command specifically for the current
+            cmd = createCommandLineForCommand(cliArgs, commandLineList);
 
             int exitCode;
             if (isRebuildCheck()) {
-                exitCode = runReAugmentationIfNeeded(cliArgs, cmd);
+                CommandLine currentCommand = null;
+                if (commandLineList.size() > 1) {
+                    currentCommand = commandLineList.get(commandLineList.size() - 1);
+                }
+                exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
             } else {
                 PropertyMappers.sanitizeDisabledMappers();
                 exitCode = cmd.execute(argArray);
@@ -126,6 +146,37 @@ public final class Picocli {
         } catch (ProfileException | PropertyException proEx) {
             catchProfileException(proEx.getMessage(), proEx.getCause(), cmd);
         }
+    }
+
+    private static CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
+        return createCommandLine(spec -> {
+            // use the incoming commandLineList from the initial parsing to determine the current command
+            CommandSpec currentSpec = spec;
+
+            // add help to the root and all commands as it is not inherited
+            addHelp(currentSpec);
+
+            for (CommandLine commandLine : commandLineList.subList(1, commandLineList.size())) {
+                CommandLine subCommand = currentSpec.subcommands().get(commandLine.getCommandName());
+                if (subCommand == null) {
+                    currentSpec = null;
+                    break;
+                }
+
+                currentSpec = subCommand.getCommandSpec();
+
+                addHelp(currentSpec);
+            }
+
+            if (currentSpec != null) {
+                addCommandOptions(cliArgs, currentSpec.commandLine());
+            }
+
+            if (isRebuildCheck()) {
+                // build command should be available when running re-aug
+                addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
+            }
+        });
     }
 
     private static void catchParameterException(ParameterException parEx, CommandLine cmd, String[] args) {
@@ -153,16 +204,14 @@ public final class Picocli {
         }
     }
 
-    private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
+    private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
         int exitCode = 0;
 
-        CommandLine currentCommandSpec = getCurrentCommandSpec(cliArgs, cmd.getCommandSpec());
-
-        if (currentCommandSpec == null) {
+        if (currentCommand == null) {
             return exitCode; // possible if using --version or the user made a mistake
         }
 
-        String currentCommandName = currentCommandSpec.getCommandName();
+        String currentCommandName = currentCommand.getCommandName();
 
         if (shouldSkipRebuild(cliArgs, currentCommandName)) {
             return exitCode;
@@ -176,7 +225,7 @@ public final class Picocli {
                 Environment.forceDevProfile();
             }
         }
-        if (requiresReAugmentation(currentCommandSpec)) {
+        if (requiresReAugmentation(currentCommand)) {
             PropertyMappers.sanitizeDisabledMappers();
             exitCode = runReAugmentation(cliArgs, cmd);
         }
@@ -190,6 +239,7 @@ public final class Picocli {
                 || cliArgs.contains("--help-all")
                 || currentCommandName.equals(Build.NAME)
                 || currentCommandName.equals(ShowConfig.NAME)
+                || currentCommandName.equals(BootstrapAdmin.NAME)
                 || currentCommandName.equals(Tools.NAME);
     }
 
@@ -246,15 +296,19 @@ public final class Picocli {
             checkChangesInBuildOptionsDuringAutoBuild();
         }
 
-        int exitCode;
+        List<String> configArgsList = new ArrayList<>();
+        configArgsList.add(Build.NAME);
+        parseConfigArgs(cliArgs, (k, v) -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(k);
 
-        List<String> configArgsList = new ArrayList<>(cliArgs);
+            if (mapper == null || mapper.isRunTime()) {
+                return;
+            }
 
-        String commandName = getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName();
-        configArgsList.replaceAll(arg -> replaceCommandWithBuild(commandName, arg));
-        configArgsList.removeIf(Picocli::isRuntimeOption);
+            configArgsList.add(k + "=" + v);
+        }, ignored -> {});
 
-        exitCode = cmd.execute(configArgsList.toArray(new String[0]));
+        int exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
             cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
@@ -589,25 +643,9 @@ public final class Picocli {
         return key.startsWith("kc.provider.file");
     }
 
-    public static CommandLine createCommandLine(List<String> cliArgs) {
+    public static CommandLine createCommandLine(Consumer<CommandSpec> consumer) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main()).name(Environment.getCommand());
-
-        for (CommandLine subCommand : spec.subcommands().values()) {
-            CommandSpec subCommandSpec = subCommand.getCommandSpec();
-
-            // help option added to any subcommand
-            subCommandSpec.addOption(OptionSpec.builder(Help.OPTION_NAMES)
-                    .usageHelp(true)
-                    .description("This help message.")
-                    .build());
-        }
-
-        addCommandOptions(cliArgs, getCurrentCommandSpec(cliArgs, spec));
-
-        if (isRebuildCheck()) {
-            // build command should be available when running re-aug
-            addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
-        }
+        consumer.accept(spec);
 
         CommandLine cmd = new CommandLine(spec);
 
@@ -618,6 +656,17 @@ public final class Picocli {
         cmd.setErr(new PrintWriter(System.err, true));
 
         return cmd;
+    }
+
+    private static void addHelp(CommandSpec currentSpec) {
+        try {
+            currentSpec.addOption(OptionSpec.builder(Help.OPTION_NAMES)
+                    .usageHelp(true)
+                    .description("This help message.")
+                    .build());
+        } catch (DuplicateOptionAnnotationsException e) {
+            // Completion is inheriting mixinStandardHelpOptions = true
+        }
     }
 
     private static IncludeOptions getIncludeOptions(List<String> cliArgs, AbstractCommand abstractCommand, String commandName) {
@@ -651,18 +700,6 @@ public final class Picocli {
 
             addOptionsToCli(command, options);
         }
-    }
-
-    private static CommandLine getCurrentCommandSpec(List<String> cliArgs, CommandSpec spec) {
-        for (String arg : cliArgs) {
-            CommandLine command = spec.subcommands().get(arg);
-
-            if (command != null) {
-                return command;
-            }
-        }
-
-        return null;
     }
 
     private static void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
@@ -848,13 +885,6 @@ public final class Picocli {
         }
 
         return args;
-    }
-
-    private static String replaceCommandWithBuild(String commandName, String arg) {
-        if (arg.equals(commandName)) {
-            return Build.NAME;
-        }
-        return arg;
     }
 
     private static boolean isRuntimeOption(String arg) {

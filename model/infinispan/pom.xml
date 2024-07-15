@@ -67,21 +67,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.infinispan.protostream</groupId>
-            <artifactId>protostream</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan.protostream</groupId>
-            <artifactId>protostream-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan.protostream</groupId>
-            <artifactId>protostream-processor</artifactId>
-            <!-- compile-only dependency -->
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -98,7 +83,7 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.infinispan.maven-plugins</groupId>
+                <groupId>org.infinispan.protostream</groupId>
                 <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
                 <executions>
                     <execution>

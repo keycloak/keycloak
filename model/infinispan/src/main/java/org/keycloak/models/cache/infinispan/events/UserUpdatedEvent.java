@@ -52,7 +52,7 @@ public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInva
 
     @ProtoFactory
     static UserUpdatedEvent protoFactory(String id, String username, String email, String realmId) {
-        return new UserUpdatedEvent(id, username, Marshalling.emptyStringToNull(email), realmId);
+        return new UserUpdatedEvent(id, username, email, realmId);
     }
 
     @Override

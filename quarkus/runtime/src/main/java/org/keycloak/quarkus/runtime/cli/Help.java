@@ -43,7 +43,7 @@ public final class Help extends CommandLine.Help {
     private static final int HELP_WIDTH = 100;
     private static final String DEFAULT_OPTION_LIST_HEADING = "Options:";
     private static final String DEFAULT_COMMAND_LIST_HEADING = "Commands:";
-    private boolean allOptions;
+    private static boolean ALL_OPTIONS;
 
     Help(CommandLine.Model.CommandSpec commandSpec, ColorScheme colorScheme) {
         super(commandSpec, colorScheme);
@@ -165,7 +165,7 @@ public final class Help extends CommandLine.Help {
         String optionName = undecorateDuplicitOptionName(option.longestName());
 
         OptionCategory category = null;
-        if (option.group() != null) {
+        if (option.group() != null && option.group().heading() != null) {
             category = OptionCategory.fromHeading(removeSuffix(option.group().heading(), ":"));
         }
         PropertyMapper<?> mapper = getMapper(optionName, category);
@@ -180,7 +180,7 @@ public final class Help extends CommandLine.Help {
                 return true;
             }
 
-            if (allOptions && isDisabledMapper) {
+            if (ALL_OPTIONS && isDisabledMapper) {
                 return true;
             }
 
@@ -192,13 +192,13 @@ public final class Help extends CommandLine.Help {
 
         if (isUnsupportedOption) {
             // unsupported options removed from help if all options are not requested
-            return !option.hidden() && allOptions;
+            return !option.hidden() && ALL_OPTIONS;
         }
 
         return !option.hidden();
     }
 
-    public void setAllOptions(boolean allOptions) {
-        this.allOptions = allOptions;
+    public static void setAllOptions(boolean allOptions) {
+        ALL_OPTIONS = allOptions;
     }
 }

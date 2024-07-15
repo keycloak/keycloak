@@ -248,6 +248,7 @@ public class ModelToRepresentation {
         }
         if (attributes != null && !copy.isEmpty()) {
             Map<String, List<String>> attrs = new HashMap<>(copy);
+            attrs.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
             rep.setAttributes(attrs);
         }
 

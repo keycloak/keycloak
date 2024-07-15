@@ -36,6 +36,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -110,6 +111,50 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
     }
+    
+    public CLIResult kcadm(String... arguments) throws IOException {
+    	return kcadm(Arrays.asList(arguments));
+    }
+
+    public CLIResult kcadm(List<String> arguments) throws IOException {
+        List<String> allArgs = new ArrayList<>();
+
+        invoke(allArgs, SCRIPT_KCADM_CMD);
+
+        if (this.isDebug()) {
+            allArgs.add("-x");
+        }
+
+        allArgs.addAll(arguments);
+
+        ProcessBuilder pb = new ProcessBuilder(allArgs);
+        ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
+
+        // TODO: it is possible to debug kcadm, but it's more involved
+        /*if (debug) {
+            builder.environment().put("DEBUG_SUSPEND", "y");
+        }*/
+
+        builder.environment().putAll(envVars);
+
+        Process kcadm = builder.start();
+
+        List<String> outputStream = new ArrayList<>();
+        List<String> errorStream = new ArrayList<>();
+        readOutput(kcadm, outputStream, errorStream);
+
+        int exitValue = kcadm.exitValue();
+
+        return CLIResult.create(outputStream, errorStream, exitValue);
+    }
+
+	private void invoke(List<String> allArgs, String cmd) {
+		if (isWindows()) {
+            allArgs.add(distPath.resolve("bin") + File.separator + cmd);
+        } else {
+            allArgs.add("./" + cmd);
+        }
+	}
 
     @Override
     public CLIResult run(List<String> arguments) {
@@ -237,11 +282,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         List<String> allArgs = new ArrayList<>();
 
-        if (isWindows()) {
-            allArgs.add(distPath.resolve("bin") + File.separator + SCRIPT_CMD_INVOKABLE);
-        } else {
-            allArgs.add(SCRIPT_CMD_INVOKABLE);
-        }
+        invoke(allArgs, SCRIPT_CMD);
 
         if (this.isDebug()) {
             allArgs.add("--debug");
@@ -467,6 +508,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             if (!dPath.resolve("bin").resolve(SCRIPT_CMD).toFile().setExecutable(true)) {
                 throw new RuntimeException("Cannot set " + SCRIPT_CMD + " executable");
             }
+            if (!dPath.resolve("bin").resolve(SCRIPT_KCADM_CMD).toFile().setExecutable(true)) {
+                throw new RuntimeException("Cannot set " + SCRIPT_KCADM_CMD + " executable");
+            }
 
             inited = true;
 
@@ -477,11 +521,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void readOutput() {
+        readOutput(keycloak, outputStream, errorStream);
+    }
+
+    private static void readOutput(Process process, List<String> outputStream, List<String> errorStream) {
         try (
-                BufferedReader outStream = new BufferedReader(new InputStreamReader(keycloak.getInputStream()));
-                BufferedReader errStream = new BufferedReader(new InputStreamReader(keycloak.getErrorStream()));
+                BufferedReader outStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         ) {
-            while (keycloak.isAlive()) {
+            while (process.isAlive()) {
                 readStream(outStream, outputStream);
                 readStream(errStream, errorStream);
                 // a hint to temporarily disable the current thread in favor of the process where the distribution is running
@@ -493,7 +541,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void readStream(BufferedReader reader, List<String> stream) throws IOException {
+    private static void readStream(BufferedReader reader, List<String> stream) throws IOException {
         String line;
 
         while (reader.ready() && (line = reader.readLine()) != null) {

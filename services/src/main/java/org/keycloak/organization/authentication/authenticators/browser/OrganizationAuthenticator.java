@@ -97,21 +97,24 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
+            context.setUser(user);
+
+            if (organization != null) {
+                context.form().setAttributeMapper(attributes -> {
+                    attributes.put("org", new OrganizationBean(session, organization, user));
+                    return attributes;
+                });
+            }
+
             List<IdentityProviderModel> broker = resolveBroker(session, user);
 
-            if (broker.isEmpty()) {
-                // not a managed member, continue with the regular flow
-                if (organization != null) {
-                    context.form().setAttributeMapper(attributes -> {
-                        attributes.put("org", new OrganizationBean(session, organization, user));
-                        return attributes;
-                    });
-                }
-                context.attempted();
-            } else if (broker.size() == 1) {
+            if (broker.size() == 1) {
                 // user is a managed member and associated with a broker, redirect automatically
                 redirect(context, broker.get(0).getAlias(), user.getEmail());
+                return;
             }
+
+            context.attempted();
 
             return;
         }

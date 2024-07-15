@@ -13,9 +13,6 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
 
     @Override
     public void start(KeycloakTestServerConfig serverConfig) {
-        serverConfig.adminUserName().ifPresent(username -> System.setProperty("keycloakAdmin", username));
-        serverConfig.adminUserPassword().ifPresent(password -> System.setProperty("keycloakAdminPassword", password));
-
         List<String> rawOptions = new LinkedList<>();
         rawOptions.add("start-dev");
 //        rawOptions.add("--db=dev-mem"); // TODO With dev-mem there's an issue as the H2 DB isn't stopped when restarting embedded server
@@ -24,6 +21,9 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
         if (!serverConfig.features().isEmpty()) {
             rawOptions.add("--features=" + String.join(",", serverConfig.features()));
         }
+        
+        serverConfig.adminUserName().ifPresent(username -> rawOptions.add("--bootstrap-admin-username=" + username));
+        serverConfig.adminUserPassword().ifPresent(password -> rawOptions.add("--bootstrap-admin-password=" + password));
 
         serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
 

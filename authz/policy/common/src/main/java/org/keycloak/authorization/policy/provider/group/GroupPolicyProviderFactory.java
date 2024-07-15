@@ -33,10 +33,13 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation.GroupDefinition;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -79,7 +82,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         representation.setGroupsClaim(policy.getConfig().get("groupsClaim"));
 
         try {
-            representation.setGroups(getGroupsDefinition(policy.getConfig()));
+            representation.setGroups(getGroupsDefinition(policy.getConfig(), authorization));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -104,7 +107,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
         try {
-            updatePolicy(policy, representation.getConfig().get("groupsClaim"), getGroupsDefinition(representation.getConfig()), authorization);
+            updatePolicy(policy, representation.getConfig().get("groupsClaim"), getGroupsDefinition(representation.getConfig(), authorization), authorization);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -118,6 +121,11 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
 
         for (GroupPolicyRepresentation.GroupDefinition definition: groups) {
             GroupModel group = authorization.getRealm().getGroupById(definition.getId());
+
+            if (group == null) {
+                continue;
+            }
+
             definition.setId(null);
             definition.setPath(ModelToRepresentation.buildGroupPath(group));
         }
@@ -144,8 +152,6 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-        });
     }
 
     @Override
@@ -164,41 +170,11 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             config.put("groupsClaim", groupsClaim);
         }
 
-        List<GroupModel> topLevelGroups = authorization.getKeycloakSession().groups().getTopLevelGroupsStream(authorization.getRealm()).collect(Collectors.toList());
-
         for (GroupPolicyRepresentation.GroupDefinition definition : groups) {
-            GroupModel group = null;
-
-            if (definition.getId() != null) {
-                group = authorization.getRealm().getGroupById(definition.getId());
-            }
-
-            String path = definition.getPath();
-            
-            if (group == null && path != null) {
-                String canonicalPath = path.startsWith("/") ? path.substring(1, path.length()) : path;
-
-                if (canonicalPath != null) {
-                    String[] parts = canonicalPath.split("/");
-                    GroupModel parent = null;
-
-                    for (String part : parts) {
-                        if (parent == null) {
-                            parent = topLevelGroups.stream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Top level group with name [" + part + "] not found"));
-                        } else {
-                            group = parent.getSubGroupsStream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Group with name [" + part + "] not found"));
-                            parent = group;
-                        }
-                    }
-
-                    if (parts.length == 1) {
-                        group = parent;
-                    }
-                }
-            }
+            GroupModel group = getGroup(authorization, definition);
 
             if (group == null) {
-                throw new RuntimeException("Group with id [" + definition.getId() + "] not found");
+                continue;
             }
 
             definition.setId(group.getId());
@@ -214,7 +190,47 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         policy.setConfig(config);
     }
 
-    private Set<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config) throws IOException {
+    private GroupModel getGroup(AuthorizationProvider authorization, GroupDefinition definition) {
+        RealmModel realm = authorization.getRealm();
+        KeycloakSession session = authorization.getKeycloakSession();
+        GroupProvider groups = session.groups();
+
+        if (definition.getId() != null) {
+            return realm.getGroupById(definition.getId());
+        }
+
+        GroupModel group = null;
+        String path = definition.getPath();
+
+        if (path != null) {
+            String canonicalPath = path.startsWith("/") ? path.substring(1) : path;
+            String[] parts = canonicalPath.split("/");
+            GroupModel parent = null;
+
+            for (String part : parts) {
+                if (parent == null) {
+                    parent = groups.getGroupByName(realm, null, part);
+                    if (parent == null) {
+                        return null;
+                    }
+                } else {
+                    group = groups.getGroupByName(realm, parent, part);
+                    if (group == null) {
+                        return null;
+                    }
+                    parent = group;
+                }
+            }
+
+            if (parts.length == 1) {
+                group = parent;
+            }
+        }
+
+        return group;
+    }
+
+    private Set<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config, AuthorizationProvider authorization) throws IOException {
         String groups = config.get("groups");
 
         if (groups == null) {
@@ -222,6 +238,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         }
 
         return Arrays.stream(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class))
+                .filter(d -> getGroup(authorization, d) != null)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }

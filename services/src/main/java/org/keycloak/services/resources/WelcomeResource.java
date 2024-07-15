@@ -139,7 +139,7 @@ public class WelcomeResource {
             applianceBootstrap.createMasterRealmUser(username, password);
 
             shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdInitialAdminUser(username);
+            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
             return createWelcomePage("User created", null);
         }
     }
@@ -249,7 +249,7 @@ public class WelcomeResource {
     }
 
     protected String getAdminCreationMessage() {
-        return "or set the environment variables KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD before starting the server";
+        return "or set the environment variables KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD before starting the server";
     }
 
     private boolean shouldBootstrap() {

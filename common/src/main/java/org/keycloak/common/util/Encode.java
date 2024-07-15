@@ -86,7 +86,11 @@ public class Encode
             case '@':
                continue;
          }
-         pathEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
+         try {
+            pathEncoding[i] = URLEncoder.encode(String.valueOf((char) i), UTF_8);
+         } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+         }
       }
       pathEncoding[' '] = "%20";
       System.arraycopy(pathEncoding, 0, matrixParameterEncoding, 0, pathEncoding.length);
@@ -119,7 +123,11 @@ public class Encode
                queryNameValueEncoding[i] = "+";
                continue;
          }
-         queryNameValueEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
+         try {
+            queryNameValueEncoding[i] = URLEncoder.encode(String.valueOf((char) i), UTF_8);
+         } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+         }
       }
 
       /*
@@ -157,7 +165,11 @@ public class Encode
                queryStringEncoding[i] = "%20";
                continue;
          }
-         queryStringEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
+         try {
+            queryStringEncoding[i] = URLEncoder.encode(String.valueOf((char) i), UTF_8);
+         } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+         }
       }
 
      /*

@@ -74,7 +74,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
 
         RealmModel realm = keycloakSession.getContext().getRealm();
-        List<Format> supportedFormats = realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
+        List<String> supportedFormats = realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
                 .map(cm ->
                         keycloakSession
                                 .getKeycloakSessionFactory()

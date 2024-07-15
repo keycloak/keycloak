@@ -66,7 +66,8 @@ import java.nio.file.Path;
                 Export.class,
                 Import.class,
                 ShowConfig.class,
-                Tools.class
+                Tools.class,
+                BootstrapAdmin.class
         })
 public final class Main {
 
@@ -77,11 +78,6 @@ public final class Main {
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
-
-    @Option(names = { "-h", "--help" },
-            description = "This help message.",
-            usageHelp = true)
-    boolean help;
 
     @Option(names = { "-V", "--version" },
             description = "Show version information",

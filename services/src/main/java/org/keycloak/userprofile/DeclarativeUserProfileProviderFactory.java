@@ -358,13 +358,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             metadata.addAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE, -1,
                             new AttributeValidatorMetadata(OrganizationMemberValidator.ID),
                             new AttributeValidatorMetadata(ImmutableAttributeValidator.ID))
-                    .addReadCondition(c -> USER_API.equals(c.getContext()))
-                    .addWriteCondition(context -> {
-                        // the attribute can only be managed within the scope of the Organization API
-                        // we assume, for now, that if the organization is set as a session attribute, we are operating within the scope if the Organization API
-                        KeycloakSession session = context.getSession();
-                        return session.getAttribute(OrganizationModel.class.getName()) != null;
-                    });
+                    .addReadCondition((c) -> false)
+                    .addWriteCondition((c) -> false);
         }
     }
 
