@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +35,9 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.Proof;
 import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -71,7 +75,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
 
         Optional<Proof> optionalProof = getProofFromContext(vcIssuanceContext);
 
-        if (!optionalProof.isPresent()) {
+        if (optionalProof.isEmpty()) {
             return null; // No proof support
         }
 
@@ -90,10 +94,10 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
         validateProofPayload(vcIssuanceContext, proofPayload);
 
         SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
-        if(signatureVerifierContext==null){
+        if (signatureVerifierContext == null) {
             throw new VCIssuerException("No verifier configured for " +jwsHeader.getAlgorithm());
         }
-        if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes("UTF-8"), jwsInput.getSignature())) {
+        if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jwsInput.getSignature())) {
             throw new VCIssuerException("Could not verify provided proof");
         }
 
@@ -110,13 +114,8 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
 
     private Optional<Proof> getProofFromContext(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
         return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
-                .map(config -> config.getProofTypesSupported())
+                .map(SupportedCredentialConfiguration::getProofTypesSupported)
                 .flatMap(proofTypesSupported -> {
-                    if (proofTypesSupported == null) {
-                        LOGGER.debugf("No proof support. Will skip proof validation.");
-                        return Optional.empty();
-                    }
-
                     Optional.ofNullable(proofTypesSupported.getJwt())
                             .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
 
@@ -150,9 +149,9 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
         // As we limit accepted algorithm to the ones listed by the server, we can omit checking for "none"
         // The Algorithm enum class does not list the none value anyway.
         Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
-                .map(config -> config.getProofTypesSupported())
-                .map(proofTypesSupported -> proofTypesSupported.getJwt())
-                .map(jwt -> jwt.getProofSigningAlgValuesSupported())
+                .map(SupportedCredentialConfiguration::getProofTypesSupported)
+                .map(ProofTypesSupported::getJwt)
+                .map(ProofTypeJWT::getProofSigningAlgValuesSupported)
                 .filter(supportedAlgs -> supportedAlgs.contains(jwsHeader.getAlgorithm().name()))
                 .orElseThrow(() -> new VCIssuerException("Proof signature algorithm not supported: " + jwsHeader.getAlgorithm().name()));
 
