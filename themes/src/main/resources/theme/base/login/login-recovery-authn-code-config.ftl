@@ -106,7 +106,7 @@
         }
 
         function parseRecoveryCodeList() {
-            var recoveryCodes = document.querySelectorAll(".kc-recovery-codes-list li");
+            var recoveryCodes = document.querySelectorAll("#kc-recovery-codes-list li");
             var recoveryCodeList = "";
 
             for (var i = 0; i < recoveryCodes.length; i++) {
