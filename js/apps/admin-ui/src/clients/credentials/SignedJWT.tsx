@@ -12,8 +12,8 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
   const { cryptoInfo } = useServerInfo();
   const providers =
     clientAuthenticatorType === "client-jwt"
-      ? cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? []
-      : cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
+      ? (cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [])
+      : (cryptoInfo?.clientSignatureSymmetricAlgorithms ?? []);
 
   const { t } = useTranslation();
 

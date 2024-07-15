@@ -85,6 +85,9 @@ public class RemoteInfinispanNotificationManager {
     }
 
     public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), dcNotify, ignoreSender);
 
         var eventKey = UUID.randomUUID().toString();

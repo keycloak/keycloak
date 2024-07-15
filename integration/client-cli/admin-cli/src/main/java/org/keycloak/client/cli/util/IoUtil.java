@@ -16,7 +16,8 @@
  */
 package org.keycloak.client.cli.util;
 
-import java.io.Console;
+import org.keycloak.common.util.StreamUtil;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -65,31 +66,12 @@ public class IoUtil {
         return content;
     }
 
-    public static String readSecret(String prompt) {
-        Console cons = System.console();
-        if (cons == null) {
-            throw new RuntimeException("Console is not active, but a password is required");
-        }
-        char[] passwd;
-        if ((passwd = cons.readPassword("%s", prompt)) != null) {
-            return new String(passwd);
-        }
-        throw new RuntimeException("No password provided");
-    }
-
     public static String readFully(InputStream is) {
-        StringBuilder out = new StringBuilder();
-        byte [] buf = new byte[8192];
-
-        int rc;
         try {
-            while ((rc = is.read(buf)) != -1) {
-                out.append(new String(buf, 0, rc, StandardCharsets.UTF_8));
-            }
+            return StreamUtil.readString(is, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException("Failed to read stream", e);
         }
-        return out.toString();
     }
 
     public static void copyStream(InputStream is, OutputStream os) {

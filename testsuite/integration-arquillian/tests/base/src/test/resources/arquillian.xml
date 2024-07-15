@@ -31,7 +31,7 @@
         <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
 
         <!-- firefox -->
-        <property name="firefoxBinary">${firefox_binary}</property> <!-- we need to use 'firefoxBinary' instead of 'firefox_binary' due to some weird conflict with Appium -->
+        <property name="firefoxBinary">${firefox_binary}</property>
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
@@ -42,16 +42,6 @@
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${chromeArguments}</property>
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
-
-        <!-- appium -->
-        <property name="appium.platformName">${appium.platformName}</property>
-        <property name="appium.deviceName">${appium.deviceName}</property>
-        <property name="appium.browserName">${appium.browserName}</property>
-        <property name="appium.avd">${appium.avd}</property>
-        <property name="appium.automationName">${appium.automationName}</property>
-        <property name="appium.noReset">${appium.noReset}</property>
-        <property name="appium.fullReset">${appium.fullReset}</property>
-        <property name="appium.nativeWebScreenshot">true</property> <!-- there's some issue when taking screenshot using the chromedriver therefore we need to take screenshots of the whole screen (using adb) instead -->
     </extension>
 
     <extension qualifier="drone">

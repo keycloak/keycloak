@@ -43,7 +43,8 @@ import jakarta.persistence.Table;
                 " where o.realmId = :realmId AND (o.name = :search OR d.name = :search) order by o.name ASC"),
         @NamedQuery(name="getByNameOrDomainContained", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
                 " where o.realmId = :realmId AND (lower(o.name) like concat('%',:search,'%') OR d.name like concat('%',:search,'%')) order by o.name ASC"),
-        @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId")
+        @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
+        @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId")
 })
 public class OrganizationEntity {
 

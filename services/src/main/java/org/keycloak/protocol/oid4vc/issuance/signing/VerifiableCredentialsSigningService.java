@@ -57,8 +57,8 @@ public interface VerifiableCredentialsSigningService<T> extends Provider {
      * @param vcConfigId
      * @return
      */
-    static String locator(Format format, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId){
-        return (format==null? "" : format.name()) + LOCATION_SEPARATOR +
+    static String locator(String format, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId){
+        return (format==null? "" : format) + LOCATION_SEPARATOR +
                 (credentialType==null?"":credentialType.getValue()) + LOCATION_SEPARATOR +
                 (vcConfigId==null?"":vcConfigId.getValue());
     }

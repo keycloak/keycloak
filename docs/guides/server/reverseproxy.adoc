@@ -31,7 +31,7 @@ NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes preceden
 
 NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
 
-== Proxy modes
+== Proxy modes (deprecated)
 NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
 
 For {project_name}, your choice of proxy modes depends on the TLS termination in your environment. The following proxy modes are available:
@@ -59,15 +59,11 @@ To select the proxy mode, enter this command:
 == Different context-path on reverse proxy
 
 {project_name} assumes it is exposed through the reverse proxy under the same context path as {project_name} is configured for. By default {project_name} is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
-You can use `hostname-path` or `hostname-url` in these cases, for example using `--hostname-path=/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
+You can use a full URL for the `hostname` option in these cases, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
+
+For more details on exposing {project_name} on different hostname or context-path incl. Administration REST API and Console, see <@links.server id="hostname"/>.
 
 Alternatively you can also change the context path of {project_name} itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of {project_name} itself to match the context path used by the reverse proxy.
-
-== Trust the proxy to set hostname
-
-By default, {project_name} needs to know under which hostname it will be called. If your reverse proxy is configured to check for the correct hostname, you can set {project_name} to accept any hostname.
-
-<@kc.start parameters="--proxy-headers=forwarded|xforwarded --hostname-strict=false"/>
 
 == Enable sticky sessions
 
@@ -105,16 +101,7 @@ to `false` in order to avoid attaching the node to cookies and just rely on the 
 By default, the `spi-sticky-session-encoder-infinispan-should-attach-route` option value is `true` so that the node name is attached to
 cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
-=== Exposing the administration console
-
-By default, the administration console URLs are created solely based on the requests to resolve the proper scheme, host name, and port. For instance,
-if you are using the `edge` proxy mode and your proxy is misconfigured, backend requests from your TLS termination proxy are going to use plain HTTP and potentially cause the administration
-console from being accessible because URLs are going to be created using the `http` scheme and the proxy does not support plain HTTP.
-
-In order to proper expose the administration console, you should make sure that your proxy is setting the `X-Forwarded-*` headers herein mentioned in order
-to create URLs using the scheme, host name, and port, being exposed by your proxy.
-
-=== Exposed path recommendations
+== Exposed path recommendations
 When using a reverse proxy, {project_name} only requires certain paths need to be exposed.
 The following table shows the recommended paths to expose.
 
@@ -136,11 +123,6 @@ The following table shows the recommended paths to expose.
 | -
 |Yes (see note below)
 |Access to keycloak.js needed for "internal" clients, e.g. the account console
-
-|/welcome/
-| -
-|No
-|No need exists to expose the welcome page after initial installation.
 
 |/realms/
 |/realms/
@@ -175,7 +157,7 @@ As it's true that the `js` path is needed for internal clients like the account 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
-=== Enabling client certificate lookup
+== Enabling client certificate lookup
 
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
 clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
@@ -228,7 +210,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
 |===
 
-==== Configuring the NGINX provider
+=== Configuring the NGINX provider
 
 The NGINX SSL/TLS module does not expose the client certificate chain. {project_name}'s NGINX certificate lookup provider rebuilds it by using the {project_name} truststore.
 

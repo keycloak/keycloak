@@ -11,7 +11,7 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -100,16 +100,15 @@ export const UserConsents = () => {
           {
             name: "grantedClientScopes",
             displayKey: "grantedClientScopes",
-            cellFormatters: [emptyFormatter()],
             cellRenderer: clientScopesRenderer,
             transforms: [cellWidth(30)],
           },
           {
-            name: "createDate",
+            name: "createdDate",
             displayKey: "created",
             transforms: [cellWidth(20)],
-            cellRenderer: ({ createDate }) =>
-              createDate ? formatDate(new Date(createDate)) : "—",
+            cellRenderer: ({ createdDate }) =>
+              createdDate ? formatDate(new Date(createdDate)) : "—",
           },
           {
             name: "lastUpdatedDate",

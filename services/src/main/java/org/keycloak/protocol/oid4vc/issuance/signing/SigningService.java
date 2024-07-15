@@ -43,9 +43,9 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
 
     // As the type is not identical to the format, we use the format as a factory to
     // instantiate provider.
-    protected final Format format;
+    protected final String format;
 
-    protected SigningService(KeycloakSession keycloakSession, String keyId, Format format, String type) {
+    protected SigningService(KeycloakSession keycloakSession, String keyId, String format, String type) {
         this.keycloakSession = keycloakSession;
         this.keyId = keyId;
         this.format = format;

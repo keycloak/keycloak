@@ -73,4 +73,5 @@ public abstract class AbstractCommand {
     public CommandLine getCommandLine() {
         return spec.commandLine();
     }
+
 }

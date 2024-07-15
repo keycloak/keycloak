@@ -74,11 +74,11 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.18.0",
+    "rollup": "^4.18.1",
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "js-sha256": "^0.11.0",
+    "@noble/hashes": "^1.4.0",
     "jwt-decode": "^4.0.0"
   }
 }

@@ -153,7 +153,7 @@ function RealmSettingsGeneralTabForm({
           className="pf-u-mt-lg"
           onSubmit={onSubmit}
         >
-          <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
+          <FormGroup label={t("realmName")} fieldId="kc-realm-id" isRequired>
             <Controller
               name="realm"
               control={control}

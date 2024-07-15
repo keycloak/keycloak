@@ -22,7 +22,9 @@ import java.security.PrivilegedAction;
 
 /**
  * A {@link java.security.PrivilegedAction} that calls {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
+ * @deprecated for removal in Keycloak 27
  */
+@Deprecated(forRemoval = true)
 public class SetAccessiblePrivilegedAction implements PrivilegedAction<Void> {
 
     private final AccessibleObject member;

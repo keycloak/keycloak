@@ -3,7 +3,9 @@ package org.keycloak.testsuite.util;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -28,6 +30,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -50,6 +54,16 @@ public class KeyUtils {
         }
     }
 
+    public static KeyPair generateEdDSAKey(String curve) throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(curve);
+        return kpg.generateKeyPair();
+    }
+
+    public static SecretKey generateSecretKey(String algorithm, int keySize) throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyGenerator keyGen = KeyGenerator.getInstance(JavaAlgorithm.getJavaAlgorithm(algorithm), BouncyIntegration.PROVIDER);
+        keyGen.init(keySize);
+        return keyGen.generateKey();
+    }
 
     public static PublicKey publicKeyFromString(String key) {
         try {

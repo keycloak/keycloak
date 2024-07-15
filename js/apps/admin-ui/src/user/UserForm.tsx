@@ -26,7 +26,7 @@ import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useAccess } from "../context/access/Access";
@@ -52,6 +52,7 @@ export type UserFormProps = {
   bruteForce?: BruteForced;
   userProfileMetadata?: UserProfileMetadata;
   save: (user: UserFormFields) => void;
+  refresh?: () => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
@@ -65,6 +66,7 @@ export const UserForm = ({
   },
   userProfileMetadata,
   save,
+  refresh,
   onGroupsUpdate,
 }: UserFormProps) => {
   const { adminClient } = useAdminClient();
@@ -94,8 +96,11 @@ export const UserForm = ({
 
   const unLockUser = async () => {
     try {
-      await adminClient.attackDetection.del({ id: user!.id! });
+      await adminClient.users.update({ id: user!.id! }, { enabled: true });
       addAlert(t("unlockSuccess"), AlertVariant.success);
+      if (refresh) {
+        refresh();
+      }
     } catch (error) {
       addError("unlockError", error);
     }
@@ -279,9 +284,6 @@ export const UserForm = ({
               onChange={(_event, value) => {
                 unLockUser();
                 setLocked(value);
-                save({
-                  enabled: !value,
-                });
               }}
               isChecked={locked}
               isDisabled={!locked}

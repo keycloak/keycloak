@@ -73,22 +73,35 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         String username = parameters.getFirst(UserModel.USERNAME);
         String emailDomain = getEmailDomain(username);
 
-        if (emailDomain == null) {
-            // username does not map to any email domain, go to the next authentication step/sub-flow
-            context.attempted();
-            return;
-        }
-
+        RealmModel realm = context.getRealm();
         OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = provider.getByDomainName(emailDomain);
+        OrganizationModel organization = null;
+        UserModel user = null;
+
+        if (emailDomain == null) {
+            // username was provided, check if the user is already federated in the realm and onboarded in an organization
+            user = session.users().getUserByUsername(realm, username);
+            if (user != null) {
+                organization = getOrganizationProvider().getByMember(user);
+            }
+
+            if (organization == null) {
+                // user in not member of an organization, go to the next authentication step/sub-flow
+                context.attempted();
+                return;
+            }
+        } else {
+            organization = provider.getByDomainName(emailDomain);
+        }
 
         if (organization != null) {
             // make sure the organization is set to the session to make it available to templates
             session.setAttribute(OrganizationModel.class.getName(), organization);
         }
 
-        RealmModel realm = context.getRealm();
-        UserModel user = session.users().getUserByEmail(realm, username);
+        if (user == null) {
+            user = session.users().getUserByEmail(realm, username);
+        }
 
         if (user != null) {
             // user exists, check if enabled
@@ -97,21 +110,25 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
+            context.setUser(user);
+
+            if (organization != null) {
+                OrganizationBean orgBean = new OrganizationBean(session, organization, user);
+                context.form().setAttributeMapper(attributes -> {
+                    attributes.put("org", orgBean);
+                    return attributes;
+                });
+            }
+
             List<IdentityProviderModel> broker = resolveBroker(session, user);
 
-            if (broker.isEmpty()) {
-                // not a managed member, continue with the regular flow
-                if (organization != null) {
-                    context.form().setAttributeMapper(attributes -> {
-                        attributes.put("org", new OrganizationBean(session, organization, user));
-                        return attributes;
-                    });
-                }
-                context.attempted();
-            } else if (broker.size() == 1) {
+            if (broker.size() == 1) {
                 // user is a managed member and associated with a broker, redirect automatically
                 redirect(context, broker.get(0).getAlias(), user.getEmail());
+                return;
             }
+
+            context.attempted();
 
             return;
         }

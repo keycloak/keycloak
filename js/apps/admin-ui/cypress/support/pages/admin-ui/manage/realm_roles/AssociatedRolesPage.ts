@@ -1,6 +1,4 @@
 export default class AssociatedRolesPage {
-  #actionDropdown = "action-dropdown";
-  #addRolesDropdownItem = "add-roles";
   #addRoleToolbarButton = "assignRole";
   #addAssociatedRolesModalButton = "assign";
   #compositeRoleBadge = "composite-role-badge";
@@ -9,11 +7,13 @@ export default class AssociatedRolesPage {
   #usersPage = "users-page";
   #removeRolesButton = "unAssignRole";
   #addRoleTable = '[aria-label="Roles"] td';
+  #associatedRolesTab = "associatedRolesTab";
+  #assignRole = "no-roles-in-this-realm-empty-action";
 
   addAssociatedRealmRole(roleName: string) {
-    cy.findByTestId(this.#actionDropdown).last().click();
+    cy.findByTestId(this.#associatedRolesTab).should("exist").click();
 
-    cy.findByTestId(this.#addRolesDropdownItem).click();
+    cy.findByTestId(this.#assignRole).click();
 
     cy.findByTestId(this.#filterTypeDropdown).click();
 

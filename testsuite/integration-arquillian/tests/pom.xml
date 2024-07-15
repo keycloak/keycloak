@@ -226,14 +226,6 @@
         <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=* --ignore-ssl-errors=yes --ignore-certificate-errors</chromeArguments>
         <chromeDriverVersion/>
 
-        <appium.platformName/>
-        <appium.deviceName/>
-        <appium.browserName/>
-        <appium.avd/>
-        <appium.automationName/>
-        <appium.noReset/>
-        <appium.fullReset/>
-
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
@@ -330,70 +322,6 @@
                                 </artifactItems>
                                 <outputDirectory>${containers.home}</outputDirectory>
                                 <skip>${app.server.skip.unpack}</skip>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>example-wars</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>copy</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.copy.example.wars}</skip>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>hello-world-authz-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>servlet-authz-app</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>servlet-policy-enforcer</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-cors-database-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${examples.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>test-apps-realms</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-dist</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>zip</type>
-                                        <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${examples.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
                             </configuration>
                         </execution>
                     </executions>
@@ -601,14 +529,6 @@
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
                             <firefoxArguments>${firefoxArguments}</firefoxArguments>
-
-                            <appium.platformName>${appium.platformName}</appium.platformName>
-                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
-                            <appium.browserName>${appium.browserName}</appium.browserName>
-                            <appium.avd>${appium.avd}</appium.avd>
-                            <appium.automationName>${appium.automationName}</appium.automationName>
-                            <appium.noReset>${appium.noReset}</appium.noReset>
-                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
 
                             <project.version>${project.version}</project.version>
 
@@ -1645,12 +1565,6 @@
                     </exclusions>
                 </dependency>
 
-                <dependency>
-                    <groupId>io.appium</groupId>
-                    <artifactId>java-client</artifactId>
-                    <version>${appium.client.version}</version>
-                </dependency>
-
                 <!--
                     httpclient and httpcore are here to ensure we use the same version
                     as in keycloak/pom.xml and to prevent the other versions beeing present
@@ -1749,7 +1663,7 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client</artifactId>
+                    <artifactId>keycloak-admin-client-tests</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>

@@ -88,8 +88,8 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <!-- 1.0.2.4 exhibits class loading issues -->
-        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
+        <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
+        <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -100,6 +100,7 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.5.Final</infinispan.version>
+        <protostream.version>5.0.7.Final</protostream.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -152,10 +153,6 @@
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
 
         <liquibase.version>4.25.1</liquibase.version>
-        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
-        <osgi.version>6.0.0</osgi.version>
-        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
-        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -181,7 +178,6 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
-        <selenium.version>2.35.0</selenium.version>
         <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.13.5.Final/getting-started-async/pom.xml#L14 -->
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
@@ -194,7 +190,6 @@
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
-        <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
         <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
@@ -204,7 +199,6 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
-        <infinispan.maven-plugins.version>1.0.5.Final</infinispan.maven-plugins.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -400,11 +394,17 @@
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
             
-          <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bc-fips</artifactId>
-            <version>${bouncycastle.bcfips.version}</version>
-          </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-fips</artifactId>
+                <version>${bouncycastle.bcfips.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.bctls-fips.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
@@ -677,20 +677,6 @@
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
             </dependency>
-
-            <!-- Selenium -->
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-java</artifactId>
-                <version>${selenium.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-chrome-driver</artifactId>
-                <version>${selenium.version}</version>
-                <scope>test</scope>
-            </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>
                 <artifactId>ApacheJMeter_java</artifactId>
@@ -885,31 +871,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>osgi.core</artifactId>
-                <version>${osgi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.enterprise.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-runtime</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-api</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-spi</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
 
             <!-- keycloak -->
             <dependency>
@@ -983,12 +944,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client-jee</artifactId>
+                <artifactId>keycloak-admin-client-jee-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client</artifactId>
+                <artifactId>keycloak-admin-client-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1463,6 +1424,25 @@
                 <artifactId>rdf-urdna</artifactId>
                 <version>${io.setl.rdf-urdna.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream</artifactId>
+                <version>${protostream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-types</artifactId>
+                <version>${protostream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-processor</artifactId>
+                <version>${protostream.version}</version>
+                <!-- compile-only dependency -->
+                <scope>provided</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1633,11 +1613,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-bundle-plugin</artifactId>
-                    <version>${osgi.bundle.plugin.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <configuration>
@@ -1724,9 +1699,9 @@
                     <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.infinispan.maven-plugins</groupId>
+                    <groupId>org.infinispan.protostream</groupId>
                     <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
-                    <version>${infinispan.maven-plugins.version}</version>
+                    <version>${protostream.version}</version>
                     <configuration>
                         <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
                     </configuration>

@@ -26,9 +26,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-admin-client</artifactId>
-    <name>Keycloak Admin REST Client</name>
-    <description/>
+    <artifactId>keycloak-admin-client-tests</artifactId>
+    <name>Keycloak Admin REST Client for tests</name>
+    <description>Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client` module.
+    </description>
 
     <properties>
         <jakarta-transformer-sources>${project.basedir}/../admin-client-jee/src</jakarta-transformer-sources>

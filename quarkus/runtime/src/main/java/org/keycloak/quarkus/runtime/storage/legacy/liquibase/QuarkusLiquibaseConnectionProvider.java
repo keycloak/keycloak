@@ -28,12 +28,12 @@ import liquibase.Scope;
 import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
@@ -117,7 +117,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     }
 
     @Override
-    public Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
+    public KeycloakLiquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
@@ -127,11 +127,11 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
 
-        return new Liquibase(changelog, resourceAccessor, database);
+        return new KeycloakLiquibase(changelog, resourceAccessor, database);
     }
 
     @Override
-    public Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    public KeycloakLiquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
@@ -142,7 +142,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
 
-        return new Liquibase(changelogLocation, resourceAccessor, database);
+        return new KeycloakLiquibase(changelogLocation, resourceAccessor, database);
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RecaptchaAssessmentResponse {
 
     @JsonProperty("name")
@@ -38,9 +39,14 @@ public class RecaptchaAssessmentResponse {
     @JsonProperty("event")
     private Event event;
 
+    @JsonProperty("accountDefenderAssessment")
+    private AccountDefenderAssessment accountDefenderAssessment;
+
     public String toString() {
-        return format("RecaptchaAssessmentResponse(name=%s, riskAnalysis=%s, tokenProperties=%s, event=%s)",
-                this.getName(), this.getRiskAnalysis(), this.getTokenProperties(), this.getEvent());
+        return format(
+                "RecaptchaAssessmentResponse(name=%s, riskAnalysis=%s, tokenProperties=%s, event=%s, accountDefenderAssessment=%s)",
+                this.getName(), this.getRiskAnalysis(), this.getTokenProperties(), this.getEvent(),
+                this.getAccountDefenderAssessment());
     }
 
     public String getName() {
@@ -73,6 +79,14 @@ public class RecaptchaAssessmentResponse {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public AccountDefenderAssessment getAccountDefenderAssessment() {
+        return accountDefenderAssessment;
+    }
+
+    public void setAccountDefenderAssessment(AccountDefenderAssessment accountDefenderAssessment) {
+        this.accountDefenderAssessment = accountDefenderAssessment;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -241,7 +255,26 @@ public class RecaptchaAssessmentResponse {
         public void setUserIpAddress(String userIpAddress) {
             this.userIpAddress = userIpAddress;
         }
+    }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class AccountDefenderAssessment {
+
+        @JsonProperty("labels")
+        private String[] labels;
+
+        public String toString() {
+            return format("AccountDefenderAssessment(labels=%s)",
+                    this.getLabels() != null ? Arrays.toString(this.getLabels()) : "[]");
+        }
+
+        public String[] getLabels() {
+            return labels;
+        }
+
+        public void setLabels(String[] labels) {
+            this.labels = labels;
+        }
     }
 
 }

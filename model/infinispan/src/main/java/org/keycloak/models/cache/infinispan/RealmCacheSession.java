@@ -41,6 +41,7 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -1170,8 +1171,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
-        GroupModel group = getGroupDelegate().createGroup(realm, id, name, toParent);
+    public GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent) {
+        GroupModel group = getGroupDelegate().createGroup(realm, id, type, name, toParent);
         return groupAdded(realm, group, toParent);
     }
 
@@ -1602,5 +1603,11 @@ public class RealmCacheSession implements CacheRealmProvider {
             return localizationTexts.get(key);
         }
         return null;
+    }
+
+    @Override
+    public void preRemove(RealmModel realm) {
+        listInvalidations.add(realm.getId());
+        getGroupDelegate().preRemove(realm);
     }
 }

@@ -37,6 +37,7 @@ import jakarta.persistence.Table;
  */
 @NamedQueries({
         @NamedQuery(name="getGroupAttributesByNameAndValue", query="select attr from GroupAttributeEntity attr where attr.name = :name and attr.value = :value"),
+        @NamedQuery(name="deleteGroupAttributesByRealm", query="delete from  GroupAttributeEntity a where a.group IN (select u from GroupEntity u where u.realm=:realm)")
 })
 @Table(name="GROUP_ATTRIBUTE")
 @Entity

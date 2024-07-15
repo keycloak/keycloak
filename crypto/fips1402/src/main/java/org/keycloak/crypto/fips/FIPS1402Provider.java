@@ -323,13 +323,13 @@ public class FIPS1402Provider implements CryptoProvider {
         } catch (NoSuchAlgorithmException nsae) {
 
             // Fallback to regular SecureRandom
+            // We could delete this once https://issues.redhat.com/browse/RHEL-3478 is fixed
             SecureRandom secRandom = new SecureRandom();
             String origStrongAlgs = Security.getProperty("securerandom.strongAlgorithms");
             String usedAlg = secRandom.getAlgorithm() + ":" + secRandom.getProvider().getName();
             log.debugf("Strong secure random not available. Tried algorithms: %s. Using algorithm as a fallback for strong secure random: %s", origStrongAlgs, usedAlg);
 
-            String strongAlgs = origStrongAlgs == null ? usedAlg : usedAlg + "," + origStrongAlgs;
-            Security.setProperty("securerandom.strongAlgorithms", strongAlgs);
+            Security.setProperty("securerandom.strongAlgorithms", usedAlg);
 
             try {
                 // Need to insert BCFIPS provider to security providers with "strong algorithm" available
@@ -338,8 +338,6 @@ public class FIPS1402Provider implements CryptoProvider {
                 log.debugf("Initialized BCFIPS secured random");
             } catch (NoSuchAlgorithmException | NoSuchProviderException nsaee) {
                 throw new IllegalStateException("Not possible to initiate BCFIPS secure random", nsaee);
-            } finally {
-                Security.setProperty("securerandom.strongAlgorithms", origStrongAlgs != null ? origStrongAlgs : "");
             }
         }
     }

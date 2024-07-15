@@ -62,6 +62,7 @@ export const UserSelect = ({
       const params: UserQuery = {
         max: 20,
       };
+
       if (search) {
         params.username = search;
       }
@@ -154,7 +155,10 @@ export const UserSelect = ({
                                   );
                                 }}
                               >
-                                {selection}
+                                {
+                                  users.find((u) => u?.id === selection)
+                                    ?.username
+                                }
                               </Chip>
                             ),
                           )}

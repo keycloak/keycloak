@@ -46,7 +46,7 @@ public class GroupAddedEvent extends InvalidationEvent implements RealmCacheInva
 
     @ProtoFactory
     static GroupAddedEvent protoFactory(String id, String realmId, String parentId) {
-        return new GroupAddedEvent(id, realmId, Marshalling.emptyStringToNull(parentId));
+        return new GroupAddedEvent(id, realmId, parentId);
     }
 
     public static GroupAddedEvent create(String groupId, String parentId, String realmId) {

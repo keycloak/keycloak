@@ -27,7 +27,7 @@ GREP="grep"
 DIRNAME="$(dirname "$RESOLVED_NAME")"
 
 abs_path () {
-  if [ -z $IS_CYGWIN ] ; then
+  if [ -z "$IS_CYGWIN" ] ; then
     echo "$DIRNAME/$1"
   else
     cygpath -w "$DIRNAME/$1"

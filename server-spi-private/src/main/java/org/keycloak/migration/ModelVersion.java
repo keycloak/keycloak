@@ -94,7 +94,7 @@ public class ModelVersion {
 
         if (micro < version.micro) {
             return true;
-        } else if (minor > version.minor) {
+        } else if (micro > version.micro) {
             return false;
         }
 

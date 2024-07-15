@@ -6,7 +6,6 @@ fips-mode-setup --is-enabled
 if [ $? -ne 0 ]; then
   exit 1
 fi
-echo "fips.provider.7=XMLDSig" >>/etc/alternatives/java_sdk_21/conf/security/java.security
 export JAVA_HOME=/etc/alternatives/java_sdk_21
 
 # Build all dependent modules

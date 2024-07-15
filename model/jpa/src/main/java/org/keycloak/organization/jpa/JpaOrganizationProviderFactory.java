@@ -38,6 +38,8 @@ import org.keycloak.provider.ProviderEvent;
 
 public class JpaOrganizationProviderFactory implements OrganizationProviderFactory {
 
+    public static final String ID = "jpa";
+
     @Override
     public OrganizationProvider create(KeycloakSession session) {
         return new JpaOrganizationProvider(session);
@@ -60,18 +62,13 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
 
     @Override
     public String getId() {
-        return "jpa";
+        return ID;
     }
 
     private void handleEvents(ProviderEvent event) {
         if (event instanceof RealmPostCreateEvent) {
             RealmModel realm = ((RealmPostCreateEvent) event).getCreatedRealm();
             configureAuthenticationFlows(realm);
-        }
-        if (event instanceof RealmRemovedEvent) {
-            KeycloakSession session = ((RealmRemovedEvent) event).getKeycloakSession();
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            provider.removeAll();
         }
         if (event instanceof GroupEvent) {
             GroupEvent groupEvent = (GroupEvent) event;

@@ -28,6 +28,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
     @Override
     public InstanceWrapper<ClientResource, TestClient> getValue(Registry registry, TestClient annotation) {
         InstanceWrapper<ClientResource, TestClient> wrapper = new InstanceWrapper<>(this, annotation);
+        LifeCycle lifecycle = annotation.lifecycle();
 
         RealmResource realm = registry.getDependency(RealmResource.class, wrapper);
 
@@ -35,7 +36,8 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
         ClientRepresentation clientRepresentation = config.getRepresentation();
 
         if (clientRepresentation.getClientId() == null) {
-            clientRepresentation.setClientId(registry.getCurrentContext().getRequiredTestClass().getSimpleName());
+            String clientId = lifecycle.equals(LifeCycle.GLOBAL) ? config.getClass().getSimpleName() : registry.getCurrentContext().getRequiredTestClass().getSimpleName();
+            clientRepresentation.setClientId(clientId);
         }
 
         Response response = realm.clients().create(clientRepresentation);
@@ -48,14 +50,9 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
         wrapper.addNote(CLIENT_UUID_KEY, clientId);
 
         ClientResource clientResource = realm.clients().get(clientId);
-        wrapper.setValue(clientResource);
+        wrapper.setValue(clientResource, lifecycle);
 
         return wrapper;
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.CLASS;
     }
 
     @Override

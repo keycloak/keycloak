@@ -154,6 +154,7 @@ public abstract class KeycloakApplication extends Application {
 
                 if (createMasterRealm) {
                     applianceBootstrap.createMasterRealm();
+                    createTemporaryAdmin(session);
                 }
             }
         });
@@ -168,6 +169,8 @@ public abstract class KeycloakApplication extends Application {
 
         return exportImportManager[0];
     }
+
+    protected abstract void createTemporaryAdmin(KeycloakSession session);
 
     protected void loadConfig() {
 

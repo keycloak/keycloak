@@ -318,6 +318,11 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
+    public Type getType() {
+        return Type.valueOf(group.getType());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof GroupModel)) return false;

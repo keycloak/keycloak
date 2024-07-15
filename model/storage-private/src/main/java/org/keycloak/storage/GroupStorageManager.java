@@ -19,6 +19,7 @@ package org.keycloak.storage;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -119,8 +120,8 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
-        return localStorage().createGroup(realm, id, name, toParent);
+    public GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent) {
+        return localStorage().createGroup(realm, id, type, name, toParent);
     }
 
     @Override
@@ -136,6 +137,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
         localStorage().addTopLevelGroup(realm, subGroup);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm) {
+        localStorage().preRemove(realm);
     }
 
     @Override

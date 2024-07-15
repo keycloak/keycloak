@@ -17,7 +17,7 @@ npm i @keycloak/keycloak-account-ui
 To use these pages you'll need to add `KeycloakProvider` in your component hierarchy to setup what client, realm and url to use.
 
 ```jsx
-import { KeycloakProvider } from "@keycloak/keycloak-account-ui";
+import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
 
 //...
 

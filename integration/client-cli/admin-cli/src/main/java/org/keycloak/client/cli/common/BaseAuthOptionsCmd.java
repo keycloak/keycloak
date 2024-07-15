@@ -25,7 +25,7 @@ import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.cli.util.AuthUtil;
 import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.client.cli.util.HttpUtil;
-import org.keycloak.client.cli.util.IoUtil;
+import org.keycloak.common.util.IoUtils;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -63,19 +63,19 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
     @Option(names = "--user", description = "Username to login with")
     protected String user;
 
-    @Option(names = "--password", description = "Password to login with (prompted for if not specified, --user is used, and the env variable KC_CLI_PASSWORD is not defined)", defaultValue = "${env:KC_CLI_PASSWORD}")
+    @Option(names = "--password", description = "Password to login with (prompted for if not specified, --user is used, and the env variable KC_CLI_PASSWORD is not defined)")
     protected String password;
 
-    @Option(names = "--secret", description = "Secret to authenticate the client (prompted for if no --user nor --keystore is specified, and the env variable KC_CLI_CLIENT_SECRET is not defined)", defaultValue = "${env:KC_CLI_CLIENT_SECRET}")
+    @Option(names = "--secret", description = "Secret to authenticate the client (prompted for if no --user nor --keystore is specified, and the env variable KC_CLI_CLIENT_SECRET is not defined)")
     protected String secret;
 
     @Option(names = "--keystore", description = "Path to a keystore containing private key")
     protected String keystore;
 
-    @Option(names = "--storepass", description = "Keystore password (prompted for if not specified, --keystore is used, and the env variable KC_CLI_STORE_PASSWORD is undefined)", defaultValue = "${env:KC_CLI_STORE_PASSWORD}")
+    @Option(names = "--storepass", description = "Keystore password (prompted for if not specified, --keystore is used, and the env variable KC_CLI_STORE_PASSWORD is undefined)")
     protected String storePass;
 
-    @Option(names = "--keypass", description = "Key password (prompted for if not specified and --keystore is used without --storepass, \n                             otherwise defaults to keystore password)", defaultValue = "${env:KC_CLI_KEY_PASSWORD}")
+    @Option(names = "--keypass", description = "Key password (prompted for if not specified, --keystore is used without --storepass, and the env variable KC_CLI_KEY_PASSWORD is undefined, otherwise defaults to keystore password)")
     protected String keyPass;
 
     @Option(names = "--alias", description = "Alias of the key inside a keystore (defaults to the value of ClientId)")
@@ -84,7 +84,7 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
     @Option(names = "--truststore", description = "Path to a truststore")
     protected String trustStore;
 
-    @Option(names = "--trustpass", description = "Truststore password (prompted for if not specified, --user is used, and the env variable KC_CLI_TRUSTSTORE_PASSWORD is not defined)", defaultValue = "${env:KC_CLI_TRUSTSTORE_PASSWORD}")
+    @Option(names = "--trustpass", description = "Truststore password (prompted for if not specified, --user is used, and the env variable KC_CLI_TRUSTSTORE_PASSWORD is not defined)")
     protected String trustPass;
 
     @Option(names = "--insecure", description = "Turns off TLS validation")
@@ -174,7 +174,10 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
                 pass = configData.getTrustpass();
             }
             if (pass == null) {
-                pass = IoUtil.readSecret("Enter truststore password: ");
+            	pass = System.getenv("KC_CLI_TRUSTSTORE_PASSWORD");
+            }
+            if (pass == null) {            	
+                pass = IoUtils.readPasswordFromConsole("truststore password");
             }
 
             try {

@@ -48,7 +48,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
     private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     public static final String PROOF_JWT_TYP="openid4vci-proof+jwt";
 
-    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, Format format, String type) {
+    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, String format, String type) {
         super(keycloakSession, keyId, format, type);
     }
 

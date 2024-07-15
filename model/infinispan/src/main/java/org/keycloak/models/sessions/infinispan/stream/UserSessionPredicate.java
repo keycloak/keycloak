@@ -118,10 +118,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     @ProtoFactory
     static UserSessionPredicate create(String userId, String brokerSessionId, String brokerUserId, String realm, String client) {
         return create(realm)
-                .user(Marshalling.emptyStringToNull(userId))
-                .client(Marshalling.emptyStringToNull(client))
-                .brokerSessionId(Marshalling.emptyStringToNull(brokerSessionId))
-                .brokerUserId(Marshalling.emptyStringToNull(brokerUserId));
+                .user(userId)
+                .client(client)
+                .brokerSessionId(brokerSessionId)
+                .brokerUserId(brokerUserId);
     }
 
     @Override

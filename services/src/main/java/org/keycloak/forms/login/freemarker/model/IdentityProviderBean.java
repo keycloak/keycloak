@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,23 +51,22 @@ public class IdentityProviderBean {
         this.session = null;
     }
 
-    public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI) {
+    public IdentityProviderBean(RealmModel realm, KeycloakSession session, Stream<IdentityProviderModel> identityProviders, URI baseURI) {
         this.realm = realm;
         this.session = session;
 
-        if (!identityProviders.isEmpty()) {
-            List<IdentityProvider> orderedList = new ArrayList<>();
-            for (IdentityProviderModel identityProvider : identityProviders) {
-                if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
-                    addIdentityProvider(orderedList, realm, baseURI, identityProvider);
-                }
-            }
+        List<IdentityProvider> orderedList = new ArrayList<>();
 
-            if (!orderedList.isEmpty()) {
-                orderedList.sort(IDP_COMPARATOR_INSTANCE);
-                providers = orderedList;
-                displaySocial = true;
+        identityProviders.forEach(identityProvider -> {
+            if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
+                addIdentityProvider(orderedList, realm, baseURI, identityProvider);
             }
+        });
+
+        if (!orderedList.isEmpty()) {
+            orderedList.sort(IDP_COMPARATOR_INSTANCE);
+            providers = orderedList;
+            displaySocial = true;
         }
     }
 

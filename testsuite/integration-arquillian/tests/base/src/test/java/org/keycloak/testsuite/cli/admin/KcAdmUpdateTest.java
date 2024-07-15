@@ -162,17 +162,28 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
             // test using merge with file
             exe = KcAdmExec.newBuilder()
                     .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
-                            "' -o -s enabled=true -m -f -")
+                            "' -o -m -f -")
                     .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
                     .execute();
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins());
-            Assert.assertTrue("enabled is true", client.isEnabled());
+            Assert.assertFalse("enabled is false", client.isEnabled());
             Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris());
+
+            exe = KcAdmExec.newBuilder()
+                    .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
+                            "' -o -s enabled=true -m -f -")
+                    .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp1\"] }".getBytes()))
+                    .execute();
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp1"), client.getWebOrigins());
+            Assert.assertTrue("enabled is true", client.isEnabled());
         }
     }
 }

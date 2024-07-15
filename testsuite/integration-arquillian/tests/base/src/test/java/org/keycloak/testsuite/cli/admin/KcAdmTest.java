@@ -672,5 +672,16 @@ public class KcAdmTest extends AbstractAdmCliTest {
         // should contain an error message
         assertExitCodeAndStreamSizes(exec, 0, 0, 1);
     }
+    
+    @Test
+    public void testEnvPasswordWithRegularCommand() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = KcAdmExec.newBuilder()
+                .argsLine("get users --format csv")
+                .env("KC_CLI_PASSWORD=ignoreme")
+                .execute();
+        // should not contain an error message
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+    }
 
 }

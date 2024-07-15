@@ -8,8 +8,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.5.0",
-    "@types/node": "^20.14.7",
+    "@eslint/js": "^9.7.0",
+    "@types/node": "^20.14.10",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-cypress": "^3.3.0",
@@ -17,15 +17,15 @@
     "eslint-plugin-mocha": "^10.4.3",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-prettier": "^5.1.3",
-    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react": "^7.34.4",
     "eslint-plugin-react-hooks": "^4.6.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
-    "prettier": "^3.3.2",
+    "prettier": "^3.3.3",
     "tslib": "^2.6.3",
-    "typescript": "^5.5.2",
-    "typescript-eslint": "^7.13.1",
-    "wireit": "^0.14.4"
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^7.16.0",
+    "wireit": "^0.14.5"
   },
   "pnpm": {
     "ignoredOptionalDependencies": [

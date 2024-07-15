@@ -22,7 +22,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useAccess } from "../../context/access/Access";
@@ -147,6 +147,21 @@ type GroupTreeProps = {
 
 const SUBGROUP_COUNT = 50;
 
+const TreeLoading = () => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Spinner size="sm" /> {t("spinnerLoading")}
+    </>
+  );
+};
+
+const LOADING_TREE = [
+  {
+    name: <TreeLoading />,
+  },
+];
+
 export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
@@ -183,6 +198,7 @@ export const GroupTree = ({
     group: GroupRepresentation,
     refresh: () => void,
   ): ExtendedTreeViewDataItem => {
+    const hasSubGroups = group.subGroupCount;
     return {
       id: group.id,
       name: (
@@ -191,16 +207,10 @@ export const GroupTree = ({
         </Tooltip>
       ),
       access: group.access || {},
-      children: group.subGroupCount
-        ? [
-            {
-              name: (
-                <>
-                  <Spinner size="sm" /> {t("spinnerLoading")}
-                </>
-              ),
-            },
-          ]
+      children: hasSubGroups
+        ? search.length === 0
+          ? LOADING_TREE
+          : group.subGroups?.map((g) => mapGroup(g, refresh))
         : undefined,
       action: (hasAccess("manage-users") || group.access?.manage) && (
         <GroupTreeContextMenu group={group} refresh={refresh} />

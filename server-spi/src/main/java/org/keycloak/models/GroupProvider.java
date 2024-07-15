@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
 
@@ -158,7 +159,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      *
      * @param realm Realm.
      * @param name Name.
-     * @throws ModelDuplicateException If there is already a top-level group with the given name 
+     * @throws ModelDuplicateException If there is already a top-level group with the given name
      * @return Model of the created group.
      */
     default GroupModel createGroup(RealmModel realm, String name) {
@@ -172,7 +173,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param realm Realm.
      * @param id Id.
      * @param name Name.
-     * @throws ModelDuplicateException If a group with given id already exists or there is a top-level group with the given name 
+     * @throws ModelDuplicateException If a group with given id already exists or there is a top-level group with the given name
      * @return Model of the created group
      */
     default GroupModel createGroup(RealmModel realm, String id, String name) {
@@ -203,7 +204,22 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @throws ModelDuplicateException If a group with the given id already exists or the toParent group has a subgroup with the given name
      * @return Model of the created group
      */
-    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
+    default GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
+        return createGroup(realm, id, Type.REALM, name, toParent);
+    }
+
+    /**
+     * Creates a new group with the given name, id, name and parent to the given realm.
+     *
+     * @param realm Realm.
+     * @param id Id, will be generated if {@code null}.
+     * @param type the group type. if not set, defaults to {@link Type#REALM}
+     * @param name Name.
+     * @param toParent Parent group, or {@code null} if the group is top level group
+     * @throws ModelDuplicateException If a group with the given id already exists or the toParent group has a subgroup with the given name
+     * @return Model of the created group
+     */
+    GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent);
 
     /**
      * Removes the given group for the given realm.
@@ -237,4 +253,12 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @throws ModelDuplicateException If there is already a top level group name with the same name
      */
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
+
+    /**
+     * Called when a realm is removed.
+     * Should remove all groups that belong to the realm.
+     *
+     * @param realm a reference to the realm
+     */
+    void preRemove(RealmModel realm);
 }

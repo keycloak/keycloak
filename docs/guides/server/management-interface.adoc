@@ -14,10 +14,10 @@ The most significant advantage might be seen in Kubernetes environments as the s
 == Management interface configuration
 
 The management interface is turned on by default, so management endpoints such as `/metrics`, and `/health` are exposed on the default management port `9000`.
+The management interface provides a set of options and is fully configurable.
 In order to change the port for the management interface, you can use the {project_name} option `http-management-port`.
 
-The management interface provides a set of options and is fully configurable.
-If these options for the management HTTP server are not explicitly set, their values are automatically inherited from the default HTTP server.
+NOTE: If management interface properties are not explicitly set, their values are automatically inherited from the default HTTP server.
 
 You can change the relative path of the management interface, as the prefix path for the management endpoints can be different.
 You can achieve it via the {project_name} option `http-management-relative-path`.

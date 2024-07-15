@@ -39,6 +39,7 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -451,11 +452,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     private GroupModel createOrganizationGroup(String orgId) {
-        GroupModel group = groupProvider.createGroup(getRealm(), null, orgId);
-
-        group.setSingleAttribute(ORGANIZATION_ATTRIBUTE, orgId);
-
-        return group;
+        return groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, orgId, null);
     }
 
     private GroupModel getOrganizationGroup(OrganizationModel organization) {

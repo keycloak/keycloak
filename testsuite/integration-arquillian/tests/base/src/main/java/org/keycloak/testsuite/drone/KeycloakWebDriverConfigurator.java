@@ -51,7 +51,6 @@ public class KeycloakWebDriverConfigurator {
 
         DesiredCapabilities capabilitiesToAdd = new DesiredCapabilities();
         updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
-        updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
         acceptAllSSLCerts(webDriverCfg, capabilitiesToAdd);
 
         BrowserCapabilities browserCap = registryInstance.get().getEntryFor(webDriverCfg.getBrowser());

@@ -61,7 +61,7 @@ public class SupportedCredentialConfiguration {
     private String id;
 
     @JsonProperty(FORMAT_KEY)
-    private Format format;
+    private String format;
 
     @JsonProperty(SCOPE_KEY)
     private String scope;
@@ -90,7 +90,7 @@ public class SupportedCredentialConfiguration {
     @JsonProperty(CLAIMS_KEY)
     private Claims claims;
 
-    public Format getFormat() {
+    public String getFormat() {
         return format;
     }
 
@@ -108,7 +108,7 @@ public class SupportedCredentialConfiguration {
      * @return
      */
     public VerifiableCredentialType deriveType() {
-        if(format==Format.SD_JWT_VC) {
+        if(Objects.equals(format, Format.SD_JWT_VC)) {
             return VerifiableCredentialType.from(vct);
         }
         return null;
@@ -118,7 +118,7 @@ public class SupportedCredentialConfiguration {
         return CredentialConfigId.from(id);
     }
 
-    public SupportedCredentialConfiguration setFormat(Format format) {
+    public SupportedCredentialConfiguration setFormat(String format) {
         this.format = format;
         return this;
     }
@@ -244,7 +244,7 @@ public class SupportedCredentialConfiguration {
     public static SupportedCredentialConfiguration fromDotNotation(String credentialId, Map<String, String> dotNotated) {
 
         SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration().setId(credentialId);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredentialConfiguration::setFormat);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + FORMAT_KEY)).ifPresent(supportedCredentialConfiguration::setFormat);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + VERIFIABLE_CREDENTIAL_TYPE_KEY)).ifPresent(supportedCredentialConfiguration::setVct);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + SCOPE_KEY)).ifPresent(supportedCredentialConfiguration::setScope);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
@@ -289,7 +289,7 @@ public class SupportedCredentialConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SupportedCredentialConfiguration that = (SupportedCredentialConfiguration) o;
-        return Objects.equals(id, that.id) && format == that.format && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(cryptographicSuitesSupported, that.cryptographicSuitesSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(display, that.display) && Objects.equals(vct, that.vct) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(claims, that.claims);
+        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(cryptographicSuitesSupported, that.cryptographicSuitesSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(display, that.display) && Objects.equals(vct, that.vct) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(claims, that.claims);
     }
 
     @Override

@@ -57,7 +57,7 @@ public class WrapperClusterEvent implements ClusterEvent {
     @ProtoFactory
     static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, List<WrappedMessage> eventPS) {
         var events = eventPS.stream().map(WrappedMessage::getValue).map(ClusterEvent.class::cast).toList();
-        return new WrapperClusterEvent(eventKey, Marshalling.emptyStringToNull(senderAddress), Marshalling.emptyStringToNull(senderSite), siteFilter, events);
+        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteFilter, events);
     }
 
     public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {

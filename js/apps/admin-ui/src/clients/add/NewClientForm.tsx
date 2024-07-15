@@ -10,7 +10,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -21,6 +21,7 @@ import { toClients } from "../routes/Clients";
 import { CapabilityConfig } from "./CapabilityConfig";
 import { GeneralSettings } from "./GeneralSettings";
 import { LoginSettings } from "./LoginSettings";
+import { useState } from "react";
 
 const NewClientFooter = (newClientForm: any) => {
   const { t } = useTranslation();
@@ -54,6 +55,7 @@ export default function NewClientForm() {
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
+  const [saving, setSaving] = useState<boolean>(false);
 
   const { addAlert, addError } = useAlerts();
   const form = useForm<FormFields>({
@@ -78,6 +80,8 @@ export default function NewClientForm() {
   const protocol = watch("protocol");
 
   const save = async () => {
+    if (saving) return;
+    setSaving(true);
     const client = convertFormValuesToObject(getValues());
     try {
       const newClient = await adminClient.clients.create({
@@ -88,6 +92,8 @@ export default function NewClientForm() {
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
       addError("createClientError", error);
+    } finally {
+      setSaving(false);
     }
   };
 

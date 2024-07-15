@@ -1,10 +1,15 @@
-import {
-  Alert,
-  AlertActionCloseButton,
-  AlertGroup,
-  AlertVariant,
-} from "@patternfly/react-core";
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { AlertVariant } from "@patternfly/react-core";
+import { PropsWithChildren, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { createNamedContext } from "../utils/createNamedContext";
+import { getErrorDescription, getErrorMessage } from "../utils/errors";
+import { generateId } from "../utils/generateId";
+import { useRequiredContext } from "../utils/useRequiredContext";
+import { useSetTimeout } from "../utils/useSetTimeout";
+import { AlertPanel } from "./AlertPanel";
+
+const ALERT_TIMEOUT = 8000;
 
 export type AddAlertFunction = (
   message: string,
@@ -12,18 +17,21 @@ export type AddAlertFunction = (
   description?: string,
 ) => void;
 
-export type AddErrorFunction = (message: string) => void;
+export type AddErrorFunction = (messageKey: string, error: unknown) => void;
 
 export type AlertProps = {
   addAlert: AddAlertFunction;
   addError: AddErrorFunction;
 };
 
-export const AlertContext = createContext<AlertProps | undefined>(undefined);
+const AlertContext = createNamedContext<AlertProps | undefined>(
+  "AlertContext",
+  undefined,
+);
 
-export const useAlerts = () => useContext(AlertContext)!;
+export const useAlerts = () => useRequiredContext(AlertContext);
 
-export type AlertType = {
+export type AlertEntry = {
   id: number;
   message: string;
   variant: AlertVariant;
@@ -31,55 +39,43 @@ export type AlertType = {
 };
 
 export const AlertProvider = ({ children }: PropsWithChildren) => {
-  const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const { t } = useTranslation();
+  const setTimeout = useSetTimeout();
+  const [alerts, setAlerts] = useState<AlertEntry[]>([]);
 
-  const hideAlert = (id: number) => {
+  const removeAlert = (id: number) =>
     setAlerts((alerts) => alerts.filter((alert) => alert.id !== id));
-  };
 
-  const addAlert = (
-    message: string,
-    variant: AlertVariant = AlertVariant.success,
-    description?: string,
-  ) => {
-    setAlerts([
-      {
-        id: Math.random() * 100,
+  const addAlert = useCallback<AddAlertFunction>(
+    (message, variant = AlertVariant.success, description) => {
+      const alert: AlertEntry = {
+        id: generateId(),
         message,
         variant,
         description,
-      },
-      ...alerts,
-    ]);
-  };
+      };
 
-  const addError = (message: string) => {
-    addAlert(message, AlertVariant.danger);
-  };
+      setAlerts((alerts) => [alert, ...alerts]);
+      setTimeout(() => removeAlert(alert.id), ALERT_TIMEOUT);
+    },
+    [setTimeout],
+  );
+
+  const addError = useCallback<AddErrorFunction>(
+    (messageKey, error) => {
+      const message = t(messageKey, { error: getErrorMessage(error) });
+      const description = getErrorDescription(error);
+
+      addAlert(message, AlertVariant.danger, description);
+    },
+    [addAlert, t],
+  );
+
+  const value = useMemo(() => ({ addAlert, addError }), [addAlert, addError]);
 
   return (
-    <AlertContext.Provider value={{ addAlert, addError }}>
-      <AlertGroup isToast data-testid="alerts">
-        {alerts.map(({ id, variant, message, description }) => (
-          <Alert
-            key={id}
-            isLiveRegion
-            variant={AlertVariant[variant]}
-            variantLabel=""
-            title={message}
-            actionClose={
-              <AlertActionCloseButton
-                title={message}
-                onClose={() => hideAlert(id)}
-              />
-            }
-            timeout
-            onTimeout={() => hideAlert(id)}
-          >
-            {description && <p>{description}</p>}
-          </Alert>
-        ))}
-      </AlertGroup>
+    <AlertContext.Provider value={value}>
+      <AlertPanel alerts={alerts} onCloseAlert={removeAlert} />
       {children}
     </AlertContext.Provider>
   );

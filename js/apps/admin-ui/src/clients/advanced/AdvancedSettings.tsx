@@ -111,6 +111,21 @@ export const AdvancedSettings = ({
             defaultValue={realm?.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
+
+          {realm?.offlineSessionMaxLifespanEnabled && (
+            <TokenLifespan
+              id="clientOfflineSessionMax"
+              name={convertAttributeNameToForm(
+                "attributes.client.offline.session.max.lifespan",
+              )}
+              defaultValue={
+                realm?.offlineSessionMaxLifespanEnabled
+                  ? realm.offlineSessionMaxLifespan
+                  : undefined
+              }
+              units={["minute", "day", "hour"]}
+            />
+          )}
           <DefaultSwitchControl
             name={convertAttributeNameToForm<FormFields>(
               "attributes.tls.client.certificate.bound.access.tokens",

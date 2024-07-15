@@ -75,7 +75,7 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
     private final CredentialConfigId vcConfigId;
 
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-6
-    // vct sort of additional category for sd-jw.
+    // vct sort of additional category for sd-jwt.
     private final VerifiableCredentialType vct;
 
     public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {

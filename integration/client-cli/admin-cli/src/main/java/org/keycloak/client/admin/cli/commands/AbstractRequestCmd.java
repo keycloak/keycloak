@@ -29,6 +29,7 @@ import org.keycloak.client.cli.util.HeadersBodyStatus;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.client.cli.util.OutputFormat;
 import org.keycloak.client.cli.util.ReturnFields;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -265,6 +266,11 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 ReflectionUtil.merge(ctx.getResult(), (ObjectNode) ctxremote.getResult());
             }
             ctx = ctxremote;
+            try {
+                ctx.setContent(JsonSerialization.writeValueAsString(ctxremote.getResult()));
+            } catch (IOException e) {
+                throw new RuntimeException("Could not convert merge result to string " + e.getMessage(), e);
+            }
         }
 
         if (attrs.size() > 0) {

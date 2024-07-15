@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../admin-client";
 import { useNavigate } from "react-router-dom";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { toOrganizations } from "./routes/Organizations";
 import { useRealm } from "../context/realm-context/RealmContext";

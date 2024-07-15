@@ -117,7 +117,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             )}
           </>
         )}
-        <TextControl
+        <TextAreaControl
           name="description"
           label={t("description")}
           labelIcon={t("scopeDescriptionHelp")}

@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialRequest {
 
-    private Format format;
+    private String format;
 
     @JsonProperty("credential_identifier")
     private String credentialIdentifier;
@@ -44,12 +44,11 @@ public class CredentialRequest {
     @JsonProperty("credential_definition")
     private CredentialDefinition credentialDefinition;
 
-
-    public Format getFormat() {
+    public String getFormat() {
         return format;
     }
 
-    public CredentialRequest setFormat(Format format) {
+    public CredentialRequest setFormat(String format) {
         this.format = format;
         return this;
     }

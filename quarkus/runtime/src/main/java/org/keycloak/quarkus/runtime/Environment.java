@@ -42,7 +42,9 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
-    public static final String IMPORT_EXPORT_MODE = "import_export";
+    public static final String NON_SERVER_MODE = "nonserver";
+    public static final String PROFILE ="kc.profile";
+    public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = File.separator + "data";
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String PROD_PROFILE_VALUE = "prod";
@@ -139,8 +141,8 @@ public final class Environment {
         return Optional.ofNullable(org.keycloak.common.util.Environment.getProfile()).orElse("").equalsIgnoreCase(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
     }
 
-    public static boolean isImportExportMode() {
-        return IMPORT_EXPORT_MODE.equalsIgnoreCase(org.keycloak.common.util.Environment.getProfile());
+    public static boolean isNonServerMode() {
+        return NON_SERVER_MODE.equalsIgnoreCase(org.keycloak.common.util.Environment.getProfile());
     }
 
     public static boolean isWindows() {

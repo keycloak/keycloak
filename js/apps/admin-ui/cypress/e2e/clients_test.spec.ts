@@ -20,6 +20,7 @@ import CommonPage from "../support/pages/CommonPage";
 import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
 import DedicatedScopesMappersTab from "../support/pages/admin-ui/manage/clients/client_details/DedicatedScopesMappersTab";
 import { ClientRegistrationPage } from "../support/pages/admin-ui/manage/clients/ClientRegistrationPage";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -30,6 +31,7 @@ const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const attributesTab = new AttributesTab();
 const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
+const realmSettings = new RealmSettingsPage();
 
 describe("Clients test", () => {
   const realmName = `clients-realm-${uuid()}`;
@@ -878,6 +880,30 @@ describe("Clients test", () => {
       advancedTab.clickExcludeSessionStateSwitch();
       advancedTab.clickUseRefreshTokenForClientCredentialsGrantSwitch();
       advancedTab.revertCompatibility();
+    });
+
+    it("Client Offline Session Max", () => {
+      configureOfflineSessionMaxInRealmSettings(true);
+
+      cy.findByTestId("token-lifespan-clientOfflineSessionMax").should("exist");
+
+      configureOfflineSessionMaxInRealmSettings(false);
+
+      cy.findByTestId("token-lifespan-clientOfflineSessionMax").should(
+        "not.exist",
+      );
+
+      function configureOfflineSessionMaxInRealmSettings(enabled: boolean) {
+        commonPage.sidebar().goToRealmSettings();
+        realmSettings.goToSessionsTab();
+        realmSettings.setOfflineSessionMaxSwitch(enabled);
+        realmSettings.saveSessions();
+
+        commonPage.sidebar().goToClients();
+        commonPage.tableToolbarUtils().searchItem(client);
+        commonPage.tableUtils().clickRowItemLink(client);
+        clientDetailsPage.goToAdvancedTab();
+      }
     });
 
     it("Advanced settings", () => {

@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
+            <artifactId>keycloak-admin-client-tests</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

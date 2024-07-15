@@ -332,7 +332,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 // public clients can not exchange tokens from other client
                 forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
             }
-            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
                 event.detail(Details.REASON, "client not allowed to exchange to audience");
                 event.error(Errors.NOT_ALLOWED);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
@@ -408,10 +408,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         if (targetUserSession == null) {
-            // if no session is associated with a subject_token, a stateless session is created to only allow building a token to the audience
+            // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
-
+                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
 
         event.session(targetUserSession);
@@ -434,8 +433,13 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
         }
 
+        if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
+            responseBuilder.getAccessToken().setSessionId(null);
+        }
+
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-            && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
+                && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }

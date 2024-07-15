@@ -34,10 +34,9 @@ import static org.keycloak.client.cli.util.ConfigUtil.getHandler;
 import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.cli.util.ConfigUtil.saveTokens;
 import static org.keycloak.client.cli.util.IoUtil.printErr;
-import static org.keycloak.client.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
-
+import static org.keycloak.common.util.IoUtils.readPasswordFromConsole;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -104,17 +103,23 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
 
             // if user was set there needs to be a password so we can authenticate
             if (password == null) {
-                password = readSecret("Enter password: ");
+            	password = System.getenv("KC_CLI_PASSWORD");
+            }
+            if (password == null) {
+                password = readPasswordFromConsole("password");
             }
             // if secret was set to be read from stdin, then ask for it
             if ("-".equals(secret) && keystore == null) {
-                secret = readSecret("Enter client secret: ");
+                secret = readPasswordFromConsole("client secret");
             }
         } else if (keystore != null || secret != null || clientSet) {
             grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
             printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
             if (keystore == null && secret == null) {
-                secret = readSecret("Enter client secret: ");
+            	secret = System.getenv("KC_CLI_CLIENT_SECRET");
+            	if (secret == null) {
+                    secret = readPasswordFromConsole("client secret");
+            	}
             }
         }
 
@@ -128,8 +133,17 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
             }
 
             if (storePass == null) {
-                storePass = readSecret("Enter keystore password: ");
-                keyPass = readSecret("Enter key password: ");
+            	storePass = System.getenv("KC_CLI_STORE_PASSWORD");
+            }
+            if (keyPass == null) {
+            	keyPass = System.getenv("KC_CLI_KEY_PASSWORD");
+            }
+            
+            if (storePass == null) {
+                storePass = readPasswordFromConsole("keystore password");
+                if (keyPass == null) {
+                	keyPass = readPasswordFromConsole("key password");
+                }
             }
 
             if (keyPass == null) {

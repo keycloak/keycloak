@@ -87,6 +87,5 @@ public interface VCSigningServiceProviderFactory extends ComponentFactory<Verifi
      *
      * @return the format
      */
-    Format supportedFormat();
-
+    String supportedFormat();
 }

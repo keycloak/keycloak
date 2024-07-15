@@ -134,9 +134,9 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(Organizations::toRepresentation);
+            return provider.getAllStream(attributes, first, max).map(Organizations::toBriefRepresentation);
         } else {
-            return provider.getAllStream(search, exact, first, max).map(Organizations::toRepresentation);
+            return provider.getAllStream(search, exact, first, max).map(Organizations::toBriefRepresentation);
         }
     }
 

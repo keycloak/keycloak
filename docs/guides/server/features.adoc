@@ -40,11 +40,6 @@ For example to disable `impersonation`, enter this command:
 
 <@kc.build parameters="--features-disabled=\"impersonation\""/>
 
-You can disable all default features by entering this command:
-
-<@kc.build parameters="--features-disabled=\"default\""/>
-
-This command can be used in combination with `features` to explicitly set what features should be available.
 It is not allowed to have a feature in both the `features-disabled` list and the `features` list.
 
 When a feature is disabled all versions of that feature are disabled.

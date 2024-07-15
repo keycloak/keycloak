@@ -42,6 +42,7 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./AddTranslationsDialog";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 import "../../realm-settings-section.css";
 
@@ -271,6 +272,11 @@ export const AttributeGeneralSettings = ({
               )}
             </Grid>
           </FormGroup>
+          <DefaultSwitchControl
+            name="multivalued"
+            label={t("multivalued")}
+            labelIcon={t("multivaluedHelp")}
+          />
           <SelectControl
             name="group"
             label={t("attributeGroup")}

@@ -7,9 +7,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.FileUtils;
 
 import java.io.File;
+import java.nio.file.Files;
 
 @Mojo(name = "keycloak-guide", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
 public class GuideMojo extends AbstractMojo {
@@ -29,7 +29,7 @@ public class GuideMojo extends AbstractMojo {
             Log log = getLog();
             File topDir = new File(sourceDir);
 
-            for (File srcDir: topDir.listFiles(d -> d.isDirectory() && !d.getName().equals("templates"))) {
+            for (File srcDir : topDir.listFiles(d -> d.isDirectory() && !d.getName().equals("templates"))) {
                 if (srcDir.getName().equals("target") || srcDir.getName().equals("src")) {
                     // those are standard maven folders, ignore them
                     continue;
@@ -41,7 +41,8 @@ public class GuideMojo extends AbstractMojo {
                 }
 
                 if (srcDir.getName().equals("images")) {
-                    FileUtils.copyDirectoryStructure(srcDir, targetDir);
+                    log.info("Copy files from " + srcDir + " to " + targetDir);
+                    Files.walkFileTree(srcDir.toPath(), new DirectoryCopyVisitor(targetDir.toPath()));
                 } else {
                     log.info("Guide dir: " + srcDir.getAbsolutePath());
                     log.info("Target dir: " + targetDir.getAbsolutePath());

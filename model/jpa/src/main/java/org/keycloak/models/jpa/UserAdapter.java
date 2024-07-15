@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.UserCredentialManager;
@@ -45,6 +47,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.keycloak.organization.OrganizationProvider;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -391,7 +395,15 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public long getGroupsCount() {
-        return createCountGroupsQuery().getSingleResult();
+        Long result = createCountGroupsQuery().getSingleResult();
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            if (result > 0 && provider.getByMember(this) != null) {
+                // remove from the count the organization group membership
+                result--;
+            }
+        }
+        return result;
     }
 
     @Override

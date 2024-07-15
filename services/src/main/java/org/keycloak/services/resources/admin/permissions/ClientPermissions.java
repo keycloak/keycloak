@@ -32,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.storage.StorageId;
 
@@ -319,7 +320,12 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to) {
+    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel client) {
+        return canExchangeTo(authorizedClient, client, null);
+    }
+
+    @Override
+    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token) {
 
         ResourceServer server = resourceServer(to);
         if (server == null) {
@@ -351,7 +357,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             logger.debug(TOKEN_EXCHANGE + " not initialized");
             return false;
         }
-        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient, token);
         EvaluationContext context = new DefaultEvaluationContext(identity, session) {
             @Override
             public Map<String, Collection<String>> getBaseAttributes() {

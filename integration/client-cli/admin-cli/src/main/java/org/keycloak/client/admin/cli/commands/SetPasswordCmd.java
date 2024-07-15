@@ -28,9 +28,9 @@ import static org.keycloak.client.admin.cli.operations.UserOperations.getIdFromU
 import static org.keycloak.client.admin.cli.operations.UserOperations.resetUserPassword;
 import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
 import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.common.util.IoUtils.readPasswordFromConsole;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -61,7 +61,7 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
         }
 
         if (pass == null) {
-            pass = readSecret("Enter password: ");
+            pass = readPasswordFromConsole("password");
         }
 
         ConfigData config = loadConfig();

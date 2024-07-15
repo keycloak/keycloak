@@ -151,8 +151,8 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         }
 
         if (!StoreProvider.JPA.equals(StoreProvider.getCurrentProvider())) {
-            builder.environment().put("KEYCLOAK_ADMIN", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+            builder.environment().put("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
+            builder.environment().put("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin");
         }
 
         if (restart.compareAndSet(false, true)) {

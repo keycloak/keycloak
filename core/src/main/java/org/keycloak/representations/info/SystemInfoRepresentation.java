@@ -17,7 +17,6 @@
 
 package org.keycloak.representations.info;
 
-import org.keycloak.common.Version;
 
 import java.util.Date;
 import java.util.Locale;
@@ -43,9 +42,9 @@ public class SystemInfoRepresentation {
     private String userTimezone;
     private String userLocale;
 
-    public static SystemInfoRepresentation create(long serverStartupTime) {
+    public static SystemInfoRepresentation create(long serverStartupTime, String serverVersion) {
         SystemInfoRepresentation rep = new SystemInfoRepresentation();
-        rep.version = Version.VERSION;
+        rep.version = serverVersion;
         rep.serverTime = new Date().toString();
         rep.uptimeMillis = System.currentTimeMillis() - serverStartupTime;
         rep.uptime = formatUptime(rep.uptimeMillis);

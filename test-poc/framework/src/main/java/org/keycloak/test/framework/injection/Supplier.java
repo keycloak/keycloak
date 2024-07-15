@@ -10,8 +10,6 @@ public interface Supplier<T, S extends Annotation> {
 
     InstanceWrapper<T, S> getValue(Registry registry, S annotation);
 
-    LifeCycle getLifeCycle();
-
     boolean compatible(InstanceWrapper<T, S> a, InstanceWrapper<T, S> b);
 
     default void close(T instance) {}

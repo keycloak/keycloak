@@ -52,7 +52,7 @@ public class ClientRemovedEvent extends BaseClientEvent {
 
     public static ClientRemovedEvent create(ClientModel client) {
         var clientRoles = client.getRolesStream().collect(Collectors.toMap(RoleModel::getId, RoleModel::getName));
-        return new ClientRemovedEvent(client.getId(), client.getClientId(), client.getRealm().getId(), clientRoles);
+        return new ClientRemovedEvent(client.getId(), client.getRealm().getId(), client.getClientId(), clientRoles);
     }
 
 
