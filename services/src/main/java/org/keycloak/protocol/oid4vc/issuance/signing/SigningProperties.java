@@ -38,7 +38,8 @@ public enum SigningProperties {
     DECOYS("decoys", "Number of decoys to be added.", "The number of decoys to be added to the SD-JWT.", ProviderConfigProperty.STRING_TYPE, 0),
     HASH_ALGORITHM("hashAlgorithm", "Hash algorithm for SD-JWTs.", "The hash algorithm to be used for the SD-JWTs.", ProviderConfigProperty.STRING_TYPE, "sha-256"),
     VISIBLE_CLAIMS("visibleClaims", "Visible claims of the SD-JWT.", "List of claims to stay disclosed in the SD-JWT.", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null),
-    VC_CONFIG_ID("vcConfigId", "Credential configuration identifier", "The identifier of this credential configuration", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+    VC_CONFIG_ID("vcConfigId", "Credential configuration identifier", "The identifier of this credential configuration", ProviderConfigProperty.STRING_TYPE, null),
+    VC_VCT("vct", "Credential Type", "The type of this credential", ProviderConfigProperty.STRING_TYPE, null);
 
     private final String key;
     private final String label;

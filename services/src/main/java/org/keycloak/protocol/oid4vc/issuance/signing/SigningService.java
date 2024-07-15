@@ -54,7 +54,9 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
 
     @Override
     public String locator() {
-        return format.name();
+        // Future implementation might consider credential type or even cofiguration specific signers.
+        // See: org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService.locator
+        return  VerifiableCredentialsSigningService.locator(format, null, null);
     }
 
     /**

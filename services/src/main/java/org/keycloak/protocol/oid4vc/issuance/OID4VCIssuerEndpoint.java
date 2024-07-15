@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -309,21 +310,44 @@ public class OID4VCIssuerEndpoint {
             checkScope(credentialRequestVO);
         }
 
+        // Both Format and identifier are optional.
+        // If the credential_identifier is present, Format can't be present. But this implementation will
+        // tolerate the presence of both, waiting for clarity in specifications.
+        // This implementation will priviledge the presence of the credential config identifier.
+        String requestedCredentialId = credentialRequestVO.getCredentialIdentifier();
         Format requestedFormat = credentialRequestVO.getFormat();
-        String requestedCredential = credentialRequestVO.getCredentialIdentifier();
 
-        SupportedCredentialConfiguration supportedCredentialConfiguration = Optional
-                .ofNullable(OID4VCIssuerWellKnownProvider.getSupportedCredentials(this.session)
-                        .get(requestedCredential))
-                .orElseThrow(
-                        () -> {
-                            LOGGER.debugf("Unsupported credential %s was requested.", requestedCredential);
-                            return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
-                        });
+        // Check if at least one of both is available.
+        if(requestedCredentialId==null && requestedFormat==null){
+            LOGGER.debugf("Missing both  configuration id and requested format. At least one shall be specified.");
+            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG_AND_FORMAT));
+        }
 
-        if (!supportedCredentialConfiguration.getFormat().equals(requestedFormat)) {
-            LOGGER.debugf("Format %s is not supported for credential %s.", requestedFormat, requestedCredential);
-            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
+        Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(this.session);
+
+        // resolve from identifier first
+        SupportedCredentialConfiguration supportedCredentialConfiguration = null;
+        if (requestedCredentialId!=null) {
+            supportedCredentialConfiguration = supportedCredentials.get(requestedCredentialId);
+            if(supportedCredentialConfiguration==null){
+                LOGGER.debugf("Credential with configuration id %s not found.", requestedCredentialId);
+                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
+            }
+            // Then for format. We know spec does not allow both parameter. But we are tolerant if you send both
+            // Was found by id, check that the format matches.
+            if (requestedFormat!=null && !requestedFormat.equals(supportedCredentialConfiguration.getFormat())){
+                LOGGER.debugf("Credential with configuration id %s does not support requested format %s, but supports %s.", requestedCredentialId, requestedFormat, supportedCredentialConfiguration.getFormat());
+                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
+            }
+        }
+
+        if(supportedCredentialConfiguration==null && requestedFormat!=null) {
+            // Search by format
+            supportedCredentialConfiguration = getSupportedCredentialConfiguration(credentialRequestVO, supportedCredentials, requestedFormat);
+            if(supportedCredentialConfiguration==null) {
+                LOGGER.debugf("Credential with requested format %s, not supported.", requestedFormat);
+                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
+            }
         }
 
         CredentialResponse responseVO = new CredentialResponse();
@@ -334,8 +358,38 @@ public class OID4VCIssuerEndpoint {
             default -> throw new BadRequestException(
                     getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
-        return Response.ok().entity(responseVO)
-                .build();
+        return Response.ok().entity(responseVO).build();
+    }
+
+    private SupportedCredentialConfiguration getSupportedCredentialConfiguration(CredentialRequest credentialRequestVO, Map<String, SupportedCredentialConfiguration> supportedCredentials, Format requestedFormat) {
+        // 1. Format resolver
+        List<SupportedCredentialConfiguration> configs = supportedCredentials.values().stream()
+                .filter(supportedCredential -> supportedCredential.getFormat() == requestedFormat)
+                .collect(Collectors.toList());
+
+        List<SupportedCredentialConfiguration> matchingConfigs;
+
+        switch (requestedFormat) {
+            // Will detach this when each format provides logic on how to resolve from definition.
+            case JWT_VC, LDP_VC -> {
+                matchingConfigs = configs.stream()
+                        .filter(supportedCredential -> Objects.equals(supportedCredential.getCredentialDefinition(), credentialRequestVO.getCredentialDefinition()))
+                        .collect(Collectors.toList());
+            }
+            // Resolve from vct for sd-jwt
+            case SD_JWT_VC -> {
+                matchingConfigs = configs.stream()
+                        .filter(supportedCredential -> Objects.equals(supportedCredential.getVct(), credentialRequestVO.getVct()))
+                        .collect(Collectors.toList());
+            }
+            default -> throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
+        }
+
+        if (matchingConfigs.isEmpty()) {
+            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG));
+        }
+
+        return matchingConfigs.iterator().next();
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
@@ -394,18 +448,22 @@ public class OID4VCIssuerEndpoint {
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO);
 
-        String specificConfigKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.getId());
-        String formatKey = credentialConfig.getFormat().name();
+        String fullyQualifiedConfigKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.deriveType(), credentialConfig.deriveConfiId());
+        String formatAndTypeKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.deriveType(), null);
+        String formatOnlyKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), null, null);
 
-        // First retrieve by format/id, then by format only
+        // Search from specific to general config.
         VerifiableCredentialsSigningService signingService = signingServices.getOrDefault(
-                specificConfigKey, signingServices.get(formatKey)
+                fullyQualifiedConfigKey,
+                signingServices.getOrDefault(
+                        formatAndTypeKey,
+                        signingServices.get(formatOnlyKey))
         );
 
         return Optional.ofNullable(signingService)
                 .map(service -> service.signCredential(vcIssuanceContext))
                 .orElseThrow(() -> new IllegalArgumentException(
-                        String.format("No signer found for specific config '%s' or format '%s'.", specificConfigKey, formatKey)
+                        String.format("No signer found for specific config '%s' or '%s' or format '%s'.", fullyQualifiedConfigKey, formatAndTypeKey, formatOnlyKey)
                 ));
     }
 

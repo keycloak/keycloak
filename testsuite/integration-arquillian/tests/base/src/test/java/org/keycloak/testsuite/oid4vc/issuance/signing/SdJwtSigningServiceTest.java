@@ -34,8 +34,10 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
+import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.SdJwtUtils;
@@ -76,8 +78,9 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                                     "did:web:test.org",
                                     0,
                                     List.of(),
-                                    new StaticTimeProvider(1000),
-                                    Optional.empty(), null));
+                                    Optional.empty(),
+                                    VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
+                                    CredentialConfigId.from("test-credential")));
         } catch (RunOnServerException ros) {
             throw ros.getCause();
         }
@@ -195,8 +198,9 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 "did:web:test.org",
                 decoys,
                 visibleClaims,
-                new StaticTimeProvider(1000),
-                keyId, null);
+                keyId,
+                VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
+                CredentialConfigId.from("test-credential"));
 
         VerifiableCredential testCredential = getTestCredential(claims);
         VCIssuanceContext vcIssuanceContext = new VCIssuanceContext()
@@ -245,7 +249,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
-            assertEquals("The type should be included", TEST_TYPES.get(0), theToken.getOtherClaims().get("vct"));
+            assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
 
             List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
             if (sds != null && !sds.isEmpty()){

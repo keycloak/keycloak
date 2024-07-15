@@ -14,26 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.util.JsonSerialization;
 
-import java.net.URI;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Pojo to represent a VerifiableCredential for internal handling
+ * Pojo to represent a CredentialDefinition for internal handling
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialDefinition {
@@ -41,24 +35,7 @@ public class CredentialDefinition {
     @JsonProperty("@context")
     private List<String> context;
     private List<String> type = new ArrayList<>();
-    private URI issuer;
-    private Date issuanceDate;
-    private URI id;
-    private Date expirationDate;
     private CredentialSubject credentialSubject = new CredentialSubject();
-    @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<>();
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return additionalProperties;
-    }
-
-    @JsonAnySetter
-    public CredentialDefinition setAdditionalProperties(String name, Object property) {
-        additionalProperties.put(name, property);
-        return this;
-    }
 
     public List<String> getContext() {
         return context;
@@ -78,42 +55,6 @@ public class CredentialDefinition {
         return this;
     }
 
-    public URI getIssuer() {
-        return issuer;
-    }
-
-    public CredentialDefinition setIssuer(URI issuer) {
-        this.issuer = issuer;
-        return this;
-    }
-
-    public Date getIssuanceDate() {
-        return issuanceDate;
-    }
-
-    public CredentialDefinition setIssuanceDate(Date issuanceDate) {
-        this.issuanceDate = issuanceDate;
-        return this;
-    }
-
-    public URI getId() {
-        return id;
-    }
-
-    public CredentialDefinition setId(URI id) {
-        this.id = id;
-        return this;
-    }
-
-    public Date getExpirationDate() {
-        return expirationDate;
-    }
-
-    public CredentialDefinition setExpirationDate(Date expirationDate) {
-        this.expirationDate = expirationDate;
-        return this;
-    }
-
     public CredentialSubject getCredentialSubject() {
         return credentialSubject;
     }
@@ -123,8 +64,19 @@ public class CredentialDefinition {
         return this;
     }
 
-    public CredentialDefinition setAdditionalProperties(Map<String, Object> additionalProperties) {
-        this.additionalProperties = additionalProperties;
-        return this;
+    public String toJsonString() {
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static CredentialDefinition fromJsonString(String jsonString) {
+        try {
+            return JsonSerialization.readValue(jsonString, CredentialDefinition.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

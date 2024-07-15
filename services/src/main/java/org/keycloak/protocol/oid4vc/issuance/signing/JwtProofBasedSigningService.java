@@ -37,6 +37,11 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.JsonSerialization;
 
+/**
+ * Common signing service logic to handle proofs.
+ *
+ * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
+ */
 public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
 
     private static final Logger LOGGER = Logger.getLogger(JwtProofBasedSigningService.class);
