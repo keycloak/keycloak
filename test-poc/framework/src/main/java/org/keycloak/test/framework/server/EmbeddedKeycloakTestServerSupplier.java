@@ -7,4 +7,9 @@ public class EmbeddedKeycloakTestServerSupplier extends AbstractKeycloakTestServ
         return new EmbeddedKeycloakTestServer();
     }
 
+    @Override
+    public boolean requiresDatabase() {
+        return true;
+    }
+
 }

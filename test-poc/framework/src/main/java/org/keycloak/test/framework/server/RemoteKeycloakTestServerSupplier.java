@@ -7,4 +7,9 @@ public class RemoteKeycloakTestServerSupplier extends AbstractKeycloakTestServer
         return new RemoteKeycloakTestServer();
     }
 
+    @Override
+    public boolean requiresDatabase() {
+        return false;
+    }
+
 }

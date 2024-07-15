@@ -1,31 +1,76 @@
 package org.keycloak.test.framework.database;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-public interface DatabaseConfig {
+public class DatabaseConfig {
 
-    default String vendor() {
-        return "";
+    private String vendor;
+    private String containerImage;
+    private String urlHost;
+    private String username;
+    private String password;
+
+    public String getVendor() {
+        return vendor;
     }
 
-    default String containerImage() {
-        return "";
+    public DatabaseConfig vendor(String vendor) {
+        this.vendor = vendor;
+        return this;
     }
 
-    default String urlHost() {
-        return "";
+    public String getContainerImage() {
+        return containerImage;
     }
 
-    default String username() {
-        return "";
+    public DatabaseConfig containerImage(String containerImage) {
+        this.containerImage = containerImage;
+        return this;
     }
 
-    default String password() {
-        return "";
+    public String getUrlHost() {
+        return urlHost;
     }
 
-    default boolean isExternal() {
-        return false;
+    public DatabaseConfig urlHost(String urlHost) {
+        this.urlHost = urlHost;
+        return this;
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public DatabaseConfig username(String username) {
+        this.username = username;
+        return this;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public DatabaseConfig password(String password) {
+        this.password = password;
+        return this;
+    }
+
+    public Map<String, String> toConfig() {
+        Map<String, String> config = new HashMap<>();
+        if (vendor != null) {
+            config.put("db", vendor);
+        }
+        if (urlHost != null) {
+            config.put("db-url-host", urlHost);
+        }
+        if (username != null) {
+            config.put("db-username", username);
+        }
+        if (password != null) {
+            config.put("db-password", password);
+        }
+        return config;
+    }
+
 }

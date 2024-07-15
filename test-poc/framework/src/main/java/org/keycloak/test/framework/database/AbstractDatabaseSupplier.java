@@ -2,12 +2,11 @@ package org.keycloak.test.framework.database;
 
 import org.keycloak.test.framework.KeycloakTestDatabase;
 import org.keycloak.test.framework.injection.InstanceWrapper;
+import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.Supplier;
 
-public abstract class DatabaseSupplier implements Supplier<TestDatabase, KeycloakTestDatabase> {
-
-    protected static TestDatabase testDatabase;
+public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase, KeycloakTestDatabase> {
 
     @Override
     public Class<KeycloakTestDatabase> getAnnotationClass() {
@@ -21,10 +20,9 @@ public abstract class DatabaseSupplier implements Supplier<TestDatabase, Keycloa
 
     @Override
     public InstanceWrapper<TestDatabase, KeycloakTestDatabase> getValue(Registry registry, KeycloakTestDatabase annotation) {
-        InstanceWrapper<TestDatabase, KeycloakTestDatabase> wrapper = new InstanceWrapper<>(this, annotation);
-        testDatabase = registry.getDependency(TestDatabase.class, wrapper);
+        TestDatabase testDatabase = getTestDatabase();
         testDatabase.start();
-        return wrapper;
+        return new InstanceWrapper<>(this, annotation, testDatabase, LifeCycle.GLOBAL);
     }
 
     @Override
@@ -32,7 +30,6 @@ public abstract class DatabaseSupplier implements Supplier<TestDatabase, Keycloa
         return true;
     }
 
-    public TestDatabase getTestDatabase() {
-        return testDatabase;
-    }
+    abstract TestDatabase getTestDatabase();
+
 }

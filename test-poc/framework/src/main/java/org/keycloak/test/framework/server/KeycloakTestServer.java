@@ -1,11 +1,10 @@
 package org.keycloak.test.framework.server;
 
-import org.keycloak.test.framework.database.DatabaseConfig;
-import org.keycloak.test.framework.database.TestDatabase;
+import java.util.Map;
 
 public interface KeycloakTestServer {
 
-    void start(KeycloakTestServerConfig serverConfig, DatabaseConfig databaseConfig);
+    void start(KeycloakTestServerConfig serverConfig, Map<String, String> databaseConfig);
 
     void stop();
 

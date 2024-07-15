@@ -1,18 +1,15 @@
 package org.keycloak.test.framework.server;
 
-import org.keycloak.test.framework.database.DatabaseConfig;
-import org.keycloak.test.framework.database.TestDatabase;
+import java.util.Map;
 
 public class RemoteKeycloakTestServer implements KeycloakTestServer {
 
     @Override
-    public void start(KeycloakTestServerConfig serverConfig, DatabaseConfig databaseConfig) {
-
+    public void start(KeycloakTestServerConfig serverConfig, Map<String, String> databaseConfig) {
     }
 
     @Override
     public void stop() {
-
     }
 
     @Override
