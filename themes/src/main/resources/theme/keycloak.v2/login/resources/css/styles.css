@@ -69,7 +69,7 @@ div.kc-logo-text span {
     border-color: transparent black transparent transparent;
 }
 
-.kc-recovery-codes-list {
+#kc-recovery-codes-list {
     columns: 2;
 }
 
