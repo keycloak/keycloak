@@ -86,6 +86,13 @@ public class Registry {
     }
 
     public void beforeEach(Object testInstance) {
+        findRequestedInstances(testInstance);
+        matchDeployedInstancesWithRequestedInstances();
+        deployRequestedInstances();
+        injectFields(testInstance);
+    }
+
+    private void findRequestedInstances(Object testInstance) {
         Class testClass = testInstance.getClass();
         RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
         requestedInstances.add(requestedServerInstance);
@@ -101,7 +108,9 @@ public class Registry {
             LOGGER.tracev("Requested suppliers: {0}",
                     requestedInstances.stream().map(r -> r.getSupplier().getClass().getSimpleName()).collect(Collectors.joining(", ")));
         }
+    }
 
+    private void matchDeployedInstancesWithRequestedInstances() {
         Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
             RequestedInstance<?, ?> requestedInstance = itr.next();
@@ -124,8 +133,10 @@ public class Registry {
                 }
             }
         }
+    }
 
-        itr = requestedInstances.iterator();
+    private void deployRequestedInstances() {
+        Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
             RequestedInstance requestedInstance = itr.next();
 
@@ -140,7 +151,9 @@ public class Registry {
 
             itr.remove();
         }
+    }
 
+    private void injectFields(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
             InstanceWrapper<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
             try {
@@ -208,7 +221,17 @@ public class Registry {
     }
 
     private InstanceWrapper getDeployedInstance(RequestedInstance requestedInstance) {
-        return deployedInstances.stream().filter(i -> i.getValue().equals(requestedInstance.getValueType())).findFirst().orElse(null);
+        Class requestedValueType = requestedInstance.getValueType();
+        for (InstanceWrapper<?, ?> i : deployedInstances) {
+            if (requestedValueType != null) {
+                if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
+                    return i;
+                }
+            } else if (i.getSupplier().equals(requestedInstance.getSupplier())) {
+                return i;
+            }
+        }
+        return null;
     }
 
     private void loadSuppliers() {
