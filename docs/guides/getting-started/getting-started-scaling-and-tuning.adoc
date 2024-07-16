@@ -5,26 +5,25 @@
 title="Scaling"
 summary="Get started with {project_name} scaling and tuning">
 
-Once you have {project_name} started you can next consider adapting your instance to whatever load may be needed. Scaling and tuning can help you address:
-- minimizing resource utilization
-- excessive response times
-- database pool contention
-- out of memory errors, or excessive garbage collection overhead
-- providing higher availability via horizontal scaling
+Once you have {project_name} started you can next consider adapting your instance to whatever load may be needed. Scaling and tuning can help you:
+
+- minimize resource utilization
+- achieve target response times
+- minimize database pool contention
+- resolve out of memory errors, or excessive garbage collection overhead
+- provide higher availability via horizontal scaling
 
 == Vertical Scaling
 
-As you monitor your {project_name} workload if you see that CPU or memory is either under or over utilized, please consult <@links.ha id="concepts-memory-and-cpu-sizing" /> to better tune the resources available to the VM.
+As you monitor your {project_name} workload if you see that CPU or memory is either under or over utilized, please consult <@links.ha id="concepts-memory-and-cpu-sizing" /> to better tune the resources available to the Java Virtual Machine (JVM).
 
-Before increasing the amount of memory available to the VM, in particular when experiencing an out of memory error, it's best to determine what is contributing to the increased footprint via a heap dump. Excessive response times may also indicate the HTTP work queue is too large and tuning for load shedding would be better than simply providing more memory - see below.
+Before increasing the amount of memory available to the JVM, in particular when experiencing an out of memory error, it is best to determine what is contributing to the increased footprint via a heap dump. Excessive response times may also indicate the HTTP work queue is too large and tuning for load shedding would be better than simply providing more memory - see below.
 
-=== VM Tuning
+=== Common Tuning Options
 
-JVM Tuning is highly related to the resources available. For example the default garbage collection settings may work well for nominal heap sizes, but may be not ideal for much smaller or larger VMs. If you are experiencing excessive GC overhead in addition to utilizing the JVM GC tuning options, please open an issue or discussion to raise awareness of your situation.
+{project_name} automatically adjusts the number of used threads based upon how many cores you make available. Manually changing the thread count can improve overall throughput see <@links.ha id="concepts-threads" /> - but this must be done in conjunction with other JVM resources, such as database connections - see <@links.ha id="concepts-database-connections" /> as otherwise you may be moving a bottleneck somewhere else.
 
-While there is some automatic adjustment based upon how many cores you make available to your {project_name} server, fine-tuning thread counts can improve overall throughput see <@links.ha id="concepts-threads" /> - but this must be done in conjunction with other VM resources, such as database connections - see <@links.ha id="concepts-database-connections" /> otherwise you may be moving a bottleneck somewhere else.
-
-To limit memory utilization of queued work and to provide for load shedding see <@links.ha id="concepts-threads#load-shedding" /> 
+To limit memory utilization of queued work and to provide for load shedding see <@links.ha id="concepts-threads" anchor="load-shedding" />.
 
 If you are experiencing timeouts in obtaining database connections, you should consider increasing the number of connections available - see <@links.ha id="concepts-database-connections" />.
 
@@ -34,28 +33,29 @@ Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale. 
 
 == Horizontal Scaling
 
-A single {project_name} instance is susceptible to availability issues. If the instance goes down and the  you will be faced with a full outage until another instance comes up, and unless 'persistent-user-sessions' feature is enabled all of your on-going sessions will be lost. By running at least two cluster members on different machines you will greatly increase the availability of {project_name}. 
+A single {project_name} instance is susceptible to availability issues. If the instance goes down you will be faced with a full outage until another instance comes up, and unless the '`persistent-user-sessions`' feature is enabled all of your ongoing sessions will be lost. By running at least two cluster members on different machines you will greatly increase the availability of {project_name}.
 
-There will also be a limit on the amount of concurrent requests a single VM can effectively handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching limit scaling.
+There will also be a limit on the amount of concurrent requests a single JVM can effectively handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching, limit scaling.
 
-In general it's best to let the {project_name} Operator handle horizontal scaling concerns. When using the Operator simply set the Keycloak custom resource spec.instances as desired to horizontally scale - see <@links.ha id="deploy-keycloak-kubernetes" /> for more.
+In general, it is best to let the {project_name} Operator handle horizontal scaling concerns. When using the Operator simply set the Keycloak custom resource `spec.instances` as desired to horizontally scale - see <@links.ha id="deploy-keycloak-kubernetes" /> for more.
 
-If you are not using the Operator, please review the following.
+If you are not using the Operator, please review the following:
 
-Your instances should be on separate machines if possible to increase availability. On Kubernetes you can use Pod anti-affinitity to enforce this.
+* Your instances should be on separate machines if possible to increase availability. On Kubernetes you can use Pod anti-affinitity to enforce this.
 
-You need to use distributed or external caching for cluster members to share the same session state - see <@links.server id="caching" /> for more on the relevant configuration. The embedded Infinispan cache has horizontal scaling considerations including:
+* You need to use distributed caching and for multi-site clusters external caching for cluster members to share the same session state - see <@links.server id="caching" /> for more on the relevant configuration. The embedded Infinispan cache has horizontal scaling considerations including:
+
 - Your instances will need a way to find each other, see discovery in the server guide.
-- It is not well suited for clusters spanning multiple availability zones, also known as a stretch clusters. It is recommended that when using the embedded Infinispan cache that the instances all exist in the same availability zone. On Kubernetes you can use pod affinity to enforce this grouping of pods.
+- It is not well suited for clusters spanning multiple availability zones, also known as a stretch clusters. It is recommended that when using the embedded Infinispan cache that the instances all exist in the same availability zone to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes you can use Pod affinity to enforce this grouping of Pods.
 - It does not gracefully handle multiple members joining or leaving at the same time - the latter can lead to data loss. On Kubernetes you can use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially.
 
-Keep in mind that running at least 2 instances does not make your installation highly available as you are still vulnerable to the loss of a single site. Please consult the high availability guide for more on a multi-site deployment - see <@links.ha id="introduction" />.
+To avoid losing service availability when a whole site is not available, see the high availability guide for more information on a multi-site deployment - see <@links.ha id="introduction" />.
 
 === Horizontal Autoscaling
 
 Horizontal autoscaling allows for adding or removing {project_name} instances on demand. Keep in mind that startup times will not be instantaneous and that optimized images should be used to minimize the start time.
 
-When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform an expensive rebalancing of cache state. Rebalancing can be avoided by using an external cache - see <@links.ha id="connect-keycloak-to-external-infinispan" />.
+When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the session caches which can get expensive if a lot of entries exist in those caches.
 
 On Kubernetes the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler].
 
