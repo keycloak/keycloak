@@ -5,6 +5,7 @@ import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
@@ -45,7 +46,7 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> a, InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> b) {
+    public boolean compatible(InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> a, RequestedInstance<KeycloakTestServer, KeycloakIntegrationTest> b) {
         return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
