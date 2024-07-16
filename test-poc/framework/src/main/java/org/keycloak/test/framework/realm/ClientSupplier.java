@@ -8,6 +8,7 @@ import org.keycloak.test.framework.TestClient;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
@@ -56,9 +57,8 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<ClientResource, TestClient> a, InstanceWrapper<ClientResource, TestClient> b) {
-        return a.getAnnotation().config().equals(b.getAnnotation().config()) &&
-                a.getNote(CLIENT_UUID_KEY, String.class).equals(b.getNote(CLIENT_UUID_KEY, String.class));
+    public boolean compatible(InstanceWrapper<ClientResource, TestClient> a, RequestedInstance<ClientResource, TestClient> b) {
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
