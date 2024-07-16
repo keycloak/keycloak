@@ -422,7 +422,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void failEmailVerificationRequiredActionWithUserEmailNullAndCustomPriority() {
+    public void skipRequiredActionsWithCustomPriority() {
         enableRequiredActionForUser(RequiredAction.VERIFY_EMAIL);
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
 
@@ -444,11 +444,25 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Login
         loginPage.open();
         loginPage.login(USERNAME, PASSWORD);
-        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR).error(Messages.VERIFY_EMAIL_NULL_ERROR).assertEvent();
 
-        user.setEmail(EMAIL);
-        user.setEmailVerified(false);
-        userResource.update(user);
+        // change password
+        changePasswordPage.assertCurrent();
+        changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+
+        // Second, complete the profile
+        verifyProfilePage.assertCurrent();
+        events.expectRequiredAction(EventType.VERIFY_PROFILE)
+                .user(testUserId)
+                .detail(Details.FIELDS_TO_UPDATE, UserModel.EMAIL)
+                .assertEvent();
+
+        verifyProfilePage.updateEmail(EMAIL, NEW_FIRST_NAME, NEW_LAST_NAME);
+        events.expectRequiredAction(EventType.UPDATE_PROFILE)
+                .user(testUserId)
+                .assertEvent();
+
+        verifyEmailPage.assertCurrent();
     }
 
     @Test

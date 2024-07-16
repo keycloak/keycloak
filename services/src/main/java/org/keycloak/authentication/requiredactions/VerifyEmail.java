@@ -49,7 +49,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
-        if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
+        if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified() && !Validation.isBlank(context.getUser().getEmail())) {
             context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
             logger.debug("User is required to verify email");
         }
@@ -66,16 +66,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         String email = context.getUser().getEmail();
         if (Validation.isBlank(email)) {
-            EventBuilder event = context.getEvent().clone();
-            event.event(EventType.VERIFY_EMAIL_ERROR)
-                    .user(context.getUser())
-                    .detail(Details.USERNAME, context.getUser().getUsername())
-                    .error(Messages.VERIFY_EMAIL_NULL_ERROR);
-
-            Response errorResponse = context.form()
-                    .setError(Messages.VERIFY_EMAIL_NULL_ERROR)
-                    .createErrorPage(Response.Status.BAD_REQUEST);
-            context.challenge(errorResponse);
+            context.ignore();
             return;
         }
 

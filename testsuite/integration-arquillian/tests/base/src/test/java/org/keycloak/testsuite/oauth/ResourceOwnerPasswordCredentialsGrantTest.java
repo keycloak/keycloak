@@ -87,6 +87,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     private static String userId2;
 
+    private static String defaultUserId;
+
     private static String userIdMultipleOTPs;
 
     private final TimeBasedOTP totp = new TimeBasedOTP();
@@ -164,6 +166,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         userIdMultipleOTPs = adminClient.realm("test").users().search("direct-login-multiple-otps", true).get(0).getId();
         userId = adminClient.realm("test").users().search("direct-login", true).get(0).getId();
         userId2 = adminClient.realm("test").users().search("direct-login-otp", true).get(0).getId();
+        defaultUserId = adminClient.realm("test").users().search("test-user@localhost", true).get(0).getId();
     }
 
     @Test
@@ -307,6 +310,10 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private void grantAccessToken(String login, String clientId) throws Exception {
+        grantAccessToken(userId, login, clientId, null);
+    }
+
+    private void grantAccessToken(String userId, String login, String clientId) throws Exception {
         grantAccessToken(userId, login, clientId, null);
     }
 
@@ -532,20 +539,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         oauth.clientId("resource-owner");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
-
-        assertEquals(400, response.getStatusCode());
-
-        assertEquals("invalid_grant", response.getError());
-        assertEquals("Account is not fully set up", response.getErrorDescription());
-
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
-                .error(Errors.RESOLVE_REQUIRED_ACTIONS)
-                .user((String) null)
-                .assertEvent();
+        grantAccessToken(defaultUserId, "test-user@localhost", "resource-owner");
 
         RealmManager.realm(realmResource).verifyEmail(false);
         UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
@@ -553,7 +547,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
         Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
-    
+
     @Test
     public void grantAccessTokenVerifyEmailInvalidPassword() throws Exception {
 
@@ -617,7 +611,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }
     }
-    
+
     @Test
     public void grantAccessTokenExpiredPasswordInvalidPassword() throws Exception {
 
