@@ -12,4 +12,8 @@ public class EmbeddedKeycloakTestServerSupplier extends AbstractKeycloakTestServ
         return true;
     }
 
+    @Override
+    public String getAlias() {
+        return "embedded";
+    }
 }
