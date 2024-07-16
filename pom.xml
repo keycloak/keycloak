@@ -1113,7 +1113,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-policy-enforcer</artifactId>
+                <artifactId>keycloak-policy-enforcer-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
