@@ -1,8 +1,8 @@
 package org.keycloak.test.framework.database;
 
-public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
+public class MySQLDatabaseSupplier extends AbstractDatabaseSupplier {
 
-    public static final String VENDOR = "postgres";
+    public static final String VENDOR = "mysql";
 
     @Override
     TestDatabase getTestDatabase() {
@@ -10,7 +10,7 @@ public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
                 .vendor(VENDOR)
                 .username(DEFAULT_DB_USERNAME)
                 .password(DEFAULT_DB_PASSWORD)
-                .containerImage("postgres:latest");
+                .containerImage("mysql:latest");
         return new TestDatabase(databaseConfig);
     }
 

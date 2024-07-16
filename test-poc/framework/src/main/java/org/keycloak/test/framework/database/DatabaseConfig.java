@@ -7,7 +7,7 @@ public class DatabaseConfig {
 
     private String vendor;
     private String containerImage;
-    private String urlHost;
+    private String url;
     private String username;
     private String password;
 
@@ -29,12 +29,12 @@ public class DatabaseConfig {
         return this;
     }
 
-    public String getUrlHost() {
-        return urlHost;
+    public String getUrl() {
+        return url;
     }
 
-    public DatabaseConfig urlHost(String urlHost) {
-        this.urlHost = urlHost;
+    public DatabaseConfig url(String url) {
+        this.url = url;
         return this;
     }
 
@@ -61,8 +61,8 @@ public class DatabaseConfig {
         if (vendor != null) {
             config.put("db", vendor);
         }
-        if (urlHost != null) {
-            config.put("db-url-host", urlHost);
+        if (url != null) {
+            config.put("db-url", url);
         }
         if (username != null) {
             config.put("db-username", username);
