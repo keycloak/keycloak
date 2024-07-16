@@ -457,7 +457,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         try {
             UPConfig testUpConfig = configuration.clone();
             List<String> attributes = List.of("foo", "bar", "zar");
-            List<String> values = IntStream.range(1, 6).mapToObj(Integer::toString).collect(Collectors.toList());
+            List<String> values = IntStream.range(0, 5).mapToObj(Integer::toString).collect(Collectors.toList());
             Set<String> valuesSet = new HashSet<>(values);
 
             for (String attribute : attributes) {
@@ -479,7 +479,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(attribute);
+                    updateProfilePage.clickAddAttributeValue(elementId);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
@@ -489,14 +489,14 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
                 loginPage.open();
-                assertThat(IntStream.range(1, 6).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+                assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
                 final String lastValue = values.get(values.size() - 1);
 
                 // remove multiple values, only the last value should be kept as you can't remove the last one
                 for (String value : values) {
                     try {
-                        updateProfilePage.clickRemoveAttributeValue(attribute + "-1");
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
                     } catch (ElementClickInterceptedException e) {
                         if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
                             throw e;
@@ -515,14 +515,14 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(attribute);
+                    updateProfilePage.clickAddAttributeValue(elementId);
                 }
 
-                assertThat(IntStream.range(1, 6).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+                assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
                 for (String value : values) {
                     try {
-                        updateProfilePage.clickRemoveAttributeValue(attribute + "-1");
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
                     } catch (ElementClickInterceptedException e) {
                         if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
                             throw e;
@@ -530,8 +530,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                     }
                 }
                 // make sure the last attribute is set with a value
-                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-1"))) {
-                    updateProfilePage.setAttribute(attribute + "-1", lastValue);
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
+                    updateProfilePage.setAttribute(attribute + "-0", lastValue);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
@@ -545,7 +545,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(attribute);
+                    updateProfilePage.clickAddAttributeValue(elementId);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
 
