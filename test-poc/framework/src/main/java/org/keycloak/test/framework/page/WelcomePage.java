@@ -6,9 +6,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
-public class WelcomePage {
-
-    private final WebDriver driver;
+public class WelcomePage extends AbstractPage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -26,8 +24,7 @@ public class WelcomePage {
     private WebElement pageAlert;
 
     public WelcomePage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
+        super(driver);
     }
 
     public void navigateTo() {

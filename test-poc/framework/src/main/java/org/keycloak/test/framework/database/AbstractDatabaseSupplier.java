@@ -4,6 +4,7 @@ import org.keycloak.test.framework.KeycloakTestDatabase;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 
 public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase, KeycloakTestDatabase> {
@@ -26,7 +27,7 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<TestDatabase, KeycloakTestDatabase> a, InstanceWrapper<TestDatabase, KeycloakTestDatabase> b) {
+    public boolean compatible(InstanceWrapper<TestDatabase, KeycloakTestDatabase> a, RequestedInstance<TestDatabase, KeycloakTestDatabase> b) {
         return true;
     }
 

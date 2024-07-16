@@ -7,6 +7,7 @@ import org.keycloak.test.framework.TestRealm;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
@@ -51,9 +52,8 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<RealmResource, TestRealm> a, InstanceWrapper<RealmResource, TestRealm> b) {
-        return a.getAnnotation().config().equals(b.getAnnotation().config()) &&
-                a.getNote(REALM_NAME_KEY, String.class).equals(b.getNote(REALM_NAME_KEY, String.class));
+    public boolean compatible(InstanceWrapper<RealmResource, TestRealm> a, RequestedInstance<RealmResource, TestRealm> b) {
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override

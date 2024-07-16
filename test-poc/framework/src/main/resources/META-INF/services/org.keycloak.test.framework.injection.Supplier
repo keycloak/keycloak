@@ -10,3 +10,4 @@ org.keycloak.test.framework.webdriver.FirefoxWebDriverSupplier
 org.keycloak.test.framework.database.DevMemDatabaseSupplier
 org.keycloak.test.framework.database.DevFileDatabaseSupplier
 org.keycloak.test.framework.database.PostgresDatabaseSupplier
+org.keycloak.test.framework.page.PageSupplier
