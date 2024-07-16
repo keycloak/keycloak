@@ -30,15 +30,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Proof {
 
     @JsonProperty("proof_type")
-    private ProofType proofType;
+    private String proofType;
 
     private Object proofObject;
 
-    public ProofType getProofType() {
+    public String getProofType() {
         return proofType;
     }
 
-    public Proof setProofType(ProofType proofType) {
+    public Proof setProofType(String proofType) {
         this.proofType = proofType;
         return this;
     }
