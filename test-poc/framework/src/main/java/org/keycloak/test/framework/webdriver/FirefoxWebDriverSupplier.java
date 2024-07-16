@@ -35,4 +35,8 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
         instance.quit();
     }
 
+    @Override
+    public String getAlias() {
+        return "firefox";
+    }
 }

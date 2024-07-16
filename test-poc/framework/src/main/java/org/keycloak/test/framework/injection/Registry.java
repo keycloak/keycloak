@@ -2,9 +2,11 @@ package org.keycloak.test.framework.injection;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.keycloak.test.framework.config.Config;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -209,10 +211,48 @@ public class Registry {
     }
 
     private void loadSuppliers() {
-        ServiceLoader.load(Supplier.class).iterator().forEachRemaining(suppliers::add);
+        Iterator<Supplier> supplierIterator = ServiceLoader.load(Supplier.class).iterator();
+        Set<Class> loadedValueTypes = new HashSet<>();
+        Set<Supplier> skippedSuppliers = new HashSet<>();
+
+        while (supplierIterator.hasNext()) {
+            Supplier supplier = supplierIterator.next();
+            boolean shouldAdd = false;
+            Class supplierValueType = supplier.getValueType();
+
+            if (!loadedValueTypes.contains(supplierValueType)) {
+                String requestedSupplier = Config.getInstance().getSelectedSupplier(supplierValueType);
+                if (requestedSupplier != null) {
+                    if (requestedSupplier.equals(supplier.getAlias())) {
+                        shouldAdd = true;
+                    }
+                } else {
+                    shouldAdd = true;
+                }
+            }
+
+            if (shouldAdd) {
+                suppliers.add(supplier);
+                loadedValueTypes.add(supplierValueType);
+            } else {
+                skippedSuppliers.add(supplier);
+            }
+        }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracev("Suppliers: {0}", suppliers.stream().map(s -> s.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            StringBuilder loaded = new StringBuilder();
+            loaded.append("Loaded suppliers:");
+            for (Supplier s : suppliers) {
+                loaded.append("\n - " + ValueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
+            }
+            LOGGER.trace(loaded.toString());
+
+            StringBuilder skipped = new StringBuilder();
+            skipped.append("Skipped suppliers:");
+            for (Supplier s : skippedSuppliers) {
+                skipped.append("\n - " + ValueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
+            }
+            LOGGER.trace(skipped.toString());
         }
     }
 
