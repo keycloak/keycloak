@@ -98,7 +98,7 @@ export const DiscoveryEndpointField = ({
           type="url"
           placeholder={
             id === "oidc"
-              ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
+              ? "https://hostname/realms/master/.well-known/openid-configuration"
               : ""
           }
           validated={
