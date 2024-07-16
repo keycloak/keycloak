@@ -28,10 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -40,6 +42,8 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -125,6 +129,12 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
         assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+
+        AuthenticationManagementResource flows = testRealm().flows();
+        List<AuthenticationExecutionInfoRepresentation> executions = flows.getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW);
+        assertThat(executions.stream().filter(e -> "Organization".equals(e.getDisplayName())).count(), is(1L));
+        executions = flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
+        assertThat(executions.stream().filter(e -> "First Broker Login - Conditional Organization".equals(e.getDisplayName())).count(), is(1L));
     }
 
     @Test
