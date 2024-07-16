@@ -299,6 +299,28 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4(@types/node@20.14.12)(jsdom@24.1.1)(lightningcss@1.25.1)(terser@5.31.0)
 
+  js/apps/kc-create:
+    dependencies:
+      chalk:
+        specifier: ^5.3.0
+        version: 5.3.0
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      fs-extra:
+        specifier: ^11.2.0
+        version: 11.2.0
+      mustache:
+        specifier: ^4.2.0
+        version: 4.2.0
+      simple-git:
+        specifier: ^3.25.0
+        version: 3.25.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.2
+        version: 20.14.12
+
   js/apps/keycloak-server:
     dependencies:
       '@octokit/rest':
@@ -1054,6 +1076,12 @@ packages:
   '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui':
     resolution: {directory: js/apps/admin-ui, type: directory}
 
+  '@kwsites/file-exists@1.1.1':
+    resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
+
+  '@kwsites/promise-deferred@1.1.1':
+    resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+
   '@microsoft/api-extractor-model@7.28.13':
     resolution: {integrity: sha512-39v/JyldX4MS9uzHcdfmjjfS6cYGAoXV+io8B5a338pkHiSt+gy2eXQ0Q7cGFJ7quSa1VqqlMdlPrB6sLR/cAw==}
 
@@ -1646,9 +1674,6 @@ packages:
 
   '@types/mocha@10.0.7':
     resolution: {integrity: sha512-GN8yJ1mNTcFcah/wKEFIJckJx9iJLoMSzWcfRRuxz/Jk+U6KQNnml+etbtxFK8lPjzOw3zp4Ha/kjSst9fsHYw==}
-
-  '@types/node@20.14.11':
-    resolution: {integrity: sha512-kprQpL8MMeszbz6ojB5/tU8PLN4kesnN8Gjzw349rDlNgsSzg90lAVj3llK99Dh7JON+t9AuscPPFW6mPbTnSA==}
 
   '@types/node@20.14.12':
     resolution: {integrity: sha512-r7wNXakLeSsGT0H1AU863vS2wa5wBOK4bWMjZz2wj+8nBx+m5PeIn0k8AloSLpRuiwdRQZwarZqHE4FNArPuJQ==}
@@ -3656,6 +3681,10 @@ packages:
   muggle-string@0.3.1:
     resolution: {integrity: sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==}
 
+  mustache@4.2.0:
+    resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
+    hasBin: true
+
   nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -4224,6 +4253,9 @@ packages:
   simple-bin-help@1.8.0:
     resolution: {integrity: sha512-0LxHn+P1lF5r2WwVB/za3hLRIsYoLaNq1CXqjbrs3ZvLuvlWnRKrUjEWzV7umZL7hpQ7xULiQMV+0iXdRa5iFg==}
     engines: {node: '>=14.16'}
+
+  simple-git@3.25.0:
+    resolution: {integrity: sha512-KIY5sBnzc4yEcJXW7Tdv4viEz8KyG+nU0hay+DWZasvdFOYKeUZ6Xc25LUHHjw0tinPT7O1eY6pzX7pRT1K8rw==}
 
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
@@ -5491,6 +5523,14 @@ snapshots:
       - immer
       - react-native
 
+  '@kwsites/file-exists@1.1.1':
+    dependencies:
+      debug: 4.3.5(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@kwsites/promise-deferred@1.1.1': {}
+
   '@microsoft/api-extractor-model@7.28.13(@types/node@20.14.12)':
     dependencies:
       '@microsoft/tsdoc': 0.14.2
@@ -6123,7 +6163,7 @@ snapshots:
 
   '@types/gunzip-maybe@1.4.2':
     dependencies:
-      '@types/node': 20.14.11
+      '@types/node': 20.14.12
 
   '@types/lodash-es@4.17.12':
     dependencies:
@@ -6132,10 +6172,6 @@ snapshots:
   '@types/lodash@4.17.1': {}
 
   '@types/mocha@10.0.7': {}
-
-  '@types/node@20.14.11':
-    dependencies:
-      undici-types: 5.26.5
 
   '@types/node@20.14.12':
     dependencies:
@@ -6160,7 +6196,7 @@ snapshots:
 
   '@types/tar-fs@2.0.4':
     dependencies:
-      '@types/node': 20.14.11
+      '@types/node': 20.14.12
       '@types/tar-stream': 3.1.3
 
   '@types/tar-stream@3.1.3':
@@ -8444,6 +8480,8 @@ snapshots:
 
   muggle-string@0.3.1: {}
 
+  mustache@4.2.0: {}
+
   nanoid@3.3.7: {}
 
   natural-compare@1.4.0: {}
@@ -9022,6 +9060,14 @@ snapshots:
   signal-exit@4.1.0: {}
 
   simple-bin-help@1.8.0: {}
+
+  simple-git@3.25.0:
+    dependencies:
+      '@kwsites/file-exists': 1.1.1
+      '@kwsites/promise-deferred': 1.1.1
+      debug: 4.3.5(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
 
   slash@3.0.0: {}
 
