@@ -4,6 +4,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
 
@@ -16,7 +17,7 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(KeycloakTestServerConfig serverConfig) {
+    public void start(KeycloakTestServerConfig serverConfig, Map<String, String> databaseConfig) {
         keycloak = new RawKeycloakDistribution(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort);
 
         // Set environment variables user and password for Keycloak Admin used by Keycloak instance.
@@ -34,6 +35,8 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
         }
 
         serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+
+        databaseConfig.forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
 
         keycloak.run(rawOptions).assertStartedDevMode();
     }
