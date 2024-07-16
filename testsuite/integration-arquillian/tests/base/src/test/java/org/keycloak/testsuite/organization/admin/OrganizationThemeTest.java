@@ -152,7 +152,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom");
-        loginPage.login("tom", "password");
+        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        loginPage.login("password");
         waitForPage(driver, "update account information", false);
         Assert.assertTrue("Driver should be on the consumer realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));

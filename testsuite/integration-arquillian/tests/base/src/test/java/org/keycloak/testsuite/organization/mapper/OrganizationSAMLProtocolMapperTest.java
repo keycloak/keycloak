@@ -36,6 +36,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
@@ -53,6 +54,8 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
     @Test
     public void testAttribute() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
+        organization.identityProviders().get(broker.getAlias()).delete().close();
         addMember(organization);
         String clientId = "saml-client";
         testRealm().clients().create(ClientBuilder.create()

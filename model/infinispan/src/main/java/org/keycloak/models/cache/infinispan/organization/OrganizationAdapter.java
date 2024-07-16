@@ -158,6 +158,11 @@ public class OrganizationAdapter implements OrganizationModel {
     }
 
     @Override
+    public boolean isMember(UserModel user) {
+        return delegate.isMember(this, user);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof OrganizationModel)) return false;

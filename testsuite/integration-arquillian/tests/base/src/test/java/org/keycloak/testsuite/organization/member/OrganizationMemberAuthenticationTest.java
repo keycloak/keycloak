@@ -74,7 +74,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
     }
 
     @Test
-    public void testAuthenticateUnmanagedMemberWehnProviderDisabled() throws IOException {
+    public void testAuthenticateUnmanagedMemberWhenProviderDisabled() throws IOException {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 

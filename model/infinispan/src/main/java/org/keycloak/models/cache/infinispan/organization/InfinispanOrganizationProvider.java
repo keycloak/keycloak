@@ -161,7 +161,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getByMember(UserModel member) {
+    public Stream<OrganizationModel> getByMember(UserModel member) {
         return orgDelegate.getByMember(member);
     }
 

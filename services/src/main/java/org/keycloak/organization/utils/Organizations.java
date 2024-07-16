@@ -21,8 +21,11 @@ import static java.util.Optional.ofNullable;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -57,7 +60,7 @@ public class Organizations {
         }
 
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+            OrganizationModel organization = resolveOrganization(session);
 
             return organization != null && organization.getId().equals(group.getName());
         }
@@ -65,18 +68,24 @@ public class Organizations {
         return true;
     }
 
-    public static List<IdentityProviderModel> resolveBroker(KeycloakSession session, UserModel user) {
+    public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
-        OrganizationModel organization = provider.getByMember(user);
+        List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
+                .filter(OrganizationModel::isEnabled)
+                .filter((org) -> org.isManaged(user))
+                .toList();
 
-        if (organization == null || !organization.isEnabled()) {
+        if (organizations.isEmpty()) {
             return List.of();
         }
 
-        if (provider.isManagedMember(organization, user)) {
+        List<IdentityProviderModel> brokers = new ArrayList<>();
+
+        for (OrganizationModel organization : organizations) {
+            // user is a managed member, try to resolve the origin broker and redirect automatically
             List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-            return session.users().getFederatedIdentitiesStream(realm, user)
+            session.users().getFederatedIdentitiesStream(realm, user)
                     .map(f -> {
                         IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
 
@@ -92,10 +101,10 @@ public class Organizations {
 
                         return null;
                     }).filter(Objects::nonNull)
-                    .toList();
+                    .forEach(brokers::add);
         }
 
-        return List.of();
+        return brokers;
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
@@ -105,7 +114,7 @@ public class Organizations {
                 return;
             }
 
-            OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+            OrganizationModel current = resolveOrganization(session);
 
             try {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
@@ -218,26 +227,37 @@ public class Organizations {
         return email.substring(domainSeparator + 1);
     }
 
+    public static OrganizationModel resolveOrganization(KeycloakSession session) {
+        return resolveOrganization(session, null, null);
+    }
+
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user) {
-        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+        return resolveOrganization(session, user, null);
+    }
 
-        if (organization != null) {
-            return organization;
-        }
+    public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
+        Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
 
-        if (user == null) {
-            return null;
+        if (organization.isPresent()) {
+            return organization.get();
         }
 
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-        OrganizationModel memberOrg = provider.getByMember(user);
 
-        if (memberOrg != null) {
-            return memberOrg;
+        organization = ofNullable(user).stream().flatMap(provider::getByMember)
+                .filter(o -> o.isEnabled() && provider.isManagedMember(o, user))
+                .findAny();
+
+        if (organization.isPresent()) {
+            return organization.get();
         }
 
-        String domain = Organizations.getEmailDomain(user.getEmail());
+        if (user != null && domain == null) {
+            domain = getEmailDomain(user.getEmail());
+        }
 
-        return domain == null ? null : provider.getByDomainName(domain);
+        return ofNullable(domain)
+                .map(provider::getByDomainName)
+                .orElse(null);
     }
 }

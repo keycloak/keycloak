@@ -206,6 +206,11 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public boolean isMember(UserModel user) {
+        return provider.isMember(this, user);
+    }
+
+    @Override
     public OrganizationEntity getEntity() {
         return entity;
     }

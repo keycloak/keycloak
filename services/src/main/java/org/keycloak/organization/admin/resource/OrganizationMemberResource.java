@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -178,29 +179,27 @@ public class OrganizationMemberResource {
         throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
-    @Path("{id}/organization")
+    @Path("{id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns the organization associated with the user that has the specified id")
-    public OrganizationRepresentation getOrganization(@PathParam("id") String id) {
+    @Operation(summary = "Returns the organizations associated with the user that has the specified id")
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getMember(id);
-        OrganizationModel organization = provider.getByMember(member);
 
-        if (organization == null) {
-            throw ErrorResponse.error("Not associated with an organization", Status.NOT_FOUND);
-        }
+        return provider.getByMember(member).map((org) -> {
+            OrganizationRepresentation organization = new OrganizationRepresentation();
 
-        OrganizationRepresentation rep = new OrganizationRepresentation();
+            organization.setId(org.getId());
+            organization.setName(org.getName());
 
-        rep.setId(organization.getId());
-
-        return rep;
+            return organization;
+        });
     }
 
     private UserModel getMember(String id) {

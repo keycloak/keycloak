@@ -18,6 +18,8 @@
 package org.keycloak.organization.protocol.mappers.saml;
 
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -65,16 +67,20 @@ public class OrganizationMembershipMapper extends AbstractSAMLProtocolMapper imp
         }
 
         UserModel user = userSession.getUser();
-        OrganizationModel organization = provider.getByMember(user);
+        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
+        AttributeType attribute = new AttributeType(ORGANIZATION_ATTRIBUTE_NAME);
 
-        if (organization == null || !organization.isEnabled()) {
+        attribute.setFriendlyName(ORGANIZATION_ATTRIBUTE_NAME);
+        attribute.setNameFormat(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get());
+
+        organizations.forEach(organization -> {
+            attribute.addAttributeValue(organization.getAlias());
+        });
+
+        if (attribute.getAttributeValue().isEmpty()) {
             return;
         }
 
-        AttributeType attribute = new AttributeType(ORGANIZATION_ATTRIBUTE_NAME);
-        attribute.setFriendlyName(ORGANIZATION_ATTRIBUTE_NAME);
-        attribute.setNameFormat(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get());
-        attribute.addAttributeValue(organization.getAlias());
         attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
     }
 

@@ -67,11 +67,6 @@ public interface OrganizationMembersResource {
             @QueryParam("max") Integer max
     );
 
-    @Path("{id}/organization")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    OrganizationRepresentation getOrganization(@PathParam("id") String id);
-
     @Path("{id}")
     OrganizationMemberResource member(@PathParam("id") String id);
 

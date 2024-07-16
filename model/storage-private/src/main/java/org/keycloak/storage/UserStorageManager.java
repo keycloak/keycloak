@@ -117,10 +117,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && user != null) {
             // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel organization = organizationProvider.getByMember(user);
-
-            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(user) && !organization.isEnabled()) || 
-                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(user))) {
+            if (isOrganizationDisabled(session, user)) {
                 return new ReadOnlyUserModelDelegate(user) {
                     @Override
                     public boolean isEnabled() {
@@ -291,13 +288,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                     }
 
                     logger.tracef("This provider (%s) cannot provide enough users to pass firstResult so we are going to filter it out and change "
-                            + "firstResult for next provider: %d - %d = %d", provider.getClass().getSimpleName(), 
+                            + "firstResult for next provider: %d - %d = %d", provider.getClass().getSimpleName(),
                             currentFirst.get(), expectedNumberOfUsersForProvider, currentFirst.get() - expectedNumberOfUsersForProvider);
                     currentFirst.set((int) (currentFirst.get() - expectedNumberOfUsersForProvider));
                     return false;
                 })
-                // collecting stream of providers to ensure the filtering (above) is evaluated before we move forward to actual querying    
-                .collect(Collectors.toList()).stream(); 
+                // collecting stream of providers to ensure the filtering (above) is evaluated before we move forward to actual querying
+                .collect(Collectors.toList()).stream();
         }
 
         if (needsAdditionalFirstResultFiltering.get() && currentFirst.get() > 0) {
@@ -925,5 +922,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return Collections.emptyList();
+    }
+
+    private boolean isOrganizationDisabled(KeycloakSession session, UserModel delegate) {
+        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+
+        return organizationProvider.getByMember(delegate)
+                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 }

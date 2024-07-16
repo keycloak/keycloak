@@ -549,7 +549,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 OrganizationModel organization = resolveOrganization(session, user);
 
                 if (organization != null) {
-                    attributes.put("org", new OrganizationBean(session, organization, user));
+                    attributes.put("org", new OrganizationBean(organization, user));
                 }
             }
         }

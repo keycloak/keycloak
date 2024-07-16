@@ -123,12 +123,13 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     public void testIdentityFirstUserNotExistEmailMatchBrokerDomainNoPublicBroker() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
+        idpRep.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertFalse(driver.getPageSource().contains("Your email domain matches the neworg organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the neworg organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
@@ -221,6 +222,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
         brokerRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+        brokerRep.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
 
         openIdentityFirstLoginPage(bc.getUserEmail(), true, brokerRep, false, true);
@@ -243,6 +245,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
+        brokerRep.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         brokerRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
 
@@ -445,6 +448,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource org1 = testRealm().organizations().get(createOrganization(org1Name).getId());
         IdentityProviderRepresentation org1Broker = org1.identityProviders().getIdentityProviders().get(0);
         org1Broker.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        org1Broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         org1Broker.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get(org1Broker.getAlias()).update(org1Broker);
 
