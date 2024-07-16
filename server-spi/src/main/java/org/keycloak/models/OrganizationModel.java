@@ -77,4 +77,6 @@ public interface OrganizationModel {
     Stream<IdentityProviderModel> getIdentityProviders();
 
     boolean isManaged(UserModel user);
+
+    boolean isMember(UserModel user);
 }

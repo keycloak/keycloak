@@ -33,7 +33,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -52,7 +51,6 @@ public class OrganizationInvitationResource {
 
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final OrganizationProvider provider;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
     private final int tokenExpiration;
@@ -60,7 +58,6 @@ public class OrganizationInvitationResource {
     public OrganizationInvitationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        this.provider = session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent;
         this.tokenExpiration = getTokenExpiration();
@@ -74,9 +71,7 @@ public class OrganizationInvitationResource {
         UserModel user = session.users().getUserByEmail(realm, email);
 
         if (user != null) {
-            OrganizationModel org = provider.getByMember(user);
-
-            if (org != null && org.equals(organization)) {
+            if (organization.isMember(user)) {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 

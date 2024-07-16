@@ -210,7 +210,7 @@ public class LinkedAccountsResource {
         }
 
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            if (Organizations.resolveBroker(session, user).stream()
+            if (Organizations.resolveHomeBroker(session, user).stream()
                     .map(IdentityProviderModel::getAlias)
                     .anyMatch(providerAlias::equals)) {
                 throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION), Response.Status.BAD_REQUEST);

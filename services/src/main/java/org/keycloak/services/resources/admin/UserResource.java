@@ -1082,7 +1082,6 @@ public class UserResource {
 
         attributes.remove(UserModel.USERNAME);
         attributes.remove(UserModel.EMAIL);
-        attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
 
         return attributes.entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))

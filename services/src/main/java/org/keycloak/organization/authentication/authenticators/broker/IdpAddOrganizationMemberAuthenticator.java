@@ -30,6 +30,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
@@ -41,9 +42,10 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        OrganizationProvider provider = context.getSession().getProvider(OrganizationProvider.class);
+        KeycloakSession session = context.getSession();
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         UserModel user = context.getUser();
-        OrganizationModel organization = (OrganizationModel) context.getSession().getAttribute(OrganizationModel.class.getName());
+        OrganizationModel organization = Organizations.resolveOrganization(session);
 
         if (organization == null) {
             context.attempted();
@@ -75,7 +77,7 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             return false;
         }
 
-        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+        OrganizationModel organization = Organizations.resolveOrganization(session);
 
         if (organization == null || !organization.isEnabled()) {
             return false;

@@ -18,7 +18,7 @@
 package org.keycloak.organization.validator;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.organization.utils.Organizations.resolveBroker;
+import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
 import java.util.Collections;
@@ -36,7 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
@@ -59,7 +59,10 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     @Override
     protected void doValidate(Object value, String inputHint, ValidationContext context, ValidatorConfig config) {
         KeycloakSession session = context.getSession();
-        OrganizationModel organization = resolveOrganization(context, session);
+        UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
+        AttributeContext attributeContext = upContext.getAttributeContext();
+        UserModel user = attributeContext.getUser();
+        OrganizationModel organization = Organizations.resolveOrganization(session, user);
 
         if (organization == null) {
             return;
@@ -121,7 +124,7 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     }
 
     private static Set<String> resolveExpectedDomainsForManagedUser(ValidationContext context, UserModel user) {
-        List<IdentityProviderModel> brokers = resolveBroker(context.getSession(), user);
+        List<IdentityProviderModel> brokers = resolveHomeBroker(context.getSession(), user);
 
         if (brokers.isEmpty()) {
             return Set.of();
@@ -163,24 +166,5 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
         // expect the email domain to match the domain set to the broker or none if not set
         String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         return  ofNullable(brokerDomain).map(Set::of).orElse(Set.of());
-    }
-
-    private OrganizationModel resolveOrganization(ValidationContext context, KeycloakSession session) {
-        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
-
-        if (organization != null) {
-            return organization;
-        }
-
-        UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
-        AttributeContext attributeContext = upContext.getAttributeContext();
-        UserModel user = attributeContext.getUser();
-
-        if (user != null) {
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            return provider.getByMember(user);
-        }
-
-        return null;
     }
 }

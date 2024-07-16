@@ -26,6 +26,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.organization.utils.Organizations;
 
 public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean {
 
@@ -74,7 +75,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             return false;
         }
 
-        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+        OrganizationModel organization = Organizations.resolveOrganization(session);
 
         if (organization != null && !organization.getId().equals(model.getOrganizationId())) {
             return false;

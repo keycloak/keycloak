@@ -469,10 +469,6 @@ public class ExportUtils {
             userRep.setGroups(groups);
         }
 
-        if (userRep.getAttributes() != null) {
-            userRep.getAttributes().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        }
-
         return userRep;
     }
 

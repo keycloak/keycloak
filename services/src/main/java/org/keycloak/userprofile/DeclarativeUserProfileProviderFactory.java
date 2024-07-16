@@ -354,12 +354,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                     attribute.addValidators(List.of(new AttributeValidatorMetadata(OrganizationMemberValidator.ID)));
                 }
             }
-
-            metadata.addAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE, -1,
-                            new AttributeValidatorMetadata(OrganizationMemberValidator.ID),
-                            new AttributeValidatorMetadata(ImmutableAttributeValidator.ID))
-                    .addReadCondition((c) -> false)
-                    .addWriteCondition((c) -> false);
         }
     }
 

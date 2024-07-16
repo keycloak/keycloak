@@ -23,11 +23,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
 
 public class OrganizationBean {
 
@@ -37,16 +35,12 @@ public class OrganizationBean {
     private final boolean isMember;
     private final Map<String, List<String>> attributes;
 
-    public OrganizationBean(KeycloakSession session, OrganizationModel organization, UserModel user) {
+    public OrganizationBean(OrganizationModel organization, UserModel user) {
         this.name = organization.getName();
         this.alias = organization.getAlias();
         this.domains = organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
-        this.isMember = user != null && organization.equals(getOrganizationProvider(session).getByMember(user));
+        this.isMember = user != null && organization.isMember(user);
         this.attributes = Collections.unmodifiableMap(organization.getAttributes());
-    }
-
-    private static OrganizationProvider getOrganizationProvider(KeycloakSession session) {
-        return session.getProvider(OrganizationProvider.class);
     }
 
     public String getName() {

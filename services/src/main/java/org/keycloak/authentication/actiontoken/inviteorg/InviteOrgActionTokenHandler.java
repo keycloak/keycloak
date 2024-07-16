@@ -84,19 +84,19 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 
-        if (orgProvider.getByMember(user) != null) {
-            event.user(user).error(Errors.USER_ORG_MEMBER_ALREADY);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
-                    .createInfoPage();
-        }
-
         if (organization == null) {
             event.user(user).error(Errors.ORG_NOT_FOUND);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
+                    .createInfoPage();
+        }
+
+        if (organization.isMember(user)) {
+            event.user(user).error(Errors.USER_ORG_MEMBER_ALREADY);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
                     .createInfoPage();
         }
 

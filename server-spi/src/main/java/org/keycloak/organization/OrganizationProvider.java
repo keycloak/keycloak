@@ -142,10 +142,10 @@ public interface OrganizationProvider extends Provider {
     /**
      * Returns the {@link OrganizationModel} that the {@code member} belongs to.
      *
-     * @param member the member of a organization
-     * @return the organization the {@code member} belongs to or {@code null} if the user doesn't belong to any.
+     * @param member the member of an organization
+     * @return the organizations the {@code member} belongs to or an empty stream if the user doesn't belong to any.
      */
-    OrganizationModel getByMember(UserModel member);
+    Stream<OrganizationModel> getByMember(UserModel member);
 
     /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
@@ -195,6 +195,17 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if the {@code member} is managed by the given {@code organization}. Otherwise, returns {@code false}
      */
     boolean isManagedMember(OrganizationModel organization, UserModel member);
+
+    /**
+     * Indicates if the given {@code user} is a member of the given {@code organization}.
+     *
+     * @param organization the organization
+     * @param user the member
+     * @return {@code true} if the user is a member. Otherwise, {@code false}
+     */
+    default boolean isMember(OrganizationModel organization, UserModel user) {
+        return getMemberById(organization, user.getId()) != null;
+    }
 
     /**
      * <p>Removes a member from the organization.

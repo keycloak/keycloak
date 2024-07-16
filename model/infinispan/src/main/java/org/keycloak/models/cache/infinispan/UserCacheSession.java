@@ -340,12 +340,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel organization = organizationProvider.getByMember(delegate);
-
-            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) ||
-                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate))) {
+            if (isOrganizationDisabled(session, delegate)) {
                 return new ReadOnlyUserModelDelegate(delegate) {
                     @Override
                     public boolean isEnabled() {
@@ -980,5 +975,14 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
         return List.of();
+    }
+
+    private boolean isOrganizationDisabled(KeycloakSession session, UserModel delegate) {
+        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+
+        return organizationProvider.getByMember(delegate)
+                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 }

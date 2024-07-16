@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -39,6 +40,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
@@ -48,8 +50,19 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testClaim() throws Exception {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization);
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        Assert.assertTrue(orga.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        member = getUserRepresentation(memberEmail);
 
         oauth.clientId("direct-grant");
         oauth.scope("openid organization");
@@ -60,10 +73,13 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> claim = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(claim, notNullValue());
-        assertThat(claim.get(organizationName), notNullValue());
+        assertThat(claim.get(orga.toRepresentation().getName()), notNullValue());
+        String orgaId = orga.toRepresentation().getName();
+        String orgbId = orgb.toRepresentation().getName();
+        assertThat(claim.get(orgaId), notNullValue());
+        assertThat(claim.get(orgbId), notNullValue());
     }
 
     @Test

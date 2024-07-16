@@ -17,12 +17,16 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationMemberResource {
 
@@ -32,4 +36,9 @@ public interface OrganizationMemberResource {
 
     @DELETE
     Response delete();
+
+    @Path("organizations")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> getOrganizations();
 }
