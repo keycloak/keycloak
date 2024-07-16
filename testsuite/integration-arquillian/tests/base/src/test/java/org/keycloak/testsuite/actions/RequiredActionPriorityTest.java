@@ -35,7 +35,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -89,9 +87,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected VerifyProfilePage verifyProfilePage;
-
-    @Page
-    protected VerifyEmailPage verifyEmailPage;
 
     @Page
     protected TermsAndConditionsPage termsPage;
@@ -419,36 +414,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
         events.expectLogin().assertEvent();
 
-    }
-
-    @Test
-    public void failEmailVerificationRequiredActionWithUserEmailNullAndCustomPriority() {
-        enableRequiredActionForUser(RequiredAction.VERIFY_EMAIL);
-        enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
-
-        RealmRepresentation realmRep = testRealm().toRepresentation();
-        realmRep.setVerifyEmail(true);
-        testRealm().update(realmRep);
-
-        final var requiredActionsCustomOrdered = List.of(
-                RequiredAction.VERIFY_EMAIL,
-                RequiredAction.UPDATE_PASSWORD
-        );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
-
-        final var userResource = testRealm().users().get(testUserId);
-        final var user = userResource.toRepresentation();
-        user.setEmail("");
-        userResource.update(user);
-
-        // Login
-        loginPage.open();
-        loginPage.login(USERNAME, PASSWORD);
-        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR).error(Messages.VERIFY_EMAIL_NULL_ERROR).assertEvent();
-
-        user.setEmail(EMAIL);
-        user.setEmailVerified(false);
-        userResource.update(user);
     }
 
     @Test

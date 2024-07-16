@@ -20,7 +20,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -33,7 +32,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
@@ -45,7 +43,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.PageFactory;
 
 import static org.junit.Assert.assertEquals;
@@ -893,9 +890,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         List<UserRepresentation> users = realm.users().search("no-email");
         assertEquals(1, users.size());
-        List<String> requiredActions = users.get(0).getRequiredActions();
-        assertEquals(1, requiredActions.size());
-        assertEquals(UserModel.RequiredAction.VERIFY_EMAIL.name(), requiredActions.get(0));
 
     }
 

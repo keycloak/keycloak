@@ -31,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -51,6 +52,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
@@ -109,6 +111,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     protected VerifyEmailPage verifyEmailPage;
 
     @Page
+    protected VerifyProfilePage verifyProfilePage;
+
+    @Page
     protected RegisterPage registerPage;
 
     @Page
@@ -137,8 +142,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
+                .firstName("test-user")
+                .lastName("test-user")
+                .emailVerified(false)
                 .email("test-user@localhost").build();
         testUserId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+    }
+
+    protected boolean removeVerifyProfileAtImport() {
+        // in this test verify profile is enabled
+        return false;
     }
 
     /**
@@ -1103,5 +1116,50 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         // Required action included in the action token is not valid anymore, because we don't know the provider for it
         assertThat(errorPage.getError(), is("Required actions included in the link are not valid"));
+    }
+
+    @Test
+    public void testVerifyEmailWithNoEmailAndVerifyProfile() throws Exception {
+        UserResource user = testRealm().users().get(testUserId);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("");
+        user.update(userRep);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        // verify profile should be presented first as the verify email is ignored without email
+        verifyProfilePage.assertCurrent();
+        events.expectRequiredAction(EventType.VERIFY_PROFILE)
+                .user(testUserId)
+                .detail(Details.FIELDS_TO_UPDATE, UserModel.EMAIL)
+                .assertEvent();
+
+        verifyProfilePage.updateEmail("test-user@localhost", "test-user", "test-user");
+
+        verifyEmailPage.assertCurrent();
+
+        events.expectRequiredAction(EventType.UPDATE_PROFILE)
+                .user(testUserId)
+                .detail(Details.UPDATED_EMAIL, "test-user@localhost")
+                .assertEvent();
+
+        // verify email is presented now
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        final MimeMessage message = greenMail.getLastReceivedMessage();
+
+        final String verificationUrl = getEmailLink(message);
+
+        // confirm
+        driver.navigate().to(verificationUrl);
+
+        // back to app, already logged in
+        appPage.assertCurrent();
+
+        // email should be verified and required actions empty
+        userRep = user.toRepresentation();
+        assertTrue(userRep.isEmailVerified());
+        assertThat(userRep.getRequiredActions(), Matchers.empty());
     }
 }
