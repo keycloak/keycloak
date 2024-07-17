@@ -37,7 +37,7 @@ A single {project_name} instance is susceptible to availability issues. If the i
 
 There will also be a limit on the amount of concurrent requests a single JVM can effectively handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching, limit scaling.
 
-In general, it is best to let the {project_name} Operator handle horizontal scaling concerns. When using the Operator simply set the Keycloak custom resource `spec.instances` as desired to horizontally scale - see <@links.ha id="deploy-keycloak-kubernetes" /> for more.
+In general, consider allowing the {project_name} Operator to handle horizontal scaling concerns. When using the Operator, set the Keycloak custom resource `spec.instances` as desired to horizontally scale.  For more details, see <@links.ha id="deploy-keycloak-kubernetes" />.
 
 If you are not using the Operator, please review the following:
 
