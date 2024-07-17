@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +40,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -50,6 +54,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -183,6 +191,20 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+    }
+
+    // Issue 29866
+    @Test
+    public void authorizationRequestInvalidResponseType_testHeaders() throws IOException {
+        oauth.responseType("tokenn");
+        Client client = AdminClientUtil.createResteasyClient();
+        Response response = client.target(oauth.getLoginFormUrl()).request().get();
+
+        assertThat(response.getStatus(), is(equalTo(302)));
+        String cacheControl = response.getHeaderString(HttpHeaders.CACHE_CONTROL);
+        Assert.assertNotNull(cacheControl);
+        Assert.assertThat(cacheControl, containsString("no-store"));
+        Assert.assertThat(cacheControl, containsString("must-revalidate"));
     }
 
     @Test
@@ -395,5 +417,5 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
     }
-    
+
 }
