@@ -31,7 +31,7 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugv("UMA policy {} evaluating using parent class", evaluation.getPolicy().getName());
+        logger.debugf("UMA policy %s evaluating using parent class", evaluation.getPolicy().getName());
         ResourcePermission permission = evaluation.getPermission();
         Resource resource = permission.getResource();
 

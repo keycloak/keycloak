@@ -39,7 +39,7 @@ public class AggregatePolicyProvider implements PolicyProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugv("Aggregate policy {} evaluating using parent class", evaluation.getPolicy().getName());
+        logger.debugf("Aggregate policy %s evaluating using parent class", evaluation.getPolicy().getName());
         DecisionResultCollector decision = new DecisionResultCollector() {
             @Override
             protected void onComplete(Result result) {
