@@ -416,6 +416,41 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    @Test
+    public void skipToNextRequiredActionWithCustomPriority() {
+        enableRequiredActionForUser(RequiredAction.VERIFY_EMAIL);
+        enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
+
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setVerifyEmail(true);
+        testRealm().update(realmRep);
+
+        final var userResource = testRealm().users().get(testUserId);
+        final var user = userResource.toRepresentation();
+        user.setEmailVerified(true);
+        userResource.update(user);
+
+        final var requiredActionsCustomOrdered = List.of(
+                RequiredAction.VERIFY_EMAIL,
+                RequiredAction.UPDATE_PASSWORD
+        );
+        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+
+        // Login
+        loginPage.open();
+        loginPage.login(USERNAME, PASSWORD);
+        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+
+        // change password
+        changePasswordPage.assertCurrent();
+        changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+
+        appPage.assertCurrent();
+        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        events.expectLogin().assertEvent();
+    }
+
     private void enableRequiredActionForUser(final RequiredAction requiredAction) {
         setRequiredActionEnabled(TEST_REALM_NAME, testUserId, requiredAction.name(), true);
     }
