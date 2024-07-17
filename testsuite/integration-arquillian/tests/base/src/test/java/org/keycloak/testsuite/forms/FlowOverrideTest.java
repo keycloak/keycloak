@@ -27,12 +27,14 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -50,6 +52,8 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -61,7 +65,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 /**
  * Test that clients can override auth flows
@@ -395,15 +398,20 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
         String newFlowAlias = "Copy of Browser Flow";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        AuthenticationFlowRepresentation newFlow = findFlowByAlias(newFlowAlias);
 
         try {
             // 1. set a flow override for client
-            AuthenticationFlowRepresentation newFlow = findFlowByAlias(newFlowAlias);
             clientRep.setAuthenticationFlowBindingOverrides(Map.of(binding, newFlow.getId()));
             clientResource.update(clientRep);
 
-            // 2. remove the flow
-            revertFlows(testRealm(), newFlowAlias);
+            // 2. remove the flow through database, since we could not delete the flow which is used by client
+            testingClient.server("test").run(session -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, newFlow.getId(), LockModeType.PESSIMISTIC_WRITE);
+                em.remove(entity);
+                em.flush();
+            });
 
             // 3. login with client
             testNoOverride.accept(clientRep.getClientId());
