@@ -1316,6 +1316,39 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testNullAttributesInConfig() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNullAttributesInConfig);
+    }
+
+    private static void testNullAttributesInConfig(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+        config.setAttributes(null);
+        config.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+
+        profile.validate();
+
+        config.setAttributes(Collections.emptyList());
+        try {
+            provider.setConfiguration(config);
+            Assert.fail("Expected to fail as we are trying to remove required attributes email and username");
+        } catch (ComponentValidationException cve) {
+            //ignore
+        }
+    }
+
+    @Test
     public void testCustomAttributeOptional() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testCustomAttributeOptional);
     }
