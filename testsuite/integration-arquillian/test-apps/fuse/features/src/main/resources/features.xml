@@ -20,7 +20,7 @@
 
       <feature name="keycloak-fuse-7.0-example" version="${project.version}">
           <details>The Keycloak / Fuse 7.0 on Undertow example</details>
-          <feature>pax-http-undertow</feature>
+          <feature>pax-web-http-undertow</feature>
           <feature>war</feature>
           <feature>camel</feature>
           <feature>camel-undertow</feature>

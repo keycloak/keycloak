@@ -74,6 +74,7 @@ public class ClientRegistrationPolicyResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_REGISTRATION_POLICY)
     @Operation( summary="Base path for retrieve providers with the configProperties properly filled")
     public Stream<ComponentTypeRepresentation> getProviders() {
+        auth.realm().requireViewRealm();
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientRegistrationPolicy.class)
                 .map((ProviderFactory factory) -> {
                     ClientRegistrationPolicyFactory clientRegFactory = (ClientRegistrationPolicyFactory) factory;

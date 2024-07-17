@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OTPSetup;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
@@ -57,6 +58,9 @@ public class SigningInTest extends BaseAccountPageTest {
 
     @Page
     private UpdatePassword updatePasswordPage;
+
+    @Page
+    private DeleteCredentialPage deleteCredentialPage;
 
     @Page
     private OTPSetup otpSetupPage;
@@ -214,6 +218,6 @@ public class SigningInTest extends BaseAccountPageTest {
     }
 
     private void testRemoveCredential(SigningInPage.UserCredential userCredential) {
-        SigningInPageUtils.testRemoveCredential(getAccountPage(), userCredential);
+        SigningInPageUtils.testRemoveCredential(getAccountPage(), deleteCredentialPage, userCredential);
     }
 }

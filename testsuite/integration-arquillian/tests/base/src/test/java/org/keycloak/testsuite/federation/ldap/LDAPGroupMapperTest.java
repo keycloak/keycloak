@@ -721,10 +721,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
                 return;
             }
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.MAX_CONDITIONS, "15");
 
             // create big grups that use ranged search
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
             LDAPObject bigGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "biggroup", descriptionAttrName, "biggroup - description");
+            // create a non-exitent group member first to check pagination is OK
+            LDAPDn nonExistentDn = LDAPDn.fromString(ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsersDn());
+            nonExistentDn.addFirst(ctx.getLdapProvider().getLdapIdentityStore().getConfig().getRdnLdapAttribute(), "nonexistent");
+            LDAPObject nonExistentLdapUser = new LDAPObject();
+            nonExistentLdapUser.setDn(nonExistentDn);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", bigGroup, nonExistentLdapUser);
             // create the users to use range search and add them to the group
             for (int i = 0; i < membersToTest; i++) {
                 String username = String.format("user%02d", i);
@@ -759,6 +766,18 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             for (int i = 0; i < membersToTest; i++) {
                 Assert.assertTrue("Group contains user " + i, usernames.contains(String.format("user%02d", i)));
             }
+            // check group members are paginated OK using page size 10
+            usernames.clear();
+            for (int i = 0; i < membersToTest; i += 10) {
+                groupMembers = session.users().getGroupMembersStream(appRealm, kcBigGroup, i, 10)
+                    .collect(Collectors.toList());
+                usernames.addAll(groupMembers.stream().map(u -> u.getUsername()).collect(Collectors.toSet()));
+                Assert.assertEquals("Incorrect number of users after pagination " + i, membersToTest < i + 10? membersToTest : i + 10, usernames.size());
+            }
+            for (int i = 0; i < membersToTest; i++) {
+                Assert.assertTrue("Group contains user after pagination " + i, usernames.contains(String.format("user%02d", i)));
+            }
+            ctx.getLdapModel().getConfig().remove(LDAPConstants.MAX_CONDITIONS);
         });
     }
 

@@ -18,13 +18,26 @@
 package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.dsl.Loggable;
+import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
@@ -32,6 +45,7 @@ import io.quarkus.logging.Log;
 
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger.Level;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,18 +53,29 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -67,6 +92,7 @@ public abstract class BaseOperatorTest {
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
   public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
   public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
+  public static final String POSTGRESQL_NAME = "postgresql-db";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
@@ -211,8 +237,17 @@ public abstract class BaseOperatorTest {
             });
   }
 
-  // TODO improve this (preferably move to JOSDK)
+  // This differs from later branches as to not introduce the additional test file changes
   protected void savePodLogs() {
+    logEvents();
+    // provide some helpful entries in the main log as well
+    logFailedKeycloaks();
+    if (operatorDeployment == OperatorDeployment.remote) {
+      log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
+    }
+    logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
+    k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems().stream()
+        .forEach(pod -> log(k8sclient.pods().resource(pod), Pod::getStatus, false));
     Log.infof("Saving pod logs to %s", POD_LOGS_DIR);
     for (var pod : k8sclient.pods().inNamespace(namespace).list().getItems()) {
       try {
@@ -225,7 +260,7 @@ public abstract class BaseOperatorTest {
           fw.write(podLog);
         }
       } catch (Exception e) {
-        Log.error(e.getStackTrace());
+        Log.errorf("Error saving pod logs: %s", e.getMessage());
       }
     }
   }
@@ -237,19 +272,136 @@ public abstract class BaseOperatorTest {
 
   @AfterEach
   public void cleanup() {
-    Log.info("Deleting Keycloak CR");
-    k8sclient.resources(Keycloak.class).delete();
-    Awaitility.await()
-            .untilAsserted(() -> {
-              var kcDeployments = k8sclient
-                      .apps()
-                      .statefulSets()
-                      .inNamespace(namespace)
-                      .withLabels(Constants.DEFAULT_LABELS)
-                      .list()
-                      .getItems();
-              assertThat(kcDeployments.size()).isZero();
-            });
+      Log.info("Deleting Keycloak CR");
+
+      // due to https://github.com/operator-framework/java-operator-sdk/issues/2314 we
+      // try to ensure that the operator has processed the delete event from root objects
+      // this can be simplified to just the root deletion after we pick up the fix
+      // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
+      // to just a timed foreground deletion
+      var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
+      var dependents = List.of(StatefulSet.class, Secret.class, Service.class, Pod.class, Job.class);
+
+      var rootsDeleted = CompletableFuture.allOf(roots.stream()
+              .map(c -> k8sclient.resources(c).informOnCondition(List::isEmpty)).toArray(CompletableFuture[]::new));
+      roots.stream().forEach(c -> k8sclient.resources(c).withGracePeriod(0).delete());
+      try {
+          rootsDeleted.get(1, TimeUnit.MINUTES);
+      } catch (Exception e) {
+          // delete event should have arrived quickly because this is a background delete
+          throw new RuntimeException(e);
+      }
+      dependents.stream().map(c -> k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS))
+              .forEach(r -> r.withGracePeriod(0).delete());
+      // enforce that the dependents are gone
+      Awaitility.await().during(5, TimeUnit.SECONDS).until(() -> {
+          if (dependents.stream().anyMatch(
+                  c -> !k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS).list().getItems().isEmpty())) {
+              // the operator must have recreated because it hasn't gotten the keycloak
+              // deleted event, keep cleaning
+              dependents.stream().map(c -> k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS))
+                      .forEach(r -> r.withGracePeriod(0).delete());
+              return false;
+          }
+          return true;
+      });
+  }
+
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void log(R resource, Function<T, Object> statusExtractor, boolean failedOnly) {
+      var instance = resource.get();
+      if (failedOnly) {
+          if (resource.isReady()) {
+              return;
+          }
+          Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
+      } else {
+          Log.infof("%s is ready %s %s", instance.getMetadata().getName(), resource.isReady(), Serialization.asYaml(statusExtractor.apply(instance)));
+      }
+      try {
+          String log = resource.getLog();
+          log = log.substring(Math.max(0, log.length() - 50000));
+          Log.warnf("%s log: %s", instance.getMetadata().getName(), log);
+      } catch (KubernetesClientException e) {
+          Log.warnf("No %s log: %s", instance.getMetadata().getName(), e.getMessage());
+          if (instance instanceof Pod) {
+              try {
+                  String previous = k8sclient.raw(String.format("/api/v1/namespaces/%s/pods/%s/log?previous=true", namespace, instance.getMetadata().getName()));
+                  Log.warnf("%s previous log: %s", instance.getMetadata().getName(), previous);
+              } catch (KubernetesClientException pe) {
+                  // not available
+                  if (pe.getCode() != HttpURLConnection.HTTP_BAD_REQUEST) {
+                      Log.infof("Could not obtain previous log for %s: %s", instance.getMetadata().getName(), e.getMessage());
+                  }
+              }
+          }
+      }
+  }
+
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+      log(resource, statusExtractor, true);
+  }
+
+  private void logFailedKeycloaks() {
+      k8sclient.resources(Keycloak.class).list().getItems().stream()
+              .filter(kc -> !Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false))
+              .forEach(kc -> {
+                  Log.warnf("Keycloak failed to become ready \"%s\" %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                  var statefulSet = k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).get();
+                  if (statefulSet != null) {
+                      Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
+                      k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
+                              .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
+                                  logFailed(p, Pod::getStatus);
+                                  threadDump(p);
+                              });
+                  }
+              });
+  }
+
+  private void threadDump(PodResource pr) {
+      int exitCode = -1;
+      Exception ex = null;
+      String output = null;
+      Pod pod = pr.item();
+      try {
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          ExecWatch execWatch = pr.writingOutput(baos).withReadyWaitTimeout(0).exec("sh", "-c", "jcmd 1 Thread.print");
+          exitCode = execWatch.exitCode().get(1, TimeUnit.MINUTES);
+          output = baos.toString(StandardCharsets.UTF_8);
+          if (exitCode == 0) {
+              Log.info("Thread dump for " + pod.getMetadata().getName() + ": " + output);
+          }
+      } catch (Exception e) {
+          ex = e;
+      }
+      if (exitCode != 0) {
+          Log.warn("A thread dump was not successful for " + pod.getMetadata().getName()
+                  + ", exit code " + exitCode + " output: " + output, ex);
+      }
+  }
+
+  private void logEvents() {
+      List<Event> recentEventList = k8sclient.resources(Event.class).list().getItems();
+
+      var grouped = recentEventList.stream()
+              .sorted(Comparator.comparing(BaseOperatorTest::getTime, Comparator.nullsFirst(Comparator.reverseOrder())))
+              .collect(
+                      Collectors.groupingBy(
+                              event -> java.util.Arrays.asList(event.getType(), event.getReason(),
+                                      event.getMetadata().getName(), event.getNote()),
+                              LinkedHashMap::new, Collectors.toList()))
+              .entrySet().iterator();
+
+      for (int i = 0; i < 50 && grouped.hasNext(); i++) {
+          var entry = grouped.next();
+          Log.logf("Normal".equals(entry.getValue().get(0).getType()) ? Level.INFO : Level.WARN,
+                  "Event last seen %s repeated %s times - %s", getTime(entry.getValue().get(0)),
+                  entry.getValue().size(), entry.getKey().stream().collect(Collectors.joining(" ")));
+      }
+  }
+
+  private static String getTime(Event event) {
+      return Optional.ofNullable(event.getEventTime()).map(MicroTime::getTime).orElse(event.getDeprecatedLastTimestamp());
   }
 
   @AfterAll

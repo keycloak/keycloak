@@ -229,6 +229,14 @@
                         <groupId>com.google.guava</groupId>
                         <artifactId>guava</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <!-- Fuse adapter tests dependencies END -->
@@ -466,8 +474,8 @@
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>

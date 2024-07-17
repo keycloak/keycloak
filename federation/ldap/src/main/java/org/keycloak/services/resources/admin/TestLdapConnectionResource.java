@@ -89,6 +89,7 @@ public class TestLdapConnectionResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
+        auth.realm().requireManageRealm();
         try {
             LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
             return Response.noContent().build();

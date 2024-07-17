@@ -21,6 +21,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -56,6 +57,11 @@ public interface AbstractAuthenticationFlowContext {
      * @return
      */
     AuthenticationExecutionModel getExecution();
+
+    /**
+     * @return the top level flow (root flow) of this authentication
+     */
+    AuthenticationFlowModel getTopLevelFlow();
 
     /**
      * Current realm

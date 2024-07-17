@@ -38,5 +38,5 @@ export const createRedirect = (currentLocation: string): string => {
         redirectUri += "?referrer=" + referrer + "&referrer_uri=" + referrerUri.replace('#', '_hash_');
     }
 
-    return encodeURIComponent(redirectUri) + encodeURIComponent("/#" + currentLocation);    
+    return encodeURIComponent(redirectUri) + encodeURIComponent("#" + currentLocation);
 }

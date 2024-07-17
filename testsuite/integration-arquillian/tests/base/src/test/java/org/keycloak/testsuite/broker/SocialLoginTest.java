@@ -387,7 +387,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
-        navigateToLoginPage();
         assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
@@ -625,7 +624,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Assert.assertEquals(1, users.size());
 
         String username = users.get(0).getUsername();
-        checkFeature(400, username);
+        checkFeature(501, username);
 
         testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
@@ -712,7 +711,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         } finally {
             httpClient.close();
             testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
-            checkFeature(400, username);
+            checkFeature(501, username);
         }
     }
 }

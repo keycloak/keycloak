@@ -45,7 +45,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class TestApplicationResourceProviderFactory implements RealmResourceProviderFactory {
 
     private BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingDeque<>();
-    private BlockingQueue<LogoutToken> backChannelLogoutTokens = new LinkedBlockingDeque<>();
+    private BlockingQueue<String> backChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<LogoutToken> frontChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<PushNotBeforeAction> pushNotBeforeActions = new LinkedBlockingDeque<>();
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();

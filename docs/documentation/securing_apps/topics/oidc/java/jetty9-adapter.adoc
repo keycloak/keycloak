@@ -15,7 +15,7 @@ Adapters are no longer included with the appliance or war distribution. Each ada
 .Procedure
 .  Download the {project_name} Jetty 9.4 adapter ZIP archive from the link:https://www.keycloak.org/downloads[Keycloak Downloads] site.
 
-. Unzip the Jetty 9.4 distro into Jetty 9.4's link:https://eclipse.dev/jetty/documentation/jetty-9/index.html[base directory]. In the example below, the Jetty base is named `your-base`:
+. Unzip the Jetty 9.4 distro into Jetty 9.4's base directory. In the example below, the Jetty base is named `your-base`:
 +
 [source, subs="attributes"]
 ----

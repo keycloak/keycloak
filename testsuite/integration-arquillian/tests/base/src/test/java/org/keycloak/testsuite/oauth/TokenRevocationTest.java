@@ -71,6 +71,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -85,6 +86,9 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -171,6 +175,23 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         assertThat(response, Matchers.statusCodeIsHC(Status.OK));
 
         isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
+    }
+
+    @Test
+    public void testRevokedAccessTokenCacheLifespan() throws Exception {
+        oauth.clientId("test-app");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+
+        isTokenEnabled(tokenResponse, "test-app");
+
+        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password");
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+
+        setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
+
+        isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
+
+        setTimeOffset(0);
     }
 
     @Test

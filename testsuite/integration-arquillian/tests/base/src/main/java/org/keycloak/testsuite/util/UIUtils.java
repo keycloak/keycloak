@@ -10,6 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.safari.SafariDriver;
@@ -250,8 +251,8 @@ public final class UIUtils {
     }
 
     public static String getRawPageSource(WebDriver driver) {
-        if (driver instanceof FirefoxDriver) {
-            // firefox has some weird "bug" – it wraps xml in html
+        if (driver instanceof FirefoxDriver || driver instanceof ChromeDriver) {
+            // firefox and chrome has some weird "bug" – it wraps xml in html
             return driver.findElement(By.tagName("body")).getText();
         }
         else {

@@ -24,9 +24,13 @@ the name, set up a replacement string value. For example, a string value such as
 
 *Home URL*:: Provides the default URL for when the auth server needs to redirect or link back to the client.
 
-*Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$
+*Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. Exact (case sensitive) string matching is used to compare valid redirect URIs.
 +
-Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
+You can use wildcards at the end of the URL pattern. For example `$$http://host.com/path/*$$`. To avoid security issues, if the passed redirect URI contains the *userinfo* part or its *path* manages access to parent directory (`/../`) no wildcard comparison is performed but the standard and secure exact string matching.
++
+The full wildcard `$$*$$` valid redirect URI can also be configured to allow any *http* or *https* redirect URI. Please do not use it in production environments.
++
+Exclusive redirect URI patterns are typically more secure. See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
 
 Web Origins:: Enter a URL pattern and click + to add and - to remove existing URLs. Click Save.
 +

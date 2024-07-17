@@ -116,8 +116,8 @@
                         <supportedProjectType>war</supportedProjectType>
                     </supportedProjectTypes>
                     <instructions>
-                        <Webapp-Context>external-config</Webapp-Context>
-                        <Web-ContextPath>external-config</Web-ContextPath>
+                        <Webapp-Context>/external-config</Webapp-Context>
+                        <Web-ContextPath>/external-config</Web-ContextPath>
                         <Embed-Directory>WEB-INF/lib</Embed-Directory>
                         <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>

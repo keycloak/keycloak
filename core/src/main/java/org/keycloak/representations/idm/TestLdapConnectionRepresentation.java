@@ -16,10 +16,15 @@ public class TestLdapConnectionRepresentation {
     }
 
     public TestLdapConnectionRepresentation(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout) {
-        this(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, null, null);
+        this(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, null, null, null);
     }
 
     public TestLdapConnectionRepresentation(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout, String startTls, String authType) {
+        this(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, authType, null);
+    }
+
+    public TestLdapConnectionRepresentation(String action, String connectionUrl, String bindDn, String bindCredential,
+            String useTruststoreSpi, String connectionTimeout, String startTls, String authType, String componentId) {
         this.action = action;
         this.connectionUrl = connectionUrl;
         this.bindDn = bindDn;
@@ -28,6 +33,7 @@ public class TestLdapConnectionRepresentation {
         this.connectionTimeout = connectionTimeout;
         this.startTls = startTls;
         this.authType = authType;
+        this.componentId = componentId;
     }
 
     public String getAction() {

@@ -21,6 +21,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 
@@ -78,14 +79,18 @@ public class SigningInPageUtils {
         assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible(), is(false));
     }
 
-    public static void testRemoveCredential(AbstractLoggedInPage accountPage, SigningInPage.UserCredential userCredential) {
+    public static void testRemoveCredential(AbstractLoggedInPage accountPage, DeleteCredentialPage deleteCredentialPage, SigningInPage.UserCredential userCredential) {
         int countBeforeRemove = userCredential.getCredentialType().getUserCredentialsCount();
+        userCredential.clickRemoveBtn();
 
-        testModalDialog(accountPage, userCredential::clickRemoveBtn, () -> {
-            assertThat(userCredential.isPresent(), is(true));
-            assertThat(userCredential.getCredentialType().getUserCredentialsCount(), is(countBeforeRemove));
-        });
-        accountPage.alert().assertSuccess();
+        deleteCredentialPage.assertCurrent();
+        deleteCredentialPage.cancel();
+        accountPage.assertCurrent();
+        assertThat(userCredential.isPresent(), is(true));
+        assertThat(userCredential.getCredentialType().getUserCredentialsCount(), is(countBeforeRemove));
+        userCredential.clickRemoveBtn();
+        deleteCredentialPage.assertCurrent();
+        deleteCredentialPage.confirm();
 
         assertThat(userCredential.isPresent(), is(false));
         assertThat(userCredential.getCredentialType().getUserCredentialsCount(), is(countBeforeRemove - 1));

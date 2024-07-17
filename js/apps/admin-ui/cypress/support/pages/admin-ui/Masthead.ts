@@ -95,16 +95,27 @@ export default class Masthead extends CommonElements {
     cy.get("#manage-account").click();
   }
 
-  checkNotificationMessage(message: string, closeNotification = true) {
-    this.getAlertsContainer()
-      .find(this.alertMessage)
-      .should("contain.text", message);
-
-    if (closeNotification) {
+  checkNotificationMessage(message: string | RegExp, closeNotification = true) {
+    if (typeof message === "string") {
       this.getAlertsContainer()
-        .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
-        .last()
-        .click({ force: true });
+        .find(this.alertMessage)
+        .should("contain.text", message);
+
+      if (closeNotification) {
+        this.getAlertsContainer()
+          .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
+          .last()
+          .click({ force: true });
+      }
+    } else {
+      this.getAlertsContainer()
+        .find(this.alertMessage)
+        .invoke("text")
+        .should("match", message);
+
+      if (closeNotification) {
+        this.getAlertsContainer().find("button").last().click({ force: true });
+      }
     }
     return this;
   }

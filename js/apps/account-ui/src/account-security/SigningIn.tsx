@@ -17,12 +17,10 @@ import {
 } from "@patternfly/react-core";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
-import { deleteCredentials, getCredentials } from "../api/methods";
+import { getCredentials } from "../api/methods";
 import {
   CredentialContainer,
   CredentialMetadataRepresentation,
-  CredentialRepresentation,
 } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import useFormatter from "../components/format/format-date";
@@ -66,14 +64,11 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
 const SigningIn = () => {
   const { t } = useTranslation();
   const { formatDate } = useFormatter();
-  const { addAlert, addError } = useAlerts();
   const { login } = keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
-  const [key, setKey] = useState(1);
-  const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getCredentials({ signal }), setCredentials, [key]);
+  usePromise((signal) => getCredentials({ signal }), setCredentials, []);
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
@@ -103,9 +98,6 @@ const SigningIn = () => {
     }
     return items;
   };
-
-  const label = (credential: CredentialRepresentation) =>
-    credential.userLabel || t(credential.type as TFuncKey);
 
   if (!credentials) {
     return <Spinner />;
@@ -170,34 +162,17 @@ const SigningIn = () => {
                         aria-labelledby={`cred-${meta.credential.id}`}
                       >
                         {container.removeable ? (
-                          <ContinueCancelModal
-                            buttonTitle="remove"
-                            buttonVariant="danger"
-                            modalTitle={t("removeCred", [
-                              label(meta.credential),
-                            ])}
-                            modalMessage={t("stopUsingCred", [
-                              label(meta.credential),
-                            ])}
-                            onContinue={async () => {
-                              try {
-                                await deleteCredentials(meta.credential);
-                                addAlert(
-                                  t("successRemovedMessage", {
-                                    userLabel: label(meta.credential),
-                                  }),
-                                );
-                                refresh();
-                              } catch (error) {
-                                addError(
-                                  t("errorRemovedMessage", {
-                                    userLabel: label(meta.credential),
-                                    error,
-                                  }).toString(),
-                                );
-                              }
+                          <Button
+                            variant="danger"
+                            onClick={() => {
+                              login({
+                                action:
+                                  "delete_credential:" + meta.credential.id,
+                              });
                             }}
-                          />
+                          >
+                            {t("delete")}
+                          </Button>
                         ) : (
                           <Button
                             variant="secondary"

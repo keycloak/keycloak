@@ -119,6 +119,7 @@
                                                 <include>keycloak-direct-access.json</include>
                                                 <include>keycloak-hawtio-client.json</include>
                                                 <include>keycloak-hawtio.json</include>
+                                                <include>product-portal-keycloak.json</include>
                                             </includes>
                                         </resource>
                                     </resources>

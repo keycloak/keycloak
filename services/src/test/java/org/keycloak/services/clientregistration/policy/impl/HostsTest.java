@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientregistration.policies.impl;
+package org.keycloak.services.clientregistration.policy.impl;
 
 import java.net.InetAddress;
 

@@ -305,6 +305,7 @@ class SigningInPage extends React.Component<
                                 removeable={removeable}
                                 updateAction={updateAIA}
                                 credRemover={this.handleRemove}
+                                keycloak={keycloak}
                               />
                           </DataListItemRow>
                       </DataListItem>
@@ -471,6 +472,7 @@ interface CredentialActionProps {
     removeable: boolean;
     updateAction: AIACommand;
     credRemover: CredRemover;
+    keycloak: KeycloakService;
 };
 
 class CredentialAction extends React.Component<CredentialActionProps> {
@@ -499,20 +501,24 @@ class CredentialAction extends React.Component<CredentialActionProps> {
 
         if (this.props.removeable) {
             const userLabel: string = this.props.credential.userLabel;
+            const removeAction: AIACommand = new AIACommand(this.props.keycloak, 'delete_credential:' + this.props.credential.id);
             return (
                 <DataListAction
                   aria-label={Msg.localize('removeCredAriaLabel')}
                   aria-labelledby={Msg.localize('removeCredAriaLabel')}
                   id={'removeAction-' + this.props.credential.id }
                 >
-                    <ContinueCancelModal 
-                        buttonTitle='remove'
-                        buttonVariant='danger'
-                        buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
-                        modalTitle={Msg.localize('removeCred', [userLabel])}
-                        modalMessage={Msg.localize('stopUsingCred', [userLabel])}
-                        onContinue={() => this.props.credRemover(this.props.credential.id, userLabel)}
-                    />
+                    <Button
+                        variant="danger"
+                        id={`${SigningInPage.credElementId(
+                            this.props.credential.type,
+                            this.props.credential.id,
+                            "remove"
+                        )}`}
+                        onClick={() => removeAction.execute()}
+                    >
+                        <Msg msgKey="remove" />
+                    </Button>
                 </DataListAction>
             );
         }

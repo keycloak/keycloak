@@ -22,9 +22,9 @@ import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
-import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -52,11 +52,11 @@ public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, Au
     @Override
     public boolean matchCondition(AuthenticationFlowContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        AcrStore acrStore = new AcrStore(authSession);
+        AcrStore acrStore = new AcrStore(context.getSession(), authSession);
         int currentAuthenticationLoa = acrStore.getLevelOfAuthenticationFromCurrentAuthentication();
         Integer configuredLoa = getConfiguredLoa(context);
         if (configuredLoa == null) configuredLoa = Constants.MINIMUM_LOA;
-        int requestedLoa = acrStore.getRequestedLevelOfAuthentication();
+        int requestedLoa = acrStore.getRequestedLevelOfAuthentication(context.getTopLevelFlow());
         if (currentAuthenticationLoa < Constants.MINIMUM_LOA) {
             logger.tracef("Condition '%s' evaluated to true due the user not yet reached any authentication level in this session, configuredLoa: %d, requestedLoa: %d",
                     context.getAuthenticatorConfig().getAlias(), configuredLoa, requestedLoa);
@@ -84,7 +84,7 @@ public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, Au
     @Override
     public void onParentFlowSuccess(AuthenticationFlowContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        AcrStore acrStore = new AcrStore(authSession);
+        AcrStore acrStore = new AcrStore(context.getSession(), authSession);
 
         Integer newLoa = getConfiguredLoa(context);
         if (newLoa == null) {
@@ -102,14 +102,14 @@ public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, Au
     }
 
     @Override
-    public void onTopFlowSuccess() {
+    public void onTopFlowSuccess(AuthenticationFlowModel topFlow) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
-        AcrStore acrStore = new AcrStore(authSession);
+        AcrStore acrStore = new AcrStore(session, authSession);
 
         logger.tracef("Finished authentication at level %d when authenticating authSession '%s'.", acrStore.getLevelOfAuthenticationFromCurrentAuthentication(), authSession.getParentSession().getId());
-        if (acrStore.isLevelOfAuthenticationForced() && !acrStore.isLevelOfAuthenticationSatisfiedFromCurrentAuthentication()) {
+        if (acrStore.isLevelOfAuthenticationForced() && !acrStore.isLevelOfAuthenticationSatisfiedFromCurrentAuthentication(topFlow)) {
             String details = String.format("Forced level of authentication did not meet the requirements. Requested level: %d, Fulfilled level: %d",
-                    acrStore.getRequestedLevelOfAuthentication(), acrStore.getLevelOfAuthenticationFromCurrentAuthentication());
+                    acrStore.getRequestedLevelOfAuthentication(topFlow), acrStore.getLevelOfAuthenticationFromCurrentAuthentication());
             throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, details, Messages.ACR_NOT_FULFILLED);
         }
 

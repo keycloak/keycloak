@@ -34,10 +34,10 @@ export default function CreateClientRole() {
         ...role,
       });
 
-      const createdRole = await adminClient.clients.findRole({
+      const createdRole = (await adminClient.clients.findRole({
         id: clientId!,
         roleName: role.name!,
-      });
+      }))!;
 
       addAlert(t("roleCreated"), AlertVariant.success);
       navigate(

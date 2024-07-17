@@ -17,7 +17,11 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
+import java.util.Date;
+
 import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,4 +62,12 @@ public abstract class NamedParameterCondition implements Condition {
     public boolean isBinary() {
         return binary;
     }
+
+    public String escapeValue(Object value) {
+        if (Date.class.isInstance(value)) {
+            value = LDAPUtil.formatDate((Date) value);
+        }
+        return new OctetStringEncoder(EscapeStrategy.DEFAULT).encode(value, isBinary());
+    }
+
 }

@@ -139,7 +139,7 @@ public class ApiUtil {
 
     public static UserRepresentation findUserByUsername(RealmResource realm, String username) {
         UserRepresentation user = null;
-        List<UserRepresentation> ur = realm.users().search(username, null, null, null, 0, -1);
+        List<UserRepresentation> ur = realm.users().search(username, true);
         if (ur.size() == 1) {
             user = ur.get(0);
         }

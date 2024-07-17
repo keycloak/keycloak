@@ -79,6 +79,11 @@ public abstract class AbstractLDAPStorageMapper implements LDAPStorageMapper {
         return null;
     }
 
+    @Override
+    public Set<String> getUserAttributes() {
+        return Collections.emptySet();
+    }
+
     public static boolean parseBooleanParameter(ComponentModel mapperModel, String paramName) {
         String paramm = mapperModel.getConfig().getFirst(paramName);
         return Boolean.parseBoolean(paramm);

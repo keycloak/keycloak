@@ -63,6 +63,12 @@
             <artifactId>cxf-rt-transports-http-undertow</artifactId>
             <version>${cxf.undertow.version}</version>
         </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

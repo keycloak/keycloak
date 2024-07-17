@@ -28,6 +28,7 @@
       }
 
       let init;
+      let preventAdditionalRequests = false;
 
       async function checkState(clientId, origin, sessionState) {
         // Check if the browser has granted us access to 3rd-party storage (such as cookies).
@@ -41,6 +42,13 @@
 
         // If not initialized, verify this client is allowed access with a call to the server.
         if (!init) {
+          // Prevent additional requests to the server to avoid potential DoS attacks.
+          if (preventAdditionalRequests) {
+            return "error";
+          } else {
+            preventAdditionalRequests = true;
+          }
+
           const url = new URL(`${location.origin}${location.pathname}/init`);
 
           url.searchParams.set("client_id", clientId);

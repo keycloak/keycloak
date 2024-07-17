@@ -25,6 +25,7 @@ public class Messages {
     public static final String LOGIN_TIMEOUT = "loginTimeout";
 
     public static final String REAUTHENTICATE = "reauthenticate";
+    public static final String AUTHENTICATE_STRONG = "authenticateStrong";
 
     public static final String INVALID_USER = "invalidUserMessage";
 
