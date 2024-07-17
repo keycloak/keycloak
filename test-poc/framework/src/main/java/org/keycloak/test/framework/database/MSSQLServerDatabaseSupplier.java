@@ -1,16 +1,13 @@
 package org.keycloak.test.framework.database;
 
-public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
-
-    public static final String VENDOR = "postgres";
+public class MSSQLServerDatabaseSupplier extends AbstractDatabaseSupplier {
+    public static final String VENDOR = "mssql";
 
     @Override
     TestDatabase getTestDatabase() {
         DatabaseConfig databaseConfig = new DatabaseConfig()
                 .vendor(VENDOR)
-                .username(DEFAULT_DB_USERNAME)
-                .password(DEFAULT_DB_PASSWORD)
-                .containerImage("postgres:latest");
+                .containerImage("mcr.microsoft.com/mssql/server:latest");
         return new TestDatabase(databaseConfig);
     }
 
