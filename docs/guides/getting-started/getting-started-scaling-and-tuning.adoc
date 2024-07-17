@@ -29,7 +29,7 @@ If you are experiencing timeouts in obtaining database connections, you should c
 
 === Vertical Autoscaling
 
-Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale. That is not recommended for {project_name} if it requires restarting the server instance - which is currently the case for Java on Kubernetes. You can consider instead providing higher CPU and/or memory limits to allow your JVM to adapt within those limits as needed.
+Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale.  Vertical autoscaling is not recommended for {project_name} if it requires restarting the server instance, which is currently the case for Java on Kubernetes. You can consider instead providing higher CPU and/or memory limits to allow your JVM to adapt within those limits as needed.
 
 == Horizontal Scaling
 
