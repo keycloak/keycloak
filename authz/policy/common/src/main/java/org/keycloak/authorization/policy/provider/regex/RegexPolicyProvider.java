@@ -68,7 +68,7 @@ public class RegexPolicyProvider implements PolicyProvider {
         Matcher matcher = pattern.matcher(value);
         if (matcher.matches()) {
             evaluation.grant();
-            logger.debugv("policy {} evaluated with status {} on identity {} and claim value {}", policy.getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), getClaimValue(evaluation, policy));
+            logger.debugf("policy %s evaluated with status %s on identity %s and claim value %s", policy.getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), getClaimValue(evaluation, policy));
         }
     }
 

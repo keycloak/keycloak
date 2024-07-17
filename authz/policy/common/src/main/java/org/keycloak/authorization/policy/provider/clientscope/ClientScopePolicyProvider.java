@@ -70,7 +70,7 @@ public class ClientScopePolicyProvider implements PolicyProvider {
                 }
             }
         }
-        logger.debugv("Client Scope Policy {} evaluated to {}", policy.getName(), evaluation.getEffect());
+        logger.debugf("Client Scope Policy %s evaluated to %s", policy.getName(), evaluation.getEffect());
     }
 
     private boolean hasClientScope(Identity identity, ClientScopeModel clientScope) {

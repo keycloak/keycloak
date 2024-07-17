@@ -35,7 +35,7 @@ public class ScopePolicyProvider extends AbstractPermissionProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugv("Scope policy {} evaluating using parent class", evaluation.getPolicy().getName());
+        logger.debugf("Scope policy %s evaluating using parent class", evaluation.getPolicy().getName());
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
         Policy policy = defaultEvaluation.getParentPolicy();
