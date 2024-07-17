@@ -71,7 +71,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
-     * 
+     *
      * @param context to get current auth flow from
      * @param configuredScopes to be evaluated
      * @return
@@ -248,13 +248,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
 
-        if (parsedConfig == null) {
+        if (parsedConfig == null || parsedConfig.getAttributes() == null) {
             return decoratedMetadata;
         }
 
         Map<String, UPGroup> groupsByName = asHashMap(parsedConfig.getGroups());
         int guiOrder = 0;
-        
+
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
 
@@ -413,7 +413,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {
         return groups.stream().collect(Collectors.toMap(g -> g.getName(), g -> g));
     }
-    
+
     private AttributeGroupMetadata toAttributeGroupMeta(UPGroup group) {
         if (group == null) {
             return null;
