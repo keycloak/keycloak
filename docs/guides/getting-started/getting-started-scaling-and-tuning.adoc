@@ -41,7 +41,7 @@ In general, it is best to let the {project_name} Operator handle horizontal scal
 
 If you are not using the Operator, please review the following:
 
-* Your instances should be on separate machines if possible to increase availability. On Kubernetes you can use Pod anti-affinitity to enforce this.
+* Higher availability is possible of your instances are on separate machines. On Kubernetes, use Pod anti-affinitity to enforce this.
 
 * You need to use distributed caching and for multi-site clusters external caching for cluster members to share the same session state - see <@links.server id="caching" /> for more on the relevant configuration. The embedded Infinispan cache has horizontal scaling considerations including:
 
