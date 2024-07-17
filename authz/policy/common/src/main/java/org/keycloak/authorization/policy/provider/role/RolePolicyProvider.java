@@ -72,7 +72,7 @@ public class RolePolicyProvider implements PolicyProvider {
                 }
             }
         }
-        logger.debugv("policy {} evaluated with status {} on identity {}", policy.getName(), evaluation.getEffect(), identity.getId());
+        logger.debugf("policy %s evaluated with status %s on identity %s", policy.getName(), evaluation.getEffect(), identity.getId());
     }
 
     private boolean hasRole(Identity identity, RoleModel role, RealmModel realm, AuthorizationProvider authorizationProvider, boolean fetchRoles) {

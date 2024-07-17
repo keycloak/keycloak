@@ -33,7 +33,7 @@ public class ClientPolicyProvider implements PolicyProvider {
 
             if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
                 evaluation.grant();
-                logger.debugv("Client policy {} matched with client {} and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
+                logger.debugf("Client policy %s matched with client %s and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
                 return;
             }
         }

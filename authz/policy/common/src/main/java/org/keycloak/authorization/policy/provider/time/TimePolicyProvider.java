@@ -43,7 +43,7 @@ public class TimePolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
         SimpleDateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
-        logger.debugv("Time policy {} evaluating", policy.getName());
+        logger.debugf("Time policy %s evaluating", policy.getName());
         try {
             String contextTime = null;
             EvaluationContext context = evaluation.getContext();
@@ -67,7 +67,7 @@ public class TimePolicyProvider implements PolicyProvider {
             String notOnOrAfter = policy.getConfig().get("noa");
             if (notOnOrAfter != null && !"".equals(notOnOrAfter)) {
                 if (actualDate.after(dateFormat.parse(format(notOnOrAfter)))) {
-                    logger.debugv("Provided date is after the accepted date: (noa) {}", notOnOrAfter);
+                    logger.debugf("Provided date is after the accepted date: (noa) %s", notOnOrAfter);
                     evaluation.deny();
                     return;
                 }
@@ -78,7 +78,7 @@ public class TimePolicyProvider implements PolicyProvider {
                     || isInvalid(actualDate, Calendar.YEAR, "year", policy)
                     || isInvalid(actualDate, Calendar.HOUR_OF_DAY, "hour", policy)
                     || isInvalid(actualDate, Calendar.MINUTE, "minute", policy)) {
-                logger.debugv("Invalid date provided to time policy {}", policy.getName());
+                logger.debugf("Invalid date provided to time policy %s", policy.getName());
                 evaluation.deny();
                 return;
             }
