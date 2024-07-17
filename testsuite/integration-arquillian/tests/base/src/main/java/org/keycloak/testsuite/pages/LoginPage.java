@@ -65,13 +65,13 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
-    @FindBy(className = "alert-error")
+    @FindBy(className = "pf-m-danger")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "alert-success")
+    @FindBy(className = "pf-m-success")
     private WebElement loginSuccessMessage;
 
-    @FindBy(className = "alert-info")
+    @FindBy(className = "pf-m-info")
     private WebElement loginInfoMessage;
 
     @FindBy(className = "instruction")

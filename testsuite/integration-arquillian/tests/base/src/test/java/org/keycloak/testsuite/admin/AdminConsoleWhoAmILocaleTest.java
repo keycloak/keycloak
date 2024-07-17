@@ -30,6 +30,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
 
 public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
@@ -52,6 +53,10 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     @Before
     public void createHttpClient() throws Exception {
         client = HttpClientBuilder.create().build();
+
+        getCleanup().addCleanup(ClientAttributeUpdater.forClient(adminClient, "master", ADMIN_CLI_CLIENT_ID).setAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true").update());
+        getCleanup().addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_I18N_OFF, ADMIN_CLI_CLIENT_ID).setAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true").update());
+        getCleanup().addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_I18N_ON, ADMIN_CLI_CLIENT_ID).setAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true").update());
     }
 
     @After
@@ -101,17 +106,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     }
 
     private OAuthClient.AccessTokenResponse accessToken(String realmName, String username, String password) throws Exception {
-        String codeVerifier = PkceUtils.generateCodeVerifier();
-        oauth.realm(realmName)
-                .codeVerifier(codeVerifier)
-                .codeChallenge(PkceUtils.generateS256CodeChallenge(codeVerifier))
-                .codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256)
-                .clientId(Constants.ADMIN_CONSOLE_CLIENT_ID)
-                .redirectUri(adminConsole.createUriBuilder().build(realmName).toASCIIString());
-        oauth.doLogin(username, password);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
-        return response;
+        return oauth.doGrantAccessTokenRequest(realmName, username, password, null, ADMIN_CLI_CLIENT_ID, null);
     }
 
     private String whoAmiUrl(String realmName) {
@@ -139,7 +134,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithoutLocale() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_OFF, USER_WITHOUT_LOCALE, PASSWORD);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(REALM_I18N_OFF, USER_WITHOUT_LOCALE, PASSWORD, null, ADMIN_CLI_CLIENT_ID, null);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
@@ -276,7 +271,8 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmTokenForOtherClient() throws Exception {
-        try (Keycloak adminCliClient = AdminClientUtil.createAdminClient(true, REALM_I18N_ON,
+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_I18N_ON, ADMIN_CLI_CLIENT_ID).setAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, null).update();
+          Keycloak adminCliClient = AdminClientUtil.createAdminClient(true, REALM_I18N_ON,
                 USER_WITH_LOCALE, PASSWORD, Constants.ADMIN_CLI_CLIENT_ID, null)) {
             AccessTokenResponse accessToken = adminCliClient.tokenManager().getAccessToken();
             Assert.assertNotNull(accessToken);

@@ -118,6 +118,7 @@ import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+import static org.keycloak.testsuite.AbstractKeycloakTest.PREFERRED_DEFAULT_LOGIN_THEME;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
@@ -174,7 +175,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testRhssoThemes(RealmResource realm) {
         // check themes are removed
         RealmRepresentation rep = realm.toRepresentation();
-        Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
+        assertThat("Login theme modified for test purposes", rep.getLoginTheme(), anyOf(nullValue(), equalTo(PREFERRED_DEFAULT_LOGIN_THEME)));
         Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
         // there should be either new default or left null if not set
         assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
