@@ -5,7 +5,7 @@
 title="Scaling"
 summary="Get started with {project_name} scaling and tuning">
 
-Once you have {project_name} started you can next consider adapting your instance to whatever load may be needed. Scaling and tuning can help you:
+After starting {project_name}, consider adapting your instance to the required load using these scaling and tuning guidelines:
 
 - minimize resource utilization
 - achieve target response times
