@@ -1,0 +1,12 @@
+name: Split Weblate Translations
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/messages_*.properties'
+jobs:
+  split-translations:
+    if: github.event.pull_request.head.repo.full_name == 'weblate/keycloak'
+    name: Split Translations
+    runs-on: ubuntu-latest
