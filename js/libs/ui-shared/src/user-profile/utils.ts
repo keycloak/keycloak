@@ -25,7 +25,7 @@ export type UserProfileError = {
 };
 
 const isBundleKey = (displayName?: string) => displayName?.includes("${");
-export const unWrap = (key: string) => key.substring(2, key.length - 1);
+const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
   t: TFunction,
