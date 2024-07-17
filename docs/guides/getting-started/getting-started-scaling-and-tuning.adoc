@@ -43,7 +43,7 @@ If you are not using the Operator, please review the following:
 
 * Higher availability is possible of your instances are on separate machines. On Kubernetes, use Pod anti-affinitity to enforce this.
 
-* You need to use distributed caching and for multi-site clusters external caching for cluster members to share the same session state - see <@links.server id="caching" /> for more on the relevant configuration. The embedded Infinispan cache has horizontal scaling considerations including:
+* Use distributed caching; for multi-site clusters, use external caching for cluster members to share the same session state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
 
 - Your instances will need a way to find each other, see discovery in the server guide.
 - It is not well suited for clusters spanning multiple availability zones, also known as a stretch clusters. It is recommended that when using the embedded Infinispan cache that the instances all exist in the same availability zone to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes you can use Pod affinity to enforce this grouping of Pods.
