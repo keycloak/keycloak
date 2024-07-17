@@ -1103,7 +1103,7 @@
             <!-- Authorization -->
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-authz-client</artifactId>
+                <artifactId>keycloak-authz-client-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

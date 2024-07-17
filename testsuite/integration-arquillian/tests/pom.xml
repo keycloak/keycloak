@@ -1675,7 +1675,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-authz-client</artifactId>
+                    <artifactId>keycloak-authz-client-tests</artifactId>
                 </dependency>
 
                 <!--UNDERTOW-->

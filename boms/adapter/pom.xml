@@ -61,7 +61,8 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-authz-client</artifactId>
+                <!-- TODO: Adapter bom should not reference the "-tests" version. Should be improved later -->
+                <artifactId>keycloak-authz-client-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

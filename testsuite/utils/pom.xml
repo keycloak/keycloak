@@ -179,7 +179,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-client</artifactId>
+            <artifactId>keycloak-authz-client-tests</artifactId>
         </dependency>
         <!-- Dependency on services from integration-arquillian -->
         <dependency>
