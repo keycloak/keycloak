@@ -22,6 +22,7 @@ org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.models.ClientSpi
 org.keycloak.models.ClientScopeSpi
 org.keycloak.models.GroupSpi
+org.keycloak.models.IDPSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.RoleSpi
 org.keycloak.models.DeploymentStateSpi
