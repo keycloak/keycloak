@@ -35,7 +35,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-client</artifactId>
+            <artifactId>keycloak-authz-client-tests</artifactId>
         </dependency>
 
         <!-- Built-in Elytron/Jakarta Servlet integration  -->
