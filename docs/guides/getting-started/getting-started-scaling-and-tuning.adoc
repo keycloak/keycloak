@@ -17,7 +17,7 @@ After starting {project_name}, consider adapting your instance to the required l
 
 As you monitor your {project_name} workload, check to see if the CPU or memory is under or over utilized. Consult <@links.ha id="concepts-memory-and-cpu-sizing" /> to better tune the resources available to the Java Virtual Machine (JVM).
 
-Before increasing the amount of memory available to the JVM, in particular when experiencing an out of memory error, it is best to determine what is contributing to the increased footprint via a heap dump. Excessive response times may also indicate the HTTP work queue is too large and tuning for load shedding would be better than simply providing more memory - see below.
+Before increasing the amount of memory available to the JVM, in particular when experiencing an out of memory error, it is best to determine what is contributing to the increased footprint using a heap dump. Excessive response times may also indicate the HTTP work queue is too large and tuning for load shedding would be better than simply providing more memory. See the following section.
 
 === Common Tuning Options
 
