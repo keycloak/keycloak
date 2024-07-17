@@ -217,12 +217,13 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         return config;
     }
 
-    void createFlow(AuthenticationFlowRepresentation flowRep) {
+    String createFlow(AuthenticationFlowRepresentation flowRep) {
         Response response = authMgmtResource.createFlow(flowRep);
         org.keycloak.testsuite.Assert.assertEquals(201, response.getStatus());
         response.close();
         String flowId = ApiUtil.getCreatedId(response);
         getCleanup().addAuthenticationFlowId(flowId);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
+        return flowId;
     }
 }
