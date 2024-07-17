@@ -1,8 +1,6 @@
 package org.keycloak.test.framework.page;
 
-import org.keycloak.test.framework.injection.InstanceWrapper;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.openqa.selenium.WebDriver;
@@ -21,21 +19,14 @@ public class PageSupplier  implements Supplier<AbstractPage, TestPage> {
         return AbstractPage.class;
     }
 
-    public InstanceWrapper<AbstractPage, TestPage> getValue(Registry registry, TestPage annotation) {
-        throw new UnsupportedOperationException();
+    @Override
+    public AbstractPage getValue(InstanceContext<AbstractPage, TestPage> instanceContext) {
+        WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
+        return createPage(webDriver, instanceContext.getRequestedValueType());
     }
 
     @Override
-    public InstanceWrapper<AbstractPage, TestPage> getValue(Registry registry, TestPage annotation, Class<? extends AbstractPage> valueType) {
-        InstanceWrapper<AbstractPage, TestPage> instanceWrapper = new InstanceWrapper<>(this, annotation);
-        WebDriver webDriver = registry.getDependency(WebDriver.class, instanceWrapper);
-        AbstractPage page = createPage(webDriver, valueType);
-        instanceWrapper.setValue(page, LifeCycle.CLASS);
-        return instanceWrapper;
-    }
-
-    @Override
-    public boolean compatible(InstanceWrapper<AbstractPage, TestPage> a, RequestedInstance<AbstractPage, TestPage> b) {
+    public boolean compatible(InstanceContext<AbstractPage, TestPage> a, RequestedInstance<AbstractPage, TestPage> b) {
         return true;
     }
 

@@ -22,8 +22,16 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
             rawOptions.add("--features=" + String.join(",", serverConfig.features()));
         }
 
-        serverConfig.adminUserName().ifPresent(username -> System.setProperty("keycloakAdmin", username));
-        serverConfig.adminUserPassword().ifPresent(password -> System.setProperty("keycloakAdminPassword", password));
+        if (serverConfig.adminUserName() != null) {
+            System.setProperty("keycloakAdmin", serverConfig.adminUserName());
+        } else {
+            System.getProperties().remove("keycloakAdmin");
+        }
+        if (serverConfig.adminUserPassword() != null) {
+            System.setProperty("keycloakAdminPassword", serverConfig.adminUserPassword());
+        } else {
+            System.getProperties().remove("keycloakAdminPassword");
+        }
 
         serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
         databaseConfig.forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
