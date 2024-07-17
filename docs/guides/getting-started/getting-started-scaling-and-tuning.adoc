@@ -21,7 +21,7 @@ Before increasing the amount of memory available to the JVM, in particular when 
 
 === Common Tuning Options
 
-{project_name} automatically adjusts the number of used threads based upon how many cores you make available. Manually changing the thread count can improve overall throughput see <@links.ha id="concepts-threads" /> - but this must be done in conjunction with other JVM resources, such as database connections - see <@links.ha id="concepts-database-connections" /> as otherwise you may be moving a bottleneck somewhere else.
+{project_name} automatically adjusts the number of used threads based upon how many cores you make available. Manually changing the thread count can improve overall throughput. For more details,  see <@links.ha id="concepts-threads" />. However, changing the thread count must be done in conjunction with other JVM resources, such as database connections;  otherwise, you may be moving a bottleneck somewhere else. For more details, see <@links.ha id="concepts-database-connections" />.
 
 To limit memory utilization of queued work and to provide for load shedding see <@links.ha id="concepts-threads" anchor="load-shedding" />.
 
