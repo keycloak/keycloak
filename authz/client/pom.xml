@@ -11,11 +11,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-authz-client</artifactId>
+    <artifactId>keycloak-authz-client-tests</artifactId>
     <packaging>jar</packaging>
 
     <name>Keycloak Authz: Client API</name>
-    <description>KeyCloak AuthZ: Client API</description>
+    <description>Keycloak Authz: Client API. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-authz-client` module.</description>
 
     <dependencies>
         <dependency>
