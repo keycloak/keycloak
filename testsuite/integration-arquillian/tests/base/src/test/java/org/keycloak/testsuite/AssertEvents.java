@@ -27,6 +27,7 @@ import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -41,6 +42,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
@@ -369,16 +371,21 @@ public class AssertEvents implements TestRule {
         }
 
         public EventRepresentation assertEvent() {
-            return assertEvent(false);
+            return assertEvent(false, 0);
+        }
+
+        public EventRepresentation assertEvent(boolean ignorePreviousEvents) {
+            return assertEvent(ignorePreviousEvents, 0);
         }
 
         /**
          * Assert the expected event was sent to the listener by Keycloak server. Returns this event.
          *
          * @param ignorePreviousEvents if true, test will ignore all the events, which were already present. Test will poll the events from the queue until it finds the event of expected type
+         * @param seconds The seconds to wait for the next event to come
          * @return the expected event
          */
-        public EventRepresentation assertEvent(boolean ignorePreviousEvents) {
+        public EventRepresentation assertEvent(boolean ignorePreviousEvents, int seconds) {
             if (expected.getError() != null && ! expected.getType().endsWith("_ERROR")) {
                 expected.setType(expected.getType() + "_ERROR");
             }
@@ -387,7 +394,7 @@ public class AssertEvents implements TestRule {
                 // Consider 25 as a "limit" for maximum number of events in the queue for now
                 List<String> presentedEventTypes = new LinkedList<>();
                 for (int i = 0 ; i < 25 ; i++) {
-                    EventRepresentation event = fetchNextEvent();
+                    EventRepresentation event = fetchNextEvent(seconds);
                     if (event == null) {
                         Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
                     }
@@ -522,5 +529,27 @@ public class AssertEvents implements TestRule {
 
     private EventRepresentation fetchNextEvent() {
         return context.testingClient.testing().pollEvent();
+    }
+
+    private EventRepresentation fetchNextEvent(int seconds) {
+        if (seconds <= 0) {
+            return fetchNextEvent();
+        }
+
+        final long millis = TimeUnit.SECONDS.toMillis(seconds);
+        final long start = Time.currentTimeMillis();
+        do {
+            try {
+                EventRepresentation event = fetchNextEvent();
+                if (event != null) {
+                    return event;
+                }
+                // wait a bit to receive the event
+                TimeUnit.MILLISECONDS.sleep(millis / 10L);
+            } catch (InterruptedException e) {
+                // no-op
+            }
+        } while (Time.currentTimeMillis() - start < millis);
+        return null;
     }
 }
