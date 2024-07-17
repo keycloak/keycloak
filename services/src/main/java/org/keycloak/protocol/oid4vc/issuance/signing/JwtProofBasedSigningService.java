@@ -120,7 +120,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
                             .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
 
                     Proof proof = Optional.ofNullable(vcIssuanceContext.getCredentialRequest().getProof())
-                            .orElseThrow(() -> new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT.getValue()));
+                            .orElseThrow(() -> new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT));
 
                     if (!Objects.equals(proof.getProofType(), ProofType.JWT)) {
                         throw new VCIssuerException("Wrong proof type");

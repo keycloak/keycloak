@@ -2,9 +2,11 @@ package org.keycloak.test.framework.injection;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.keycloak.test.framework.config.Config;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,7 +23,7 @@ public class Registry {
     private ExtensionContext currentContext;
     private final List<Supplier<?, ?>> suppliers = new LinkedList<>();
     private final List<InstanceWrapper<?, ?>> deployedInstances = new LinkedList<>();
-    private final List<InstanceWrapper<?, ?>> requestedInstances = new LinkedList<>();
+    private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
 
     public Registry() {
         loadSuppliers();
@@ -50,9 +52,9 @@ public class Registry {
             return (T) dependency.getValue();
         }
 
-        dependency = getRequestedInstance(typeClass);
-        if (dependency != null) {
-            dependency = dependency.getSupplier().getValue(this, dependency.getAnnotation());
+        RequestedInstance requestedDependency = getRequestedInstance(typeClass);
+        if (requestedDependency != null) {
+            dependency = requestedDependency.getSupplier().getValue(this, requestedDependency.getAnnotation(), typeClass);
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
 
@@ -67,8 +69,8 @@ public class Registry {
 
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
-            Supplier<?, ?> supplier = supplied.get();
-            dependency = supplier.getValue(this, null);
+            Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
+            dependency = supplier.getValue(this, null, typeClass);
             deployedInstances.add(dependency);
 
             if (LOGGER.isTraceEnabled()) {
@@ -84,14 +86,21 @@ public class Registry {
     }
 
     public void beforeEach(Object testInstance) {
+        findRequestedInstances(testInstance);
+        matchDeployedInstancesWithRequestedInstances();
+        deployRequestedInstances();
+        injectFields(testInstance);
+    }
+
+    private void findRequestedInstances(Object testInstance) {
         Class testClass = testInstance.getClass();
-        InstanceWrapper requestedServerInstance = createInstanceWrapper(testClass.getAnnotations());
+        RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
         requestedInstances.add(requestedServerInstance);
 
         for (Field f : testClass.getDeclaredFields()) {
-            InstanceWrapper instanceWrapper = createInstanceWrapper(f.getAnnotations());
-            if (instanceWrapper != null) {
-                requestedInstances.add(instanceWrapper);
+            RequestedInstance requestedInstance = createRequestedInstance(f.getAnnotations(), f.getType());
+            if (requestedInstance != null) {
+                requestedInstances.add(requestedInstance);
             }
         }
 
@@ -99,11 +108,13 @@ public class Registry {
             LOGGER.tracev("Requested suppliers: {0}",
                     requestedInstances.stream().map(r -> r.getSupplier().getClass().getSimpleName()).collect(Collectors.joining(", ")));
         }
+    }
 
-        Iterator<InstanceWrapper<?, ?>> itr = requestedInstances.iterator();
+    private void matchDeployedInstancesWithRequestedInstances() {
+        Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
-            InstanceWrapper<?, ?> requestedInstance = itr.next();
-            InstanceWrapper deployedInstance = getDeployedInstance(requestedInstance.getSupplier());
+            RequestedInstance<?, ?> requestedInstance = itr.next();
+            InstanceWrapper deployedInstance = getDeployedInstance(requestedInstance);
             if (deployedInstance != null) {
                 if (deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
                     if (LOGGER.isTraceEnabled()) {
@@ -122,12 +133,14 @@ public class Registry {
                 }
             }
         }
+    }
 
-        itr = requestedInstances.iterator();
+    private void deployRequestedInstances() {
+        Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
-            InstanceWrapper requestedInstance = itr.next();
+            RequestedInstance requestedInstance = itr.next();
 
-            InstanceWrapper instance = requestedInstance.getSupplier().getValue(this, requestedInstance.getAnnotation());
+            InstanceWrapper instance = requestedInstance.getSupplier().getValue(this, requestedInstance.getAnnotation(), requestedInstance.getValueType());
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Created instance: {0}",
@@ -138,9 +151,11 @@ public class Registry {
 
             itr.remove();
         }
+    }
 
+    private void injectFields(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
-            InstanceWrapper<?, ?> instance = getDeployedInstance(f.getAnnotations());
+            InstanceWrapper<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
             try {
                 f.setAccessible(true);
                 f.set(testInstance, instance.getValue());
@@ -168,21 +183,22 @@ public class Registry {
         destroy.forEach(this::destroy);
     }
 
-    private InstanceWrapper<?, ?> createInstanceWrapper(Annotation[] annotations) {
+    private RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
         for (Annotation a : annotations) {
             for (Supplier s : suppliers) {
                 if (s.getAnnotationClass().equals(a.annotationType())) {
-                    return new InstanceWrapper(s, a);
+                    return new RequestedInstance(s, a, valueType);
                 }
             }
         }
         return null;
     }
 
-    private InstanceWrapper<?, ?> getDeployedInstance(Annotation[] annotations) {
+    private InstanceWrapper<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
         for (Annotation a : annotations) {
             for (InstanceWrapper<?, ?> i : deployedInstances) {
-                if (i.getSupplier().getAnnotationClass().equals(a.annotationType())) {
+                Supplier<?, ?> supplier = i.getSupplier();
+                if (supplier.getAnnotationClass().equals(a.annotationType()) && valueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;
                 }
             }
@@ -195,7 +211,7 @@ public class Registry {
         if (removed) {
             Set<InstanceWrapper> dependencies = instanceWrapper.getDependencies();
             dependencies.forEach(this::destroy);
-            instanceWrapper.getSupplier().close(instanceWrapper.getValue());
+            instanceWrapper.getSupplier().close(instanceWrapper);
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Closed instance: {0}",
@@ -204,15 +220,63 @@ public class Registry {
         }
     }
 
-    private InstanceWrapper getDeployedInstance(Supplier supplier) {
-        return deployedInstances.stream().filter(i -> i.getSupplier().equals(supplier)).findFirst().orElse(null);
+    private InstanceWrapper getDeployedInstance(RequestedInstance requestedInstance) {
+        Class requestedValueType = requestedInstance.getValueType();
+        for (InstanceWrapper<?, ?> i : deployedInstances) {
+            if (requestedValueType != null) {
+                if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
+                    return i;
+                }
+            } else if (i.getSupplier().equals(requestedInstance.getSupplier())) {
+                return i;
+            }
+        }
+        return null;
     }
 
     private void loadSuppliers() {
-        ServiceLoader.load(Supplier.class).iterator().forEachRemaining(suppliers::add);
+        Iterator<Supplier> supplierIterator = ServiceLoader.load(Supplier.class).iterator();
+        Set<Class> loadedValueTypes = new HashSet<>();
+        Set<Supplier> skippedSuppliers = new HashSet<>();
+
+        while (supplierIterator.hasNext()) {
+            Supplier supplier = supplierIterator.next();
+            boolean shouldAdd = false;
+            Class supplierValueType = supplier.getValueType();
+
+            if (!loadedValueTypes.contains(supplierValueType)) {
+                String requestedSupplier = Config.getInstance().getSelectedSupplier(supplierValueType);
+                if (requestedSupplier != null) {
+                    if (requestedSupplier.equals(supplier.getAlias())) {
+                        shouldAdd = true;
+                    }
+                } else {
+                    shouldAdd = true;
+                }
+            }
+
+            if (shouldAdd) {
+                suppliers.add(supplier);
+                loadedValueTypes.add(supplierValueType);
+            } else {
+                skippedSuppliers.add(supplier);
+            }
+        }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracev("Suppliers: {0}", suppliers.stream().map(s -> s.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            StringBuilder loaded = new StringBuilder();
+            loaded.append("Loaded suppliers:");
+            for (Supplier s : suppliers) {
+                loaded.append("\n - " + ValueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
+            }
+            LOGGER.trace(loaded.toString());
+
+            StringBuilder skipped = new StringBuilder();
+            skipped.append("Skipped suppliers:");
+            for (Supplier s : skippedSuppliers) {
+                skipped.append("\n - " + ValueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
+            }
+            LOGGER.trace(skipped.toString());
         }
     }
 
@@ -220,7 +284,7 @@ public class Registry {
         return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
     }
 
-    private InstanceWrapper getRequestedInstance(Class typeClass) {
+    private RequestedInstance getRequestedInstance(Class typeClass) {
         return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
     }
 

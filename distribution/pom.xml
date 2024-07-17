@@ -41,7 +41,6 @@
     </properties>
 
     <modules>
-        <module>feature-packs</module>
         <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>

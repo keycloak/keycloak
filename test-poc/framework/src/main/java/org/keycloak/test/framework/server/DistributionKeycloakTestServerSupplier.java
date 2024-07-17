@@ -7,4 +7,13 @@ public class DistributionKeycloakTestServerSupplier extends AbstractKeycloakTest
         return new DistributionKeycloakTestServer();
     }
 
+    @Override
+    public boolean requiresDatabase() {
+        return true;
+    }
+
+    @Override
+    public String getAlias() {
+        return "distribution";
+    }
 }

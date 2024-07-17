@@ -23,19 +23,10 @@ package org.keycloak.protocol.oid4vc.model;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public enum ProofType {
+public final class ProofType {
 
-    JWT("jwt"),
-    LD_PROOF("ldp_vp"),
-    CWT("cwt");
+    public static final String JWT = "jwt";
+    public static final String LD_PROOF = "ldp_vp";
+    public static final String CWT = "cwt";
 
-    private final String value;
-
-    ProofType(String value) {
-        this.value = value;
-    }
-
-    public String getValue() {
-        return value;
-    }
 }

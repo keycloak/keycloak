@@ -10,8 +10,21 @@ public interface Supplier<T, S extends Annotation> {
 
     InstanceWrapper<T, S> getValue(Registry registry, S annotation);
 
-    boolean compatible(InstanceWrapper<T, S> a, InstanceWrapper<T, S> b);
+    default InstanceWrapper<T, S> getValue(Registry registry, S annotation, Class<? extends T> valueType) {
+        return getValue(registry, annotation);
+    }
 
-    default void close(T instance) {}
+    boolean compatible(InstanceWrapper<T, S> a, RequestedInstance<T, S> b);
+
+    default void close(T value) {
+    }
+
+    default void close(InstanceWrapper<T, S> instanceWrapper) {
+        close(instanceWrapper.getValue());
+    }
+
+    default String getAlias() {
+        return getClass().getSimpleName();
+    }
 
 }

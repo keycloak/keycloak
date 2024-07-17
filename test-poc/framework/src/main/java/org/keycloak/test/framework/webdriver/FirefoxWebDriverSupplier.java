@@ -3,6 +3,7 @@ package org.keycloak.test.framework.webdriver;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -26,7 +27,7 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<WebDriver, TestWebDriver> a, InstanceWrapper<WebDriver, TestWebDriver> b) {
+    public boolean compatible(InstanceWrapper<WebDriver, TestWebDriver> a, RequestedInstance<WebDriver, TestWebDriver> b) {
         return true;
     }
 
@@ -35,4 +36,8 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
         instance.quit();
     }
 
+    @Override
+    public String getAlias() {
+        return "firefox";
+    }
 }

@@ -122,7 +122,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         LinkedList<FlowExecutions> expected = new LinkedList<>();
         String[] kerberosAuthExpectedChoices = KerberosUtils.isKerberosSupportExpected() ? new String[]{REQUIRED, ALTERNATIVE, DISABLED} : new String[]{DISABLED};
 
-        AuthenticationFlowRepresentation flow = newFlow("browser", "browser based authentication", "basic-flow", true, true);
+        AuthenticationFlowRepresentation flow = newFlow("browser", "Browser based authentication", "basic-flow", true, true);
         addExecExport(flow, null, false, "auth-cookie", false, null, ALTERNATIVE, 10);
         addExecExport(flow, null, false, "auth-spnego", false, null, DISABLED, 20);
         addExecExport(flow, null, false, "identity-provider-redirector", false, null, ALTERNATIVE, 25);
@@ -192,7 +192,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         expected.add(new FlowExecutions(flow, execs));
 
-         flow = newFlow("registration", "registration flow", "basic-flow", true, true);
+        flow = newFlow("registration", "Registration flow", "basic-flow", true, true);
         addExecExport(flow, "registration form", false, "registration-page-form", true, null, REQUIRED, 10);
 
         execs = new LinkedList<>();

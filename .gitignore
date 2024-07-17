@@ -112,3 +112,5 @@ node_modules
 
 # JENV
 .java-version
+
+.env

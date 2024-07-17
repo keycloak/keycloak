@@ -9,8 +9,9 @@ import {
   DropdownList,
   MenuToggle,
   ToolbarItem,
+  Label,
 } from "@patternfly/react-core";
-import { EllipsisVIcon } from "@patternfly/react-icons";
+import { EllipsisVIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -52,9 +53,15 @@ const MemberOfRenderer = (member: MembersOf) => {
 
 const UserDetailLink = (user: MembersOf) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username}
+      {user.username}{" "}
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
     </Link>
   );
 };
