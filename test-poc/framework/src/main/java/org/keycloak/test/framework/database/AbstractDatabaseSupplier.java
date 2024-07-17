@@ -9,6 +9,9 @@ import org.keycloak.test.framework.injection.Supplier;
 
 public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase, KeycloakTestDatabase> {
 
+    protected static final String DEFAULT_DB_USERNAME = "keycloak";
+    protected static final String DEFAULT_DB_PASSWORD = "Password1!";
+
     @Override
     public Class<KeycloakTestDatabase> getAnnotationClass() {
         return KeycloakTestDatabase.class;
