@@ -291,7 +291,7 @@ following content:
 [source]
 ----
 usernameOrEmail=Brukernavn
-password=Password
+password=Passord
 ----
 +
 If you omit a translation for messages, they will use English.
