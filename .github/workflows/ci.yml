@@ -292,7 +292,11 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          if [ "$OSTYPE" == "msys" ]; then
+            ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS  "-Dwebdriver.chrome.driver=$ChromeWebDriver/chromedriver.exe" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          else
+            ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS  "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver"     -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          fi
 
       - name: Build with JDK
         run:
@@ -349,7 +353,7 @@ jobs:
               ;;
           esac
           echo "Variant: $VARIANT"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus $VARIANT -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" $VARIANT -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -497,7 +501,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -590,7 +594,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -756,7 +760,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh webauthn`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -839,6 +843,7 @@ jobs:
           -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
           -Dauth.server.ssl.required=false \
           -Dauth.server.db.host=localhost \
+          "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
           -f testsuite/integration-arquillian/pom.xml 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
