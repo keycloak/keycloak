@@ -33,7 +33,7 @@ Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale. 
 
 == Horizontal Scaling
 
-A single {project_name} instance is susceptible to availability issues. If the instance goes down you will be faced with a full outage until another instance comes up, and unless the '`persistent-user-sessions`' feature is enabled all of your ongoing sessions will be lost. By running at least two cluster members on different machines you will greatly increase the availability of {project_name}.
+A single {project_name} instance is susceptible to availability issues. If the instance goes down, you experience a full outage until another instance comes up. Also, unless the '`persistent-user-sessions`' feature is enabled, all ongoing sessions are lost. By running two or more cluster members on different machines, you greatly increase the availability of {project_name}.
 
 A single JVM has a limit on how many concurrent requests it can handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching, limit that scaling.
 
