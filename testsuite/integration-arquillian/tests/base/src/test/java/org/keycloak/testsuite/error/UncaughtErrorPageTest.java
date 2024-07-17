@@ -223,6 +223,8 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
         try {
             checkPageNotFound("/auth/realms/master/nosuch");
+            // Once keycloak.v2 would be the default login theme, uncomment the following line and remove the one below:
+            // String url = driver.findElement(By.xpath("//option[text()[contains(.,'Deutsch')]]")).getAttribute("value");
             String url = driver.findElement(By.xpath("//a[text()[contains(.,'Deutsch')]]")).getAttribute("href");
             driver.navigate().to(url);
             errorPage.assertCurrent();

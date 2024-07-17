@@ -345,19 +345,19 @@ public class OAuthClient {
 
     public void linkUsers(String username, String password) {
         WaitUtils.waitForPageToLoad();
-        WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
+        WebElement linkAccountButton = driver.findElement(By.name("linkAccount"));
         waitUntilElement(linkAccountButton).is().clickable();
         linkAccountButton.click();
 
         WaitUtils.waitForPageToLoad();
-        WebElement usernameInput = driver.findElement(By.id("username"));
+        WebElement usernameInput = driver.findElement(By.name("username"));
         usernameInput.clear();
         usernameInput.sendKeys(username);
-        WebElement passwordInput = driver.findElement(By.id("password"));
+        WebElement passwordInput = driver.findElement(By.name("password"));
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
-        WebElement loginButton = driver.findElement(By.id("kc-login"));
+        WebElement loginButton = driver.findElement(By.name("kc-login"));
         waitUntilElement(loginButton).is().clickable();
         loginButton.click();
     }
@@ -382,8 +382,8 @@ public class OAuthClient {
         WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
-            driver.findElement(By.id("username")).sendKeys(username);
-            driver.findElement(By.id("password")).sendKeys(password);
+            driver.findElement(By.name("username")).sendKeys(username);
+            driver.findElement(By.name("password")).sendKeys(password);
             if (rememberMe) {
                 driver.findElement(By.id("rememberMe")).click();
             }
@@ -396,19 +396,19 @@ public class OAuthClient {
 
     private void updateAccountInformation(String username, String email, String firstName, String lastName) {
 
-        WebElement usernameInput = driver.findElement(By.id("username"));
+        WebElement usernameInput = driver.findElement(By.name("username"));
         usernameInput.clear();
         usernameInput.sendKeys(username);
 
-        WebElement emailInput = driver.findElement(By.id("email"));
+        WebElement emailInput = driver.findElement(By.name("email"));
         emailInput.clear();
         emailInput.sendKeys(email);
 
-        WebElement firstNameInput = driver.findElement(By.id("firstName"));
+        WebElement firstNameInput = driver.findElement(By.name("firstName"));
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
 
-        WebElement lastNameInput = driver.findElement(By.id("lastName"));
+        WebElement lastNameInput = driver.findElement(By.name("lastName"));
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
