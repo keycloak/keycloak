@@ -49,3 +49,9 @@ For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring t
 The `java-keystore` key provider, which allows loading a realm key from an external java keystore file, has been modified to manage all {project_name} algorithms. Besides, the keystore and key secrets, needed to retrieve the actual key from the store, can be configured using the link:{adminguide_link}#_vault-administration[vault]. Therefore a {project_name} realm can externalize any key to the encrypted file without sensitive data stored in the database.
 
 For more information about this subject, see link:{adminguide_link}#realm_keys[Configuring realm keys].
+
+= Deprecating `keycloak` login theme
+
+The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2` and will be removed in a future version.
+While it remains the default for the new realms for compatibility reasons, it is strongly recommended to switch all the
+realm themes to `keycloak.v2`.
