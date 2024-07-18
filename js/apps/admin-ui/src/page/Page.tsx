@@ -1,8 +1,9 @@
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ButtonVariant, DropdownItem } from "@patternfly/react-core";
+import { get } from "lodash-es";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -10,6 +11,9 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./PageList";
 import { PageParams, toPage } from "./routes";
+import { useFetch } from "../utils/useFetch";
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { useState } from "react";
 
 export default function Page() {
   const { adminClient } = useAdminClient();
@@ -21,11 +25,18 @@ export default function Page() {
   const navigate = useNavigate();
   const { id, providerId } = useParams<PageParams>();
   const { addAlert, addError } = useAlerts();
+  const [pageData, setPageData] = useState<ComponentRepresentation>();
 
   const page = pages?.find((p) => p.id === providerId);
   if (!page) {
     throw new Error(t("notFound"));
   }
+
+  useFetch(
+    async () => adminClient.components.findOne({ id: id! }),
+    setPageData,
+    [id],
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "itemDeleteConfirmTitle",
@@ -48,7 +59,10 @@ export default function Page() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={id || t("createItem")}
+        titleKey={
+          get(pageData, `config.${page.metadata.displayFields[0]}`)?.[0] ||
+          t("createItem")
+        }
         dropdownItems={
           id
             ? [
