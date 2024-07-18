@@ -15,21 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.admin.client.resource;
+package org.keycloak.representations.idm;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.keycloak.representations.idm.MemberRepresentation;
+public class MemberRepresentation extends UserRepresentation {
 
-public interface OrganizationMemberResource {
+    private MembershipType membershipType;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    MemberRepresentation toRepresentation();
+    public MemberRepresentation() {
+        super();
+    }
 
-    @DELETE
-    Response delete();
+    public MemberRepresentation(UserRepresentation user) {
+        super(user);
+    }
+
+    public MembershipType getMembershipType() {
+        return membershipType;
+    }
+
+    public void setMembershipType(MembershipType membershipType) {
+        this.membershipType = membershipType;
+    }
 }

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -132,6 +133,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
         //this way, all organizations in the realm will be invalidated ... or should it be invalidated whole realm instead?
         getAllStream().forEach(this::remove);
+    }
+
+    @Override
+    public boolean addManagedMember(OrganizationModel organization, UserModel user) {
+        return orgDelegate.addManagedMember(organization, user);
     }
 
     @Override

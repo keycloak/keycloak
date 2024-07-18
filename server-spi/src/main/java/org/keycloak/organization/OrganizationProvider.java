@@ -103,7 +103,17 @@ public interface OrganizationProvider extends Provider {
     void removeAll();
 
     /**
-     * Adds the given {@link UserModel} as a member of the given {@link OrganizationModel}.
+     * Adds the given {@link UserModel} as a managed member of the given {@link OrganizationModel}.
+     *
+     * @param organization the organization
+     * @param user the user
+     * @throws ModelException if the {@link UserModel} is member of different organization
+     * @return {@code true} if the user was added as a member. Otherwise, returns {@code false}
+     */
+    boolean addManagedMember(OrganizationModel organization, UserModel user);
+
+    /**
+     * Adds the given {@link UserModel} as an unmanaged member of the given {@link OrganizationModel}.
      *
      * @param organization the organization
      * @param user the user

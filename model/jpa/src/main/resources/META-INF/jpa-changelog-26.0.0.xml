@@ -45,4 +45,14 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.0.0-org-group-membership">
+        <addColumn tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" type="VARCHAR(255)"/>
+        </addColumn>
+        <update tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" value="UNMANAGED"/>
+        </update>
+        <addNotNullConstraint tableName="USER_GROUP_MEMBERSHIP" columnName="MEMBERSHIP_TYPE" columnDataType="VARCHAR(255)"/>
+    </changeSet>
+
 </databaseChangeLog>

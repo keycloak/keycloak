@@ -406,7 +406,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation existing = createOrganization("acme", "acme.org", "acme.net");
         // disable the organization provider and try to access REST endpoints
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
-                .setOrganizationEnabled(Boolean.FALSE)
+                .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
             OrganizationRepresentation org = createRepresentation("some", "some.com");
 

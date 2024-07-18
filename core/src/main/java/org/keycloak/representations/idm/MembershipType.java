@@ -14,22 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.representations.idm;
 
-package org.keycloak.admin.client.resource;
+public enum MembershipType {
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.keycloak.representations.idm.MemberRepresentation;
+    /**
+     * Indicates that member can exist without group/organization.
+     */
+    UNMANAGED,
 
-public interface OrganizationMemberResource {
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    MemberRepresentation toRepresentation();
-
-    @DELETE
-    Response delete();
+    /**
+     * Indicates that member cannot exist without group/organization.
+     */
+    MANAGED;
 }
