@@ -64,6 +64,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(ExportPropertyMappers.getMappers());
         MAPPERS.addAll(ImportPropertyMappers.getMappers());
         MAPPERS.addAll(TruststorePropertyMappers.getMappers());
+        MAPPERS.addAll(BootstrapAdminPropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
