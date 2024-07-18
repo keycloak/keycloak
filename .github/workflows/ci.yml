@@ -51,16 +51,16 @@ jobs:
           fi
           echo "matrix=$(echo $STORES  | jq -Rc 'split(", ")')" >> $GITHUB_OUTPUT
 
-  build:
-    name: Build
-    if: needs.conditional.outputs.ci == 'true'
-    runs-on: ubuntu-latest
-    needs: conditional
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Keycloak
-        uses: ./.github/actions/build-keycloak
+#  build:
+#    name: Build
+#    if: needs.conditional.outputs.ci == 'true'
+#    runs-on: ubuntu-latest
+#    needs: conditional
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Build Keycloak
+#        uses: ./.github/actions/build-keycloak
 #
 #  unit-tests:
 #    name: Base UT
@@ -864,10 +864,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - conditional
-      - build
+#      - build
     timeout-minutes: 30
     steps:
       - run: |
+          echo ${{ toJSON(needs.conditional.outputs) }}
           echo ${{ needs.conditional.outputs.ci-test-poc }}
           echo ${{ needs.conditional.outputs.ci-test-poc == 'true' }}
 
@@ -877,7 +878,7 @@ jobs:
     if: needs.conditional.outputs.ci-test-poc == 'true'
     needs:
       - conditional
-      - build
+#      - build
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -896,7 +897,7 @@ jobs:
     if: always()
     needs:
       - conditional
-      - build
+#      - build
 #      - unit-tests
 #      - base-integration-tests
 #      - adapter-integration-tests
