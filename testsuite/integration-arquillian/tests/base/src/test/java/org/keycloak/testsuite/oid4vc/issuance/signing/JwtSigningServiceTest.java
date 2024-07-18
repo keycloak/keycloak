@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,10 +37,10 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
 import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,7 +125,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
                                         "arrayClaim", List.of("a", "b", "c"),
-                                        "issuanceDate", Date.from(Instant.ofEpochSecond(10)))));
+                                        "issuanceDate", Instant.ofEpochSecond(10))));
     }
 
     @Test
@@ -184,19 +183,19 @@ public class JwtSigningServiceTest extends OID4VCTest {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals("JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC", TEST_EXPIRATION_DATE.toInstant().getEpochSecond(), theToken.getExp().longValue());
+            assertEquals("JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC", TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue());
             if (claims.containsKey("issuanceDate")) {
-                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", ((Date) claims.get("issuanceDate")).toInstant().getEpochSecond(), theToken.getNbf().longValue());
+                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", ((Instant) claims.get("issuanceDate")).getEpochSecond(), theToken.getNbf().longValue());
             } else {
                 // if not specific date is set, check against "currentTime"
-                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", TEST_ISSUANCE_DATE.toInstant().getEpochSecond(), theToken.getNbf().longValue());
+                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue());
             }
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
             Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals("If the credentials subject id is set, it should be set as the token subject.", id.toString(), theToken.getSubject()));
 
             assertNotNull("The credentials should be included at the vc-claim.", theToken.getOtherClaims().get("vc"));
-            VerifiableCredential credential = new ObjectMapper().convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+            VerifiableCredential credential = JsonSerialization.mapper.convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
             assertEquals("The types should be included", TEST_TYPES, credential.getType());
             assertEquals("The issuer should be included", TEST_DID, credential.getIssuer());
             assertEquals("The expiration date should be included", TEST_EXPIRATION_DATE, credential.getExpirationDate());
@@ -213,7 +212,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
         }
     }
 
- 
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         if (testRealm.getComponents() != null) {
@@ -223,4 +222,4 @@ public class JwtSigningServiceTest extends OID4VCTest {
                     Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
         }
     }
-} 
+}

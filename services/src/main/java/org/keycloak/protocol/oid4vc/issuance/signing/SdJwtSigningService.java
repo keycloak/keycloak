@@ -32,6 +32,7 @@ import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -121,7 +122,7 @@ public class SdJwtSigningService extends SigningService<String> {
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
         // provided
         long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
+                .map(Instant::getEpochSecond)
                 .orElse((long) timeProvider.currentTimeSeconds());
         rootNode.put(NOT_BEFORE_CLAIM, iat);
         if (verifiableCredential.getType() == null || verifiableCredential.getType().size() != 1) {
