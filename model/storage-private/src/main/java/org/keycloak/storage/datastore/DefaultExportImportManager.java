@@ -85,7 +85,6 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -134,6 +133,8 @@ import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 
 /**
  * This wraps the functionality about export/import for the storage.
@@ -1598,9 +1599,13 @@ public class DefaultExportImportManager implements ExportImportManager {
                     provider.addIdentityProvider(org, idp);
                 }
 
-                for (UserRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
+                for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
-                    provider.addMember(org, m);
+                    if (MembershipType.MANAGED.equals(member.getMembershipType())) {
+                        provider.addManagedMember(org, m);
+                    } else {
+                        provider.addMember(org, m);
+                    }
                 }
             }
         }

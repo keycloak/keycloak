@@ -14,22 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models;
 
-package org.keycloak.admin.client.resource;
+import org.keycloak.representations.idm.MembershipType;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.keycloak.representations.idm.MemberRepresentation;
+public class MembershipMetadata {
 
-public interface OrganizationMemberResource {
+    private final MembershipType membershipType;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    MemberRepresentation toRepresentation();
+    public MembershipMetadata(MembershipType membershipType) {
+        this.membershipType = membershipType;
+    }
 
-    @DELETE
-    Response delete();
+    public MembershipType getMembershipType() {
+        return membershipType;
+    }
 }

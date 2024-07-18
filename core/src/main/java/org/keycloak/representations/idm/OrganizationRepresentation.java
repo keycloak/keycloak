@@ -34,7 +34,7 @@ public class OrganizationRepresentation {
     private String description;
     private Map<String, List<String>> attributes;
     private Set<OrganizationDomainRepresentation> domains;
-    private List<UserRepresentation> members;
+    private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
 
     public String getId() {
@@ -119,19 +119,19 @@ public class OrganizationRepresentation {
         getDomains().remove(domain);
     }
 
-    public List<UserRepresentation> getMembers() {
+    public List<MemberRepresentation> getMembers() {
         return members;
     }
 
-    public void setMembers(List<UserRepresentation> members) {
+    public void setMembers(List<MemberRepresentation> members) {
         this.members = members;
     }
 
-    public void addMember(UserRepresentation user) {
+    public void addMember(MemberRepresentation member) {
         if (members == null) {
             members = new ArrayList<>();
         }
-        members.add(user);
+        members.add(member);
     }
 
     public List<IdentityProviderRepresentation> getIdentityProviders() {

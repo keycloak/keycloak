@@ -58,7 +58,7 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             return;
         }
 
-        provider.addMember(organization, user);
+        provider.addManagedMember(organization, user);
         context.success();
     }
 

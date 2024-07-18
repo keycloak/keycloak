@@ -195,6 +195,9 @@ public interface UserModel extends RoleMapperModel {
     }
 
     void joinGroup(GroupModel group);
+    default void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        joinGroup(group);
+    }
     void leaveGroup(GroupModel group);
     boolean isMemberOf(GroupModel group);
 

@@ -27,6 +27,8 @@ import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
@@ -45,6 +47,7 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -212,14 +215,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
     @Test
     public void testLinkExistingAccount() {
-        // create a realm user in the consumer realm
-        realmsResouce().realm(bc.consumerRealmName()).users()
-                .create(UserBuilder.create()
-                        .username(bc.getUserLogin())
-                        .email(bc.getUserEmail())
-                        .password(bc.getUserPassword())
-                        .enabled(true).build()
-                ).close();
+        createUserInConsumerRealm();
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
@@ -242,14 +238,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
     @Test
     public void testExistingUserUsingOrgDomain() {
-        // create a realm user in the consumer realm
-        realmsResouce().realm(bc.consumerRealmName()).users()
-                .create(UserBuilder.create()
-                        .username(bc.getUserLogin())
-                        .email(bc.getUserEmail())
-                        .password(bc.getUserPassword())
-                        .enabled(true).build()
-                ).close();
+        createUserInConsumerRealm();
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
@@ -425,6 +414,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+        
     }
 
     @Test
@@ -687,6 +677,20 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         try {
             assertNull(organization.members().member(account.getId()).toRepresentation());
         } catch (NotFoundException ignore) {
+        }
+    }
+
+    private void createUserInConsumerRealm() {
+        // create a realm user in the consumer realm
+        try (Response response = realmsResouce().realm(bc.consumerRealmName()).users()
+                .create(UserBuilder.create()
+                        .username(bc.getUserLogin())
+                        .email(bc.getUserEmail())
+                        .password(bc.getUserPassword())
+                        .enabled(true).build())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String id = ApiUtil.getCreatedId(response);
+            getCleanup(bc.consumerRealmName()).addUserId(id);
         }
     }
 }

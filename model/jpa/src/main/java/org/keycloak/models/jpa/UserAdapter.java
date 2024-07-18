@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
 import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
+import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -55,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -167,7 +169,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
+        String valueToSet = (values != null && !values.isEmpty()) ? values.get(0) : null;
         if (UserModel.FIRST_NAME.equals(name)) {
             user.setFirstName(valueToSet);
             return;
@@ -363,7 +365,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         predicates.add(builder.equal(root.get("user"), getEntity()));
 
         queryBuilder.select(root.get("groupId"));
-        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(predicates.toArray(Predicate[]::new));
 
         return em.createQuery(queryBuilder);
     }
@@ -414,20 +416,28 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
-        joinGroupImpl(group);
+        joinGroup(group, null);
+    }
 
+    @Override
+    public void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
+        joinGroupImpl(group, metadata);
     }
 
     protected void joinGroupImpl(GroupModel group) {
+        joinGroupImpl(group, null);
+    }
+
+    protected void joinGroupImpl(GroupModel group, MembershipMetadata metadata) {
         UserGroupMembershipEntity entity = new UserGroupMembershipEntity();
         entity.setUser(getEntity());
         entity.setGroupId(group.getId());
+        entity.setMembershipType(metadata == null ? MembershipType.UNMANAGED : metadata.getMembershipType());
         em.persist(entity);
         em.flush();
         em.detach(entity);
         GroupMemberJoinEvent.fire(group, session);
-
     }
 
     @Override
@@ -437,7 +447,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         TypedQuery<UserGroupMembershipEntity> query = getUserGroupMappingQuery(group);
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserGroupMembershipEntity> results = query.getResultList();
-        if (results.size() == 0) return;
+        if (results.isEmpty()) return;
         for (UserGroupMembershipEntity entity : results) {
             em.remove(entity);
         }
@@ -508,7 +518,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserRoleMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return;
+        if (results.isEmpty()) return;
         for (UserRoleMappingEntity entity : results) {
             em.remove(entity);
         }

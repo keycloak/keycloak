@@ -34,6 +34,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.equalTo;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,6 +43,8 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -113,7 +116,9 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
         assertThat(users, Matchers.not(empty()));
         // user is a member
-        Assert.assertNotNull(organization.members().member(users.get(0).getId()).toRepresentation());
+        MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+        Assert.assertNotNull(member);
+        assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
         getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console

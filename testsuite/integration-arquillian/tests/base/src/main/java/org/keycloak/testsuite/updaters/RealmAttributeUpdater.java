@@ -180,7 +180,7 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
-    public RealmAttributeUpdater setOrganizationEnabled(Boolean organizationsEnabled) {
+    public RealmAttributeUpdater setOrganizationsEnabled(Boolean organizationsEnabled) {
         rep.setOrganizationsEnabled(organizationsEnabled);
         return this;
     }

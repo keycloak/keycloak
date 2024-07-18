@@ -53,6 +53,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -68,7 +69,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testUpdate() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        UserRepresentation expected = getUserRepFromMemberRep(addMember(organization));
 
         expected.setFirstName("f");
         expected.setLastName("l");
@@ -90,7 +91,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        UserRepresentation expected = getUserRepFromMemberRep(addMember(organization));
 
         expected.singleAttribute(ORGANIZATION_ATTRIBUTE, "invalid");
 
@@ -161,7 +162,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             expected.add(addMember(organization, "member-" + i + "@neworg.org"));
         }
 
-        List<UserRepresentation> existing = organization.members().getAll();
+        List<MemberRepresentation> existing = organization.members().getAll();
         assertFalse(existing.isEmpty());
         assertEquals(expected.size(), existing.size());
         for (UserRepresentation expectedRep : expected) {
@@ -200,7 +201,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existingOrg.isEnabled(), is(false));
 
         // now fetch all users from the org - unmanaged users should still be enabled, but managed ones should not.
-        List<UserRepresentation> existing = organization.members().getAll();
+        List<MemberRepresentation> existing = organization.members().getAll();
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
@@ -213,10 +214,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         // fetching users from the users endpoint should have the same result.
         UserRepresentation disabledUser = null;
-        existing = testRealm().users().search("*neworg*",0, 10);
-        assertThat(existing, not(empty()));
-        assertThat(existing, hasSize(6));
-        for (UserRepresentation user : existing) {
+        List<UserRepresentation> existingUsers = testRealm().users().search("*neworg*",0, 10);
+        assertThat(existingUsers, not(empty()));
+        assertThat(existingUsers, hasSize(6));
+        for (UserRepresentation user : existingUsers) {
             if (user.getEmail().equals(bc.getUserEmail())) {
                 assertThat(user.isEnabled(), is(false));
                 disabledUser = user;
@@ -254,7 +255,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         // disable the organization provider
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
-                .setOrganizationEnabled(Boolean.FALSE)
+                .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
 
             // now fetch all members from the realm - unmanaged users should still be enabled, but managed ones should not.
@@ -305,7 +306,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testUpdateEmailUnmanagedMember() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        UserRepresentation expected = getUserRepFromMemberRep(addMember(organization));
         expected.setEmail("some@unknown.org");
         UserResource userResource = testRealm().users().get(expected.getId());
         userResource.update(expected);
@@ -315,10 +316,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     }
 
+    private UserRepresentation getUserRepFromMemberRep(MemberRepresentation member) {
+        return new UserRepresentation(member);
+    }
+
     @Test
     public void testDeleteMembersOnOrganizationRemoval() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        List<UserRepresentation> expected = new ArrayList<>();
+        List<MemberRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
             expected.add(addMember(organization, "member-" + i + "@neworg.org"));
@@ -326,19 +331,19 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         organization.delete().close();
 
-        for (UserRepresentation member : expected) {
+        for (MemberRepresentation member : expected) {
             try {
                 organization.members().member(member.getId()).toRepresentation();
                 fail("should be deleted");
             } catch (NotFoundException ignore) {}
         }
 
-        for (UserRepresentation member : expected) {
+        for (MemberRepresentation member : expected) {
             // users should exist as they are not managed by the organization
             testRealm().users().get(member.getId()).toRepresentation();
         }
 
-        for (UserRepresentation member : expected) {
+        for (MemberRepresentation member : expected) {
             try {
                 // user no longer bound to the organization
                 organization.members().getOrganization(member.getId());
@@ -361,7 +366,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         expected.add(addMember(organization, "thejoker@neworg.org", "Jack", "White"));
 
         // exact search - username/e-mail, first name, last name.
-        List<UserRepresentation> existing = organization.members().search("brucewayne@neworg.org", true, null, null);
+        List<MemberRepresentation> existing = organization.members().search("brucewayne@neworg.org", true, null, null);
         assertThat(existing, hasSize(1));
         assertThat(existing.get(0).getUsername(), is(equalTo("brucewayne@neworg.org")));
         assertThat(existing.get(0).getEmail(), is(equalTo("brucewayne@neworg.org")));
