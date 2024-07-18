@@ -1,0 +1,42 @@
+name: Build lf petal keycloak image
+
+on:
+  workflow_dispatch:
+    inputs:
+      Tag:
+        type: string
+        description: Image tag
+        required: true
+        default: latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: '${{ github.event.inputs.Tag }}'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          architecture: x64
+      - name: Build jar
+        run: |
+          ./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests clean install
+          cp ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./quarkus/container/
+
+      - name: Docker build and push
+        uses: lotusflare/actions/docker-build@docker-build-v2.0
+        with:
+          docker-path: './quarkus/container/'
+          file: './quarkus/container/Dockerfile'
+          image-name: 'lf-petal-keycloak'
+          tag: ${{ env.IMAGE_TAG }}
+          publish: true
+          scan_trivy: 0
+          build-args: KEYCLOAK_DIST=./keycloak-999.0.0-SNAPSHOT.tar.gz
