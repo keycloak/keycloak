@@ -24,6 +24,7 @@ import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -61,7 +62,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     @Override
     public Response process(Context context) {
         setContext(context);
-        
+
+        checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
+
         if (client.isBearerOnly()) {
             event.detail(Details.REASON, "Bearer-only client not allowed to retrieve service account");
             event.error(Errors.INVALID_CLIENT);
@@ -150,6 +153,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
+        checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {

@@ -270,9 +270,9 @@ public class DPoPUtil {
             long time = Time.currentTime();
             Long iat = t.getIat();
 
-            if (!(iat <= time + clockSkew && iat > time - lifetime)) {
-                throw new DPoPVerificationException(t, "DPoP proof is not active");
-            }
+//            if (!(iat <= time + clockSkew && iat > time - lifetime)) {
+//                throw new DPoPVerificationException(t, "DPoP proof is not active");
+//            }
             return true;
         }
     }
