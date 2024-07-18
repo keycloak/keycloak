@@ -29,8 +29,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
 public interface OrganizationMembersResource {
 
@@ -45,7 +45,7 @@ public interface OrganizationMembersResource {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<UserRepresentation> getAll();
+    List<MemberRepresentation> getAll();
 
     /**
      * Return all organization members that match the specified filters.
@@ -60,7 +60,7 @@ public interface OrganizationMembersResource {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<UserRepresentation> search(
+    List<MemberRepresentation> search(
             @QueryParam("search") String search,
             @QueryParam("exact") Boolean exact,
             @QueryParam("first") Integer first,

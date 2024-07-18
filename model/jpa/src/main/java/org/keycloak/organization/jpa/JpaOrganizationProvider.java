@@ -36,24 +36,29 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.util.stream.Collectors;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.utils.StringUtil;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
@@ -144,7 +149,16 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public boolean addManagedMember(OrganizationModel organization, UserModel user) {
+        return addMember(organization, user, new MembershipMetadata(MembershipType.MANAGED));
+    }
+
+    @Override
     public boolean addMember(OrganizationModel organization, UserModel user) {
+        return addMember(organization, user, new MembershipMetadata(MembershipType.UNMANAGED));
+    }
+
+    private boolean addMember(OrganizationModel organization, UserModel user, MembershipMetadata metadata) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(user, "User");
 
@@ -171,7 +185,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 throw new ModelException("User [" + user.getId() + "] is a member of a different organization");
             }
 
-            user.joinGroup(group);
+            user.joinGroup(group, metadata);
             user.setSingleAttribute(ORGANIZATION_ATTRIBUTE, entity.getId());
         } finally {
             if (current == null) {
@@ -357,20 +371,23 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        List<IdentityProviderModel> brokers = organization.getIdentityProviders().toList();
-
-        if (brokers.isEmpty()) {
+        UserEntity userEntity = em.find(UserEntity.class, member.getId());
+        if (userEntity == null) {
             return false;
         }
 
-        RealmModel realm = getRealm();
-        List<FederatedIdentityModel> federatedIdentities = userProvider.getFederatedIdentitiesStream(realm, member)
-                .map(federatedIdentityModel -> realm.getIdentityProviderByAlias(federatedIdentityModel.getIdentityProvider()))
-                .filter(brokers::contains)
-                .map(m -> userProvider.getFederatedIdentity(realm, member, m.getAlias()))
-                .toList();
+        GroupModel organizationGroup = getOrganizationGroup(organization);
+        try {
+            UserGroupMembershipEntity membership = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class)
+                    .setParameter("user", userEntity)
+                    .setParameter("groupId", organizationGroup.getId())
+                    .getSingleResult();
+            em.detach(membership);
 
-        return !federatedIdentities.isEmpty();
+            return MembershipType.MANAGED.equals(membership.getMembershipType());
+        } catch (NoResultException e) {
+            return false;
+        }
     }
 
     @Override
@@ -385,7 +402,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         if (isManagedMember(organization, member)) {
-            userProvider.removeUser(getRealm(), member);
+            return new UserManager(session).removeUser(getRealm(), member, userProvider);
         } else {
             OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 

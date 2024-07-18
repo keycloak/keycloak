@@ -28,6 +28,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.io.Serializable;
+import org.keycloak.representations.idm.MembershipType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -62,6 +63,9 @@ public class UserGroupMembershipEntity {
     @Column(name = "GROUP_ID")
     protected String groupId;
 
+    @Column(name = "MEMBERSHIP_TYPE")
+    private String membershipType;
+
     public UserEntity getUser() {
         return user;
     }
@@ -76,6 +80,14 @@ public class UserGroupMembershipEntity {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    public MembershipType getMembershipType() {
+        return MembershipType.valueOf(membershipType);
+    }
+
+    public void setMembershipType(MembershipType membershipType) {
+        this.membershipType = membershipType.toString();
     }
 
     public static class Key implements Serializable {
