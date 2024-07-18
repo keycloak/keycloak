@@ -25,7 +25,7 @@ Before increasing the amount of memory available to the JVM, in particular when 
 
 To limit memory utilization of queued work and to provide for load shedding, see <@links.ha id="concepts-threads" anchor="load-shedding" />.
 
-If you are experiencing timeouts in obtaining database connections, you should consider increasing the number of connections available - see <@links.ha id="concepts-database-connections" />.
+If you are experiencing timeouts in obtaining database connections, you should consider increasing the number of connections available. For more details, see <@links.ha id="concepts-database-connections" />.
 
 === Vertical Autoscaling
 
@@ -46,8 +46,8 @@ If you are not using the Operator, please review the following:
 * Use distributed caching; for multi-site clusters, use external caching for cluster members to share the same session state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
 
 - Your instances will need a way to find each other, see discovery in the server guide.
-- It is not well suited for clusters spanning multiple availability zones, also known as a stretch clusters. It is recommended that when using the embedded Infinispan cache that the instances all exist in the same availability zone to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes you can use Pod affinity to enforce this grouping of Pods.
-- It does not gracefully handle multiple members joining or leaving at the same time - the latter can lead to data loss. On Kubernetes you can use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially.
+- This cache is not optimal for clusters that span multiple availability zones, which are also called stretch clusters. For embedded Infinispan cache, work to have all instances in one availability zone. The goal is to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes, use Pod affinity to enforce this grouping of Pods.
+- This cache does not gracefully handle multiple members joining or leaving concurrently. In particular, members leaving at the same time can lead to data loss. On Kubernetes, you can use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially.
 
 To avoid losing service availability when a whole site is unavailable, see the high availability guide for more information on a multi-site deployment. See <@links.ha id="introduction" />.
 
@@ -55,8 +55,8 @@ To avoid losing service availability when a whole site is unavailable, see the h
 
 Horizontal autoscaling allows for adding or removing {project_name} instances on demand. Keep in mind that startup times will not be instantaneous and that optimized images should be used to minimize the start time.
 
-When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the session caches which can get expensive if a lot of entries exist in those caches.
+When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the session caches,m which can get expensive if many entries exist in those caches.
 
-On Kubernetes the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler].
+On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler].
 
 </@tmpl.guide>
