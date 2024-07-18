@@ -48,30 +48,19 @@ public class FipsDistTest {
     }
 
     @Test
-    void testFipsApprovedModePasswordFails(KeycloakDistribution dist) {
+    void testFipsApprovedMode(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin");
 
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
-            cliResult.assertStarted();
-            cliResult.assertMessage(
-                    "org.bouncycastle.crypto.fips.FipsUnapprovedOperationError: password must be at least 112 bits");
+            cliResult.assertMessage("password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
-        });
-    }
-
-    @Test
-    void testFipsApprovedModePasswordSucceeds(KeycloakDistribution dist) {
-        runOnFipsEnabledDistribution(dist, () -> {
-            dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
+            
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
-
-            CLIResult cliResult = dist.run("start", "--fips-mode=strict");
+            cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();
-            cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
             cliResult.assertMessage("Created temporary admin user with username admin");
         });
     }

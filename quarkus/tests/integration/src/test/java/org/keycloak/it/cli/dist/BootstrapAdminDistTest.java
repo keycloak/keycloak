@@ -63,6 +63,13 @@ public class BootstrapAdminDistTest {
     void createAdmin(LaunchResult result) {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
     }
+    
+    @Test
+    @Launch({ "start-dev", "--bootstrap-admin-password=MY_PASSWORD" })
+    void createAdminWithCliOptions(LaunchResult result) {
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        result.getOutput().contains("Created temporary admin user with username temp-admin");
+    }
 
     @Test
     @Launch({ "bootstrap-admin", "service", "--no-prompt" })
