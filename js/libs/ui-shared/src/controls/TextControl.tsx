@@ -34,7 +34,7 @@ export const TextControl = <
 >(
   props: TextControlProps<T, P>,
 ) => {
-  const { labelIcon, ...rest } = props;
+  const { labelIcon, helperText, ...rest } = props;
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
@@ -62,10 +62,10 @@ export const TextControl = <
         {...rest}
         {...field}
       />
-      {props.helperText && (
+      {helperText && (
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>{props.helperText}</HelperTextItem>
+            <HelperTextItem>{helperText}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       )}
