@@ -27,7 +27,6 @@ public class Registry {
 
     public Registry() {
         loadSuppliers();
-        Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
     }
 
     public ExtensionContext getCurrentContext() {
@@ -99,7 +98,9 @@ public class Registry {
     private void findRequestedInstances(Object testInstance) {
         Class testClass = testInstance.getClass();
         RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
-        requestedInstances.add(requestedServerInstance);
+        if (requestedServerInstance != null) {
+            requestedInstances.add(requestedServerInstance);
+        }
 
         for (Field f : testClass.getDeclaredFields()) {
             RequestedInstance requestedInstance = createRequestedInstance(f.getAnnotations(), f.getType());
@@ -182,9 +183,9 @@ public class Registry {
         destroy.forEach(this::destroy);
     }
 
-    public void onShutdown() {
-        LOGGER.trace("Closing instances with global lifecycle");
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.GLOBAL)).toList();
+    public void close() {
+        LOGGER.trace("Closing all instances");
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().toList();
         destroy.forEach(this::destroy);
     }
 

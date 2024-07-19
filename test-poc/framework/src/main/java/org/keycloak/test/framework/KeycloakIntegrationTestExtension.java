@@ -35,7 +35,7 @@ public class KeycloakIntegrationTestExtension implements BeforeEachCallback, Aft
 
     private Registry getRegistry(ExtensionContext context) {
         ExtensionContext.Store store = getStore(context);
-        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> new Registry());
+        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> createRegistry());
         registry.setCurrentContext(context);
         return registry;
     }
@@ -45,6 +45,12 @@ public class KeycloakIntegrationTestExtension implements BeforeEachCallback, Aft
             context = context.getParent().get();
         }
         return context.getStore(ExtensionContext.Namespace.create(getClass()));
+    }
+
+    private Registry createRegistry() {
+        Registry registry = new Registry();
+        Runtime.getRuntime().addShutdownHook(new Thread(registry::close));
+        return registry;
     }
 
 }
