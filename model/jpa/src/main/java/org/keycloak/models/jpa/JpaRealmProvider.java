@@ -272,7 +272,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("realm", realm.getId());
         Stream<String> roles = query.getResultStream();
 
-        return closing(roles.map(realm::getRoleById));
+        return closing(roles.map(realm::getRoleById).filter(Objects::nonNull));
     }
 
     @Override
@@ -324,7 +324,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 .setParameter("ids", ids.collect(Collectors.toList()));
 
         return closing(paginateQuery(query, first, max).getResultStream())
-                .map(g -> session.roles().getRoleById(realm, g));
+                .map(g -> session.roles().getRoleById(realm, g)).filter(Objects::nonNull);
     }
 
     @Override
@@ -569,7 +569,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 .setParameter("ids", idsList);
 
         return closing(paginateQuery(query, first, max).getResultStream())
-                .map(g -> session.groups().getGroupById(realm, g));
+                .map(g -> session.groups().getGroupById(realm, g)).filter(Objects::nonNull);
     }
 
     @Override
@@ -589,7 +589,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
 
         return closing(paginateQuery(query, first, max).getResultStream())
-                .map(g -> session.groups().getGroupById(realm, g));
+                .map(g -> session.groups().getGroupById(realm, g)).filter(Objects::nonNull);
     }
 
     @Override
@@ -890,7 +890,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<String> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(id -> session.clients().getClientById(realm, id));
+                .map(id -> session.clients().getClientById(realm, id)).filter(Objects::nonNull);
     }
 
     @Override
@@ -935,7 +935,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<String> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(id -> session.clients().getClientById(realm, id));
+                .map(id -> session.clients().getClientById(realm, id)).filter(Objects::nonNull);
     }
 
     @Override
@@ -1005,7 +1005,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("realm", realm.getId());
         Stream<String> scopes = query.getResultStream();
 
-        return closing(scopes.map(realm::getClientScopeById));
+        return closing(scopes.map(realm::getClientScopeById).filter(Objects::nonNull));
     }
 
     @Override
@@ -1118,7 +1118,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 .setParameter("search", search);
         Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
 
-        return closing(groups.map(id -> session.groups().getGroupById(realm, id)).sorted(GroupModel.COMPARE_BY_NAME).distinct());
+        return closing(groups.map(id -> session.groups().getGroupById(realm, id)).filter(Objects::nonNull).sorted(GroupModel.COMPARE_BY_NAME).distinct());
     }
 
     @Override
