@@ -156,8 +156,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
                 // - does not know all of the picocli parsing rules. picocli will accept -cffile, and short option grouping - that's not accounted for
-                // - does not understand spi options, they will be assumed to be unary
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key)) {
+                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith("--spi")) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {
