@@ -125,8 +125,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 GroupModel group = getOrganizationGroup(entity);
 
                 if (group != null) {
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                     //TODO: won't scale, requires a better mechanism for bulk deleting users
-                    userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
+                    userProvider.getGroupMembersStream(realm, group).forEach(userModel -> provider.removeMember(organization, userModel));
                     groupProvider.removeGroup(realm, group);
                 }
 

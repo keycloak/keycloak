@@ -22,6 +22,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProviderFactory;
@@ -41,12 +42,17 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-            if (event instanceof RealmModel.IdentityProviderUpdatedEvent idpUpdatedEvent) {
-                registerOrganizationInvalidation(idpUpdatedEvent.getKeycloakSession(), idpUpdatedEvent.getUpdatedIdentityProvider());
+        factory.register(e -> {
+            if (e instanceof RealmModel.IdentityProviderUpdatedEvent event) {
+                registerOrganizationInvalidation(event.getKeycloakSession(), event.getUpdatedIdentityProvider());
             }
-            if (event instanceof RealmModel.IdentityProviderRemovedEvent idpRemovedEvent) {
-                registerOrganizationInvalidation(idpRemovedEvent.getKeycloakSession(), idpRemovedEvent.getRemovedIdentityProvider());
+            if (e instanceof RealmModel.IdentityProviderRemovedEvent event) {
+                registerOrganizationInvalidation(event.getKeycloakSession(), event.getRemovedIdentityProvider());
+            }
+            if (e instanceof UserModel.UserRemovedEvent event) {
+                KeycloakSession session = event.getKeycloakSession();
+                InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
+                orgProvider.getByMember(event.getUser()).forEach(organization -> orgProvider.registerMemberInvalidation(organization, event.getUser()));
             }
         });
     }
@@ -55,7 +61,8 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
         if (idp.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE) != null) {
             InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
             if (orgProvider != null) {
-                orgProvider.registerOrganizationInvalidation(idp.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+                OrganizationModel organization = orgProvider.getById(idp.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+                orgProvider.registerOrganizationInvalidation(organization);
             }
         }
     }

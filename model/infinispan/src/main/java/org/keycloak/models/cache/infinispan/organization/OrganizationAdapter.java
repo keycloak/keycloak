@@ -36,11 +36,13 @@ public class OrganizationAdapter implements OrganizationModel {
     private final CacheRealmProvider realmCache;
     private final CachedOrganization cached;
     private final OrganizationProvider delegate;
+    private final InfinispanOrganizationProvider organizationCache;
 
-    public OrganizationAdapter(CachedOrganization cached, CacheRealmProvider realmCache, OrganizationProvider delegate) {
+    public OrganizationAdapter(CachedOrganization cached, CacheRealmProvider realmCache, OrganizationProvider delegate, InfinispanOrganizationProvider organizationCache) {
         this.cached = cached;
         this.realmCache = realmCache;
         this.delegate = delegate;
+        this.organizationCache = organizationCache;
         this.modelSupplier = this::getOrganizationModel;
     }
 
@@ -62,8 +64,8 @@ public class OrganizationAdapter implements OrganizationModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            realmCache.registerInvalidation(cached.getId());
             updated = modelSupplier.get();
+            organizationCache.registerOrganizationInvalidation(updated);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
