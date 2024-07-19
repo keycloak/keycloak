@@ -1,57 +1,43 @@
 package org.keycloak.test.framework.config;
 
+import io.smallrye.config.DotEnvConfigSourceProvider;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.test.framework.injection.ValueTypeAlias;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
 
 public class Config {
 
-    private final static Config instance = new Config();
+    private static final SmallRyeConfig config = initConfig();
 
-    private Properties localEnv = new Properties();
-
-    private Config() {
-        File envFile = new File(".env");
-        if (envFile.isFile()) {
-            try {
-                localEnv.load(new FileInputStream(envFile));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    public static String getSelectedSupplier(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + ValueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
-    public static Config getInstance() {
-        return instance;
+    private static SmallRyeConfig initConfig() {
+        SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(new DotEnvConfigSourceProvider());
+
+        ConfigSource testConfigSource = initTestConfigSource();
+        if (testConfigSource != null) {
+            configBuilder.withSources(testConfigSource);
+        }
+
+        return configBuilder.build();
     }
 
-    public String getSelectedSupplier(Class valueType) {
-        return getString("kc-test-" + ValueTypeAlias.getAlias(valueType));
-    }
-
-    public String getString(String key) {
-        String propKey = key.replace('-', '.');
-        String envKey = key.replace('-', '_').toUpperCase();
-
-        String value = System.getProperty(propKey);
-        if (value != null) {
-            return value;
+    private static ConfigSource initTestConfigSource() {
+        try {
+            String testConfigFile = System.getProperty("kc.test.config", System.getenv("KC_TEST_CONFIG"));
+            return testConfigFile != null ? new PropertiesConfigSource(new File(testConfigFile).toURI().toURL()) : null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        value = System.getenv(envKey);
-        if (value != null) {
-            return value;
-        }
-
-        value = localEnv.getProperty(envKey);
-        if (value != null) {
-            return value;
-        }
-
-        return null;
     }
 
 }
