@@ -6,30 +6,35 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class InstanceWrapper<T, A extends Annotation> {
+public class InstanceContext<T, A extends Annotation> {
 
+    private final Registry registry;
     private final Supplier<T, A> supplier;
     private final A annotation;
-    private final Set<InstanceWrapper<T, A>> dependencies = new HashSet<>();
+    private final Set<InstanceContext<T, A>> dependencies = new HashSet<>();
     private T value;
+    private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
     private final Map<String, Object> notes = new HashMap<>();
 
-    public InstanceWrapper(Supplier<T, A> supplier, A annotation) {
+    public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
+        this.registry = registry;
         this.supplier = supplier;
         this.annotation = annotation;
+        this.requestedValueType = requestedValueType;
+        this.lifeCycle = supplier.getLifeCycle(annotation);
     }
 
-    public InstanceWrapper(Supplier<T, A> supplier, A annotation, T value, LifeCycle lifeCycle) {
-        this.supplier = supplier;
-        this.annotation = annotation;
-        this.value = value;
-        this.lifeCycle = lifeCycle;
+    public <D> D getDependency(Class<D> typeClazz) {
+        return registry.getDependency(typeClazz, this);
     }
 
-    public void setValue(T value, LifeCycle lifeCycle) {
+    public Registry getRegistry() {
+        return registry;
+    }
+
+    void setValue(T value) {
         this.value = value;
-        this.lifeCycle = lifeCycle;
     }
 
     public Supplier<T, A> getSupplier() {
@@ -40,6 +45,10 @@ public class InstanceWrapper<T, A extends Annotation> {
         return value;
     }
 
+    public Class<? extends T> getRequestedValueType() {
+        return requestedValueType;
+    }
+
     public LifeCycle getLifeCycle() {
         return lifeCycle;
     }
@@ -48,12 +57,12 @@ public class InstanceWrapper<T, A extends Annotation> {
         return annotation;
     }
 
-    public Set<InstanceWrapper<T, A>> getDependencies() {
+    public Set<InstanceContext<T, A>> getDependencies() {
         return dependencies;
     }
 
-    public void registerDependency(InstanceWrapper<T, A> instanceWrapper) {
-        dependencies.add(instanceWrapper);
+    public void registerDependency(InstanceContext<T, A> instanceContext) {
+        dependencies.add(instanceContext);
     }
 
     public void addNote(String key, Object value) {

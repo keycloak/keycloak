@@ -34,6 +34,7 @@ jobs:
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-store-matrix: ${{ steps.conditional-stores.outputs.matrix }}
+      ci-test-poc: ${{ steps.conditional.outputs.ci-test-poc }}
     steps:
       - uses: actions/checkout@v4
 
@@ -863,6 +864,26 @@ jobs:
         with:
           job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
+  test-poc:
+    name: Test PoC
+    runs-on: ubuntu-latest
+    if: needs.conditional.outputs.ci-test-poc == 'true'
+    needs:
+      - conditional
+      - build
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run tests
+        run: |
+          cd test-poc
+          mvn clean install
+
   check:
     name: Status Check - Keycloak CI
     if: always()
@@ -886,6 +907,7 @@ jobs:
       - sssd-unit-tests
       - migration-tests
       - external-infinispan-tests
+      - test-poc
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

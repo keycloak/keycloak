@@ -22,7 +22,7 @@ public class Registry {
 
     private ExtensionContext currentContext;
     private final List<Supplier<?, ?>> suppliers = new LinkedList<>();
-    private final List<InstanceWrapper<?, ?>> deployedInstances = new LinkedList<>();
+    private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
 
     public Registry() {
@@ -38,8 +38,8 @@ public class Registry {
         this.currentContext = currentContext;
     }
 
-    public <T> T getDependency(Class<T> typeClass, InstanceWrapper dependent) {
-        InstanceWrapper dependency = getDeployedInstance(typeClass);
+    public <T> T getDependency(Class<T> typeClass, InstanceContext dependent) {
+        InstanceContext dependency = getDeployedInstance(typeClass);
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
@@ -54,7 +54,8 @@ public class Registry {
 
         RequestedInstance requestedDependency = getRequestedInstance(typeClass);
         if (requestedDependency != null) {
-            dependency = requestedDependency.getSupplier().getValue(this, requestedDependency.getAnnotation(), typeClass);
+            dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
+            dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
 
@@ -70,7 +71,10 @@ public class Registry {
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            dependency = supplier.getValue(this, null, typeClass);
+            dependency = new InstanceContext(this, supplier, null, typeClass);
+            dependency.registerDependency(dependent);
+            dependency.setValue(supplier.getValue(dependency));
+
             deployedInstances.add(dependency);
 
             if (LOGGER.isTraceEnabled()) {
@@ -114,9 +118,9 @@ public class Registry {
         Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
             RequestedInstance<?, ?> requestedInstance = itr.next();
-            InstanceWrapper deployedInstance = getDeployedInstance(requestedInstance);
+            InstanceContext deployedInstance = getDeployedInstance(requestedInstance);
             if (deployedInstance != null) {
-                if (deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
+                if (requestedInstance.getLifeCycle().equals(deployedInstance.getLifeCycle()) && deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.tracev("Reusing compatible: {0}",
                                 deployedInstance.getSupplier().getClass().getSimpleName());
@@ -140,7 +144,8 @@ public class Registry {
         while (itr.hasNext()) {
             RequestedInstance requestedInstance = itr.next();
 
-            InstanceWrapper instance = requestedInstance.getSupplier().getValue(this, requestedInstance.getAnnotation(), requestedInstance.getValueType());
+            InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+            instance.setValue(requestedInstance.getSupplier().getValue(instance));
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Created instance: {0}",
@@ -155,7 +160,7 @@ public class Registry {
 
     private void injectFields(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
-            InstanceWrapper<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
+            InstanceContext<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
             try {
                 f.setAccessible(true);
                 f.set(testInstance, instance.getValue());
@@ -167,19 +172,19 @@ public class Registry {
 
     public void afterAll() {
         LOGGER.trace("Closing instances with class lifecycle");
-        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
         LOGGER.trace("Closing instances with method lifecycle");
-        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void onShutdown() {
         LOGGER.trace("Closing instances with global lifecycle");
-        List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.GLOBAL)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.GLOBAL)).toList();
         destroy.forEach(this::destroy);
     }
 
@@ -194,9 +199,9 @@ public class Registry {
         return null;
     }
 
-    private InstanceWrapper<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
+    private InstanceContext<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
         for (Annotation a : annotations) {
-            for (InstanceWrapper<?, ?> i : deployedInstances) {
+            for (InstanceContext<?, ?> i : deployedInstances) {
                 Supplier<?, ?> supplier = i.getSupplier();
                 if (supplier.getAnnotationClass().equals(a.annotationType()) && valueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;
@@ -206,23 +211,23 @@ public class Registry {
         return null;
     }
 
-    private void destroy(InstanceWrapper instanceWrapper) {
-        boolean removed = deployedInstances.remove(instanceWrapper);
+    private void destroy(InstanceContext instanceContext) {
+        boolean removed = deployedInstances.remove(instanceContext);
         if (removed) {
-            Set<InstanceWrapper> dependencies = instanceWrapper.getDependencies();
+            Set<InstanceContext> dependencies = instanceContext.getDependencies();
             dependencies.forEach(this::destroy);
-            instanceWrapper.getSupplier().close(instanceWrapper);
+            instanceContext.getSupplier().close(instanceContext);
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Closed instance: {0}",
-                        instanceWrapper.getSupplier().getClass().getSimpleName());
+                        instanceContext.getSupplier().getClass().getSimpleName());
             }
         }
     }
 
-    private InstanceWrapper getDeployedInstance(RequestedInstance requestedInstance) {
+    private InstanceContext getDeployedInstance(RequestedInstance requestedInstance) {
         Class requestedValueType = requestedInstance.getValueType();
-        for (InstanceWrapper<?, ?> i : deployedInstances) {
+        for (InstanceContext<?, ?> i : deployedInstances) {
             if (requestedValueType != null) {
                 if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;
@@ -280,7 +285,7 @@ public class Registry {
         }
     }
 
-    private InstanceWrapper getDeployedInstance(Class typeClass) {
+    private InstanceContext getDeployedInstance(Class typeClass) {
         return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
     }
 
