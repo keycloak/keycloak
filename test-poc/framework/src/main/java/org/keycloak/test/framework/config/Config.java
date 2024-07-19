@@ -1,43 +1,43 @@
 package org.keycloak.test.framework.config;
 
 import io.smallrye.config.DotEnvConfigSourceProvider;
+import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.test.framework.injection.ValueTypeAlias;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
 
 public class Config {
 
-    private static final SmallRyeConfig config;
+    private static final SmallRyeConfig config = initConfig();
 
-    private static final String kcTestConfigPath = System.getProperty("kc.test.config");
-
-    static {
-        List<ConfigSource> configSources = new ArrayList<>();
-
-        if (kcTestConfigPath != null) {
-            configSources.add(new FileConfigSource());
-        }
-
-        config = new SmallRyeConfigBuilder()
-                .addDefaultSources()
-                .addDefaultInterceptors()
-                .withSources(configSources)
-                .withSources(new DotEnvConfigSourceProvider())
-                .build();
+    public static String getSelectedSupplier(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + ValueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
-    public static String getSelectedSupplier(Class valueType) {
-        String key = "kc.test." + ValueTypeAlias.getAlias(valueType);
+    private static SmallRyeConfig initConfig() {
+        SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
+                .addDefaultSources()
+                .addDefaultInterceptors()
+                .withSources(new DotEnvConfigSourceProvider());
 
-        if (config.isPropertyPresent(key)) {
-            return config.getValue(key, String.class);
+        ConfigSource testConfigSource = initTestConfigSource();
+        if (testConfigSource != null) {
+            configBuilder.withSources(testConfigSource);
         }
 
-        return null;
+        return configBuilder.build();
+    }
+
+    private static ConfigSource initTestConfigSource() {
+        try {
+            String testConfigFile = System.getProperty("kc.test.config", System.getenv("KC_TEST_CONFIG"));
+            return testConfigFile != null ? new PropertiesConfigSource(new File(testConfigFile).toURI().toURL()) : null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
