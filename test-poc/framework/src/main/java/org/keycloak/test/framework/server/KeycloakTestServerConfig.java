@@ -15,12 +15,12 @@ public interface KeycloakTestServerConfig {
         return Collections.emptySet();
     }
 
-    default Optional<String> adminUserName() {
-        return Optional.of("admin");
+    default String adminUserName() {
+        return "admin";
     }
 
-    default Optional<String> adminUserPassword() {
-        return Optional.of("admin");
+    default String adminUserPassword() {
+        return "admin";
     }
 
 }

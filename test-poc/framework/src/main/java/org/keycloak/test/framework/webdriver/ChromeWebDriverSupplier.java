@@ -1,44 +1,27 @@
 package org.keycloak.test.framework.webdriver;
 
-import org.keycloak.test.framework.injection.InstanceWrapper;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.injection.Registry;
-import org.keycloak.test.framework.injection.RequestedInstance;
-import org.keycloak.test.framework.injection.Supplier;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
-public class ChromeWebDriverSupplier implements Supplier<WebDriver, TestWebDriver> {
-
-    @Override
-    public Class<TestWebDriver> getAnnotationClass() {
-        return TestWebDriver.class;
-    }
-
-    @Override
-    public Class<WebDriver> getValueType() {
-        return WebDriver.class;
-    }
-
-    @Override
-    public InstanceWrapper<WebDriver, TestWebDriver> getValue(Registry registry, TestWebDriver annotation) {
-        final var driver = new ChromeDriver();
-        return new InstanceWrapper<>(this, annotation, driver, LifeCycle.GLOBAL);
-    }
-
-    @Override
-    public boolean compatible(InstanceWrapper<WebDriver, TestWebDriver> a, RequestedInstance<WebDriver, TestWebDriver> b) {
-        return true;
-    }
-
-    @Override
-    public void close(WebDriver instance) {
-        instance.quit();
-    }
+public class ChromeWebDriverSupplier extends AbstractWebDriverSupplier {
 
     @Override
     public String getAlias() {
         return "chrome";
     }
 
+    @Override
+    public WebDriver getWebDriver() {
+        ChromeOptions options = new ChromeOptions();
+        setGlobalOptions(options);
+        options.addArguments(
+                "--headless",
+                "--disable-gpu",
+                "--window-size=1920,1200",
+                "--ignore-certificate-errors",
+                "--disable-dev-shm-usage"
+        );
+        return new ChromeDriver(options);
+    }
 }
