@@ -49,14 +49,15 @@ export const MultiLineInput = ({
       ? stringToMultiline(
           Array.isArray(value) && value.length === 1 ? value[0] : value,
         )
-      : value;
+      : Array.isArray(value)
+        ? value
+        : [value];
 
-    values =
-      Array.isArray(values) && values.length !== 0
-        ? values
-        : (stringify
-            ? stringToMultiline(defaultValue as string)
-            : defaultValue) || [""];
+    if (!Array.isArray(values) || values.length === 0) {
+      values = (stringify
+        ? stringToMultiline(defaultValue as string)
+        : defaultValue) || [""];
+    }
 
     return values;
   }, [value]);
