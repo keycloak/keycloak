@@ -417,7 +417,6 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
-        
     }
 
     @Test
