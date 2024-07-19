@@ -40,7 +40,7 @@ export const AttributesForm = ({
         <KeyValueInput name={name} isDisabled={isDisabled} />
       </FormProvider>
       {!noSaveCancelButtons && (
-        <FixedButtonsGroup name="attributes" reset={reset} isActive isSubmit />
+        <FixedButtonsGroup name="attributes" reset={reset} isSubmit />
       )}
     </FormAccess>
   );
