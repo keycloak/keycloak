@@ -30,6 +30,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -78,7 +79,7 @@ public class JwtSigningService extends SigningService<String> {
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
         // provided
         long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
+                .map(Instant::getEpochSecond)
                 .orElse((long) timeProvider.currentTimeSeconds());
 
         // set mandatory fields
@@ -90,7 +91,7 @@ public class JwtSigningService extends SigningService<String> {
 
         // expiry is optional
         Optional.ofNullable(verifiableCredential.getExpirationDate())
-                .ifPresent(d -> jsonWebToken.exp(d.toInstant().getEpochSecond()));
+                .ifPresent(d -> jsonWebToken.exp(d.getEpochSecond()));
 
         // subject id should only be set if the credential subject has an id.
         Optional.ofNullable(

@@ -58,7 +58,7 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
 
     private static final Logger LOGGER = Logger.getLogger(SdJwtSigningService.class);
 
-    private static final String ISSUER_CLAIM ="iss";
+    private static final String ISSUER_CLAIM = "iss";
     private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
     private static final String CREDENTIAL_ID_CLAIM = "jti";
     private static final String CNF_CLAIM = "cnf";
@@ -91,7 +91,7 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
 
         // If a config id is defined, a vct must be defined.
         // Also validated in: org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningServiceProviderFactory.validateSpecificConfiguration
-        if(this.vcConfigId!=null && this.vct==null){
+        if (this.vcConfigId != null && this.vct == null) {
             throw new SigningServiceException(String.format("Missing vct for credential config id %s.", vcConfigId));
         }
 
@@ -161,7 +161,7 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
         rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
 
         // add the key binding if any
-        if (jwk!=null) {
+        if (jwk != null) {
             rootNode.putPOJO(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
         }
 

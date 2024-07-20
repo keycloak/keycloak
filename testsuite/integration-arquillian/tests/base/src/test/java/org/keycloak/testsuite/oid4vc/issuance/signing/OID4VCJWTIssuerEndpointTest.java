@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -105,7 +104,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         Response response = oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
 
                         assertEquals("An offer uri should have been returned.", HttpStatus.SC_OK, response.getStatus());
-                        CredentialOfferURI credentialOfferURI = new ObjectMapper().convertValue(response.getEntity(), CredentialOfferURI.class);
+                        CredentialOfferURI credentialOfferURI = JsonSerialization.mapper.convertValue(response.getEntity(), CredentialOfferURI.class);
                         assertNotNull("A nonce should be included.", credentialOfferURI.getNonce());
                         assertNotNull("The issuer uri should be provided.", credentialOfferURI.getIssuer());
                     } catch (Exception e) {
@@ -191,7 +190,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             .setId("test-credential")
                             .setScope("VerifiableCredential")
                             .setFormat(Format.JWT_VC);
-                    String nonce = prepareNonce(authenticator, OBJECT_MAPPER.writeValueAsString(supportedCredentialConfiguration));
+                    String nonce = prepareNonce(authenticator, JsonSerialization.writeValueAsString(supportedCredentialConfiguration));
 
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(nonce);
@@ -199,7 +198,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     Object credentialOfferEntity = credentialOfferResponse.getEntity();
                     assertNotNull("An actual offer should be in the response.", credentialOfferEntity);
 
-                    CredentialsOffer credentialsOffer = OBJECT_MAPPER.convertValue(credentialOfferEntity, CredentialsOffer.class);
+                    CredentialsOffer credentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
                     assertNotNull("Credentials should have been offered.", credentialsOffer.getCredentialConfigurationIds());
                     assertFalse("Credentials should have been offered.", credentialsOffer.getCredentialConfigurationIds().isEmpty());
                     List<String> supportedCredentials = credentialsOffer.getCredentialConfigurationIds();
@@ -289,7 +288,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestCredential() {
         String token = getBearerToken(oauth);
-        ObjectMapper objectMapper = new ObjectMapper();
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -302,12 +300,12 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
                     assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatus());
                     assertNotNull("A credential should be responded.", credentialResponse.getEntity());
-                    CredentialResponse credentialResponseVO = OBJECT_MAPPER.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+                    CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
                     JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponseVO.getCredential(), JsonWebToken.class).getToken();
 
                     assertNotNull("A valid credential string should have been responded", jsonWebToken);
                     assertNotNull("The credentials should be included at the vc-claim.", jsonWebToken.getOtherClaims().get("vc"));
-                    VerifiableCredential credential = objectMapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                    VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                     assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
                     assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
                 }));
@@ -402,7 +400,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
                         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
 
-                        VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                         assertEquals(TEST_TYPES, credential.getType());
                         assertEquals(TEST_DID, credential.getIssuer());
                         assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));

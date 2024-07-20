@@ -21,8 +21,8 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
         keycloak = new RawKeycloakDistribution(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort);
 
         // Set environment variables user and password for Keycloak Admin used by Keycloak instance.
-        keycloak.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", serverConfig.adminUserName().get());
-        keycloak.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", serverConfig.adminUserPassword().get());
+        keycloak.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", serverConfig.adminUserName());
+        keycloak.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", serverConfig.adminUserPassword());
 
         List<String> rawOptions = new LinkedList<>();
         rawOptions.add("start-dev");

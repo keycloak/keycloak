@@ -51,7 +51,7 @@ public class UserPolicyProvider implements PolicyProvider {
                 break;
             }
         }
-        logger.debugv("User policy {} evaluated to status {} on identity {} with accepted users: {}", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), representation.getUsers());
+        logger.debugf("User policy %s evaluated to status %s on identity %s with accepted users: %s", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), representation.getUsers());
     }
 
     @Override

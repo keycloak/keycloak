@@ -307,7 +307,7 @@ Metrics from caches are automatically exposed when the metrics are enabled.
 To enable histograms for the cache metrics, set `cache-metrics-histograms-enabled` to `true`.
 While these metrics provide more insights into the latency distribution, collecting them might have a performance impact, so you should be cautious to activate them in an already saturated system.
 
-<@kc.start parameters="--metrics-enabled true --cache-metrics-histograms-enabled true"/>
+<@kc.start parameters="--metrics-enabled=true --cache-metrics-histograms-enabled=true"/>
 
 For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
 

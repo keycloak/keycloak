@@ -16,10 +16,10 @@
  */
 package org.keycloak.protocol.oidc;
 
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
-
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -43,6 +43,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -55,8 +57,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -66,10 +66,9 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -237,13 +236,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
             OAuth2Code codeData = new OAuth2Code(UUID.randomUUID().toString(),
-                    Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
-                    nonce,
-                    authSession.getClientNote(OAuth2Constants.SCOPE),
-                    authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
-                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
-                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
-                    userSession.getId());
+                Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
+                nonce,
+                authSession.getClientNote(OAuth2Constants.SCOPE),
+                authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);
@@ -253,7 +252,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (responseType.isImplicitOrHybridFlow()) {
             org.keycloak.protocol.oidc.TokenManager tokenManager = new org.keycloak.protocol.oidc.TokenManager();
             org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
-                    .generateAccessToken();
+                .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
 
@@ -282,7 +281,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
                 }
-                return redirectUri.build();
+                return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx, cpe, null);
             }
 
             AccessTokenResponse res = responseBuilder.build();
@@ -298,7 +297,35 @@ public class OIDCLoginProtocol implements LoginProtocol {
             }
         }
 
-        return redirectUri.build();
+        return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx);
+    }
+
+    /**
+     * this method can be used in extension-implementations to the {@link OIDCLoginProtocol} to add additional
+     * parameters to the redirectUri after successful authentication and to store these e.g. in the clientSession
+     *
+     * @see https://github.com/keycloak/keycloak/issues/31086
+     */
+    public Response buildRedirectUri(OIDCRedirectUriBuilder redirectUriBuilder,
+                                     AuthenticationSessionModel authSession,
+                                     UserSessionModel userSession,
+                                     ClientSessionContext clientSessionCtx) {
+        return redirectUriBuilder.build();
+    }
+
+    /**
+     * this method can be used in extension-implementations to the {@link OIDCLoginProtocol} to add additional
+     * parameters to the redirectUri after failed authentication
+     *
+     * @see https://github.com/keycloak/keycloak/issues/31086
+     */
+    public Response buildRedirectUri(OIDCRedirectUriBuilder redirectUriBuilder,
+                                     AuthenticationSessionModel authSession,
+                                     UserSessionModel userSession,
+                                     ClientSessionContext clientSessionCtx,
+                                     Exception ex,
+                                     Error oidcError) {
+        return redirectUriBuilder.build();
     }
 
     // For FAPI 1.0 Advanced
@@ -324,7 +351,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Remove authenticationSession from current tab
         new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
 
-        return redirectUri.build();
+        return buildRedirectUri(redirectUri, authSession, null, null, null, error);
     }
 
     private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error) {
@@ -353,9 +380,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public ClientData getClientData(AuthenticationSessionModel authSession) {
         return new ClientData(authSession.getRedirectUri(),
-                authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM),
-                authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM),
-                authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM));
+            authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM),
+            authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM),
+            authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM));
     }
 
     @Override
@@ -365,11 +392,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Should check if clientData are valid for current client
         AuthorizationEndpointRequest req = AuthorizationEndpointRequest.fromClientData(clientData);
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
-                .event(event)
-                .client(client)
-                .realm(realm)
-                .request(req)
-                .session(session);
+            .event(event)
+            .client(client)
+            .realm(realm)
+            .request(req)
+            .session(session);
         try {
             checker.checkResponseType();
             checker.checkRedirectUri();
@@ -379,7 +406,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
         OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error);
-        return redirectUri.build();
+        return buildRedirectUri(redirectUri, null, null, null, null, error);
     }
 
     private OAuth2ErrorRepresentation translateError(Error error) {
@@ -465,12 +492,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
             return false;
         }
 
-        int authTimeInt = authTime==null ? 0 : Integer.parseInt(authTime);
+        int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
         int maxAgeInt = Integer.parseInt(maxAge);
 
         if (authTimeInt + maxAgeInt < Time.currentTime()) {
             logger.debugf("Authentication time is expired, needs to reauthenticate. userSession=%s, clientId=%s, maxAge=%d, authTime=%d", userSession.getId(),
-                    authSession.getClient().getId(), maxAgeInt, authTimeInt);
+                authSession.getClient().getId(), maxAgeInt, authTimeInt);
             return true;
         }
 

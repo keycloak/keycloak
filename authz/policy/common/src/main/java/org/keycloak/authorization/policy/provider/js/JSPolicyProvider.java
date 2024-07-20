@@ -54,7 +54,7 @@ class JSPolicyProvider implements PolicyProvider {
             context.setAttribute("$evaluation", evaluation, ScriptContext.ENGINE_SCOPE);
 
             adapter.eval(context);
-            logger.debugv("JS Policy {} evaluated to status {}", policy.getName(), evaluation.getEffect());
+            logger.debugf("JS Policy %s evaluated to status %s", policy.getName(), evaluation.getEffect());
         }
         catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);

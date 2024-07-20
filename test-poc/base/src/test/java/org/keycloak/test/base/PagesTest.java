@@ -18,18 +18,8 @@ public class PagesTest {
     @Test
     public void testLoginFromWelcome() {
         welcomePage.navigateTo();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         loginPage.fillLogin("admin", "admin");
         loginPage.submit();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

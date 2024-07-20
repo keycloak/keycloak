@@ -98,33 +98,12 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         }
     }
 
-    public void createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession existingSession) {
-        KeycloakSessionTask task = session -> {
-            new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
-        };
-
-        runAdminTask(adminUserName, existingSession, task);
+    public void createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
+        new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
     }
 
-    public void createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession existingSession) {
-        KeycloakSessionTask task = session -> {
-            new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
-        };
-
-        runAdminTask(clientId, existingSession, task);
-    }
-
-    private void runAdminTask(String adminUserName, KeycloakSession existingSession, KeycloakSessionTask task) {
-        try {
-            if (existingSession == null) {
-                KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-                KeycloakModelUtils.runJobInTransaction(sessionFactory, task);
-            } else {
-                task.run(existingSession);
-            }
-        } catch (Throwable t) {
-            ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        }
+    public void createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
+        new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
     }
 
     private String getEnvOrProp(String envKey, String propKey) {

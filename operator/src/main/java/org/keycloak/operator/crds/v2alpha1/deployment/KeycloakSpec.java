@@ -46,7 +46,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 public class KeycloakSpec {
 
     @SpecReplicas
-    @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
+    @JsonPropertyDescription("Number of Keycloak instances. Default is 1.")
     private Integer instances;
 
     @JsonPropertyDescription("Custom Keycloak image to be used.")

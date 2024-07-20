@@ -1,6 +1,9 @@
 package org.keycloak.test.framework.injection;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Optional;
 
 public interface Supplier<T, S extends Annotation> {
 
@@ -8,19 +11,29 @@ public interface Supplier<T, S extends Annotation> {
 
     Class<T> getValueType();
 
-    InstanceWrapper<T, S> getValue(Registry registry, S annotation);
+    T getValue(InstanceContext<T, S> instanceContext);
 
-    default InstanceWrapper<T, S> getValue(Registry registry, S annotation, Class<? extends T> valueType) {
-        return getValue(registry, annotation);
+    default LifeCycle getLifeCycle(S annotation) {
+        if (annotation != null) {
+            Optional<Method> lifecycle = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("lifecycle")).findFirst();
+            if (lifecycle.isPresent()) {
+                try {
+                    return (LifeCycle) lifecycle.get().invoke(annotation);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return getDefaultLifecycle();
     }
 
-    boolean compatible(InstanceWrapper<T, S> a, RequestedInstance<T, S> b);
-
-    default void close(T value) {
+    default LifeCycle getDefaultLifecycle() {
+        return LifeCycle.CLASS;
     }
 
-    default void close(InstanceWrapper<T, S> instanceWrapper) {
-        close(instanceWrapper.getValue());
+    boolean compatible(InstanceContext<T, S> a, RequestedInstance<T, S> b);
+
+    default void close(InstanceContext<T, S> instanceContext) {
     }
 
     default String getAlias() {

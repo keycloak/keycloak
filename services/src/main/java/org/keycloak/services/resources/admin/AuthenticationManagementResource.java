@@ -253,12 +253,12 @@ public class AuthenticationManagementResource {
         if (realm.getFlowByAlias(flow.getAlias()) != null) {
             throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
-        
+
         //adding an empty string to avoid NPE
         if(Objects.isNull(flow.getDescription())) {
             flow.setDescription("");
         }
-        
+
         ReservedCharValidator.validate(flow.getAlias());
 
         AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
@@ -503,7 +503,7 @@ public class AuthenticationManagementResource {
         String type = (String) data.get("type");
         String provider = (String) data.get("provider");
         int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
-        
+
         //Make sure that the description to avoid NullPointerException
         String description = Objects.isNull(data.get("description")) ? "" : (String) data.get("description");
 
@@ -795,17 +795,17 @@ public class AuthenticationManagementResource {
         if (!checkFlow.getAlias().equals(rep.getDisplayName())) {
             checkFlow.setAlias(rep.getDisplayName());
         }
-        
+
         // check if description is null and set an empty String to avoid NPE
         if (Objects.isNull(checkFlow.getDescription())) {
             checkFlow.setDescription("");
         }
-        
+
         // check if the description changed
         if (!checkFlow.getDescription().equals(rep.getDescription())) {
             checkFlow.setDescription(rep.getDescription());
         }
-        
+
         //update the flow
         realm.updateAuthenticationFlow(checkFlow);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -828,7 +828,7 @@ public class AuthenticationManagementResource {
 
         final Optional<AuthenticationExecutionModel> model = Optional.ofNullable(realm.getAuthenticationExecutionById(executionId));
         if (!model.isPresent()) {
-            logger.debugv("Could not find execution by Id: {}", executionId);
+            logger.debugf("Could not find execution by Id: %s", executionId);
             throw new NotFoundException("Illegal execution");
         }
 
@@ -1020,7 +1020,7 @@ public class AuthenticationManagementResource {
     @APIResponse(responseCode = "201", description = "Created")
     public Response newExecutionConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "JSON with new configuration") AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
-        
+
         ReservedCharValidator.validate(json.getAlias());
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
@@ -1137,7 +1137,7 @@ public class AuthenticationManagementResource {
         return actions.isEmpty() ? 0 : actions.get(actions.size() - 1).getPriority() + 1;
     }
 
-    
+
     /**
      * Get required actions
      *
@@ -1526,7 +1526,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         ReservedCharValidator.validate(rep.getAlias());
-        
+
         AuthenticatorConfigModel config = realm.addAuthenticatorConfig(RepresentationToModel.toModel(rep));
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri(), config.getId()).representation(rep).success();
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(config.getId()).build()).build();
@@ -1608,7 +1608,7 @@ public class AuthenticationManagementResource {
         if (exists == null) {
             throw new NotFoundException("Could not find authenticator config");
         }
-        
+
         exists.setAlias(rep.getAlias());
         exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
         realm.updateAuthenticatorConfig(exists);

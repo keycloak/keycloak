@@ -26,14 +26,16 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-policy-enforcer</artifactId>
-    <name>Keycloak Authz: Policy Enforcer</name>
+    <artifactId>keycloak-policy-enforcer-tests</artifactId>
+    <name>Keycloak Authz: Policy Enforcer for tests</name>
+    <description>Keycloak Policy Enforcer. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-policy-enforcer` module.</description>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-client</artifactId>
+            <artifactId>keycloak-authz-client-tests</artifactId>
         </dependency>
 
         <!-- Built-in Elytron/Jakarta Servlet integration  -->

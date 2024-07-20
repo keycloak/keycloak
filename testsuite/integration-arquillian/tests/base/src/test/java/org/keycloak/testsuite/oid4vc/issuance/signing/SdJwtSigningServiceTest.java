@@ -42,6 +42,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -58,7 +59,6 @@ import static org.junit.Assert.fail;
 
 public class SdJwtSigningServiceTest extends OID4VCTest {
 
-    private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static KeyWrapper rsaKey = getRsaKey();
 
     // If an unsupported algorithm is provided, the JWT Sigining Service should not be instantiated.
@@ -250,7 +250,6 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
-
             List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
             if (sds != null && !sds.isEmpty()){
                 assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
@@ -272,7 +271,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 .map(disclosed -> new String(Base64.getUrlDecoder().decode(disclosed)))
                 .map(disclosedString -> {
                     try {
-                        return OBJECT_MAPPER.readValue(disclosedString, List.class);
+                        return JsonSerialization.mapper.readValue(disclosedString, List.class);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }

@@ -8,9 +8,9 @@ public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
     TestDatabase getTestDatabase() {
         DatabaseConfig databaseConfig = new DatabaseConfig()
                 .vendor(VENDOR)
-                .username("keycloak")
-                .password("keycloak")
-                .containerImage("the-postgres-container:the-version");
+                .username(DEFAULT_DB_USERNAME)
+                .password(DEFAULT_DB_PASSWORD)
+                .containerImage("postgres:latest");
         return new TestDatabase(databaseConfig);
     }
 

@@ -97,7 +97,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
                     assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatus());
                     assertNotNull("A credential should be responded.", credentialResponse.getEntity());
-                    CredentialResponse credentialResponseVO = OBJECT_MAPPER.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+                    CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
                     new TestCredentialResponseHandler(vct).handleCredentialResponse(credentialResponseVO);
                 }));
     }
@@ -219,7 +219,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
         SdJwtSigningService testCredentialSigningService = new SdJwtSigningService(
                 session,
-                OBJECT_MAPPER,
+                JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
                 Format.SD_JWT_VC.toString(),
@@ -233,7 +233,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         SdJwtSigningService identityCredentialSigningService = new SdJwtSigningService(
                 session,
-                OBJECT_MAPPER,
+                JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
                 Format.SD_JWT_VC.toString(),
@@ -372,7 +372,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             Map<String, JsonNode> disclosureMap = sdJwtVP.getDisclosures().values().stream()
                     .map(disclosure -> {
                         try {
-                            JsonNode jsonNode = OBJECT_MAPPER.readTree(Base64Url.decode(disclosure));
+                            JsonNode jsonNode = JsonSerialization.mapper.readTree(Base64Url.decode(disclosure));
                             return Map.entry(jsonNode.get(1).asText(), jsonNode); // Create a Map.Entry
                         } catch (IOException e) {
                             throw new RuntimeException(e); // Re-throw as unchecked exception

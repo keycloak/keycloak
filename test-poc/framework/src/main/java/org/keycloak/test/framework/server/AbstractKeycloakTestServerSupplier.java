@@ -2,9 +2,8 @@ package org.keycloak.test.framework.server;
 
 import org.keycloak.test.framework.KeycloakIntegrationTest;
 import org.keycloak.test.framework.database.TestDatabase;
-import org.keycloak.test.framework.injection.InstanceWrapper;
+import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
@@ -25,13 +24,13 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
     }
 
     @Override
-    public InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> getValue(Registry registry, KeycloakIntegrationTest annotation) {
+    public KeycloakTestServer getValue(InstanceContext<KeycloakTestServer, KeycloakIntegrationTest> instanceContext) {
+        KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
-        InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> wrapper = new InstanceWrapper<>(this, annotation);
 
         Map<String, String> databaseConfig;
         if (requiresDatabase()) {
-            TestDatabase testDatabase = registry.getDependency(TestDatabase.class, wrapper);
+            TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
             databaseConfig = testDatabase.getServerConfig();
         } else {
             databaseConfig = Collections.emptyMap();
@@ -39,20 +38,22 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
 
         KeycloakTestServer keycloakTestServer = getServer();
         keycloakTestServer.start(serverConfig, databaseConfig);
-
-        wrapper.setValue(keycloakTestServer, LifeCycle.GLOBAL);
-
-        return wrapper;
+        return keycloakTestServer;
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> a, RequestedInstance<KeycloakTestServer, KeycloakIntegrationTest> b) {
+    public LifeCycle getDefaultLifecycle() {
+        return LifeCycle.GLOBAL;
+    }
+
+    @Override
+    public boolean compatible(InstanceContext<KeycloakTestServer, KeycloakIntegrationTest> a, RequestedInstance<KeycloakTestServer, KeycloakIntegrationTest> b) {
         return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
-    public void close(KeycloakTestServer keycloakTestServer) {
-        keycloakTestServer.stop();
+    public void close(InstanceContext<KeycloakTestServer, KeycloakIntegrationTest> instanceContext) {
+        instanceContext.getValue().stop();
     }
 
     public abstract KeycloakTestServer getServer();

@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -87,7 +86,6 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
-    protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     protected static final TimeProvider TIME_PROVIDER = new OID4VCTest.StaticTimeProvider(1000);
     protected CloseableHttpClient httpClient;
 
@@ -267,7 +265,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 "did:web:issuer.org",
                 Map.of(jwtSigningService.locator(), jwtSigningService),
                 authenticator,
-                new ObjectMapper(),
+                JsonSerialization.mapper,
                 TIME_PROVIDER,
                 30,
                 true);
@@ -286,7 +284,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         request.setFormat(offeredCredential.getFormat());
         request.setCredentialIdentifier(offeredCredential.getId());
 
-        StringEntity stringEntity = new StringEntity(OBJECT_MAPPER.writeValueAsString(request), ContentType.APPLICATION_JSON);
+        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request), ContentType.APPLICATION_JSON);
 
         HttpPost postCredential = new HttpPost(credentialEndpoint);
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
@@ -360,7 +358,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             assertNotNull("The credential should have been responded.", credentialResponse.getCredential());
             JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
             assertEquals("did:web:test.org", jsonWebToken.getIssuer());
-            VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+            VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
             assertEquals(List.of("VerifiableCredential"), credential.getType());
             assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
             assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));

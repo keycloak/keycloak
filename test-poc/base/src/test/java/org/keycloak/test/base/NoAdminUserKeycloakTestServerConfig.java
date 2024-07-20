@@ -7,13 +7,13 @@ import java.util.Optional;
 public class NoAdminUserKeycloakTestServerConfig implements KeycloakTestServerConfig {
 
     @Override
-    public Optional<String> adminUserName() {
-        return Optional.empty();
+    public String adminUserName() {
+        return null;
     }
 
     @Override
-    public Optional<String> adminUserPassword() {
-        return Optional.empty();
+    public String adminUserPassword() {
+        return null;
     }
 
 }

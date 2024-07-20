@@ -48,3 +48,5 @@ js/libs/ui-shared/                          ci ci-webauthn
 themes/                                     codeql-themes
 
 testsuite::database-suite                   ci-store
+
+test-poc/                                   ci ci-test-poc
