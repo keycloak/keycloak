@@ -190,10 +190,10 @@ public class Organizations {
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
         model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
-                    .filter(Objects::nonNull)
-                    .filter(domain -> StringUtil.isNotBlank(domain.getName()))
-                    .map(Organizations::toModel)
-                    .collect(Collectors.toSet()));
+                .filter(Objects::nonNull)
+                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
+                .map(Organizations::toModel)
+                .collect(Collectors.toSet()));
 
         return model;
     }

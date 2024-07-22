@@ -93,7 +93,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         RealmModel realm = getRealm();
-        OrganizationAdapter adapter = new OrganizationAdapter(realm, this);
+        OrganizationAdapter adapter = new OrganizationAdapter(session, realm, this);
 
         try {
             session.setAttribute(OrganizationModel.class.getName(), adapter);
@@ -194,7 +194,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public OrganizationModel getById(String id) {
         OrganizationEntity entity = getEntity(id, false);
-        return entity == null ? null : new OrganizationAdapter(getRealm(), entity, this);
+        return entity == null ? null : new OrganizationAdapter(session, getRealm(), entity, this);
     }
 
     @Override
@@ -205,7 +205,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("name", domain.toLowerCase());
         try {
             OrganizationEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(realm, entity, this);
+            return new OrganizationAdapter(session, realm, entity, this);
         } catch (NoResultException nre) {
             return null;
         }
@@ -227,7 +227,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("realmId", realm.getId());
 
         return closing(paginateQuery(query, first, max).getResultStream()
-                .map(entity -> new OrganizationAdapter(realm, entity, this)));
+                .map(entity -> new OrganizationAdapter(session, realm, entity, this)));
     }
 
     @Override
@@ -260,7 +260,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
         TypedQuery<OrganizationEntity> typedQuery = em.createQuery(query.select(org).where(finalPredicate));
         return closing(paginateQuery(typedQuery, first, max).getResultStream())
-                .map(entity -> new OrganizationAdapter(realm, entity, this));
+                .map(entity -> new OrganizationAdapter(session, realm, entity, this));
     }
 
     @Override
