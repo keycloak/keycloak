@@ -58,6 +58,8 @@ public class Registry {
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
 
+            requestedInstances.remove(requestedDependency);
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Injecting requested dependency {0} into {1}",
                         dependency.getSupplier().getClass().getSimpleName(),
@@ -141,21 +143,17 @@ public class Registry {
     }
 
     private void deployRequestedInstances() {
-        Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
-        while (itr.hasNext()) {
-            RequestedInstance requestedInstance = itr.next();
+        while (!requestedInstances.isEmpty()) {
+            RequestedInstance requestedInstance = requestedInstances.remove(0);
 
             InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
             instance.setValue(requestedInstance.getSupplier().getValue(instance));
+            deployedInstances.add(instance);
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Created instance: {0}",
                         requestedInstance.getSupplier().getClass().getSimpleName());
             }
-
-            deployedInstances.add(instance);
-
-            itr.remove();
         }
     }
 
@@ -187,6 +185,10 @@ public class Registry {
         LOGGER.trace("Closing all instances");
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().toList();
         destroy.forEach(this::destroy);
+    }
+
+    List<Supplier<?, ?>> getSuppliers() {
+        return suppliers;
     }
 
     private RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
