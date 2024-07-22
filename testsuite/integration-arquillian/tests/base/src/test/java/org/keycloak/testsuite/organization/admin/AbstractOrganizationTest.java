@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -147,6 +148,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             domainRep.setName(orgDomain);
             org.addDomain(domainRep);
         }
+
+        org.setAttributes(Map.of("key", List.of("value1", "value2")));
 
         return org;
     }
