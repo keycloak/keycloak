@@ -33,7 +33,7 @@ public class UserSupplier implements Supplier<UserResource, TestUser> {
         UserRepresentation userRepresentation = config.getRepresentation();
 
         if (userRepresentation.getUsername() == null) {
-            String username = instanceContext.getLifeCycle().equals(LifeCycle.GLOBAL) ? config.getClass().getSimpleName() : instanceContext.getRegistry().getCurrentContext().getRequiredTestClass().getSimpleName();
+            String username = instanceContext.getRef();
             userRepresentation.setUsername(username);
         }
 

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry {
@@ -146,6 +147,10 @@ public class Registry {
         while (!requestedInstances.isEmpty()) {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 
+            if (getDeployedInstance(requestedInstance) != null) {
+                throw new RuntimeException("Instance ref redefinition: " + requestedInstance.getRef());
+            }
+
             InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
             instance.setValue(requestedInstance.getSupplier().getValue(instance));
             deployedInstances.add(instance);
@@ -205,8 +210,10 @@ public class Registry {
     private InstanceContext<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
         for (Annotation a : annotations) {
             for (InstanceContext<?, ?> i : deployedInstances) {
-                Supplier<?, ?> supplier = i.getSupplier();
-                if (supplier.getAnnotationClass().equals(a.annotationType()) && valueType.isAssignableFrom(i.getValue().getClass())) {
+                Supplier supplier = i.getSupplier();
+                if (supplier.getAnnotationClass().equals(a.annotationType())
+                        && valueType.isAssignableFrom(i.getValue().getClass())
+                        && supplier.getRef(a).equals(i.getRef()) ) {
                     return i;
                 }
             }
@@ -229,8 +236,13 @@ public class Registry {
     }
 
     private InstanceContext getDeployedInstance(RequestedInstance requestedInstance) {
+        String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
+            if(!i.getRef().equals(requestedRef)) {
+                continue;
+            }
+
             if (requestedValueType != null) {
                 if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;

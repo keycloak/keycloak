@@ -15,6 +15,8 @@ public @interface TestClient {
 
     Class<? extends ClientConfig> config() default DefaultClientConfig.class;
 
+    String ref() default "default";
+
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
 }

@@ -15,6 +15,7 @@ public class InstanceContext<T, A extends Annotation> {
     private T value;
     private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
+    private final String ref;
     private final Map<String, Object> notes = new HashMap<>();
 
     public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
@@ -23,6 +24,7 @@ public class InstanceContext<T, A extends Annotation> {
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
+        this.ref = supplier.getRef(annotation);
     }
 
     public <D> D getDependency(Class<D> typeClazz) {
@@ -51,6 +53,10 @@ public class InstanceContext<T, A extends Annotation> {
 
     public LifeCycle getLifeCycle() {
         return lifeCycle;
+    }
+
+    public String getRef() {
+        return ref;
     }
 
     public A getAnnotation() {
