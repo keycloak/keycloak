@@ -1,5 +1,6 @@
 package org.keycloak.test.framework.page;
 
+import org.keycloak.test.framework.annotations.TestPage;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;

@@ -3,7 +3,7 @@ package org.keycloak.test.framework.realm;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.test.framework.TestRealm;
+import org.keycloak.test.framework.annotations.TestRealm;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
