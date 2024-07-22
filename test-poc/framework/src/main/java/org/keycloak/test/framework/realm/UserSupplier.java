@@ -4,7 +4,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.TestUser;
+import org.keycloak.test.framework.annotations.TestUser;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
