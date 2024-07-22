@@ -242,7 +242,7 @@ public class AuthzClient {
             throw new IllegalArgumentException("Configuration URL can not be null.");
         }
 
-        configurationUrl = KeycloakUriBuilder.fromUri(configurationUrl).clone().path(AUTHZ_DISCOVERY_URL).build(configuration.getRealm()).toString(); 
+        configurationUrl = KeycloakUriBuilder.fromUri(configurationUrl).clone().path(AUTHZ_DISCOVERY_URL).build(configuration.getRealm()).toString();
         this.configuration = configuration;
 
         this.http = new Http(configuration, configuration.getClientCredentialsProvider());
@@ -256,14 +256,14 @@ public class AuthzClient {
         }
     }
 
-    private TokenCallable createPatSupplier(String userName, String password) {
+    public TokenCallable createPatSupplier(String userName, String password) {
         if (patSupplier == null) {
             patSupplier = createRefreshableAccessTokenSupplier(userName, password);
         }
         return patSupplier;
     }
 
-    private TokenCallable createPatSupplier() {
+    public TokenCallable createPatSupplier() {
         return createPatSupplier(null, null);
     }
 
