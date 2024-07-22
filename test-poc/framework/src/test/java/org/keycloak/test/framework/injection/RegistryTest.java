@@ -5,13 +5,17 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.injection.mocks.MockChildAnnotation;
 import org.keycloak.test.framework.injection.mocks.MockChildSupplier;
 import org.keycloak.test.framework.injection.mocks.MockChildValue;
 import org.keycloak.test.framework.injection.mocks.MockInstances;
+import org.keycloak.test.framework.injection.mocks.MockParent2Supplier;
 import org.keycloak.test.framework.injection.mocks.MockParentAnnotation;
 import org.keycloak.test.framework.injection.mocks.MockParentSupplier;
 import org.keycloak.test.framework.injection.mocks.MockParentValue;
+
+import java.util.List;
 
 public class RegistryTest {
 
@@ -115,11 +119,93 @@ public class RegistryTest {
     }
 
     @Test
+    public void testRecreateIfDifferentLifeCycleRequested() {
+        MockParentSupplier.DEFAULT_LIFECYCLE = LifeCycle.GLOBAL;
+
+        ParentTest parentTest = new ParentTest();
+
+        registry.beforeEach(parentTest);
+        registry.afterEach();
+        registry.afterAll();
+        assertRunning(parentTest.parent);
+
+        MockParentSupplier.DEFAULT_LIFECYCLE = LifeCycle.CLASS;
+
+        ParentTest parentTest2 = new ParentTest();
+        registry.beforeEach(parentTest2);
+
+        assertRunning(parentTest2.parent);
+        assertClosed(parentTest.parent);
+        Assertions.assertNotSame(parentTest2.parent, parentTest.parent);
+    }
+
+    @Test
+    public void testRecreateIfNotCompatible() {
+        ParentTest parentTest = new ParentTest();
+
+        registry.beforeEach(parentTest);
+        MockParentValue parent1 = parentTest.parent;
+        registry.afterEach();
+
+        MockParentSupplier.COMPATIBLE = false;
+
+        registry.beforeEach(parentTest);
+        registry.afterEach();
+
+        MockParentValue parent2 = parentTest.parent;
+
+        assertRunning(parent2);
+        assertClosed(parent1);
+        Assertions.assertNotSame(parent2, parent1);
+    }
+
+    @Test
+    public void testSelectedSupplierDefault() {
+        List<Supplier<?, ?>> suppliers = registry.getSuppliers();
+        Assertions.assertEquals(1, suppliers.stream().filter(s -> s.getValueType().equals(MockParentValue.class)).count());
+        Assertions.assertTrue(suppliers.stream().anyMatch(s -> s.getClass().equals(MockParentSupplier.class)));
+        Assertions.assertFalse(suppliers.stream().anyMatch(s -> s.getClass().equals(MockParent2Supplier.class)));
+    }
+
+    @Test
+    public void testSelectedSupplierConfigOverride() {
+        System.setProperty("kc.test.MockParentValue", MockParent2Supplier.class.getSimpleName());
+        try {
+            Config.initConfig();
+
+            registry = new Registry();
+            List<Supplier<?, ?>> suppliers = registry.getSuppliers();
+            Assertions.assertEquals(1, suppliers.stream().filter(s -> s.getValueType().equals(MockParentValue.class)).count());
+            Assertions.assertFalse(suppliers.stream().anyMatch(s -> s.getClass().equals(MockParentSupplier.class)));
+            Assertions.assertTrue(suppliers.stream().anyMatch(s -> s.getClass().equals(MockParent2Supplier.class)));
+        } finally {
+            System.getProperties().remove("kc.test.MockParentValue");
+            Config.initConfig();
+        }
+    }
+
+    @Test
     public void testDependencyCreatedOnDemand() {
         ChildTest childTest = new ChildTest();
 
         registry.beforeEach(childTest);
         assertRunning(childTest.child, childTest.child.getParent());
+    }
+
+    @Test
+    public void testDependencyRequestedBefore() {
+        ParentAndChildTest test = new ParentAndChildTest();
+
+        registry.beforeEach(test);
+        assertRunning(test.child, test.child.getParent());
+    }
+
+    @Test
+    public void testDependencyRequestedAfter() {
+        ChildAndParentTest test = new ChildAndParentTest();
+
+        registry.beforeEach(test);
+        assertRunning(test.child, test.child.getParent());
     }
 
     public static void assertRunning(Object... values) {
@@ -150,4 +236,11 @@ public class RegistryTest {
         MockChildValue child;
     }
 
+    public static final class ChildAndParentTest {
+        @MockChildAnnotation
+        MockChildValue child;
+
+        @MockParentAnnotation
+        MockParentValue parent;
+    }
 }

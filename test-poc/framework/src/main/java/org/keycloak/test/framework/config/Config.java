@@ -17,7 +17,7 @@ public class Config {
         return config.getOptionalValue("kc.test." + ValueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
-    private static SmallRyeConfig initConfig() {
+    public static SmallRyeConfig initConfig() {
         SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
