@@ -201,6 +201,18 @@
                             <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>securing-apps-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
