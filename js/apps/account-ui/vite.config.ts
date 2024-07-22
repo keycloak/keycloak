@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const external = ["react", "react/jsx-runtime", "react-dom"];
   const plugins = [react(), checker({ typescript: true })];
+  const input = env.LIB ? undefined : "src/main.tsx";
   if (env.LIB) {
     external.push("react-router-dom");
     external.push("react-i18next");
@@ -23,7 +24,9 @@ export default defineConfig(({ mode }) => {
           formats: ["es"],
         },
       }
-    : undefined;
+    : {
+        outDir: "target/classes/theme/keycloak.v3/account/resources",
+      };
   return {
     base: "",
     server: {
@@ -38,7 +41,7 @@ export default defineConfig(({ mode }) => {
       cssMinify: "lightningcss",
       manifest: true,
       rollupOptions: {
-        input: "src/main.tsx",
+        input,
         external,
       },
     },
