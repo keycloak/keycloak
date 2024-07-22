@@ -45,7 +45,6 @@ public class UserSupplier implements Supplier<UserResource, TestUser> {
         response.close();
 
         instanceContext.addNote(USER_UUID_KEY, userId);
-
         return realm.users().get(userId);
     }
 

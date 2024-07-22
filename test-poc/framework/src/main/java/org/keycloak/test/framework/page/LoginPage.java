@@ -28,4 +28,8 @@ public class LoginPage extends AbstractPage {
         submitButton.click();
     }
 
+    public void open(String endpoint) {
+        driver.get("http://localhost:8080" + endpoint);
+    }
+
 }
