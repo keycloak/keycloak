@@ -1,7 +1,10 @@
 package org.keycloak.test.framework.admin;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.test.framework.annotations.TestAdminClient;
+import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
@@ -23,7 +26,13 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, TestAdmin
     @Override
     public Keycloak getValue(InstanceContext<Keycloak, TestAdminClient> instanceContext) {
         KeycloakTestServer testServer = instanceContext.getDependency(KeycloakTestServer.class);
-        return Keycloak.getInstance(testServer.getBaseUrl(), "master", "admin", "admin", "admin-cli");
+        return KeycloakBuilder.builder()
+                .serverUrl(testServer.getBaseUrl())
+                .realm("master")
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(Config.getAdminClientId())
+                .clientSecret(Config.getAdminClientSecret())
+                .build();
     }
 
     @Override

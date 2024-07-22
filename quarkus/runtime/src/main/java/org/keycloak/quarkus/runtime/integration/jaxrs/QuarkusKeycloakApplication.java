@@ -46,9 +46,7 @@ import jakarta.ws.rs.ApplicationPath;
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
-    private static final String KEYCLOAK_ADMIN_PROP_VAR = "keycloakAdmin";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
-    private static final String KEYCLOAK_ADMIN_PASSWORD_PROP_VAR = "keycloakAdminPassword";
 
     void onStartupEvent(@Observes StartupEvent event) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
@@ -79,8 +77,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
-        var adminUsername = Configuration.getOptionalKcValue(BootstrapAdminOptions.USERNAME.getKey()).orElse(getEnvOrProp(KEYCLOAK_ADMIN_ENV_VAR, KEYCLOAK_ADMIN_PROP_VAR));
-        var adminPassword = Configuration.getOptionalKcValue(BootstrapAdminOptions.PASSWORD.getKey()).orElse(getEnvOrProp(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR, KEYCLOAK_ADMIN_PASSWORD_PROP_VAR));
+        var adminUsername = Configuration.getOptionalKcValue(BootstrapAdminOptions.USERNAME.getKey()).orElse(System.getenv(KEYCLOAK_ADMIN_ENV_VAR));
+        var adminPassword = Configuration.getOptionalKcValue(BootstrapAdminOptions.PASSWORD.getKey()).orElse(System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR));
 
         var clientId = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_ID.getKey()).orElse(null);
         var clientSecret = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_SECRET.getKey()).orElse(null);
@@ -104,11 +102,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     public void createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
         new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
-    }
-
-    private String getEnvOrProp(String envKey, String propKey) {
-        String value = System.getenv(envKey);
-        return value != null ? value : System.getProperty(propKey);
     }
 
 }

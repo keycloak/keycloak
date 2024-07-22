@@ -41,6 +41,9 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
 
         adminClient.realms().create(realmRepresentation);
 
+        // TODO Token needs to be invalidated after creating realm to have roles for new realm in the token. Maybe lightweight access tokens could help.
+        adminClient.tokenManager().invalidate(adminClient.tokenManager().getAccessTokenString());
+
         return adminClient.realm(realmRepresentation.getRealm());
     }
 
