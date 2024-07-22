@@ -1,0 +1,19 @@
+[[_sp-idp-allowedclockskew]]
+
+== IDP AllowedClockSkew sub element
+
+The `AllowedClockSkew` optional sub element defines the allowed clock skew between IDP and SP.
+The default value is 0.
+
+[source,xml]
+----
+<AllowedClockSkew unit="MILLISECONDS">3500</AllowedClockSkew>
+----
+
+unit::
+  It is possible to define the time unit attached to the value for this element.
+  Allowed values are MICROSECONDS, MILLISECONDS, MINUTES, NANOSECONDS and SECONDS.
+  This is _OPTIONAL_.
+  The default value is `SECONDS`.
+
+

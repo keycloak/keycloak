@@ -37,7 +37,6 @@ include::topics/oidc/recommendations.adoc[]
 
 include::topics/saml/saml-overview.adoc[]
 ifeval::[{project_community}==true]
-include::topics/saml/java/java-adapters.adoc[]
 include::topics/saml/mod-auth-mellon.adoc[]
 endif::[]
 ifeval::[{project_product}==true]
