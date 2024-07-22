@@ -89,7 +89,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.12.1",
+    "i18next": "^23.12.2",
     "i18next-http-backend": "^2.5.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
