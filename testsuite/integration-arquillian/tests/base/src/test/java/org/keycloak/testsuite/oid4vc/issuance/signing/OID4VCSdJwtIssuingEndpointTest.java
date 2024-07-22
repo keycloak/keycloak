@@ -222,7 +222,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
-                Format.SD_JWT_VC.toString(),
+                Format.SD_JWT_VC,
                 "sha-256",
                 "did:web:issuer.org",
                 2,
@@ -236,7 +236,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
-                Format.SD_JWT_VC.toString(),
+                Format.SD_JWT_VC,
                 "sha-256",
                 "did:web:issuer.org",
                 0,
@@ -263,12 +263,12 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
         componentExportRepresentation.setName("sd-jwt-signing_identity_credential");
         componentExportRepresentation.setId(UUID.randomUUID().toString());
-        componentExportRepresentation.setProviderId(Format.SD_JWT_VC.toString());
+        componentExportRepresentation.setProviderId(Format.SD_JWT_VC);
 
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "algorithmType", List.of("ES256"),
-                        "tokenType", List.of(Format.SD_JWT_VC.toString()),
+                        "tokenType", List.of(Format.SD_JWT_VC),
                         "issuerDid", List.of(TEST_DID.toString()),
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("0"),
@@ -283,12 +283,12 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
         componentExportRepresentation.setName("sd-jwt-signing_test-credential");
         componentExportRepresentation.setId(UUID.randomUUID().toString());
-        componentExportRepresentation.setProviderId(Format.SD_JWT_VC.toString());
+        componentExportRepresentation.setProviderId(Format.SD_JWT_VC);
 
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "algorithmType", List.of("ES256"),
-                        "tokenType", List.of(Format.SD_JWT_VC.toString()),
+                        "tokenType", List.of(Format.SD_JWT_VC),
                         "issuerDid", List.of(TEST_DID.toString()),
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("2"),
@@ -307,7 +307,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         clientRepresentation.setEnabled(true);
         Map<String, String> testCredentialAttributes = Map.of(
                 "vc.test-credential.expiry_in_s", "1800",
-                "vc.test-credential.format", Format.SD_JWT_VC.toString(),
+                "vc.test-credential.format", Format.SD_JWT_VC,
                 "vc.test-credential.scope", "test-credential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
                 "vc.test-credential.vct", "https://credentials.example.com/test-credential",
@@ -316,7 +316,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         );
         Map<String, String> identityCredentialAttributes = Map.of(
                 "vc.IdentityCredential.expiry_in_s", "31536000",
-                "vc.IdentityCredential.format", Format.SD_JWT_VC.toString(),
+                "vc.IdentityCredential.format", Format.SD_JWT_VC,
                 "vc.IdentityCredential.scope", "identity_credential",
                 "vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential",
                 "vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk",

@@ -315,13 +315,13 @@ public class OID4VCIssuerEndpoint {
         // Both Format and identifier are optional.
         // If the credential_identifier is present, Format can't be present. But this implementation will
         // tolerate the presence of both, waiting for clarity in specifications.
-        // This implementation will priviledge the presence of the credential config identifier.
+        // This implementation will privilege the presence of the credential config identifier.
         String requestedCredentialId = credentialRequestVO.getCredentialIdentifier();
         String requestedFormat = credentialRequestVO.getFormat();
 
         // Check if at least one of both is available.
-        if(requestedCredentialId==null && requestedFormat==null){
-            LOGGER.debugf("Missing both  configuration id and requested format. At least one shall be specified.");
+        if(requestedCredentialId == null && requestedFormat == null){
+            LOGGER.debugf("Missing both configuration id and requested format. At least one shall be specified.");
             throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG_AND_FORMAT));
         }
 
@@ -329,7 +329,7 @@ public class OID4VCIssuerEndpoint {
 
         // resolve from identifier first
         SupportedCredentialConfiguration supportedCredentialConfiguration = null;
-        if (requestedCredentialId!=null) {
+        if (requestedCredentialId != null) {
             supportedCredentialConfiguration = supportedCredentials.get(requestedCredentialId);
             if(supportedCredentialConfiguration==null){
                 LOGGER.debugf("Credential with configuration id %s not found.", requestedCredentialId);

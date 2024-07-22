@@ -185,7 +185,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         clientRepresentation.setEnabled(true);
         clientRepresentation.setAttributes(Map.of(
                 "vc.test-credential.expiry_in_s", "100",
-                "vc.test-credential.format", Format.JWT_VC.toString(),
+                "vc.test-credential.format", Format.JWT_VC,
                 "vc.test-credential.scope", "VerifiableCredential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
                 "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}"
