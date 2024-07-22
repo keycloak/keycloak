@@ -1,0 +1,3 @@
+:guide-title: WildFly
+:guide-summary: Secure WildFly Applications with Keycloak
+:external-link: https://wildfly-security.github.io/wildfly-elytron/blog/securing-wildfly-apps-openid-connect/

@@ -39,17 +39,3 @@ ifeval::[{project_community}==true]
 * https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc]
 endif::[]
 
-==== SAML
-
-===== Java
-
-* <<_saml_jboss_adapter,JBoss EAP>>
-ifeval::[{project_community}==true]
-* <<_saml_jboss_adapter,WildFly>>
-endif::[]
-
-ifeval::[{project_community}==true]
-===== Apache HTTP Server
-
-* <<_mod_auth_mellon,mod_auth_mellon>>
-endif::[]
