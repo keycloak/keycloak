@@ -108,7 +108,7 @@ public class SupportedCredentialConfiguration {
      * @return
      */
     public VerifiableCredentialType deriveType() {
-        if(Objects.equals(format, Format.SD_JWT_VC)) {
+        if (Objects.equals(format, Format.SD_JWT_VC)) {
             return VerifiableCredentialType.from(vct);
         }
         return null;
@@ -218,7 +218,7 @@ public class SupportedCredentialConfiguration {
 
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
-        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format.toString()));
+        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format));
         Optional.ofNullable(vct).ifPresent(vct -> dotNotation.put(id + DOT_SEPARATOR + VERIFIABLE_CREDENTIAL_TYPE_KEY, vct));
         Optional.ofNullable(scope).ifPresent(scope -> dotNotation.put(id + DOT_SEPARATOR + SCOPE_KEY, scope));
         Optional.ofNullable(cryptographicBindingMethodsSupported).ifPresent(types ->
@@ -273,7 +273,7 @@ public class SupportedCredentialConfiguration {
                 .map(entry -> DisplayObject.fromJsonString(entry.getValue()))
                 .collect(Collectors.toList());
 
-        if(!displayList.isEmpty()){
+        if (!displayList.isEmpty()){
             supportedCredentialConfiguration.setDisplay(displayList);
         }
 

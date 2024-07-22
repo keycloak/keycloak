@@ -84,8 +84,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.keycloak.protocol.oid4vc.model.Format.JWT_VC;
 import static org.keycloak.protocol.oid4vc.model.Format.LDP_VC;
 import static org.keycloak.protocol.oid4vc.model.Format.SD_JWT_VC;
+import static org.keycloak.protocol.oid4vc.model.Format.SUPPORTED_FORMATS;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -331,22 +333,22 @@ public class OID4VCIssuerEndpoint {
         SupportedCredentialConfiguration supportedCredentialConfiguration = null;
         if (requestedCredentialId != null) {
             supportedCredentialConfiguration = supportedCredentials.get(requestedCredentialId);
-            if(supportedCredentialConfiguration==null){
+            if(supportedCredentialConfiguration == null){
                 LOGGER.debugf("Credential with configuration id %s not found.", requestedCredentialId);
                 throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
             }
             // Then for format. We know spec does not allow both parameter. But we are tolerant if you send both
             // Was found by id, check that the format matches.
-            if (requestedFormat!=null && !requestedFormat.equals(supportedCredentialConfiguration.getFormat())){
+            if (requestedFormat != null && !requestedFormat.equals(supportedCredentialConfiguration.getFormat())){
                 LOGGER.debugf("Credential with configuration id %s does not support requested format %s, but supports %s.", requestedCredentialId, requestedFormat, supportedCredentialConfiguration.getFormat());
                 throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
             }
         }
 
-        if(supportedCredentialConfiguration==null && requestedFormat!=null) {
+        if(supportedCredentialConfiguration == null && requestedFormat != null) {
             // Search by format
             supportedCredentialConfiguration = getSupportedCredentialConfiguration(credentialRequestVO, supportedCredentials, requestedFormat);
-            if(supportedCredentialConfiguration==null) {
+            if(supportedCredentialConfiguration == null) {
                 LOGGER.debugf("Credential with requested format %s, not supported.", requestedFormat);
                 throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
             }
@@ -355,7 +357,7 @@ public class OID4VCIssuerEndpoint {
         CredentialResponse responseVO = new CredentialResponse();
 
         Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
-        if(Objects.equals(requestedFormat, Format.JWT_VC) || Objects.equals(requestedFormat, LDP_VC) || Objects.equals(requestedFormat, SD_JWT_VC)) {
+        if(SUPPORTED_FORMATS.contains(requestedFormat)) {
             responseVO.setCredential(theCredential);
         } else {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
@@ -366,23 +368,27 @@ public class OID4VCIssuerEndpoint {
     private SupportedCredentialConfiguration getSupportedCredentialConfiguration(CredentialRequest credentialRequestVO, Map<String, SupportedCredentialConfiguration> supportedCredentials, String requestedFormat) {
         // 1. Format resolver
         List<SupportedCredentialConfiguration> configs = supportedCredentials.values().stream()
-                .filter(supportedCredential -> Objects.equals(supportedCredential.getFormat(),requestedFormat))
+                .filter(supportedCredential -> Objects.equals(supportedCredential.getFormat(), requestedFormat))
                 .collect(Collectors.toList());
 
         List<SupportedCredentialConfiguration> matchingConfigs;
 
-        if(Objects.equals(requestedFormat, Format.JWT_VC) || Objects.equals(requestedFormat, LDP_VC)) {
-            // Will detach this when each format provides logic on how to resolve from definition.
-            matchingConfigs = configs.stream()
-                    .filter(supportedCredential -> Objects.equals(supportedCredential.getCredentialDefinition(), credentialRequestVO.getCredentialDefinition()))
-                    .collect(Collectors.toList());
-        } else if (Objects.equals(requestedFormat, Format.SD_JWT_VC)) {
-            // Resolve from vct for sd-jwt
-            matchingConfigs = configs.stream()
-                    .filter(supportedCredential -> Objects.equals(supportedCredential.getVct(), credentialRequestVO.getVct()))
-                    .collect(Collectors.toList());
-        } else {
-            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
+        switch (requestedFormat) {
+            case SD_JWT_VC:
+                // Resolve from vct for sd-jwt
+                matchingConfigs = configs.stream()
+                        .filter(supportedCredential -> Objects.equals(supportedCredential.getVct(), credentialRequestVO.getVct()))
+                        .collect(Collectors.toList());
+                break;
+            case JWT_VC:
+            case LDP_VC:
+                // Will detach this when each format provides logic on how to resolve from definition.
+                matchingConfigs = configs.stream()
+                        .filter(supportedCredential -> Objects.equals(supportedCredential.getCredentialDefinition(), credentialRequestVO.getCredentialDefinition()))
+                        .collect(Collectors.toList());
+                break;
+            default:
+                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
         }
 
         if (matchingConfigs.isEmpty()) {
@@ -423,7 +429,7 @@ public class OID4VCIssuerEndpoint {
      *
      * @param authResult    authResult containing the userSession to create the credential for
      * @param credentialConfig    the supported credential configuration
-     * @param credentialRequestVO
+     * @param credentialRequestVO the credential request
      * @return the signed credential
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult, SupportedCredentialConfiguration credentialConfig, CredentialRequest credentialRequestVO) {
@@ -492,7 +498,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     // Return all {@link  OID4VCClient}s that support the given scope and format
-    // Scope might be different from vct. In the case of sd-jwt for eaxample
+    // Scope might be different from vct. In the case of sd-jwt for example
     private List<OID4VCClient> getClientsOfScope(String vcScope, String format) {
         LOGGER.debugf("Retrieve all clients of scope %s, supporting format %s", vcScope, format);
 

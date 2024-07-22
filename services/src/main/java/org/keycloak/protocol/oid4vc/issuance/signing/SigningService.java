@@ -26,7 +26,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.model.Format;
 
 /**
  * Abstract base class to provide the Signing Services common functionality
@@ -54,7 +53,7 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
 
     @Override
     public String locator() {
-        // Future implementation might consider credential type or even cofiguration specific signers.
+        // Future implementation might consider credential type or even configuration specific signers.
         // See: org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService.locator
         return  VerifiableCredentialsSigningService.locator(format, null, null);
     }
@@ -77,10 +76,10 @@ public abstract class SigningService<T> implements VerifiableCredentialsSigningS
 
     protected SignatureVerifierContext getVerifier(JWK jwk, String jwsAlgorithm) throws VerificationException {
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, jwsAlgorithm);
-        return signatureProvider.verifier(getKeyWraper(jwk, jwsAlgorithm, KeyUse.SIG));
+        return signatureProvider.verifier(getKeyWrapper(jwk, jwsAlgorithm, KeyUse.SIG));
     }
 
-    private KeyWrapper getKeyWraper(JWK jwk, String algorithm, KeyUse keyUse) {
+    private KeyWrapper getKeyWrapper(JWK jwk, String algorithm, KeyUse keyUse) {
         KeyWrapper keyWrapper = new KeyWrapper();
         keyWrapper.setType(jwk.getKeyType());
 

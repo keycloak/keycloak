@@ -100,7 +100,7 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
         if (signingKey == null) {
             throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
         }
-        // @Francis: keyId header can be confusing if there is any key rotation, as key ids have to be immutable. It can lead
+        // keyId header can be confusing if there is any key rotation, as key ids have to be immutable. It can lead
         // to different keys being exposed under the same id.
         // set the configured kid if present.
         if (kid.isPresent()) {
