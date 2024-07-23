@@ -57,7 +57,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
         String vcConfigId = model.get(SigningProperties.VC_CONFIG_ID.getKey());
 
         List<String> visibleClaims = Optional.ofNullable(model.get(SigningProperties.VISIBLE_CLAIMS.getKey()))
-                .map(visibileClaims -> visibileClaims.split(","))
+                .map(vsbleClaims -> vsbleClaims.split(","))
                 .map(Arrays::asList)
                 .orElse(List.of());
 
@@ -92,7 +92,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
 
     @Override
     public String getId() {
-        return SUPPORTED_FORMAT.toString();
+        return SUPPORTED_FORMAT;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
                 .checkRequired(SigningProperties.TOKEN_TYPE.asConfigProperty())
                 .checkInt(SigningProperties.DECOYS.asConfigProperty(), true);
         // Make sure VCT is set if vc config id is set.
-        if(model.get(SigningProperties.VC_CONFIG_ID.getKey())!=null){
+        if (model.get(SigningProperties.VC_CONFIG_ID.getKey()) != null) {
             helper.checkRequired(SigningProperties.VC_VCT.asConfigProperty());
         }
     }

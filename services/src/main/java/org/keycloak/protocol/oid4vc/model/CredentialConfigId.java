@@ -23,8 +23,7 @@ public class CredentialConfigId {
     private String value;
 
     public static CredentialConfigId from(String value) {
-
-        return value==null ? null : new CredentialConfigId(value);
+        return value == null ? null : new CredentialConfigId(value);
     }
 
     public CredentialConfigId(String value) {

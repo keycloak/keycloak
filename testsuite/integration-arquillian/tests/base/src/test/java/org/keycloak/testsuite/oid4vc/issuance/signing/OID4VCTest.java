@@ -187,7 +187,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         clientRepresentation.setEnabled(true);
         clientRepresentation.setAttributes(Map.of(
                 "vc.test-credential.expiry_in_s", "100",
-                "vc.test-credential.format", Format.JWT_VC.toString(),
+                "vc.test-credential.format", Format.JWT_VC,
                 "vc.test-credential.scope", "VerifiableCredential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
                 "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}"
@@ -354,16 +354,16 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    protected ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String atributeName, String supportedCredentialTypes) {
+    protected ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName, String supportedCredentialTypes) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
-        protocolMapperRepresentation.setName(supportedCredentialTypes + "-" + atributeName + "-mapper");
+        protocolMapperRepresentation.setName(supportedCredentialTypes + "-" + attributeName + "-mapper");
         protocolMapperRepresentation.setProtocol("oid4vc");
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-user-attribute-mapper");
         protocolMapperRepresentation.setConfig(
                 Map.of(
                         "subjectProperty", subjectProperty,
-                        "userAttribute", atributeName,
+                        "userAttribute", attributeName,
                         "supportedCredentialTypes", supportedCredentialTypes)
         );
         return protocolMapperRepresentation;

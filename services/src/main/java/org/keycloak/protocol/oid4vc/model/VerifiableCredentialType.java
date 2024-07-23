@@ -23,7 +23,7 @@ public class VerifiableCredentialType {
     private String value;
 
     public static VerifiableCredentialType from(String value){
-        return value==null? null : new VerifiableCredentialType(value);
+        return value == null? null : new VerifiableCredentialType(value);
     }
     public VerifiableCredentialType(String value) {
         this.value = value;

@@ -26,7 +26,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
@@ -42,7 +41,7 @@ public interface VCSigningServiceProviderFactory extends ComponentFactory<Verifi
      */
     String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
 
-    public static ProviderConfigurationBuilder configurationBuilder() {
+    static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 // I do believe the ALGORITHM_TYPE need to be mandatory instead. As the keyId might change with key rotation.
                 // If keyId is not set, service can always work with active key.

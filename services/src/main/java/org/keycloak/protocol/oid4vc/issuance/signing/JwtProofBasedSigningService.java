@@ -32,7 +32,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.Proof;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
@@ -95,7 +94,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
 
         SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
         if (signatureVerifierContext == null) {
-            throw new VCIssuerException("No verifier configured for " +jwsHeader.getAlgorithm());
+            throw new VCIssuerException("No verifier configured for " + jwsHeader.getAlgorithm());
         }
         if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jwsInput.getSignature())) {
             throw new VCIssuerException("Could not verify provided proof");
@@ -184,7 +183,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
                         "Proof not produced for this audience. Audience claim must be: " + credentialIssuer + " but are " + Arrays.asList(proofPayload.getAudience())));
 
         // Validate mandatory iat.
-        // I do not understand the rationale behind requiring a issue time if we are not checking expiration.
+        // I do not understand the rationale behind requiring an issue time if we are not checking expiration.
         Optional.ofNullable(proofPayload.getIat())
                 .orElseThrow(() -> new VCIssuerException("Missing proof issuing time. iat claim must be provided."));
 

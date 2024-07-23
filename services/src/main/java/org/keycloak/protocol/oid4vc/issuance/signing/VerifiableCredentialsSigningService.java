@@ -45,7 +45,7 @@ public interface VerifiableCredentialsSigningService<T> extends Provider {
      */
     String locator();
 
-    static final String LOCATION_SEPARATOR = "::";
+    String LOCATION_SEPARATOR = "::";
 
     /**
      * We are forcing a structure with 3 components. format::type::configId. We assume format is always set, as
@@ -57,8 +57,8 @@ public interface VerifiableCredentialsSigningService<T> extends Provider {
      * @return
      */
     static String locator(String format, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId){
-        return (format==null? "" : format) + LOCATION_SEPARATOR +
-                (credentialType==null?"":credentialType.getValue()) + LOCATION_SEPARATOR +
-                (vcConfigId==null?"":vcConfigId.getValue());
+        return (format == null ? "" : format) + LOCATION_SEPARATOR +
+                (credentialType == null ? "" : credentialType.getValue()) + LOCATION_SEPARATOR +
+                (vcConfigId == null ? "" : vcConfigId.getValue());
     }
 }

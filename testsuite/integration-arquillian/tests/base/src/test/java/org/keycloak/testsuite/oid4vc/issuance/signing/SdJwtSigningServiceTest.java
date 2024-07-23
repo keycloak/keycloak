@@ -61,7 +61,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
 
     private static KeyWrapper rsaKey = getRsaKey();
 
-    // If an unsupported algorithm is provided, the JWT Sigining Service should not be instantiated.
+    // If an unsupported algorithm is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testUnsupportedAlgorithm() throws Throwable {
         try {
@@ -86,7 +86,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
         }
     }
 
-    // If no key is provided, the JWT Sigining Service should not be instantiated.
+    // If no key is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testFailIfNoKey() throws Throwable {
         try {

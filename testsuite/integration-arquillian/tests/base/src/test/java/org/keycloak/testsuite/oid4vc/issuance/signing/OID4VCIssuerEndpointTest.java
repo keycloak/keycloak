@@ -166,7 +166,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // use supported values by Credential Issuer Metadata
         String testCredentialConfigurationId = "test-credential";
         String testScope = "VerifiableCredential";
-        String testFormat = Format.JWT_VC.toString();
+        String testFormat = Format.JWT_VC;
 
         // register optional client scope
         String scopeId = registerOptionalClientScope(testScope);
