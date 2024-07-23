@@ -168,15 +168,15 @@ public class RealmEntity {
     @Column(name="VALUE")
     @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> eventsListeners;
-    
+
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name="REALM_ENABLED_EVENT_TYPES", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> enabledEventTypes;
-    
+
     @Column(name="ADMIN_EVENTS_ENABLED")
     protected boolean adminEventsEnabled;
-    
+
     @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
     protected boolean adminEventsDetailsEnabled;
 
@@ -186,7 +186,7 @@ public class RealmEntity {
     @Column(name="DEFAULT_ROLE")
     protected String defaultRoleId;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     protected List<IdentityProviderEntity> identityProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
@@ -304,7 +304,7 @@ public class RealmEntity {
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
-    
+
     public boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
@@ -312,7 +312,7 @@ public class RealmEntity {
     public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
         this.loginWithEmailAllowed = loginWithEmailAllowed;
     }
-    
+
     public boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -538,7 +538,7 @@ public class RealmEntity {
     public void setEventsListeners(Set<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
     }
-    
+
     public Set<String> getEnabledEventTypes() {
         if (enabledEventTypes == null) {
             enabledEventTypes = new HashSet<>();
@@ -549,7 +549,7 @@ public class RealmEntity {
     public void setEnabledEventTypes(Set<String> enabledEventTypes) {
         this.enabledEventTypes = enabledEventTypes;
     }
-    
+
     public boolean isAdminEventsEnabled() {
         return adminEventsEnabled;
     }
@@ -627,7 +627,7 @@ public class RealmEntity {
     }
 
     public void addIdentityProvider(IdentityProviderEntity entity) {
-        entity.setRealm(this);
+        entity.setRealmId(this.id);
         getIdentityProviders().add(entity);
     }
 
@@ -675,7 +675,7 @@ public class RealmEntity {
         }
         return authenticators;
     }
-    
+
     public void setAuthenticatorConfigs(Collection<AuthenticatorConfigEntity> authenticators) {
         this.authenticators = authenticators;
     }
