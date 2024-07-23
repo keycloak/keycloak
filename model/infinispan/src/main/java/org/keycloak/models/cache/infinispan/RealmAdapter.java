@@ -906,20 +906,16 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream().map(this::createOrganizationAwareIdentityProviderModel);
-        return cached.getIdentityProviders().stream().map(this::createOrganizationAwareIdentityProviderModel);
+        return session.identityProviders().getAllStream().map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return createOrganizationAwareIdentityProviderModel(updated.getIdentityProviderByAlias(alias));
-        return getIdentityProvidersStream()
-                .filter(model -> Objects.equals(model.getAlias(), alias))
-                .findFirst()
-                .map(this::createOrganizationAwareIdentityProviderModel)
-                .orElse(null);
+        IdentityProviderModel idp = session.identityProviders().getByAlias(alias);
+        return idp != null ? createOrganizationAwareIdentityProviderModel(idp) : null;
     }
 
+    // TODO move this to the infinispan IDPProvider implementation.
     private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
         if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
         return new IdentityProviderModel(idp) {
@@ -938,20 +934,17 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.addIdentityProvider(identityProvider);
+        session.identityProviders().create(identityProvider);
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.updateIdentityProvider(identityProvider);
+        session.identityProviders().update(identityProvider);
     }
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        getDelegateForUpdate();
-        updated.removeIdentityProviderByAlias(alias);
+        session.identityProviders().remove(alias);
     }
 
     @Override
@@ -1147,8 +1140,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        if (isUpdated()) return updated.isIdentityFederationEnabled();
-        return cached.isIdentityFederationEnabled();
+        return session.identityProviders().isIdentityFederationEnabled();
     }
 
 
