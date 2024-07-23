@@ -42,7 +42,7 @@ export const AccessSettings = ({
           name="settings"
           save={save}
           reset={reset}
-          isActive={!isManager}
+          isDisabled={isManager}
         />
       )}
     </FormAccess>
