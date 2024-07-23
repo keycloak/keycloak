@@ -1,6 +1,6 @@
 package org.keycloak.test.framework.page;
 
-import org.keycloak.test.framework.annotations.TestPage;
+import org.keycloak.test.framework.annotations.Page;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
@@ -8,11 +8,11 @@ import org.openqa.selenium.WebDriver;
 
 import java.lang.reflect.Constructor;
 
-public class PageSupplier  implements Supplier<AbstractPage, TestPage> {
+public class PageSupplier  implements Supplier<AbstractPage, Page> {
 
     @Override
-    public Class<TestPage> getAnnotationClass() {
-        return TestPage.class;
+    public Class<Page> getAnnotationClass() {
+        return Page.class;
     }
 
     @Override
@@ -21,13 +21,13 @@ public class PageSupplier  implements Supplier<AbstractPage, TestPage> {
     }
 
     @Override
-    public AbstractPage getValue(InstanceContext<AbstractPage, TestPage> instanceContext) {
+    public AbstractPage getValue(InstanceContext<AbstractPage, Page> instanceContext) {
         WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
         return createPage(webDriver, instanceContext.getRequestedValueType());
     }
 
     @Override
-    public boolean compatible(InstanceContext<AbstractPage, TestPage> a, RequestedInstance<AbstractPage, TestPage> b) {
+    public boolean compatible(InstanceContext<AbstractPage, Page> a, RequestedInstance<AbstractPage, Page> b) {
         return true;
     }
 

@@ -7,9 +7,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.annotations.TestClient;
-import org.keycloak.test.framework.annotations.TestRealm;
-import org.keycloak.test.framework.annotations.TestUser;
+import org.keycloak.test.framework.annotations.Client;
+import org.keycloak.test.framework.annotations.Realm;
+import org.keycloak.test.framework.annotations.User;
 import org.keycloak.test.framework.injection.LifeCycle;
 
 import java.util.List;
@@ -17,13 +17,13 @@ import java.util.List;
 @KeycloakIntegrationTest
 public class ManagedResourcesTest {
 
-    @TestRealm(lifecycle = LifeCycle.CLASS)
+    @Realm(lifecycle = LifeCycle.CLASS)
     RealmResource realmResource;
 
-    @TestClient
+    @Client
     ClientResource clientResource;
 
-    @TestUser
+    @User
     UserResource userResource;
 
     @Test

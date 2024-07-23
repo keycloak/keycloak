@@ -6,24 +6,21 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.annotations.TestClient;
-import org.keycloak.test.framework.annotations.TestRealm;
-import org.keycloak.test.framework.annotations.TestUser;
+import org.keycloak.test.framework.annotations.Client;
+import org.keycloak.test.framework.annotations.Realm;
+import org.keycloak.test.framework.annotations.User;
 import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.realm.DefaultClientConfig;
-import org.keycloak.test.framework.realm.DefaultRealmConfig;
-import org.keycloak.test.framework.realm.DefaultUserConfig;
 
 @KeycloakIntegrationTest
 public class GlobalManagedResourcesTest {
 
-    @TestRealm(lifecycle = LifeCycle.GLOBAL)
+    @Realm(lifecycle = LifeCycle.GLOBAL)
     RealmResource realmResource;
 
-    @TestClient(lifecycle = LifeCycle.GLOBAL)
+    @Client(lifecycle = LifeCycle.GLOBAL)
     ClientResource clientResource;
 
-    @TestUser(lifecycle = LifeCycle.GLOBAL)
+    @User(lifecycle = LifeCycle.GLOBAL)
     UserResource userResource;
 
     @Test

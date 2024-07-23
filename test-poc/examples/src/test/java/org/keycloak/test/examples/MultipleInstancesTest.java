@@ -5,28 +5,27 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.annotations.TestClient;
-import org.keycloak.test.framework.annotations.TestRealm;
+import org.keycloak.test.framework.annotations.Client;
+import org.keycloak.test.framework.annotations.Realm;
 import org.keycloak.test.framework.realm.RealmConfig;
 
 @KeycloakIntegrationTest
 public class MultipleInstancesTest {
 
-    @TestRealm
+    @Realm
     RealmResource realm1;
 
-    @TestRealm
+    @Realm
     RealmResource realm2;
 
-    @TestRealm(ref = "another", config = CustomRealmConfig.class)
+    @Realm(ref = "another", config = CustomRealmConfig.class)
     RealmResource realm3;
 
-    @TestClient(ref = "client1")
+    @Client(ref = "client1")
     ClientResource client;
 
-    @TestClient
+    @Client
     ClientResource client2;
 
     @Test

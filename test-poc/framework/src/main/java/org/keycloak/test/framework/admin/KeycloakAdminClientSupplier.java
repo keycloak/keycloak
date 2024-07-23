@@ -1,18 +1,18 @@
 package org.keycloak.test.framework.admin;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.test.framework.annotations.TestAdminClient;
+import org.keycloak.test.framework.annotations.AdminClient;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.server.KeycloakTestServer;
 
-public class KeycloakAdminClientSupplier implements Supplier<Keycloak, TestAdminClient> {
+public class KeycloakAdminClientSupplier implements Supplier<Keycloak, AdminClient> {
 
     @Override
-    public Class<TestAdminClient> getAnnotationClass() {
-        return TestAdminClient.class;
+    public Class<AdminClient> getAnnotationClass() {
+        return AdminClient.class;
     }
 
     @Override
@@ -21,7 +21,7 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, TestAdmin
     }
 
     @Override
-    public Keycloak getValue(InstanceContext<Keycloak, TestAdminClient> instanceContext) {
+    public Keycloak getValue(InstanceContext<Keycloak, AdminClient> instanceContext) {
         KeycloakTestServer testServer = instanceContext.getDependency(KeycloakTestServer.class);
         return Keycloak.getInstance(testServer.getBaseUrl(), "master", "admin", "admin", "admin-cli");
     }
@@ -32,12 +32,12 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, TestAdmin
     }
 
     @Override
-    public boolean compatible(InstanceContext<Keycloak, TestAdminClient> a, RequestedInstance<Keycloak, TestAdminClient> b) {
+    public boolean compatible(InstanceContext<Keycloak, AdminClient> a, RequestedInstance<Keycloak, AdminClient> b) {
         return true;
     }
 
     @Override
-    public void close(InstanceContext<Keycloak, TestAdminClient> instanceContext) {
+    public void close(InstanceContext<Keycloak, AdminClient> instanceContext) {
         instanceContext.getValue().close();
     }
 
