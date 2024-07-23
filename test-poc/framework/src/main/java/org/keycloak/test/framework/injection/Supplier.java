@@ -27,6 +27,20 @@ public interface Supplier<T, S extends Annotation> {
         return getDefaultLifecycle();
     }
 
+    default String getRef(S annotation) {
+        if (annotation != null) {
+            Optional<Method> ref = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("ref")).findFirst();
+            if (ref.isPresent()) {
+                try {
+                    return (String) ref.get().invoke(annotation);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return "";
+    }
+
     default LifeCycle getDefaultLifecycle() {
         return LifeCycle.CLASS;
     }

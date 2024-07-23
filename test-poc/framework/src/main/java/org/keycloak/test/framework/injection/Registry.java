@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry {
@@ -146,13 +147,15 @@ public class Registry {
         while (!requestedInstances.isEmpty()) {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 
-            InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
-            instance.setValue(requestedInstance.getSupplier().getValue(instance));
-            deployedInstances.add(instance);
+            if (getDeployedInstance(requestedInstance) == null) {
+                InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+                instance.setValue(requestedInstance.getSupplier().getValue(instance));
+                deployedInstances.add(instance);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Created instance: {0}",
-                        requestedInstance.getSupplier().getClass().getSimpleName());
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.tracev("Created instance: {0}",
+                            requestedInstance.getSupplier().getClass().getSimpleName());
+                }
             }
         }
     }
@@ -205,8 +208,10 @@ public class Registry {
     private InstanceContext<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
         for (Annotation a : annotations) {
             for (InstanceContext<?, ?> i : deployedInstances) {
-                Supplier<?, ?> supplier = i.getSupplier();
-                if (supplier.getAnnotationClass().equals(a.annotationType()) && valueType.isAssignableFrom(i.getValue().getClass())) {
+                Supplier supplier = i.getSupplier();
+                if (supplier.getAnnotationClass().equals(a.annotationType())
+                        && valueType.isAssignableFrom(i.getValue().getClass())
+                        && supplier.getRef(a).equals(i.getRef()) ) {
                     return i;
                 }
             }
@@ -229,8 +234,13 @@ public class Registry {
     }
 
     private InstanceContext getDeployedInstance(RequestedInstance requestedInstance) {
+        String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
+            if(!i.getRef().equals(requestedRef)) {
+                continue;
+            }
+
             if (requestedValueType != null) {
                 if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;
