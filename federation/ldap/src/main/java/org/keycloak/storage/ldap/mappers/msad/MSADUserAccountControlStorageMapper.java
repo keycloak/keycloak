@@ -260,7 +260,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
                 markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
 
-                updateUserAccountControl(false, ldapUser, control);
+                updateUserAccountControl(true, ldapUser, control);
             }
             // Always update DB
             super.setEnabled(enabled);
