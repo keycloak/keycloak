@@ -25,6 +25,7 @@ import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.IDPProvider;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -314,6 +315,11 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public SingleUseObjectProvider singleUseObjects() {
         return getDatastoreProvider().singleUseObjects();
+    }
+
+    @Override
+    public IDPProvider identityProviders() {
+        return getDatastoreProvider().identityProviders();
     }
 
     @Override

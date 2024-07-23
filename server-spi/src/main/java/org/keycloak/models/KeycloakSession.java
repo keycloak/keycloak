@@ -204,6 +204,13 @@ public interface KeycloakSession extends AutoCloseable {
 
     SingleUseObjectProvider singleUseObjects();
 
+    /**
+     * Returns the default IDP provider .
+     *
+     * @return the default IDP provider.
+     */
+    IDPProvider identityProviders();
+
     @Override
     void close();
 
