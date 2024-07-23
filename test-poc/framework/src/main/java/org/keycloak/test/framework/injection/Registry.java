@@ -147,17 +147,15 @@ public class Registry {
         while (!requestedInstances.isEmpty()) {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 
-            if (getDeployedInstance(requestedInstance) != null) {
-                throw new RuntimeException("Instance ref redefinition: " + requestedInstance.getRef());
-            }
+            if (getDeployedInstance(requestedInstance) == null) {
+                InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+                instance.setValue(requestedInstance.getSupplier().getValue(instance));
+                deployedInstances.add(instance);
 
-            InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
-            instance.setValue(requestedInstance.getSupplier().getValue(instance));
-            deployedInstances.add(instance);
-
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Created instance: {0}",
-                        requestedInstance.getSupplier().getClass().getSimpleName());
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.tracev("Created instance: {0}",
+                            requestedInstance.getSupplier().getClass().getSimpleName());
+                }
             }
         }
     }
