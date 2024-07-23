@@ -20,6 +20,7 @@ package org.keycloak.storage.datastore;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.IDPProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
@@ -49,6 +50,7 @@ public class DefaultDatastoreProvider implements DatastoreProvider, StoreManager
     private ClientProvider clientProvider;
     private ClientScopeProvider clientScopeProvider;
     private GroupProvider groupProvider;
+    private IDPProvider idpProvider;
     private UserLoginFailureProvider userLoginFailureProvider;
     private RealmProvider realmProvider;
     private RoleProvider roleProvider;
@@ -208,6 +210,14 @@ public class DefaultDatastoreProvider implements DatastoreProvider, StoreManager
             groupProvider = getGroupProvider();
         }
         return groupProvider;
+    }
+
+    @Override
+    public IDPProvider identityProviders() {
+        if (idpProvider == null) {
+            idpProvider = session.getProvider(IDPProvider.class);
+        }
+        return idpProvider;
     }
 
     @Override
