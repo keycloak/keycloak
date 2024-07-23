@@ -172,6 +172,7 @@ export const DefaultsGroupsTab = () => {
             </ToolbarItem>
             <ToolbarItem>
               <Dropdown
+                onOpenChange={toggleKebab}
                 toggle={(ref) => (
                   <MenuToggle
                     ref={ref}

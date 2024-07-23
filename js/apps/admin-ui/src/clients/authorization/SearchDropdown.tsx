@@ -55,6 +55,7 @@ export const SearchDropdown = ({
 
   return (
     <Dropdown
+      onOpenChange={toggle}
       toggle={(ref) => (
         <MenuToggle
           data-testid="searchdropdown_dorpdown"
