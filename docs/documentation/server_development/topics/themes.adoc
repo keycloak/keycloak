@@ -241,6 +241,25 @@ Or to use directly in HTML templates add the following to a custom HTML template
 <img src="${url.resourcesPath}/img/image.jpg" alt="My image description">
 ----
 
+[[_theme_custom_footer]]
+==== Adding a custom footer to a login theme
+
+In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
+
+An example for a custom `footer.ftl` may look like this:
+```
+<#macro content>
+<#-- footer at the end of the login box -->
+<div>
+    <ul id="kc-login-footer-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+    </ul>
+<div>
+</#macro>
+```
+
 ==== Adding an image to a email theme
 
 To make images available to the theme add them to the `<THEME TYPE>/email/resources/img` directory of your theme. These can be used from within directly in HTML templates.
