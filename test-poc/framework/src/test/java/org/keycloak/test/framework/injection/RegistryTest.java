@@ -208,6 +208,35 @@ public class RegistryTest {
         assertRunning(test.child, test.child.getParent());
     }
 
+    @Test
+    public void testMultiplRef() {
+        MultipleRefTest refTest = new MultipleRefTest();
+        registry.beforeEach(refTest);
+
+        MockParentValue def1 = refTest.def;
+        MockParentValue a1 = refTest.a;
+
+        Assertions.assertNotSame(refTest.def, refTest.a);
+        Assertions.assertNotSame(refTest.def, refTest.b);
+        Assertions.assertNotSame(refTest.a, refTest.b);
+
+        assertRunning(refTest.def, refTest.a, refTest.b);
+
+        registry.afterEach();
+
+        registry.beforeEach(refTest);
+        assertRunning(refTest.def, refTest.a, refTest.b);
+
+        Assertions.assertSame(def1, refTest.def);
+        Assertions.assertSame(a1, refTest.a);
+
+        registry.afterEach();
+        assertRunning(refTest.def, refTest.a, refTest.b);
+
+        registry.afterAll();
+        assertClosed(refTest.def, refTest.a, refTest.b);
+    }
+
     public static void assertRunning(Object... values) {
         MatcherAssert.assertThat(MockInstances.INSTANCES, Matchers.hasItems(values));
         MatcherAssert.assertThat(MockInstances.INSTANCES, Matchers.hasSize(values.length));
@@ -242,5 +271,16 @@ public class RegistryTest {
 
         @MockParentAnnotation
         MockParentValue parent;
+    }
+
+    public static final class MultipleRefTest {
+        @MockParentAnnotation()
+        MockParentValue def;
+
+        @MockParentAnnotation(ref = "a")
+        MockParentValue a;
+
+        @MockParentAnnotation(ref = "b")
+        MockParentValue b;
     }
 }
