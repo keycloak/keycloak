@@ -288,6 +288,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
             userRep = userResource.toRepresentation(true);
             assertProfileAttributes(userRep, null, true, "username", "email", "firstName", "lastName", "postal_code");
+
+            // the second provider is not readonly
+            userResource = ApiUtil.findUserByUsernameId(testRealm(), "anotherjohn");
+            userRep = userResource.toRepresentation(true);
+            assertProfileAttributes(userRep, null, false, "username", "email", "firstName", "lastName");
         } finally {
           setLDAPWritable();
         }
