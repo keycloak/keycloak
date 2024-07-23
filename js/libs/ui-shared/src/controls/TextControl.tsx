@@ -26,6 +26,7 @@ export type TextControlProps<
     labelIcon?: string | ReactNode;
     isDisabled?: boolean;
     helperText?: string;
+    "data-testid"?: string;
   };
 
 export const TextControl = <
@@ -54,7 +55,7 @@ export const TextControl = <
       <TextInput
         isRequired={required}
         id={props.name}
-        data-testid={props.name}
+        data-testid={props["data-testid"] || props.name}
         validated={
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
