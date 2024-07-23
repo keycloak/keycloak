@@ -20,7 +20,7 @@ package org.keycloak.protocol.oid4vc.model;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class CredentialConfigId {
-    private String value;
+    private final String value;
 
     public static CredentialConfigId from(String value) {
         return value == null ? null : new CredentialConfigId(value);
