@@ -4,6 +4,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.injection.Registry;
 
 public class KeycloakIntegrationTestExtension implements BeforeEachCallback, AfterEachCallback, AfterAllCallback {
@@ -35,7 +36,7 @@ public class KeycloakIntegrationTestExtension implements BeforeEachCallback, Aft
 
     private Registry getRegistry(ExtensionContext context) {
         ExtensionContext.Store store = getStore(context);
-        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> new Registry());
+        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> createRegistry());
         registry.setCurrentContext(context);
         return registry;
     }
@@ -45,6 +46,12 @@ public class KeycloakIntegrationTestExtension implements BeforeEachCallback, Aft
             context = context.getParent().get();
         }
         return context.getStore(ExtensionContext.Namespace.create(getClass()));
+    }
+
+    private Registry createRegistry() {
+        Registry registry = new Registry();
+        Runtime.getRuntime().addShutdownHook(new Thread(registry::close));
+        return registry;
     }
 
 }

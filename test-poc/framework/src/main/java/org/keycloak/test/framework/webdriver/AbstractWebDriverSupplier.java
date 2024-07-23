@@ -1,5 +1,6 @@
 package org.keycloak.test.framework.webdriver;
 
+import org.keycloak.test.framework.annotations.TestWebDriver;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;

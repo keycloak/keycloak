@@ -268,7 +268,6 @@ function RealmSettingsGeneralTabForm({
           <FixedButtonsGroup
             name="realmSettingsGeneralTab"
             reset={setupForm}
-            isActive
             isSubmit
           />
         </FormAccess>

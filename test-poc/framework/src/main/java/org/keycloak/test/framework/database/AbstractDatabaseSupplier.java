@@ -1,6 +1,6 @@
 package org.keycloak.test.framework.database;
 
-import org.keycloak.test.framework.KeycloakTestDatabase;
+import org.keycloak.test.framework.annotations.KeycloakTestDatabase;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry {
@@ -27,7 +28,6 @@ public class Registry {
 
     public Registry() {
         loadSuppliers();
-        Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
     }
 
     public ExtensionContext getCurrentContext() {
@@ -58,6 +58,8 @@ public class Registry {
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
+
+            requestedInstances.remove(requestedDependency);
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Injecting requested dependency {0} into {1}",
@@ -99,7 +101,9 @@ public class Registry {
     private void findRequestedInstances(Object testInstance) {
         Class testClass = testInstance.getClass();
         RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
-        requestedInstances.add(requestedServerInstance);
+        if (requestedServerInstance != null) {
+            requestedInstances.add(requestedServerInstance);
+        }
 
         for (Field f : testClass.getDeclaredFields()) {
             RequestedInstance requestedInstance = createRequestedInstance(f.getAnnotations(), f.getType());
@@ -140,21 +144,19 @@ public class Registry {
     }
 
     private void deployRequestedInstances() {
-        Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
-        while (itr.hasNext()) {
-            RequestedInstance requestedInstance = itr.next();
+        while (!requestedInstances.isEmpty()) {
+            RequestedInstance requestedInstance = requestedInstances.remove(0);
 
-            InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
-            instance.setValue(requestedInstance.getSupplier().getValue(instance));
+            if (getDeployedInstance(requestedInstance) == null) {
+                InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+                instance.setValue(requestedInstance.getSupplier().getValue(instance));
+                deployedInstances.add(instance);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Created instance: {0}",
-                        requestedInstance.getSupplier().getClass().getSimpleName());
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.tracev("Created instance: {0}",
+                            requestedInstance.getSupplier().getClass().getSimpleName());
+                }
             }
-
-            deployedInstances.add(instance);
-
-            itr.remove();
         }
     }
 
@@ -182,10 +184,14 @@ public class Registry {
         destroy.forEach(this::destroy);
     }
 
-    public void onShutdown() {
-        LOGGER.trace("Closing instances with global lifecycle");
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.GLOBAL)).toList();
+    public void close() {
+        LOGGER.trace("Closing all instances");
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().toList();
         destroy.forEach(this::destroy);
+    }
+
+    List<Supplier<?, ?>> getSuppliers() {
+        return suppliers;
     }
 
     private RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
@@ -202,8 +208,10 @@ public class Registry {
     private InstanceContext<?, ?> getDeployedInstance(Class<?> valueType, Annotation[] annotations) {
         for (Annotation a : annotations) {
             for (InstanceContext<?, ?> i : deployedInstances) {
-                Supplier<?, ?> supplier = i.getSupplier();
-                if (supplier.getAnnotationClass().equals(a.annotationType()) && valueType.isAssignableFrom(i.getValue().getClass())) {
+                Supplier supplier = i.getSupplier();
+                if (supplier.getAnnotationClass().equals(a.annotationType())
+                        && valueType.isAssignableFrom(i.getValue().getClass())
+                        && supplier.getRef(a).equals(i.getRef()) ) {
                     return i;
                 }
             }
@@ -226,8 +234,13 @@ public class Registry {
     }
 
     private InstanceContext getDeployedInstance(RequestedInstance requestedInstance) {
+        String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
+            if(!i.getRef().equals(requestedRef)) {
+                continue;
+            }
+
             if (requestedValueType != null) {
                 if (requestedValueType.isAssignableFrom(i.getValue().getClass())) {
                     return i;
@@ -250,7 +263,7 @@ public class Registry {
             Class supplierValueType = supplier.getValueType();
 
             if (!loadedValueTypes.contains(supplierValueType)) {
-                String requestedSupplier = Config.getInstance().getSelectedSupplier(supplierValueType);
+                String requestedSupplier = Config.getSelectedSupplier(supplierValueType);
                 if (requestedSupplier != null) {
                     if (requestedSupplier.equals(supplier.getAlias())) {
                         shouldAdd = true;

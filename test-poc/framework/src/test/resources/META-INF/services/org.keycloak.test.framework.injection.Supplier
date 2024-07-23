@@ -1,0 +1,3 @@
+org.keycloak.test.framework.injection.mocks.MockParentSupplier
+org.keycloak.test.framework.injection.mocks.MockParent2Supplier
+org.keycloak.test.framework.injection.mocks.MockChildSupplier

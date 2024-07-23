@@ -144,6 +144,12 @@ export const UserForm = ({
     }
   };
 
+  const allFieldsReadOnly = () =>
+    user?.userProfileMetadata?.attributes &&
+    !user?.userProfileMetadata?.attributes
+      ?.map((a) => a.readOnly)
+      .reduce((p, c) => p && c, true);
+
   return (
     <FormAccess
       isHorizontal
@@ -342,7 +348,7 @@ export const UserForm = ({
         saveText={user?.id ? t("save") : t("create")}
         reset={onFormReset}
         resetText={user?.id ? t("revert") : t("cancel")}
-        isActive
+        isDisabled={allFieldsReadOnly()}
         isSubmit
       />
     </FormAccess>

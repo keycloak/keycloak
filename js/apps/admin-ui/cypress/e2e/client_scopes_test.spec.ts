@@ -192,9 +192,11 @@ describe("Client Scopes test", () => {
         .checkDropdownItemIsDisabled("Delete")
         .clickItemCheckbox(itemName)
         .checkInSearchBarChangeTypeToButtonIsDisabled(false)
+        .clickSearchBarActionButton()
         .checkDropdownItemIsDisabled("Delete", false)
         .clickItemCheckbox(itemName)
         .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickSearchBarActionButton()
         .checkDropdownItemIsDisabled("Delete");
     });
 

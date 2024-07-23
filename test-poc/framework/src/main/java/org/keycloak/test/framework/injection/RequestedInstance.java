@@ -8,12 +8,14 @@ public class RequestedInstance<T, A extends Annotation> {
     private final A annotation;
     private final Class<? extends T> valueType;
     private final LifeCycle lifeCycle;
+    private final String ref;
 
     public RequestedInstance(Supplier<T, A> supplier, A annotation, Class<? extends T> valueType) {
         this.supplier = supplier;
         this.annotation = annotation;
         this.valueType = valueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
+        this.ref = supplier.getRef(annotation);
     }
 
     public Supplier<T, A> getSupplier() {
@@ -30,5 +32,9 @@ public class RequestedInstance<T, A extends Annotation> {
 
     public LifeCycle getLifeCycle() {
         return lifeCycle;
+    }
+
+    public String getRef() {
+        return ref;
     }
 }
