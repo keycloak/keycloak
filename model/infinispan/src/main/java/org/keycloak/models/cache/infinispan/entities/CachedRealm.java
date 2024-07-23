@@ -726,11 +726,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     public MultivaluedMap<String, ComponentModel> getComponentsByParent() {
-        return componentsByParent;
+        return new MultivaluedHashMap<>(componentsByParent);
     }
 
     public MultivaluedMap<String, ComponentModel> getComponentsByParentAndType() {
-        return componentsByParentAndType;
+        return new MultivaluedHashMap<>(componentsByParentAndType);
     }
 
     public Map<String, ComponentModel> getComponents() {
