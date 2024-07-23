@@ -274,6 +274,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("0"),
                         "vct", List.of("https://credentials.example.com/identity_credential"),
+                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("IdentityCredential")
                 )
         ));
@@ -294,6 +295,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("2"),
                         "vct", List.of("https://credentials.example.com/test-credential"),
+                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("test-credential")
                 )
         ));
