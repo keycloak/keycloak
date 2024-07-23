@@ -155,7 +155,6 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         <FixedButtonsGroup
           name="authenticationSettings"
           reset={() => reset(resource)}
-          isActive
           isSubmit
         />
       </FormAccess>

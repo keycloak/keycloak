@@ -144,6 +144,7 @@ export const AddRoleMappingModal = ({
           canViewRealmRoles && (
             <ToolbarItem>
               <Dropdown
+                onOpenChange={(isOpen) => setSearchToggle(isOpen)}
                 onSelect={() => {
                   setFilterType(filterType === "roles" ? "clients" : "roles");
                   setSearchToggle(false);

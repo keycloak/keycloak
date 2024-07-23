@@ -1,7 +1,7 @@
 package org.keycloak.test.framework.admin;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.test.framework.TestAdminClient;
+import org.keycloak.test.framework.annotations.TestAdminClient;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;

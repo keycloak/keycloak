@@ -89,7 +89,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.12.1",
+    "i18next": "^23.12.2",
     "i18next-http-backend": "^2.5.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -107,8 +107,8 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.2",
-    "@testing-library/dom": "^10.3.2",
-    "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.0",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
@@ -120,7 +120,7 @@
     "cypress": "^13.13.1",
     "cypress-axe": "^1.5.0",
     "cypress-split": "^1.24.0",
-    "jsdom": "^24.1.0",
+    "jsdom": "^24.1.1",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.25.1",
     "ts-node": "^10.9.2",
@@ -128,6 +128,6 @@
     "vite": "^5.3.4",
     "vite-plugin-checker": "^0.7.2",
     "vite-plugin-dts": "^3.9.1",
-    "vitest": "^2.0.3"
+    "vitest": "^2.0.4"
   }
 }

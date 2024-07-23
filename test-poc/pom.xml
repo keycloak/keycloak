@@ -33,8 +33,9 @@
     <description>Keycloak Test Parent</description>
 
     <modules>
-        <module>base</module>
         <module>framework</module>
+        <module>examples</module>
+        <module>showcase</module>
     </modules>
 
 </project>

@@ -14,7 +14,7 @@ public class ValueTypeAlias {
             TestDatabase.class, "database"
     );
 
-    public static String getAlias(Class clazz) {
+    public static String getAlias(Class<?> clazz) {
         String alias = aliases.get(clazz);
         if (alias == null) {
             alias = clazz.getSimpleName();

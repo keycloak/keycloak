@@ -107,6 +107,7 @@ const GroupTreeContextMenu = ({
         popperProps={{
           position: "right",
         }}
+        onOpenChange={toggleOpen}
         toggle={(ref) => (
           <MenuToggle
             ref={ref}

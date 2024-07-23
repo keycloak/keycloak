@@ -152,6 +152,7 @@ export const ViewHeader = ({
                       popperProps={{
                         position: "right",
                       }}
+                      onOpenChange={onDropdownToggle}
                       toggle={(ref) => (
                         <MenuToggle
                           ref={ref}
@@ -195,6 +196,7 @@ export const ViewHeader = ({
         {lowerDropdownItems && (
           <Dropdown
             className="keycloak__user-federation__dropdown"
+            onOpenChange={onLowerDropdownToggle}
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}

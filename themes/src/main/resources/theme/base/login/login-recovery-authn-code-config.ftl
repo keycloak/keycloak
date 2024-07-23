@@ -75,7 +75,7 @@
         /* copy recovery codes  */
         function copyRecoveryCodes() {
             var tmpTextarea = document.createElement("textarea");
-            var codes = document.getElementById("kc-recovery-codes-list").getElementsByTagName("li");
+            var codes = document.querySelectorAll("#kc-recovery-codes-list li");
             for (i = 0; i < codes.length; i++) {
                 tmpTextarea.value = tmpTextarea.value + codes[i].innerText + "\n";
             }
@@ -106,7 +106,7 @@
         }
 
         function parseRecoveryCodeList() {
-            var recoveryCodes = document.querySelectorAll(".kc-recovery-codes-list li");
+            var recoveryCodes = document.querySelectorAll("#kc-recovery-codes-list li");
             var recoveryCodeList = "";
 
             for (var i = 0; i < recoveryCodes.length; i++) {
