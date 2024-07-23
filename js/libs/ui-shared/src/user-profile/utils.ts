@@ -31,7 +31,15 @@ export const label = (
   t: TFunction,
   text: string | undefined,
   fallback?: string,
-) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+  inputOptionLabelsI18nPrefix?: string,
+) => {
+  if (inputOptionLabelsI18nPrefix && text) {
+    const prefixedText = `${inputOptionLabelsI18nPrefix}.${text}`;
+    return t(prefixedText) || fallback;
+  }
+
+  return (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+};
 
 export const labelAttribute = (
   t: TFunction,
@@ -44,10 +52,7 @@ export const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);
 
 export const fieldName = (name?: string) =>
-  `${isRootAttribute(name) ? "" : "attributes."}${name?.replaceAll(
-    ".",
-    "🍺",
-  )}` as FieldPath<UserFormFields>;
+  `${isRootAttribute(name) ? "" : "attributes."}${name?.replaceAll(".", "🍺")}` as FieldPath<UserFormFields>;
 
 export const beerify = <T extends string>(name: T) =>
   name.replaceAll(".", "🍺");
