@@ -5,7 +5,44 @@ framework handles the lifecycle of Keycloak, the database, and any injected reso
 
 Tests simply declare what they want, including specific configuration, and the framework takes care of the rest. 
 
+```mermaid
+classDiagram
+    direction LR
+    class Framework {
+        Control center
+    }
 
+    class Database {
+        Supplies database
+        Manages database
+    }
+
+    class WebDriver {
+        Supplies webdriver
+        Navigates UI
+    }
+
+    class Keycloak {
+        Supplies Keycloak server
+        Manages Keycloak server
+    }
+
+    class Tests {
+        Define tests
+    }
+
+    class JUnit5 {
+        Manages parallelization
+    }
+
+    Framework --|> Database
+    Framework --|> WebDriver
+    Framework --|>  Keycloak
+
+
+    JUnit5 --|> Tests: execute
+    Tests --|>  Framework: use
+```
 # Writing tests
 
 An example is better than a lot of words, so here is a very basic test:
