@@ -169,6 +169,7 @@ export const AddScopeDialog = ({
                 popperProps={{
                   direction: "up",
                 }}
+                onOpenChange={(isOpen) => setAddToggle(isOpen)}
                 className="keycloak__client-scopes-add__add-dropdown"
                 key="add-dropdown"
                 isOpen={addToggle}
@@ -215,6 +216,7 @@ export const AddScopeDialog = ({
             onSelect={() => {
               onFilterTypeDropdownSelect(filterType);
             }}
+            onOpenChange={toggleIsFilterTypeDropdownOpen}
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}
@@ -246,6 +248,7 @@ export const AddScopeDialog = ({
                 onSelect={() => {
                   onFilterTypeDropdownSelect(filterType);
                 }}
+                onOpenChange={toggleIsFilterTypeDropdownOpen}
                 data-testid="filter-type-dropdown"
                 toggle={(ref) => (
                   <MenuToggle

@@ -49,6 +49,7 @@ export const AddFlowDropdown = ({
             position: "right",
           }}
           isOpen={open}
+          onOpenChange={(isOpen) => setOpen(isOpen)}
           toggle={(ref) => (
             <MenuToggle
               ref={ref}

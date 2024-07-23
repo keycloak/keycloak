@@ -213,6 +213,7 @@ export const Members = () => {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
+                  onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
                   toggle={(ref) => (
                     <MenuToggle
                       ref={ref}
