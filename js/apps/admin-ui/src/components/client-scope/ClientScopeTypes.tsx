@@ -86,6 +86,7 @@ export const CellDropdown = ({
         </MenuToggle>
       )}
       isOpen={open}
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       selected={[type]}
       onSelect={(_, value) => {
         onSelect(

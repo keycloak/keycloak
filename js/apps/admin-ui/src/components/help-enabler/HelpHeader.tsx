@@ -62,6 +62,7 @@ export const HelpHeader = () => {
       popperProps={{
         position: "right",
       }}
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       isOpen={open}
       toggle={(ref) => (
         <MenuToggle

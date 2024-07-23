@@ -71,6 +71,7 @@ export const TokenLifespan = ({
                   </MenuToggle>
                 )}
                 isOpen={open}
+                onOpenChange={(isOpen) => setOpen(isOpen)}
                 onSelect={(_, value) => {
                   field.onChange(value);
                   setOpen(false);

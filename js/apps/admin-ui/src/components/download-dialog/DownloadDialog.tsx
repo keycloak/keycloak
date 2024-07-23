@@ -125,6 +125,7 @@ export const DownloadDialog = ({
             >
               <Select
                 isOpen={openType}
+                onOpenChange={(isOpen) => setOpenType(isOpen)}
                 toggle={(ref) => (
                   <MenuToggle
                     id="type"

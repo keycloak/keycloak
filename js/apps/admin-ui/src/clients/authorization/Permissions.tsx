@@ -208,6 +208,7 @@ export const AuthorizationPermissions = ({
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
+                  onOpenChange={toggleCreate}
                   toggle={(ref) => (
                     <MenuToggle
                       ref={ref}
