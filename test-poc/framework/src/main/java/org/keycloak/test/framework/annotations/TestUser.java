@@ -17,4 +17,5 @@ public @interface TestUser {
 
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
+    String ref() default "default";
 }

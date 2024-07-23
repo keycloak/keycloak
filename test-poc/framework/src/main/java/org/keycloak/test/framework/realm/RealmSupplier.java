@@ -32,7 +32,7 @@ public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
         RealmRepresentation realmRepresentation = config.getRepresentation();
 
         if (realmRepresentation.getRealm() == null) {
-            String realmName = instanceContext.getLifeCycle().equals(LifeCycle.GLOBAL) ? config.getClass().getSimpleName() : instanceContext.getRegistry().getCurrentContext().getRequiredTestClass().getSimpleName();
+            String realmName = instanceContext.getRef();
             realmRepresentation.setRealm(realmName);
         }
 

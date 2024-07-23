@@ -33,7 +33,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
         ClientRepresentation clientRepresentation = config.getRepresentation();
 
         if (clientRepresentation.getClientId() == null) {
-            String clientId = instanceContext.getLifeCycle().equals(LifeCycle.GLOBAL) ? config.getClass().getSimpleName() : instanceContext.getRegistry().getCurrentContext().getRequiredTestClass().getSimpleName();
+            String clientId = instanceContext.getRef();
             clientRepresentation.setClientId(clientId);
         }
 

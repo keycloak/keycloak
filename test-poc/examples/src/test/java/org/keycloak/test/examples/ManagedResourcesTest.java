@@ -28,20 +28,20 @@ public class ManagedResourcesTest {
 
     @Test
     public void testCreatedRealm() {
-        Assertions.assertEquals(ManagedResourcesTest.class.getSimpleName(), realmResource.toRepresentation().getRealm());
+        Assertions.assertEquals("default", realmResource.toRepresentation().getRealm());
     }
 
     @Test
     public void testCreatedClient() {
-        Assertions.assertEquals(ManagedResourcesTest.class.getSimpleName(), clientResource.toRepresentation().getClientId());
+        Assertions.assertEquals("default", clientResource.toRepresentation().getClientId());
 
-        List<ClientRepresentation> clients = realmResource.clients().findByClientId(ManagedResourcesTest.class.getSimpleName());
+        List<ClientRepresentation> clients = realmResource.clients().findByClientId("default");
         Assertions.assertEquals(1, clients.size());
     }
 
     @Test
     public void testCreatedUser() {
-        Assertions.assertEquals(ManagedResourcesTest.class.getSimpleName().toLowerCase(), userResource.toRepresentation().getUsername());
+        Assertions.assertEquals("default", userResource.toRepresentation().getUsername());
     }
 
 }

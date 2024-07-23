@@ -28,17 +28,17 @@ public class GlobalManagedResourcesTest {
 
     @Test
     public void testCreatedRealm() {
-        Assertions.assertEquals(DefaultRealmConfig.class.getSimpleName(), realmResource.toRepresentation().getRealm());
+        Assertions.assertEquals("default", realmResource.toRepresentation().getRealm());
     }
 
     @Test
     public void testCreatedClient() {
-        Assertions.assertEquals(DefaultClientConfig.class.getSimpleName(), clientResource.toRepresentation().getClientId());
+        Assertions.assertEquals("default", clientResource.toRepresentation().getClientId());
     }
 
     @Test
     public void testCreatedUser() {
-        Assertions.assertEquals(DefaultUserConfig.class.getSimpleName().toLowerCase(), userResource.toRepresentation().getUsername());
+        Assertions.assertEquals("default", userResource.toRepresentation().getUsername());
     }
 
 }
