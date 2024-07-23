@@ -48,6 +48,11 @@ public abstract class SdJwtVPVerificationTest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
+    // This testsuite relies on a range of test vectors (`sdjwt/s20.*-sdjwt+kb*.txt`)
+    // manually crafted to fit different cases. External tools were typically used,
+    // including mkjwk.org for generating keys, jwt.io for creating signatures, and
+    // base64.guru for manipulating the Base64-encoded disclosures.
+
     static ObjectMapper mapper = new ObjectMapper();
     static TestSettings testSettings = TestSettings.getInstance();
 
@@ -66,7 +71,26 @@ public abstract class SdJwtVPVerificationTest {
     public void testVerif_s20_8_sdjwt_with_kb__AltCnfCurves() throws VerificationException {
         var entries = List.of("sdjwt/s20.8-sdjwt+kb--es384.txt", "sdjwt/s20.8-sdjwt+kb--es512.txt");
 
-        for (var entry: entries) {
+        for (var entry : entries) {
+            String sdJwtVPString = TestUtils.readFileAsString(getClass(), entry);
+            SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
+
+            sdJwtVP.verify(
+                    defaultIssuerSignedJwtVerificationOpts().build(),
+                    defaultKeyBindingJwtVerificationOpts().build()
+            );
+        }
+    }
+
+    @Test
+    public void testVerif_s20_8_sdjwt_with_kb__CnfRSA() throws VerificationException {
+        var entries = List.of(
+                "sdjwt/s20.8-sdjwt+kb--cnf-rsa-rs256.txt",
+                "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps256.txt",
+                "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps512.txt"
+        );
+
+        for (var entry : entries) {
             String sdJwtVPString = TestUtils.readFileAsString(getClass(), entry);
             SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
 
@@ -195,12 +219,12 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbSdHashWrongFormat() {
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
 
         // This hash is not a string
         kbPayload.set("sd_hash", mapper.valueToTree(1234));
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
                 "Key binding JWT: Claim `sd_hash` missing or not a string",
@@ -210,12 +234,12 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbSdHashInvalid() {
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
 
         // This hash makes no sense
         kbPayload.put("sd_hash", "c3FmZHFmZGZlZXNkZmZi");
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
                 "Key binding JWT: Invalid `sd_hash` digest",
@@ -227,10 +251,10 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbIssuedInFuture() {
         long now = Instant.now().getEpochSecond();
 
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
         kbPayload.set("iat", mapper.valueToTree(now + 1000));
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
                 "Key binding JWT: Invalid `iat` claim",
@@ -242,11 +266,11 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbTooOld() {
         long issuerSignedJwtIat = 1683000000; // same value in test vector
 
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
         // This KB-JWT is then issued more than 60s ago
         kbPayload.set("iat", mapper.valueToTree(issuerSignedJwtIat - 120));
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts()
                         .withAllowedMaxAge(60)
@@ -260,10 +284,10 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbExpired() {
         long now = Instant.now().getEpochSecond();
 
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
         kbPayload.set("exp", mapper.valueToTree(now - 1000));
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts()
                         .withValidateExpirationClaim(true)
@@ -277,10 +301,10 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbNotBeforeTimeYet() {
         long now = Instant.now().getEpochSecond();
 
-        var kbPayload = exampleS20KbPayload();
+        var kbPayload = exampleKbPayload();
         kbPayload.set("nbf", mapper.valueToTree(now + 1000));
 
-        testShouldFailGenericS20(
+        testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts()
                         .withValidateNotBeforeClaim(true)
@@ -329,17 +353,6 @@ public abstract class SdJwtVPVerificationTest {
         );
     }
 
-    @Test
-    public void testShouldFail_IfCnfJwkAlgNotSupported() {
-        testShouldFailGeneric(
-                // RSA cnf/jwk are not supported
-                "sdjwt/s20.8-sdjwt+kb--cnf-rsa.txt",
-                defaultKeyBindingJwtVerificationOpts().build(),
-                "cnf/jwk alg is unsupported or deemed not secure",
-                null
-        );
-    }
-
     private void testShouldFailGeneric(
             String testFilePath,
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
@@ -363,7 +376,11 @@ public abstract class SdJwtVPVerificationTest {
         }
     }
 
-    private void testShouldFailGenericS20(
+    /**
+     * This test helper allows replacing the key binding JWT of base
+     * sample `sdjwt/s20.1-sdjwt+kb.txt` to cover different scenarios.
+     */
+    private void testShouldFailGeneric2(
             JsonNode kbPayloadSubstitute,
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
             String exceptionMessage,
@@ -412,7 +429,7 @@ public abstract class SdJwtVPVerificationTest {
                 .withValidateNotBeforeClaim(false);
     }
 
-    private ObjectNode exampleS20KbPayload() {
+    private ObjectNode exampleKbPayload() {
         var payload = mapper.createObjectNode();
         payload.put("nonce", "1234567890");
         payload.put("aud", "https://verifier.example.org");

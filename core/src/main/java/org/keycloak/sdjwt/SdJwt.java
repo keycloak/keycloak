@@ -198,7 +198,7 @@ public class SdJwt {
     /**
      * Verifies SD-JWT as to whether the Issuer-signed JWT's signature and disclosures are valid.
      *
-     * @param verificationOpts Options to parametize the Issuer-Signed JWT verification. A verifier
+     * @param verificationOpts Options to parameterize the Issuer-Signed JWT verification. A verifier
      *                         must be specified for validating the Issuer-signed JWT. The caller
      *                         is responsible for establishing trust in that associated public keys
      *                         belong to the intended issuer.

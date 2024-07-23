@@ -30,7 +30,6 @@ import java.security.spec.ECPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.ClassRule;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
@@ -41,7 +40,6 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * Import test-settings from:

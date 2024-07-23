@@ -38,7 +38,7 @@ public abstract class SdJwsTest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
-    static TestSettings testSesstings = TestSettings.getInstance();
+    static TestSettings testSettings = TestSettings.getInstance();
 
     private JsonNode createPayload() {
         ObjectMapper mapper = new ObjectMapper();
@@ -51,16 +51,16 @@ public abstract class SdJwsTest {
 
     @Test
     public void testVerifySignature_Positive() throws Exception {
-        SdJws sdJws = new SdJws(createPayload(), testSesstings.holderSigContext, "jwt") {
+        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
         };
-        sdJws.verifySignature(testSesstings.holderVerifierContext);
+        sdJws.verifySignature(testSettings.holderVerifierContext);
     }
 
     @Test
     public void testVerifySignature_WrongPublicKey() {
-        SdJws sdJws = new SdJws(createPayload(), testSesstings.holderSigContext, "jwt") {
+        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
         };
-        assertThrows(VerificationException.class, () -> sdJws.verifySignature(testSesstings.issuerVerifierContext));
+        assertThrows(VerificationException.class, () -> sdJws.verifySignature(testSettings.issuerVerifierContext));
     }
 
     @Test
@@ -115,7 +115,7 @@ public abstract class SdJwsTest {
 
     @Test
     public void testSignedJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload(), testSesstings.holderSigContext, "jwt") {
+        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
         };
         assertNotNull(sdJws.toJws());
     }

@@ -209,12 +209,12 @@ public class SdJwtVP {
     /**
      * Verifies SD-JWT presentation.
      *
-     * @param issuerSignedJwtVerificationOpts Options to parametize the verification. A verifier must be specified
+     * @param issuerSignedJwtVerificationOpts Options to parameterize the verification. A verifier must be specified
      *                                        for validating the Issuer-signed JWT. The caller is responsible for
      *                                        establishing trust in that associated public keys belong to the
      *                                        intended issuer.
-     * @param keyBindingJwtVerificationOpts   Options to parametize the Key Binding JWT verification.
-     *                                        Must, among others, specify the Verify's policy whether
+     * @param keyBindingJwtVerificationOpts   Options to parameterize the Key Binding JWT verification.
+     *                                        Must, among others, specify the Verifier's policy whether
      *                                        to check Key Binding.
      * @throws VerificationException if verification failed
      */
@@ -226,7 +226,7 @@ public class SdJwtVP {
                 .verifyPresentation(issuerSignedJwtVerificationOpts, keyBindingJwtVerificationOpts);
     }
 
-    // Recursively seraches the node with the given value.
+    // Recursively searches the node with the given value.
     // Returns the node if found, null otherwise.
     private static JsonNode findNode(JsonNode node, String value) {
         if (node == null) {

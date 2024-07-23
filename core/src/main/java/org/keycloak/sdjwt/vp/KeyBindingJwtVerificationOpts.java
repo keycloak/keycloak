@@ -24,7 +24,7 @@ package org.keycloak.sdjwt.vp;
  */
 public class KeyBindingJwtVerificationOpts {
     /**
-     * Specifies the Verify's policy whether to check Key Binding
+     * Specifies the Verifier's policy whether to check Key Binding
      */
     private final boolean keyBindingRequired;
 
