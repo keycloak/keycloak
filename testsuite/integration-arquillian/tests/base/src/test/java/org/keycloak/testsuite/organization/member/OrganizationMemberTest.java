@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_ATTRIBUTE;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 
+import org.hamcrest.Matchers;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -53,14 +56,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -453,5 +459,70 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 session.users().removeUser(realm, user);
             }
         });
+    }
+
+    @Test
+    public void testUserFederatedBeforeTheIDPBoundWithAnOrgIsNotMember() {
+        // create non-org idp in a realm
+        String idpAlias = "former-non-org-identity-provider";
+        IdentityProviderRepresentation idpRep = brokerConfigFunction.apply("former-non-org").setUpIdentityProvider();
+        try (Response response = testRealm().identityProviders().create(idpRep)) {
+            assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            getCleanup().addCleanup(testRealm().identityProviders().get(bc.getIDPAlias())::remove);
+        }
+
+        loginViaNonOrgIdP(idpAlias);
+
+        List<UserRepresentation> search = testRealm().users().search(bc.getUserLogin(), Boolean.TRUE);
+        assertThat(search, hasSize(1));
+
+        // create org
+        String orgDomain = organizationName + ".org";
+        OrganizationRepresentation orgRep = createRepresentation(organizationName, orgDomain);
+        String id;
+
+        try (Response response = testRealm().organizations().create(orgRep)) {
+            assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            id = ApiUtil.getCreatedId(response);
+            getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
+        }
+
+        // assign IdP to the org
+        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
+        idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        
+        try (Response response = testRealm().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+        }
+
+        //check the federated user is not a member
+        assertThat(testRealm().organizations().get(id).members().getAll(), hasSize(0));
+    }
+
+    private void loginViaNonOrgIdP(String idpAlias) {
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertTrue(loginPage.isSocialButtonPresent(idpAlias));
+        loginPage.clickSocial(idpAlias);
+
+        waitForPage(driver, "sign in to", true);
+
+        // user automatically redirected to the identity provider
+        assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+        
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+
+        appPage.assertCurrent();
+        assertThat(appPage.getRequestType(), equalTo(AppPage.RequestType.AUTH_RESPONSE));
     }
 }
