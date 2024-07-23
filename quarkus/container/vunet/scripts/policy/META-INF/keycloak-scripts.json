@@ -1,0 +1,16 @@
+{
+  "policies": [
+    {
+      "name": "Evaluate User Privilege",
+      "fileName": "evaluate-privileges.js",
+      "description": "A policy that extracts the username from a request URI and check if it matches the current identity"
+    }
+  ],
+  "mappers": [
+    {
+      "name": "Group IDs",
+      "fileName": "group-id-mapper.js",
+      "description": "A custom script mapper which adds the group_ids claim to a user's token"
+    }
+  ]
+}

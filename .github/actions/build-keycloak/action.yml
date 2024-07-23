@@ -1,16 +1,6 @@
 name: Build Keycloak
 description: Builds Keycloak providing Maven repository with all artifacts
 
-inputs:
-  upload-m2-repo:
-    description: Upload Maven repository for org.keycloak artifacts
-    required: false
-    default: "true"
-  upload-dist:
-    description: Upload distribution
-    required: false
-    default: "false"
-
 runs:
   using: composite
   steps:
@@ -41,9 +31,9 @@ runs:
       # If there are no changes for WildFly adapters, we use adapters built in the latest nightly build
       run: |
         WF_ADAPTERS_REGEX="^adapters/oidc/wildfly|^adapters/saml/wildfly"
-        
+
         git fetch origin --tags --force
-        
+
         echo "GIT_WF_ADAPTERS_DIFF=$(git diff origin/main --name-only | egrep -ic -e "$WF_ADAPTERS_REGEX")" >> $GITHUB_ENV
         echo "NIGHTLY_DIFF=$(git diff nightly --name-only | egrep -ic -e "$WF_ADAPTERS_REGEX")" >> $GITHUB_ENV
 
@@ -55,37 +45,9 @@ runs:
         echo "MVN_PROFILES=-Pdistribution" >> $GITHUB_ENV
         echo "WildFly adapters will be built in our codebase"
     ########################################################################################################
-
     - id: build-keycloak
       name: Build Keycloak
       shell: bash
       # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
         ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples ${{ env.MVN_PROFILES}}
-
-    - id: compress-keycloak-maven-repository
-      name: Compress Keycloak Maven artifacts
-      if: inputs.upload-m2-repo == 'true'
-      shell: bash
-      run: |
-        tar -C ~/ --use-compress-program zstd -cf m2-keycloak.tzts \
-        --exclude '*.tar.gz' \
-        .m2/repository/org/keycloak
-
-    - id: upload-keycloak-maven-repository
-      name: Upload Keycloak Maven artifacts
-      if: inputs.upload-m2-repo == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: m2-keycloak.tzts
-        path: m2-keycloak.tzts
-        retention-days: 1
-
-    - id: upload-keycloak-dist
-      name: Upload Keycloak dist
-      if: inputs.upload-dist == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: keycloak-dist
-        path: quarkus/dist/target/keycloak*.tar.gz
-        retention-days: 1

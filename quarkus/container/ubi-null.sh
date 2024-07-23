@@ -14,6 +14,7 @@ printf '%s\n' "$@" > keep
 cat >>keep <<EOF
 bash
 coreutils-single
+curl
 EOF
 
 # Disallow list to block certain packages and their dependencies

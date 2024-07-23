@@ -1,63 +1,57 @@
-name: Washinton Release
+name: Build Keycloak, Create Release and Publish Docker Image
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Release version (e.g., v1.0.0)"
-        required: true
 
 jobs:
-  build_and_release:
+  release_and_publish:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set VERSION from push event
-        if: github.event_name == 'push'
-        run: echo "VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+      - name: Bump version and push tag
+        id: tag
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DEFAULT_BUMP: patch
 
-      - name: Set VERSION from workflow_dispatch input
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+      - name: Set version
+        run: ./set-version.sh ${{ steps.tag.outputs.new_tag }}
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          upload-m2-repo: false
+          files: quarkus/dist/target/keycloak-*.tar.gz
+          tag_name: ${{ steps.tag.outputs.new_tag }}
 
-      - name: Rename artifact
-        run: mv quarkus/dist/target/keycloak*.tar.gz quarkus/dist/target/keycloak-$VERSION.tar.gz
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Create GitHub Release and Upload Artifact
-        run: |
-          gh release create $VERSION quarkus/dist/target/keycloak-$VERSION.tar.gz --title "Release $VERSION"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Check if current release is the latest release
-        run: |
-          LATEST_TAG=$(gh release list | head -n 1 | awk '{print $2}')
-          if [[ "$VERSION" == "$LATEST_TAG" ]]; then
-            echo "CREATE_LATEST_RELEASE=true" >> $GITHUB_ENV
-          else
-            echo "CREATE_LATEST_RELEASE=false" >> $GITHUB_ENV
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Rename artifact for latest release
-        if: env.CREATE_LATEST_RELEASE == 'true'
-        run: mv quarkus/dist/target/keycloak-$VERSION.tar.gz quarkus/dist/target/keycloak-latest.tar.gz
-
-      - name: Create latest release
-        if: env.CREATE_LATEST_RELEASE == 'true'
-        run: |
-          gh release create latest quarkus/dist/target/keycloak-latest.tar.gz --title "Release latest"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./quarkus/container/
+          file: ./quarkus/container/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.actor }}/washington:${{ steps.tag.outputs.new_tag }}
+          build-args: |
+            KEYCLOAK_VERSION=${{ steps.tag.outputs.new_tag }}
+            ORG_NAME=${{ github.actor }}

@@ -1,0 +1,56 @@
+:root {
+  --border-radius: 1rem;
+  --primary: #11339a;
+  --primary-button: #11339a;
+  --muted: #6e6e6e;
+  --border-color: #6e6e6e44;
+}
+
+.vu-container {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  max-width: 32rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.kc-logo-text {
+  color: var(--primary);
+  /* font-size: 2rem; */
+}
+
+.heading_4 {
+  color: var(--primary);
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.input__label,
+.muted_text {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.bg-primary-600 {
+  background-color: var(--primary-button);
+}
+
+.logo_container {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media only screen and (max-width: 520px) {
+  .vu-container {
+    border: none;
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+}
+input[type='password'] + div .hide-pass-icon {
+  display: none;
+}
+input:not([type='password'])  + div .show-pass-icon {
+  display: none;
+}
