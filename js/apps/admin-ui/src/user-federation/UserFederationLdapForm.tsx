@@ -75,7 +75,7 @@ export const UserFederationLdapForm = ({
       <Form onSubmit={form.handleSubmit(onSubmit)}>
         <FixedButtonsGroup
           name="ldap"
-          isActive={form.formState.isDirty}
+          isDisabled={!form.formState.isDirty}
           isSubmit
         >
           <Button
