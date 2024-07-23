@@ -43,7 +43,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.ReservedCharValidator;
-import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -57,11 +56,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -186,36 +183,14 @@ public class IdentityProvidersResource {
         this.auth.realm().requireViewIdentityProviders();
 
         if (maxResults == null) {
-            maxResults = 100; // always set a maximum of 100
+            maxResults = 100; // always set a maximum of 100 by default
         }
 
         Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
                 : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 
-        Stream<IdentityProviderModel> stream = realm.getIdentityProvidersStream().sorted(new IdPComparator());
-        if (!StringUtil.isBlank(search)) {
-            stream = stream.filter(predicateByName(search));
-        }
-        if (firstResult != null) {
-            stream = stream.skip(firstResult);
-        }
-        return stream.limit(maxResults).map(toRepresentation);
-    }
-
-    private Predicate<IdentityProviderModel> predicateByName(final String search) {
-        if (search.startsWith("\"") && search.endsWith("\"")) {
-            final String name = search.substring(1, search.length() - 1);
-            return (m) -> m.getAlias().equals(name);
-        } else if (search.startsWith("*") && search.endsWith("*")) {
-            final String name = search.substring(1, search.length() - 1);
-            return (m) -> m.getAlias().contains(name);
-        } else if (search.endsWith("*")) {
-            final String name = search.substring(0, search.length() - 1);
-            return (m) -> m.getAlias().startsWith(name);
-        } else {
-            return (m) -> m.getAlias().startsWith(search);
-        }
+        return session.identityProviders().getAllStream(search, firstResult, maxResults).map(toRepresentation);
     }
 
     /**
@@ -233,7 +208,7 @@ public class IdentityProvidersResource {
         this.auth.realm().requireManageIdentityProviders();
 
         ReservedCharValidator.validateNoSpace(representation.getAlias());
-        
+
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);
@@ -241,15 +216,15 @@ public class IdentityProvidersResource {
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
                     .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
-            
+
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
-            
+
             if (message == null) {
                 message = "Invalid request";
             }
-            
+
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
@@ -277,14 +252,5 @@ public class IdentityProvidersResource {
     private Stream<ProviderFactory> getProviderFactories() {
         return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
-    }
-
-    // TODO: for the moment just sort the identity provider list. But the
-    // idea is modifying the Model API to get the result already ordered.
-    private static class IdPComparator implements Comparator<IdentityProviderModel> {
-        @Override
-        public int compare(IdentityProviderModel idp1, IdentityProviderModel idp2) {
-            return idp1.getAlias().compareTo(idp2.getAlias());
-        }
     }
 }

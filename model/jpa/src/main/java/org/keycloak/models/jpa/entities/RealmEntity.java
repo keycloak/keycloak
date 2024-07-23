@@ -186,9 +186,6 @@ public class RealmEntity {
     @Column(name="DEFAULT_ROLE")
     protected String defaultRoleId;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    protected List<IdentityProviderEntity> identityProviders = new LinkedList<>();
-
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<IdentityProviderMapperEntity> identityProviderMappers = new LinkedList<>();
 
@@ -613,22 +610,6 @@ public class RealmEntity {
 
     public void setAttributes(Collection<RealmAttributeEntity> attributes) {
         this.attributes = attributes;
-    }
-
-    public List<IdentityProviderEntity> getIdentityProviders() {
-        if (identityProviders == null) {
-            identityProviders = new LinkedList<>();
-        }
-        return this.identityProviders;
-    }
-
-    public void setIdentityProviders(List<IdentityProviderEntity> identityProviders) {
-        this.identityProviders = identityProviders;
-    }
-
-    public void addIdentityProvider(IdentityProviderEntity entity) {
-        entity.setRealmId(this.id);
-        getIdentityProviders().add(entity);
     }
 
     public boolean isInternationalizationEnabled() {
