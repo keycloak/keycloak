@@ -39,7 +39,7 @@ team/core-shared:
   - area/infinispan
   - area/storage
 
-team/cross-dc:
+team/sre:
 
 team/ui:
   - area/account/ui
