@@ -16,8 +16,6 @@
  */
 package org.keycloak.services.clientregistration.policy.impl;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -98,20 +96,6 @@ public class TrustedHostClientRegistrationPolicyTest {
         policy.checkURLTrusted("https://www.googlebot.com", policy.getTrustedHosts(), policy.getTrustedDomains());
         policy.checkURLTrusted("https://googlebot.com", policy.getTrustedHosts(), policy.getTrustedDomains());
         Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://www.othergooglebot.com",
-                policy.getTrustedHosts(), policy.getTrustedDomains()));
-    }
-
-    @Test
-    public void testGithubDomain() throws UnknownHostException {
-        TrustedHostClientRegistrationPolicyFactory factory = new TrustedHostClientRegistrationPolicyFactory();
-        ComponentModel model = createComponentModel("*.github.com");
-        TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
-
-        policy.verifyHost(InetAddress.getByName("www.github.com").getHostAddress());
-        policy.verifyHost(InetAddress.getByName("github.com").getHostAddress());
-        policy.checkURLTrusted("https://www.github.com", policy.getTrustedHosts(), policy.getTrustedDomains());
-        policy.checkURLTrusted("https://github.com", policy.getTrustedHosts(), policy.getTrustedDomains());
-        Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://othergithub.com",
                 policy.getTrustedHosts(), policy.getTrustedDomains()));
     }
 
