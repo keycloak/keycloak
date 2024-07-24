@@ -89,6 +89,9 @@ In this release, revoked access tokens are written to the database and reloaded 
 
 To disable this behavior, use the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens` as outlined in the https://www.keycloak.org/server/all-provider-config[All provider configuration] {section}.
 
+The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
+This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
+
 = Admin Bootstrapping
 
 The environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`.

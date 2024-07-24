@@ -19,9 +19,7 @@ package org.keycloak.testsuite.model.singleUseObject;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;

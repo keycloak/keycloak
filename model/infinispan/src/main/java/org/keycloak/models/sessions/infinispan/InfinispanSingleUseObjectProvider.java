@@ -79,6 +79,10 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public Map<String, String> get(String key) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be retrieved");
+        }
+
         SingleUseObjectValueEntity singleUseObjectValueEntity;
 
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
