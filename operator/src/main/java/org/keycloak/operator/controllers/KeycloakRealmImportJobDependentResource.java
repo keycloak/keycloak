@@ -33,12 +33,11 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
-import jakarta.inject.Inject;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.PlaceholderSecret;
+import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
 
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
     @Override
     protected Job desired(KeycloakRealmImport primary, Context<KeycloakRealmImport> context) {
         StatefulSet existingDeployment = context.managedDependentResourceContext().get(StatefulSet.class, StatefulSet.class).orElseThrow();
-        Map<String, PlaceholderSecret> placeholders = primary.getSpec().getPlaceholders();
+        Map<String, Placeholder> placeholders = primary.getSpec().getPlaceholders();
         boolean replacePlaceholders = (placeholders != null && !placeholders.isEmpty());
 
         var keycloakPodTemplate = existingDeployment
@@ -98,7 +97,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         envvars.add(new EnvVarBuilder().withName(healthEnvVarName).withValue("false").build());
 
         if (replacePlaceholders) {
-            for (Map.Entry<String, PlaceholderSecret> secret : primary.getSpec().getPlaceholders().entrySet()) {
+            for (Map.Entry<String, Placeholder> secret : primary.getSpec().getPlaceholders().entrySet()) {
                 envvars.add(
                     new EnvVarBuilder()
                         .withName(secret.getKey())

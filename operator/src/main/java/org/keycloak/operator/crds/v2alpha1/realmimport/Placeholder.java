@@ -28,13 +28,13 @@ import java.util.Objects;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
-public class PlaceholderSecret {
+public class Placeholder {
     private SecretKeySelector secret;
 
-    public PlaceholderSecret() {
+    public Placeholder() {
     }
 
-    public PlaceholderSecret(SecretKeySelector secret) {
+    public Placeholder(SecretKeySelector secret) {
         this.secret = secret;
     }
 
@@ -50,7 +50,7 @@ public class PlaceholderSecret {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PlaceholderSecret that = (PlaceholderSecret) o;
+        Placeholder that = (Placeholder) o;
         return getSecret().equals(that.getSecret());
     }
 

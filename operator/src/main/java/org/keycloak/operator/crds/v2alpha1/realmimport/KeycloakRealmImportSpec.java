@@ -43,7 +43,7 @@ public class KeycloakRealmImportSpec {
     private ResourceRequirements resourceRequirements;
 
     @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
-    private Map<String, PlaceholderSecret> placeholders;
+    private Map<String, Placeholder> placeholders;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -69,11 +69,11 @@ public class KeycloakRealmImportSpec {
         this.resourceRequirements = resourceRequirements;
     }
 
-    public Map<String, PlaceholderSecret> getPlaceholders() {
+    public Map<String, Placeholder> getPlaceholders() {
         return placeholders;
     }
 
-    public void setPlaceholders(Map<String, PlaceholderSecret> placeholders) {
+    public void setPlaceholders(Map<String, Placeholder> placeholders) {
         this.placeholders = placeholders;
     }
 }

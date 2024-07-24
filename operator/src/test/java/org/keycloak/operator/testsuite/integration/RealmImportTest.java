@@ -38,7 +38,7 @@ import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.PlaceholderSecret;
+import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -136,8 +136,8 @@ public class RealmImportTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
             KeycloakRealmImport realmImport = (KeycloakRealmImport) obj;
             realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}"));
-            realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new PlaceholderSecret(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
-                            "MY_SMTP_SERVER", new PlaceholderSecret(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
+            realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
+                            "MY_SMTP_SERVER", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
             return realmImport;
         });
         
