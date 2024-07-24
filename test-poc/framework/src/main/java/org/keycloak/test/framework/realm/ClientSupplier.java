@@ -4,20 +4,19 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.test.framework.annotations.TestClient;
+import org.keycloak.test.framework.annotations.InjectClient;
 import org.keycloak.test.framework.injection.InstanceContext;
-import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
-public class ClientSupplier implements Supplier<ClientResource, TestClient> {
+public class ClientSupplier implements Supplier<ClientResource, InjectClient> {
 
     private static final String CLIENT_UUID_KEY = "clientUuid";
 
     @Override
-    public Class<TestClient> getAnnotationClass() {
-        return TestClient.class;
+    public Class<InjectClient> getAnnotationClass() {
+        return InjectClient.class;
     }
 
     @Override
@@ -26,7 +25,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
     }
 
     @Override
-    public ClientResource getValue(InstanceContext<ClientResource, TestClient> instanceContext) {
+    public ClientResource getValue(InstanceContext<ClientResource, InjectClient> instanceContext) {
         RealmResource realm = instanceContext.getDependency(RealmResource.class);
 
         ClientConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
@@ -50,12 +49,12 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
     }
 
     @Override
-    public boolean compatible(InstanceContext<ClientResource, TestClient> a, RequestedInstance<ClientResource, TestClient> b) {
+    public boolean compatible(InstanceContext<ClientResource, InjectClient> a, RequestedInstance<ClientResource, InjectClient> b) {
         return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
-    public void close(InstanceContext<ClientResource, TestClient> instanceContext) {
+    public void close(InstanceContext<ClientResource, InjectClient> instanceContext) {
         instanceContext.getValue().remove();
     }
 

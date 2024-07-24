@@ -4,20 +4,19 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.annotations.TestUser;
+import org.keycloak.test.framework.annotations.InjectUser;
 import org.keycloak.test.framework.injection.InstanceContext;
-import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
-public class UserSupplier implements Supplier<UserResource, TestUser> {
+public class UserSupplier implements Supplier<UserResource, InjectUser> {
 
     private static final String USER_UUID_KEY = "userUuid";
 
     @Override
-    public Class<TestUser> getAnnotationClass() {
-        return TestUser.class;
+    public Class<InjectUser> getAnnotationClass() {
+        return InjectUser.class;
     }
 
     @Override
@@ -26,7 +25,7 @@ public class UserSupplier implements Supplier<UserResource, TestUser> {
     }
 
     @Override
-    public UserResource getValue(InstanceContext<UserResource, TestUser> instanceContext) {
+    public UserResource getValue(InstanceContext<UserResource, InjectUser> instanceContext) {
         RealmResource realm = instanceContext.getDependency(RealmResource.class);
 
         UserConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
@@ -50,12 +49,12 @@ public class UserSupplier implements Supplier<UserResource, TestUser> {
     }
 
     @Override
-    public boolean compatible(InstanceContext<UserResource, TestUser> a, RequestedInstance<UserResource, TestUser> b) {
+    public boolean compatible(InstanceContext<UserResource, InjectUser> a, RequestedInstance<UserResource, InjectUser> b) {
         return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
-    public void close(InstanceContext<UserResource, TestUser> instanceContext) {
+    public void close(InstanceContext<UserResource, InjectUser> instanceContext) {
         instanceContext.getValue().remove();
     }
 

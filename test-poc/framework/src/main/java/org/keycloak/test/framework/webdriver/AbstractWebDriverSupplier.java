@@ -1,6 +1,6 @@
 package org.keycloak.test.framework.webdriver;
 
-import org.keycloak.test.framework.annotations.TestWebDriver;
+import org.keycloak.test.framework.annotations.InjectWebDriver;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
@@ -11,11 +11,11 @@ import org.openqa.selenium.remote.AbstractDriverOptions;
 
 import java.time.Duration;
 
-public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, TestWebDriver> {
+public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, InjectWebDriver> {
 
     @Override
-    public Class<TestWebDriver> getAnnotationClass() {
-        return TestWebDriver.class;
+    public Class<InjectWebDriver> getAnnotationClass() {
+        return InjectWebDriver.class;
     }
 
     @Override
@@ -24,22 +24,22 @@ public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, T
     }
 
     @Override
-    public WebDriver getValue(InstanceContext<WebDriver, TestWebDriver> instanceContext) {
+    public WebDriver getValue(InstanceContext<WebDriver, InjectWebDriver> instanceContext) {
         return getWebDriver();
     }
 
     @Override
-    public boolean compatible(InstanceContext<WebDriver, TestWebDriver> a, RequestedInstance<WebDriver, TestWebDriver> b) {
+    public boolean compatible(InstanceContext<WebDriver, InjectWebDriver> a, RequestedInstance<WebDriver, InjectWebDriver> b) {
         return true;
     }
 
     @Override
-    public LifeCycle getLifeCycle(TestWebDriver annotation) {
+    public LifeCycle getLifeCycle(InjectWebDriver annotation) {
         return LifeCycle.GLOBAL;
     }
 
     @Override
-    public void close(InstanceContext<WebDriver, TestWebDriver> instanceContext) {
+    public void close(InstanceContext<WebDriver, InjectWebDriver> instanceContext) {
         instanceContext.getValue().quit();
     }
 
