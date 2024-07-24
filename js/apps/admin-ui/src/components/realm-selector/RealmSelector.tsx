@@ -69,7 +69,7 @@ const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
   const { t } = useTranslation();
 
   return (
-    <Split className="keycloak__realm_selector__list-item-split">
+    <Split>
       <SplitItem isFilled>
         <Stack>
           {displayName ? (
@@ -172,7 +172,14 @@ export const RealmSelector = () => {
           }}
           isFullWidth
         >
-          {label(t, realmDisplayName, realm)}
+          <Stack className="keycloak__realm_selector__dropdown">
+            {realmDisplayName ? (
+              <StackItem className="pf-v5-u-font-weight-bold" isFilled>
+                {label(t, realmDisplayName)}
+              </StackItem>
+            ) : null}
+            <StackItem isFilled>{realm}</StackItem>
+          </Stack>
         </MenuToggle>
       )}
     >
