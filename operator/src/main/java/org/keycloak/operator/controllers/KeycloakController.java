@@ -47,6 +47,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
@@ -61,7 +62,7 @@ import jakarta.inject.Inject;
 @ControllerConfiguration(
     dependents = {
         @Dependent(type = KeycloakDeploymentDependentResource.class),
-        @Dependent(type = KeycloakAdminSecretDependentResource.class),
+        @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
@@ -104,6 +105,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Log.debugf("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
+        // TODO - these modifications to the resource belong in a webhook because dependents run first
         boolean modifiedSpec = false;
         if (kc.getSpec().getInstances() == null) {
             // explicitly set defaults - and let another reconciliation happen
