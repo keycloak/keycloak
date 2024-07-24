@@ -17,4 +17,3 @@
 
 org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory
 org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProviderFactory
-org.keycloak.models.sessions.infinispan.PersistentSessionsSingleUseObjectProviderFactory

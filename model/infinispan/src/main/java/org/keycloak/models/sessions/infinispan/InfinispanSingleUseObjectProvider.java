@@ -27,7 +27,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 
 /**
@@ -41,11 +43,15 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     public static final Logger logger = Logger.getLogger(InfinispanSingleUseObjectProvider.class);
 
+    private final KeycloakSession session;
     private final Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
+    private final boolean persistRevokedTokens;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache) {
+    public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache, boolean persistRevokedTokens) {
+        this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
+        this.persistRevokedTokens = persistRevokedTokens;
         this.tx = new InfinispanKeycloakTransaction();
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
@@ -61,8 +67,13 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
             if (logger.isDebugEnabled()) {
                 logger.debugf(re, "Failed when adding code %s", key);
             }
-
             throw re;
+        }
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            if (!notes.isEmpty()) {
+                throw new ModelException("notes are not supported for revoked tokens");
+            }
+            session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanSeconds);
         }
     }
 

@@ -18,6 +18,11 @@
 package org.keycloak.models.sessions.infinispan;
 
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.infinispan.Cache;
@@ -26,28 +31,46 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.SingleUseObjectProviderFactory;
+import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory {
+public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+
+    public static final String CONFIG_PERSIST_REVOKED_TOKENS = "persistRevokedTokens";
+    private static final boolean DEFAULT_PERSIST_REVOKED_TOKENS = true;
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
     protected volatile Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
 
+    private volatile boolean initialized;
+    private boolean persistRevokedTokens;
+
     @Override
     public InfinispanSingleUseObjectProvider create(KeycloakSession session) {
-        return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache);
+        initialize(session);
+        return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache, persistRevokedTokens);
     }
 
     static Supplier<BasicCache<String, SingleUseObjectValueEntity>> getSingleUseObjectCache(KeycloakSession session) {
@@ -67,15 +90,63 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public void init(Config.Scope config) {
+        persistRevokedTokens = config.getBoolean(CONFIG_PERSIST_REVOKED_TOKENS, DEFAULT_PERSIST_REVOKED_TOKENS);
+    }
 
+    private final static String LOADED = "loaded" + SingleUseObjectProvider.REVOKED_KEY;
+
+    private void initialize(KeycloakSession session) {
+        if (persistRevokedTokens && !initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    RevokedTokenPersisterProvider provider = session.getProvider(RevokedTokenPersisterProvider.class);
+                    BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
+                    if (cache.get(LOADED) == null) {
+                        // in a cluster, multiple Keycloak instances might load the same data in parallel, but that wouldn't matter
+                        provider.getAllRevokedTokens().forEach(revokedToken -> {
+                            long lifespanSeconds = revokedToken.expiry() - Time.currentTime();
+                            if (lifespanSeconds > 0) {
+                                cache.put(revokedToken.tokenId() + SingleUseObjectProvider.REVOKED_KEY, new SingleUseObjectValueEntity(Collections.emptyMap()),
+                                        InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds)), TimeUnit.MILLISECONDS);
+                            }
+                        });
+                        cache.put(LOADED, new SingleUseObjectValueEntity(Collections.emptyMap()));
+                    }
+                    initialized = true;
+                }
+            }
+        }
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
-        // means also listeners will start only after first cache initialization - that would be too late
+        // means also listeners will start only after first cache initialization - that would be too latedddd
         if (singleUseObjectCache == null) {
             this.singleUseObjectCache = getSingleUseObjectCache(factory.create());
+        }
+
+        if (persistRevokedTokens) {
+            factory.register(new ProviderEventListener() {
+                public void onEvent(ProviderEvent event) {
+                    if (event instanceof PostMigrationEvent) {
+                        KeycloakSessionFactory sessionFactory = ((PostMigrationEvent) event).getFactory();
+                        try (KeycloakSession session = sessionFactory.create()) {
+                            TimerProvider timer = session.getProvider(TimerProvider.class);
+                            if (timer != null) {
+                                long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
+                                scheduleTask(sessionFactory, timer, interval);
+                            }
+                            // load sessions during startup, not on first request to avoid congestion
+                            initialize(session);
+                        }
+                    }
+                }
+
+                private void scheduleTask(KeycloakSessionFactory sessionFactory, TimerProvider timer, long interval) {
+                    timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredRevokedTokens(), interval), interval);
+                }
+            });
         }
     }
 
@@ -96,6 +167,29 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS);
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> info = new HashMap<>();
+        info.put(CONFIG_PERSIST_REVOKED_TOKENS, Boolean.toString(persistRevokedTokens));
+        return info;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        builder.property()
+                .name(CONFIG_PERSIST_REVOKED_TOKENS)
+                .type("boolean")
+                .helpText("If revoked tokens are stored persistently across restarts")
+                .defaultValue(DEFAULT_PERSIST_REVOKED_TOKENS)
+                .add();
+
+        return builder.build();
+    }
+
 }
+

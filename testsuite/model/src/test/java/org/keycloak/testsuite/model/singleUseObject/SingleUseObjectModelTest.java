@@ -169,8 +169,6 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Test
     public void testRevokedTokenIsPresentAfterRestartAndEventuallyExpires() {
-        Assume.assumeTrue(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS));
-
         String revokedKey = UUID.randomUUID() + SingleUseObjectProvider.REVOKED_KEY;
 
         inComittedTransaction(session -> {
