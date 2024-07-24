@@ -347,10 +347,9 @@ public class SdJwtVerificationContext {
             throw new VerificationException("Key binding JWT: Invalid `iat` claim", e);
         }
 
-        long now = Instant.now().getEpochSecond();
-        long keyBindingJwtIat = SdJwtUtils.readTimeClaim(keyBindingJwt.getPayload(), "iat");
-
-        if (now - keyBindingJwtIat > keyBindingJwtVerificationOpts.getAllowedMaxAge()) {
+        try {
+            keyBindingJwt.verifyAge(keyBindingJwtVerificationOpts.getAllowedMaxAge());
+        } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT is too old");
         }
 
@@ -453,13 +452,13 @@ public class SdJwtVerificationContext {
                         var decodedDisclosure = validateSdArrayDigestDisclosureFormat(disclosure);
 
                         // Mark salt as visited
-                        markSaltAsVisited(decodedDisclosure.saltValue(), visitedSalts);
+                        markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
 
                         // Insert, at the level of the _sd key, a new claim using the claim name
                         // and claim value from the Disclosure
                         currentObjectNode.set(
-                                decodedDisclosure.claimName(),
-                                decodedDisclosure.claimValue()
+                                decodedDisclosure.getClaimName(),
+                                decodedDisclosure.getClaimValue()
                         );
                     }
                 }
@@ -500,11 +499,11 @@ public class SdJwtVerificationContext {
                             var decodedDisclosure = validateArrayElementDigestDisclosureFormat(disclosure);
 
                             // Mark salt as visited
-                            markSaltAsVisited(decodedDisclosure.saltValue(), visitedSalts);
+                            markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
 
                             // Replace the array element with the value from the Disclosure.
                             // Removal is done below.
-                            currentArrayNode.set(i, decodedDisclosure.claimValue());
+                            currentArrayNode.set(i, decodedDisclosure.getClaimValue());
                         } else {
                             // Remove all array elements for which the digest was not found in the previous step.
                             indexesToRemove.add(i);
@@ -573,7 +572,7 @@ public class SdJwtVerificationContext {
      *
      * @return decoded disclosure (salt, claim name, claim value)
      */
-    private DisclosureData validateSdArrayDigestDisclosureFormat(String disclosure)
+    private DisclosureFields validateSdArrayDigestDisclosureFormat(String disclosure)
             throws VerificationException {
         ArrayNode arrayNode = SdJwtUtils.decodeDisclosureString(disclosure);
 
@@ -595,7 +594,7 @@ public class SdJwtVerificationContext {
         }
 
         // Return decoded disclosure
-        return new DisclosureData(
+        return new DisclosureFields(
                 arrayNode.get(0).asText(),
                 claimName,
                 arrayNode.get(2)
@@ -612,7 +611,7 @@ public class SdJwtVerificationContext {
      *
      * @return decoded disclosure (salt, value)
      */
-    private DisclosureData validateArrayElementDigestDisclosureFormat(String disclosure)
+    private DisclosureFields validateArrayElementDigestDisclosureFormat(String disclosure)
             throws VerificationException {
         ArrayNode arrayNode = SdJwtUtils.decodeDisclosureString(disclosure);
 
@@ -622,7 +621,7 @@ public class SdJwtVerificationContext {
         }
 
         // Return decoded disclosure
-        return new DisclosureData(
+        return new DisclosureFields(
                 arrayNode.get(0).asText(),
                 null,
                 arrayNode.get(1)
@@ -702,8 +701,29 @@ public class SdJwtVerificationContext {
     }
 
     /**
-     * Plain record for disclosure data.
+     * Plain record for disclosure fields.
      */
-    private record DisclosureData(String saltValue, String claimName, JsonNode claimValue) {
+    private static class DisclosureFields {
+        String saltValue;
+        String claimName;
+        JsonNode claimValue;
+
+        public DisclosureFields(String saltValue, String claimName, JsonNode claimValue) {
+            this.saltValue = saltValue;
+            this.claimName = claimName;
+            this.claimValue = claimValue;
+        }
+
+        public String getSaltValue() {
+            return saltValue;
+        }
+
+        public String getClaimName() {
+            return claimName;
+        }
+
+        public JsonNode getClaimValue() {
+            return claimValue;
+        }
     }
 }

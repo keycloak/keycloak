@@ -139,6 +139,21 @@ public abstract class SdJws {
     }
 
     /**
+     * Verifies that the JWS is not too old.
+     *
+     * @param maxAge Maximum age in seconds
+     * @throws VerificationException if too old
+     */
+    public void verifyAge(int maxAge) throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        long iat = SdJwtUtils.readTimeClaim(getPayload(), "iat");
+
+        if (now - iat > maxAge) {
+            throw new VerificationException("jwt is too old");
+        }
+    }
+
+    /**
      * Verifies that SD-JWT was issued by one of the provided issuers.
      * @param issuers List of trusted issuers
      */

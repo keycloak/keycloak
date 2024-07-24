@@ -155,6 +155,29 @@ public abstract class SdJwsTest {
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("vct", "IdentityCredential");
         SdJws sdJws = new SdJws(payload) {};
-        sdJws.verifyVctClaim(List.of("IdentityCredential".toLowerCase()));
+        sdJws.verifyVctClaim(List.of("IdentityCredential"));
+    }
+
+    @Test
+    public void shouldValidateAgeSinceIssued() throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        var sdJws = exampleSdJws(now);
+        sdJws.verifyAge(180);
+    }
+
+    @Test
+    public void shouldValidateAgeSinceIssued_IfJwtIsTooOld() {
+        long now = Instant.now().getEpochSecond();
+        var sdJws = exampleSdJws(now - 1000); // that will be too old
+        var exception = assertThrows(VerificationException.class, () -> sdJws.verifyAge(180));
+        assertEquals("jwt is too old", exception.getMessage());
+    }
+
+    private SdJws exampleSdJws(long iat) {
+        var payload = SdJwtUtils.mapper.createObjectNode();
+        payload.set("iat", SdJwtUtils.mapper.valueToTree(iat));
+
+        return new SdJws(payload) {
+        };
     }
 }

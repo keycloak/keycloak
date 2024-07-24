@@ -87,6 +87,7 @@ public abstract class SdJwtVPVerificationTest {
         var entries = List.of(
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-rs256.txt",
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps256.txt",
+                "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps384.txt",
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps512.txt"
         );
 
