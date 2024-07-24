@@ -6,8 +6,7 @@ import fs from "fs-extra";
 import Mustache from "mustache";
 import { mkdtemp } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import path from "path";
+import { join, resolve, dirname } from "node:path";
 import { simpleGit } from "simple-git";
 import { fileURLToPath } from "url";
 
@@ -21,7 +20,7 @@ function main() {
     .usage(`${chalk.green("<name>")} [options]`)
     .option(
       "-t, --type <name>",
-      "the type of ui to be created either account or admin ",
+      "the type of ui to be created either `account` or `admin` ",
       "account",
     )
     .action(async (name, options) => {
@@ -60,15 +59,15 @@ function cloneQuickstart() {
 
 async function createProject(name, type) {
   const templateProjectDir = await cloneQuickstart();
-  const projectDir = path.join(path.resolve(), name);
+  const projectDir = join(resolve(), name);
   await fs.mkdir(projectDir);
   await fs.copy(templateProjectDir, projectDir);
   const filename = fileURLToPath(import.meta.url);
-  const templateDir = path.join(path.dirname(filename), "templates");
+  const templateDir = join(dirname(filename), "templates");
   const templateFiles = await searchFile(templateDir, "mu");
   templateFiles.forEach(async (file) => {
     const dest = file.substring(templateDir.length, file.length - 3);
-    const destPath = path.join(projectDir, dest);
+    const destPath = join(projectDir, dest);
     const contents = await fs.readFile(file, "utf8");
     const data = Mustache.render(contents, {
       name,
@@ -84,7 +83,7 @@ async function searchFile(dir, fileName) {
   const files = await fs.readdir(dir);
 
   for (const file of files) {
-    const filePath = path.join(dir, file);
+    const filePath = join(dir, file);
     const fileStat = await fs.stat(filePath);
 
     if (fileStat.isDirectory()) {
@@ -101,10 +100,10 @@ function done(appName) {
   console.log(`Success! Created ${appName} at ./${appName}`);
   console.log("Inside that directory, you can run several commands:");
   console.log();
-  console.log(chalk.cyan(`  pnpm start-keycloak`));
+  console.log(chalk.cyan(`  npm run start-keycloak`));
   console.log("    Downloads and starts a keycloak server.");
   console.log();
-  console.log(chalk.cyan(`  pnpm dev`));
+  console.log(chalk.cyan(`  npm run dev`));
   console.log("    Starts development server.");
   console.log();
   console.log(chalk.cyan(`  mvn install`));
@@ -118,9 +117,9 @@ function done(appName) {
   console.log("We suggest that you begin by typing:");
   console.log();
   console.log(chalk.cyan("  cd"), appName);
-  console.log(`  ${chalk.cyan(`pnpm start-keycloak &`)}`);
+  console.log(`  ${chalk.cyan(`npm run start-keycloak &`)}`);
   console.log();
-  console.log(`  ${chalk.cyan(`pnpm dev`)}`);
+  console.log(`  ${chalk.cyan(`npm run dev`)}`);
   console.log();
   console.log("👾 🚀 Happy hacking!");
 }

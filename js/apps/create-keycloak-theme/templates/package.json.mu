@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "start-keycloak": "node ./start-server.js --account-dev"
   },
@@ -26,12 +25,7 @@
     "@octokit/rest": "^20.1.1",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.22",
-    "@typescript-eslint/eslint-plugin": "^7.3.1",
-    "@typescript-eslint/parser": "^7.3.1",
     "@vitejs/plugin-react-swc": "^3.7.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
     "gunzip-maybe": "^1.4.2",
     "tar-fs": "^3.0.6",
     "typescript": "^5.4.3",

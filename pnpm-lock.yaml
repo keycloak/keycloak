@@ -299,7 +299,7 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4(@types/node@20.14.12)(jsdom@24.1.1)(lightningcss@1.25.1)(terser@5.31.0)
 
-  js/apps/kc-create:
+  js/apps/create-keycloak-theme:
     dependencies:
       chalk:
         specifier: ^5.3.0
@@ -316,10 +316,6 @@ importers:
       simple-git:
         specifier: ^3.25.0
         version: 3.25.0
-    devDependencies:
-      '@types/node':
-        specifier: ^20.14.2
-        version: 20.14.12
 
   js/apps/keycloak-server:
     dependencies:

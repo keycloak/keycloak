@@ -5,7 +5,7 @@ Create a new Keycloak ui project based on a template
 ## Usage
 
 ```bash
-kc-create <name> [options]
+npm create keycloak-theme <name> [options]
 ```
 
 ### Options
@@ -15,7 +15,7 @@ kc-create <name> [options]
 ### Example
 
 ```bash
-kc-create my-project -t account
+npm create keycloak-theme my-project -t account
 ```
 
 This will create a new project called `my-project` with an account ui based on the template from the quickstarts repo.
@@ -23,12 +23,12 @@ After the project is created, the following commands can be used to start the se
 
 ```bash
 cd my-project
-pnpm dev
+npm run dev
 ```
 And then run keycloak in the background:
 
 ```bash
-pnpm start-keycloak
+npm run start-keycloak
 ```
 
 Then open the ui in a browser:

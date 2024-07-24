@@ -1,5 +1,5 @@
 {
-  "name": "kc-create",
+  "name": "create-keycloak-theme",
   "version": "999.0.0-SNAPSHOT",
   "description": "Create a new Keycloak ui project based on a template",
   "main": "create.js",
@@ -10,14 +10,11 @@
   "publishConfig": {
     "access": "public"
   },
-  "devDependencies": {
-    "@types/node": "^20.14.2"
-  },
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
     "mustache": "^4.2.0",
     "simple-git": "^3.25.0"
-  },
+  }
 }
