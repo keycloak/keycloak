@@ -88,7 +88,7 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=10, value="Failed to add user '%s' to realm '%s': user with username exists")
     void addUserFailedUserExists(String user, String realm);
-
+    
     @LogMessage(level = ERROR)
     @Message(id=11, value="Failed to add user '%s' to realm '%s'")
     void addUserFailed(@Cause Throwable t, String user, String realm);
@@ -465,10 +465,15 @@ public interface ServicesLogger extends BasicLogger {
     void scriptEngineCreated(String engineName, String engineVersion, String mimeType);
 
     @LogMessage(level = DEBUG)
-    @Message(id=107, value="Skipping create admin user. Admin already exists in realm '%s'.")
-    void addAdminUserFailedAdminExists(String realm);
+    @Message(id=107, value="Skipping create admin user. User(s) already exist in realm '%s'.")
+    void addAdminUserFailedUsersExist(String realm);
 
     @LogMessage(level = WARN)
     @Message(id=108, value="URI '%s' doesn't match any trustedHost or trustedDomain")
     void uriDoesntMatch(String uri);
+    
+    @LogMessage(level = ERROR)
+    @Message(id=109, value="Failed to add client '%s' to realm '%s': client with client ID exists")
+    void addClientFailedClientExists(String clientId, String realm);
+
 }
