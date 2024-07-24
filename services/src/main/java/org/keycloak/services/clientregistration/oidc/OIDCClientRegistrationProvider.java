@@ -29,6 +29,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
@@ -56,6 +57,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.urls.UrlType;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -129,6 +132,13 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
+
+            if (clientOIDC.getScope() != null) {
+                ClientModel oldClient = session.getContext().getRealm().getClientById(clientOIDC.getClientId());
+                Collection<String> defaultClientScopes = oldClient.getClientScopes(true).keySet();
+                client.setDefaultClientScopes(new ArrayList<>(defaultClientScopes));
+            }
+
             OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = update(clientId, oidcContext);
 
