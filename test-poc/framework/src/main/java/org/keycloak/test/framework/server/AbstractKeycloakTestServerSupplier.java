@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.server;
 
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
@@ -8,8 +9,8 @@ import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 public abstract class AbstractKeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
 
@@ -28,17 +29,27 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-        Map<String, String> databaseConfig;
-        if (requiresDatabase()) {
-            TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
-            databaseConfig = testDatabase.getServerConfig();
-        } else {
-            databaseConfig = Collections.emptyMap();
+        List<String> rawOptions = new LinkedList<>();
+        rawOptions.add("start-dev");
+        rawOptions.add("--cache=local");
+
+        rawOptions.add("--bootstrap-admin-client-id=" + Config.getAdminClientId());
+        rawOptions.add("--bootstrap-admin-client-secret=" + Config.getAdminClientSecret());
+
+        if (!serverConfig.features().isEmpty()) {
+            rawOptions.add("--features=" + String.join(",", serverConfig.features()));
         }
 
-        KeycloakTestServer keycloakTestServer = getServer();
-        keycloakTestServer.start(serverConfig, databaseConfig);
-        return keycloakTestServer;
+        serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+
+        if (requiresDatabase()) {
+            TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
+            testDatabase.getServerConfig().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+        }
+
+        KeycloakTestServer server = getServer();
+        server.start(rawOptions);
+        return server;
     }
 
     @Override

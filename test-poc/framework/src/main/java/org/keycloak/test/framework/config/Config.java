@@ -17,6 +17,14 @@ public class Config {
         return config.getOptionalValue("kc.test." + ValueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
+    public static String getAdminClientId() {
+        return "kc-test-admin";
+    }
+
+    public static String getAdminClientSecret() {
+        return "kc-test-secret";
+    }
+
     public static SmallRyeConfig initConfig() {
         SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
                 .addDefaultSources()
