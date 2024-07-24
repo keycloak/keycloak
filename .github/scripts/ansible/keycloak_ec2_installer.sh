@@ -7,9 +7,8 @@ if [[ "$RUNNER_DEBUG" == "1" ]]; then
 fi
 
 REGION=$1
-KEYCLOAK_SRC=$2
-
-CLUSTER_NAME=${CLUSTER_NAME:-"keycloak_$(whoami)"}
+CLUSTER_NAME=$2
+KEYCLOAK_SRC=$3
 
 ansible-playbook -i ${CLUSTER_NAME}_${REGION}_inventory.yml keycloak.yml \
   -e "keycloak_src=\"${KEYCLOAK_SRC}\""

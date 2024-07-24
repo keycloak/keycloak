@@ -83,8 +83,8 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         ProcessBuilder pb = new ProcessBuilder(commands);
         Process p = pb.directory(wrkDir).inheritIO().start();
         try {
-            if (!p.waitFor(60, TimeUnit.SECONDS)) {
-                throw new IOException("Command " + command + " did not finished in 60 seconds");
+            if (!p.waitFor(300, TimeUnit.SECONDS)) {
+                throw new IOException("Command " + command + " did not finished in 300 seconds");
             }
             if (p.exitValue() != 0) {
                 throw new IOException("Command " + command + " was executed with exit status " + p.exitValue());

@@ -19,6 +19,13 @@
   register: group
   no_log: "{{ no_log_sensitive }}"
 
+- name: Delete existing key pair if it exists
+  amazon.aws.ec2_key:
+    region: '{{ region }}'
+    name: '{{ cluster_name }}'
+    state: absent
+  ignore_errors: true
+
 - name: Create Key
   amazon.aws.ec2_key:
     state: present

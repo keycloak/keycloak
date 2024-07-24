@@ -7,9 +7,10 @@ if [[ "$RUNNER_DEBUG" == "1" ]]; then
 fi
 
 REGION=$1
-MVN_PARAMS=${@:2}
+CLUSTER_NAME=$2
+MVN_PARAMS=${@:3}
 
-CLUSTER_NAME=${CLUSTER_NAME:-"keycloak_$(whoami)"}
+echo "mvn_params=\"${MVN_PARAMS}\""
 
 ansible-playbook -i ${CLUSTER_NAME}_${REGION}_inventory.yml mvn.yml \
   -e "mvn_params=\"${MVN_PARAMS}\""
