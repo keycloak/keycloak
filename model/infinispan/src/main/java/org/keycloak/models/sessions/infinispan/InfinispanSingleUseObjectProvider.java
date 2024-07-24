@@ -71,7 +71,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
         }
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
             if (!notes.isEmpty()) {
-                throw new ModelException("notes are not supported for revoked tokens");
+                throw new ModelException("Notes are not supported for revoked tokens");
             }
             session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanSeconds);
         }
@@ -88,6 +88,10 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public Map<String, String> remove(String key) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+           throw new ModelException("Revoked tokens can't be removed");
+        }
+
         try {
             BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
             SingleUseObjectValueEntity existing = cache.remove(key);
@@ -105,12 +109,20 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be replaced");
+        }
+
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
         return cache.replace(key, new SingleUseObjectValueEntity(notes)) != null;
     }
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be used in putIfAbsent");
+        }
+
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
 

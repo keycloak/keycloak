@@ -42,14 +42,17 @@ public class RevokedTokenEntity {
         this.id = id;
     }
 
+    /**
+     * Expire time in seconds.
+     */
     @Column(name="EXPIRE")
-    protected Long expire;
+    protected long expire;
 
-    public Long getExpire() {
+    public long getExpire() {
         return expire;
     }
 
-    public void setExpire(Long expire) {
+    public void setExpire(long expire) {
         this.expire = expire;
     }
 
