@@ -50,6 +50,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
     private static final String REALM_ATTRIBUTE = "test-realm";
 
     public static void createObjects(KeycloakSession session, RealmModel realm) {
+        RealmModel sessionRealm = session.getContext().getRealm();
+        session.getContext().setRealm(realm);
         final List<String> realmNameList = Collections.singletonList(realm.getName());
 
         ClientModel app1 = realm.addClient("app1");
@@ -66,6 +68,7 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
         app1.addScopeMapping(realm.getRole("role1"));
 
         realm.addClient("cl1").setAttribute(REALM_ATTRIBUTE, realm.getName());
+        session.getContext().setRealm(sessionRealm);
     }
 
     @Test
@@ -108,7 +111,7 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             // Test searching
             Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, Map.of(UserModel.SEARCH, "user")).count());
 
-            return new String[] { id1, id2 };
+            return new String[]{id1, id2};
         });
 
         String id1 = res[0];
@@ -118,34 +121,38 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = sessionTestUser2;
 
             RealmModel realm1 = currentSession.realms().getRealm(id1);
-            RealmModel realm2 = currentSession.realms().getRealm(id2);
-
+            currentSession.getContext().setRealm(realm1);
             UserModel r1user1 = r1user1Atomic.get();
 
             currentSession.users().removeUser(realm1, r1user1);
             UserModel user2 = currentSession.users().getUserByUsername(realm1, "user2");
             currentSession.users().removeUser(realm1, user2);
             Assert.assertEquals(0, currentSession.users().searchForUserStream(realm1, Map.of(UserModel.SEARCH, "user")).count());
-            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm2, Map.of(UserModel.SEARCH, "user")).count());
-
 
             UserModel user1 = currentSession.users().getUserByUsername(realm1, "user1");
-            UserModel user1a = currentSession.users().getUserByUsername(realm2, "user1");
-
             UserManager um = new UserManager(currentSession);
             if (user1 != null) {
                 um.removeUser(realm1, user1);
-            }
-            if (user1a != null) {
-                um.removeUser(realm2, user1a);
             }
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser3) -> {
             KeycloakSession currentSession = sessionTestUser3;
-            currentSession.realms().removeRealm(id1);
-            currentSession.realms().removeRealm(id2);
+
+            RealmModel realm2 = currentSession.realms().getRealm(id2);
+            currentSession.getContext().setRealm(realm2);
+            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm2, Map.of(UserModel.SEARCH, "user")).count());
+
+            UserModel user1a = currentSession.users().getUserByUsername(realm2, "user1");
+
+            UserManager um = new UserManager(currentSession);
+            if (user1a != null) {
+                um.removeUser(realm2, user1a);
+            }
         });
+
+        removeRealm(session, id1);
+        removeRealm(session, id2);
     }
 
     @Test
@@ -197,9 +204,11 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
             UserManager um = new UserManager(currentSession);
             if (user1 != null) {
+                currentSession.getContext().setRealm(realm1);
                 um.removeUser(realm1, user1);
             }
             if (user1a != null) {
+                currentSession.getContext().setRealm(realm2);
                 um.removeUser(realm2, user1a);
             }
 
@@ -209,15 +218,21 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
         String id1 = res[0];
         String id2 = res[1];
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser3) -> {
-            KeycloakSession currentSession = sessionTestUser3;
-            currentSession.realms().removeRealm(id1);
-            currentSession.realms().removeRealm(id2);
-        });
+        removeRealm(session, id1);
+        removeRealm(session, id2);
     }
 
     private void assertAttrRealm(RealmModel realm, Stream<String> attr) {
         assertThat(attr.collect(Collectors.toList()), containsInAnyOrder(realm.getName()));
+    }
+
+    private void removeRealm(KeycloakSession session, String realmId) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser3) -> {
+            RealmModel realm = sessionTestUser3.realms().getRealm(realmId);
+            sessionTestUser3.getContext().setRealm(realm);
+            sessionTestUser3.realms().removeRealm(realmId);
+        });
+
     }
 
     @Override

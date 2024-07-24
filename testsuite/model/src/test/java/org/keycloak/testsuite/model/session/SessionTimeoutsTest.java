@@ -66,6 +66,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         super.createEnvironment(s);
 
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -79,6 +80,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     public void cleanEnvironment(KeycloakSession s) {
         InfinispanTestUtil.revertTimeService(s);
         RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         UserModel user1 = s.users().getUserByUsername(realm, "user1");
         s.sessions().removeUserSessions(realm);
         s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));

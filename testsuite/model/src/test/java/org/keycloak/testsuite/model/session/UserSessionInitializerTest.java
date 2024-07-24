@@ -66,6 +66,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
@@ -81,6 +82,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Override
     public void cleanEnvironment(KeycloakSession s) {
         RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.sessions().removeUserSessions(realm);
 
         UserModel user1 = s.users().getUserByUsername(realm, "user1");

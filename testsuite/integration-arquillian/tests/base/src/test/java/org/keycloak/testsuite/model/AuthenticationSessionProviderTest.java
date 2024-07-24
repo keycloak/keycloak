@@ -268,8 +268,9 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved2) -> {
             KeycloakSession currentSession = sesRealmRemoved2;
-
-            new RealmManager(currentSession).removeRealm(currentSession.realms().getRealmByName("foo-realm"));
+            RealmModel fooRealm = currentSession.realms().getRealmByName("foo-realm");
+            currentSession.getContext().setRealm(fooRealm);
+            new RealmManager(currentSession).removeRealm(fooRealm);
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved3) -> {

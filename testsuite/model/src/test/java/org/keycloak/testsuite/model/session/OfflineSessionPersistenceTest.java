@@ -1,13 +1,13 @@
 /*
  * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -69,13 +69,14 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;
     private static final int OFFLINE_SESSION_COUNT_PER_USER = 10;
-    
+
     private String realmId;
     private List<String> userIds;
 
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = prepareRealm(s, "realm");
+        s.getContext().setRealm(realm);
         this.realmId = realm.getId();
 
         userIds = IntStream.range(0, USER_COUNT)
@@ -96,7 +97,9 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
-        new RealmManager(s).removeRealm(s.realms().getRealm(realmId));  // See https://issues.redhat.com/browse/KEYCLOAK-17876
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
+        new RealmManager(s).removeRealm(realm);  // See https://issues.redhat.com/browse/KEYCLOAK-17876
     }
 
     @Test
@@ -222,7 +225,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                     // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
                     // on-going transaction, so it does not accept new invocations."
                     // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
-                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) || 
+                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) ||
                             (ex.getMessage() != null && ex.getMessage().contains("ISPN000217")) ||
                             (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers"))) {
                         log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
