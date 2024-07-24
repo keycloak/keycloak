@@ -206,7 +206,7 @@ For more details, see <@links.server id="containers" />.
 
 === Scheduling
 
-You may control several aspects of the server Pod scheduling via the Keycloak CR. The scheduling stanza exposes optional standard Kubernetes affinity, tolerations, topology spread constraints, and the priority class name to fine tune the scheduling and placement of your server Pods. 
+You may control several aspects of the server Pod scheduling via the Keycloak CR. The scheduling stanza exposes optional standard Kubernetes affinity, tolerations, topology spread constraints, and the priority class name to fine tune the scheduling and placement of your server Pods.
 
 An example utilizing all scheduling fields:
 
