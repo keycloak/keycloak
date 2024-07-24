@@ -33,6 +33,7 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -262,27 +263,26 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation client = buildClient();
         ArrayList<String> optionalClientScopes = new ArrayList<>(List.of("address"));
         client.setOptionalClientScopes(optionalClientScopes);
-
         ClientRepresentation createdClient = registerClient(client);
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(createdClient.getDefaultClientScopes().isEmpty());
+        assertTrue(CollectionUtil.collectionEquals(createdClient.getDefaultClientScopes(), Set.of("basic")));
 
         authManageClients();
         ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
         registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(obtainedClient.getDefaultClientScopes().isEmpty());
+        assertTrue(CollectionUtil.collectionEquals(obtainedClient.getDefaultClientScopes(), Set.of("basic")));
 
 
         optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
-        client.setOptionalClientScopes(optionalClientScopes);
-        ClientRepresentation updatedClient = reg.update(client);
+        obtainedClient.setOptionalClientScopes(optionalClientScopes);
+        ClientRepresentation updatedClient = reg.update(obtainedClient);
         requestedClientScopes = new HashSet<>(optionalClientScopes);
         registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(updatedClient.getDefaultClientScopes().isEmpty());
+        assertTrue(CollectionUtil.collectionEquals(updatedClient.getDefaultClientScopes(), Set.of("basic")));
     }
 
     @Test
@@ -741,7 +741,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
         assertTrue(requestedClientScopes.equals(registeredClientScopes));
-        assertTrue(client.getDefaultClientScopes().isEmpty());
+        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
     }
 
     @Test
