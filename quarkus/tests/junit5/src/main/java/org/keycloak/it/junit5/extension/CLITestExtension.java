@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +59,6 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NA
 public class CLITestExtension extends QuarkusMainTestExtension {
 
     private static final String SYS_PROPS = "sys-props";
-    private static final String KEY_VALUE_SEPARATOR = "[=]";
     private KeycloakDistribution dist;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
@@ -73,24 +71,17 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         getStore(context).put(SYS_PROPS, new HashMap<>(System.getProperties()));
 
         if (launch != null && distConfig == null) {
-            for (String arg : launch.value()) {
-                if (arg.contains(CONFIG_FILE_SHORT_NAME) || arg.contains(CONFIG_FILE_LONG_NAME)) {
-                    Pattern kvSeparator = Pattern.compile(KEY_VALUE_SEPARATOR);
-                    String[] cfKeyValue = kvSeparator.split(arg);
-                    setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, cfKeyValue[1]);
+            ConfigArgsConfigSource.parseConfigArgs(List.of(launch.value()), (arg, value) -> {
+                if (arg.equals(CONFIG_FILE_SHORT_NAME) || arg.equals(CONFIG_FILE_LONG_NAME)) {
+                    setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, value);
                 } else if (arg.startsWith("-D")) {
-                    // allow setting system properties from JVM tests
-                    int keyValueSeparator = arg.indexOf('=');
-
-                    if (keyValueSeparator == -1) {
-                        continue;
-                    }
-
-                    String name = arg.substring(2, keyValueSeparator);
-                    String value = arg.substring(keyValueSeparator + 1);
-                    setProperty(name, value);
+                    setProperty(arg, value);
                 }
-            }
+            }, arg -> {
+                if (arg.startsWith("-D")) {
+                    setProperty(arg, "");
+                }
+            });
         }
 
         configureDatabase(context);
