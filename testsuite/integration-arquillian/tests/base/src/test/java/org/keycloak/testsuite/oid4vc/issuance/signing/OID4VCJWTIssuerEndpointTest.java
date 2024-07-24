@@ -20,6 +20,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -102,7 +103,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString("invalid-token");
                     OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
+                    Response response = oid4VCIssuerEndpoint
+                            .getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
+                    assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
                 })));
     }
 
@@ -141,7 +144,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                         authenticator.setTokenString(null);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                        issuerEndpoint.getCredentialOffer("nonce");
+                        Response response = issuerEndpoint.getCredentialOffer("nonce");
+                        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
                     });
         });
     }
@@ -244,9 +248,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                         authenticator.setTokenString(null);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                        issuerEndpoint.requestCredential(new CredentialRequest()
+                        Response response = issuerEndpoint.requestCredential(new CredentialRequest()
                                 .setFormat(Format.JWT_VC)
                                 .setCredentialIdentifier("test-credential"));
+                        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
                     }));
         });
     }
