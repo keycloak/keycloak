@@ -31,7 +31,13 @@ export const label = (
   t: TFunction,
   text: string | undefined,
   fallback?: string,
-) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+  prefix?: string,
+) => {
+  const value = text || fallback;
+  const bundleKey = isBundleKey(value) ? unWrap(value!) : value;
+  const key = prefix ? `${prefix}.${bundleKey}` : bundleKey;
+  return t(key || "");
+};
 
 export const labelAttribute = (
   t: TFunction,
