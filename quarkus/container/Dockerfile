@@ -1,8 +1,8 @@
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
 
 ARG KEYCLOAK_VERSION 999.0.0-SNAPSHOT
-ARG ORG_NAME vunetsystems
-ARG KEYCLOAK_DIST=https://github.com/$ORG_NAME/washington/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
+ARG REPOSITORY vunetsystems/washington
+ARG KEYCLOAK_DIST=https://github.com/$REPOSITORY/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
 
 RUN dnf install -y tar gzip zip
 

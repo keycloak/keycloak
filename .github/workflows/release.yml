@@ -1,19 +1,14 @@
 name: Build Keycloak, Create Release and Publish Docker Image
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types:
-      - closed
-  workflow_dispatch:
 
 jobs:
   release_and_publish:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -53,7 +48,7 @@ jobs:
           context: ./quarkus/container/
           file: ./quarkus/container/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.actor }}/washington:${{ steps.tag.outputs.new_tag }}
+          tags: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.new_tag }}
           build-args: |
             KEYCLOAK_VERSION=${{ steps.tag.outputs.new_tag }}
-            ORG_NAME=${{ github.actor }}
+            REPOSITORY=${{ github.repository }}
