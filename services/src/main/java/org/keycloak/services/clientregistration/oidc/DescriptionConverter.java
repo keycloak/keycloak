@@ -55,6 +55,7 @@ import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +83,9 @@ public class DescriptionConverter {
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeParam = clientOIDC.getScope();
-        if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));
+        if (scopeParam != null) {
+            client.setOptionalClientScopes(scopeParam.isEmpty() ? Collections.emptyList() : Arrays.asList(scopeParam.split(" ")));
+        }
 
         List<String> oidcResponseTypes = clientOIDC.getResponseTypes();
         if (oidcResponseTypes == null || oidcResponseTypes.isEmpty()) {
