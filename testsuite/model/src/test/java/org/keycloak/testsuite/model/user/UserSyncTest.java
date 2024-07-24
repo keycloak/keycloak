@@ -73,6 +73,7 @@ public class UserSyncTest extends KeycloakModelTest {
     public void createEnvironment(KeycloakSession s) {
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().createRealm("realm");
+            s.getContext().setRealm(realm);
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
             this.realmId = realm.getId();
         });
@@ -80,6 +81,7 @@ public class UserSyncTest extends KeycloakModelTest {
         getParameters(UserStorageProviderModel.class).forEach(fs -> inComittedTransaction(session -> {
             if (userFederationId != null || !fs.isImportEnabled()) return;
             RealmModel realm = session.realms().getRealm(realmId);
+            s.getContext().setRealm(realm);
 
             fs.setParentId(realmId);
 
@@ -101,6 +103,7 @@ public class UserSyncTest extends KeycloakModelTest {
     @Override
     public void cleanEnvironment(KeycloakSession s) {
         final RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
 
         ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
         LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(s, ldapModel);

@@ -65,6 +65,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = realmManager.getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             if (realm != null) {
 
@@ -99,6 +100,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
             RealmManager realmManager = new RealmManager(currentSession);
             RealmModel realm = realmManager.createRealm("original");
+            currentSession.getContext().setRealm(realm);
 
             ClientModel fooClient = realm.addClient("foo-client");
             ClientModel barClient = realm.addClient("bar-client");
@@ -302,6 +304,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUT) -> {
             KeycloakSession currentSession = sessionUT;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
             currentSession.users().removeUser(realm, john);

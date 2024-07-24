@@ -50,6 +50,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession session) {
         RealmModel realm = createRealm(session, "remote-login-failure-test");
+        session.getContext().setRealm(realm);
         realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realmId = realm.getId();
 
@@ -66,6 +67,8 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
