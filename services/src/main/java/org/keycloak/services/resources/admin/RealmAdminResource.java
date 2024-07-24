@@ -95,7 +95,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
-import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -446,7 +445,6 @@ public class RealmAdminResource {
                 }
             }
 
-            boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
@@ -456,10 +454,6 @@ public class RealmAdminResource {
             session.getContext().getUri();
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
-
-            if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
-                session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
-            }
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
