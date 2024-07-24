@@ -575,14 +575,14 @@
                 <docker.database.image>mcr.microsoft.com/mssql/server:${mssql.version}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
-                <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.password>vEry=tron9Pwd</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database};integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;</keycloak.connectionsJpa.url>
                 <!-- Map Store JPA -->
                 <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
