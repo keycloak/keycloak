@@ -96,7 +96,6 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
-import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -423,7 +422,7 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
         ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
@@ -447,7 +446,6 @@ public class RealmAdminResource {
                 }
             }
 
-            boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
@@ -457,11 +455,9 @@ public class RealmAdminResource {
             session.getContext().getUri();
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
-            
-            if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
-                session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
-            }
-            
+
+
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Realm with same name exists");
