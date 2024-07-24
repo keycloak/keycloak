@@ -1,17 +1,19 @@
 import {
   Avatar,
   AvatarProps,
-  Brand,
-  BrandProps,
   DropdownItem,
+  Masthead,
+  MastheadBrand,
+  MastheadBrandProps,
+  MastheadContent,
+  MastheadMainProps,
+  MastheadToggle,
+  PageToggleButton,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  PageHeader,
-  PageHeaderProps,
-  PageHeaderTools,
-  PageHeaderToolsGroup,
-  PageHeaderToolsItem,
-} from "@patternfly/react-core/deprecated";
+import { BarsIcon } from "@patternfly/react-icons";
 import { TFunction } from "i18next";
 import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
 import { ReactNode } from "react";
@@ -38,11 +40,9 @@ function loggedInUserName(
   return givenName || familyName || preferredUsername || t("unknownUser");
 }
 
-type BrandLogo = BrandProps & {
-  href: string;
-};
+type BrandLogo = MastheadBrandProps;
 
-type KeycloakMastheadProps = PageHeaderProps & {
+type KeycloakMastheadProps = MastheadMainProps & {
   keycloak: Keycloak;
   brand: BrandLogo;
   avatar?: AvatarProps;
@@ -58,7 +58,7 @@ type KeycloakMastheadProps = PageHeaderProps & {
 
 const KeycloakMasthead = ({
   keycloak,
-  brand: { href: brandHref, ...brandProps },
+  brand: { src, alt, className, ...brandProps },
   avatar,
   features: {
     hasLogout = true,
@@ -92,14 +92,41 @@ const KeycloakMasthead = ({
 
   const picture = keycloak.idTokenParsed?.picture;
   return (
-    <PageHeader
-      {...rest}
-      logo={<Brand {...brandProps} />}
-      logoProps={{ href: brandHref }}
-      headerTools={
-        <PageHeaderTools>
-          <PageHeaderToolsGroup>
-            <PageHeaderToolsItem
+    <Masthead {...rest}>
+      <MastheadToggle>
+        <PageToggleButton variant="plain" aria-label={t("navigation")}>
+          <BarsIcon />
+        </PageToggleButton>
+      </MastheadToggle>
+      <MastheadBrand {...brandProps}>
+        <img src={src} alt={alt} className={className} />
+      </MastheadBrand>
+      <MastheadContent>
+        <Toolbar>
+          <ToolbarContent>
+            {toolbarItems?.map((item, index) => (
+              <ToolbarItem key={index} align={{ default: "alignRight" }}>
+                {item}
+              </ToolbarItem>
+            ))}
+            <ToolbarItem
+              visibility={{
+                default: "hidden",
+                md: "visible",
+              }} /** this user dropdown is hidden on mobile sizes */
+            >
+              <KeycloakDropdown
+                data-testid="options"
+                dropDownItems={[...dropdownItems, extraItems]}
+                title={
+                  hasUsername
+                    ? loggedInUserName(keycloak.idTokenParsed, t)
+                    : undefined
+                }
+              />
+            </ToolbarItem>
+            <ToolbarItem
+              align={{ default: "alignLeft" }}
               visibility={{
                 md: "hidden",
               }}
@@ -112,33 +139,22 @@ const KeycloakMasthead = ({
                   extraItems,
                 ]}
               />
-            </PageHeaderToolsItem>
-            <PageHeaderToolsItem>{toolbarItems}</PageHeaderToolsItem>
-            <PageHeaderToolsItem
-              visibility={{
-                default: "hidden",
-                md: "visible",
-              }}
+            </ToolbarItem>
+            <ToolbarItem
+              variant="overflow-menu"
+              align={{ default: "alignRight" }}
+              className="pf-v5-u-m-0-on-lg"
             >
-              <KeycloakDropdown
-                data-testid="options"
-                dropDownItems={[...dropdownItems, extraItems]}
-                title={
-                  hasUsername
-                    ? loggedInUserName(keycloak.idTokenParsed, t)
-                    : undefined
-                }
-              />
-            </PageHeaderToolsItem>
-          </PageHeaderToolsGroup>
-          {picture || avatar?.src ? (
-            <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
-          ) : (
-            <DefaultAvatar {...avatar} />
-          )}
-        </PageHeaderTools>
-      }
-    />
+              {picture || avatar?.src ? (
+                <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
+              ) : (
+                <DefaultAvatar {...avatar} />
+              )}
+            </ToolbarItem>
+          </ToolbarContent>
+        </Toolbar>
+      </MastheadContent>
+    </Masthead>
   );
 };
 

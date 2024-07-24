@@ -49,7 +49,6 @@ export const Header = () => {
       data-testid="page-header"
       keycloak={keycloak}
       features={{ hasManageAccount: false }}
-      showNavToggle
       brand={{
         href: indexHref,
         src: joinPath(environment.resourceUrl, brandImage),
