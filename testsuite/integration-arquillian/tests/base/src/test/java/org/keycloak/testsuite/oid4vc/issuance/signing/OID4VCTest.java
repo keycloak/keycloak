@@ -27,6 +27,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -104,7 +105,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
             kw.setPrivateKey(keyPair.getPrivate());
             kw.setPublicKey(keyPair.getPublic());
             kw.setUse(KeyUse.SIG);
-            kw.setKid(keyId);
+            if (keyId != null) {
+                kw.setKid(keyId);
+            } else {
+                kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+            }
             kw.setType("EC");
             kw.setAlgorithm("ES256");
             return kw;
@@ -173,29 +178,27 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return componentExportRepresentation;
     }
 
-    public static ClientRepresentation getTestClient(String clientId) {
+    protected ClientRepresentation getTestClient(String clientId) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setClientId(clientId);
         clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         clientRepresentation.setEnabled(true);
         clientRepresentation.setAttributes(Map.of(
                 "vc.test-credential.expiry_in_s", "100",
-                "vc.test-credential.format", Format.JWT_VC.toString(),
+                "vc.test-credential.format", Format.JWT_VC,
                 "vc.test-credential.scope", "VerifiableCredential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
-                "vc.test-credential.vct", "VerifiableCredential",
-                "vc.test-credential.cryptographic_binding_methods_supported", "jwk",
-                "vc.test-credential.credential_signing_alg_values_supported", "ES256,ES384",
-                "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}",
-                "vc.test-credential.proof_types_supported","{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"
+                "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}"
+                // Moved sd-jwt specific attributes to: org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getTestCredentialSigningProvider
         ));
         clientRepresentation.setProtocolMappers(
                 List.of(
-                        getRoleMapper(clientId),
-                        getEmailMapper(),
-                        getIdMapper(),
-                        getStaticClaimMapper("VerifiableCredential"),
-                        getStaticClaimMapper("AnotherCredentialType")
+                        getRoleMapper(clientId, "VerifiableCredential"),
+                        getUserAttributeMapper("email", "email", "VerifiableCredential"),
+                        getIdMapper("VerifiableCredential"),
+                        getStaticClaimMapper("VerifiableCredential", "VerifiableCredential"),
+                        // This is used for negative test. Shall not land into the credential
+                        getStaticClaimMapper("AnotherCredentialType", "AnotherCredentialType")
                 )
         );
         return clientRepresentation;
@@ -203,8 +206,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     protected ComponentExportRepresentation getEdDSAKeyProvider() {
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
-        componentExportRepresentation.setName("eddsa-generated");
-        componentExportRepresentation.setId(UUID.randomUUID().toString());
         componentExportRepresentation.setName("eddsa-generated");
         componentExportRepresentation.setId(UUID.randomUUID().toString());
         componentExportRepresentation.setProviderId("eddsa-generated");
@@ -217,7 +218,20 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return componentExportRepresentation;
     }
 
-    public static ProtocolMapperRepresentation getRoleMapper(String clientId) {
+    protected ComponentExportRepresentation getEcKeyProvider() {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("ecdsa-issuer-key");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("ecdsa-generated");
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(
+                        "ecdsaEllipticCurveKey", List.of("P-256"),
+                        "algorithm", List.of("ES256")                        ))
+        );
+        return componentExportRepresentation;
+    }
+
+    public static ProtocolMapperRepresentation getRoleMapper(String clientId, String supportedCredentialTypes) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("role-mapper");
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
@@ -227,27 +241,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 Map.of(
                         "subjectProperty", "roles",
                         "clientId", clientId,
-                        "supportedCredentialTypes", "VerifiableCredential")
+                        "supportedCredentialTypes", supportedCredentialTypes)
         );
         return protocolMapperRepresentation;
     }
 
-    public static ProtocolMapperRepresentation getEmailMapper() {
-        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
-        protocolMapperRepresentation.setName("email-mapper");
-        protocolMapperRepresentation.setProtocol("oid4vc");
-        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
-        protocolMapperRepresentation.setProtocolMapper("oid4vc-user-attribute-mapper");
-        protocolMapperRepresentation.setConfig(
-                Map.of(
-                        "subjectProperty", "email",
-                        "userAttribute", "email",
-                        "supportedCredentialTypes", "VerifiableCredential")
-        );
-        return protocolMapperRepresentation;
-    }
-
-    public static ProtocolMapperRepresentation getIdMapper() {
+    public static ProtocolMapperRepresentation getIdMapper(String supportedCredentialTypes) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("id-mapper");
         protocolMapperRepresentation.setProtocol("oid4vc");
@@ -255,12 +254,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         protocolMapperRepresentation.setProtocolMapper("oid4vc-subject-id-mapper");
         protocolMapperRepresentation.setConfig(
                 Map.of(
-                        "supportedCredentialTypes", "VerifiableCredential")
+                        "supportedCredentialTypes", supportedCredentialTypes)
         );
         return protocolMapperRepresentation;
     }
 
-    public static ProtocolMapperRepresentation getStaticClaimMapper(String supportedType) {
+    public static ProtocolMapperRepresentation getStaticClaimMapper(String scope, String supportedCredentialTypes) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocol("oid4vc");
@@ -268,9 +267,9 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         protocolMapperRepresentation.setProtocolMapper("oid4vc-static-claim-mapper");
         protocolMapperRepresentation.setConfig(
                 Map.of(
-                        "subjectProperty", supportedType,
+                        "subjectProperty", scope,
                         "staticValue", "true",
-                        "supportedCredentialTypes", supportedType)
+                        "supportedCredentialTypes", supportedCredentialTypes)
         );
         return protocolMapperRepresentation;
     }
@@ -353,4 +352,18 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    protected ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName, String supportedCredentialTypes) {
+        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+        protocolMapperRepresentation.setName(supportedCredentialTypes + "-" + attributeName + "-mapper");
+        protocolMapperRepresentation.setProtocol("oid4vc");
+        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+        protocolMapperRepresentation.setProtocolMapper("oid4vc-user-attribute-mapper");
+        protocolMapperRepresentation.setConfig(
+                Map.of(
+                        "subjectProperty", subjectProperty,
+                        "userAttribute", attributeName,
+                        "supportedCredentialTypes", supportedCredentialTypes)
+        );
+        return protocolMapperRepresentation;
+    }
 }

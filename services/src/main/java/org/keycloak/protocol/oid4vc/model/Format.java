@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Enum of supported credential formats
  *
@@ -39,4 +42,5 @@ public class Format {
      */
     public static final String SD_JWT_VC = "vc+sd-jwt";
 
+    public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC));
 }

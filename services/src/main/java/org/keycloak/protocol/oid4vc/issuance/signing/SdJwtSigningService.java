@@ -21,19 +21,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 
-import java.time.Instant;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -46,44 +54,61 @@ import java.util.stream.IntStream;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class SdJwtSigningService extends SigningService<String> {
+public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
 
     private static final Logger LOGGER = Logger.getLogger(SdJwtSigningService.class);
 
-    private static final String ISSUER_CLAIM ="iss";
-    private static final String NOT_BEFORE_CLAIM ="nbf";
+    private static final String ISSUER_CLAIM = "iss";
     private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
     private static final String CREDENTIAL_ID_CLAIM = "jti";
+    private static final String CNF_CLAIM = "cnf";
+    private static final String JWK_CLAIM = "jwk";
 
     private final ObjectMapper objectMapper;
     private final SignatureSignerContext signatureSignerContext;
-    private final TimeProvider timeProvider;
     private final String tokenType;
     private final String hashAlgorithm;
     private final int decoys;
     private final List<String> visibleClaims;
     protected final String issuerDid;
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, TimeProvider timeProvider, Optional<String> kid) {
-        super(keycloakSession, keyId, algorithmType);
+    private final CredentialConfigId vcConfigId;
+
+    // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-6
+    // vct sort of additional category for sd-jwt.
+    private final VerifiableCredentialType vct;
+
+    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {
+        super(keycloakSession, keyId, Format.SD_JWT_VC, algorithmType);
         this.objectMapper = objectMapper;
         this.issuerDid = issuerDid;
-        this.timeProvider = timeProvider;
         this.tokenType = tokenType;
         this.hashAlgorithm = hashAlgorithm;
         this.decoys = decoys;
         this.visibleClaims = visibleClaims;
+        this.vcConfigId = vcConfigId;
+        this.vct = credentialType;
+
+        // If a config id is defined, a vct must be defined.
+        // Also validated in: org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningServiceProviderFactory.validateSpecificConfiguration
+        if (this.vcConfigId != null && this.vct == null) {
+            throw new SigningServiceException(String.format("Missing vct for credential config id %s.", vcConfigId));
+        }
+
+        // Will return the active key if key id is null.
         KeyWrapper signingKey = getKey(keyId, algorithmType);
         if (signingKey == null) {
             throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
         }
+        // keyId header can be confusing if there is any key rotation, as key ids have to be immutable. It can lead
+        // to different keys being exposed under the same id.
         // set the configured kid if present.
         if (kid.isPresent()) {
             // we need to clone the key first, to not change the kid of the original key so that the next request still can find it.
             signingKey = signingKey.cloneKey();
             signingKey.setKid(keyId);
         }
-        kid.ifPresent(signingKey::setKid);
+
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
         signatureSignerContext = signatureProvider.signer(signingKey);
 
@@ -91,8 +116,17 @@ public class SdJwtSigningService extends SigningService<String> {
     }
 
     @Override
-    public String signCredential(VerifiableCredential verifiableCredential) {
+    public String signCredential(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
 
+        JWK jwk = null;
+        try {
+            // null returned is a valid result. Means no key binding will be included.
+            jwk = validateProof(vcIssuanceContext);
+        } catch (JWSInputException | VerificationException | IOException e) {
+            throw new VCIssuerException("Can not verify proof", e);
+        }
+
+        VerifiableCredential verifiableCredential = vcIssuanceContext.getVerifiableCredential();
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         JsonNode claimSet = objectMapper.valueToTree(credentialSubject);
@@ -119,17 +153,17 @@ public class SdJwtSigningService extends SigningService<String> {
         ObjectNode rootNode = claimSet.withObject("");
         rootNode.put(ISSUER_CLAIM, issuerDid);
 
-        // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
-        // provided
-        long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                .map(Instant::getEpochSecond)
-                .orElse((long) timeProvider.currentTimeSeconds());
-        rootNode.put(NOT_BEFORE_CLAIM, iat);
-        if (verifiableCredential.getType() == null || verifiableCredential.getType().size() != 1) {
-            throw new SigningServiceException("SD-JWT only supports single type credentials.");
-        }
-        rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, verifiableCredential.getType().get(0));
+        // nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed
+        // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
+
+        // Use vct as type for sd-jwt.
+        rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, vct.getValue());
         rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
+
+        // add the key binding if any
+        if (jwk != null) {
+            rootNode.putPOJO(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
+        }
 
         SdJwt sdJwt = SdJwt.builder()
                 .withDisclosureSpec(disclosureSpecBuilder.build())
@@ -142,4 +176,8 @@ public class SdJwtSigningService extends SigningService<String> {
         return sdJwt.toSdJwtString();
     }
 
+    @Override
+    public String locator() {
+        return VerifiableCredentialsSigningService.locator(format, vct, vcConfigId);
+    }
 }
