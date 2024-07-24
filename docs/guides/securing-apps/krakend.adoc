@@ -1,3 +1,0 @@
-:guide-title: KrakenD
-:guide-summary: Secure APIs with an API Gateway
-:external-link: https://www.krakend.io/docs/authorization/keycloak/

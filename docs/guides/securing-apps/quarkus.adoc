@@ -1,3 +1,0 @@
-:guide-title: Quarkus
-:guide-summary: Using OpenID Connect and Keycloak to secure your Quarkus applications
-:external-link: https://quarkus.io/guides/security-keycloak-authorization

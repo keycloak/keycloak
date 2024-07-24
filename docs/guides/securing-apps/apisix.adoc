@@ -1,3 +1,0 @@
-:guide-title: Apache APISIX
-:guide-summary: Integrate Keycloak for Authentication with Apache APISIX
-:external-link: https://apisix.apache.org/blog/2021/12/10/integrate-keycloak-auth-in-apisix
