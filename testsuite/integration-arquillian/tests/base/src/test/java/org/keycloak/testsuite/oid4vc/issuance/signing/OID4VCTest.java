@@ -27,6 +27,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;

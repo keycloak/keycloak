@@ -1,0 +1,3 @@
+:guide-title: Traefik Hub
+:guide-summary: Use Keycloak as an identity provider or as an identity broker for Traefik Hub API management
+:external-link: https://doc.traefik.io/traefik-hub/authentication-authorization/idp/keycloak
