@@ -1,4 +1,4 @@
-.keycloak__realm_selector__dropdown .pf-v5-c-menu__list .pf-m-fill {
+.keycloak__realm_selector__dropdown .pf-m-fill {
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -14,4 +14,8 @@
   padding-right: var(--pf-v5-c-nav__link--PaddingRight);
   margin-bottom: var(--pf-v5-c-nav__link--PaddingBottom);
   padding-left: var(--pf-v5-c-nav__link--PaddingLeft);
+}
+
+.keycloak__realm_selector__dropdown {
+  text-align: left;
 }
