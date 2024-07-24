@@ -60,8 +60,7 @@ import jakarta.inject.Inject;
 
 @ControllerConfiguration(
     dependents = {
-        @Dependent(type = KeycloakDeploymentDependentResource.class),
-        @Dependent(type = KeycloakAdminSecretDependentResource.class),
+        @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
@@ -78,6 +77,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
+    
+    volatile KeycloakDeploymentDependentResource deploymentDependentResource;
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
@@ -94,6 +95,10 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Map<String, EventSource> sources = new HashMap<>();
         sources.put("serviceSource", servicesEvent);
+        
+        this.deploymentDependentResource = new KeycloakDeploymentDependentResource(config, watchedResources, distConfigurator);
+        sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, this.deploymentDependentResource));
+        
         return sources;
     }
 
@@ -104,6 +109,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Log.debugf("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
+        // TODO - these modifications to the resource may belong in a webhook because dependents run first
+        // only the statefulset is deferred until after
         boolean modifiedSpec = false;
         if (kc.getSpec().getInstances() == null) {
             // explicitly set defaults - and let another reconciliation happen
@@ -125,6 +132,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         if (modifiedSpec) {
             return UpdateControl.updateResource(kc);
         }
+        
+        // after the spec has possibly been updated, reconcile the StatefulSet
+        this.deploymentDependentResource.reconcile(kc, context);
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
