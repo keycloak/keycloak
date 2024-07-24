@@ -435,7 +435,7 @@
 
                                             <!-- MSSQL -->
                                             <ACCEPT_EULA>Y</ACCEPT_EULA>
-                                            <SA_PASSWORD>${keycloak.connectionsJpa.password}</SA_PASSWORD>
+                                            <MSSQL_SA_PASSWORD>${keycloak.connectionsJpa.password}</MSSQL_SA_PASSWORD>
 
                                             <!-- Oracle -->
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
