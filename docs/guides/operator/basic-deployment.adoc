@@ -265,7 +265,7 @@ Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 
 For more details refer to the <@links.server id="reverseproxy"/> guide.
 
-NOTE: In an edge scenario where you do not wish to set proxy.headers, you must set proxy=edge as an additionalOption to override the implied default of proxy=passthrough. This will not be necessary in subsequent major releases.
+NOTE: In an edge scenario where you do not wish to set `proxy.headers`, you must set `proxy=edge` as an option in `additionalOptions` field to override the implied default of `proxy=passthrough`. This will not be necessary in subsequent major releases.
 
 === Accessing the Admin Console
 
