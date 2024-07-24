@@ -36,6 +36,14 @@ public class CredentialRequest {
 
     private Proof proof;
 
+    // I have the choice of either defining format specific fields here, or adding a generic structure,
+    // opening room for spamming the server. I will prefer having format specific fields.
+    private String vct;
+
+    // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
+    @JsonProperty("credential_definition")
+    private CredentialDefinition credentialDefinition;
+
     public String getFormat() {
         return format;
     }
@@ -60,6 +68,24 @@ public class CredentialRequest {
 
     public CredentialRequest setProof(Proof proof) {
         this.proof = proof;
+        return this;
+    }
+
+    public String getVct() {
+        return vct;
+    }
+
+    public CredentialRequest setVct(String vct) {
+        this.vct = vct;
+        return this;
+    }
+
+    public CredentialDefinition getCredentialDefinition() {
+        return credentialDefinition;
+    }
+
+    public CredentialRequest setCredentialDefinition(CredentialDefinition credentialDefinition) {
+        this.credentialDefinition = credentialDefinition;
         return this;
     }
 }

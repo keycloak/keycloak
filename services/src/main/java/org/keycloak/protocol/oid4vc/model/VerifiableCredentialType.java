@@ -14,30 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.protocol.oid4vc.model;
 
-
 /**
- * Enum to handle potential errors in issuing credentials with the error types defined in OID4VCI
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html}
- *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public enum ErrorType {
-
-    INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
-    INVALID_TOKEN("invalid_token"),
-    UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
-    UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
-    INVALID_PROOF("invalid_proof"),
-    INVALID_ENCRYPTION_PARAMETER("invalid_encryption_parameters"),
-    MISSING_CREDENTIAL_CONFIG("missing_credential_config"),
-    MISSING_CREDENTIAL_CONFIG_AND_FORMAT("missing_credential_config_format");
-
+public class VerifiableCredentialType {
     private final String value;
 
-    ErrorType(String value) {
+    public static VerifiableCredentialType from(String value){
+        return value == null? null : new VerifiableCredentialType(value);
+    }
+    public VerifiableCredentialType(String value) {
         this.value = value;
     }
 

@@ -56,6 +56,8 @@ public class SupportedCredentialConfiguration {
     private static final String CLAIMS_KEY = "claims";
     @JsonIgnore
     private static final String VERIFIABLE_CREDENTIAL_TYPE_KEY = "vct";
+    @JsonIgnore
+    private static final String CREDENTIAL_DEFINITION_KEY = "credential_definition";
     private String id;
 
     @JsonProperty(FORMAT_KEY)
@@ -79,6 +81,9 @@ public class SupportedCredentialConfiguration {
     @JsonProperty(VERIFIABLE_CREDENTIAL_TYPE_KEY)
     private String vct;
 
+    @JsonProperty(CREDENTIAL_DEFINITION_KEY)
+    private CredentialDefinition credentialDefinition;
+
     @JsonProperty(PROOF_TYPES_SUPPORTED_KEY)
     private ProofTypesSupported proofTypesSupported;
 
@@ -87,6 +92,30 @@ public class SupportedCredentialConfiguration {
 
     public String getFormat() {
         return format;
+    }
+
+    /**
+     * Return the verifiable credential type. Sort of confusing in the specification.
+     * For sdjwt, we have a "vct" claim.
+     *   See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-6
+     *
+     * For iso mdl (not yet supported) we have a "doctype"
+     *   See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-5
+     *
+     * For jwt_vc and ldp_vc, we will be inferring from the "credential_definition"
+     *   See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-3
+     *
+     * @return
+     */
+    public VerifiableCredentialType deriveType() {
+        if (Objects.equals(format, Format.SD_JWT_VC)) {
+            return VerifiableCredentialType.from(vct);
+        }
+        return null;
+    }
+
+    public CredentialConfigId deriveConfiId() {
+        return CredentialConfigId.from(id);
     }
 
     public SupportedCredentialConfiguration setFormat(String format) {
@@ -169,6 +198,15 @@ public class SupportedCredentialConfiguration {
         return this;
     }
 
+    public CredentialDefinition getCredentialDefinition() {
+        return credentialDefinition;
+    }
+
+    public SupportedCredentialConfiguration setCredentialDefinition(CredentialDefinition credentialDefinition) {
+        this.credentialDefinition = credentialDefinition;
+        return this;
+    }
+
     public ProofTypesSupported getProofTypesSupported() {
         return proofTypesSupported;
     }
@@ -180,7 +218,7 @@ public class SupportedCredentialConfiguration {
 
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
-        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format.toString()));
+        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format));
         Optional.ofNullable(vct).ifPresent(vct -> dotNotation.put(id + DOT_SEPARATOR + VERIFIABLE_CREDENTIAL_TYPE_KEY, vct));
         Optional.ofNullable(scope).ifPresent(scope -> dotNotation.put(id + DOT_SEPARATOR + SCOPE_KEY, scope));
         Optional.ofNullable(cryptographicBindingMethodsSupported).ifPresent(types ->
@@ -190,6 +228,7 @@ public class SupportedCredentialConfiguration {
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
                 dotNotation.put(id + DOT_SEPARATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY, String.join(",", credentialSigningAlgValuesSupported)));
         Optional.ofNullable(claims).ifPresent(c -> dotNotation.put(id + DOT_SEPARATOR + CLAIMS_KEY, c.toJsonString()));
+        Optional.ofNullable(credentialDefinition).ifPresent(cdef -> dotNotation.put(id + DOT_SEPARATOR + CREDENTIAL_DEFINITION_KEY, cdef.toJsonString()));
 
         Optional.ofNullable(display)
                 .ifPresent(d -> d.stream()
@@ -223,6 +262,9 @@ public class SupportedCredentialConfiguration {
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CLAIMS_KEY))
                 .map(Claims::fromJsonString)
                 .ifPresent(supportedCredentialConfiguration::setClaims);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CREDENTIAL_DEFINITION_KEY))
+                .map(CredentialDefinition::fromJsonString)
+                .ifPresent(supportedCredentialConfiguration::setCredentialDefinition);
 
         String displayKeyPrefix = credentialId + DOT_SEPARATOR + DISPLAY_KEY + DOT_SEPARATOR;
         List<DisplayObject> displayList = dotNotated.entrySet().stream()
@@ -231,7 +273,7 @@ public class SupportedCredentialConfiguration {
                 .map(entry -> DisplayObject.fromJsonString(entry.getValue()))
                 .collect(Collectors.toList());
 
-        if(!displayList.isEmpty()){
+        if (!displayList.isEmpty()){
             supportedCredentialConfiguration.setDisplay(displayList);
         }
 
@@ -247,11 +289,11 @@ public class SupportedCredentialConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SupportedCredentialConfiguration that = (SupportedCredentialConfiguration) o;
-        return Objects.equals(id, that.id) && format == that.format && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(cryptographicSuitesSupported, that.cryptographicSuitesSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(display, that.display) && Objects.equals(vct, that.vct) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(claims, that.claims);
+        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(cryptographicSuitesSupported, that.cryptographicSuitesSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(display, that.display) && Objects.equals(vct, that.vct) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(claims, that.claims);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, cryptographicSuitesSupported, credentialSigningAlgValuesSupported, display, vct, proofTypesSupported, claims);
+        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, cryptographicSuitesSupported, credentialSigningAlgValuesSupported, display, vct, credentialDefinition, proofTypesSupported, claims);
     }
 }

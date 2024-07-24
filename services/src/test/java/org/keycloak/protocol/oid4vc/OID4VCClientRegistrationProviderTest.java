@@ -42,7 +42,7 @@ public class OID4VCClientRegistrationProviderTest {
                 {
                         "Single Supported Credential with format and single-type.",
                         Map.of(
-                                "vc.credential-id.format", Format.JWT_VC.toString(),
+                                "vc.credential-id.format", Format.JWT_VC,
                                 "vc.credential-id.scope", "VerifiableCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredentialConfiguration()
@@ -54,7 +54,7 @@ public class OID4VCClientRegistrationProviderTest {
                 {
                         "Single Supported Credential with format and multi-type.",
                         Map.of(
-                                "vc.credential-id.format", Format.JWT_VC.toString(),
+                                "vc.credential-id.format", Format.JWT_VC,
                                 "vc.credential-id.scope", "AnotherCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredentialConfiguration()
@@ -66,7 +66,7 @@ public class OID4VCClientRegistrationProviderTest {
                 {
                         "Single Supported Credential with format, multi-type and a display object.",
                         Map.of(
-                                "vc.credential-id.format", Format.JWT_VC.toString(),
+                                "vc.credential-id.format", Format.JWT_VC,
                                 "vc.credential-id.scope", "AnotherCredential",
                                 "vc.credential-id.display.0", "{\"name\":\"Another\",\"locale\":\"en\"}"),
                         new OID4VCClient(null, "did:web:test.org",
@@ -80,10 +80,10 @@ public class OID4VCClientRegistrationProviderTest {
                 {
                         "Multiple Supported Credentials.",
                         Map.of(
-                                "vc.first-id.format", Format.JWT_VC.toString(),
+                                "vc.first-id.format", Format.JWT_VC,
                                 "vc.first-id.scope", "AnotherCredential",
                                 "vc.first-id.display.0", "{\"name\":\"First\",\"locale\":\"en\"}",
-                                "vc.second-id.format", Format.SD_JWT_VC.toString(),
+                                "vc.second-id.format", Format.SD_JWT_VC,
                                 "vc.second-id.scope", "MyType",
                                 "vc.second-id.display.0", "{\"name\":\"Second Credential\",\"locale\":\"de\"}",
                                 "vc.second-id.proof_types_supported","{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"),

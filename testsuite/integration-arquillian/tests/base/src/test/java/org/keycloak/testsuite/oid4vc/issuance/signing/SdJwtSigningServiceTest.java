@@ -30,14 +30,19 @@ import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
+import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -54,10 +59,9 @@ import static org.junit.Assert.fail;
 
 public class SdJwtSigningServiceTest extends OID4VCTest {
 
-    private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static KeyWrapper rsaKey = getRsaKey();
 
-    // If an unsupported algorithm is provided, the JWT Sigining Service should not be instantiated.
+    // If an unsupported algorithm is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testUnsupportedAlgorithm() throws Throwable {
         try {
@@ -74,14 +78,15 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                                     "did:web:test.org",
                                     0,
                                     List.of(),
-                                    new StaticTimeProvider(1000),
-                                    Optional.empty()));
+                                    Optional.empty(),
+                                    VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
+                                    CredentialConfigId.from("test-credential")));
         } catch (RunOnServerException ros) {
             throw ros.getCause();
         }
     }
 
-    // If no key is provided, the JWT Sigining Service should not be instantiated.
+    // If no key is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testFailIfNoKey() throws Throwable {
         try {
@@ -193,12 +198,15 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 "did:web:test.org",
                 decoys,
                 visibleClaims,
-                new StaticTimeProvider(1000),
-                keyId);
+                keyId,
+                VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
+                CredentialConfigId.from("test-credential"));
 
         VerifiableCredential testCredential = getTestCredential(claims);
-
-        String sdJwt = signingService.signCredential(testCredential);
+        VCIssuanceContext vcIssuanceContext = new VCIssuanceContext()
+                .setVerifiableCredential(testCredential)
+                .setCredentialConfig(new SupportedCredentialConfiguration());
+        String sdJwt = signingService.signCredential(vcIssuanceContext);
         SignatureVerifierContext verifierContext = null;
         switch (algorithm) {
             case Algorithm.ES256: {
@@ -241,10 +249,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
-            assertEquals("The type should be included", TEST_TYPES.get(0), theToken.getOtherClaims().get("vct"));
-
-            assertEquals("The nbf date should be included", TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue());
-
+            assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
             List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
             if (sds != null && !sds.isEmpty()){
                 assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
@@ -266,7 +271,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 .map(disclosed -> new String(Base64.getUrlDecoder().decode(disclosed)))
                 .map(disclosedString -> {
                     try {
-                        return OBJECT_MAPPER.readValue(disclosedString, List.class);
+                        return JsonSerialization.mapper.readValue(disclosedString, List.class);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }

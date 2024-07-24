@@ -31,6 +31,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
     public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
+    public static final String CODE_REQUEST_PARAM = "pre-authorized_code";
 
     @Override
     public OAuth2GrantType create(KeycloakSession session) {

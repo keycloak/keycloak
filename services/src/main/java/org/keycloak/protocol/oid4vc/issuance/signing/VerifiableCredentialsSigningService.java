@@ -17,7 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
 import org.keycloak.provider.Provider;
 
 /**
@@ -30,8 +33,32 @@ public interface VerifiableCredentialsSigningService<T> extends Provider {
      * Takes a verifiable credential and signs it according to the implementation.
      * Depending on the type of the SigningService, it will return a signed representation of the credential
      *
-     * @param verifiableCredential the credential to sign
+     * @param vcIssuanceContext verifiable credential to sign and context info
      * @return a signed representation
      */
-    T signCredential(VerifiableCredential verifiableCredential);
+    T signCredential(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
+
+    /**
+     * Returns the identifier of this service instance, can be either the format alone,
+     * or the combination between format, credential type and credential configuration id.
+     * @return
+     */
+    String locator();
+
+    String LOCATION_SEPARATOR = "::";
+
+    /**
+     * We are forcing a structure with 3 components. format::type::configId. We assume format is always set, as
+     * implementation of this interface always know their format.
+     *
+     * @param format
+     * @param credentialType
+     * @param vcConfigId
+     * @return
+     */
+    static String locator(String format, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId){
+        return (format == null ? "" : format) + LOCATION_SEPARATOR +
+                (credentialType == null ? "" : credentialType.getValue()) + LOCATION_SEPARATOR +
+                (vcConfigId == null ? "" : vcConfigId.getValue());
+    }
 }
