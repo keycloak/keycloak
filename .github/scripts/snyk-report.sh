@@ -14,7 +14,7 @@ check_github_issue_exists() {
     # Extract the CVE ID
     local CVE_ID=$(echo "$issue_title" | grep -oE '(CVE-[0-9]{4}-[0-9]{4,7}|SNYK-[A-Z]+-[A-Z0-9]+-[0-9]{4,7})')
     local search_url="https://api.github.com/search/issues?q=$CVE_ID+is%3Aissue+sort%3Aupdated-desc+repo:$KEYCLOAK_REPO"
-    local response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$search_url")
+    local response=$(curl -f -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$search_url")
     local count=$(echo "$response" | jq '.total_count')
 
     # Check for bad credentials

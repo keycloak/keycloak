@@ -23,4 +23,4 @@ runs:
       shell: bash
       run: |
         mkdir -p ~/.arquillian/drone/phantomjs/${{ inputs.version }}/
-        curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2 --output ~/.arquillian/drone/phantomjs/${{ inputs.version }}/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2
+        curl -f -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2 --output ~/.arquillian/drone/phantomjs/${{ inputs.version }}/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2
