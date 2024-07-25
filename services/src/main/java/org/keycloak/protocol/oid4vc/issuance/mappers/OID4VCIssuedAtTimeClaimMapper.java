@@ -63,23 +63,27 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
-        subjectPropertyNameConfig.setLabel("Issuance Date Claim Property Name");
-        subjectPropertyNameConfig.setHelpText("Name of the property to contain the iat.");
+        subjectPropertyNameConfig.setLabel("Time Claim Name");
+        subjectPropertyNameConfig.setHelpText("Name of this time claim. Default is iat");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
+        subjectPropertyNameConfig.setDefaultValue("iat");
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
         ProviderConfigProperty truncateToTimeUnit = new ProviderConfigProperty();
         truncateToTimeUnit.setName(TRUNCATE_TO_TIME_UNIT_KEY);
         truncateToTimeUnit.setLabel("Truncate To Time Unit");
-        truncateToTimeUnit.setHelpText("Truncate to time unit");
-        truncateToTimeUnit.setType(ProviderConfigProperty.STRING_TYPE);
+        truncateToTimeUnit.setHelpText("Truncate time to the first second of the MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS or YEARS. Such as to prevent correlation of credentials based on this time value.");
+        truncateToTimeUnit.setType(ProviderConfigProperty.LIST_TYPE);
+        truncateToTimeUnit.setOptions(List.of("MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
         CONFIG_PROPERTIES.add(truncateToTimeUnit);
 
         ProviderConfigProperty valueSource = new ProviderConfigProperty();
         valueSource.setName(VALUE_SOURCE);
-        valueSource.setLabel("Value Source");
-        valueSource.setHelpText("Value Source");
-        valueSource.setType(ProviderConfigProperty.STRING_TYPE);
+        valueSource.setLabel("Source of Value");
+        valueSource.setHelpText("Tells the protocol mapper where to get the information. For now: COMPUTE or VC. Default is compute, in which this protocol mapper computes the current time in seconds.");
+        valueSource.setType(ProviderConfigProperty.LIST_TYPE);
+        valueSource.setOptions(List.of("COMPUTE", "VC"));
+        valueSource.setDefaultValue("COMPUTE");
         CONFIG_PROPERTIES.add(valueSource);
     }
 
