@@ -16,10 +16,10 @@ ifeval::[{project_community}==true]
 endif::[]
 
 ===== JavaScript (client-side)
-* <<_javascript_adapter,JavaScript>>
+* JavaScript
 
 ===== Node.js (server-side)
-* <<_nodejs_adapter,Node.js>>
+* Node.js
 
 
 ifeval::[{project_community}==true]
