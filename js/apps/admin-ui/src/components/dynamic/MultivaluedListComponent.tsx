@@ -42,7 +42,9 @@ export const MultiValuedListComponent = ({
       <Controller
         name={convertToName(name!)}
         control={control}
-        defaultValue={defaultValue ? [defaultValue] : []}
+        defaultValue={
+          stringify ? defaultValue || "" : defaultValue ? [defaultValue] : []
+        }
         render={({ field }) => (
           <KeycloakSelect
             toggleId={name}
