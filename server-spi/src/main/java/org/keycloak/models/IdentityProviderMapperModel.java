@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Specifies a mapping from broker login to user data.
  *
@@ -96,6 +98,9 @@ public class IdentityProviderMapperModel implements Serializable {
 
     public Map<String, List<String>> getConfigMap(String configKey) {
         String configMap = config.get(configKey);
+        if (configMap == null) {
+            return emptyMap();
+        }
 
         try {
             List<StringPair> map = JsonSerialization.readValue(configMap, MAP_TYPE_REPRESENTATION);
