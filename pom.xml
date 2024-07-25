@@ -1415,6 +1415,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <type>test-jar</type>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.infinispan.protostream</groupId>
                 <artifactId>protostream</artifactId>
                 <version>${protostream.version}</version>
