@@ -27,7 +27,9 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
+import org.keycloak.models.IDPSpi;
 import org.keycloak.models.dblock.DBLockSpi;
+import org.keycloak.models.jpa.JpaIDPProviderFactory;
 import org.keycloak.models.jpa.session.JpaRevokedTokensPersisterProviderFactory;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.session.RevokedTokenPersisterSpi;
@@ -74,6 +76,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(DBLockSpi.class)
 
       //required for FederatedIdentityModel
+      .add(IDPSpi.class)
       .add(IdentityProviderSpi.class)
 
       .build();
@@ -88,6 +91,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaClientScopeProviderFactory.class)
       .add(JpaEventStoreProviderFactory.class)
       .add(JpaGroupProviderFactory.class)
+      .add(JpaIDPProviderFactory.class)
       .add(JpaRealmProviderFactory.class)
       .add(JpaRoleProviderFactory.class)
       .add(JpaUpdaterProviderFactory.class)
@@ -120,6 +124,7 @@ public class Jpa extends KeycloakModelParameters {
         cf.spi("client").defaultProvider("jpa")
           .spi("clientScope").defaultProvider("jpa")
           .spi("group").defaultProvider("jpa")
+          .spi("idp").defaultProvider("jpa")
           .spi("role").defaultProvider("jpa")
           .spi("user").defaultProvider("jpa")
           .spi("realm").defaultProvider("jpa")
