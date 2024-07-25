@@ -28,6 +28,7 @@ export const KeycloakDropdown = ({
       popperProps={{
         position: "right",
       }}
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       toggle={(ref) => (
         <MenuToggle
           data-testid={`${rest["data-testid"]}-toggle`}

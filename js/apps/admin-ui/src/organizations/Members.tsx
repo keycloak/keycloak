@@ -113,6 +113,7 @@ export const Members = () => {
           <>
             <ToolbarItem>
               <Dropdown
+                onOpenChange={toggle}
                 toggle={(ref) => (
                   <MenuToggle
                     ref={ref}

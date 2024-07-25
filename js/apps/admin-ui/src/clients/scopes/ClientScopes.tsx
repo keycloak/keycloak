@@ -297,6 +297,7 @@ export const ClientScopes = ({
                 </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
+                    onOpenChange={(isOpen) => setKebabOpen(isOpen)}
                     toggle={(ref) => (
                       <MenuToggle
                         data-testid="kebab"
