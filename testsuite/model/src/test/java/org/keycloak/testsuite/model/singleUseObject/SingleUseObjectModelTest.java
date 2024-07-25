@@ -179,7 +179,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            assertThat(singleUseStore.get(revokedKey), Matchers.notNullValue());
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(true));
         });
 
         setTimeOffset(120);
@@ -190,7 +190,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             // not loaded as it is too old
-            assertThat(singleUseStore.get(revokedKey), Matchers.nullValue());
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
 
             // remove it from the database
             new ClearExpiredRevokedTokens().run(session);
@@ -201,7 +201,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             // not loaded as it has been removed from the database
-            assertThat(singleUseStore.get(revokedKey), Matchers.nullValue());
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
         });
 
     }
