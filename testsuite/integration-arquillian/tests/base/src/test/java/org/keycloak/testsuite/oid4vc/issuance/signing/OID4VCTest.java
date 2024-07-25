@@ -27,10 +27,10 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -53,8 +53,10 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -364,6 +366,26 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                         "userAttribute", attributeName,
                         "supportedCredentialTypes", supportedCredentialTypes)
         );
+        return protocolMapperRepresentation;
+    }
+
+    protected ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource, String supportedCredentialTypes) {
+        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+        protocolMapperRepresentation.setName(supportedCredentialTypes + "-" + subjectProperty + "-oid4vc-issued-at-time-claim-mapper");
+        protocolMapperRepresentation.setProtocol("oid4vc");
+        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+        protocolMapperRepresentation.setProtocolMapper("oid4vc-issued-at-time-claim-mapper");
+
+        Map<String, String> configMap = new HashMap<>();
+        configMap.put("supportedCredentialTypes", supportedCredentialTypes);
+        Optional.ofNullable(subjectProperty)
+                .ifPresent(value -> configMap.put(OID4VCIssuedAtTimeClaimMapper.SUBJECT_PROPERTY_CONFIG_KEY, value));
+        Optional.ofNullable(truncateToTimeUnit)
+                .ifPresent(value -> configMap.put(OID4VCIssuedAtTimeClaimMapper.TRUNCATE_TO_TIME_UNIT_KEY, value));
+        Optional.ofNullable(valueSource)
+                .ifPresent(value -> configMap.put(OID4VCIssuedAtTimeClaimMapper.VALUE_SOURCE, value));
+
+        protocolMapperRepresentation.setConfig(configMap);
         return protocolMapperRepresentation;
     }
 }
