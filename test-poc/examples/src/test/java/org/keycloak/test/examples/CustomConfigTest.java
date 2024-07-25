@@ -6,7 +6,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.annotations.TestAdminClient;
+import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.server.KeycloakTestServerConfig;
 
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.Set;
 @KeycloakIntegrationTest(config = CustomConfigTest.CustomServerConfig.class)
 public class CustomConfigTest {
 
-    @TestAdminClient
+    @InjectAdminClient
     Keycloak adminClient;
 
     @Test

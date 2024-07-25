@@ -1,8 +1,7 @@
 package org.keycloak.test.framework.annotations;
 
+import org.keycloak.test.framework.database.DatabaseConfig;
 import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.realm.DefaultUserConfig;
-import org.keycloak.test.framework.realm.UserConfig;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,11 +10,10 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface TestUser {
+public @interface InjectTestDatabase {
 
-    Class<? extends UserConfig> config() default DefaultUserConfig.class;
+    Class<? extends DatabaseConfig> config() default DatabaseConfig.class;
 
-    LifeCycle lifecycle() default LifeCycle.CLASS;
+    LifeCycle lifecycle() default LifeCycle.GLOBAL;
 
-    String ref() default "default";
 }

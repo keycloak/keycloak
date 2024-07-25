@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.annotations.TestAdminClient;
+import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.page.WelcomePage;
-import org.keycloak.test.framework.annotations.TestWebDriver;
+import org.keycloak.test.framework.annotations.InjectWebDriver;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
@@ -15,10 +15,10 @@ import java.util.List;
 @KeycloakIntegrationTest
 public class WelcomePageTest {
 
-    @TestWebDriver
+    @InjectWebDriver
     WebDriver driver;
 
-    @TestAdminClient
+    @InjectAdminClient
     Keycloak adminClient;
 
     @Test

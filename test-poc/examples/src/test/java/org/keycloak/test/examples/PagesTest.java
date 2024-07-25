@@ -3,16 +3,16 @@ package org.keycloak.test.examples;
 import org.junit.jupiter.api.Test;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.page.LoginPage;
-import org.keycloak.test.framework.annotations.TestPage;
+import org.keycloak.test.framework.annotations.InjectPage;
 import org.keycloak.test.framework.page.WelcomePage;
 
 @KeycloakIntegrationTest
 public class PagesTest {
 
-    @TestPage
+    @InjectPage
     WelcomePage welcomePage;
 
-    @TestPage
+    @InjectPage
     LoginPage loginPage;
 
     @Test

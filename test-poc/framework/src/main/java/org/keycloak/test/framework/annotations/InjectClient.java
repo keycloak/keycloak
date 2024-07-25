@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface TestClient {
+public @interface InjectClient {
 
     Class<? extends ClientConfig> config() default DefaultClientConfig.class;
 
