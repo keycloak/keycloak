@@ -114,6 +114,7 @@ export const MapperList = ({
         toolbarItem={
           <Dropdown
             onSelect={() => setMapperAction(false)}
+            onOpenChange={(isOpen) => setMapperAction(isOpen)}
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}

@@ -40,9 +40,12 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
 
   const optionLabel =
     (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
+  const prefix = attribute.annotations?.[
+    "inputOptionLabelsI18nPrefix"
+  ] as string;
 
   const fetchLabel = (option: string) =>
-    label(props.t, optionLabel[option], option);
+    label(props.t, optionLabel[option], option, prefix);
 
   const convertOptions = (selected: string) =>
     options

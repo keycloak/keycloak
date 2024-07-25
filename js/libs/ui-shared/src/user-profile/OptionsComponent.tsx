@@ -18,6 +18,9 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
 
   const optionLabel =
     (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
+  const prefix = attribute.annotations?.[
+    "inputOptionLabelsI18nPrefix"
+  ] as string;
 
   return (
     <UserProfileGroup {...props}>
@@ -32,7 +35,7 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
                 key={option}
                 id={option}
                 data-testid={option}
-                label={label(props.t, optionLabel[option], option)}
+                label={label(props.t, optionLabel[option], option, prefix)}
                 value={option}
                 isChecked={field.value.includes(option)}
                 onChange={() => {

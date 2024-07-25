@@ -229,6 +229,7 @@ export default function IdentityProvidersSection() {
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
+                    onOpenChange={(isOpen) => setAddProviderOpen(isOpen)}
                     toggle={(ref) => (
                       <MenuToggle
                         ref={ref}

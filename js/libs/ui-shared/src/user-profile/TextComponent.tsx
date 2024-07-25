@@ -20,6 +20,8 @@ export const TextComponent = (props: UserProfileFieldProps) => {
         placeholder={label(
           props.t,
           attribute.annotations?.["inputTypePlaceholder"] as string,
+          attribute.name,
+          attribute.annotations?.["inputOptionLabelsI18nPrefix"] as string,
         )}
         readOnly={attribute.readOnly}
         isRequired={isRequired}

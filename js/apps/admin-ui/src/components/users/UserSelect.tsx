@@ -109,6 +109,7 @@ export const UserSelect = ({
         render={({ field }) => (
           <Select
             id={name!}
+            onOpenChange={toggleOpen}
             toggle={(ref) => (
               <MenuToggle
                 data-testid={name!}
