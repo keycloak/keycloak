@@ -25,6 +25,7 @@ import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.util.concurrent.ActionSequencer;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.health.LoadBalancerCheckProvider;
 import org.keycloak.health.LoadBalancerCheckProviderFactory;
@@ -62,7 +63,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return MultiSiteUtils.isMultiSiteEnabled() && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override

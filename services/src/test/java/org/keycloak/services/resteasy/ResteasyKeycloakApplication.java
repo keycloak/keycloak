@@ -18,6 +18,7 @@
 package org.keycloak.services.resteasy;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
@@ -62,7 +63,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
         singletons.add(new ObjectMapperResolver());
         classes.add(WelcomeResource.class);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+        if (MultiSiteUtils.isMultiSiteEnabled()) {
             // If we are running in multi-site mode, we need to add a resource which to expose
             // an endpoint for the load balancer to gather information whether this site should receive requests or not.
             classes.add(LoadBalancerResource.class);

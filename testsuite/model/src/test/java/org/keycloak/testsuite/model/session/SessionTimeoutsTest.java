@@ -24,6 +24,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -286,7 +287,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     return null;
                 });
 
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                if (MultiSiteUtils.isPersistentSessionsEnabled()) {
                     // The persistent session will write the update data asynchronously, wait for it to arrive.
                     Retry.executeWithBackoff(iteration -> {
                         withRealm(realmId, (session, realm) -> {

@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -214,7 +215,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
     @Test
     @ModelTest
     public void testExpiredAuthSessions(KeycloakSession session) {
-        assumeFalse(Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
+        assumeFalse(InfinispanUtils.isRemoteInfinispan());
         AtomicReference<String> authSessionID = new AtomicReference<>();
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), mainSession -> {
