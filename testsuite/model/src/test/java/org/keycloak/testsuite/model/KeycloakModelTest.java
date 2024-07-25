@@ -601,6 +601,13 @@ public abstract class KeycloakModelTest {
         });
     }
 
+   protected void withRealmConsumer(String realmId, BiConsumer<KeycloakSession, RealmModel> what) {
+       withRealm(realmId, (session, realm) -> {
+          what.accept(session, realm);
+          return null;
+       });
+   }
+
     protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
         return false;
     }
