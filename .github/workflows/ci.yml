@@ -956,9 +956,9 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        run: |
-          cd test-poc
-          mvn clean install
+        env:
+          KC_TEST_BROWSER: chrome-headless
+        run: mvn clean install -f test-poc
 
   check:
     name: Status Check - Keycloak CI

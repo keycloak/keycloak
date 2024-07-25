@@ -4,17 +4,18 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
-public class FirefoxWebDriverSupplier extends AbstractWebDriverSupplier {
+public class FirefoxHeadlessWebDriverSupplier extends AbstractWebDriverSupplier {
 
     @Override
     public String getAlias() {
-        return "firefox";
+        return "firefox-headless";
     }
 
     @Override
     public WebDriver getWebDriver() {
         FirefoxOptions options = new FirefoxOptions();
         setGlobalOptions(options);
+        options.addArguments("-headless");
         return new FirefoxDriver(options);
     }
 }
