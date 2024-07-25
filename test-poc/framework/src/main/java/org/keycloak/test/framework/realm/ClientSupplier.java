@@ -27,7 +27,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
 
     @Override
     public ClientResource getValue(InstanceContext<ClientResource, TestClient> instanceContext) {
-        RealmResource realm = instanceContext.getDependency(RealmResource.class);
+        ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class);
 
         ClientConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         ClientRepresentation clientRepresentation = config.getRepresentation();
@@ -37,7 +37,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
             clientRepresentation.setClientId(clientId);
         }
 
-        Response response = realm.clients().create(clientRepresentation);
+        Response response = realm.admin().clients().create(clientRepresentation);
 
         String path = response.getLocation().getPath();
         String clientId = path.substring(path.lastIndexOf('/') + 1);
@@ -46,7 +46,7 @@ public class ClientSupplier implements Supplier<ClientResource, TestClient> {
 
         instanceContext.addNote(CLIENT_UUID_KEY, clientId);
 
-        return realm.clients().get(clientId);
+        return realm.admin().clients().get(clientId);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.annotations.TestClient;
 import org.keycloak.test.framework.annotations.TestRealm;
 import org.keycloak.test.framework.injection.LifeCycle;
+import org.keycloak.test.framework.realm.ManagedRealm;
 
 import java.util.List;
 
@@ -16,21 +17,23 @@ import java.util.List;
 public class ManagedResources2Test {
 
     @TestRealm(lifecycle = LifeCycle.CLASS)
-    RealmResource realmResource;
+    ManagedRealm realm;
 
     @TestClient
     ClientResource clientResource;
 
     @Test
     public void testCreatedRealm() {
-        Assertions.assertEquals("default", realmResource.toRepresentation().getRealm());
+        Assertions.assertEquals("http://localhost:8080/realms/default", realm.getBaseUrl());
+        Assertions.assertEquals("default", realm.getName());
+        Assertions.assertEquals("default", realm.admin().toRepresentation().getRealm());
     }
 
     @Test
     public void testCreatedClient() {
         Assertions.assertEquals("default", clientResource.toRepresentation().getClientId());
 
-        List<ClientRepresentation> clients = realmResource.clients().findByClientId("default");
+        List<ClientRepresentation> clients = realm.admin().clients().findByClientId("default");
         Assertions.assertEquals(1, clients.size());
     }
 
