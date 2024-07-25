@@ -12,7 +12,7 @@
     "@types/node": "^20.14.12",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-cypress": "^3.3.0",
+    "eslint-plugin-cypress": "^3.4.0",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-mocha": "^10.4.3",
     "eslint-plugin-playwright": "^1.6.2",
