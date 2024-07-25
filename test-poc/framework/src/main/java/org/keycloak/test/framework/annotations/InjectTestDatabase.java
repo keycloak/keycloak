@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface KeycloakTestDatabase {
+public @interface InjectTestDatabase {
 
     Class<? extends DatabaseConfig> config() default DatabaseConfig.class;
 
