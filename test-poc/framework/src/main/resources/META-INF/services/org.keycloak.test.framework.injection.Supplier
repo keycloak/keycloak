@@ -5,7 +5,9 @@ org.keycloak.test.framework.realm.UserSupplier
 org.keycloak.test.framework.server.EmbeddedKeycloakTestServerSupplier
 org.keycloak.test.framework.server.DistributionKeycloakTestServerSupplier
 org.keycloak.test.framework.server.RemoteKeycloakTestServerSupplier
+org.keycloak.test.framework.webdriver.ChromeHeadlessWebDriverSupplier
 org.keycloak.test.framework.webdriver.ChromeWebDriverSupplier
+org.keycloak.test.framework.webdriver.FirefoxHeadlessWebDriverSupplier
 org.keycloak.test.framework.webdriver.FirefoxWebDriverSupplier
 org.keycloak.test.framework.database.DevMemDatabaseSupplier
 org.keycloak.test.framework.database.DevFileDatabaseSupplier
