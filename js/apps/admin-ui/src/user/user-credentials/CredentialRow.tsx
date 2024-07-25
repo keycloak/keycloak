@@ -94,6 +94,7 @@ export const CredentialRow = ({
           popperProps={{
             position: "right",
           }}
+          onOpenChange={toggleKebab}
           toggle={(ref) => (
             <MenuToggle
               ref={ref}

@@ -50,6 +50,7 @@ export const KeycloakCard = ({
               popperProps={{
                 position: "right",
               }}
+              onOpenChange={onDropdownToggle}
               toggle={(ref: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
                   ref={ref}

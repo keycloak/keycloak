@@ -169,6 +169,7 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
+        onOpenChange={(isOpen) => setKebabOpen(isOpen)}
         toggle={(ref) => (
           <MenuToggle
             ref={ref}

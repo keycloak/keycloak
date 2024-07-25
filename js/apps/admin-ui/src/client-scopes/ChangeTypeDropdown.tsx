@@ -38,6 +38,7 @@ export const ChangeTypeDropdown = ({
   return (
     <Select
       aria-label="change-type-to"
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       isOpen={open}
       toggle={(ref) => (
         <MenuToggle

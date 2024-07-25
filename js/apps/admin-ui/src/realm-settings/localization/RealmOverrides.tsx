@@ -384,6 +384,7 @@ export const RealmOverrides = ({
             </Button>
             <ToolbarItem>
               <Dropdown
+                onOpenChange={(isOpen) => setKebabOpen(isOpen)}
                 toggle={(ref) => (
                   <MenuToggle
                     ref={ref}
