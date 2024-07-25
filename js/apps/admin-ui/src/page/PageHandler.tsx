@@ -70,7 +70,7 @@ export const PageHandler = ({
       } else {
         await adminClient.components.create(updatedComponent);
       }
-      addAlert("itemSaveSuccessful");
+      addAlert(t("itemSaveSuccessful"));
     } catch (error) {
       addError("itemSaveError", error);
     }
