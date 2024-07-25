@@ -20,6 +20,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -29,6 +30,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -43,6 +45,8 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -291,6 +295,51 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         } finally {
           setLDAPWritable();
         }
+    }
+
+    @Test
+    public void testUsernameRespectFormatFromExternalStore() {
+        String upperCaseUsername = "JOHNKEYCLOAK3";
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
+            RealmModel appRealm = ctx.getRealm();
+
+            ctx.getLdapModel().getConfig().put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, List.of(LDAPConstants.GIVENNAME));
+            ctx.getLdapModel().getConfig().put(LDAPConstants.RDN_LDAP_ATTRIBUTE, List.of(LDAPConstants.GIVENNAME));
+
+            ComponentModel ldapComponentMapper = LDAPTestUtils.addUserAttributeMapper(appRealm, ctx.getLdapModel(), "givename-mapper", "username", LDAPConstants.GIVENNAME);
+            ldapComponentMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
+            appRealm.updateComponent(ldapComponentMapper);
+
+            appRealm.removeComponent(appRealm.getComponentsStream(ctx.getLdapModel().getId())
+                    .filter(mapper -> UserAttributeLDAPStorageMapperFactory.PROVIDER_ID.equals(mapper.getProviderId()))
+                    .filter((mapper) -> mapper.getName().equals(UserModel.USERNAME))
+                    .findAny().orElse(null));
+
+            appRealm.updateComponent(ctx.getLdapModel());
+
+            MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
+            otherAttrs.put(LDAPConstants.GIVENNAME, List.of(upperCaseUsername));
+
+            LDAPObject john3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, upperCaseUsername, "John", "Doe", "john3@email.org", otherAttrs);
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john3, "Password1");
+        });
+
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealm(), upperCaseUsername);
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertEquals(upperCaseUsername, john.getUsername());
+
+        johnResource = ApiUtil.findUserByUsernameId(testRealm(), upperCaseUsername.toLowerCase());
+        john = johnResource.toRepresentation(true);
+        Assert.assertEquals(upperCaseUsername, john.getUsername());
+
+        loginPage.open();
+        loginPage.login(upperCaseUsername, "Password1");
+        appPage.assertCurrent();
+        testRealm().users().get(john.getId()).logout();
+        loginPage.open();
+        loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
+        appPage.assertCurrent();
     }
 
     private void setLDAPReadOnly() {

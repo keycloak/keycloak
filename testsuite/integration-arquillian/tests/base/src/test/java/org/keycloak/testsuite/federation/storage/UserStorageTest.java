@@ -85,6 +85,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -442,7 +443,7 @@ public class UserStorageTest extends AbstractAuthTest {
     public void testQuery() {
         Set<UserRepresentation> queried = new HashSet<>();
         int first = 0;
-        while (queried.size() < 8) {
+        while (queried.size() < 10) {
             List<UserRepresentation> results = testRealmResource().users().search("", first, 3);
             log.debugf("first=%s, results: %s", first, results.size());
             if (results.isEmpty()) {
@@ -456,7 +457,7 @@ public class UserStorageTest extends AbstractAuthTest {
             usernames.add(user.getUsername());
             log.info(user.getUsername());
         }
-        Assert.assertEquals(9, queried.size());
+        Assert.assertEquals(10, queried.size());
         Assert.assertTrue(usernames.contains("thor"));
         Assert.assertTrue(usernames.contains("zeus"));
         Assert.assertTrue(usernames.contains("apollo"));
@@ -466,6 +467,7 @@ public class UserStorageTest extends AbstractAuthTest {
         Assert.assertTrue(usernames.contains("rob"));
         Assert.assertTrue(usernames.contains("jules"));
         Assert.assertTrue(usernames.contains("danny"));
+        Assert.assertTrue(usernames.contains("UPPERCASE"));
 
         // test searchForUser
         List<UserRepresentation> users = testRealmResource().users().search("tbrady", 0, -1);
@@ -544,7 +546,7 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel userModel = session.users().getUserByUsername(realm, "thor");
             userModel.setSingleAttribute("weapon", longValue);
 
-            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()),
                     containsInAnyOrder("thor"));
 
             // searching here is always case sensitive
@@ -779,7 +781,7 @@ public class UserStorageTest extends AbstractAuthTest {
         });
 
         setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
-        
+
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername(realm, "thor");
@@ -1158,6 +1160,13 @@ public class UserStorageTest extends AbstractAuthTest {
         });
     }
 
+    @Test
+    public void testRespectUsernameFormatFromStorage() {
+        loginSuccessAndLogout("uppercase", "uppercase");
+        UserResource user = ApiUtil.findUserByUsernameId(testRealmResource(), "uppercase");
+        UserRepresentation rep = user.toRepresentation();
+        assertEquals("uppercase".toUpperCase(), rep.getUsername());
+    }
 
     private void assertOrder(List<CredentialModel> creds, String... expectedIds) {
         org.keycloak.testsuite.Assert.assertEquals(expectedIds.length, creds.size());
