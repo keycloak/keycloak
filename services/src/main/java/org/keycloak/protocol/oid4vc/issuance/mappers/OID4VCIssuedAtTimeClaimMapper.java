@@ -80,7 +80,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         ProviderConfigProperty valueSource = new ProviderConfigProperty();
         valueSource.setName(VALUE_SOURCE);
         valueSource.setLabel("Source of Value");
-        valueSource.setHelpText("Tells the protocol mapper where to get the information. For now: COMPUTE or VC. Default is compute, in which this protocol mapper computes the current time in seconds.");
+        valueSource.setHelpText("Tells the protocol mapper where to get the information. For now: COMPUTE or VC. Default is COMPUTE, in which this protocol mapper computes the current time in seconds. With value `VC`, the time is read from the verifiable credential issuance date field.");
         valueSource.setType(ProviderConfigProperty.LIST_TYPE);
         valueSource.setOptions(List.of("COMPUTE", "VC"));
         valueSource.setDefaultValue("COMPUTE");
@@ -104,9 +104,9 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         // truncate is possible. Return iat if not.
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
-                .filter(Objects::nonNull)
+                .filter(i -> i.isEmpty())
                 .map(timeUnitStr -> ChronoUnit.valueOf(timeUnitStr))
-                .map(timeUnit -> iat.truncatedTo(timeUnit))
+                .map(iat::truncatedTo)
                 .orElse(iat);
 
         // Set the value
@@ -119,7 +119,6 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        String id = userSessionModel.getId();
         // NoOp
     }
 
