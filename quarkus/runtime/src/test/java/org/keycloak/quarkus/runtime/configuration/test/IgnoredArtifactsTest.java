@@ -24,9 +24,9 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,6 +44,8 @@ import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_M
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_MYSQL;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_ORACLE;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_POSTGRES;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.test.ConfigurationTest.setSystemProperty;
 
 public class IgnoredArtifactsTest {
 
@@ -124,8 +126,7 @@ public class IgnoredArtifactsTest {
         var notIgnoredWithDefaults = new HashSet<>(notIgnored);
         notIgnoredWithDefaults.addAll(IGNORED_JDBC_FROM_PROPS);
 
-        System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), vendor);
-        try {
+        setSystemProperty(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), vendor, () -> {
             final var resultArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
             assertThat(String.format("Ignored artifacts does not comply with the specified artifacts for '%s' JDBC driver", vendor),
                     resultArtifacts,
@@ -136,38 +137,30 @@ public class IgnoredArtifactsTest {
             assertThat("Ignored artifacts does not contain items for the other JDBC drivers",
                     resultArtifacts,
                     CoreMatchers.hasItems(includedArtifacts.toArray(new String[0])));
-        } finally {
-            System.getProperties().remove(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey());
-        }
+        });
     }
 
     @Test
     public void health() {
-        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-        // Health disabled by default
-        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.HEALTH), is(true));
-
-        System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "true");
-        try {
-            final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-            assertThat(artifacts.containsAll(IgnoredArtifacts.HEALTH), is(false));
-        } finally {
-            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "");
-        }
+        assertIgnoredArtifacts(IgnoredArtifacts.HEALTH, HealthOptions.HEALTH_ENABLED);
     }
 
     @Test
     public void metrics() {
-        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-        // Metrics disabled by default
-        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.METRICS), is(true));
+        assertIgnoredArtifacts(IgnoredArtifacts.METRICS, MetricsOptions.METRICS_ENABLED);
+    }
 
-        System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + MetricsOptions.METRICS_ENABLED.getKey(), "true");
-        try {
+    private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption) {
+        assertIgnoredArtifacts(artifactsSet, enabledOption, true);
+    }
+
+    private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption, boolean disabledByDefault) {
+        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        assertThat(String.format("Expected: %s.\n Actual: %s.", artifactsSet, ignoredArtifacts), ignoredArtifacts.containsAll(artifactsSet), is(disabledByDefault));
+
+        setSystemProperty(NS_KEYCLOAK_PREFIX + enabledOption.getKey(), Boolean.valueOf(disabledByDefault).toString(), () -> {
             final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-            assertThat(artifacts.containsAll(IgnoredArtifacts.METRICS), is(false));
-        } finally {
-            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "");
-        }
+            assertThat(artifacts.containsAll(artifactsSet), is(!disabledByDefault));
+        });
     }
 }
