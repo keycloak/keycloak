@@ -67,9 +67,7 @@ public class AppAuthManager extends AuthenticationManager {
         }
 
         String bearerPart = split[0];
-        if (!bearerPart.equalsIgnoreCase(BEARER)
-                // support DPoP authentication scheme after RFC9449 #7.1
-                && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
+        if (!bearerPart.equalsIgnoreCase(BEARER) && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
             return null;
         }
 

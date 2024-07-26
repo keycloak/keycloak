@@ -144,9 +144,7 @@ public class ProtocolMapperUtils {
                         .filter(Objects::nonNull)
                         .filter(filter);
 
-        return Stream.concat(protocolMapperStream,
-                             /* DPoP must be handled for all grantTypes as defined in RFC9449 section 5 */
-                             DPoPUtil.getTransientProtocolMapper())
+        return Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper())
                 .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 
