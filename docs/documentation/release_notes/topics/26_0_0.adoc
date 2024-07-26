@@ -129,3 +129,9 @@ The `_LEGACY` cookies also served another purpose, which was to allow login from
 not recommended at all in production deployments of Keycloak, it is fairly frequent to access Keycloak over `http` outside
 of `localhost`. As an alternative to the `_LEGACY` cookies Keycloak now doesn't set the `secure` flag and sets `SameSite=Lax`
 instead of `SameSite=None` when it detects an insecure context is used.
+
+= Property `origin` in the `UserRepresentation` is deprecated
+
+The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.
+
+Instead, prefer using the `federationLink` property to obtain the provider to which a user is linked with.

@@ -84,7 +84,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
         // TODO: It should be possibly LDAP_ID (LDAP UUID) used as an externalId inside storageId...
         Assert.assertEquals(storageId.getExternalId(), user.getUsername());
-        Assert.assertNull(user.getFederationLink());
+        Assert.assertNotNull(user.getFederationLink());
     }
 
 

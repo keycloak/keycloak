@@ -421,8 +421,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
         memuser = user(uid).toRepresentation();
         assertNotNull(memuser);
-        assertNotNull(memuser.getOrigin());
-        ComponentRepresentation origin = testRealmResource().components().component(memuser.getOrigin()).toRepresentation();
+        assertNotNull(memuser.getFederationLink());
+        ComponentRepresentation origin = testRealmResource().components().component(memuser.getFederationLink()).toRepresentation();
         Assert.assertEquals("memory", origin.getName());
 
         testRealmResource().users().get(memuser.getId()).remove();
