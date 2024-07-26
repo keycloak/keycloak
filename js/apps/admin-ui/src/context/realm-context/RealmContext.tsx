@@ -1,14 +1,15 @@
-import { PropsWithChildren, useEffect, useMemo, useState } from "react";
-import { useMatch } from "react-router-dom";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   createNamedContext,
   useEnvironment,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { useMatch } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useFetch } from "../../utils/useFetch";
+import { i18n } from "../../i18n/i18n";
 
 type RealmContextType = {
   realm: string;
@@ -41,7 +42,13 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   // Configure admin client to use selected realm when it changes.
-  useEffect(() => adminClient.setConfig({ realmName: realm }), [realm]);
+  useEffect(() => {
+    (async () => {
+      adminClient.setConfig({ realmName: realm });
+      await i18n.loadNamespaces(realm);
+      i18n.setDefaultNamespace(realm);
+    })();
+  }, [realm]);
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     setRealmRepresentation,
