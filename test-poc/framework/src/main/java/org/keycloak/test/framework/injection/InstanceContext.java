@@ -16,6 +16,7 @@ public class InstanceContext<T, A extends Annotation> {
     private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
     private final String ref;
+    private final String realmRef;
     private final Map<String, Object> notes = new HashMap<>();
 
     public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
@@ -25,6 +26,17 @@ public class InstanceContext<T, A extends Annotation> {
         this.requestedValueType = requestedValueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
         this.ref = supplier.getRef(annotation);
+        this.realmRef = supplier.getRealmRef(annotation);
+    }
+
+    public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType, String ref) {
+        this.registry = registry;
+        this.supplier = supplier;
+        this.annotation = annotation;
+        this.requestedValueType = requestedValueType;
+        this.lifeCycle = supplier.getLifeCycle(annotation);
+        this.ref = ref;
+        this.realmRef = supplier.getRealmRef(annotation);
     }
 
     public <D> D getDependency(Class<D> typeClazz) {
@@ -57,6 +69,10 @@ public class InstanceContext<T, A extends Annotation> {
 
     public String getRef() {
         return ref;
+    }
+
+    public String getRealmRef() {
+        return realmRef;
     }
 
     public A getAnnotation() {

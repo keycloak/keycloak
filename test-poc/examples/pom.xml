@@ -53,6 +53,12 @@
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
         </dependency>
+        <!-- Temporary dependency until we figure out how we want to support OAuth -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+            <version>11.13</version>
+        </dependency>
     </dependencies>
 
     <build>

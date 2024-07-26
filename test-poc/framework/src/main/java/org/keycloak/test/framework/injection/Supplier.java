@@ -41,6 +41,20 @@ public interface Supplier<T, S extends Annotation> {
         return "";
     }
 
+    default String getRealmRef(S annotation) {
+        if (annotation != null) {
+            Optional<Method> realmRef = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("realmRef")).findFirst();
+            if (realmRef.isPresent()) {
+                try {
+                    return (String) realmRef.get().invoke(annotation);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return "";
+    }
+
     default LifeCycle getDefaultLifecycle() {
         return LifeCycle.CLASS;
     }
