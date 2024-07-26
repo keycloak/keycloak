@@ -2,6 +2,7 @@ package org.keycloak.test.framework.injection;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.config.Config;
 
 import java.lang.annotation.Annotation;
@@ -14,7 +15,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry {
@@ -39,7 +39,33 @@ public class Registry {
     }
 
     public <T> T getDependency(Class<T> typeClass, InstanceContext dependent) {
-        InstanceContext dependency = getDeployedInstance(typeClass);
+        T dependency;
+        dependency = getDeployedDependency(typeClass, dependent);
+        if (dependency != null) {
+            return dependency;
+        } else {
+            dependency = getRequestedDependency(typeClass, dependent);
+            if(dependency != null) {
+                return dependency;
+            } else {
+                dependency = getUnConfiguredDependency(typeClass, dependent);
+                if(dependency != null) {
+                    return dependency;
+                }
+            }
+        }
+
+        throw new RuntimeException("Dependency not found: " + typeClass);
+    }
+
+    private <T> T getDeployedDependency(Class<T> typeClass, InstanceContext dependent) {
+        InstanceContext dependency;
+        if(!dependent.getRealmRef().equals("")) {
+            dependency = getDeployedInstance(typeClass, dependent.getRealmRef());
+        } else {
+            dependency = getDeployedInstance(typeClass);
+        }
+
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
@@ -51,8 +77,17 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
+        return null;
+    }
 
-        RequestedInstance requestedDependency = getRequestedInstance(typeClass);
+    private <T> T getRequestedDependency(Class<T> typeClass, InstanceContext dependent) {
+        InstanceContext dependency;
+        RequestedInstance requestedDependency;
+        if(!dependent.getRealmRef().equals("")) {
+             requestedDependency = getRequestedInstance(typeClass, dependent.getRealmRef());
+        } else {
+            requestedDependency = getRequestedInstance(typeClass);
+        }
         if (requestedDependency != null) {
             dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
@@ -69,11 +104,20 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
+        return null;
+    }
 
+    private <T> T getUnConfiguredDependency(Class<T> typeClass, InstanceContext dependent) {
+        InstanceContext dependency;
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            dependency = new InstanceContext(this, supplier, null, typeClass);
+            if(!dependent.getRealmRef().equals("")) {
+                dependency = new InstanceContext(this, supplier, supplier.getAnnotationClass().getAnnotation(InjectRealm.class), typeClass, dependent.getRealmRef());
+            } else {
+                dependency = new InstanceContext(this, supplier, null, typeClass);
+            }
+
             dependency.registerDependency(dependent);
             dependency.setValue(supplier.getValue(dependency));
 
@@ -87,8 +131,7 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
-
-        throw new RuntimeException("Dependency not found: " + typeClass);
+        return null;
     }
 
     public void beforeEach(Object testInstance) {
@@ -302,8 +345,16 @@ public class Registry {
         return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
     }
 
+    private InstanceContext getDeployedInstance(Class typeClass, String realmRef) {
+        return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).filter(j -> j.getRef().equals(realmRef)).findFirst().orElse(null);
+    }
+
     private RequestedInstance getRequestedInstance(Class typeClass) {
         return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
+    }
+
+    private RequestedInstance getRequestedInstance(Class typeClass, String realmRef) {
+        return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).filter(j -> j.getRef().equals(realmRef)).findFirst().orElse(null);
     }
 
 }
