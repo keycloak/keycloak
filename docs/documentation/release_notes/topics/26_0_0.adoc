@@ -30,6 +30,11 @@ As a consequence, group-related events like the `GroupRemovedEvent` are no longe
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Persisting revoked access tokens across restarts
+
+In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Keycloak CR supports standard scheduling options
 

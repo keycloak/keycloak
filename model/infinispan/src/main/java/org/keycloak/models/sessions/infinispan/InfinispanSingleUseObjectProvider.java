@@ -27,7 +27,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 
 /**
@@ -41,11 +43,15 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     public static final Logger logger = Logger.getLogger(InfinispanSingleUseObjectProvider.class);
 
+    private final KeycloakSession session;
     private final Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
+    private final boolean persistRevokedTokens;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache) {
+    public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache, boolean persistRevokedTokens) {
+        this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
+        this.persistRevokedTokens = persistRevokedTokens;
         this.tx = new InfinispanKeycloakTransaction();
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
@@ -61,13 +67,22 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
             if (logger.isDebugEnabled()) {
                 logger.debugf(re, "Failed when adding code %s", key);
             }
-
             throw re;
+        }
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            if (!notes.isEmpty()) {
+                throw new ModelException("Notes are not supported for revoked tokens");
+            }
+            session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanSeconds);
         }
     }
 
     @Override
     public Map<String, String> get(String key) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be retrieved");
+        }
+
         SingleUseObjectValueEntity singleUseObjectValueEntity;
 
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
@@ -77,6 +92,10 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public Map<String, String> remove(String key) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+           throw new ModelException("Revoked tokens can't be removed");
+        }
+
         try {
             BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
             SingleUseObjectValueEntity existing = cache.remove(key);
@@ -94,12 +113,20 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be replaced");
+        }
+
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
         return cache.replace(key, new SingleUseObjectValueEntity(notes)) != null;
     }
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            throw new ModelException("Revoked tokens can't be used in putIfAbsent");
+        }
+
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
         BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
 
