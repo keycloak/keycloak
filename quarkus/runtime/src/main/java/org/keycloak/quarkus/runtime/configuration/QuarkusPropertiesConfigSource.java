@@ -57,7 +57,10 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
             return false;
         }
 
-        return NAME.equals(value.getConfigSourceName());
+        // workaround for https://github.com/smallrye/smallrye-config/issues/1207
+        // replace by the following line when fixed:
+        // return NAME.equals(value.getConfigSourceName());
+        return value.getConfigSourceName() != null && value.getConfigSourceName().endsWith(FILE_NAME);
     }
 
     public static Path getConfigurationFile() {

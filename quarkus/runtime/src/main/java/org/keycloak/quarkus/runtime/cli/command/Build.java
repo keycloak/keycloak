@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
+import io.quarkus.runtime.LaunchMode;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -31,7 +32,6 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -131,7 +131,7 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private void cleanTempResources() {
-        if (!ProfileManager.getLaunchMode().isDevOrTest()) {
+        if (!LaunchMode.current().isDevOrTest()) {
             // only needed for dev/testing purposes
             getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
         }
