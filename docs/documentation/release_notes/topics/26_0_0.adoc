@@ -40,7 +40,7 @@ https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Confi
 
 = KeycloakRealmImport CR supports placeholder replacement
 
-The RealmImport CR now exposes spec.placeholders to create environment variables for placeholder replacement in the import.
+The KeycloakRealmImport CR now exposes `spec.placeholders` to create environment variables for placeholder replacement in the import.
 
 For more details, see the
 https://www.keycloak.org/operator/realm-import[Operator Realm Import].
