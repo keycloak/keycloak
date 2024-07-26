@@ -21,6 +21,10 @@ public class ManagedClient {
         return createdRepresentation.getClientId();
     }
 
+    public String getSecret() {
+        return createdRepresentation.getSecret();
+    }
+
     public ClientResource admin() {
         return clientResource;
     }
