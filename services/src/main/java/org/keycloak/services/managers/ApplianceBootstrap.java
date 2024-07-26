@@ -43,7 +43,7 @@ import org.keycloak.utils.StringUtil;
 public class ApplianceBootstrap {
 
     public static final String DEFAULT_TEMP_ADMIN_USERNAME = "temp-admin";
-    public static final String DEFAULT_TEMP_ADMIN_SERVICE = "temp-admin-service";
+    public static final String DEFAULT_TEMP_ADMIN_SERVICE = "temp-admin";
     public static final int DEFAULT_TEMP_ADMIN_EXPIRATION = 120;
 
     private final KeycloakSession session;
