@@ -120,7 +120,7 @@ data:
     clearcache offlineSessions
     clearcache sessions
     clearcache work
-    
+
 # end::infinispan-crossdc-clear-caches[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -138,14 +138,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-actionTokens[]
@@ -165,7 +167,9 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -173,7 +177,7 @@ spec:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-authenticationSessions[]
@@ -193,7 +197,9 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -201,7 +207,7 @@ spec:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-clientSessions[]
@@ -221,14 +227,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-loginFailures[]
@@ -248,7 +256,9 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -256,7 +266,7 @@ spec:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-offlineClientSessions[]
@@ -276,7 +286,9 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -284,7 +296,7 @@ spec:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-offlineSessions[]
@@ -302,16 +314,20 @@ spec:
   template: |-
     distributedCache:
       mode: "SYNC"
-      owners: "2"
+      owners: "1" # <1>
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
+      memory:
+        maxCount: 10000 # <2>
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
-        site-a: # <2>
+        mergePolicy: ALWAYS_REMOVE # <3>
+        site-a: # <4>
           backup:
-            strategy: "SYNC" # <3>
+            strategy: "SYNC" # <5>
             timeout: 13000
             stateTransfer:
               chunkSize: 16
@@ -332,14 +348,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: 5000
+      locking:
+        acquireTimeout: 4000
       stateTransfer:
         chunkSize: 16
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: 4500
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-work[]
@@ -410,5 +428,5 @@ spec:
           namespace: keycloak # <12>
           url: openshift://api.site-a # <13>
           secretName: xsite-token-secret # <14>
-          
+
     # end::infinispan-crossdc[]
