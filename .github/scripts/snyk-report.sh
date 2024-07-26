@@ -14,7 +14,7 @@ check_github_issue_exists() {
     # Extract the CVE ID
     local CVE_ID=$(echo "$issue_title" | grep -oE '(CVE-[0-9]{4}-[0-9]{4,7}|SNYK-[A-Z]+-[A-Z0-9]+-[0-9]{4,7})')
     local search_url="https://api.github.com/search/issues?q=$CVE_ID+is%3Aissue+sort%3Aupdated-desc+repo:$KEYCLOAK_REPO"
-    local response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$search_url")
+    local response=$(curl -f -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$search_url")
     local count=$(echo "$response" | jq '.total_count')
 
     # Check for bad credentials
@@ -52,7 +52,7 @@ create_github_issue() {
     local api_url="https://api.github.com/repos/$KEYCLOAK_REPO/issues"
     local data=$(jq -n --arg title "$title" --arg body "$body" --arg branch "backport/$BRANCH_NAME" \
                  '{title: $title, body: $body, labels: ["status/triage", "kind/cve", "kind/bug", $branch]}')
-    local response=$(curl -s -w "%{http_code}" -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$data" "$api_url")
+    local response=$(curl -f -s -w "%{http_code}" -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$data" "$api_url")
     local http_code=$(echo "$response" | tail -n1)
 
     if [[ $http_code -eq 201 ]]; then
@@ -67,11 +67,11 @@ create_github_issue() {
 update_github_issue() {
     local issue_id="$1"
     local api_url="https://api.github.com/repos/$KEYCLOAK_REPO/issues/$issue_id"
-    local existing_labels=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$api_url" | jq '.labels | .[].name' | jq -s .)
+    local existing_labels=$(curl -f -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$api_url" | jq '.labels | .[].name' | jq -s .)
     local new_label="backport/$BRANCH_NAME"
     local updated_labels=$(echo "$existing_labels" | jq --arg new_label "$new_label" '. + [$new_label] | unique')
     local data=$(jq -n --argjson labels "$updated_labels" '{labels: $labels}')
-    local response=$(curl -s -w "%{http_code}" -X PATCH -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$data" "$api_url")
+    local response=$(curl -f -s -w "%{http_code}" -X PATCH -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$data" "$api_url")
     local http_code=$(echo "$response" | tail -n1)
 
     if [[ $http_code -eq 200 ]]; then
