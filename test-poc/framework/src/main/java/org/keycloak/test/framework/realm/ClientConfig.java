@@ -6,4 +6,8 @@ public interface ClientConfig {
 
     ClientRepresentation getRepresentation();
 
+    default ClientConfigBuilder builder() {
+        return new ClientConfigBuilder();
+    }
+
 }

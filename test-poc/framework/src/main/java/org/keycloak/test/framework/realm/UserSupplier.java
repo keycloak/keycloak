@@ -2,6 +2,7 @@ package org.keycloak.test.framework.realm;
 
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.InjectUser;
 import org.keycloak.test.framework.injection.InstanceContext;
@@ -42,6 +43,7 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
         UserResource userResource = realm.admin().users().get(uuid);
         userRepresentation.setId(uuid);
+
         return new ManagedUser(userRepresentation, userResource);
     }
 

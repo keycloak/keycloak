@@ -6,7 +6,7 @@ public class DefaultRealmConfig implements RealmConfig {
 
     @Override
     public RealmRepresentation getRepresentation() {
-        return new RealmRepresentation();
+        return builder().build();
     }
 
 }

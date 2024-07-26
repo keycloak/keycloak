@@ -6,7 +6,7 @@ public class DefaultClientConfig implements ClientConfig {
 
     @Override
     public ClientRepresentation getRepresentation() {
-        return new ClientRepresentation();
+        return builder().build();
     }
 
 }
