@@ -105,7 +105,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
                 .filter(i -> i.isEmpty())
-                .map(timeUnitStr -> ChronoUnit.valueOf(timeUnitStr))
+                .map(ChronoUnit::valueOf)
                 .map(iat::truncatedTo)
                 .orElse(iat);
 
