@@ -144,8 +144,8 @@ HTTP(S):
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
+                       no value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
@@ -158,7 +158,7 @@ HTTP(S):
                        instead, see the docs for details.
 --https-trust-store-type <type>
                      DEPRECATED. The type of the trust store file. If not given, the type is
-                       automatically detected based on the file name. If 'fips-mode' is set to
+                       automatically detected based on the file extension. If 'fips-mode' is set to
                        'strict' and no value is set, it defaults to 'BCFKS'. Use the System
                        Truststore instead, see the docs for details.
 

@@ -1,5 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.quarkus.vertx.http.runtime.CertificateConfig;
+import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import org.keycloak.common.crypto.FipsMode;
@@ -11,6 +13,7 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -127,6 +130,52 @@ public final class HttpPropertyMappers {
 
     public static void validateConfig() {
         boolean enabled = isHttpEnabled(Configuration.getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()));
+        boolean trustStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey()).isPresent();
+        boolean keyStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_FILE.getKey()).isPresent();
+
+        if (trustStoreFile) {
+            CertificateConfig config = new CertificateConfig();
+
+            config.trustStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey()).map(Paths::get);
+            config.trustStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_PASSWORD.getKey());
+            config.trustStoreFileType = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_TYPE.getKey());
+            config.trustStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-provider");
+            config.trustStoreCertAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-cert-alias");
+            config.trustStoreFiles = Optional.empty();
+
+            try {
+                TlsUtils.computeTrustOptions(config, config.trustStorePassword);
+            } catch (IOException e) {
+                throw new PropertyException(Messages.httpsConfigurationNotSet());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unable to determine 'https-trust-store-type' automatically. " +
+                        "Adjust the file extension or specify the property.");
+            }
+        }
+
+        if (keyStoreFile) {
+            CertificateConfig config = new CertificateConfig();
+
+            config.keyStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_FILE.getKey()).map(Paths::get);
+            config.keyStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_PASSWORD.getKey());
+            config.keyStoreFileType = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey());
+            config.keyStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-provider");
+            config.keyStoreAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias");
+            config.keyStoreAliasPassword = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password");
+            config.keyStoreAliasPasswordKey = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password-key");
+            config.keyStoreKeyAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-key-alias");
+            config.keyFiles = Optional.empty();
+            config.files = Optional.empty();
+
+            try {
+                TlsUtils.computeKeyStoreOptions(config, config.keyStorePassword, config.keyStoreAliasPassword);
+            } catch (IOException e) {
+                throw new PropertyException(Messages.httpsConfigurationNotSet());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unable to determine 'https-key-store-type' automatically. " +
+                        "Adjust the file extension or specify the property.");
+            }
+        }
 
         if (!enabled) {
             Optional<String> value = Configuration.getOptionalKcValue(HttpOptions.HTTPS_CERTIFICATE_FILE.getKey());

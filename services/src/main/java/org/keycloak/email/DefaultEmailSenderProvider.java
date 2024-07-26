@@ -192,7 +192,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.put("mail.smtp.ssl.socketFactory", factory);
             if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
                 props.setProperty("mail.smtp.ssl.trust", "*");
-                props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
+                props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString()); // this should be the default but seems to be impl specific, so set it explicitly just to be sure
+            }
+            else {
+                props.put("mail.smtp.ssl.checkserveridentity", Boolean.TRUE.toString());
             }
         }
     }
