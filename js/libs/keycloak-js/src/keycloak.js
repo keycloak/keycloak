@@ -162,6 +162,10 @@ function Keycloak (config) {
                 kc.acrValues = initOptions.acrValues;
             }
 
+            if (initOptions.forwardParameters) {
+              kc.forwardParameters = initOptions.forwardParameters;
+            }
+
             if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
                 kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
             } else {
@@ -475,6 +479,13 @@ function Keycloak (config) {
 
         if ((options && options.acrValues) || kc.acrValues) {
             url += '&acr_values=' + encodeURIComponent(options.acrValues || kc.acrValues);
+        }
+
+        if ((options && options.forwardParameters) || kc.forwardParameters) {
+          var forwardParameters = (options && options.forwardParameters) || kc.forwardParameters;
+          url = Object.keys(forwardParameters).reduce(function (url, forwardParameter) {
+              return url + "&" + forwardParameter + "=" + encodeURIComponent(forwardParameters[forwardParameter]);
+          }, url);
         }
 
         if (kc.pkceMethod) {
