@@ -403,7 +403,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets) {
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
-        var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
+        String adminSecretName = KeycloakAdminSecretDependentResource.getName(keycloakCR);
+        var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR, adminSecretName);
 
         var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
@@ -425,14 +426,15 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // watch the secrets used by secret key - we don't currently expect configmaps, optional refs, or watch the initial-admin
         TreeSet<String> serverConfigSecretsNames = envVars.stream().map(EnvVar::getValueFrom).filter(Objects::nonNull)
-                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
+                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName)
+                .filter(n -> !n.equals(adminSecretName)).collect(Collectors.toCollection(TreeSet::new));
 
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
 
         allSecrets.addAll(serverConfigSecretsNames);
     }
 
-    private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {
+    private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR, String adminSecretName) {
         // default config values
         List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
 
@@ -464,6 +466,29 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 envVars.add(new EnvVarBuilder().withName(env).withValue(value).build());
             }
         }
+
+        envVars.add(
+                new EnvVarBuilder()
+                        .withName("KEYCLOAK_ADMIN")
+                        .withNewValueFrom()
+                        .withNewSecretKeyRef()
+                        .withName(adminSecretName)
+                        .withKey("username")
+                        .withOptional(false)
+                        .endSecretKeyRef()
+                        .endValueFrom()
+                        .build());
+        envVars.add(
+                new EnvVarBuilder()
+                        .withName("KEYCLOAK_ADMIN_PASSWORD")
+                        .withNewValueFrom()
+                        .withNewSecretKeyRef()
+                        .withName(adminSecretName)
+                        .withKey("password")
+                        .withOptional(false)
+                        .endSecretKeyRef()
+                        .endValueFrom()
+                        .build());
 
         return envVars;
     }
