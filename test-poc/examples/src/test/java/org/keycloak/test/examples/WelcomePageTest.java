@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.page.WelcomePage;
 import org.keycloak.test.framework.annotations.InjectWebDriver;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.page.WelcomePage;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
