@@ -25,10 +25,10 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
     () =>
       access.hasAccess("view-realm")
         ? adminClient.components.findOne({
-            id: (user.federationLink || user.origin)!,
+            id: user.federationLink!,
           })
         : adminClient.userStorageProvider.name({
-            id: (user.federationLink || user.origin)!,
+            id: user.federationLink!,
           }),
     setComponent,
     [],

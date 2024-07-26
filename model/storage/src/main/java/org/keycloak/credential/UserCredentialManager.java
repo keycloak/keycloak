@@ -61,7 +61,7 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
         List<CredentialInput> toValidate = new LinkedList<>(inputs);
 
-        String providerId = StorageId.isLocalStorage(user.getId()) ? user.getFederationLink() : StorageId.providerId(user.getId());
+        String providerId = user.getFederationLink();
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return false;
@@ -80,8 +80,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
     @Override
     public boolean updateCredential(CredentialInput input) {
-        String providerId = StorageId.isLocalStorage(user.getId()) ? user.getFederationLink() : StorageId.providerId(user.getId());
         if (!StorageId.isLocalStorage(user.getId())) throwExceptionIfInvalidUser(user);
+        String providerId = user.getFederationLink();
 
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
@@ -152,8 +152,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
     @Override
     public void disableCredentialType(String credentialType) {
-        String providerId = StorageId.isLocalStorage(user.getId()) ? user.getFederationLink() : StorageId.providerId(user.getId());
         if (!StorageId.isLocalStorage(user.getId())) throwExceptionIfInvalidUser(user);
+        String providerId = user.getFederationLink();
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return;
@@ -172,7 +172,7 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     @Override
     public Stream<String> getDisableableCredentialTypesStream() {
         Stream<String> types = Stream.empty();
-        String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
+        String providerId = user.getFederationLink();
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return types;
@@ -231,7 +231,7 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     private UserStorageCredentialConfigured isConfiguredThroughUserStorage(RealmModel realm, UserModel user, String type) {
-        String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
+        String providerId = user.getFederationLink();
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;

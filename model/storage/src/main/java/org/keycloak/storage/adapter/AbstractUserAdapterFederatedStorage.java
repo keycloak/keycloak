@@ -247,7 +247,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public String getFederationLink() {
-        return null;
+        return StorageId.providerId(getId());
     }
 
     /**

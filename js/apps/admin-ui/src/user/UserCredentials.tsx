@@ -354,7 +354,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     toggleDeleteDialog();
   };
 
-  const useFederatedCredentials = user.federationLink || user.origin;
+  const useFederatedCredentials = user.federationLink;
   const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
 
   useFetch(

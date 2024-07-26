@@ -27,7 +27,6 @@ export default interface UserRepresentation {
   firstName?: string;
   groups?: string[];
   lastName?: string;
-  origin?: string;
   realmRoles?: string[];
   self?: string;
   serviceAccountClientId?: string;

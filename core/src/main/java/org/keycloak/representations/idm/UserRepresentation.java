@@ -67,7 +67,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
         this.setUserProfileMetadata(rep.getUserProfileMetadata());
 
         this.self = rep.getSelf();
-        this.origin = rep.getOrigin();
         this.createdTimestamp = rep.getCreatedTimestamp();
         this.enabled = rep.isEnabled();
         this.totp = rep.isTotp();
@@ -214,19 +213,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setGroups(List<String> groups) {
         this.groups = groups;
-    }
-
-    /**
-     * Returns id of UserStorageProvider that loaded this user
-     *
-     * @return NULL if user stored locally
-     */
-    public String getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(String origin) {
-        this.origin = origin;
     }
 
     public Set<String> getDisableableCredentialTypes() {
