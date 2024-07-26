@@ -23,6 +23,8 @@ import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -39,6 +41,7 @@ import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -590,22 +593,26 @@ public class LogoutEndpoint {
 
         LogoutToken logoutToken = tokenManager.toLogoutToken(encodedLogoutToken).get();
 
+        String idpHint = form.getFirst(AdapterConstants.KC_IDP_HINT);
+
+        Stream<OIDCIdentityProvider> oidcIdentityProviders = null;
+        if (idpHint != null) {
+            // try to lookup specific IdP for backChannel logout by identity provider alias.
+            OIDCIdentityProvider oidcIdentityProvider = tokenManager.getOIDCIdentityProvider(realm, session, idpHint);
+            if (oidcIdentityProvider != null) {
+                oidcIdentityProviders = Stream.of(oidcIdentityProvider);
+            }
+        }
+
+        if (oidcIdentityProviders == null) {
+            oidcIdentityProviders = tokenManager.getOIDCIdentityProviders(realm, session);
+        }
+
         Stream<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(realm,
-                session, encodedLogoutToken, logoutToken)
+                session, oidcIdentityProviders, encodedLogoutToken, logoutToken)
                 .map(idp -> idp.getConfig().getAlias());
 
-        boolean logoutOfflineSessions = Boolean.parseBoolean(logoutToken.getEvents()
-                .getOrDefault(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, false).toString());
-
-        BackchannelLogoutResponse backchannelLogoutResponse;
-
-        if (logoutToken.getSid() != null) {
-            backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases,
-                    logoutOfflineSessions, logoutToken.getSubject());
-        } else {
-            backchannelLogoutResponse = backchannelLogoutFederatedUserId(logoutToken.getSubject(),
-                    identityProviderAliases, logoutOfflineSessions);
-        }
+        BackchannelLogoutResponse backchannelLogoutResponse = executeBackChannelLogout(logoutToken, identityProviderAliases);
 
         if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             String errorMessage = "There was an error during the local logout";
@@ -630,37 +637,65 @@ public class LogoutEndpoint {
                         .type(MediaType.APPLICATION_JSON_TYPE));
     }
 
-    private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
-            Stream<String> identityProviderAliases, boolean logoutOfflineSessions, String federatedUserId) {
+    public BackchannelLogoutResponse executeBackChannelLogout(LogoutToken logoutToken, Stream<String> identityProviderAliases) {
+        BackchannelLogoutResponse backchannelLogoutResponse;
+
+        if (logoutToken.getSid() != null) {
+            backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken, identityProviderAliases);
+        } else {
+            backchannelLogoutResponse = backchannelLogoutFederatedUserId(logoutToken, identityProviderAliases);
+        }
+        return backchannelLogoutResponse;
+    }
+
+    private BackchannelLogoutResponse backchannelLogoutWithSessionId(LogoutToken logoutToken, Stream<String> identityProviderAliases) {
         AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
         backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
+        String sid = logoutToken.getSid();
+        boolean logoutOfflineSessions = TokenUtil.isLogoutOfflineSessions(logoutToken);
+        String federatedUserId = logoutToken.getSubject();
         identityProviderAliases.forEach(identityProviderAlias -> {
-            UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, identityProviderAlias + "." + sessionId);
-
-            if (logoutOfflineSessions) {
-                logoutOfflineUserSessionByBrokerUserId(identityProviderAlias + "." + federatedUserId, identityProviderAlias + "." + sessionId);
-            }
-
-            if (userSession != null) {
-                backchannelLogoutResponse.set(logoutUserSession(userSession));
-            }
+            BackchannelLogoutResponse logoutResponse = backChannelLogoutViaIdpBrokeredSessionId(sid, logoutOfflineSessions, federatedUserId, identityProviderAlias);
+            backchannelLogoutResponse.set(logoutResponse);
         });
 
         return backchannelLogoutResponse.get();
     }
 
-    private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
-                                                                       Stream<String> identityProviderAliases,
-                                                                       boolean logoutOfflineSessions) {
+    private BackchannelLogoutResponse backChannelLogoutViaIdpBrokeredSessionId(String sessionId, boolean logoutOfflineSessions, String federatedUserId, String identityProviderAlias) {
+
+        String brokerSessionId = identityProviderAlias + "." + sessionId;
+        UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
+
+        if (logoutOfflineSessions) {
+            logoutOfflineUserSessionByBrokerUserId(identityProviderAlias + "." + federatedUserId, brokerSessionId);
+        }
+
+        BackchannelLogoutResponse logoutResponse;
+        if (userSession != null) {
+            logoutResponse = logoutUserSession(userSession);
+        } else {
+            logoutResponse = new BackchannelLogoutResponse();
+        }
+        return logoutResponse;
+    }
+
+    private BackchannelLogoutResponse backchannelLogoutFederatedUserId(LogoutToken logoutToken,
+                                                                       Stream<String> identityProviderAliases) {
+
+        String federatedUserId = logoutToken.getSubject();
+        boolean logoutOfflineSessions = TokenUtil.isLogoutOfflineSessions(logoutToken);
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
         backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
 
+            String brokerUserId = identityProviderAlias + "." + federatedUserId;
+
             if (logoutOfflineSessions) {
-                logoutOfflineUserSessions(identityProviderAlias + "." + federatedUserId);
+                logoutOfflineUserSessions(brokerUserId);
             }
 
-            session.sessions().getUserSessionByBrokerUserIdStream(realm, identityProviderAlias + "." + federatedUserId)
+            session.sessions().getUserSessionByBrokerUserIdStream(realm, brokerUserId)
                     .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
                     .forEach(userSession -> {
                         BackchannelLogoutResponse userBackchannelLogoutResponse = this.logoutUserSession(userSession);

@@ -28,6 +28,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
 
 import java.io.IOException;
@@ -235,5 +236,14 @@ public class TokenUtil {
 
         return jwe.getContent();
 
+    }
+
+    public static boolean isLogoutOfflineSessions(LogoutToken logoutToken) {
+        if (logoutToken == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(logoutToken.getEvents()
+                .getOrDefault(TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, false)
+                .toString());
     }
 }

@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -46,6 +47,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -1383,13 +1385,18 @@ public class TokenManager {
     }
 
     public LogoutTokenValidationCode verifyLogoutToken(KeycloakSession session, RealmModel realm, String encodedLogoutToken) {
+        return verifyLogoutToken(session, realm, encodedLogoutToken, null);
+    }
+
+    public LogoutTokenValidationCode verifyLogoutToken(KeycloakSession session, RealmModel realm, String encodedLogoutToken, OIDCIdentityProvider identityProvider) {
+
         Optional<LogoutToken> logoutTokenOptional = toLogoutToken(encodedLogoutToken);
         if (!logoutTokenOptional.isPresent()) {
             return LogoutTokenValidationCode.DECODE_TOKEN_FAILED;
         }
 
         LogoutToken logoutToken = logoutTokenOptional.get();
-        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session).toList();
+        List<OIDCIdentityProvider> identityProviders = identityProvider != null ? List.of(identityProvider) : getOIDCIdentityProviders(realm, session).toList();
         if (identityProviders.isEmpty()) {
             return LogoutTokenValidationCode.COULD_NOT_FIND_IDP;
         }
@@ -1432,11 +1439,22 @@ public class TokenManager {
         }
     }
 
+    public Stream<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel realm, KeycloakSession session, Stream<OIDCIdentityProvider> oidcIdentityProviders, String encodedLogoutToken, LogoutToken logoutToken) {
+        return validateLogoutTokenAgainstIdpProvider(oidcIdentityProviders, encodedLogoutToken, logoutToken);
+    }
 
+    /**
+     * @param realm
+     * @param session
+     * @param encodedLogoutToken
+     * @param logoutToken
+     * @return
+     * @deprecated Use {@link #getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel, KeycloakSession, Stream, String, LogoutToken)}
+     */
+    @Deprecated
     public Stream<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel realm, KeycloakSession session, String encodedLogoutToken, LogoutToken logoutToken) {
         return validateLogoutTokenAgainstIdpProvider(getOIDCIdentityProviders(realm, session), encodedLogoutToken, logoutToken);
     }
-
 
     public Stream<OIDCIdentityProvider> validateLogoutTokenAgainstIdpProvider(Stream<OIDCIdentityProvider> oidcIdps, String encodedLogoutToken, LogoutToken logoutToken) {
             return oidcIdps
@@ -1453,7 +1471,7 @@ public class TokenManager {
                     });
     }
 
-    private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
+    public Stream<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
         try {
             return realm.getIdentityProvidersStream()
                     .map(idpModel ->
@@ -1461,9 +1479,25 @@ public class TokenManager {
                     .filter(OIDCIdentityProvider.class::isInstance)
                     .map(OIDCIdentityProvider.class::cast);
         } catch (IdentityBrokerException e) {
-            logger.warnf("LogoutToken verification with identity provider failed", e.getMessage());
+            logger.warnf("LogoutToken verification with identity provider failed. Error: %s", e.getMessage());
         }
         return Stream.empty();
+    }
+
+    public OIDCIdentityProvider getOIDCIdentityProvider(RealmModel realm, KeycloakSession session, String alias) {
+        IdentityProviderModel idpModel = realm.getIdentityProviderByAlias(alias);
+        if (idpModel == null ){
+            return null;
+        }
+        try {
+            IdentityProvider idp = IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel);
+            if (idp instanceof OIDCIdentityProvider oidcIdp) {
+                return oidcIdp;
+            }
+        } catch (IdentityBrokerException e) {
+            logger.warnf("Identity provider lookup by name %s failed. Error: %s", alias, e.getMessage());
+        }
+        return null;
     }
 
     private boolean checkLogoutTokenForEvents(LogoutToken logoutToken) {

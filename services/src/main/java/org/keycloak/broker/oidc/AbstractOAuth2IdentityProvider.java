@@ -484,7 +484,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         protected final AuthenticationCallback callback;
         protected final RealmModel realm;
         protected final EventBuilder event;
-        private final AbstractOAuth2IdentityProvider provider;
+        protected final AbstractOAuth2IdentityProvider provider;
 
         protected final KeycloakSession session;
 
