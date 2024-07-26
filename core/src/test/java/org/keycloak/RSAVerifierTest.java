@@ -22,22 +22,32 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public abstract class RSAVerifierTest {
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
     // private static X509Certificate[] idpCertificates;
     private static KeyPair idpPair;
     private static KeyPair badPair;
@@ -45,13 +55,9 @@ public abstract class RSAVerifierTest {
     // private static X509Certificate[] clientCertificateChain;
     private AccessToken token;
 
-    @ClassRule
-    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
-
     @BeforeClass
     public static void setupCerts()
-        throws Exception
-    {
+            throws Exception {
         // CryptoIntegration.init(ClassLoader.getSystemClassLoader());
         badPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
         idpPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
@@ -62,12 +68,12 @@ public abstract class RSAVerifierTest {
 
         token = new AccessToken();
         token.type(TokenUtil.TOKEN_TYPE_BEARER)
-                .subject("CN=Client")
-                .issuer("http://localhost:8080/auth/realm")
-                .addAccess("service").addRole("admin");
+             .subject("CN=Client")
+             .issuer("http://localhost:8080/auth/realm")
+             .addAccess("service").addRole("admin");
     }
 
-        @Test
+    @Test
     public void testSimpleVerification() throws Exception {
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -78,30 +84,56 @@ public abstract class RSAVerifierTest {
         Assert.assertEquals("CN=Client", token.getSubject());
     }
 
+    @Test
+    public void testVerificationWithAddedX5cAndJwk() throws Exception {
+        KeyPair caKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        X509Certificate caCertificate = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "root");
+        X509Certificate idpCertificate = CertificateUtils.generateV3Certificate(idpPair,
+                                                                                caKeyPair.getPrivate(),
+                                                                                caCertificate,
+                                                                                "idp");
+        JWK jwk = JWKBuilder.create().rsa(idpPair.getPublic());
+
+        String encoded = new JWSBuilder()
+                .jwk(jwk)
+                .x5c(List.of(idpCertificate, caCertificate))
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
+        TokenVerifier tokenVerifier = TokenVerifier.create(encoded, JsonWebToken.class);
+        verifySkeletonKeyToken(encoded);
+        Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
+        Assert.assertEquals("CN=Client", token.getSubject());
+
+        List<String> x5c = tokenVerifier.getHeader().getX5c();
+        Assert.assertEquals(2, x5c.size());
+        Assert.assertEquals(Base64.encodeBytes(idpCertificate.getEncoded()), x5c.get(0));
+        Assert.assertEquals(Base64.encodeBytes(caCertificate.getEncoded()), x5c.get(1));
+        Assert.assertEquals(JsonSerialization.mapper.convertValue(jwk, Map.class),
+                            JsonSerialization.mapper.convertValue(tokenVerifier.getHeader().getKey(), Map.class));
+    }
+
     private AccessToken verifySkeletonKeyToken(String encoded) throws VerificationException {
         return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm");
     }
 
-   // @Test
-   public void testSpeed() throws Exception
-   {
-       // Took 44 seconds with 50000 iterations
-      byte[] tokenBytes = JsonSerialization.writeValueAsBytes(token);
+    // @Test
+    public void testSpeed() throws Exception {
+        // Took 44 seconds with 50000 iterations
+        byte[] tokenBytes = JsonSerialization.writeValueAsBytes(token);
 
-      long start = System.currentTimeMillis();
-      int count = 50000;
-      for (int i = 0; i < count; i++)
-      {
-          String encoded = new JWSBuilder()
-                  .content(tokenBytes)
-                  .rsa256(idpPair.getPrivate());
+        long start = System.currentTimeMillis();
+        int count = 50000;
+        for (int i = 0; i < count; i++) {
+            String encoded = new JWSBuilder()
+                    .content(tokenBytes)
+                    .rsa256(idpPair.getPrivate());
 
-          verifySkeletonKeyToken(encoded);
+            verifySkeletonKeyToken(encoded);
 
-      }
-      long end = System.currentTimeMillis() - start;
-      System.out.println("took: " + end);
-   }
+        }
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took: " + end);
+    }
 
     @Test
     public void testBadSignature() {
@@ -187,8 +219,8 @@ public abstract class RSAVerifierTest {
     public void testTokenAuth() {
         token = new AccessToken();
         token.subject("CN=Client")
-                .issuer("http://localhost:8080/auth/realms/demo")
-                .addAccess("service").addRole("admin").verifyCaller(true);
+             .issuer("http://localhost:8080/auth/realms/demo")
+             .addAccess("service").addRole("admin").verifyCaller(true);
         token.setEmail("bill@jboss.org");
 
         String encoded = new JWSBuilder()
@@ -234,10 +266,10 @@ public abstract class RSAVerifierTest {
 
     private void verifyAudience(String encodedToken, String expectedAudience) throws VerificationException {
         TokenVerifier.create(encodedToken, AccessToken.class)
-                .publicKey(idpPair.getPublic())
-                .realmUrl("http://localhost:8080/auth/realm")
-                .audience(expectedAudience)
-                .verify();
+                     .publicKey(idpPair.getPublic())
+                     .realmUrl("http://localhost:8080/auth/realm")
+                     .audience(expectedAudience)
+                     .verify();
     }
 
 
