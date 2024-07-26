@@ -304,6 +304,11 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        public Builder<T> mapFrom(Option<?> mapFrom) {
+            this.mapFrom = mapFrom.getKey();
+            return this;
+        }
+
         public Builder<T> mapFrom(String mapFrom) {
             this.mapFrom = mapFrom;
             return this;
