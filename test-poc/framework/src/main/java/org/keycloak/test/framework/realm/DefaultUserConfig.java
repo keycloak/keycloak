@@ -6,7 +6,7 @@ public class DefaultUserConfig implements UserConfig {
 
     @Override
     public UserRepresentation getRepresentation() {
-        return new UserRepresentation();
+        return builder().build();
     }
 
 }
