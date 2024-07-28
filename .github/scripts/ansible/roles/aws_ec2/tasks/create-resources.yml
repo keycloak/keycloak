@@ -1,5 +1,5 @@
 - name: Get Ansible Control Host's public IP
-  shell: curl -ks --ipv4 https://ifconfig.me
+  shell: curl -fks --ipv4 https://ifconfig.me
   register: control_host_ip
   no_log: "{{ no_log_sensitive }}"
 

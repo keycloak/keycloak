@@ -27,9 +27,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +51,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realmId = realm.getId();
         UserModel user = s.users().addUser(realm, "user");
@@ -57,6 +60,8 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -161,6 +166,47 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             Assert.assertNull(singleUseStore.get(key));
         });
+    }
+
+    @Test
+    public void testRevokedTokenIsPresentAfterRestartAndEventuallyExpires() {
+        String revokedKey = UUID.randomUUID() + SingleUseObjectProvider.REVOKED_KEY;
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            singleUseStore.put(revokedKey,  60, Collections.emptyMap());
+        });
+
+        // simulate restart
+        reinitializeKeycloakSessionFactory();
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(true));
+        });
+
+        setTimeOffset(120);
+
+        // simulate restart
+        reinitializeKeycloakSessionFactory();
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            // not loaded as it is too old
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
+
+            // remove it from the database
+            new ClearExpiredRevokedTokens().run(session);
+        });
+
+        setTimeOffset(0);
+
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            // not loaded as it has been removed from the database
+            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
+        });
+
     }
 
     @Test

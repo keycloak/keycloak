@@ -266,9 +266,9 @@ public class ExportImportUtil {
         Assert.assertEquals(1, socialLowercaseLinks.size());
         Assert.assertEquals("lowercasesocialuser@gmail.com", socialLowercaseLinks.get(0).getUserName());
 
-        UserRepresentation foundSocialUser =  testingClient.testing().getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
+        UserRepresentation foundSocialUser =  testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
         Assert.assertEquals(foundSocialUser.getUsername(), socialUser.toRepresentation().getUsername());
-        Assert.assertNull(testingClient.testing().getUserByFederatedIdentity(realm.getRealm(), "facebook", "not-existing", "not-existing"));
+        Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook", "not-existing", "not-existing"));
 
         Assert.assertEquals("facebook1", facebookIdentityRep.getUserId());
         Assert.assertEquals("fbuser1", facebookIdentityRep.getUserName());
@@ -331,15 +331,15 @@ public class ExportImportUtil {
         /////////////////
 
         // Assert that federation link wasn't created during import
-        Assert.assertNull(testingClient.testing().getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
+        Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
 
         // Test builtin authentication flows
-        AuthenticationFlowRepresentation clientFlow = testingClient.testing().getClientAuthFlow(realm.getRealm());
+        AuthenticationFlowRepresentation clientFlow = testingClient.testing(realm.getRealm()).getClientAuthFlow(realm.getRealm());
         Assert.assertEquals(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW, clientFlow.getAlias());
         Assert.assertNotNull(realmRsc.flows().getFlow(clientFlow.getId()));
         Assert.assertTrue(realmRsc.flows().getExecutions(clientFlow.getAlias()).size() > 0);
 
-        AuthenticationFlowRepresentation resetFlow = testingClient.testing().getResetCredFlow(realm.getRealm());
+        AuthenticationFlowRepresentation resetFlow = testingClient.testing(realm.getRealm()).getResetCredFlow(realm.getRealm());
         Assert.assertEquals(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, resetFlow.getAlias());
         Assert.assertNotNull(realmRsc.flows().getFlow(resetFlow.getId()));
         Assert.assertTrue(realmRsc.flows().getExecutions(resetFlow.getAlias()).size() > 0);
@@ -416,13 +416,13 @@ public class ExportImportUtil {
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
 
-        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) { 
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
-            Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-            UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+            Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
+            UserRepresentation otherAppSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
             Assert.assertNotNull(otherAppSA);
             Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
-            UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+            UserRepresentation testAppAuthzSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
             Assert.assertNotNull(testAppAuthzSA);
             Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
 
@@ -471,7 +471,7 @@ public class ExportImportUtil {
         if (mappers == null) {
             return null;
         }
-        
+
         for (ProtocolMapperRepresentation mapper : mappers) {
             if (mapper.getProtocol().equals(type) &&
                 mapper.getName().equals(name)) {

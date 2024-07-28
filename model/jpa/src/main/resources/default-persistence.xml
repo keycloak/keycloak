@@ -50,6 +50,7 @@
         <class>org.keycloak.models.jpa.entities.RequiredActionProviderEntity</class>
         <class>org.keycloak.models.jpa.session.PersistentUserSessionEntity</class>
         <class>org.keycloak.models.jpa.session.PersistentClientSessionEntity</class>
+        <class>org.keycloak.models.jpa.entities.RevokedTokenEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupRoleMappingEntity</class>

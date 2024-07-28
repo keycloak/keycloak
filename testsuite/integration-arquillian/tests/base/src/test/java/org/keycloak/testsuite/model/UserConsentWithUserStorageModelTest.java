@@ -66,6 +66,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
 
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = realmManager.getRealmByName("original");
+            session.getContext().setRealm(realm);
 
             if (realm != null) {
 
@@ -100,6 +101,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
 
             RealmManager realmManager = new RealmManager(currentSession);
             RealmModel realm = realmManager.createRealm("original");
+            currentSession.getContext().setRealm(realm);
 
             UserStorageProviderModel model = new UserStorageProviderModel();
             model.setName("memory");
@@ -311,6 +313,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             // Validate user deleted without any referential constraint errors
             KeycloakSession currentSession = sessionDelete;
             RealmModel realm = currentSession.realms().getRealmByName("original");
+            currentSession.getContext().setRealm(realm);
 
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
             currentSession.users().removeUser(realm, john);

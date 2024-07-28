@@ -6,4 +6,8 @@ public interface RealmConfig {
 
     RealmRepresentation getRepresentation();
 
+    default RealmConfigBuilder builder() {
+        return new RealmConfigBuilder();
+    }
+
 }

@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -179,19 +180,27 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void updateClient() throws ClientRegistrationException {
+        Set<String> realmDefaultClientScopes = adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
+
         OIDCClientRepresentation response = create();
         reg.auth(Auth.token(response));
 
         response.setRedirectUris(Collections.singletonList("http://newredirect"));
         response.setResponseTypes(Arrays.asList("code", "id_token token", "code id_token token"));
         response.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD));
-
         OIDCClientRepresentation updated = reg.oidc().update(response);
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
 
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + updated.getClientId(), updated.getRegistrationClientUri());
         assertTrue(CollectionUtil.collectionEquals(Collections.singletonList("http://newredirect"), updated.getRedirectUris()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD), updated.getGrantTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"), updated.getResponseTypes()));
+        assertTrue(CollectionUtil.collectionEquals(realmDefaultClientScopes, registeredDefaultClientScopes));
     }
 
     @Test
@@ -743,8 +752,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(clientScopes.equals(registeredClientScopes));
 
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
-        assertTrue(clientResource.toRepresentation().getDefaultClientScopes().isEmpty());
-
+        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("basic")));
     }
 
     @Test

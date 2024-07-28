@@ -66,6 +66,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
@@ -82,6 +83,8 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -91,6 +94,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
             Assert.assertEquals(origSessions[0], userSession);
@@ -101,6 +105,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             session.sessions().removeUserSession(realm, session.sessions().getUserSession(realm, origSessions[0].getId()));
             session.sessions().removeUserSession(realm, session.sessions().getUserSession(realm, origSessions[1].getId()));
@@ -108,6 +113,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
             Assert.assertNull(userSession);
@@ -191,7 +197,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
             ClientModel testApp = realm.getClientByClientId("test-app");
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
-            
+
             // assert the client sessions are present
             assertThat(session.sessions().getClientSession(userSession, testApp, clientSession.getId(), false), notNullValue());
             return userSession.getId();

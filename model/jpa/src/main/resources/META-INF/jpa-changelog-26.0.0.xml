@@ -55,4 +55,16 @@
         <addNotNullConstraint tableName="USER_GROUP_MEMBERSHIP" columnName="MEMBERSHIP_TYPE" columnDataType="VARCHAR(255)"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="31296-persist-revoked-access-tokens">
+        <createTable tableName="REVOKED_TOKEN">
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RT" tableName="REVOKED_TOKEN"/>
+    </changeSet>
+
 </databaseChangeLog>

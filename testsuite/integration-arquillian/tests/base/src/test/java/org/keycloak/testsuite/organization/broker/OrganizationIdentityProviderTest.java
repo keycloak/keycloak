@@ -243,19 +243,25 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation idpRepresentation = createRep("master-identity-provider", "oidc");
         adminClient.realm("master").identityProviders().create(idpRepresentation).close();
 
-        getTestingClient().server(TEST_REALM_NAME).run(session -> {
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel organization = provider.getById(orgId);
+        try {
+                getTestingClient().server(TEST_REALM_NAME).run(session -> {
+                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                OrganizationModel organization = provider.getById(orgId);
 
-            RealmModel realm = session.realms().getRealmByName("master");
-            IdentityProviderModel idp = realm.getIdentityProviderByAlias("master-identity-provider");
+                // adjust the session context to use the master realm to be able to retrieve the idp.
+                RealmModel realm = session.realms().getRealmByName("master");
+                RealmModel current = session.getContext().getRealm();
+                session.getContext().setRealm(realm);
+                IdentityProviderModel idp = realm.getIdentityProviderByAlias("master-identity-provider");
 
-            try {
+                // restore the context and try to add the idp.
+                session.getContext().setRealm(current);
                 assertFalse(provider.addIdentityProvider(organization, idp));
-            } finally {
-                realm.removeIdentityProviderByAlias("master-identity-provider");
-            }
-        });
+            });
+
+        } finally {
+            adminClient.realm("master").identityProviders().get("master-identity-provider").remove();
+        }
     }
 
     @Test

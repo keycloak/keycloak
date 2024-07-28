@@ -46,7 +46,7 @@ if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_BOM_URL"); then
     exit 1
 fi
 
-QUARKUS_BOM=$(curl -s "$QUARKUS_BOM_URL")
+QUARKUS_BOM=$(curl -f -s "$QUARKUS_BOM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
 $(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version,quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)

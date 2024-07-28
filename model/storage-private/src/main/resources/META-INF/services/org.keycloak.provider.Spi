@@ -23,4 +23,5 @@ org.keycloak.storage.client.ClientStorageProviderSpi
 org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
 org.keycloak.models.session.UserSessionPersisterSpi
+org.keycloak.models.session.RevokedTokenPersisterSpi
 org.keycloak.cluster.ClusterSpi
