@@ -8,7 +8,7 @@ summary="Learn how to bootstrap and recover admin account.">
 
 == A temporary admin account
 
-A user or service admin account created using one of the methods described below is *temporary*. This means the account should exist only for the duration necessary to perform operations needed to gain permanent and more secure admin access. Various UI/UX elements, such as the Administration Console warning banner, labels, and log messages, will indicate to a {project_name} administrator that the account is temporary.
+A user or service admin account created using one of the methods described below is *temporary*. This means the account should exist only for the duration necessary to perform operations needed to gain permanent and more secure admin access. After that, the account needs to be removed manually. Various UI/UX elements, such as the Administration Console warning banner, labels, and log messages, will indicate to a {project_name} administrator that the account is temporary.
 
 == Bootstrapping a temporary admin account at {project_name} startup
 
@@ -24,7 +24,7 @@ The purpose of these options is solely for bootstrapping temporary admin account
 
 == Bootstrapping an admin user or service account using the dedicated command
 
-The `bootstrap-admin` command can be executed even before the first-ever start of {project_name}. Bear in mind that the server needs to be stopped prior to using this command. Its execution will trigger the creation of the initial master realm, and as a result, the startup options to bootstrap the admin user and service account will be ignored later when the server is started for the first time.
+The `bootstrap-admin` command can be executed even before the first-ever start of {project_name}. Bear in mind that all the {project_name} nodes need to be stopped prior to using this command. Its execution will trigger the creation of the initial master realm, and as a result, the startup options to bootstrap the admin user and service account will be ignored later when the server is started for the first time.
 
 Additionally, it is strongly recommended to use the dedicated command with the same options that the {project_name} server is started with (e.g., `db` options).
 
@@ -34,7 +34,7 @@ To create a temporary admin user, execute the following command:
 
 <@kc.bootstrapadmin parameters="user"/>
 
-If no other parameters are specified and/or no corresponding environment variables are set, the user is prompted to enter the required information. The username or client ID values can be omitted to use the default values. For more information, see the <<Default values>> and <<Environment variables>> sections below.
+If no other parameters are specified and/or no corresponding environment variables are set, the user is prompted to enter the required information. The username value can be omitted to use the default values. For more information, see the <<Default values>> and <<Environment variables>> sections below.
 
 Alternatively, the parameters can be directly specified in the command:
 
@@ -50,17 +50,13 @@ To create a temporary admin service account, execute the following command:
 
 <@kc.bootstrapadmin parameters="service"/>
 
-Similarly, if no corresponding environment variables or additional parameters are set, the user will be prompted to enter the required information. The username or client ID values can be omitted to use the default values. For more information, see the <<Default values>> and <<Environment variables>> sections below.
+Similarly, if no corresponding environment variables or additional parameters are set, the user will be prompted to enter the required information. The client ID value can be omitted to use the default values. For more information, see the <<Default values>> and <<Environment variables>> sections below.
 
 Alternatively, the parameters can be directly specified in the command:
 
 <@kc.bootstrapadmin parameters="service --client-id tmpclient --client-secret:env=SECRET_VAR"/>
 
 This command creates a temporary admin service account with the client ID `tmpclient` and the secret retrieved from the environment variable.
-
-== Admin bootstrapping using the {project_name} operator
-
-For more information on how to bootstrap a temporary admin user or service account using the operator, see the <@links.operator id="advanced-configuration" anchor="operator-admin-bootstrap"/>.
 
 == Regaining access to the realm with an increased security
 
@@ -78,7 +74,7 @@ Finally, the retrieved ID can be used to remove the advanced authentication meth
 
 == Default values
 
-For both the startup and dedicated command scenarios, the username and client ID are optional and default to `temp-admin` and `temp-admin-service`, respectively.
+For both the startup and dedicated command scenarios, the username and client ID are optional and default to `temp-admin` for both the user and service account, respectively.
 
 == Disable the parameters prompt
 
@@ -100,8 +96,8 @@ For the `bootstrap-admin user` command, both username and password can be option
 
 <@kc.bootstrapadmin parameters="user --username:env <YourUsernameEnv> --password:env <YourPassEnv>"/>
 
-For the `bootstrap-admin service` command, the client ID is optional and defaults to temp-admin-service, while the client secret is required to be set as an environment variable:
+For the `bootstrap-admin service` command, the client ID is optional and defaults to `temp-admin`, while the client secret is required to be set as an environment variable:
 
-<@kc.bootstrapadmin parameters="service --client-id:env=<YourClientIdEnv> --client-secret:env=<YourSecretEnv>"/>
+<@kc.bootstrapadmin parameters="service --client-id:env <YourClientIdEnv> --client-secret:env <YourSecretEnv>"/>
 
 </@tmpl.guide>

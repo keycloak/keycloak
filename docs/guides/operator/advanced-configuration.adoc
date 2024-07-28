@@ -314,4 +314,6 @@ When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be
 
 If a master realm has already been created for you cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
 
+For more information on how to bootstrap a temporary admin user or service account and recover lost admin access, refer to the <@links.server id="bootstrap-admin-recovery"/> guide.
+
 </@tmpl.guide>
