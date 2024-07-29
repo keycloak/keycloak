@@ -207,7 +207,7 @@ export default class RealmSettingsPage extends CommonPage {
   #availablePeriodExecutorFld = "available-period";
   #editExecutorBtn =
     '[aria-label="Executors"] > li > div:first-child [data-testid="editExecutor"]';
-  #executorAvailablePeriodInput = "#available-period";
+  #executorAvailablePeriodInput = "[data-testid='available-period']";
 
   #listingPage = new ListingPage();
   #addCondition = "addCondition";
