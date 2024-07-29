@@ -1,5 +1,10 @@
-[[_client_registration_cli]]
-== Automating Client Registration with the CLI
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Client registration CLI"
+priority=60
+summary="Automating Client Registration with the CLI">
 
 The Client Registration CLI is a command-line interface (CLI) tool for application developers to configure new clients in a self-service manner when integrating with {project_name}. It is specifically designed to interact with {project_name} Client Registration REST endpoints.
 
@@ -11,11 +16,11 @@ To allow a particular user to use `Client Registration CLI`, the {project_name} 
 
 
 [[_configuring_a_user_for_client_registration_cli]]
-=== Configuring a new regular user for use with Client Registration CLI
+== Configuring a new regular user for use with Client Registration CLI
 
 .Procedure
 
-. Log in to the Admin Console (for example, http://localhost:8080{kc_admins_path}) as [command]`admin`.
+. Log in to the Admin Console (for example, http://localhost:8080) as [command]`admin`.
 . Select a realm to administer.
 . If you want to use an existing user, select that user to edit; otherwise, create a new user.
 
@@ -28,7 +33,7 @@ To allow a particular user to use `Client Registration CLI`, the {project_name} 
 +
 [NOTE]
 ====
-These permissions grant the user the capability to perform operations without the use of <<_initial_access_token,Initial Access Token>> or <<_registration_access_token,Registration Access Token>>.
+These permissions grant the user the capability to perform operations without the use of Initial Access Token or Registration Access Token (see <@links.securingapps id="client-registration" anchor="_authentication" /> for more information).
 ====
 
 It is possible to not assign any [command]`realm-management` roles to a user. In that case, a user can still log in with the Client Registration CLI but cannot use it without an Initial Access Token. Trying to perform any operations without a token results in a *403 Forbidden* error.
@@ -36,7 +41,7 @@ It is possible to not assign any [command]`realm-management` roles to a user. In
 The administrator can issue Initial Access Tokens from the Admin Console in the Clients area on the *Initial Access Token* tab.
 
 [[_configuring_a_client_for_use_with_client_registration_cli]]
-=== Configuring a client for use with the Client Registration CLI
+== Configuring a client for use with the Client Registration CLI
 
 By default, the server recognizes the Client Registration CLI as the [filename]`admin-cli` client, which is configured automatically for every new realm. No additional client configuration is necessary when logging in with a user name.
 
@@ -64,7 +69,7 @@ When you run the [command]`kcreg config credentials`, use the [command]`--secret
 * With the service account enabled, you can omit specifying the user when running [command]`kcreg config credentials` and only provide the client secret or keystore information.
 
 [[_installing_client_registration_cli]]
-=== Installing the Client Registration CLI
+== Installing the Client Registration CLI
 
 The Client Registration CLI is packaged inside the {project_name} Server distribution. You can find execution scripts inside the [filename]`bin` directory. The Linux script is called [filename]`kcreg.sh`, and the Windows script is called [filename]`kcreg.bat`.
 
@@ -89,7 +94,7 @@ c:\> kcreg
 
 
 [[_using_client_registration_cli]]
-=== Using the Client Registration CLI
+== Using the Client Registration CLI
 
 .Procedure
 
@@ -102,7 +107,7 @@ For example, on:
 +
 [options="npwrap",subs="attributes+"]
 ----
-$ kcreg.sh config credentials --server http://localhost:8080{kc_base_path} --realm demo --user user --client reg-cli
+$ kcreg.sh config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
 $ kcreg.sh create -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]'
 $ kcreg.sh get my_client
 ----
@@ -110,7 +115,7 @@ $ kcreg.sh get my_client
 +
 [options="npwrap",subs="attributes+"]
 ----
-c:\> kcreg config credentials --server http://localhost:8080{kc_base_path} --realm demo --user user --client reg-cli
+c:\> kcreg config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
 c:\> kcreg create -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]"
 c:\> kcreg get my_client
 ----
@@ -138,7 +143,7 @@ c:\> kcreg config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\trustst
 
 
 [[_logging_in]]
-==== Logging in
+=== Logging in
 
 .Procedure
 
@@ -170,7 +175,7 @@ See [filename]`kcreg config credentials --help` for more information about start
 
 
 [[_working_with_alternative_configurations]]
-==== Working with alternative configurations
+=== Working with alternative configurations
 
 By default, the Client Registration CLI automatically maintains a configuration file at a default location, [filename]`./.keycloak/kcreg.config`, under the user's home directory. You can use the [command]`--config` option to point to a different file or location to maintain multiple authenticated sessions in parallel. It is the safest way to perform operations tied to a single configuration file from a single thread.
 
@@ -183,7 +188,7 @@ You might want to avoid storing secrets inside a configuration file by using the
 
 
 [[_initial_access_and_registration_access_tokens]]
-==== Initial Access and Registration Access Tokens
+=== Initial Access and Registration Access Tokens
 
 Developers who do not have an account configured at the {project_name} server they want to use can use the Client Registration CLI. This is possible only when the realm administrator issues a developer an Initial Access Token. It is up to the realm administrator to decide how and when to issue and distribute these tokens. The realm administrator can limit the maximum age of the Initial Access Token and the total number of clients that can be created with it.
 
@@ -223,13 +228,13 @@ When using an Initial Access Token, the server response includes a newly issued 
 
 The Client Registration CLI automatically uses its private configuration file to save and use this token with its associated client. As long as the same configuration file is used for all client operations, the developer does not need to authenticate to read, update, or delete a client that was created this way.
 
-See <<_client_registration, Client Registration>> for more information about Initial Access and Registration Access Tokens.
+See <@links.securingapps id="client-registration" anchor="_authentication" /> for more information about Initial Access and Registration Access Tokens.
 
 Run the [command]`kcreg config initial-token --help` and [command]`kcreg config registration-token --help` commands for more information on how to configure tokens with the Client Registration CLI.
 
 
 [[_performing_crud_operations]]
-==== Creating a client configuration
+=== Creating a client configuration
 
 The first task after authenticating with credentials or configuring an Initial Access Token is usually to create a new client. Often you might want to use a prepared JSON file as a template and set or override some of the attributes.
 
@@ -252,7 +257,7 @@ You can use [command]`kcreg attrs` to list available attributes. Keep in mind th
 template and should not specify them as arguments to the [command]`kcreg create` command.
 
 
-==== Retrieving a client configuration
+=== Retrieving a client configuration
 
 You can retrieve an existing client by using the [command]`kcreg get` command.
 
@@ -287,7 +292,7 @@ C:\> kcreg get myclient -e install > keycloak.json
 Run the [command]`kcreg get --help` command for more information about the [command]`kcreg get` command.
 
 
-==== Modifying a client configuration
+=== Modifying a client configuration
 
 There are two methods for updating a client configuration.
 
@@ -343,7 +348,7 @@ C:\> kcreg update myclient --merge -d redirectUris -f mychanges.json
 Run the [command]`kcreg update --help` command for more information about the [command]`kcreg update` command.
 
 
-==== Deleting a client configuration
+=== Deleting a client configuration
 
 Use the following example to delete a client.
 
@@ -362,7 +367,7 @@ Run the [command]`kcreg delete --help` command for more information about the [c
 
 
 [[_refreshing_invalid_registration_access_tokens]]
-==== Refreshing invalid Registration Access Tokens
+=== Refreshing invalid Registration Access Tokens
 
 When performing a create, read, update, and delete (CRUD) operation using the [command]`--no-config` mode, the Client Registration CLI cannot handle Registration Access Tokens for you. In that case, it is possible to lose track of the most recently issued Registration Access Token for a client, which makes it impossible to perform any further CRUD operations on that client without authenticating with an account that has *manage-clients* permissions.
 
@@ -372,8 +377,10 @@ Run the [command]`kcreg update-token --help` command for more information about 
 
 
 [[_troubleshooting_2]]
-=== Troubleshooting
+== Troubleshooting
 
 * Q: When logging in, I get an error: *Parameter client_assertion_type is missing [invalid_client]*.
 +
 A: This error means your client is configured with [filename]`Signed JWT` token credentials, which means you have to use the [command]`--keystore` parameter when logging in.
+
+</@tmpl.guide>

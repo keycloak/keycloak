@@ -125,4 +125,5 @@
 
 :section: guide
 :sections: guides
+:securing_apps_name: Securing applications Guides
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
