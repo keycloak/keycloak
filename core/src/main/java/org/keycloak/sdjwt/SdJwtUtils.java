@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwtUtils {
@@ -116,6 +116,15 @@ public class SdJwtUtils {
         }
 
         return claim.textValue();
+    }
+
+    public static JsonNode deepClone(JsonNode node) {
+        try {
+            byte[] serializedNode = mapper.writeValueAsBytes(node);
+            return mapper.readTree(serializedNode);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static ArraySpacedPrettyPrinter arraySpacedPrettyPrinter = new ArraySpacedPrettyPrinter();

@@ -395,7 +395,8 @@ public class SdJwtVerificationContext {
         Set<String> visitedDigests = new HashSet<>();
         Set<String> visitedDisclosureStrings = new HashSet<>();
         var disclosedPayload = validateViaRecursiveDisclosing(
-                issuerSignedJwt.getPayload(), visitedSalts, visitedDigests, visitedDisclosureStrings);
+                SdJwtUtils.deepClone(issuerSignedJwt.getPayload()),
+                visitedSalts, visitedDigests, visitedDisclosureStrings);
 
         // Validate all disclosures where visited
         validateDisclosuresVisits(visitedDisclosureStrings);

@@ -66,6 +66,13 @@ public abstract class SdJwtVerificationTest {
     }
 
     @Test
+    public void testSdJwtVerification_EnforceIdempotence() throws VerificationException {
+            var sdJwt = exampleFlatSdJwtV1().build();
+            sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+            sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+    }
+
+    @Test
     public void testSdJwtVerification_SdJwtWithUndisclosedNestedFields() throws VerificationException {
         var sdJwt = exampleSdJwtWithUndisclosedNestedFieldsV1().build();
         sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
