@@ -16,7 +16,7 @@ Client Policies realize the following points mentioned as follows.
 
 Setting policies on what configuration a client can have::
     Configuration settings on the client can be enforced by client policies during client creation/update, but also during OpenID Connect requests to {project_name} server, which are related to particular client.
-    {project_name} supports similar thing also through the Client Registration Policies described in the link:{adapterguide_link}#_client_registration_policies[{adapterguide_name}].
+    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
     However, Client Registration Policies can only cover OIDC Dynamic Client Registration. Client Policies cover not only what Client Registration Policies can do, but other client
     registration and configuration ways. The current plans are for Client Registration to be replaced by Client Policies.
 
@@ -165,7 +165,7 @@ There is JSON Editor available in the Admin Console, which simplifies the creati
 
 == Backward Compatibility
 
-Client Policies can replace Client Registration Policies described in the link:{adapterguide_link}#_client_registration_policies[{adapterguide_name}].
+Client Policies can replace Client Registration Policies described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
 However, Client Registration Policies also still co-exist. This means that for example during a Dynamic Client Registration request to create/update a client, both client policies and
 client registration policies are applied.
 

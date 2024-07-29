@@ -91,7 +91,7 @@ on the client advanced settings, which triggers the token introspection.
 
 The dynamic client registration endpoint is used to dynamically register clients.
 
-For more details, see the <<_client_registration,Client Registration chapter>> and the
+For more details, see the <@links.securingapps id="client-registration" /> {section} and the
 https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
 
 [[_token_revocation_endpoint]]
