@@ -2,7 +2,9 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.annotations.InjectClient;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.InjectUser;
@@ -15,63 +17,51 @@ import org.keycloak.test.framework.realm.RealmConfig;
 @KeycloakIntegrationTest
 public class MultipleInstancesTest {
 
-    @InjectRealm
-    ManagedRealm realm1;
+    @InjectAdminClient
+    Keycloak adminClient;
 
     @InjectRealm
-    ManagedRealm realm2;
+    ManagedRealm realmDef1;
 
-    @InjectRealm(ref = "another", config = CustomRealmConfig.class)
-    ManagedRealm realm3;
+    @InjectRealm
+    ManagedRealm realmDef2;
 
-    @InjectRealm(ref = "anotherOne")
-    ManagedRealm realm4;
+    @InjectRealm(ref = "A", config = CustomRealmConfig.class)
+    ManagedRealm realmA;
 
     @InjectClient(ref = "client1")
-    ManagedClient client;
+    ManagedClient client1;
 
-    @InjectClient
-    ManagedClient client2;
-
-    @InjectUser(realmRef = "default")
+    @InjectUser(ref = "user1", realmRef = "default")
     ManagedUser user1;
 
-    @InjectUser(realmRef = "another")
+    @InjectUser(ref = "user2", realmRef = "A")
     ManagedUser user2;
 
-    @InjectUser(ref = "another", realmRef = "another")
+    @InjectUser(ref = "user3", realmRef = "A")
     ManagedUser user3;
 
-    @InjectUser(ref = "anotherOne", realmRef = "anotherOne")
+    @InjectUser(ref = "user4", realmRef = "B")
     ManagedUser user4;
-
-    @InjectUser(realmRef = "anotherTwo")
-    ManagedUser user5;
-
-    @InjectUser(ref = "anotherTwo", realmRef = "anotherTwo")
-    ManagedUser user6;
 
     @Test
     public void testMultipleInstances() {
-        Assertions.assertEquals("default", realm1.getName());
-        Assertions.assertEquals("default", realm2.getName());
-        Assertions.assertEquals(realm1, realm2);
+        Assertions.assertEquals("default", realmDef1.getName());
+        Assertions.assertEquals("default", realmDef2.getName());
+        Assertions.assertSame(realmDef1, realmDef2);
 
-        Assertions.assertEquals("another", realm3.getName());
+        Assertions.assertEquals("A", realmA.getName());
+    }
 
-        Assertions.assertEquals("client1", client.getClientId());
-        Assertions.assertEquals("default", client2.getClientId());
+    @Test
+    public void testRealmRef() {
+        Assertions.assertFalse(realmDef1.admin().clients().findByClientId("client1").isEmpty());
 
-        Assertions.assertEquals("client1", client.getClientId());
-        Assertions.assertEquals("default", client2.getClientId());
+        Assertions.assertEquals(1, realmDef1.admin().users().count());
+        Assertions.assertEquals(2, realmA.admin().users().count());
 
-        Assertions.assertEquals("default", realm1.admin().toRepresentation().user(user1.getUsername()).getUsername());
-        Assertions.assertEquals("default", realm3.admin().toRepresentation().user(user2.getUsername()).getUsername());
-        Assertions.assertEquals("another", realm3.admin().toRepresentation().user(user3.getUsername()).getUsername());
-
-        Assertions.assertNotNull(user4);
-        Assertions.assertNotNull(user5);
-        Assertions.assertNotNull(user6);
+        Assertions.assertNotNull(adminClient.realm("B"));
+        Assertions.assertNotNull(adminClient.realm("B").users().get("user4"));
     }
 
 

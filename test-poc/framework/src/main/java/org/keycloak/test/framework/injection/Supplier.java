@@ -13,6 +13,20 @@ public interface Supplier<T, S extends Annotation> {
 
     T getValue(InstanceContext<T, S> instanceContext);
 
+    default Class<?> getConfig(S annotation) {
+        if (annotation != null) {
+            Optional<Method> config = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("config")).findFirst();
+            if (config.isPresent()) {
+                try {
+                    return (Class<?>) config.get().invoke(annotation);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
     default LifeCycle getLifeCycle(S annotation) {
         if (annotation != null) {
             Optional<Method> lifecycle = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("lifecycle")).findFirst();

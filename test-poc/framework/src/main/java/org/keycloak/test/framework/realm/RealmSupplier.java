@@ -29,7 +29,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
         KeycloakTestServer server = instanceContext.getDependency(KeycloakTestServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class);
 
-        RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+        RealmConfig config = (RealmConfig) SupplierHelpers.getInstance(instanceContext.getConfig());
         RealmRepresentation realmRepresentation = config.getRepresentation();
 
         if (realmRepresentation.getRealm() == null) {
