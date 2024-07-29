@@ -437,11 +437,15 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             responseBuilder.getAccessToken().setSessionId(null);
         }
 
+        String issuedTokenType;
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                 && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
                 && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+            issuedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
+        } else {
+            issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
@@ -450,6 +454,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         AccessTokenResponse res = responseBuilder.build();
+        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
+
         event.detail(Details.AUDIENCE, targetClient.getClientId())
             .user(targetUser);
 
