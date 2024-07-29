@@ -4,6 +4,8 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.config.Config;
+import org.keycloak.test.framework.realm.DefaultRealmConfig;
+import org.keycloak.test.framework.realm.ManagedRealm;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -112,8 +114,8 @@ public class Registry {
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            if(!dependent.getRealmRef().equals("")) {
-                dependency = new InstanceContext(this, supplier, supplier.getAnnotationClass().getAnnotation(InjectRealm.class), typeClass, dependent.getRealmRef());
+            if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
+                dependency = new InstanceContext(this, supplier, typeClass, dependent.getRealmRef(), DefaultRealmConfig.class);
             } else {
                 dependency = new InstanceContext(this, supplier, null, typeClass);
             }

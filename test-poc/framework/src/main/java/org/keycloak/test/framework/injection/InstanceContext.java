@@ -14,6 +14,7 @@ public class InstanceContext<T, A extends Annotation> {
     private final Set<InstanceContext<T, A>> dependencies = new HashSet<>();
     private T value;
     private Class<? extends T> requestedValueType;
+    private final Class<?> config;
     private LifeCycle lifeCycle;
     private final String ref;
     private final String realmRef;
@@ -24,19 +25,21 @@ public class InstanceContext<T, A extends Annotation> {
         this.supplier = supplier;
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
+        this.config = supplier.getConfig(annotation);
         this.lifeCycle = supplier.getLifeCycle(annotation);
         this.ref = supplier.getRef(annotation);
         this.realmRef = supplier.getRealmRef(annotation);
     }
 
-    public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType, String ref) {
+    public InstanceContext(Registry registry, Supplier<T, A> supplier, Class<? extends T> requestedValueType, String ref, Class<?> config) {
         this.registry = registry;
         this.supplier = supplier;
-        this.annotation = annotation;
+        this.annotation = null;
         this.requestedValueType = requestedValueType;
-        this.lifeCycle = supplier.getLifeCycle(annotation);
+        this.config = config;
+        this.lifeCycle = supplier.getDefaultLifecycle();
         this.ref = ref;
-        this.realmRef = supplier.getRealmRef(annotation);
+        this.realmRef = "";
     }
 
     public <D> D getDependency(Class<D> typeClazz) {
@@ -61,6 +64,10 @@ public class InstanceContext<T, A extends Annotation> {
 
     public Class<? extends T> getRequestedValueType() {
         return requestedValueType;
+    }
+
+    public Class<?> getConfig() {
+        return config;
     }
 
     public LifeCycle getLifeCycle() {
