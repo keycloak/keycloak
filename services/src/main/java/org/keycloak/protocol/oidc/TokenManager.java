@@ -46,7 +46,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -959,7 +958,7 @@ public class TokenManager {
                                     ClientSessionContext clientSessionCtx, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
-        token.type(TokenUtil.TOKEN_TYPE_BEARER);
+        token.type(formatTokenType(client, token));
         if (UserSessionModel.SessionPersistenceState.TRANSIENT.equals(session.getPersistenceState())) {
             token.subject(user.getId());
         }
@@ -1061,7 +1060,7 @@ public class TokenManager {
             this.session = session;
             this.userSession = userSession;
             this.clientSessionCtx = clientSessionCtx;
-            this.responseTokenType = formatTokenType(client);
+            this.responseTokenType = formatTokenType(client, null);
         }
 
         public AccessToken getAccessToken() {
@@ -1078,6 +1077,7 @@ public class TokenManager {
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
             this.accessToken = accessToken;
+            this.responseTokenType = formatTokenType(client, accessToken);
             return this;
         }
         public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
@@ -1098,6 +1098,7 @@ public class TokenManager {
         public AccessTokenResponseBuilder generateAccessToken() {
             UserModel user = userSession.getUser();
             accessToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+            responseTokenType = formatTokenType(client, accessToken);
             return this;
         }
 
@@ -1136,10 +1137,11 @@ public class TokenManager {
         }
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
-            refreshToken = new RefreshToken(accessToken);
+            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+            final AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
             clientSession.setTimestamp(refreshToken.getIat().intValue());
             UserSessionModel userSession = clientSession.getUserSession();
             userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
@@ -1158,6 +1160,19 @@ public class TokenManager {
             } else {
                 refreshToken.exp(getExpiration(false));
             }
+        }
+
+       /**
+        * RFC9449 chapter 5<br/>
+        * Refresh tokens issued to confidential clients are not bound to the DPoP proof public key because
+        * they are already sender-constrained with a different existing mechanism.<br/>
+        * <br/>
+        * Based on the definition above the confirmation is only returned for public-clients.
+        */
+        private AccessToken.Confirmation getConfirmation(AuthenticatedClientSessionModel clientSession,
+                                                         AccessToken accessToken) {
+            final boolean isPublicClient = clientSession.getClient().isPublicClient();
+            return isPublicClient ? accessToken.getConfirmation() : null;
         }
 
         private Long getExpiration(boolean offline) {
@@ -1314,11 +1329,13 @@ public class TokenManager {
 
     }
 
-    private String formatTokenType(ClientModel client) {
+    private String formatTokenType(ClientModel client, AccessToken accessToken) {
+        final String tokenType = Optional.ofNullable(accessToken).map(AccessToken::getType)
+                                                                 .orElse(TokenUtil.TOKEN_TYPE_BEARER);
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseLowerCaseInTokenResponse()) {
-            return TokenUtil.TOKEN_TYPE_BEARER.toLowerCase();
+            return tokenType.toLowerCase();
         }
-        return TokenUtil.TOKEN_TYPE_BEARER;
+        return tokenType;
     }
 
     public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {

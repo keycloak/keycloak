@@ -48,7 +48,6 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -56,6 +55,7 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.DPoPUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -73,7 +73,6 @@ public class TokenEndpoint {
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
     private OIDCAdvancedConfigWrapper clientConfig;
-    private DPoP dPoP;
 
     private final KeycloakSession session;
 
@@ -136,7 +135,19 @@ public class TokenEndpoint {
             checkParameterDuplicated();
         }
 
-        OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes, formParams, event, cors, tokenManager, dPoP);
+        /*
+         * To request an access token that is bound to a public key using DPoP, the client MUST provide a valid DPoP
+         * proof JWT in a DPoP header when making an access token request to the authorization server's token endpoint.
+         * This is applicable for all access token requests regardless of grant type (e.g., the common
+         * authorization_code and refresh_token grant types and extension grants such as the JWT
+         * authorization grant [RFC7523])
+         */
+        DPoPUtil.retrieveDPoPHeaderIfPresent(session, clientConfig, event, cors).ifPresent(dPoP -> {
+            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
+        });
+
+        OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
+                                                                      formParams, event, cors, tokenManager);
         return grant.process(context);
     }
 
