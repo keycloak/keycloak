@@ -477,31 +477,39 @@ public class ClientTest extends AbstractAdminTest {
         newClient.setClientId(client.getClientId());
         newClient.setBaseUrl("http://baseurl");
 
-        realm.clients().get(client.getId()).update(newClient);
+        ClientResource clientRes = realm.clients().get(client.getId());
+        clientRes.update(newClient);
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
-        ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
+        ClientRepresentation storedClient = clientRes.toRepresentation();
 
+        assertNull(storedClient.getSecret());
+        assertNull(clientRes.getSecret().getValue());
         assertClient(client, storedClient);
 
-        newClient.setSecret("new-secret");
+        client.setPublicClient(false);
+        newClient.setPublicClient(client.isPublicClient());
+        client.setSecret("new-secret");
+        newClient.setSecret(client.getSecret());
 
-        realm.clients().get(client.getId()).update(newClient);
+        clientRes.update(newClient);
 
         newClient.setSecret("**********"); // secrets are masked in events
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
-        storedClient = realm.clients().get(client.getId()).toRepresentation();
+        storedClient = clientRes.toRepresentation();
         assertClient(client, storedClient);
 
+        storedClient.setSecret(null);
         storedClient.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
 
-        realm.clients().get(storedClient.getId()).update(storedClient);
-        storedClient = realm.clients().get(client.getId()).toRepresentation();
+        clientRes.update(storedClient);
+        storedClient = clientRes.toRepresentation();
 
         assertFalse(storedClient.getAttributes().containsKey(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+        assertClient(client, storedClient);
     }
 
     @Test
@@ -931,6 +939,7 @@ public class ClientTest extends AbstractAdminTest {
         if (client.getBaseUrl() != null) Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
         if (client.isSurrogateAuthRequired() != null) Assert.assertEquals(client.isSurrogateAuthRequired(), storedClient.isSurrogateAuthRequired());
         if (client.getClientAuthenticatorType() != null) Assert.assertEquals(client.getClientAuthenticatorType(), storedClient.getClientAuthenticatorType());
+        if (client.getSecret() != null) Assert.assertEquals(client.getSecret(), storedClient.getSecret());
 
         if (client.getNotBefore() != null) {
             Assert.assertEquals(client.getNotBefore(), storedClient.getNotBefore());
