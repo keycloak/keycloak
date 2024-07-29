@@ -43,6 +43,13 @@ The Keycloak CR now exposes first class properties for controlling the schedulin
 For more details, see the
 https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Configuration].
 
+= KeycloakRealmImport CR supports placeholder replacement
+
+The KeycloakRealmImport CR now exposes `spec.placeholders` to create environment variables for placeholder replacement in the import.
+
+For more details, see the
+https://www.keycloak.org/operator/realm-import[Operator Realm Import].
+
 = Configuring the LDAP Connection Pool
 
 In this release, the LDAP connection pool configuration relies solely on system properties.
