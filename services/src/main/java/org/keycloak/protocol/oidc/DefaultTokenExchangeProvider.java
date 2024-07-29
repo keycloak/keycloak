@@ -422,7 +422,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
-        responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
         if (audience != null) {
             responseBuilder.getAccessToken().addAudience(audience);
@@ -441,7 +440,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
                 && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.generateRefreshToken();
-            responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
