@@ -76,7 +76,8 @@ public class PersistentSessionsWorker {
 
         private void process(ArrayBlockingQueue<PersistentUpdate> queue) throws InterruptedException {
             ArrayList<PersistentUpdate> batch = new ArrayList<>();
-            PersistentUpdate polled = queue.poll(100, TimeUnit.MILLISECONDS);
+            // Timeout is only a backup if interrupting the worker task in the stop() method didn't work as expected because someone else swallowed the interrupted flag.
+            PersistentUpdate polled = queue.poll(1, TimeUnit.SECONDS);
             if (polled != null) {
                 batch.add(polled);
                 queue.drainTo(batch, maxBatchSize - 1);
