@@ -189,7 +189,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             component.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
-        return metadataMap.computeIfAbsent(context, createUserDefinedProfileDecorator(session, decoratedMetadata, component));
+        return metadataMap.computeIfAbsent(context, createUserDefinedProfileDecorator(session, decoratedMetadata, component)).clone();
     }
 
     @Override
