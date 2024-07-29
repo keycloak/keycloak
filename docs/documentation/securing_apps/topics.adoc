@@ -8,8 +8,6 @@ include::topics/overview/terminology.adoc[]
 
 include::topics/oidc/oidc-overview.adoc[]
 
-include::topics/oidc/javascript-adapter.adoc[]
-
 ifeval::[{project_community}==true]
 include::topics/oidc/mod-auth-openidc.adoc[]
 endif::[]
