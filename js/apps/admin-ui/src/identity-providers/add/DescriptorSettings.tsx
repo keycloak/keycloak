@@ -297,6 +297,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               name="config.useMetadataDescriptorUrl"
               label={t("useMetadataDescriptorUrl")}
               isDisabled={readOnly}
+              stringify
             />
             {useMetadataDescriptorUrl !== "true" && (
               <TextAreaControl
