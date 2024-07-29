@@ -31,6 +31,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -76,7 +77,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         logger.tracef("Adding %s.put(%S)", cache.getName(), key);
 
         if (tasks.containsKey(key)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
+            throw new IllegalStateException("Can't add entry: task " + tasks.get(key) + " in progress for session");
         }
 
         tasks.put(key, new PutOperation<>(key, value, lifespan, timeUnit));
@@ -86,9 +87,11 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         logger.tracef("Adding %s.replace(%S)", cache.getName(), key);
 
         Operation<K, V> existing = tasks.get(key);
-        if (existing != null) {
+        if (existing != null && existing != TOMBSTONE && !(existing instanceof RemoteInfinispanKeycloakTransaction.RemoveOperation<K,V>)) {
             if (existing.hasValue()) {
                 tasks.put(key, existing.update(value, lifespan, timeUnit));
+            } else {
+                throw new IllegalStateException("Can't replace entry: task " + existing + " in progress for session");
             }
             return;
         }
@@ -101,7 +104,8 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
 
         Operation<K, V> existing = tasks.get(key);
         if (existing != null && existing.canRemove()) {
-            tasks.remove(key);
+            //noinspection unchecked
+            tasks.put(key, (Operation<K, V>) TOMBSTONE);
             return;
         }
 
@@ -254,4 +258,18 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
             return cache.removeAsync(key);
         }
     }
+
+    private static final Operation<?,?> TOMBSTONE = new Operation<>() {
+
+        @Override
+        public boolean canRemove() {
+            return true;
+        }
+
+        @Override
+        public CompletionStage<?> execute(RemoteCache<Object, Object> cache) {
+            return CompletableFutures.completedNull();
+        }
+    };
+
 }
