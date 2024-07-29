@@ -61,6 +61,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -226,7 +227,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 "sha-256",
                 "did:web:issuer.org",
                 2,
-                List.of(),
+                List.of("iat", "nbf"),
                 Optional.empty(),
                 VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
                 CredentialConfigId.from("test-credential"));
@@ -240,7 +241,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 "sha-256",
                 "did:web:issuer.org",
                 0,
-                List.of("given_name"),
+                List.of("given_name", "iat", "nbf"),
                 Optional.empty(),
                 VerifiableCredentialType.from("https://credentials.example.com/identity_credential"),
                 CredentialConfigId.from("IdentityCredential"));
@@ -273,6 +274,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("0"),
                         "vct", List.of("https://credentials.example.com/identity_credential"),
+                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("IdentityCredential")
                 )
         ));
@@ -293,6 +295,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         "hashAlgorithm", List.of("sha-256"),
                         "decoys", List.of("2"),
                         "vct", List.of("https://credentials.example.com/test-credential"),
+                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("test-credential")
                 )
         ));
@@ -337,9 +340,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         getUserAttributeMapper("lastName", "lastName", "test-credential"),
                         getIdMapper("test-credential"),
                         getStaticClaimMapper("test-credential", "test-credential"),
+                        getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE","test-credential"),
+                        getIssuedAtTimeMapper("nbf", null, "COMPUTE","test-credential"),
 
                         getUserAttributeMapper("given_name", "firstName", "identity_credential"),
-                        getUserAttributeMapper("family_name", "lastName", "identity_credential")
+                        getUserAttributeMapper("family_name", "lastName", "identity_credential"),
+                        getIssuedAtTimeMapper(null, ChronoUnit.MINUTES.name(), "COMPUTE","identity_credential"),
+                        getIssuedAtTimeMapper("nbf", ChronoUnit.SECONDS.name(), "COMPUTE","identity_credential")
                 )
         );
         return clientRepresentation;
@@ -391,7 +398,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertTrue("The credentials should include the email claim.", disclosureMap.containsKey("email"));
             assertEquals("email claim incorrectly mapped.", disclosureMap.get("email").get(2).asText(), "john@email.cz");
 
-        }
+            assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
+            assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());        }
     }
 }
 
