@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -33,15 +34,23 @@ import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjec
 public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectProvider {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
+    public static final SingleUseObjectValueEntity REVOKED_TOKEN_VALUE = new SingleUseObjectValueEntity(Collections.emptyMap());
 
     private final SingleUseObjectTransaction transaction;
+    private final RevokeTokenConsumer revokeTokenConsumer;
 
-    public RemoteInfinispanSingleUseObjectProvider(SingleUseObjectTransaction transaction) {
+    public RemoteInfinispanSingleUseObjectProvider(SingleUseObjectTransaction transaction, RevokeTokenConsumer revokeTokenConsumer) {
         this.transaction = Objects.requireNonNull(transaction);
+        this.revokeTokenConsumer = Objects.requireNonNull(revokeTokenConsumer);
+
     }
 
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        if (key.endsWith(REVOKED_KEY)) {
+            revokeToken(key, lifespanSeconds);
+            return;
+        }
         transaction.put(key, wrap(notes), lifespanSeconds, TimeUnit.SECONDS);
     }
 
@@ -93,11 +102,21 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
         return transaction.getCache().withFlags(Flag.FORCE_RETURN_VALUE);
     }
 
+    private void revokeToken(String key, long lifespanSeconds) {
+        transaction.put(key, REVOKED_TOKEN_VALUE, lifespanSeconds, TimeUnit.SECONDS);
+        var token = key.substring(0, key.length() - REVOKED_KEY.length());
+        revokeTokenConsumer.onTokenRevoke(token, lifespanSeconds);
+    }
+
     private static Map<String, String> unwrap(SingleUseObjectValueEntity entity) {
         return entity == null ? null : entity.getNotes();
     }
 
     private static SingleUseObjectValueEntity wrap(Map<String, String> notes) {
         return new SingleUseObjectValueEntity(notes);
+    }
+
+    public interface RevokeTokenConsumer {
+        void onTokenRevoke(String token, long lifespanSeconds);
     }
 }
