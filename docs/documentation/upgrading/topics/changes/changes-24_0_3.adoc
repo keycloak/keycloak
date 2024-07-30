@@ -25,5 +25,5 @@ Please note that wildcard valid redirect URIs are not recommended for production
 
 = Deprecated Account REST endpoint for removing credential
 
-The Account REST endpoint for removing the credential of the user is deprecated. Account console does not use this endpoint from this version. It is replaced by the `Delete Credential` application-initiated
-action, which is triggered by Account console when user want to remove the credential of some user.
+The Account REST endpoint for removing the credential of the user is deprecated. Starting at this version, the Account Console no longer uses this endpoint. It is replaced by the `Delete Credential` application-initiated
+action, which is triggered by the Account Console when a user want to remove the credential of a user.
