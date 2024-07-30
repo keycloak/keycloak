@@ -6,7 +6,6 @@
 
 # Sample output:
 # Total Open Dependabot PRs: 18
-
 # Total Admin UI E2E failures: 1
 # Total Account UI E2E failures: 0
 
@@ -139,7 +138,6 @@ function print_failed_dependabot_prs_details() {
 
 function display_stats() {
   echo "Total Open Dependabot PRs: $total_prs"
-  echo ""
   echo "Total Admin UI E2E failures: $admin_failure_counter"
   echo "Total Account UI E2E failures: $account_failure_counter"
   echo ""
