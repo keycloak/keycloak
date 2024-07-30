@@ -1,4 +1,4 @@
-package org.keycloak.test.framework.realm;
+package org.keycloak.test.framework.util;
 
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
