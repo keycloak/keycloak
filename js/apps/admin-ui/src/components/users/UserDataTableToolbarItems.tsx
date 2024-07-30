@@ -126,6 +126,7 @@ export function UserDataTableToolbarItems({
     return (
       <>
         <DropdownPanel
+          data-testid="select-attributes-dropdown"
           buttonText={t("selectAttributes")}
           setSearchDropdownOpen={setSearchDropdownOpen}
           searchDropdownOpen={searchDropdownOpen}

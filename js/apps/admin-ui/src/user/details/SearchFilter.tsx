@@ -46,6 +46,7 @@ export const SearchDropdown = ({
       onOpenChange={(isOpen) => setSearchToggle(isOpen)}
       toggle={(ref) => (
         <MenuToggle
+          data-testid="user-search-toggle"
           ref={ref}
           id="toggle-id"
           onClick={() => setSearchToggle(!searchToggle)}
