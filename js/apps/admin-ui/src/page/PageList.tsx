@@ -116,7 +116,10 @@ export default function PageList() {
         searchPlaceholderKey="searchItem"
         loader={loader}
         columns={[
-          ...page.metadata.displayFields.map((name: string, index: number) => ({
+          ...(
+            page.metadata.displayFields ||
+            page.properties.slice(0, 3).map((p) => p.name)
+          ).map((name: string, index: number) => ({
             name: `config.${name}[0]`,
             displayKey: page.properties.find((p) => p.name === name)!.label,
             cellRenderer:

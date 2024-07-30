@@ -54,15 +54,23 @@ public final class CRAssert {
 
     public static ObjectAssert<KeycloakStatusCondition> assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage, Long observedGeneration) {
         KeycloakStatusCondition statusCondition = kcStatus.findCondition(condition).orElseThrow();
-        assertThat(statusCondition.getStatus()).isEqualTo(status);
+        assertThat(statusCondition.getStatus())
+                .withFailMessage(() -> "found status " + statusCondition + " and expected status " + status)
+                .isEqualTo(status);
         if (containedMessage != null) {
-            assertThat(statusCondition.getMessage()).contains(containedMessage);
+            assertThat(statusCondition.getMessage())
+                    .withFailMessage(() -> "found status " + statusCondition + " and expected it to contain " + containedMessage)
+                    .contains(containedMessage);
         }
         if (observedGeneration != null) {
-            assertThat(statusCondition.getObservedGeneration()).isEqualTo(observedGeneration);
+            assertThat(statusCondition.getObservedGeneration())
+                    .withFailMessage(() -> "found status " + statusCondition + " and expected it to contain an observed generation of " + observedGeneration)
+                    .isEqualTo(observedGeneration);
         }
         if (status != null) {
-            assertThat(statusCondition.getLastTransitionTime()).isNotNull();
+            assertThat(statusCondition.getLastTransitionTime())
+                    .withFailMessage(() -> "found status " + statusCondition + " and expected the last transition time to not be null")
+                    .isNotNull();
         }
         return assertThat(statusCondition);
     }

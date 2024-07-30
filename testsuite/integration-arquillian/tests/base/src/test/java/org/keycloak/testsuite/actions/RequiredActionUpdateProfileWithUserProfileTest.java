@@ -33,6 +33,7 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.CONFIGURATION_FOR_U
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
@@ -61,6 +62,7 @@ import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 /**
  * Test update-profile required action with custom user profile configurations
@@ -107,7 +109,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
     @Before
     public void beforeTest() {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(),null);
+        VerifyProfileTest.setUserProfileConfiguration(testRealm(), null);
 
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
@@ -146,11 +148,11 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         //assert field names
         // i18n replaced
-        Assert.assertEquals("First name",updateProfilePage.getLabelForField("firstName"));
+        Assert.assertEquals("First name", updateProfilePage.getLabelForField("firstName"));
         // attribute name used if no display name set
-        Assert.assertEquals("lastName",updateProfilePage.getLabelForField("lastName"));
+        Assert.assertEquals("lastName", updateProfilePage.getLabelForField("lastName"));
         // direct value in display name
-        Assert.assertEquals("Department",updateProfilePage.getLabelForField("department"));
+        Assert.assertEquals("Department", updateProfilePage.getLabelForField("department"));
 
     }
 
@@ -172,49 +174,22 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        String htmlFormId="kc-update-profile-form";
 
         //assert fields and groups location in form, attributes without a group appear first
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(1) > label#header-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > label#description-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
-                ).isDisplayed()
-        );
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form label"));
+        String[] labelOrder = new String[]{"lastName", "username", "firstName", "header-company", "description-company", "department", "header-contact", "email"};
+        for (int i = 0; i < element.size(); i++) {
+            WebElement webElement = element.get(i);
+            String id;
+            if (webElement.getAttribute("for") != null) {
+                id = webElement.getAttribute("for");
+                // see that the label has an element it belongs to
+                assertThat("Label with id: " + id + " should have component it belongs to", driver.findElement(By.id(id)).isDisplayed(), is(true));
+            } else {
+                id = webElement.getAttribute("id");
+            }
+            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
 
@@ -235,31 +210,14 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.assertCurrent();
 
         //assert fields location in form
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(2) > div:nth-child(2) > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(3) > div:nth-child(2) > input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
-                ).isDisplayed()
-        );
+        //assert fields and groups location in form, attributes without a group appear first
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form input"));
+        String[] labelOrder = new String[]{"lastName", "department", "username", "firstName", "email"};
+        for (int i = 0; i < labelOrder.length; i++) {
+            WebElement webElement = element.get(i);
+            String id = webElement.getAttribute("id");
+            assertThat("Field at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     @Test
@@ -343,7 +301,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "," + VALIDATIONS_LENGTH + "},"
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "}"
                 + "]}");
 
@@ -436,7 +394,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         updateProfilePage.assertCurrent();
         Assert.assertEquals("Brady", updateProfilePage.getLastName());
-        Assert.assertFalse("'department' field is visible" , updateProfilePage.isDepartmentPresent());
+        Assert.assertFalse("'department' field is visible", updateProfilePage.isDepartmentPresent());
 
         //update of the other attributes must be successful in this case
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("First").lastName("Last").email(USERNAME1).submit();
@@ -494,7 +452,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
@@ -534,7 +492,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_default.getClientId()).openLoginForm();
@@ -568,7 +526,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
@@ -602,7 +560,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
@@ -631,7 +589,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();

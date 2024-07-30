@@ -1,5 +1,13 @@
 :project_name: Keycloak
+:project_images: keycloak-images
+:project_doc_base_url: https://www.keycloak.org/docs/latest
+:project_doc_base_url_latest: https://www.keycloak.org/docs/{version}
+:project_dirref: KEYCLOAK_HOME
+:project_openshift_product_name: Keycloak for OpenShift
 :archivebasename: keycloak
+:authorizationguide_name: Authorization Services Guide
+:authorizationguide_name_short: Authorization Services
+:authorizationguide_link: {project_doc_base_url}/authorization_services/
 :section: guide
 :sections: guides
 :archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip
@@ -10,3 +18,11 @@
 :project_product: false
 :project_community: true
 :apidocs_adminrest_link: https://www.keycloak.org/docs-api/{version}/rest-api/
+:adminguide_name: Server Administration Guide
+:adminguide_name_short: Server Administration
+:adminguide_link: {project_doc_base_url}/server_admin/
+:quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
+:quickstartRepo_name: Keycloak Quickstarts Repository
+:quickstartRepo_dir: keycloak-quickstarts
+:securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:kc_js_path: /js

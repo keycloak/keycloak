@@ -83,6 +83,8 @@ import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -116,6 +118,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class OAuthClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(OAuthClient.class);
+
     public static String SERVER_ROOT;
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
@@ -340,19 +345,19 @@ public class OAuthClient {
 
     public void linkUsers(String username, String password) {
         WaitUtils.waitForPageToLoad();
-        WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
+        WebElement linkAccountButton = driver.findElement(By.name("linkAccount"));
         waitUntilElement(linkAccountButton).is().clickable();
         linkAccountButton.click();
 
         WaitUtils.waitForPageToLoad();
-        WebElement usernameInput = driver.findElement(By.id("username"));
+        WebElement usernameInput = driver.findElement(By.name("username"));
         usernameInput.clear();
         usernameInput.sendKeys(username);
-        WebElement passwordInput = driver.findElement(By.id("password"));
+        WebElement passwordInput = driver.findElement(By.name("password"));
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
-        WebElement loginButton = driver.findElement(By.id("kc-login"));
+        WebElement loginButton = driver.findElement(By.name("kc-login"));
         waitUntilElement(loginButton).is().clickable();
         loginButton.click();
     }
@@ -377,33 +382,33 @@ public class OAuthClient {
         WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
-            driver.findElement(By.id("username")).sendKeys(username);
-            driver.findElement(By.id("password")).sendKeys(password);
+            driver.findElement(By.name("username")).sendKeys(username);
+            driver.findElement(By.name("password")).sendKeys(password);
             if (rememberMe) {
                 driver.findElement(By.id("rememberMe")).click();
             }
             driver.findElement(By.name("login")).click();
         } catch (Throwable t) {
-            System.err.println(src);
+            logger.error("Unexpected page was loaded\n{}", src);
             throw t;
         }
     }
 
     private void updateAccountInformation(String username, String email, String firstName, String lastName) {
 
-        WebElement usernameInput = driver.findElement(By.id("username"));
+        WebElement usernameInput = driver.findElement(By.name("username"));
         usernameInput.clear();
         usernameInput.sendKeys(username);
 
-        WebElement emailInput = driver.findElement(By.id("email"));
+        WebElement emailInput = driver.findElement(By.name("email"));
         emailInput.clear();
         emailInput.sendKeys(email);
 
-        WebElement firstNameInput = driver.findElement(By.id("firstName"));
+        WebElement firstNameInput = driver.findElement(By.name("firstName"));
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
 
-        WebElement lastNameInput = driver.findElement(By.id("lastName"));
+        WebElement lastNameInput = driver.findElement(By.name("lastName"));
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
@@ -499,7 +504,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
@@ -591,6 +596,9 @@ public class OAuthClient {
                 for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
                     post.addHeader(header.getKey(), header.getValue());
                 }
+            }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
             }
 
             List<NameValuePair> parameters = new LinkedList<>();
@@ -747,6 +755,9 @@ public class OAuthClient {
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
                 post.setHeader("Authorization", authorization);
+            }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
             }
 
             List<NameValuePair> parameters = new LinkedList<>();
@@ -979,7 +990,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1033,7 +1044,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1154,12 +1165,12 @@ public class OAuthClient {
         }
     }
 
-    public UserInfoResponse doUserInfoRequestByGet(String accessToken) throws Exception {
+    public UserInfoResponse doUserInfoRequestByGet(OAuthClient.AccessTokenResponse accessTokenResponse) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(getUserInfoUrl());
-            get.setHeader("Authorization", "Bearer " + accessToken);
+            get.setHeader("Authorization", accessTokenResponse.getTokenType() + " " + accessTokenResponse.getAccessToken());
             if (dpopProof != null) {
-                get.addHeader("DPoP", dpopProof);
+                get.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
             }
             return new UserInfoResponse(client.execute(get));
         } catch (IOException ex) {

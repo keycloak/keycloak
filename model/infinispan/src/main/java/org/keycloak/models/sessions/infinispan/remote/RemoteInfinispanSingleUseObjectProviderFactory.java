@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
@@ -41,7 +42,7 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
     @Override
     public RemoteInfinispanSingleUseObjectProvider create(KeycloakSession session) {
         assert cache != null;
-        return new RemoteInfinispanSingleUseObjectProvider(session, cache);
+        return new RemoteInfinispanSingleUseObjectProvider(createAndEnlistTransaction(session));
     }
 
     @Override
@@ -73,5 +74,11 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
     @Override
     public boolean isSupported(Config.Scope config) {
         return InfinispanUtils.isRemoteInfinispan();
+    }
+
+    private SingleUseObjectTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var tx = new SingleUseObjectTransaction(cache);
+        session.getTransactionManager().enlistAfterCompletion(tx);
+        return tx;
     }
 }

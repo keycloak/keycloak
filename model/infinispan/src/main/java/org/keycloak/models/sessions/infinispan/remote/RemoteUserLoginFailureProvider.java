@@ -23,10 +23,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures.LoginFailuresUpdater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
@@ -35,12 +34,11 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> transaction;
+    private final LoginFailureChangeLogTransaction transaction;
 
-    public RemoteUserLoginFailureProvider(RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> transaction) {
+    public RemoteUserLoginFailureProvider(LoginFailureChangeLogTransaction transaction) {
         this.transaction = Objects.requireNonNull(transaction);
     }
-
 
     @Override
     public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
@@ -75,7 +73,7 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
             log.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
         }
 
-        transaction.removeIf(entity -> Objects.equals(entity.getRealmId(), realm.getId()));
+        transaction.removeByRealmId(realm.getId());
     }
 
     @Override

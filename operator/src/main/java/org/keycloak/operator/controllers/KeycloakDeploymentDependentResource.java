@@ -35,7 +35,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Config;
@@ -68,13 +68,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.inject.Inject;
-
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
@@ -92,20 +89,23 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public static final String OPTIMIZED_ARG = "--optimized";
 
-    @Inject
     Config operatorConfig;
 
-    @Inject
     WatchedResources watchedResources;
 
-    @Inject
     KeycloakDistConfigurator distConfigurator;
 
     private boolean useServiceCaCrt;
 
-    public KeycloakDeploymentDependentResource() {
+    public KeycloakDeploymentDependentResource(Config operatorConfig, WatchedResources watchedResources, KeycloakDistConfigurator distConfigurator) {
         super(StatefulSet.class);
+        this.operatorConfig = operatorConfig;
+        this.watchedResources = watchedResources;
+        this.distConfigurator = distConfigurator;
         useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
+        this.configureWith(new KubernetesDependentResourceConfigBuilder<StatefulSet>()
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .build());
     }
 
     public void setUseServiceCaCrt(boolean useServiceCaCrt) {
@@ -403,8 +403,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets) {
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
-        String adminSecretName = KeycloakAdminSecretDependentResource.getName(keycloakCR);
-        var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR, adminSecretName);
+        var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
 
         var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
@@ -426,15 +425,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // watch the secrets used by secret key - we don't currently expect configmaps, optional refs, or watch the initial-admin
         TreeSet<String> serverConfigSecretsNames = envVars.stream().map(EnvVar::getValueFrom).filter(Objects::nonNull)
-                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName)
-                .filter(n -> !n.equals(adminSecretName)).collect(Collectors.toCollection(TreeSet::new));
+                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
 
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
 
         allSecrets.addAll(serverConfigSecretsNames);
     }
 
-    private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR, String adminSecretName) {
+    private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {
         // default config values
         List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
 
@@ -466,29 +464,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 envVars.add(new EnvVarBuilder().withName(env).withValue(value).build());
             }
         }
-
-        envVars.add(
-                new EnvVarBuilder()
-                        .withName("KEYCLOAK_ADMIN")
-                        .withNewValueFrom()
-                        .withNewSecretKeyRef()
-                        .withName(adminSecretName)
-                        .withKey("username")
-                        .withOptional(false)
-                        .endSecretKeyRef()
-                        .endValueFrom()
-                        .build());
-        envVars.add(
-                new EnvVarBuilder()
-                        .withName("KEYCLOAK_ADMIN_PASSWORD")
-                        .withNewValueFrom()
-                        .withNewSecretKeyRef()
-                        .withName(adminSecretName)
-                        .withKey("password")
-                        .withOptional(false)
-                        .endSecretKeyRef()
-                        .endValueFrom()
-                        .build());
 
         return envVars;
     }

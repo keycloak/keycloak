@@ -95,6 +95,11 @@ export const PersonalInfo = () => {
     return <Spinner />;
   }
 
+  const allFieldsReadOnly = () =>
+    userProfileMetadata?.attributes
+      ?.map((a) => a.readOnly)
+      .reduce((p, c) => p && c, true);
+
   const {
     updateEmailFeatureEnabled,
     updateEmailActionEnabled,
@@ -132,24 +137,26 @@ export const PersonalInfo = () => {
             ) : undefined
           }
         />
-        <ActionGroup>
-          <Button
-            data-testid="save"
-            type="submit"
-            id="save-btn"
-            variant="primary"
-          >
-            {t("save")}
-          </Button>
-          <Button
-            data-testid="cancel"
-            id="cancel-btn"
-            variant="link"
-            onClick={() => reset()}
-          >
-            {t("cancel")}
-          </Button>
-        </ActionGroup>
+        {!allFieldsReadOnly() && (
+          <ActionGroup>
+            <Button
+              data-testid="save"
+              type="submit"
+              id="save-btn"
+              variant="primary"
+            >
+              {t("save")}
+            </Button>
+            <Button
+              data-testid="cancel"
+              id="cancel-btn"
+              variant="link"
+              onClick={() => reset()}
+            >
+              {t("cancel")}
+            </Button>
+          </ActionGroup>
+        )}
         {context.environment.features.deleteAccountAllowed && (
           <ExpandableSection
             data-testid="delete-account"

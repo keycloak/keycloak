@@ -109,11 +109,11 @@ This is used by clients running on internet-connected devices that have limited 
 This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
 
 . The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
-. After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
+. After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated.
 
 An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
 
-Also please refer to other places of {project_name} documentation like link:{adapterguide_link}#_backchannel_authentication_endpoint[Backchannel Authentication Endpoint section] of {adapterguide_name} and link:{adapterguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adapterguide_name}.
+Also please refer to other places of {project_name} documentation like *Backchannel Authentication Endpoint* and *Client Initiated Backchannel Authentication Grant* in the link:{securing_apps_link}[securing apps] section.
 
 ====== CIBA Policy
 
@@ -180,10 +180,10 @@ Authentication Channel Provider is provided as SPI provider so that users of {pr
 
 If a user of {project_name} user want to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
 
-Authentication Delegation Request/Response:: 
+Authentication Delegation Request/Response::
 {project_name} sends an authentication request to the authentication entity.
 
-Authentication Result Notification/ACK:: 
+Authentication Result Notification/ACK::
 The authentication entity notifies the result of the authentication to {project_name}.
 
 Authentication Delegation Request/Response consists of the following messaging.

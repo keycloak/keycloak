@@ -152,6 +152,8 @@ public interface OAuth2Constants {
     String ISSUER = "iss";
 
     String AUTHENTICATOR_METHOD_REFERENCE = "amr";
+
+    String CNF = "cnf";
 }
 
 

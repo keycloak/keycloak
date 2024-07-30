@@ -61,6 +61,8 @@
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
+:bootstrapadminrecovery_name: Admin Bootstrap and Recovery
+:bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -125,3 +127,5 @@
 
 :section: guide
 :sections: guides
+:securing_apps_name: Securing applications Guides
+:securing_apps_link: https://www.keycloak.org/guides#securing-apps

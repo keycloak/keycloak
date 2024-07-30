@@ -17,27 +17,27 @@
 
 package org.keycloak.models.sessions.infinispan.remote;
 
+import java.lang.invoke.MethodHandles;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-
-import java.lang.invoke.MethodHandles;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
 
 public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectProvider {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final RemoteInfinispanKeycloakTransaction<String, SingleUseObjectValueEntity> transaction;
+    private final SingleUseObjectTransaction transaction;
 
-    public RemoteInfinispanSingleUseObjectProvider(KeycloakSession session, RemoteCache<String, SingleUseObjectValueEntity> cache) {
-        transaction = new RemoteInfinispanKeycloakTransaction<>(cache);
-        session.getTransactionManager().enlistAfterCompletion(transaction);
+    public RemoteInfinispanSingleUseObjectProvider(SingleUseObjectTransaction transaction) {
+        this.transaction = Objects.requireNonNull(transaction);
     }
 
     @Override

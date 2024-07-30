@@ -38,10 +38,13 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
@@ -70,9 +73,19 @@ public class PodTemplateTest {
 
     @InjectMock
     WatchedResources watchedResources;
+    
+    @Inject
+    Config operatorConfig;
 
     @Inject
+    KeycloakDistConfigurator distConfigurator;
+    
     KeycloakDeploymentDependentResource deployment;
+    
+    @BeforeEach
+    protected void setup() {
+        this.deployment = new KeycloakDeploymentDependentResource(operatorConfig, watchedResources, distConfigurator);
+    }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
         var kc = new KeycloakBuilder().withNewMetadata().withName("instance").endMetadata().build();

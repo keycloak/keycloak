@@ -14,12 +14,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.changes.remote.UserSessionTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.UseSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -117,12 +118,12 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
         );
     }
 
-    private RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater> createUserSessionTransaction(boolean offline) {
-        return new RemoteChangeLogTransaction<>(UserSessionUpdater.factory(offline), remoteCacheHolder.userSessionCache(offline));
+    private UseSessionChangeLogTransaction createUserSessionTransaction(boolean offline) {
+        return new UseSessionChangeLogTransaction(UserSessionUpdater.factory(offline), remoteCacheHolder.userSessionCache(offline));
     }
 
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> createClientSessionTransaction(boolean offline) {
-        return new RemoteChangeLogTransaction<>(AuthenticatedClientSessionUpdater.factory(offline), remoteCacheHolder.clientSessionCache(offline));
+    private ClientSessionChangeLogTransaction createClientSessionTransaction(boolean offline) {
+        return new ClientSessionChangeLogTransaction(AuthenticatedClientSessionUpdater.factory(offline), remoteCacheHolder.clientSessionCache(offline));
     }
 
     private record RemoteCacheHolder(

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.remote;
+package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import java.lang.invoke.MethodHandles;
 import java.util.LinkedHashMap;
@@ -24,41 +24,32 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
-import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 
-public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakTransaction {
+class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, V>> extends AbstractKeycloakTransaction {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Map<K, Operation<K, V>> tasks = new LinkedHashMap<>();
     private final RemoteCache<K, V> cache;
-    private Predicate<V> removePredicate;
+    private final R conditionalRemover;
 
-    public RemoteInfinispanKeycloakTransaction(RemoteCache<K, V> cache) {
+    RemoteInfinispanKeycloakTransaction(RemoteCache<K, V> cache, R conditionalRemover) {
         this.cache = Objects.requireNonNull(cache);
+        this.conditionalRemover = Objects.requireNonNull(conditionalRemover);
     }
 
     @Override
     protected void commitImpl() {
         AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
-        if (removePredicate != null) {
-            // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
-            var rmStage = Flowable.fromPublisher(cache.publishEntriesWithMetadata(null, 2048))
-                    .filter(this::shouldRemoveEntry)
-                    .map(Map.Entry::getKey)
-                    .flatMapCompletable(this::removeKey)
-                    .toCompletionStage(null);
-            stage.dependsOn(rmStage);
-        }
+        conditionalRemover.executeRemovals(cache, stage);
         tasks.values().stream()
                 .filter(this::shouldCommitOperation)
                 .map(this::commitOperation)
@@ -76,7 +67,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         logger.tracef("Adding %s.put(%S)", cache.getName(), key);
 
         if (tasks.containsKey(key)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
+            throw new IllegalStateException("Can't add entry: task " + tasks.get(key) + " in progress for session");
         }
 
         tasks.put(key, new PutOperation<>(key, value, lifespan, timeUnit));
@@ -86,9 +77,11 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         logger.tracef("Adding %s.replace(%S)", cache.getName(), key);
 
         Operation<K, V> existing = tasks.get(key);
-        if (existing != null) {
+        if (existing != null && existing != TOMBSTONE && !(existing instanceof RemoteInfinispanKeycloakTransaction.RemoveOperation<K,V>)) {
             if (existing.hasValue()) {
                 tasks.put(key, existing.update(value, lifespan, timeUnit));
+            } else {
+                throw new IllegalStateException("Can't replace entry: task " + existing + " in progress for session");
             }
             return;
         }
@@ -101,7 +94,8 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
 
         Operation<K, V> existing = tasks.get(key);
         if (existing != null && existing.canRemove()) {
-            tasks.remove(key);
+            //noinspection unchecked
+            tasks.put(key, (Operation<K, V>) TOMBSTONE);
             return;
         }
 
@@ -123,21 +117,8 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         return cache;
     }
 
-    /**
-     * Removes all Infinispan cache values that satisfy the given predicate.
-     *
-     * @param predicate The {@link Predicate} which returns {@code true} for elements to be removed.
-     */
-    public void removeIf(Predicate<V> predicate) {
-        if (removePredicate == null) {
-            removePredicate = predicate;
-            return;
-        }
-        removePredicate = removePredicate.or(predicate);
-    }
-
-    private Completable removeKey(K key) {
-        return Completable.fromCompletionStage(cache.removeAsync(key));
+    R getConditionalRemover() {
+        return conditionalRemover;
     }
 
     private boolean shouldCommitOperation(Operation<K, V> operation) {
@@ -145,15 +126,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         // 1. it is a removal operation (no value to test the predicate).
         // 2. remove predicate is not present.
         // 3. value does not match the remove predicate.
-        return !operation.hasValue() ||
-                removePredicate == null ||
-                !removePredicate.test(operation.getValue());
-    }
-
-    private boolean shouldRemoveEntry(Map.Entry<K, MetadataValue<V>> entry) {
-        // invoked by stream, so removePredicate is not null
-        assert removePredicate != null;
-        return removePredicate.test(entry.getValue().getValue());
+        return !operation.hasValue() || !conditionalRemover.willRemove(operation.getCacheKey(), operation.getValue());
     }
 
     private CompletionStage<?> commitOperation(Operation<K, V> operation) {
@@ -191,6 +164,8 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         default V getValue() {
             return null;
         }
+
+        K getCacheKey();
     }
 
     private record PutOperation<K, V>(K key, V value, long lifespan, TimeUnit timeUnit) implements Operation<K, V> {
@@ -221,7 +196,10 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
             return value;
         }
 
-
+        @Override
+        public K getCacheKey() {
+            return key;
+        }
     }
 
     private record ReplaceOperation<K, V>(K key, V value, long lifespan, TimeUnit timeUnit) implements Operation<K, V> {
@@ -245,6 +223,11 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         public V getValue() {
             return value;
         }
+
+        @Override
+        public K getCacheKey() {
+            return key;
+        }
     }
 
     private record RemoveOperation<K, V>(K key) implements Operation<K, V> {
@@ -253,5 +236,29 @@ public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakT
         public CompletionStage<?> execute(RemoteCache<K, V> cache) {
             return cache.removeAsync(key);
         }
+
+        @Override
+        public K getCacheKey() {
+            return key;
+        }
     }
+
+    private static final Operation<?, ?> TOMBSTONE = new Operation<>() {
+
+        @Override
+        public boolean canRemove() {
+            return true;
+        }
+
+        @Override
+        public Object getCacheKey() {
+            return null;
+        }
+
+        @Override
+        public CompletionStage<?> execute(RemoteCache<Object, Object> cache) {
+            return CompletableFutures.completedNull();
+        }
+    };
+
 }

@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.sessions.infinispan.remote;
 
+import java.lang.invoke.MethodHandles;
+
 import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.logging.Logger;
@@ -26,14 +28,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures.LoginFailuresUpdater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import java.lang.invoke.MethodHandles;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.getRemoteCache;
@@ -46,9 +46,7 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public RemoteUserLoginFailureProvider create(KeycloakSession session) {
-        var tx = new RemoteChangeLogTransaction<>(this, cache);
-        session.getTransactionManager().enlistAfterCompletion(tx);
-        return new RemoteUserLoginFailureProvider(tx);
+        return new RemoteUserLoginFailureProvider(createAndEnlistTransaction(session));
     }
 
     @Override
@@ -101,5 +99,11 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
     @Override
     public LoginFailuresUpdater deleted(LoginFailureKey key) {
         return LoginFailuresUpdater.delete(key);
+    }
+
+    private LoginFailureChangeLogTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var tx = new LoginFailureChangeLogTransaction(this, cache);
+        session.getTransactionManager().enlistAfterCompletion(tx);
+        return tx;
     }
 }

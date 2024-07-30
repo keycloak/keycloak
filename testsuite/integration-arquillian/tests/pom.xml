@@ -210,7 +210,7 @@
         <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
-        <login.theme.default/>
+        <login.theme.default>keycloak.v2</login.theme.default>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>

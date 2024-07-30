@@ -35,7 +35,7 @@ public class DeleteAccountActionConfirmPage extends RequiredActions {
   }
 
   public boolean isErrorMessageDisplayed() {
-    return driver.findElements(By.cssSelector(".alert-error")).size() == 1;
+    return driver.findElements(By.cssSelector(".pf-v5-c-alert")).size() == 1;
   }
 
   public String getErrorMessageText() {

@@ -40,16 +40,16 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @Page
     private UpdateProfileErrors errorsPage;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
     
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
     @FindBy(css = "input[type=\"submit\"]")
@@ -58,7 +58,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     public void update(String firstName, String lastName) {

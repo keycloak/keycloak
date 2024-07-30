@@ -1,8 +1,8 @@
-=== Supported Grant Types
+== Supported Grant Types
 
 This section describes the different grant types available to relaying parties.
 
-==== Authorization code
+=== Authorization code
 
 The Authorization Code flow redirects the user agent to {project_name}. Once the user has successfully authenticated with {project_name}, an
 Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code along with its
@@ -13,11 +13,11 @@ a user agent.
 
 For more details refer to the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] in the OpenID Connect specification.
 
-==== Implicit
+=== Implicit
 
 The Implicit flow works similarly to the Authorization Code flow, but instead of returning an Authorization Code, the Access Token and ID Token is
 returned. This approach reduces the need for the extra invocation to exchange the Authorization Code for an Access Token. However, it does not include a Refresh
-Token. This results in the need to permit Access Tokens with a long expiration; however, that approach is not practical because it is very hard to invalidate these tokens. Alternatively, you can 
+Token. This results in the need to permit Access Tokens with a long expiration; however, that approach is not practical because it is very hard to invalidate these tokens. Alternatively, you can
 require a new redirect to obtain a new Access Token once the initial Access Token has expired. The Implicit flow is useful if the application only wants to
 authenticate the user and deals with logout itself.
 
@@ -32,7 +32,7 @@ Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topi
 This flow is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-09[OAuth 2.1 specification].
 
 [[_resource_owner_password_credentials_flow]]
-==== Resource Owner Password Credentials
+=== Resource Owner Password Credentials
 
 Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens.
 Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-resource-owner-password-cre[OAuth 2.0 Security Best Practices],
@@ -60,7 +60,7 @@ It is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-o
 
 For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant] chapter in the OAuth 2.0 specification.
 
-===== Example using CURL
+==== Example using CURL
 
 The following example shows how to obtain an access token for a user in the realm `master` with username `user` and password `password`. The example is using
 the confidential client `myclient`:
@@ -76,7 +76,7 @@ curl \
   "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 
-==== Client credentials
+=== Client credentials
 
 Client Credentials are used when clients (applications and services) want to obtain access on behalf of themselves rather than on behalf of a user. For example, these credentials can
  be useful for background services that apply changes to the system in general rather than for a specific user.
@@ -87,7 +87,7 @@ This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 spec
 
 For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-4.4[Client Credentials Grant] chapter in the OAuth 2.0 specification.
 
-==== Device Authorization Grant
+=== Device Authorization Grant
 
 Device Authorization Grant is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser.
 
@@ -102,7 +102,7 @@ Device Authorization Grant is used by clients running on internet-connected devi
 For more details, see  the https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
 [[_client_initiated_backchannel_authentication_grant]]
-==== Client Initiated Backchannel Authentication Grant
+=== Client Initiated Backchannel Authentication Grant
 
 Client Initiated Backchannel Authentication Grant is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant.
 

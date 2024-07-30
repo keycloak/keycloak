@@ -159,7 +159,9 @@ public abstract class AbstractKeycloakTest {
 
     private boolean resetTimeOffset;
 
-    private static String PREFERRED_DEFAULT_LOGIN_THEME = System.getProperty("login.theme.default");
+    public static final String PROPERTY_LOGIN_THEME_DEFAULT = "login.theme.default";
+
+    public static final String PREFERRED_DEFAULT_LOGIN_THEME = System.getProperty(PROPERTY_LOGIN_THEME_DEFAULT);
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {

@@ -9,7 +9,7 @@ In the environment where trust among services is low, you may encounter this sce
 
 . A frontend client application requires authentication against {project_name}.
 
-. {project_name} authenticates a user. 
+. {project_name} authenticates a user.
 
 . {project_name} issues a token to the application.
 
@@ -27,11 +27,11 @@ To prevent any misuse of the access token, limit the audience on the token and c
 
 . A frontend application authenticates against {project_name}.
 
-. {project_name} authenticates a user. 
+. {project_name} authenticates a user.
 
 . {project_name} issues a token to the application. The application knows that it will need to invoke an untrusted service so it places *scope=<untrusted service>* in the authentication request sent to {project_name} (see <<_client_scopes, Client Scopes section>> for more details about the _scope_ parameter).
 +
-The token issued to the application contains a reference to the untrusted service in its audience (*"audience": [ "<untrusted service>" ]*) which declares that the client uses this access token to invoke the untrusted service. 
+The token issued to the application contains a reference to the untrusted service in its audience (*"audience": [ "<untrusted service>" ]*) which declares that the client uses this access token to invoke the untrusted service.
 +
 .The untrusted service serves the request to the client application but also keeps the token.
 
@@ -70,7 +70,7 @@ you can use the access token issued for the confidential client to invoke the se
 
 [NOTE]
 ====
-If you want to ensure that the audience is not added automatically, do not configure role scope mappings directly on the confidential client. Instead, you can create a dedicated client scope that contains the role scope mappings for the client roles of your dedicated client scope. 
+If you want to ensure that the audience is not added automatically, do not configure role scope mappings directly on the confidential client. Instead, you can create a dedicated client scope that contains the role scope mappings for the client roles of your dedicated client scope.
 
 Assuming that the client scope is added as an optional client scope to the confidential client, the client roles and the audience will be added to the token if explicitly requested by the *scope=<trusted service>*  parameter.
 ====
@@ -103,16 +103,16 @@ image:images/audience_mapper.png[]
 On the confidential client:
 +
 . Click the _Client Scopes_ tab.
-. Assign *good-service* as an optional (or default) client scope. 
+. Assign *good-service* as an optional (or default) client scope.
 +
 See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
 
 * You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> and generate an example access token. *good-service* will be added to the audience of the generated access token if *good-service* is included in the _scope_ parameter, when you assigned it as an optional client scope.
 
-* In your confidential client application, ensure that the _scope_ parameter is used. The value *good-service* must be included when you want to issue the token for accessing *good-service*. 
+* In your confidential client application, ensure that the _scope_ parameter is used. The value *good-service* must be included when you want to issue the token for accessing *good-service*.
 +
 See:
 +
-** link:{adapterguide_link}#_javascript_adapter[javascript adapter section] if your application uses the javascript adapter.
+** *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section if your application uses the javascript adapter.
 
 NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.

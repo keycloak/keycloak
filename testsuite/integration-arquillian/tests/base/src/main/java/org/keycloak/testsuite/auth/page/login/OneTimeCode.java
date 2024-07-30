@@ -34,7 +34,7 @@ public class OneTimeCode extends Authenticate {
     @FindBy(xpath = ".//label[@for='otp']")
     private WebElement otpInputLabel;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     @FindBy(id = "input-error-otp-code")

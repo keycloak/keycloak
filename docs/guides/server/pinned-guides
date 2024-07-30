@@ -1,5 +1,6 @@
 configuration
 configuration-production
+bootstrap-admin-recovery
 containers
 enabletls
 hostname

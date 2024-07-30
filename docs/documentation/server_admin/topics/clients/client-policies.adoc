@@ -16,7 +16,7 @@ Client Policies realize the following points mentioned as follows.
 
 Setting policies on what configuration a client can have::
     Configuration settings on the client can be enforced by client policies during client creation/update, but also during OpenID Connect requests to {project_name} server, which are related to particular client.
-    {project_name} supports similar thing also through the Client Registration Policies described in the link:{adapterguide_link}#_client_registration_policies[{adapterguide_name}].
+    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
     However, Client Registration Policies can only cover OIDC Dynamic Client Registration. Client Policies cover not only what Client Registration Policies can do, but other client
     registration and configuration ways. The current plans are for Client Registration to be replaced by Client Policies.
 
@@ -29,7 +29,7 @@ Validation of client configurations::
     the advanced security requirements. In the future, individual client configuration settings may be replaced by Client Policies directly performing required validations.
 
 Conformance to a required security standards and profiles such as FAPI and OAuth 2.1::
-    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like link:{adapterguide_link}#_fapi-support[FAPI] and link:{adapterguide_link}#_oauth21-support[OAuth 2.1],
+    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section,
     which makes it easy for the administrator to secure their client application to be compliant with the particular security profile. At this moment, {project_name} has global
     profiles for the support of FAPI and OAuth 2.1 specifications. The administrator will just need to configure the client policies to specify which clients should
     be compliant with the FAPI and OAuth 2.1. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
@@ -37,7 +37,7 @@ Conformance to a required security standards and profiles such as FAPI and OAuth
 
 == Protocol
 
-The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{adapterguide_link}#_oidc[OpenID Connect (OIDC) protocol], but there is
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{securing_apps_link}[OpenID Connect (OIDC) protocol], but there is
 also a client profile available for the link:{adapterguide_link}#_saml[SAML protocol].
 
 == Architecture
@@ -80,7 +80,7 @@ Client Role::
     Applies for clients with the client role of the specified name. Typically you can create a client role of specified name to requested clients and use it as a "marker role" to make
     sure that specified client policy will be applied for requested clients.
 
-NOTE: A use-case often exists for requiring the application of a particular client policy for the specified clients such as `my-client-1` and `my-client-2`. The best way to achieve this result 
+NOTE: A use-case often exists for requiring the application of a particular client policy for the specified clients such as `my-client-1` and `my-client-2`. The best way to achieve this result
 is to use a *Client Role* condition in your policy and then a create client role of specified name to requested clients. This client role can be used as a "marker role" used solely
 for marking that particular client policy for particular clients.
 
@@ -144,7 +144,7 @@ One of several purposes for this executor is to realize the security requirement
 
 A profile consists of several executors, which can realize a security profile like FAPI and OAuth 2.1. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
 Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI 1 Baseline, FAPI 1 Advanced, FAPI CIBA, FAPI 2 and OAuth 2.1 specifications.
-More details exist in the FAPI and OAuth 2.1 section of the link:{adapterguide_link}#_fapi-support[{adapterguide_name}].
+More details exist in the *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section.
 
 [[_client_policy_policy]]
 === Policy
@@ -165,7 +165,7 @@ There is JSON Editor available in the Admin Console, which simplifies the creati
 
 == Backward Compatibility
 
-Client Policies can replace Client Registration Policies described in the link:{adapterguide_link}#_client_registration_policies[{adapterguide_name}].
+Client Policies can replace Client Registration Policies described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
 However, Client Registration Policies also still co-exist. This means that for example during a Dynamic Client Registration request to create/update a client, both client policies and
 client registration policies are applied.
 

@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -32,6 +31,7 @@ import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionPr
 import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
 import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -41,14 +41,13 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 public class RemoteInfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
     private final KeycloakSession session;
-    private final RemoteInfinispanKeycloakTransaction<String, RootAuthenticationSessionEntity> transaction;
+    private final AuthenticationSessionTransaction transaction;
     private final int authSessionsLimit;
 
-    public RemoteInfinispanAuthenticationSessionProvider(KeycloakSession session, RemoteInfinispanAuthenticationSessionProviderFactory factory) {
+    public RemoteInfinispanAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit, AuthenticationSessionTransaction transaction) {
         this.session = Objects.requireNonNull(session);
-        authSessionsLimit = Objects.requireNonNull(factory).getAuthSessionsLimit();
-        transaction = new RemoteInfinispanKeycloakTransaction<>(factory.getCache());
-        session.getTransactionManager().enlistAfterCompletion(transaction);
+        this.authSessionsLimit = authSessionsLimit;
+        this.transaction = Objects.requireNonNull(transaction);
     }
 
     @Override
@@ -95,8 +94,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
-        transaction.removeIf(new RealmFilter(realm.getId()));
+        transaction.removeByRealmId(realm.getId());
     }
 
     @Override
@@ -123,7 +121,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     }
 
     private record RootAuthenticationSessionUpdater(RealmModel realm, RootAuthenticationSessionEntity entity,
-                                                    RemoteInfinispanKeycloakTransaction<String, RootAuthenticationSessionEntity> transaction
+                                                    AuthenticationSessionTransaction transaction
     ) implements SessionEntityUpdater<RootAuthenticationSessionEntity> {
 
         @Override
@@ -140,14 +138,6 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         @Override
         public void onEntityRemoved() {
             transaction.remove(entity.getId());
-        }
-    }
-
-    private record RealmFilter(String realmId) implements Predicate<RootAuthenticationSessionEntity> {
-
-        @Override
-        public boolean test(RootAuthenticationSessionEntity entity) {
-            return Objects.equals(realmId, entity.getRealmId());
         }
     }
 }

@@ -18,9 +18,32 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
+import org.keycloak.models.AbstractKeycloakTransaction;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuth2DeviceConfig;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.ParConfig;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
@@ -28,7 +51,12 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -362,6 +390,22 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
         getDelegateForUpdate();
+        if (updated.isDuplicateEmailsAllowed() != duplicateEmailsAllowed) {
+            // If the flag changed, we need to clear all entries from the user cache as there are entries with the key of the email address which need to be re-evaluated.
+            // Still, this must only happen after all changes have been written to the database, therefore we enlist this to run after the completion of the transaction.
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), false, ClusterProvider.DCNotify.ALL_DCS);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+
+                }
+            });
+        }
         updated.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
     }
 
@@ -862,20 +906,16 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream().map(this::createOrganizationAwareIdentityProviderModel);
-        return cached.getIdentityProviders().stream().map(this::createOrganizationAwareIdentityProviderModel);
+        return session.identityProviders().getAllStream().map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return createOrganizationAwareIdentityProviderModel(updated.getIdentityProviderByAlias(alias));
-        return getIdentityProvidersStream()
-                .filter(model -> Objects.equals(model.getAlias(), alias))
-                .findFirst()
-                .map(this::createOrganizationAwareIdentityProviderModel)
-                .orElse(null);
+        IdentityProviderModel idp = session.identityProviders().getByAlias(alias);
+        return idp != null ? createOrganizationAwareIdentityProviderModel(idp) : null;
     }
 
+    // TODO move this to the infinispan IDPProvider implementation.
     private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
         if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
         return new IdentityProviderModel(idp) {
@@ -894,20 +934,17 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.addIdentityProvider(identityProvider);
+        session.identityProviders().create(identityProvider);
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.updateIdentityProvider(identityProvider);
+        session.identityProviders().update(identityProvider);
     }
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        getDelegateForUpdate();
-        updated.removeIdentityProviderByAlias(alias);
+        session.identityProviders().remove(alias);
     }
 
     @Override
@@ -1074,7 +1111,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> getRolesStream() {
         return cacheSession.getRealmRolesStream(this);
     }
-    
+
     @Override
     public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
         return cacheSession.getRealmRolesStream(this, first, max);
@@ -1084,7 +1121,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return cacheSession.searchForRolesStream(this, search, first, max);
     }
-    
+
     @Override
     public RoleModel addRole(String name) {
         return cacheSession.addRealmRole(this, name);
@@ -1103,8 +1140,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        if (isUpdated()) return updated.isIdentityFederationEnabled();
-        return cached.isIdentityFederationEnabled();
+        return session.identityProviders().isIdentityFederationEnabled();
     }
 
 
@@ -1601,10 +1637,10 @@ public class RealmAdapter implements CachedRealmModel {
 
     public void executeEvictions(ComponentModel model) {
         if (model == null) return;
-        
+
         // if user cache is disabled this is null
         UserCache userCache = UserStorageUtil.userCache(session);
-        if (userCache != null) {        
+        if (userCache != null) {
           // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
           if (model.getParentId() != null && !model.getParentId().equals(getId())) {
               ComponentModel parent = getComponent(model.getParentId());
@@ -1613,13 +1649,13 @@ public class RealmAdapter implements CachedRealmModel {
               }
               return;
           }
-  
+
           // invalidate entire user cache if we're dealing with user storage SPI
           if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
             userCache.evict(this);
           }
         }
-        
+
         // invalidate entire realm if we're dealing with client storage SPI
         // entire realm because of client roles, client lists, and clients
         if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
