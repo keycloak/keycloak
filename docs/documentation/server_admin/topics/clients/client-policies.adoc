@@ -87,6 +87,10 @@ for marking that particular client policy for particular clients.
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
 
+Client Attribute::
+    Applies to clients with the client attribute of the specified name and value. If you specify multiple client attributes, they will be evaluated using AND conditions.
+    If you want to evaluate using OR conditions, set this condition multiple times.
+
 Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 
