@@ -16,7 +16,7 @@ An _authentication flow_ is a container of authentications, screens, and actions
 image:images/browser-flow.png[Browser Flow]
 
 ===== Auth type
-The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent. 
+The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent.
 
 . Cookie
 +
@@ -60,12 +60,12 @@ The element does not count to mark a flow as successful.
 
 ====== Conditional
 
-This requirement type is only set on sub-flows. 
+This requirement type is only set on sub-flows.
 
-* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements. 
-* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_. 
+* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements.
+* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_.
 * If any executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
-* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_. 
+* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_.
 * If a flow contains executions and the flow is not set to _Conditional_, {project_name} does not evaluate the executions, and the executions are considered functionally _Disabled_.
 
 ==== Creating flows
@@ -118,7 +118,7 @@ AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the 
 image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
 
 Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
-perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
+perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_.
 
 You can add sub-flows to top-level flows with the *Add sub-flow* button. The *Add sub-flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *basic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
 Sub-flows success depends on how their executions evaluate, including their contained sub-flows. See the <<_execution-requirements, execution requirements section>> for an in-depth explanation of how sub-flows work.
@@ -343,7 +343,7 @@ claims= {
 ----
 
 The {project_name} javascript adapter has support for easy construct of this JSON and sending it in the login request.
-See link:{adapterguide_link_js_adapter}[Javascript adapter documentation] for more details.
+See *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section for more details.
 
 You can also use simpler parameter `acr_values` instead of `claims` parameter to request particular levels as non-essential. This is mentioned
 in the OIDC specification.
@@ -382,7 +382,7 @@ and that level expired, the user is not required to re-authenticate, but `acr` i
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
 
 NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
-the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown 
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown
 in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
 not be the desired behavior.
 
@@ -415,7 +415,7 @@ Usually when the user is redirected to the {project_name} from client applicatio
 that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
 click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
 
-Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the 
+Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the
 user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
 
 * When the client wants the user to be redirected directly to the registration, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL
@@ -467,7 +467,7 @@ with password and OTP:
 
 image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
 
-Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that 
+Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that
 the authentication with Identity providers also participates in the session limits.
 
 NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same the configuration

@@ -191,7 +191,7 @@ image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
 ===== Example using CURL
 
 The following example shows how to obtain an access token for a user in the realm `test` with the direct grant flow. The example is using
-link:{adapterguide_link}#_resource_owner_password_credentials_flow[OAuth2 Resource Owner Password Credentials Grant] and the confidential client `resource-owner`:
+*OAuth2 Resource Owner Password Credentials Grant* in the link:{securing_apps_link}[securing apps] section and the confidential client `resource-owner`:
 
 [source,bash,subs="attributes+"]
 ----
@@ -214,7 +214,7 @@ According to your environment, it might be needed to use more options to CURL co
 * Option `--capath` to include the whole directory containing the certificate authority path
 * Options `--cert-type` or `--key-type` in case you want to use different files than `PEM`
 
-Please consult the documentation of the `curl` tool for the details if needed. If you are using other tools than `curl`, 
+Please consult the documentation of the `curl` tool for the details if needed. If you are using other tools than `curl`,
 consult the documentation of your tool. However, the setup would be similar.  A need exists to include keystore and truststore as well as client credentials in case you are using a confidential
 client.
 
