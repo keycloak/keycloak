@@ -86,7 +86,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Assigned type All types", () => {
       listingPage
-        .selectFilter(Filter.AssignedType)
+        .selectClientScopeFilter(Filter.AssignedType)
         .selectSecondaryFilterAssignedType(FilterAssignedType.AllTypes)
         .itemExist(FilterAssignedType.Default, true)
         .itemExist(FilterAssignedType.Optional, true)
@@ -95,7 +95,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Assigned type Default", () => {
       listingPage
-        .selectFilter(Filter.AssignedType)
+        .selectClientScopeFilter(Filter.AssignedType)
         .selectSecondaryFilterAssignedType(FilterAssignedType.Default)
         .itemExist(FilterAssignedType.Default, true)
         .itemExist(FilterAssignedType.Optional, false)
@@ -104,7 +104,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Assigned type Optional", () => {
       listingPage
-        .selectFilter(Filter.AssignedType)
+        .selectClientScopeFilter(Filter.AssignedType)
         .selectSecondaryFilterAssignedType(FilterAssignedType.Optional)
         .itemExist(FilterAssignedType.Default, false)
         .itemExist(FilterAssignedType.Optional, true)
@@ -113,7 +113,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Protocol All", () => {
       listingPage
-        .selectFilter(Filter.Protocol)
+        .selectClientScopeFilter(Filter.Protocol)
         .selectSecondaryFilterProtocol(FilterProtocol.All);
       sidebarPage.waitForPageLoad();
       listingPage
@@ -124,7 +124,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Protocol SAML", () => {
       listingPage
-        .selectFilter(Filter.Protocol)
+        .selectClientScopeFilter(Filter.Protocol)
         .selectSecondaryFilterProtocol(FilterProtocol.SAML)
         .itemExist(FilterProtocol.SAML, true)
         .itemExist(openIDConnectItemText, false); //using FilterProtocol.OpenID will fail, text does not match.
@@ -132,7 +132,7 @@ describe("Client Scopes test", () => {
 
     it("should filter items by Protocol OpenID", () => {
       listingPage
-        .selectFilter(Filter.Protocol)
+        .selectClientScopeFilter(Filter.Protocol)
         .selectSecondaryFilterProtocol(FilterProtocol.OpenID)
         .itemExist(FilterProtocol.SAML, false)
         .itemExist(openIDConnectItemText, true); //using FilterProtocol.OpenID will fail, text does not match.
