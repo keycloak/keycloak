@@ -22,27 +22,8 @@ type RoleDetailLinkProps = RoleRepresentation & {
   messageBundle?: string;
 };
 
-const RoleDetailLink = ({
-  defaultRoleName,
-  toDetail,
-  messageBundle,
-  ...role
-}: RoleDetailLinkProps) => {
-  const { t } = useTranslation(messageBundle);
-  const { realm } = useRealm();
-  return role.name !== defaultRoleName ? (
-    <Link to={toDetail(role.id!)}>{role.name}</Link>
-  ) : (
-    <>
-      <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
-        {role.name}{" "}
-      </Link>
-      <HelpItem
-        helpText={t(`${messageBundle}:defaultRole`)}
-        fieldLabelId="defaultRole"
-      />
-    </>
-  );
+const RoleDetailLink = ({ toDetail, ...role }: RoleDetailLinkProps) => {
+  return <Link to={toDetail(role.id!)}>{role.name}</Link>;
 };
 
 type RolesListProps = {
