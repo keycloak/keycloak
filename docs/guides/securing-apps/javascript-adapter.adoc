@@ -36,7 +36,7 @@ The following example shows how to initialize the adapter. Make sure that you re
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-    url: 'http://keycloak-server{kc_base_path}',
+    url: 'http://keycloak-server',
     realm: 'myrealm',
     clientId: 'myapp'
 });
@@ -68,7 +68,7 @@ To enable the _silent_ `check-sso`, you provide a `silentCheckSsoRedirectUri` at
 ----
 keycloak.init({
     onLoad: 'check-sso',
-    silentCheckSsoRedirectUri: `{location.origin}/silent-check-sso.html`
+    silentCheckSsoRedirectUri: `${r"${location.origin}"}/silent-check-sso.html`
 });
 ----
 
@@ -109,7 +109,7 @@ async function fetchUsers() {
     const response = await fetch('/api/users', {
         headers: {
             accept: 'application/json',
-            authorization: `Bearer {keycloak.token}`
+            authorization: `Bearer ${r"${keycloak.token}"}`
         }
     });
 
@@ -299,7 +299,7 @@ An affected browser is for example Safari starting with version 13.1.
 ----
 new Keycloak();
 new Keycloak('http://localhost/keycloak.json');
-new Keycloak({ url: 'http://localhost{kc_base_path}', realm: 'myrealm', clientId: 'myApp' });
+new Keycloak({ url: 'http://localhost', realm: 'myrealm', clientId: 'myApp' });
 ----
 
 === Properties
