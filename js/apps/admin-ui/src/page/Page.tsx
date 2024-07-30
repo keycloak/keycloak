@@ -60,8 +60,10 @@ export default function Page() {
       <DeleteConfirm />
       <ViewHeader
         titleKey={
-          get(pageData, `config.${page.metadata.displayFields[0]}`)?.[0] ||
-          t("createItem")
+          get(
+            pageData,
+            `config.${page.metadata.displayFields?.[0] || page.properties[0].name}`,
+          )?.[0] || t("createItem")
         }
         dropdownItems={
           id
