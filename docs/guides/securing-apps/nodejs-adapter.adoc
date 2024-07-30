@@ -1,5 +1,10 @@
-[[_nodejs_adapter]]
-=== {project_name} Node.js adapter
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="{project_name} Node.js adapter"
+priority=40
+summary="Node.js adapter to protect server-side JavaScript apps">
 
 {project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps - the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
@@ -12,7 +17,7 @@ To use the Node.js adapter, first you must create a client for your application 
 
 Once the client is created, click *Action* at the top right and choose *Download adapter config*. For *Format, choose *Keycloak OIDC JSON* and click *Download*. The downloaded `keycloak.json` file is at the root folder of your project.
 
-==== Installation
+== Installation
 
 Assuming you have already installed https://nodejs.org[Node.js], create a folder for your application:
 
@@ -42,7 +47,7 @@ ifeval::[{project_product}==true]
 
 endif::[]
 
-==== Usage
+== Usage
 Instantiate a Keycloak class::
 
 The `Keycloak` class provides a central point for configuration
@@ -146,7 +151,7 @@ By default, the scope value `openid` is passed as a query parameter to {project_
 [source,javascript]
     const keycloak = new Keycloak({ scope: 'offline_access' });
 
-==== Installing middleware
+== Installing middleware
 
 Once instantiated, install the middleware into your connect-capable app:
 
@@ -180,7 +185,7 @@ Last but not least, let's set up our server to listen for HTTP requests on port 
     });
 ----
 
-==== Configuration for proxies
+== Configuration for proxies
 
 If the application is running behind a proxy that terminates an SSL connection
 Express must be configured per the link:https://expressjs.com/en/guide/behind-proxies.html[express behind proxies] guide.
@@ -198,7 +203,7 @@ Example configuration:
     app.use( keycloak.middleware() );
 ----
 
-==== Protecting resources
+== Protecting resources
 
 Simple authentication::
 
@@ -322,8 +327,8 @@ for each section:
 
 Advanced Login Configuration:
 
-By default, all unauthorized requests will be redirected to the {project_name} login page unless your client is bearer-only. 
-However, a confidential or public client may host both browsable and API endpoints. To prevent redirects on unauthenticated 
+By default, all unauthorized requests will be redirected to the {project_name} login page unless your client is bearer-only.
+However, a confidential or public client may host both browsable and API endpoints. To prevent redirects on unauthenticated
 API requests and instead return an HTTP 401, you can override the redirectToLogin function.
 
 For example, this override checks if the URL contains /api/ and disables login redirects:
@@ -336,7 +341,7 @@ For example, this override checks if the URL contains /api/ and disables login r
     };
 ----
 
-==== Additional URLs
+== Additional URLs
 
 Explicit user-triggered logout::
 
@@ -348,7 +353,7 @@ configuration parameter to the `middleware()` call:
 ----
     app.use( keycloak.middleware( { logout: '/logoff' } ));
 ----
-    
+
 When the user-triggered logout is invoked a query parameter `redirect_url` can be passed:
 
 [source]
@@ -368,6 +373,8 @@ to the `middleware()` call:
 [source,javascript]
     app.use( keycloak.middleware( { admin: '/callbacks' } );
 
-==== Complete example 
+== Complete example
 
 A complete example using the Node.js adapter usage can be found in {quickstartRepo_link}/tree/latest/nodejs/resource-server[Keycloak quickstarts for Node.js]
+
+</@tmpl.guide>
