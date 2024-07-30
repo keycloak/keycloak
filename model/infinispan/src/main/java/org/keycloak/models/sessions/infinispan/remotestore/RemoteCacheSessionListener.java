@@ -28,10 +28,12 @@ import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
+import org.infinispan.client.hotrod.annotation.ClientCacheFailover;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.event.ClientCacheFailoverEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
@@ -57,6 +59,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     protected static final Logger logger = Logger.getLogger(RemoteCacheSessionListener.class);
 
     private static final int MAXIMUM_REPLACE_RETRIES = 10;
+    private final Runnable onFailover;
 
     private Cache<K, SessionEntityWrapper<V>> cache;
     private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
@@ -67,7 +70,8 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     private KeycloakSessionFactory sessionFactory;
 
 
-    protected RemoteCacheSessionListener() {
+    protected RemoteCacheSessionListener(Runnable onFailover) {
+        this.onFailover = onFailover;
     }
 
 
@@ -100,6 +104,13 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                 createRemoteEntityInCache(key);
 
             });
+        }
+    }
+
+    @ClientCacheFailover
+    public void cacheFailover(ClientCacheFailoverEvent event) {
+        if (onFailover != null) {
+            this.executor.submit(event, onFailover);
         }
     }
 
@@ -250,7 +261,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
     public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
-                                                                                         SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
+                                                                                         SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, Runnable onFailover) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.
@@ -264,7 +275,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             listener = new DontFetchInitialStateCacheListener();
         }*/
 
-        RemoteCacheSessionListener<K, V> listener = new RemoteCacheSessionListener<>();
+        RemoteCacheSessionListener<K, V> listener = new RemoteCacheSessionListener<>(onFailover);
         listener.init(session, cache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader);
 
         return listener;
