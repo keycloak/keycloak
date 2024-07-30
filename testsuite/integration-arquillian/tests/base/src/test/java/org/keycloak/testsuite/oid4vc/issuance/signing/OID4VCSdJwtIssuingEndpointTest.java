@@ -370,7 +370,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         protected void handleCredentialResponse(CredentialResponse credentialResponse) throws VerificationException {
             // SDJWT have a special format.
             SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponse.getCredential().toString());
-            JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().getJwsString(), JsonWebToken.class).getToken();
+            JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().toJws(), JsonWebToken.class).getToken();
 
             assertNotNull("A valid credential string should have been responded", jsonWebToken);
             assertNotNull("The credentials should be included at the vct-claim.", jsonWebToken.getOtherClaims().get("vct"));
