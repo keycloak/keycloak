@@ -42,7 +42,6 @@ import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.util.ByRef;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.context.Flag;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
@@ -423,55 +422,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             return userSession;
         }
 
-        // Try lookup userSession from remoteCache
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        if (cache == null) {
-            return null;
-        }
-
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-        if (remoteCache != null) {
-            SessionEntityWrapper<UserSessionEntity> remoteSessionEntityWrapper = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(id);
-            if (remoteSessionEntityWrapper != null) {
-                UserSessionEntity remoteSessionEntity = remoteSessionEntityWrapper.getEntity();
-                remoteSessionEntity.setOffline(offline);
-                log.debugf("getUserSessionWithPredicate(%s): remote cache contains session entity %s", id, remoteSessionEntity);
-
-                UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
-                if (predicate.test(remoteSessionAdapter)) {
-
-                    // Remote entity contains our predicate. Update local cache with the remote entity
-                    SessionEntityWrapper<UserSessionEntity> sessionWrapper = remoteSessionEntity.mergeRemoteEntityWithLocalEntity(sessionTx.get(id, offline));
-
-                    // Replace entity just in ispn cache. Skip remoteStore
-                    cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                            .replace(id, sessionWrapper);
-
-                    sessionTx.reloadEntityInCurrentTransaction(realm, id, sessionWrapper);
-
-                    // Recursion. We should have it locally now
-                    return getUserSessionWithPredicate(realm, id, offline, predicate);
-                } else {
-                    log.debugf("getUserSessionWithPredicate(%s): found, but predicate doesn't pass", id);
-
-                    return null;
-                }
-            } else {
-                log.debugf("getUserSessionWithPredicate(%s): not found", id);
-
-                // Session not available on remoteCache. Was already removed there. So removing locally too.
-                // TODO: Can be optimized to skip calling remoteCache.remove
-                removeUserSession(realm, userSession);
-
-                return null;
-            }
-        } else {
-
-            log.debugf("getUserSessionWithPredicate(%s): remote cache not available", id);
-
-            return null;
-        }
+        // The logic to remove the local entry if there is no entry in the remote cache that is present in the InfinispanUserSessionProvider is removed here,
+        // as with persistent sessions we will have only a subset of all sessions in memory (both locally and in the remote store).
+        return null;
     }
 
 

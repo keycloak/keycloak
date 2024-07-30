@@ -17,10 +17,6 @@
 
 package org.keycloak.services.managers;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -87,6 +83,7 @@ public class UserSessionCrossDCManager {
         AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
         String sessionId = authSessionId.getDecodedId();
 
+        // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
         // This will remove userSession "locally" if it doesn't exist on remoteCache
         kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null);
 
