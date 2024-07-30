@@ -1,4 +1,5 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,8 +21,24 @@ type RoleDetailLinkProps = RoleRepresentation & {
   messageBundle?: string;
 };
 
-const RoleDetailLink = ({ toDetail, ...role }: RoleDetailLinkProps) => {
-  return <Link to={toDetail(role.id!)}>{role.name}</Link>;
+const RoleDetailLink = ({
+  defaultRoleName,
+  toDetail,
+  messageBundle,
+  ...role
+}: RoleDetailLinkProps) => {
+  const { t } = useTranslation(messageBundle);
+  return role.name !== defaultRoleName ? (
+    <Link to={toDetail(role.id!)}>{role.name}</Link>
+  ) : (
+    <>
+      <Link to={toDetail(role.id!)}>{role.name}</Link>
+      <HelpItem
+        helpText={t(`${messageBundle}:defaultRole`)}
+        fieldLabelId="defaultRole"
+      />
+    </>
+  );
 };
 
 type RolesListProps = {
