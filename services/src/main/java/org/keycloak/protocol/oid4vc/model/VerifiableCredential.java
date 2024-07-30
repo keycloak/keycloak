@@ -129,6 +129,7 @@ public class VerifiableCredential {
                     throw new IllegalStateException("id must be a valid URI", e);
                 }
             });
+            this.issuer = issuerMap;
         }
         else {
             try {
