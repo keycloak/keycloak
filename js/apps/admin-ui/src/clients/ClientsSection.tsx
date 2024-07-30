@@ -1,6 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { label, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -12,18 +12,14 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
-  IFormatter,
-  IFormatterValueType,
   IRowData,
   TableText,
-  cellWidth,
+  cellWidth
 } from "@patternfly/react-table";
-import { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import {
@@ -39,7 +35,7 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import { emptyFormatter, exportClient } from "../util";
+import { emptyFormatter, exportClient, translationFormatter } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
 import { ClientRegistration } from "./registration/ClientRegistration";
@@ -48,12 +44,6 @@ import { toClient } from "./routes/Client";
 import { ClientsTab, toClients } from "./routes/Clients";
 import { toImportClient } from "./routes/ImportClient";
 import { getProtocolName, isRealmClient } from "./utils";
-
-export const translationFormatter =
-  (t: TFunction): IFormatter =>
-  (data?: IFormatterValueType) => {
-    return data ? label(t, data as string) || "—" : "—";
-  };
 
 const ClientDetailLink = (client: ClientRepresentation) => {
   const { t } = useTranslation();
