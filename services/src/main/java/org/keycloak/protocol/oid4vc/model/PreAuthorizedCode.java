@@ -20,6 +20,8 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 /**
  * Represents a pre-authorized grant, as used by the Credential Offer in OID4VCI
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
@@ -75,5 +77,17 @@ public class PreAuthorizedCode {
     public PreAuthorizedCode setAuthorizationServer(String authorizationServer) {
         this.authorizationServer = authorizationServer;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PreAuthorizedCode that)) return false;
+        return getInterval() == that.getInterval() && Objects.equals(getPreAuthorizedCode(), that.getPreAuthorizedCode()) && Objects.equals(getTxCode(), that.getTxCode()) && Objects.equals(getAuthorizationServer(), that.getAuthorizationServer());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPreAuthorizedCode(), getTxCode(), getInterval(), getAuthorizationServer());
     }
 }
