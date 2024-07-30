@@ -1,5 +1,11 @@
-[[_mod_auth_openidc]]
-=== mod_auth_openidc Apache HTTPD Module
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="mod_auth_openidc Apache HTTPD Module"
+priority=40
+summary="Configuring the mod_auth_openidc Apache module with {project_name}">
+
 
 WARNING: {project_name} does not provide any official support to mod_auth_openidc. The instructions below are best-effort and may not be up-to-date.
 We recommend that you stick to official mod_auth_openidc documentation for more details.
@@ -22,7 +28,7 @@ An example configuration would look like the following.
 ----
 LoadModule auth_openidc_module modules/mod_auth_openidc.so
 
-ServerName ${HOSTIP}
+ServerName ${r"${HOSTIP}"}
 
 <VirtualHost *:80>
 
@@ -32,16 +38,16 @@ ServerName ${HOSTIP}
     #this is required by mod_auth_openidc
     OIDCCryptoPassphrase a-random-secret-used-by-apache-oidc-and-balancer
 
-    OIDCProviderMetadataURL ${KC_ADDR}{kc_realms_path}/${KC_REALM}/.well-known/openid-configuration
+    OIDCProviderMetadataURL ${r"${KC_ADDR}"}{kc_realms_path}/${r"${KC_REALM}"}/.well-known/openid-configuration
 
-    OIDCClientID ${CLIENT_ID}
-    OIDCClientSecret ${CLIENT_SECRET}
-    OIDCRedirectURI http://${HOSTIP}/${CLIENT_APP_NAME}/redirect_uri
+    OIDCClientID ${r"${CLIENT_ID}"}
+    OIDCClientSecret ${r"${CLIENT_SECRET}"}
+    OIDCRedirectURI http://${r"${HOSTIP}"}/${r"${CLIENT_APP_NAME}"}/redirect_uri
 
     # maps the preferred_username claim to the REMOTE_USER environment variable
     OIDCRemoteUserClaim preferred_username
 
-    <Location /${CLIENT_APP_NAME}/>
+    <Location /${r"${CLIENT_APP_NAME}"}/>
         AuthType openid-connect
         Require valid-user
     </Location>
@@ -50,3 +56,5 @@ ServerName ${HOSTIP}
 
 Further information on how to configure mod_auth_openidc can be found on the https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc]
 project page.
+
+</@tmpl.guide>
