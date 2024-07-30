@@ -223,7 +223,18 @@ public class CacheManagerFactory {
             var builders = builder.getNamedConfigurationBuilders();
             // remove all distributed caches
             logger.debug("Removing all distributed caches.");
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(builders::remove);
+            for (String cacheName : CLUSTERED_CACHE_NAMES) {
+               var remoteStore = builders.get(cacheName)
+                     .persistence()
+                     .stores()
+                     .stream()
+                     .filter(RemoteStoreConfigurationBuilder.class::isInstance)
+                     .findFirst();
+
+               if (remoteStore.isPresent())
+                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' Feature", cacheName, Profile.Feature.REMOTE_CACHE.getKey());
+               builders.remove(cacheName);
+            }
         }
 
         var start = isStartEagerly();
