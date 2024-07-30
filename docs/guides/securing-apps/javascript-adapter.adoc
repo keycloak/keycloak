@@ -1,9 +1,14 @@
-[[_javascript_adapter]]
-=== {project_name} JavaScript adapter
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="{project_name} JavaScript adapter"
+priority=20
+summary="Client-side JavaScript library that can be used to secure web applications.">
 
 {project_name} comes with a client-side JavaScript library called `keycloak-js` that can be used to secure web applications. The adapter also comes with built-in support for Cordova applications.
 
-==== Installation
+== Installation
 
 The adapter is distributed in several ways, but we recommend that you install the https://www.npmjs.com/package/keycloak-js[`keycloak-js`] package from NPM:
 
@@ -14,7 +19,7 @@ npm install keycloak-js
 
 Alternatively, the library can be retrieved directly from the {project_name} server at `{kc_js_path}/keycloak.js` and is also distributed as a ZIP archive. We are however considering the inclusion of the adapter directly from the Keycloak server as deprecated, and this functionality might be removed in the future.
 
-==== {project_name} server configuration
+== {project_name} server configuration
 
 One important thing to consider about using client-side applications is that the client has to be a public client as there is no secure way to store client credentials in a client-side application. This consideration makes it very important to make sure the redirect URIs you have configured for the client are correct and as specific as possible.
 
@@ -22,31 +27,37 @@ To use the adapter, create a client for your application in the {project_name} A
 
 You also need to configure `Valid Redirect URIs` and `Web Origins`. Be as specific as possible as failing to do so may result in a security vulnerability.
 
-==== Using the adapter
+== Using the adapter
 
 The following example shows how to initialize the adapter. Make sure that you replace the options passed to the `Keycloak` constructor with those of the client you have configured.
 
-[source,javascript]
+[source,javascript,subs="attributes+"]
 ----
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-    url: 'http://keycloak-server${kc_base_path}',
+    url: 'http://keycloak-server',
     realm: 'myrealm',
     clientId: 'myapp'
 });
 
 try {
     const authenticated = await keycloak.init();
-    console.log(`User is ${authenticated ? 'authenticated' : 'not authenticated'}`);
+    if (authenticated) {
+        console.log('User is authenticated');
+    } else {
+        console.log('User is not authenticated');
+    }
 } catch (error) {
     console.error('Failed to initialize adapter:', error);
 }
 ----
 
-To authenticate, you call the `login` function. Two options exist to make the adapter automatically authenticate. You can pass `login-required` or `check-sso` to the `init()` function. 
 
-* `login-required` authenticates the client if the user is logged in to {project_name} or displays the login page if the user is not logged in. 
+
+To authenticate, you call the `login` function. Two options exist to make the adapter automatically authenticate. You can pass `login-required` or `check-sso` to the `init()` function.
+
+* `login-required` authenticates the client if the user is logged in to {project_name} or displays the login page if the user is not logged in.
 * `check-sso` only authenticates the client if the user is already logged in. If the user is not logged in, the browser is redirected back to the application and remains unauthenticated.
 
 You can configure a _silent_ `check-sso` option. With this feature enabled, your browser will not perform a full redirect to the {project_name} server and back to your application, but this action will be performed in a hidden iframe. Therefore, your application resources are only loaded and parsed once by the browser, namely when the application is initialized and not again after the redirect back from {project_name} to your application. This approach is particularly useful in case of SPAs (Single Page Applications).
@@ -57,14 +68,14 @@ To enable the _silent_ `check-sso`, you provide a `silentCheckSsoRedirectUri` at
 ----
 keycloak.init({
     onLoad: 'check-sso',
-    silentCheckSsoRedirectUri: `${location.origin}/silent-check-sso.html`
+    silentCheckSsoRedirectUri: `${r"${location.origin}"}/silent-check-sso.html`
 });
 ----
 
 The page at the silent check-sso redirect uri is loaded in the iframe after successfully checking your authentication state and retrieving the tokens from the {project_name} server.
 It has no other task than sending the received tokens to the main application and should only look like this:
 
-[source,html]
+[source,html,subs="attributes+"]
 ----
 <!doctype html>
 <html>
@@ -92,13 +103,13 @@ keycloak.init({
 After the user is authenticated the application can make requests to RESTful services secured by {project_name} by including the bearer token in the
 `Authorization` header. For example:
 
-[source,javascript]
+[source,javascript,subs="attributes+"]
 ----
 async function fetchUsers() {
     const response = await fetch('/api/users', {
         headers: {
             accept: 'application/json',
-            authorization: `Bearer ${keycloak.token}`
+            authorization: `Bearer ${r"${keycloak.token}"}`
         }
     });
 
@@ -124,7 +135,7 @@ const users = await fetchUsers();
 Both access and refresh token are stored in memory and are not persisted in any kind of storage. Therefore, these tokens should never be persisted to prevent hijacking attacks.
 ====
 
-==== Session Status iframe
+== Session Status iframe
 
 By default, the adapter creates a hidden iframe that is used to detect if a Single-Sign Out has occurred. This iframe does not require any network traffic. Instead the status is retrieved by looking at a special status cookie. This feature can be disabled by setting `checkLoginIframe: false` in the options passed to the `init()` method.
 
@@ -134,7 +145,7 @@ your application.
 WARNING: Session Status iframe functionality is limited in some modern browsers. Please see <<_modern_browsers,Modern Browsers with Tracking Protection Section>>.
 
 [[_javascript_implicit_flow]]
-==== Implicit and hybrid flow
+== Implicit and hybrid flow
 
 By default, the adapter uses the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
 
@@ -173,7 +184,7 @@ keycloak.init({
 ----
 
 [#hybrid-apps-with-cordova]
-==== Hybrid Apps with Cordova
+== Hybrid Apps with Cordova
 
 {project_name} supports hybrid mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The adapter has two modes for this: `cordova` and `cordova-native`:
 
@@ -204,7 +215,7 @@ This adapter requires two additional plugins:
 The technical details for linking to an app differ on each platform and special setup is needed.
 Please refer to the Android and iOS sections of the https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md[deeplinks plugin documentation] for further instructions.
 
-Different kinds of links exist for opening apps: 
+Different kinds of links exist for opening apps:
 * custom schemes, such as `myapp://login` or `android-app://com.example.myapp/https/example.com/login`
 * https://developer.apple.com/ios/universal-links/[Universal Links (iOS)]) / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
 While the former are easier to set up and tend to work more reliably, the latter offer extra security because they are unique and only the owner of a domain can register them. Custom-URLs are deprecated on iOS.  For best reliability, we recommend that you use universal links combined with a fallback site that uses a custom-url link.
@@ -220,7 +231,7 @@ Furthermore, we recommend the following steps to improve compatibility with the 
 ----
 
 [#custom-adapters]
-==== Custom Adapters
+== Custom Adapters
 
 In some situations, you may need to run the adapter in environments that are not supported by default, such as Capacitor. To use the JavasScript client in these environments, you can pass a custom adapter. For example, a third-party library could provide such an adapter to make it possible to reliably run the adapter:
 
@@ -263,15 +274,15 @@ keycloak.init({
 Naturally you can also do this without TypeScript by omitting the type information, but ensuring implementing the interface properly will then be left entirely up to you.
 
 [[_modern_browsers]]
-==== Modern Browsers with Tracking Protection
+== Modern Browsers with Tracking Protection
 In the latest versions of some browsers, various cookies policies are applied to prevent tracking of the users by third parties, such as SameSite in Chrome or completely blocked third-party cookies. Those policies are likely to become more restrictive and adopted by other browsers over time. Eventually cookies in third-party contexts may become completely unsupported and blocked by the browsers. As a result, the affected adapter features might ultimately be deprecated.
 
 The adapter relies on third-party cookies for Session Status iframe, _silent_ `check-sso` and partially also for regular (non-silent) `check-sso`. Those features have limited functionality or are completely disabled based on how restrictive the browser is regarding cookies. The adapter tries to detect this setting and reacts accordingly.
 
-===== Browsers with "SameSite=Lax by Default" Policy
+=== Browsers with "SameSite=Lax by Default" Policy
 All features are supported if SSL / TLS connection is configured on the {project_name} side as well as on the application side.  For example, Chrome is affected starting with version 84.
 
-===== Browsers with Blocked Third-Party Cookies
+=== Browsers with Blocked Third-Party Cookies
 Session Status iframe is not supported and is automatically disabled if such browser behavior is detected by the adapter. This means the adapter cannot use a session cookie for Single Sign-Out detection and must rely purely on tokens. As a result, when a user logs out in another window, the application using the adapter will not be logged out until the application tries to refresh the Access Token. Therefore, consider setting the Access Token Lifespan to a relatively short time, so that the logout is detected as soon as possible. For more details, see link:{adminguide_link}#_timeouts[Session and Token Timeouts].
 
 _Silent_ `check-sso` is not supported and falls back to regular (non-silent) `check-sso` by default. This behavior can be changed by setting `silentCheckSsoFallback: false` in the options passed to the `init` method. In this case, `check-sso` will be completely disabled if restrictive browser behavior is detected.
@@ -280,18 +291,18 @@ Regular `check-sso` is affected as well. Since Session Status iframe is unsuppor
 
 An affected browser is for example Safari starting with version 13.1.
 
-==== API Reference
+== API Reference
 
-===== Constructor
+=== Constructor
 
 [source,javascript,subs="attributes+"]
 ----
 new Keycloak();
 new Keycloak('http://localhost/keycloak.json');
-new Keycloak({ url: 'http://localhost{kc_base_path}', realm: 'myrealm', clientId: 'myApp' });
+new Keycloak({ url: 'http://localhost', realm: 'myrealm', clientId: 'myApp' });
 ----
 
-===== Properties
+=== Properties
 
 authenticated::
     Is `true` if the user is authenticated, `false` otherwise.
@@ -344,7 +355,7 @@ adapter::
 responseType::
     Response type sent to {project_name} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
-===== Methods
+=== Methods
 
 *init(options)*
 
@@ -483,8 +494,8 @@ Returns true if the token has less than minValidity seconds left before it expir
 *updateToken(minValidity)*
 
 If the token expires within minValidity seconds (minValidity is optional, if not specified 5 is used) the token is refreshed.
-If -1 is passed as the minValidity, the token will be forcibly refreshed. 
-If the session status iframe is enabled, the session status is also checked. 
+If -1 is passed as the minValidity, the token will be forcibly refreshed.
+If the session status iframe is enabled, the session status is also checked.
 
 Returns a promise that resolves with a boolean indicating whether or not the token has been refreshed.
 
@@ -507,7 +518,7 @@ This can be useful if application has detected the session was expired, for exam
 
 Invoking this results in onAuthLogout callback listener being invoked.
 
-===== Callback Events
+=== Callback Events
 
 The adapter supports setting callback listeners for certain events. Keep in mind that these have to be set before the call to the `init()` method.
 
@@ -526,3 +537,5 @@ The available events are:
 * *onAuthRefreshError* - Called if there was an error while trying to refresh the token.
 * *onAuthLogout* - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
 * *onTokenExpired* - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to the login screen to obtain a new access token.
+
+</@tmpl.guide>

@@ -8,8 +8,6 @@ include::topics/overview/terminology.adoc[]
 
 include::topics/oidc/oidc-overview.adoc[]
 
-include::topics/oidc/javascript-adapter.adoc[]
-
 include::topics/saml/saml-overview.adoc[]
 ifeval::[{project_product}==true]
 include::topics/saml/java/java-adapters-product.adoc[]
