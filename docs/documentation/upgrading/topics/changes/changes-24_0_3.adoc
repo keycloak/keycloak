@@ -22,3 +22,8 @@ List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetada
 Differently than the previous contract and behavior, this method is only invoked for the user storage provider from where the user
 was loaded from.
 endif::[]
+
+= Deprecated Account REST endpoint for removing credential
+
+The Account REST endpoint for removing the credential of the user is deprecated. Starting at this version, the Account Console no longer uses this endpoint. It is replaced by the `Delete Credential` application-initiated
+action, which is triggered by the Account Console when a user want to remove the credential of a user.
