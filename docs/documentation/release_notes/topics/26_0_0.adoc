@@ -74,3 +74,11 @@ The new `footer.ftl` template provides a `content` macro that is rendered at the
 The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2` and will be removed in a future version.
 While it remains the default for the new realms for compatibility reasons, it is strongly recommended to switch all the
 realm themes to `keycloak.v2`.
+
+= Admin Bootstrapping and Recovery
+
+In the past, regaining access to a {project_name} instance when all admin users were locked out was a challenging and complex process. Recognizing these challenges and aiming to significantly enhance the user experience, {project_name} now offers several straightforward methods to bootstrap a temporary admin account and recover lost admin access.
+
+It is now possible to run the `start` or `start-dev` commands with specific options to create a temporary admin account. Additionally, a new dedicated command has been introduced, which allows users to regain admin access without hassle.
+
+For detailed instructions and more information on this topic, refer to the link:{bootstrapadminrecovery_link}[{bootstrapadminrecovery_name}] guide.

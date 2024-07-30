@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -51,7 +52,7 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public RemoteInfinispanAuthenticationSessionProvider create(KeycloakSession session) {
-        return new RemoteInfinispanAuthenticationSessionProvider(session, this);
+        return new RemoteInfinispanAuthenticationSessionProvider(session, authSessionsLimit, createAndEnlistTransaction(session));
     }
 
     @Override
@@ -92,11 +93,9 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
         return InfinispanUtils.PROVIDER_ORDER;
     }
 
-    public int getAuthSessionsLimit() {
-        return authSessionsLimit;
-    }
-
-    public RemoteCache<String, RootAuthenticationSessionEntity> getCache() {
-        return cache;
+    private AuthenticationSessionTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var tx = new AuthenticationSessionTransaction(cache);
+        session.getTransactionManager().enlist(tx);
+        return tx;
     }
 }

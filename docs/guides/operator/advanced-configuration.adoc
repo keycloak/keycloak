@@ -206,7 +206,7 @@ For more details, see <@links.server id="containers" />.
 
 === Scheduling
 
-You may control several aspects of the server Pod scheduling via the Keycloak CR. The scheduling stanza exposes optional standard Kubernetes affinity, tolerations, topology spread constraints, and the priority class name to fine tune the scheduling and placement of your server Pods. 
+You may control several aspects of the server Pod scheduling via the Keycloak CR. The scheduling stanza exposes optional standard Kubernetes affinity, tolerations, topology spread constraints, and the priority class name to fine tune the scheduling and placement of your server Pods.
 
 An example utilizing all scheduling fields:
 
@@ -313,5 +313,7 @@ This includes `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` and the `/v
 When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be used to configure the bootstrap user and/or service account. If you do not specify anything for the spec.bootstrapAdmin, the operator will create a Secret named "metadata.name"-initial-admin with a username temp-admin and a generated password. If you specify a Secret name for bootstrap admin user, then the Secret will need to contain `username` and `password` key value pairs. If you specify a Secret name for bootstrap admin service account, then the Secret will need to contain `client-id` and `client-secret` key value pairs.
 
 If a master realm has already been created for you cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
+
+For more information on how to bootstrap a temporary admin user or service account and recover lost admin access, refer to the <@links.server id="bootstrap-admin-recovery"/> guide.
 
 </@tmpl.guide>

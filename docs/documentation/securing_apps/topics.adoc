@@ -8,10 +8,6 @@ include::topics/overview/terminology.adoc[]
 
 include::topics/oidc/oidc-overview.adoc[]
 
-ifeval::[{project_community}==true]
-include::topics/oidc/mod-auth-openidc.adoc[]
-endif::[]
-
 include::topics/saml/saml-overview.adoc[]
 ifeval::[{project_product}==true]
 include::topics/saml/java/java-adapters-product.adoc[]

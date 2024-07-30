@@ -366,7 +366,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
             remoteCacheInvoker.addRemoteCache(ispnCache.getName(), remoteCache, maxIdleLoader);
 
-            RemoteCacheSessionListener hotrodListener = RemoteCacheSessionListener.createListener(session, ispnCache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader);
+            Runnable onFailover = null;
+            if (useCaches && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                // If persistent sessions are enabled, we want to clear the local caches when a failover of the listener on the remote store changes as we might have missed some of the remote store events
+                // which might have been triggered by another Keycloak site connected to the same remote Infinispan cluster.
+                // Due to this, we can be sure that we never have outdated information in our local cache. All entries will be re-loaded from the remote cache or the database as necessary lazily.
+                onFailover = ispnCache::clear;
+            }
+
+            RemoteCacheSessionListener hotrodListener = RemoteCacheSessionListener.createListener(session, ispnCache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader, onFailover);
             remoteCache.addClientListener(hotrodListener);
             return remoteCache;
         }
