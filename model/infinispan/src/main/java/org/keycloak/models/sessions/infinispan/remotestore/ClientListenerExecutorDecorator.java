@@ -26,6 +26,7 @@ import java.util.concurrent.RejectedExecutionException;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.event.ClientCacheFailoverEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -59,7 +60,11 @@ public class ClientListenerExecutorDecorator<K> {
     }
 
 
-    // Explicitly use 3 submit methods to ensure that different type of ClientEvent is not used
+    // Use explicit submit methods to ensure that different type of ClientEvent is not used
+
+    public void submit(ClientCacheFailoverEvent clientCacheFailoverEvent, Runnable r) {
+        decorated.submit(r);
+    }
 
     public void submit(ClientCacheEntryCreatedEvent<K> cacheEntryCreatedEvent, Runnable r) {
         MyClientEvent event = convertIspnClientEvent(cacheEntryCreatedEvent);

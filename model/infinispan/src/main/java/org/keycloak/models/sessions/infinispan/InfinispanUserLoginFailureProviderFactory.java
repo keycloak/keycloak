@@ -157,7 +157,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
 
             remoteCacheInvoker.addRemoteCache(ispnCache.getName(), remoteCache, maxIdleLoader);
 
-            RemoteCacheSessionListener hotrodListener = RemoteCacheSessionListener.createListener(session, ispnCache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader);
+            RemoteCacheSessionListener hotrodListener = RemoteCacheSessionListener.createListener(session, ispnCache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader, null);
             remoteCache.addClientListener(hotrodListener);
             return remoteCache;
         }
