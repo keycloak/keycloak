@@ -1,4 +1,5 @@
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   AlertVariant,
@@ -19,8 +20,6 @@ import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { translationFormatter } from "../clients/ClientsSection";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -30,6 +29,7 @@ import {
 } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
+import { translationFormatter } from "../utils/translationFormatter";
 import { useFetch } from "../utils/useFetch";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toClientPolicies } from "./routes/ClientPolicies";

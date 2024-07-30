@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
+import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -187,6 +188,7 @@ export const AddRoleMappingModal = ({
           {
             name: "role.description",
             displayKey: "description",
+            cellFormatters: [translationFormatter(t)],
           },
         ]}
         emptyState={

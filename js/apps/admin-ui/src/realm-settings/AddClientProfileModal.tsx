@@ -4,10 +4,10 @@ import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { translationFormatter } from "../clients/ClientsSection";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { translationFormatter } from "../utils/translationFormatter";
 import { useFetch } from "../utils/useFetch";
 
 type ClientProfile = ClientProfileRepresentation & {

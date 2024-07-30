@@ -1,11 +1,11 @@
 import { Button, ToolbarItem } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { translationFormatter } from "../../clients/ClientsSection";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
+import { translationFormatter } from "../../utils/translationFormatter";
 
 export type EventType = {
   id: string;
