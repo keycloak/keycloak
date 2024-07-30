@@ -45,12 +45,9 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
-import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
-import org.keycloak.timer.TimerProvider;
+
+import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,7 +55,8 @@ import org.keycloak.timer.TimerProvider;
 public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     public static final String CONFIG_PERSIST_REVOKED_TOKENS = "persistRevokedTokens";
-    private static final boolean DEFAULT_PERSIST_REVOKED_TOKENS = true;
+    public static final boolean DEFAULT_PERSIST_REVOKED_TOKENS = true;
+    public static final String LOADED = "loaded" + SingleUseObjectProvider.REVOKED_KEY;
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
@@ -93,8 +91,6 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         persistRevokedTokens = config.getBoolean(CONFIG_PERSIST_REVOKED_TOKENS, DEFAULT_PERSIST_REVOKED_TOKENS);
     }
 
-    private final static String LOADED = "loaded" + SingleUseObjectProvider.REVOKED_KEY;
-
     private void initialize(KeycloakSession session) {
         if (persistRevokedTokens && !initialized) {
             synchronized (this) {
@@ -127,24 +123,14 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         }
 
         if (persistRevokedTokens) {
-            factory.register(new ProviderEventListener() {
-                public void onEvent(ProviderEvent event) {
-                    if (event instanceof PostMigrationEvent) {
-                        KeycloakSessionFactory sessionFactory = ((PostMigrationEvent) event).getFactory();
-                        try (KeycloakSession session = sessionFactory.create()) {
-                            TimerProvider timer = session.getProvider(TimerProvider.class);
-                            if (timer != null) {
-                                long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
-                                scheduleTask(sessionFactory, timer, interval);
-                            }
-                            // load sessions during startup, not on first request to avoid congestion
-                            initialize(session);
-                        }
+            factory.register(event -> {
+                if (event instanceof PostMigrationEvent pme) {
+                    KeycloakSessionFactory sessionFactory = pme.getFactory();
+                    setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
+                    try (KeycloakSession session = sessionFactory.create()) {
+                        // load sessions during startup, not on first request to avoid congestion
+                        initialize(session);
                     }
-                }
-
-                private void scheduleTask(KeycloakSessionFactory sessionFactory, TimerProvider timer, long interval) {
-                    timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredRevokedTokens(), interval), interval);
                 }
             });
         }

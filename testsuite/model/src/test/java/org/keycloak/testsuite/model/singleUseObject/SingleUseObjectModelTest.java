@@ -17,20 +17,6 @@
 
 package org.keycloak.testsuite.model.singleUseObject;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.models.DefaultActionTokenKey;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +24,25 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.hamcrest.Matchers;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.models.Constants;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -178,6 +183,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         });
 
         // simulate restart
+        removeRevokedTokenFromRemoteCache(revokedKey);
         reinitializeKeycloakSessionFactory();
 
         inComittedTransaction(session -> {
@@ -188,6 +194,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         setTimeOffset(120);
 
         // simulate restart
+        removeRevokedTokenFromRemoteCache(revokedKey);
         reinitializeKeycloakSessionFactory();
 
         inComittedTransaction(session -> {
@@ -284,5 +291,18 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    private void removeRevokedTokenFromRemoteCache(String revokedKey) {
+        if (!InfinispanUtils.isRemoteInfinispan()) {
+            return;
+        }
+        inComittedTransaction(session -> {
+            RemoteCache<String, SingleUseObjectValueEntity> cache = session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+            // remove loaded key to enable preloading from database
+            cache.remove(InfinispanSingleUseObjectProviderFactory.LOADED);
+            // remote the token
+            cache.remove(revokedKey);
+        });
     }
 }
