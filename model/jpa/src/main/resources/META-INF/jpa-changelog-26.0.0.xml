@@ -67,4 +67,10 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RT" tableName="REVOKED_TOKEN"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="31725-index-persist-revoked-access-tokens">
+        <createIndex indexName="IDX_REV_TOKEN_ON_EXPIRE" tableName="REVOKED_TOKEN">
+            <column name="EXPIRE" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
