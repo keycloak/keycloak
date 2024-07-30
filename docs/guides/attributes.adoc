@@ -24,3 +24,4 @@
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
+:securing_apps_link: https://www.keycloak.org/guides#securing-apps

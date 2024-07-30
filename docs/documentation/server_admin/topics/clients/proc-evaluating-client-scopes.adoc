@@ -15,7 +15,7 @@ image:images/client-scopes-evaluate.png[]
 
 [NOTE]
 ====
-To send a custom value for a *scope* parameter from your application, see the *Keycloak JavaScript adapter* in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section, for javascript adapters.
+To send a custom value for a *scope* parameter from your application, see the *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section, for javascript adapters.
 ====
 
 All examples are generated for the particular user and issued for the particular client, with the specified value of the *scope* parameter. The examples include all of the claims and role mappings used.

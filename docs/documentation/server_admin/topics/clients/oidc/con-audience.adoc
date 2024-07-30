@@ -113,6 +113,6 @@ See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
 +
 See:
 +
-** *Keycloak JavaScript adapter* in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section if your application uses the javascript adapter.
+** *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section if your application uses the javascript adapter.
 
 NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.

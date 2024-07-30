@@ -191,7 +191,7 @@ image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
 ===== Example using CURL
 
 The following example shows how to obtain an access token for a user in the realm `test` with the direct grant flow. The example is using
-*OAuth2 Resource Owner Password Credentials Grant* in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section and the confidential client `resource-owner`:
+*OAuth2 Resource Owner Password Credentials Grant* in the link:{securing_apps_link}[securing apps] section and the confidential client `resource-owner`:
 
 [source,bash,subs="attributes+"]
 ----

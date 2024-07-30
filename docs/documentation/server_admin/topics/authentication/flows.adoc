@@ -343,7 +343,7 @@ claims= {
 ----
 
 The {project_name} javascript adapter has support for easy construct of this JSON and sending it in the login request.
-See *Keycloak JavaScript adapter* in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section for more details.
+See *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section for more details.
 
 You can also use simpler parameter `acr_values` instead of `claims` parameter to request particular levels as non-essential. This is mentioned
 in the OIDC specification.

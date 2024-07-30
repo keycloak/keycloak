@@ -113,7 +113,7 @@ This is used by clients who want to initiate the authentication flow by communic
 
 An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
 
-Also please refer to other places of {project_name} documentation like *Backchannel Authentication Endpoint* and *Client Initiated Backchannel Authentication Grant* in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section.
+Also please refer to other places of {project_name} documentation like *Backchannel Authentication Endpoint* and *Client Initiated Backchannel Authentication Grant* in the link:{securing_apps_link}[securing apps] section.
 
 ====== CIBA Policy
 

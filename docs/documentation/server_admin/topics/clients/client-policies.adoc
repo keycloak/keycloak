@@ -29,7 +29,7 @@ Validation of client configurations::
     the advanced security requirements. In the future, individual client configuration settings may be replaced by Client Policies directly performing required validations.
 
 Conformance to a required security standards and profiles such as FAPI and OAuth 2.1::
-    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like *FAPI* and *OAuth 2.1*  in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section,
+    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section,
     which makes it easy for the administrator to secure their client application to be compliant with the particular security profile. At this moment, {project_name} has global
     profiles for the support of FAPI and OAuth 2.1 specifications. The administrator will just need to configure the client policies to specify which clients should
     be compliant with the FAPI and OAuth 2.1. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
@@ -37,7 +37,7 @@ Conformance to a required security standards and profiles such as FAPI and OAuth
 
 == Protocol
 
-The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:https://www.keycloak.org/guides#securing-apps[OpenID Connect (OIDC) protocol], but there is
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{securing_apps_link}[OpenID Connect (OIDC) protocol], but there is
 also a client profile available for the link:{adapterguide_link}#_saml[SAML protocol].
 
 == Architecture
@@ -144,7 +144,7 @@ One of several purposes for this executor is to realize the security requirement
 
 A profile consists of several executors, which can realize a security profile like FAPI and OAuth 2.1. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
 Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI 1 Baseline, FAPI 1 Advanced, FAPI CIBA, FAPI 2 and OAuth 2.1 specifications.
-More details exist in the *FAPI* and *OAuth 2.1*  in the link:https://www.keycloak.org/guides#securing-apps[securing apps] section.
+More details exist in the *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section.
 
 [[_client_policy_policy]]
 === Policy
