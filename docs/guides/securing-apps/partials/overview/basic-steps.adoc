@@ -1,4 +1,4 @@
-=== Basic steps to secure applications and services
+== Basic steps to secure applications and services
 
 These are the basic steps for securing an application or a service in {project_name}.
 
@@ -18,3 +18,4 @@ These are the basic steps for securing an application or a service in {project_n
 This guide provides the detailed instructions for these steps. You can find more details
 in the link:{adminguide_link}[Server Administration Guide] about how to register a client to {project_name} through the
 administration console.
+

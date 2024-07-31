@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="{project_name} SAML Galleon feature pack for WildFly and EAP"
-priority=10
+priority=60
 summary="Using {project_name} SAML Galleon feature pack to secure applications in WildFly and EAP">
 
 The SAML adapter is distributed as a Galleon feature pack for wildfly 29 or newer. More details about the subject
@@ -20,5 +20,6 @@ include::partials/saml/assertion-api.adoc[]
 include::partials/saml/error_handling.adoc[]
 include::partials/saml/debugging.adoc[]
 include::partials/saml/multi-tenancy.adoc[]
+include::partials/saml/saml-errors.adoc[]
 
 </@tmpl.guide>

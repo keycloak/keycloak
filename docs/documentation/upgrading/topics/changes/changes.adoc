@@ -1091,7 +1091,7 @@ There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7:
 Make sure you grab the correct one.
 
 You also need to update standalone.xml as the extension module and subsystem definition has changed.
-See link:{adapterguide_link}[{adapterguide_name}] for details.
+See link:{securing_apps_link}[{securing_apps_name}] for details.
 
 === Migrating from 1.2.0.Beta1 to 1.2.0.RC1
 

@@ -37,8 +37,8 @@ Conformance to a required security standards and profiles such as FAPI and OAuth
 
 == Protocol
 
-The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{securing_apps_link}[OpenID Connect (OIDC) protocol], but there is
-also a client profile available for the link:{adapterguide_link}#_saml[SAML protocol].
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{adminguide_link}#con-oidc_server_administration_guide[OpenID Connect (OIDC) protocol], but there is
+also a client profile available for the link:{adminguide_link}#_saml[SAML protocol].
 
 == Architecture
 

@@ -28,12 +28,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>securing-apps</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>server-admin</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -102,22 +96,6 @@
                             <resources>
                                 <resource>
                                     <directory>../getting_started/target/generated-docs</directory>
-                                    <include>**/**</include>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-securing_apps</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/securing_apps/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../securing_apps/target/generated-docs</directory>
                                     <include>**/**</include>
                                 </resource>
                             </resources>
