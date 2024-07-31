@@ -2,7 +2,6 @@
 
 * [Alexander Schwartz](https://github.com/ahus1)
 * [Bruno Oliveira da Silva](https://github.com/abstractj)
-* [Hynek Mlnařík](https://github.com/hmlnarik)
 * [Marek Posolda](https://github.com/mposolda)
 * [Michal Hajas](https://github.com/mhajas)
 * [Pedro Igor](https://github.com/pedroigor)
@@ -15,5 +14,6 @@
 
 # Emeritus maintainers
 
+* [Hynek Mlnařík](https://github.com/hmlnarik)
 * [Pavel Drozd](https://github.com/pdrozd)
 
