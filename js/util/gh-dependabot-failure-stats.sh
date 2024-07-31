@@ -60,7 +60,7 @@ function get_run_details() {
   gh api -X GET "/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${run_id}" --jq '{run_id: .id, status: .status, conclusion: .conclusion, html_url: .html_url, run_attempt: .run_attempt}'
 }
 
-function print_failed_dependabot_prs_details() {
+function get_failed_dependabot_prs_details() {
   local open_dependabot_prs
   open_dependabot_prs=$(fetch_open_dependabot_prs)
 
@@ -144,5 +144,5 @@ function display_stats() {
   echo -e "$failure_details"
 }
 
-print_failed_dependabot_prs_details
+get_failed_dependabot_prs_details
 display_stats
