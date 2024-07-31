@@ -186,9 +186,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     .run((session -> {
                         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                         authenticator.setTokenString(token);
-                        String nonce = prepareSessionCode(session, authenticator, "invalidNote");
+                        String sessionCode = prepareSessionCode(session, authenticator, "invalidNote");
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                        issuerEndpoint.getCredentialOffer(nonce);
+                        issuerEndpoint.getCredentialOffer(sessionCode);
                     }));
         });
     }
