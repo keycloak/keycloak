@@ -56,6 +56,12 @@ public interface UserModel extends RoleMapperModel {
         KeycloakSession getKeycloakSession();
     }
 
+    interface UserPreRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
+
     String getId();
 
     // No default method here to allow Abstract subclasses where the username is provided in a different manner

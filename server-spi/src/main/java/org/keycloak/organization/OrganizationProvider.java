@@ -131,6 +131,13 @@ public interface OrganizationProvider extends Provider {
     Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max);
 
     /**
+     * Returns number of members in the organization.
+     * @param organization the organization
+     * @return Number of members in the organization.
+     */
+    long getMembersCount(OrganizationModel organization);
+
+    /**
      * Returns the member of the {@link OrganizationModel} by its {@code id}.
      *
      * @param organization the organization
