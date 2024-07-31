@@ -77,7 +77,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
                 String singleSignOnServiceUrl = null;
                 boolean postBindingResponse = false;
-                boolean postBindingLogout = false;
                 for (EndpointType endpoint : idpDescriptor.getSingleSignOnService()) {
                     if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                         singleSignOnServiceUrl = endpoint.getLocation().toString();
@@ -88,14 +87,14 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
                 }
                 String singleLogoutServiceUrl = null;
+                boolean postBindingLogout = false;
                 for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
-                    if (postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                    if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                         singleLogoutServiceUrl = endpoint.getLocation().toString();
                         postBindingLogout = true;
                         break;
-                    } else if (!postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())) {
+                    } else if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())) {
                         singleLogoutServiceUrl = endpoint.getLocation().toString();
-                        break;
                     }
 
                 }
