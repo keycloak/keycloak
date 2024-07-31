@@ -29,6 +29,10 @@ export type Environment = {
   locale: string;
   /** Feature flags */
   features: Feature;
+  /** Name of the referrer application in the back link */
+  referrerName?: string;
+  /** UR to the referrer application in the back link */
+  referrerUrl?: string;
 };
 
 // The default environment, used during development.
