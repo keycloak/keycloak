@@ -134,12 +134,12 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
             switch (keyPair.getPublic().getAlgorithm())
             {
                 case "EC":
-                    sigGen = new JcaContentSignerBuilder("SHA1withECDSA").setProvider(BouncyIntegration.PROVIDER)
-                                                                             .build(caPrivateKey);
+                    sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
+                                                                               .build(caPrivateKey);
                     break;
                 default:
-                    sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
-                                                                                     .build(caPrivateKey);
+                    sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
+                                                                                       .build(caPrivateKey);
             }
 
             // Certificate
