@@ -25,10 +25,10 @@ public class InstanceContext<T, A extends Annotation> {
         this.supplier = supplier;
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
-        this.config = supplier.getConfig(annotation);
-        this.lifeCycle = supplier.getLifeCycle(annotation);
-        this.ref = supplier.getRef(annotation);
-        this.realmRef = supplier.getRealmRef(annotation);
+        this.config = (Class<?>) supplier.getAnnotationElementValue(annotation, SupplierHelpers.CONFIG);
+        this.lifeCycle = (LifeCycle) supplier.getAnnotationElementValue(annotation, SupplierHelpers.LIFECYCLE);
+        this.ref = (String) supplier.getAnnotationElementValue(annotation, SupplierHelpers.REF);
+        this.realmRef = (String) supplier.getAnnotationElementValue(annotation, SupplierHelpers.REALM_REF);
     }
 
     public InstanceContext(Registry registry, Supplier<T, A> supplier, Class<? extends T> requestedValueType, String ref, Class<?> config) {

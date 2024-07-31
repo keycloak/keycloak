@@ -34,7 +34,7 @@ public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, I
     }
 
     @Override
-    public LifeCycle getLifeCycle(InjectWebDriver annotation) {
+    public LifeCycle getDefaultLifecycle() {
         return LifeCycle.GLOBAL;
     }
 

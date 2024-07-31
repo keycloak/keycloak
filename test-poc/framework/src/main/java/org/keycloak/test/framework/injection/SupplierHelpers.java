@@ -4,6 +4,11 @@ import java.lang.reflect.Constructor;
 
 public class SupplierHelpers {
 
+    public static final String CONFIG = "config";
+    public static final String LIFECYCLE = "lifecycle";
+    public static final String REF = "ref";
+    public static final String REALM_REF = "realmRef";
+
     public static <T> T getInstance(Class<T> clazz) {
         try {
             Constructor<T> declaredConstructor = clazz.getDeclaredConstructor();
@@ -13,5 +18,4 @@ public class SupplierHelpers {
             throw new RuntimeException(e);
         }
     }
-
 }

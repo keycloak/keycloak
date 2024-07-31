@@ -9,15 +9,13 @@ public class RequestedInstance<T, A extends Annotation> {
     private final Class<? extends T> valueType;
     private final LifeCycle lifeCycle;
     private final String ref;
-    private final String realmRef;
 
     public RequestedInstance(Supplier<T, A> supplier, A annotation, Class<? extends T> valueType) {
         this.supplier = supplier;
         this.annotation = annotation;
         this.valueType = valueType;
-        this.lifeCycle = supplier.getLifeCycle(annotation);
-        this.ref = supplier.getRef(annotation);
-        this.realmRef = supplier.getRealmRef(annotation);
+        this.lifeCycle = (LifeCycle) supplier.getAnnotationElementValue(annotation, SupplierHelpers.LIFECYCLE);
+        this.ref = (String) supplier.getAnnotationElementValue(annotation, SupplierHelpers.REF);
     }
 
     public Supplier<T, A> getSupplier() {
@@ -40,7 +38,4 @@ public class RequestedInstance<T, A extends Annotation> {
         return ref;
     }
 
-    public String getRealmRef() {
-        return realmRef;
-    }
 }
