@@ -1,7 +1,6 @@
-<#import "footer.ftl" as loginFooter>
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}" dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
+<html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
 
 <head>
     <meta charset="utf-8">
@@ -60,7 +59,7 @@
               class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </header>
     <main class="pf-v5-c-login__main">
-      <header class="pf-v5-c-login__main-header">
+      <div class="pf-v5-c-login__main-header">
         <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
         <div class="pf-v5-c-login__main-header-utilities">
@@ -100,7 +99,7 @@
           </div>
         </div>
         </#if>
-      </header>
+      </div>
       <div class="pf-v5-c-login__main-body">
         <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
             <#if displayRequiredFields>
@@ -180,8 +179,6 @@
       <footer class="pf-v5-c-login__main-footer">
         <#nested "socialProviders">
       </footer>
-
-      <@loginFooter.content/>
     </main>
   </div>
 </div>
