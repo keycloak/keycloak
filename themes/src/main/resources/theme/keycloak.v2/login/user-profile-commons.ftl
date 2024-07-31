@@ -1,3 +1,4 @@
+<#import "field.ftl" as field>
 <#macro userProfileFormFields>
 	<#assign currentGroup="">
 	
@@ -35,26 +36,18 @@
 		</#if>
 
 		<#nested "beforeField" attribute>
-		<div class="${properties.kcFormGroupClass!}">
-			<div class="${properties.kcLabelWrapperClass!}">
-				<label for="${attribute.name}" class="${properties.kcLabelClass!}">${advancedMsg(attribute.displayName!'')}</label>
-				<#if attribute.required>*</#if>
-			</div>
+
+		<@field.group name=attribute.name label=advancedMsg(attribute.displayName!'') error=kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc required=attribute.required>
 			<div class="${properties.kcInputWrapperClass!}">
 				<#if attribute.annotations.inputHelperTextBefore??>
 					<div class="${properties.kcInputHelperTextBeforeClass!}" id="form-help-text-before-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextBefore))?no_esc}</div>
 				</#if>
 				<@inputFieldByType attribute=attribute/>
-				<#if messagesPerField.existsError('${attribute.name}')>
-					<span id="input-error-${attribute.name}" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-						${kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc}
-					</span>
-				</#if>
 				<#if attribute.annotations.inputHelperTextAfter??>
 					<div class="${properties.kcInputHelperTextAfterClass!}" id="form-help-text-after-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextAfter))?no_esc}</div>
 				</#if>
 			</div>
-		</div>
+		</@field.group>
 		<#nested "afterField" attribute>
 	</#list>
 
@@ -88,23 +81,25 @@
 </#macro>
 
 <#macro inputTag attribute value>
-	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
-		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-		<#if attribute.readOnly>disabled</#if>
-		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
-		<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
-		<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
-		<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
-		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
-		<#if attribute.annotations.inputTypeMinlength??>minlength="${attribute.annotations.inputTypeMinlength}"</#if>
-		<#if attribute.annotations.inputTypeMax??>max="${attribute.annotations.inputTypeMax}"</#if>
-		<#if attribute.annotations.inputTypeMin??>min="${attribute.annotations.inputTypeMin}"</#if>
-		<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
-		<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
-		<#list attribute.html5DataAnnotations as key, value>
-				data-${key}="${value}"
-		</#list>
-	/>
+	<span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
+		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
+			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+			<#if attribute.readOnly>disabled</#if>
+			<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
+			<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
+			<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
+			<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
+			<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
+			<#if attribute.annotations.inputTypeMinlength??>minlength="${attribute.annotations.inputTypeMinlength}"</#if>
+			<#if attribute.annotations.inputTypeMax??>max="${attribute.annotations.inputTypeMax}"</#if>
+			<#if attribute.annotations.inputTypeMin??>min="${attribute.annotations.inputTypeMin}"</#if>
+			<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
+			<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
+			<#list attribute.html5DataAnnotations as key, value>
+					data-${key}="${value}"
+			</#list>
+		/>
+	</span>
 </#macro>
 
 <#macro inputTagType attribute>

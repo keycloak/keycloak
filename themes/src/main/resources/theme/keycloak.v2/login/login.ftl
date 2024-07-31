@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "field.ftl" as field>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
         ${msg("loginAccountTitle")}
@@ -6,93 +7,26 @@
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>
-                <form id="kc-form-login" class="${properties.kcFormClass!} onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
+                <form id="kc-form-login" class="pf-v5-c-form" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
-                        <div class="${properties.kcFormGroupClass!}">
-                            <label for="username" class="${properties.kcLabelClass!}">
-                                <span class="pf-v5-c-form__label-text">
-                                    <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
-                                </span>
-                            </label>
-
-                            <span class="${properties.kcInputClass!} ${messagesPerField.existsError('username','password')?then('pf-m-error', '')}">
-                                <input tabindex="1" id="username" name="username" value="${(login.username!'')}" type="text" autofocus autocomplete="off"
-                                       aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
-                                       dir="ltr"
-                                />
-                                <#if messagesPerField.existsError('username','password')>
-                                    <span class="pf-v5-c-form-control__utilities">
-                                        <span class="pf-v5-c-form-control__icon pf-m-status">
-                                        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-                                        </span>
-                                    </span>
-                                </#if>
-                            </span>
-
-                            <#if messagesPerField.existsError('username','password')>
-                                <span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                        ${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
-                                </span>
-                            </#if>
-
-                        </div>
+                        <#assign label>
+                            <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+                        </#assign>
+                        <@field.input name="username" label=label value="${(login.username!'')}" />
                     </#if>
 
-                    <div class="${properties.kcFormGroupClass!}">
-                        <label for="password" class="${properties.kcLabelClass!}">
-                            <span class="pf-v5-c-form__label-text">${msg("password")}</span>
-                        </label>
+                    <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed/>
 
-                        <div class="${properties.kcInputGroup!}" dir="ltr">
-                            <span class="${properties.kcInputClass!}">
-                                <input tabindex="2" id="password" name="password" type="password" autocomplete="off"
-                                       aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
-                                />
-                            </span>
-                            <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
-                                    aria-controls="password" data-password-toggle
-                                    data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
-                                    data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
-                                <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
-                            </button>
-                        </div>
-
-                        <#if usernameHidden?? && messagesPerField.existsError('username','password')>
-                            <span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                    ${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
-                            </span>
+                    <div class="pf-v5-c-form__group">
+                        <#if realm.rememberMe && !usernameHidden??>
+                            <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
                         </#if>
-
                     </div>
 
-                    <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
-                        <div id="kc-form-options">
-                            <#if realm.rememberMe && !usernameHidden??>
-                                <div class="checkbox">
-                                    <label>
-                                        <span class="pf-v5-c-form__label-text">
-                                        <#if login.rememberMe??>
-                                            <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox" checked> ${msg("rememberMe")}
-                                        <#else>
-                                            <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox"> ${msg("rememberMe")}
-                                        </#if>
-                                        </span>
-                                    </label>
-                                </div>
-                            </#if>
-                            </div>
-                            <div class="${properties.kcFormOptionsWrapperClass!}">
-                                <#if realm.resetPasswordAllowed>
-                                    <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
-                                </#if>
-                            </div>
-
-                      </div>
-
-                      <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
-                          <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
-                          <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
-                      </div>
+                    <div id="kc-form-buttons" class="pf-v5-c-form__group">
+                        <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
+                        <input tabindex="4" class="pf-v5-c-button pf-m-primary pf-m-block" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
+                    </div>
                 </form>
             </#if>
             </div>
