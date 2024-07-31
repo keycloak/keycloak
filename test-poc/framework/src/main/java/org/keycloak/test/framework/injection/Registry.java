@@ -2,7 +2,6 @@ package org.keycloak.test.framework.injection;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.realm.DefaultRealmConfig;
 import org.keycloak.test.framework.realm.ManagedRealm;
@@ -62,7 +61,7 @@ public class Registry {
 
     private <T> T getDeployedDependency(Class<T> typeClass, InstanceContext dependent) {
         InstanceContext dependency;
-        if(!dependent.getRealmRef().equals("")) {
+        if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
             dependency = getDeployedInstance(typeClass, dependent.getRealmRef());
         } else {
             dependency = getDeployedInstance(typeClass);
@@ -85,7 +84,7 @@ public class Registry {
     private <T> T getRequestedDependency(Class<T> typeClass, InstanceContext dependent) {
         InstanceContext dependency;
         RequestedInstance requestedDependency;
-        if(!dependent.getRealmRef().equals("")) {
+        if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
              requestedDependency = getRequestedInstance(typeClass, dependent.getRealmRef());
         } else {
             requestedDependency = getRequestedInstance(typeClass);
@@ -256,7 +255,7 @@ public class Registry {
                 Supplier supplier = i.getSupplier();
                 if (supplier.getAnnotationClass().equals(a.annotationType())
                         && valueType.isAssignableFrom(i.getValue().getClass())
-                        && supplier.getRef(a).equals(i.getRef()) ) {
+                        && supplier.getAnnotationElementValue(a, SupplierHelpers.REF).equals(i.getRef()) ) {
                     return i;
                 }
             }
