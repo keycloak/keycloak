@@ -70,7 +70,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -209,7 +208,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-        
+
         long currentTime = Time.currentTimeMillis();
 
         UserConsentEntity consentEntity = new UserConsentEntity();
@@ -621,11 +620,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-        
+
         for (String stringToSearch : search.trim().split("\\s+")) {
             predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
         }
-        
+
         queryBuilder.where(predicates.toArray(new Predicate[0]));
 
         return em.createQuery(queryBuilder).getSingleResult().intValue();
@@ -648,11 +647,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
-        
+
         for (String stringToSearch : search.trim().split("\\s+")) {
             predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, userJoin)));
         }
-        
+
         predicates.add(groupMembership.get("groupId").in(groupIds));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
@@ -693,7 +692,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
-        
+
         groupsWithPermissionsSubquery(countQuery, groupIds, root, restrictions);
 
         countQuery.where(restrictions.toArray(new Predicate[0]));
@@ -1055,7 +1054,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
         Subquery subquery = query.subquery(String.class);
-        
+
         Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
 
         subquery.select(cb.literal(1));

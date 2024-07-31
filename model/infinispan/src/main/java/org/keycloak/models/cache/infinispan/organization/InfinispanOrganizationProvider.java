@@ -33,6 +33,7 @@ import org.keycloak.organization.OrganizationProvider;
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
+    private static final String ORG_MEMBERS_COUNT_KEY_SUFFIX = ".members.count";
 
     private final KeycloakSession session;
     private final OrganizationProvider orgDelegate;
@@ -47,6 +48,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static String cacheKeyOrgCount(RealmModel realm) {
         return realm.getId() + ORG_COUNT_KEY_SUFFIX;
+    }
+
+    public static String cacheKeyOrgMemberCount(RealmModel realm, OrganizationModel organization) {
+        return realm.getId() + ".org." + organization.getId() + ORG_MEMBERS_COUNT_KEY_SUFFIX;
     }
 
     @Override
@@ -152,6 +157,24 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
         return orgDelegate.getMembersStream(organization, search, exact, first, max);
+    }
+
+    @Override
+    public long getMembersCount(OrganizationModel organization) {
+        String cacheKey = cacheKeyOrgMemberCount(getRealm(), organization);
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+
+        // cached and not invalidated
+        if (cached != null && !isInvalid(cacheKey)) {
+            return cached.getCount();
+        }
+
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        long membersCount = orgDelegate.getMembersCount(organization);
+        cached = new CachedCount(loaded, getRealm(), cacheKey, membersCount);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+
+        return membersCount;
     }
 
     @Override
@@ -319,6 +342,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     void registerMemberInvalidation(OrganizationModel organization, UserModel member) {
         realmCache.registerInvalidation(cacheKeyByMember(member));
         realmCache.registerInvalidation(cacheKeyMembership(getRealm(), organization, member));
+        realmCache.registerInvalidation(cacheKeyOrgMemberCount(getRealm(), organization));
     }
 
     private boolean isInvalid(String cacheKey) {

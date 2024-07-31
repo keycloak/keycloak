@@ -509,6 +509,17 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(orgb.members().getAll().size(), is(0));
     }
 
+    @Test
+    public void testMembersCount() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        for (int i = 0; i < 10; i++) {
+            addMember(organization, "user" + i +"@neworg.org", "First" + i, "Last" + i);
+        }
+
+        assertEquals(10, (long) organization.members().count());
+    }
+
     private void loginViaNonOrgIdP(String idpAlias) {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());

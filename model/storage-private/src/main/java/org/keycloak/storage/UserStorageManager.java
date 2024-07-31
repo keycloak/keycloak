@@ -360,6 +360,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             getFederatedStorage().preRemove(realm, user);
         }
 
+        publishUserPreRemovedEvent(realm, user);
+
         StorageId storageId = new StorageId(user.getId());
 
         if (storageId.getProviderId() == null) {
@@ -931,5 +933,24 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return organizationProvider.getByMember(delegate)
                 .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
                         (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+    }
+
+    private void publishUserPreRemovedEvent(RealmModel realm, UserModel user) {
+        session.getKeycloakSessionFactory().publish(new UserModel.UserPreRemovedEvent() {
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 }
