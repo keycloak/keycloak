@@ -25,6 +25,10 @@ export type Environment = {
     updateEmailActionEnabled: boolean;
     isViewGroupsEnabled: boolean;
   };
+  /** Name of the referrer application in the back link */
+  referrerName?: string;
+  /** UR to the referrer application in the back link */
+  referrerUrl?: string;
 };
 
 // The default environment, used during development.
