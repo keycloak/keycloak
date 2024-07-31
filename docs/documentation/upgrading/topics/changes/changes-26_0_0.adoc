@@ -92,6 +92,27 @@ To disable this behavior, use the SPI option `spi-single-use-object-infinispan-p
 The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
 This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
 
+= HA Multi-Site Deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments on each site are now able to handle user requests simulaneously, Active/Active vs the previous
+Active/Passive architecture.
+- LoadBalancing is now handled by AWS Global Accelerator, meaning there's no longer issues with DNS caching on failover/switchover
+that existed with the previous Route53 architecture.
+- {project_name} utilises Infinispan RemoteCache's to communicate with Infinispan deployments more efficiently.
+
+As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
+
+. `distributed-cache` definitions provided by `--cache-config-file` are ignored when the `multi-site` feature is enabled,
+so you must configure the connection to the external Infinispan deployment via the `cache-remote-*` CLI args. If a
+`remote-store` configuration is detected in the cache configuration file, then a warning will be raised in the {project_name}
+logs.
+
+. [Optional] Migrate Route53 LoadBalancing to AWS Global Accelerator. Existing Route53 configurations should work as before
+with {project_name} 26 deployments, however as before only one site will process user requests and DNS caching could be
+an issue.
+
 = Admin Bootstrapping and Recovery
 
 It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
