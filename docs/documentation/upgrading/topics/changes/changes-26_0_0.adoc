@@ -133,3 +133,11 @@ when exporting a realm.
 
 To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
 This endpoint supports filters and pagination.
+
+== Support for insecure contexts dropped
+
+Due to the fact that some web platform features that Keycloak relies on are https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts/features_restricted_to_secure_contexts[only available in secure contexts], and changes made to the cookie behavior, we are officially dropping support for running Keycloak outside of a https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context].
+
+In production this means that Keycloak must *always* be served over HTTPS, and in development it should be served over `http://localhost` or a `.localhost` domain (e.g. `http://dev.whatever.localhost`).
+
+You must therefore ensure that your Keycloak instance is always running on what is https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts#when_is_a_context_considered_secure[considered a secure context].

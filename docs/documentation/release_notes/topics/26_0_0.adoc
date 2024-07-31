@@ -111,3 +111,43 @@ Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
 endif::[]
+
+= Changes to default cookie behavior
+
+As part of the https://privacysandbox.com/open-web/[Privacy Sandbox initiative] Keycloak is making changes to the default behavior around cookies. Specifically, we are preparing for the advent of the https://developers.google.com/privacy-sandbox/3pcd/prepare/prepare-for-phaseout[third-party cookie phaseout], and are looking to improve the consistency, privacy and security of how cookies are handled within Keycloak in the process.
+
+== Deprecation of 'legacy' cookies
+
+Since the introduction of the https://web.dev/articles/samesite-cookies-explained[`SameSite`] attribute on cookies provided by Keycloak, another set of 'legacy' cookies (name suffixed in `_LEGACY`) were also introduced in order to support older browsers that were https://www.chromium.org/updates/same-site/incompatible-clients/[not compatible] with this attribute. Since the `SameSite` attribute is now https://caniuse.com/same-site-cookie-attribute[widely supported], this behavior is now deprecated, so that only the cookies using the `SameSite` attribute remain.
+
+This ensures that cookies are not unnecessarily duplicated, and not possibly exposed in places where they should not be.
+
+== `Secure` attribute is now enforced
+
+All cookies set by Keycloak will now also receive the https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#secure[`Secure` attribute] by default, which means they will sent to the server only when a request is made from a https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context].
+
+This prevents the cookies from being sent over an insecure connection, which could expose them to interception, and also ensures that this behavior is consistent across all cookies, where this would previously only be applied to cookies that were marked as https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#none[`SameSite=None`], or if your realm was set up to enforce a secure connection.
+
+== Support for insecure contexts dropped
+
+Due to the fact that some web platform features that Keycloak relies on are https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts/features_restricted_to_secure_contexts[only available in secure contexts], and the aforementioned changes made to the cookie behavior, we are officially dropping support for running Keycloak outside of a secure context.
+
+In production this means that Keycloak must *always* be served over HTTPS, and in development it should be served over `http://localhost` or a `.localhost` domain (e.g. `http://dev.whatever.localhost`).
+
+You must therefore ensure that your Keycloak instance is always running on what is https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts#when_is_a_context_considered_secure[considered a secure context].
+
+== Restoring the legacy behavior for cookies
+
+You can restore the original behavior of cookies by configuring the https://www.keycloak.org/server/all-provider-config#_cookie[cookie provider], for example:
+
+```
+kc.[sh|bat] start --spi-cookie-default-same-site-legacy=true
+```
+
+Or by using an environment variable:
+
+```
+KC_SPI_COOKIE_DEFAULT_SAME_SITE_LEGACY=true kc.[sh|bat] start
+```
+
+This is however considered a temporary workaround, and will be removed in a future release. Note that even if the cookie provider is configured to restore the old behavior, a secure context will *still be required*. If you do not run Keycloak in a secure context, you may find that some features are no longer working as expected.
