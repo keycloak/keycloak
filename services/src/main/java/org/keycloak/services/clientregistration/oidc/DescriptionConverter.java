@@ -95,7 +95,7 @@ public class DescriptionConverter {
 
         try {
             OIDCResponseType responseType = OIDCResponseType.parse(oidcResponseTypes);
-            client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE));
+            client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE) || responseType.hasResponseType(OIDCResponseType.NONE));
             client.setImplicitFlowEnabled(responseType.isImplicitOrHybridFlow());
 
             if (oidcGrantTypes != null) {
