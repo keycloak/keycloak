@@ -43,7 +43,7 @@ public class DefaultCookieProviderFactory implements CookieProviderFactory {
                 .name(SAME_SITE_LEGACY_KEY)
                 .type("boolean")
                 .helpText("Adds legacy cookies without SameSite parameter")
-                .defaultValue(true)
+                .defaultValue(false)
                 .add()
                 .build();
     }
