@@ -93,7 +93,6 @@
               </span>
             </span>
           </div>
-        </div>
         </#if>
         <#if displayInfo>
           <p id="kc-info" class="${properties.kcSignUpClass!}">
