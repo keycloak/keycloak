@@ -78,6 +78,22 @@ describe("User creation", () => {
     masthead.checkNotificationMessage("The user has been created");
   });
 
+  it("Should check temporary admin user existence", () => {
+    const commonPage = new CommonPage();
+
+    // check banner visibility first
+    cy.get(".pf-v5-c-banner").should(
+      "contain.text",
+      "You are logged in as a temporary admin user.",
+    );
+
+    commonPage.tableToolbarUtils().searchItem("admin", false);
+    commonPage.tableUtils().checkRowItemExists("admin");
+    commonPage
+      .tableUtils()
+      .checkTemporaryAdminLabelExists("temporary-admin-label");
+  });
+
   it("Create user with groups test", () => {
     itemIdWithGroups += uuid();
     // Add user from search bar

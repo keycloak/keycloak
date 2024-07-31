@@ -77,6 +77,7 @@ const ClientDetailLink = (client: ClientRepresentation) => {
         <Tooltip content={t("temporaryService")}>
           <WarningTriangleIcon
             className="pf-v5-u-ml-sm"
+            id="temporary-admin-label"
           />
         </Tooltip>
       )}

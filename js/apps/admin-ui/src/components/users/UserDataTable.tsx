@@ -60,6 +60,7 @@ const UserDetailLink = (user: BruteUser) => {
         <Tooltip content={t("temporaryAdmin")}>
           <WarningTriangleIcon
             className="pf-v5-u-ml-sm"
+            id="temporary-admin-label"
           />
         </Tooltip>
       )}
