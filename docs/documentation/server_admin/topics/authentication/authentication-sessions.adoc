@@ -19,7 +19,7 @@ authentication factor than the currently authenticated factor.
 
 In some rare cases, it can happen that after authentication in the first browser tab, other browser tabs are not able to restart authentication because the authentication session is already
 expired. In this case, the particular browser tab will redirect the error about the expired authentication session back to the client in a protocol specific way. For more details, see the corresponding sections
-of  *OIDC documentation* in the link:{securing_apps_link}[securing apps] section and  link:{adapterguide_link}#_saml-errors[SAML documentation]. When the client application receives such an error, it can immediately resubmit the OIDC/SAML authentication request to {project_name} as
+of  *OIDC documentation* in the link:{securing_apps_link}[securing apps] section. When the client application receives such an error, it can immediately resubmit the OIDC/SAML authentication request to {project_name} as
 this should usually automatically authenticate the user due to the existing SSO session as described earlier. As a result, the end user is authenticated automatically in all browser tabs.
-The *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section, link:{adapterguide_link}#_saml[{project_name} SAML adapter], and <<_identity_broker, {project_name} Identity provider>>
+The *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section, and <<_identity_broker, {project_name} Identity provider>>
 support to handle this error automatically and retry the authentication to the {project_name} server in such a case.

@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Client registration service"
-priority=50
+priority=100
 summary="Using the client registration service">
 
 In order for an application or service to utilize {project_name} it has to register a client in {project_name}.

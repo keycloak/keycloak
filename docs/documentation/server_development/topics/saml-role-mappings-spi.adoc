@@ -11,7 +11,7 @@ Implementations can not only map roles into other roles but also add or remove r
 roles assigned to the SAML principal) depending on the use case.
 
 For details about the configuration of the role mappings provider for the SAML adapter as well as a description of the default
-implementations available see the link:{adapterguide_link}[{adapterguide_name}].
+implementations available see the link:{securing_apps_link}[{securing_apps_name}].
 
 === Implementing a custom role mappings provider
 

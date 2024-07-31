@@ -35,7 +35,6 @@
         <module>header-maven-plugin</module>
         <module>api_documentation</module>
         <module>authorization_services</module>
-        <module>securing_apps</module>
         <module>server_admin</module>
         <module>server_development</module>
         <module>release_notes</module>
