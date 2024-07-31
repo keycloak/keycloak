@@ -47,8 +47,11 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "input-error")
-    private WebElement inputError;
+    @FindBy(id = "input-error-username")
+    private WebElement userNameInputError;
+
+    @FindBy(id = "input-error-password")
+    private WebElement passwordInputError;
 
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
@@ -161,9 +164,13 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public String getInputError() {
         try {
-            return getTextFromElement(inputError);
-        } catch (NoSuchElementException e) {
-            return null;
+            return getTextFromElement(userNameInputError);
+        } catch (NoSuchElementException ex) {
+            try {
+                return getTextFromElement(passwordInputError);
+            } catch (NoSuchElementException e) {
+                return null;
+            }
         }
     }
 
@@ -246,7 +253,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
         assertCurrent();
     }
 
-    public void open(String realm){
+    public void open(String realm) {
         oauth.realm(realm);
         oauth.openLoginForm();
         assertCurrent(realm);
