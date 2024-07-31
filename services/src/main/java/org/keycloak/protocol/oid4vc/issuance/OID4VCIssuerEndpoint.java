@@ -217,10 +217,10 @@ public class OID4VCIssuerEndpoint {
 
     }
 
-    private Response getOfferUriAsUri(String nonce) {
+    private Response getOfferUriAsUri(String sessionCode) {
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
                 .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
-                .setNonce(nonce);
+                .setNonce(sessionCode);
 
         return Response.ok()
                 .type(MediaType.APPLICATION_JSON)
@@ -228,11 +228,11 @@ public class OID4VCIssuerEndpoint {
                 .build();
     }
 
-    private Response getOfferUriAsQr(String nonce, int width, int height) {
+    private Response getOfferUriAsQr(String sessionCode, int width, int height) {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        String endcodedOfferUri = URLEncoder.encode(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH + nonce, StandardCharsets.UTF_8);
+        String encodedOfferUri = URLEncoder.encode(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH + sessionCode, StandardCharsets.UTF_8);
         try {
-            BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + endcodedOfferUri, BarcodeFormat.QR_CODE, width, height);
+            BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + encodedOfferUri, BarcodeFormat.QR_CODE, width, height);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
             return Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()).build();
