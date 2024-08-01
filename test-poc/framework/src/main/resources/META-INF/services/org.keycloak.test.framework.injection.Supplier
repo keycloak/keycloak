@@ -17,3 +17,4 @@ org.keycloak.test.framework.database.MariaDBDatabaseSupplier
 org.keycloak.test.framework.database.MSSQLServerDatabaseSupplier
 org.keycloak.test.framework.page.PageSupplier
 org.keycloak.test.framework.oauth.OAuthClientSupplier
+org.keycloak.test.framework.flow.FlowSupplier
