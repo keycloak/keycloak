@@ -19,30 +19,32 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.lang.invoke.MethodHandles;
 
 import org.infinispan.client.hotrod.MetadataValue;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ByRealmIdQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures.LoginFailuresUpdater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteCacheAndExecutor;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.getRemoteCache;
 
 public class RemoteUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<RemoteUserLoginFailureProvider>, UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater>, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
+    private static final String PROTO_ENTITY = Marshalling.protoEntity(LoginFailureEntity.class);
 
-    private volatile RemoteCache<LoginFailureKey, LoginFailureEntity> cache;
+    private volatile RemoteCacheAndExecutor<LoginFailureKey, LoginFailureEntity> cacheHolder;
 
     @Override
     public RemoteUserLoginFailureProvider create(KeycloakSession session) {
@@ -55,19 +57,19 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public void postInit(final KeycloakSessionFactory factory) {
-        cache = getRemoteCache(factory, LOGIN_FAILURE_CACHE_NAME);
+        cacheHolder = RemoteCacheAndExecutor.create(factory, LOGIN_FAILURE_CACHE_NAME);
         factory.register(event -> {
             if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
                 UserLoginFailureProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class, getId());
                 provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
             }
         });
-        log.debugf("Post Init. Cache=%s", cache.getName());
+        log.debugf("Post Init. Cache=%s", cacheHolder.cache().getName());
     }
 
     @Override
     public void close() {
-        cache = null;
+        cacheHolder = null;
     }
 
     @Override
@@ -102,7 +104,7 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
     }
 
     private LoginFailureChangeLogTransaction createAndEnlistTransaction(KeycloakSession session) {
-        var tx = new LoginFailureChangeLogTransaction(this, cache);
+        var tx = new LoginFailureChangeLogTransaction(this, cacheHolder.cache(), new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY, cacheHolder.executor()));
         session.getTransactionManager().enlistAfterCompletion(tx);
         return tx;
     }

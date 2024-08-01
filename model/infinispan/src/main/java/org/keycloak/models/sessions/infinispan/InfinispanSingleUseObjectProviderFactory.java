@@ -117,7 +117,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
-        // means also listeners will start only after first cache initialization - that would be too latedddd
+        // means also listeners will start only after first cache initialization - that would be too late
         if (singleUseObjectCache == null) {
             this.singleUseObjectCache = getSingleUseObjectCache(factory.create());
         }

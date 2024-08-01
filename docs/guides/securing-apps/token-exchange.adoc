@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Using token exchange"
-priority=40
+priority=120
 summary="Configuring and using Token exchange with {project_name}">
 
 :tech_feature_name: Token Exchange

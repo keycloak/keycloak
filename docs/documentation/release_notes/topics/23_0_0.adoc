@@ -95,7 +95,7 @@ It is being replaced by the Elytron OIDC adapter,which is included in WildFly, a
 The SAML adapter for WildFly and JBoss EAP is no longer distributed as a ZIP download, but rather a Galleon feature pack,
 making it easier and more seamless to install.
 
-See the link:{adapterguide_link}[{adapterguide_name}] for the details.
+See the link:{securing_apps_link}[{securing_apps_name}] for the details.
 
 endif::[]
 

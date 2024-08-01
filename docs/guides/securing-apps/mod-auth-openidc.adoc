@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="mod_auth_openidc Apache HTTPD Module"
-priority=40
+priority=50
 summary="Configuring the mod_auth_openidc Apache module with {project_name}">
 
 

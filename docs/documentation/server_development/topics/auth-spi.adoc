@@ -1194,7 +1194,7 @@ or during `Service account` authentication (represented by OAuth2 `Client Creden
 
 [role="_additional-resource"]
 .Additional resources
-* For more details about {project_name} adapter and OAuth2 flows see link:{adapterguide_link}[{adapterguide_name}].
+* For more details about {project_name} adapter and OAuth2 flows see link:{securing_apps_link}[{securing_apps_name}].
 
 ==== Default implementations
 

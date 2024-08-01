@@ -286,6 +286,12 @@
                     </plugin>
                 </plugins>
             </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.infinispan</groupId>
+                    <artifactId>infinispan-remote-query-server</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
 
         <profile>

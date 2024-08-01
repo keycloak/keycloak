@@ -40,13 +40,6 @@
 :authorizationguide_name_short: Authorization Services
 :authorizationguide_link: {project_doc_base_url}/authorization_services/
 :authorizationguide_link_latest: {project_doc_base_url_latest}/authorization_services/
-:adapterguide_name: Securing Applications and Services Guide
-:adapterguide_name_short: Securing Apps
-:adapterguide_link: {project_doc_base_url}/securing_apps/
-:adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
-:adapterguide_link_nodejs_adapter: {adapterguide_link}#_nodejs_adapter
-:adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
-:adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
 :adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
@@ -128,4 +121,5 @@
 :section: guide
 :sections: guides
 :securing_apps_name: Securing applications Guides
+:securing_apps_name_short: Securing applications
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps

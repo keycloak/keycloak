@@ -1,4 +1,4 @@
-=== Terminology
+== Terminology
 
 These terms are used in this guide:
 

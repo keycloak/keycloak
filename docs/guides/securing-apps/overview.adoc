@@ -1,4 +1,10 @@
-== Planning for securing applications and services
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Planning for securing applications and services"
+priority=10
+summary="Introduction and basic concepts for securing applications">
 
 As an OAuth2, OpenID Connect, and SAML compliant server, {project_name} can secure any application and service as long
 as the technology stack they are using supports any of these protocols. For more details about the security protocols
@@ -13,4 +19,8 @@ a particular security protocol or to provide a more rich and tightly coupled int
 are known by *Keycloak Client Adapters*, and they should be used as a last resort if you cannot rely on what is available
 from the application ecosystem.
 
+include::partials/overview/basic-steps.adoc[]
+<#include "partials/overview/getting-started.adoc" />
+include::partials/overview/terminology.adoc[]
 
+</@tmpl.guide>

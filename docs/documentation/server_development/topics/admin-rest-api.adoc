@@ -97,5 +97,4 @@ endif::[]
 === Additional resources
 [role="_additional-resources"]
 * {adminguide_link}[{adminguide_name}]
-* {adapterguide_link}[{adapterguide_name}]
 * {apidocs_link}[{apidocs_name}]
