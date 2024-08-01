@@ -556,7 +556,7 @@ public class DefaultExportImportManager implements ExportImportManager {
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
-                newRealm.addIdentityProvider(RepresentationToModel.toModel(newRealm, representation, session));
+                session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
             }
         }
     }
@@ -1595,7 +1595,7 @@ public class DefaultExportImportManager implements ExportImportManager {
                 org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
-                    IdentityProviderModel idp = newRealm.getIdentityProviderByAlias(identityProvider.getAlias());
+                    IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
                     provider.addIdentityProvider(org, idp);
                 }
 

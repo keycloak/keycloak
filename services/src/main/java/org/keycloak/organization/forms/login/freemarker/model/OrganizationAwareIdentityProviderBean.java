@@ -68,8 +68,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     }
 
     private boolean isPublicOrganizationBroker(IdentityProvider idp) {
-        RealmModel realm = session.getContext().getRealm();
-        IdentityProviderModel model = realm.getIdentityProviderByAlias(idp.getAlias());
+        IdentityProviderModel model = session.identityProviders().getByAlias(idp.getAlias());
 
         if (model.getOrganizationId() == null) {
             return false;
@@ -85,9 +84,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     }
 
     private boolean isRealmBroker(IdentityProvider idp) {
-        RealmModel realm = session.getContext().getRealm();
-        IdentityProviderModel model = realm.getIdentityProviderByAlias(idp.getAlias());
-
+        IdentityProviderModel model = session.identityProviders().getByAlias(idp.getAlias());
         return model.getOrganizationId() == null;
     }
 }

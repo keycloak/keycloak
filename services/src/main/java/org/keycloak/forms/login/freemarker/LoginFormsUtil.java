@@ -51,12 +51,12 @@ public class LoginFormsUtil {
             // If the current user is not null, then it's a re-auth, and we should filter the possible options with the pre-14173 logic
             // If the current user is null, then it's one of the following cases:
             //  - either connecting a new IdP to the user's account.
-	    //    - in this case the currentUser is null AND the current flow is the FIRST_BROKER_LOGIN_PATH
-	    //    - so we should filter out the one they just used for login, as they need to re-auth themself with an already linked IdP account
+	        //    - in this case the currentUser is null AND the current flow is the FIRST_BROKER_LOGIN_PATH
+	        //    - so we should filter out the one they just used for login, as they need to re-auth themselves with an already linked IdP account
             //  - or we're on the Login page
-	    //    - in this case the current user is null AND the current flow is NOT the FIRST_BROKER_LOGIN_PATH
-	    //    - so we should show all the possible IdPs to the user trying to log in (this is the bug in #14173)
-	    //    - so we're skipping this branch, and retunring everything at the end of the method
+	        //    - in this case the current user is null AND the current flow is NOT the FIRST_BROKER_LOGIN_PATH
+	        //    - so we should show all the possible IdPs to the user trying to log in (this is the bug in #14173)
+	        //    - so we're skipping this branch, and returning everything at the end of the method
             if (currentUser != null || Objects.equals(LoginActionsService.FIRST_BROKER_LOGIN_PATH, currentFlowPath)) {
                 return filterIdentityProviders(providers, session, context);
             }

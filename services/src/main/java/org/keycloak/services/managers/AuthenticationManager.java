@@ -417,7 +417,7 @@ public class AuthenticationManager {
         if (logoutBroker) {
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
-                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
                 try {
                     identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
                 } catch (Exception e) {
@@ -648,7 +648,7 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
-            IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+            IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
             Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) {
                 return response;

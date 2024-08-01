@@ -730,7 +730,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/identity-config")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
-        return session.getContext().getRealm().getIdentityProviderByAlias(alias).getConfig();
+        return session.identityProviders().getByAlias(alias).getConfig();
     }
 
     @PUT

@@ -60,9 +60,9 @@ final class BrokerRunOnServerUtil {
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
 
-            IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
-            realm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         };
     }
 
@@ -70,9 +70,9 @@ final class BrokerRunOnServerUtil {
         return session -> {
             RealmModel realm = session.getContext().getRealm();
 
-            IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setPostBrokerLoginFlowId(null);
-            realm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         };
     }
 
@@ -123,9 +123,9 @@ final class BrokerRunOnServerUtil {
             execution2.setParentFlow(newFlow.getId());
             execution2 = appRealm.addAuthenticatorExecution(execution2);
 
-            IdentityProviderModel idp = appRealm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setFirstBrokerLoginFlowId(newFlow.getId());
-            appRealm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         });
     }
 
@@ -165,9 +165,9 @@ final class BrokerRunOnServerUtil {
             execution.setParentFlow(newFlow.getId());
             appRealm.addAuthenticatorExecution(execution);
 
-            IdentityProviderModel idp = appRealm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setFirstBrokerLoginFlowId(newFlow.getId());
-            appRealm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         };
     }
 
