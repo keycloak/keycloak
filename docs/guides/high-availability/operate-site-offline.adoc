@@ -9,7 +9,7 @@ summary="This guide describes how to take a site offline so that it no longer pr
 
 During the deployment lifecycle it might be required that one of the sites is temporarily taken offline
 for maintenance or to allow for software upgrades. To ensure that no user requests are routed to the site requiring
-maintenance, it's necessary for the site to be removed from your LoadBalancer configuration.
+maintenance, it is necessary for the site to be removed from your LoadBalancer configuration.
 
 == Procedure
 

@@ -24,7 +24,7 @@ and AWS Lambda functions. A Prometheus Alert is triggered when split-brain is de
 which results in the Prometheus AlertManager calling the AWS Lambda based webhook. The triggered Lambda function inspects
 the current Global Accelerator configuration and removes the site reported to be offline.
 
-In a true split-brain scenario, where both sites are still up but network communication is down, it's probable that both
+In a true split-brain scenario, where both sites are still up but network communication is down, it is probable that both
 sites will trigger the webhook. We guard against this by ensuring that only a single Lambda instance can be executed at
 a given time.
 

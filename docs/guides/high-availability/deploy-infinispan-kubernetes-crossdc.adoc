@@ -209,7 +209,7 @@ The following example shows the `Cache` CR for `{site-a}`.
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
 ----
-<1> Number of owners is only 1 as sessions are stored in the DB and so there's no need to hold redundant copies in memory.
+<1> Number of owners is only 1 as sessions are stored in the DB and so there is no need to hold redundant copies in memory.
 <2> The maximum number of entries which will be cached in memory.
 <3> The cross-site merge policy, invoked when there is a write-write conflict.
 Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
