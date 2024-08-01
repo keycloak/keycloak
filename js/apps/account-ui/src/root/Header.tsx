@@ -1,3 +1,5 @@
+import { Button } from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import {
   KeycloakMasthead,
   KeycloakProvider,
@@ -7,28 +9,30 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";
-import { useEnvironment } from "./KeycloakContext";
+import { label } from "ui-shared";
+
+import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
-import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
-import { Button } from "@patternfly/react-core";
+import { useEnvironment } from "./KeycloakContext";
 
 import style from "./header.module.css";
 
 const ReferrerLink = () => {
   const { t } = useTranslation();
-  const searchParams = new URLSearchParams(location.search);
 
-  return searchParams.has("referrer_uri") ? (
+  return environment.referrerUrl ? (
     <Button
       data-testid="referrer-link"
       component="a"
-      href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
+      href={environment.referrerUrl.replace("_hash_", "#")}
       variant="link"
       icon={<ExternalLinkSquareAltIcon />}
       iconPosition="right"
       isInline
     >
-      {t("backTo", { app: searchParams.get("referrer") })}
+      {t("backTo", {
+        app: label(t, environment.referrerName, environment.referrerUrl),
+      })}
     </Button>
   ) : null;
 };
