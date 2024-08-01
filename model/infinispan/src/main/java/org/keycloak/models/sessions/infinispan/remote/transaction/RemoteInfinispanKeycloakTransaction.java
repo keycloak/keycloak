@@ -77,10 +77,11 @@ class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, 
         logger.tracef("Adding %s.replace(%S)", cache.getName(), key);
 
         Operation<K, V> existing = tasks.get(key);
-        if (existing != null && existing != TOMBSTONE && !(existing instanceof RemoteInfinispanKeycloakTransaction.RemoveOperation<K,V>)) {
+        if (existing != null) {
             if (existing.hasValue()) {
                 tasks.put(key, existing.update(value, lifespan, timeUnit));
-            } else {
+            } else if (!(existing == TOMBSTONE || existing instanceof RemoveOperation<K, V>)) {
+                // A previous delete operation will take precedence over any new replace
                 throw new IllegalStateException("Can't replace entry: task " + existing + " in progress for session");
             }
             return;
