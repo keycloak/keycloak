@@ -82,13 +82,13 @@ Manual operations might be necessary depending on the database.
 | Seconds to minutes (depending on the database)
 
 | Site A
-| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to site B.
+| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to Site B.
 Some requests might receive an error message until the LoadBalancer detects Site A has failed.
 | No data loss^3^
 | Less than one minute
 
 | Site B
-| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to site B.
+| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to Site B.
 Some requests might receive an error message until the LoadBalancer detects Site A has failed.
 | No data loss^3^
 | Less than one minute
@@ -121,13 +121,13 @@ Manual operations::
 == Questions and answers
 
 Why synchronous database replication?::
-A synchronously replicated database ensures that data written in site A is always available in site B after site failures and no data is lost.
+A synchronously replicated database ensures that data written in Site A is always available in Site B after site failures and no data is lost.
 
 Why synchronous {jdgserver_name} replication?::
-A synchronously replicated {jdgserver_name} ensures that sessions created, updated and deleted in site A are always available on site B after site failure and no data is lost.
+A synchronously replicated {jdgserver_name} ensures that sessions created, updated and deleted in Site A are always available on Site B after site failure and no data is lost.
 
 Why is a low-latency network between sites needed?::
-Synchronous replication defers the response to the caller until the data is received at site B.
+Synchronous replication defers the response to the caller until the data is received at Site B.
 For synchronous database replication and synchronous {jdgserver_name} replication, a low latency is necessary as each request can have potentially multiple interactions between the sites when data is updated which would amplify the latency.
 
 Is this setup limited to two sites?::
@@ -137,14 +137,14 @@ Therefore, such a deployment is expected to have worse performance and an inferi
 For now, it has been tested and documented with blueprints only for two sites.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
-An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to site B.
-However, as site B would never be fully up-to-date with site A, this setup could lead to data loss during failures.
+An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to Site B.
+However, as Site B would never be fully up-to-date with Site A, this setup could lead to data loss during failures.
 This would include:
 +
 --
-* Lost logouts, meaning sessions are logged in on site A although they are logged out in Site B at the point of failure when using an asynchronous {jdgserver_name} replication of sessions.
-* Lost changes leading to users being able to log in with an old password because database changes are not replicated to site B at the point of failure when using an asynchronous database.
-* Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failure to site B when using an asynchronous {jdgserver_name} replication.
+* Lost logouts, meaning sessions are logged in on Site A although they are logged out in Site B at the point of failure when using an asynchronous {jdgserver_name} replication of sessions.
+* Lost changes leading to users being able to log in with an old password because database changes are not replicated to Site B at the point of failure when using an asynchronous database.
+* Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failure to Site B when using an asynchronous {jdgserver_name} replication.
 --
 +
 Therefore, tradeoffs exist between high availability and consistency. The focus of this topic is to prioritize consistency over availability with {project_name}.
