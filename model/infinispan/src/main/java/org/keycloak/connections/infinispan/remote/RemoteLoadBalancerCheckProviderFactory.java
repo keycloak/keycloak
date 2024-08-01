@@ -63,7 +63,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return MultiSiteUtils.isMultiSiteEnabled() && InfinispanUtils.isRemoteInfinispan();
+        return MultiSiteUtils.isMultiSiteEnabled();
     }
 
     @Override
