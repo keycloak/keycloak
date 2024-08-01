@@ -203,9 +203,9 @@ public class FlowUtil {
 
     public FlowUtil usesInIdentityProvider(String idpAlias) {
         // Setup new FirstBrokerLogin flow to identity provider
-        IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);
+        IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
         idp.setFirstBrokerLoginFlowId(currentFlow.getId());
-        realm.updateIdentityProvider(idp);
+        session.identityProviders().update(idp);
         return this;
     }
 

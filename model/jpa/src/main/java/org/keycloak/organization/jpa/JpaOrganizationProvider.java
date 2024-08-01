@@ -324,7 +324,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         identityProvider.setOrganizationId(organizationEntity.getId());
-        getRealm().updateIdentityProvider(identityProvider);
+        session.identityProviders().update(identityProvider);
 
         return true;
     }
@@ -336,7 +336,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
 
-        return getRealm().getIdentityProvidersStream().filter(model -> organizationEntity.getId().equals(model.getOrganizationId()));
+        return session.identityProviders().getByOrganization(organizationEntity.getId(), null, null);
     }
 
     @Override
@@ -353,7 +353,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         identityProvider.setOrganizationId(null);
         identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
         identityProvider.getConfig().remove(BROKER_PUBLIC);
-        getRealm().updateIdentityProvider(identityProvider);
+        session.identityProviders().update(identityProvider);
 
         return true;
     }
@@ -501,9 +501,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     // return true only if the organization realm and the identity provider realm is the same
     private boolean checkOrgIdpAndRealm(OrganizationEntity orgEntity, IdentityProviderModel idp) {
-        RealmModel orgRealm = session.realms().getRealm(orgEntity.getRealmId());
-        IdentityProviderModel orgIdpByAlias = orgRealm.getIdentityProviderByAlias(idp.getAlias());
-
+        IdentityProviderModel orgIdpByAlias = session.identityProviders().getByAlias(idp.getAlias());
         return orgIdpByAlias != null && orgIdpByAlias.getInternalId().equals(idp.getInternalId());
     }
 

@@ -87,7 +87,7 @@ public class Organizations {
             List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
             session.users().getFederatedIdentitiesStream(realm, user)
                     .map(f -> {
-                        IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
+                        IdentityProviderModel broker = session.identityProviders().getByAlias(f.getIdentityProvider());
 
                         if (!organizationBrokers.contains(broker)) {
                             return null;

@@ -132,6 +132,20 @@ public interface IDPProvider extends Provider {
         return getAllStream(Map.of(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId), first, max);
     }
 
+    /**
+     * Returns the aliases of all identity providers whose {@code firstBrokerLoginFlowId} or {@code postBrokerLoginFlowId}
+     * matches the provided {@code flowId}.
+     *
+     * @param flowId the id of the flow.
+     * @param search an optional {@link String} representing an identity provider alias (partial or exact). If the value is enclosed
+     *               in double quotes, the method treats it as an exact search (e.g. {@code "name"}). If the value is enclosed in
+     *               wildcards, the method treats it as an infix search (e.g. {@code *name*}). Otherwise, the method treats it as a
+     *               prefix search (i.e. {@code name*} and {@code name} return the same results).
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
+     */
+    Stream<String> getByFlow(String flowId, String search, Integer first, Integer max);
 
     /**
      * Returns the number of IDPs in the realm.

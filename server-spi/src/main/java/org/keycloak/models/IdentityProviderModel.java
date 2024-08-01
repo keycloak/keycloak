@@ -31,20 +31,22 @@ import java.util.Objects;
  */
 public class IdentityProviderModel implements Serializable {
 
+    public static final String ALIAS = "alias";
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
-    public static final String LOGIN_HINT = "loginHint";
-    public static final String PASS_MAX_AGE = "passMaxAge";
-
-    public static final String SYNC_MODE = "syncMode";
-    
-    public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
-
-    public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
+    public static final String AUTHENTICATE_BY_DEFAULT = "authenticateByDefault";
+    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
+    public static final String ENABLED = "enabled";
+    public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
+    public static final String FIRST_BROKER_LOGIN_FLOW_ID = "firstBrokerLoginFlowId";
+    public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
+    public static final String LOGIN_HINT = "loginHint";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
-    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
+    public static final String PASS_MAX_AGE = "passMaxAge";
+    public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
+    public static final String SYNC_MODE = "syncMode";
 
     private String internalId;
 
@@ -60,7 +62,7 @@ public class IdentityProviderModel implements Serializable {
     private String providerId;
 
     private boolean enabled;
-    
+
     private boolean trustEmail;
 
     private boolean storeToken;
@@ -232,14 +234,14 @@ public class IdentityProviderModel implements Serializable {
 
     /**
      * <p>Validates this configuration.
-     * 
+     *
      * <p>Sub-classes can override this method in order to enforce provider specific validations.
-     * 
+     *
      * @param realm the realm
      */
     public void validate(RealmModel realm) {
     }
-        
+
     public IdentityProviderSyncMode getSyncMode() {
         return IdentityProviderSyncMode.valueOf(getConfig().getOrDefault(SYNC_MODE, "LEGACY"));
     }
@@ -264,7 +266,7 @@ public class IdentityProviderModel implements Serializable {
         getConfig().put(PASS_MAX_AGE, String.valueOf(passMaxAge));
     }
 
-     
+
     public boolean isHideOnLogin() {
         return Boolean.valueOf(getConfig().get(HIDE_ON_LOGIN));
     }

@@ -909,7 +909,7 @@ public final class KeycloakModelUtils {
      * @param model
      * @return
      */
-    public static boolean isFlowUsed(RealmModel realm, AuthenticationFlowModel model) {
+    public static boolean isFlowUsed(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowModel realmFlow = null;
 
         if ((realmFlow = realm.getBrowserFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
@@ -931,9 +931,7 @@ public final class KeycloakModelUtils {
             return true;
         }
 
-        return realm.getIdentityProvidersStream().anyMatch(idp ->
-                Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
-                        Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
+        return session.identityProviders().getByFlow(model.getId(), null,0, 1).findAny().isPresent();
     }
 
     /**

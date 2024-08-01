@@ -28,10 +28,11 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -46,6 +47,11 @@ import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.IdentityProviderModel.ALIAS;
+import static org.keycloak.models.IdentityProviderModel.AUTHENTICATE_BY_DEFAULT;
+import static org.keycloak.models.IdentityProviderModel.ENABLED;
+import static org.keycloak.models.IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID;
+import static org.keycloak.models.IdentityProviderModel.POST_BROKER_LOGIN_FLOW_ID;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -203,21 +209,10 @@ public class JpaIDPProvider implements IDPProvider {
         predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
         if (StringUtil.isNotBlank(search)) {
-            if (search.startsWith("\"") && search.endsWith("\"")) {
-                // exact search - alias must be an exact match
-                search = search.substring(1, search.length() - 1);
-                predicates.add(builder.equal(idp.get("alias"), search));
-            } else {
-                search = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-                if (!search.endsWith("%")) {
-                    search += "%"; // default to prefix search
-                }
-
-                predicates.add(builder.like(builder.lower(idp.get("alias")), search.toLowerCase(), '\\'));
-            }
+            predicates.add(this.getAliasSearchPredicate(search, builder, idp));
         }
 
-        query.orderBy(builder.asc(idp.get("alias")));
+        query.orderBy(builder.asc(idp.get(ALIAS)));
         TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
         return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
     }
@@ -233,19 +228,72 @@ public class JpaIDPProvider implements IDPProvider {
 
         if (attrs != null) {
             for (Map.Entry<String, String> entry : attrs.entrySet()) {
-                if (StringUtil.isBlank(entry.getKey())) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (StringUtil.isBlank(key)) {
                     continue;
                 }
-                Join<IdentityProviderEntity, Object> configJoin = idp.join("config", JoinType.LEFT);
-                predicates.add(builder.and(
-                        builder.equal(configJoin.get("name"), entry.getKey()),
-                        builder.equal(configJoin.get("value"), entry.getValue())));
+                switch(key) {
+                    case ENABLED:
+                    case AUTHENTICATE_BY_DEFAULT: {
+                        predicates.add(builder.equal(idp.get(key), Boolean.valueOf(value)));
+                        break;
+                    } case FIRST_BROKER_LOGIN_FLOW_ID: {
+                        if (StringUtils.isBlank(value)) {
+                            predicates.add(builder.isNull(idp.get(key)));
+                        } else {
+                            predicates.add(builder.equal(idp.get(key), value));
+                        }
+                        break;
+                    } default: {
+                        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+                        MapJoin<IdentityProviderEntity, String, String> configJoin = idp.joinMap("config");
+                        Predicate configNamePredicate = builder.equal(configJoin.key(), key);
+
+                        if (dbProductName.equals("Oracle")) {
+                            // SELECT * FROM identity_provider_config WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+                            // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                            // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                            // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                            // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+                            Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
+                            predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                        } else {
+                            predicates.add(builder.and(configNamePredicate, builder.equal(configJoin.value(), value)));
+                        }
+                    }
+                }
             }
         }
 
-        query.orderBy(builder.asc(idp.get("alias")));
+        query.orderBy(builder.asc(idp.get(ALIAS)));
         TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
         return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
+    }
+
+    @Override
+    public Stream<String> getByFlow(String flowId, String search, Integer first, Integer max) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> query = builder.createQuery(String.class);
+        Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
+
+        if (StringUtil.isNotBlank(flowId)) {
+            predicates.add(builder.or(
+                    builder.equal(idp.get(FIRST_BROKER_LOGIN_FLOW_ID), flowId),
+                    builder.equal(idp.get(POST_BROKER_LOGIN_FLOW_ID), flowId)
+            ));
+        }
+
+        if (StringUtil.isNotBlank(search)) {
+            predicates.add(this.getAliasSearchPredicate(search, builder, idp));
+        }
+
+        query.orderBy(builder.asc(idp.get(ALIAS)));
+        TypedQuery<String> typedQuery = em.createQuery(query.select(idp.get(ALIAS)).where(predicates.toArray(Predicate[]::new)));
+        return closing(paginateQuery(typedQuery, first, max).getResultStream());
     }
 
     @Override
@@ -263,6 +311,13 @@ public class JpaIDPProvider implements IDPProvider {
     }
 
     private IdentityProviderEntity getEntityById(String id, boolean failIfNotFound) {
+        if (id == null) {
+            if (failIfNotFound) {
+                throw new ModelException("Identity Provider with null internal id does not exist");
+            }
+            return null;
+        }
+
         IdentityProviderEntity entity = em.find(IdentityProviderEntity.class, id);
         if (entity == null) {
             if (failIfNotFound) {
@@ -284,13 +339,27 @@ public class JpaIDPProvider implements IDPProvider {
         Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
 
         Predicate predicate = builder.and(builder.equal(idp.get("realmId"), getRealm().getId()),
-                builder.equal(idp.get("alias"), alias));
+                builder.equal(idp.get(ALIAS), alias));
 
         TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicate));
         try {
             return typedQuery.getSingleResult();
         } catch (NoResultException nre) {
             return null;
+        }
+    }
+
+    private Predicate getAliasSearchPredicate(String search, CriteriaBuilder builder, Root<IdentityProviderEntity> idp) {
+        if (search.startsWith("\"") && search.endsWith("\"")) {
+            // exact search - alias must be an exact match
+            search = search.substring(1, search.length() - 1);
+            return builder.equal(idp.get(ALIAS), search);
+        } else {
+            search = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            if (!search.endsWith("%")) {
+                search += "%"; // default to prefix search
+            }
+            return builder.like(builder.lower(idp.get(ALIAS)), search.toLowerCase(), '\\');
         }
     }
 
