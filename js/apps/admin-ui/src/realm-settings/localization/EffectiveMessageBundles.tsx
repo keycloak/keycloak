@@ -148,7 +148,7 @@ export const EffectiveMessageBundles = ({
       const sortedMessages = localeSort([...filteredMessages], mapByKey("key"));
 
       return sortedMessages;
-    } catch (error) {
+    } catch {
       return [];
     }
   };

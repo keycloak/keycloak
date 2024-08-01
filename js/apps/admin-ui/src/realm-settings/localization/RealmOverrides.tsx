@@ -137,7 +137,7 @@ export const RealmOverrides = ({
         }
 
         return Object.entries(result).slice(first, first + max);
-      } catch (error) {
+      } catch {
         return [];
       }
     };
@@ -245,12 +245,12 @@ export const RealmOverrides = ({
               string,
               string
             >
-          )[key],
-            await adminClient.realms.deleteRealmLocalizationTexts({
-              realm: currentRealm!,
-              selectedLocale: selectMenuLocale,
-              key: key,
-            });
+          )[key];
+          await adminClient.realms.deleteRealmLocalizationTexts({
+            realm: currentRealm!,
+            selectedLocale: selectMenuLocale,
+            key: key,
+          });
         }
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
@@ -322,7 +322,7 @@ export const RealmOverrides = ({
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
-    } catch (error) {
+    } catch {
       addAlert(t("updateTranslationError"), AlertVariant.danger);
     }
 
@@ -598,8 +598,11 @@ export const RealmOverrides = ({
                             setSelectedRowKeys([
                               (row.cells?.[0] as IRowCell).props.value,
                             ]);
-                            translations.length === 1 &&
+
+                            if (translations.length === 1) {
                               setAreAllRowsSelected(true);
+                            }
+
                             toggleDeleteDialog();
                             setKebabOpen(false);
                           },

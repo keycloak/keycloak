@@ -210,12 +210,12 @@ export const RealmSettingsTabs = () => {
               if (response) {
                 setTableData([response]);
               }
-            } catch (error) {
+            } catch {
               return [];
             }
           }),
         );
-      } catch (error) {
+      } catch {
         return [];
       }
     };

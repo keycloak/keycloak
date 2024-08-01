@@ -101,7 +101,7 @@ export const AttributesGroupTab = ({
                   });
                 setTableData([updatedData]);
               }
-            } catch (error) {
+            } catch {
               console.error(`Error removing translations for ${locale}`);
             }
           }),

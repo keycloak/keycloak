@@ -32,7 +32,7 @@ export const InitialAccessTokenList = () => {
   const loader = async () => {
     try {
       return await adminClient.realms.getClientsInitialAccess({ realm });
-    } catch (error) {
+    } catch {
       return [];
     }
   };

@@ -23,28 +23,25 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   stringify?: boolean;
 };
 
-const ComponentTypes = [
-  "String",
-  "Text",
-  "boolean",
-  "List",
-  "Role",
-  "Script",
-  "Map",
-  "Group",
-  "MultivaluedList",
-  "ClientList",
-  "UserProfileAttributeList",
-  "MultivaluedString",
-  "File",
-  "Password",
-  "Url",
-] as const;
-
-export type Components = (typeof ComponentTypes)[number];
+type ComponentType =
+  | "String"
+  | "Text"
+  | "boolean"
+  | "List"
+  | "Role"
+  | "Script"
+  | "Map"
+  | "Group"
+  | "MultivaluedList"
+  | "ClientList"
+  | "UserProfileAttributeList"
+  | "MultivaluedString"
+  | "File"
+  | "Password"
+  | "Url";
 
 export const COMPONENTS: {
-  [index in Components]: FunctionComponent<ComponentProps>;
+  [index in ComponentType]: FunctionComponent<ComponentProps>;
 } = {
   String: StringComponent,
   Text: TextComponent,
@@ -63,5 +60,5 @@ export const COMPONENTS: {
   Url: UrlComponent,
 } as const;
 
-export const isValidComponentType = (value: string): value is Components =>
+export const isValidComponentType = (value: string): value is ComponentType =>
   value in COMPONENTS;

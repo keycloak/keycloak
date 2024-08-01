@@ -78,9 +78,9 @@ export const PoliciesTab = () => {
 
       const allClientPolicies = globalPolicies?.concat(policies ?? []);
 
-      setPolicies(allClientPolicies),
-        setTablePolicies(allClientPolicies || []),
-        setCode(prettyPrintJSON(allClientPolicies));
+      setPolicies(allClientPolicies);
+      setTablePolicies(allClientPolicies || []);
+      setCode(prettyPrintJSON(allClientPolicies));
     },
     [key],
   );

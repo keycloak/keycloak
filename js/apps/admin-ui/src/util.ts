@@ -175,7 +175,7 @@ export const localeToDisplayName = (locale: string, displayLocale: string) => {
       // Once the existing locales have been moved, this code can be removed.
       locale === "zh-CN" ? "zh-HANS" : locale === "zh-TW" ? "zh-HANT" : locale,
     );
-  } catch (error) {
+  } catch {
     return locale;
   }
 };

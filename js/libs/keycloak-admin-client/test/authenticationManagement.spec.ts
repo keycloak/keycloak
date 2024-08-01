@@ -451,7 +451,7 @@ describe("Authentication management", () => {
           id: config.id!,
         });
         fail("should not find deleted config");
-      } catch (error) {
+      } catch {
         // ignore
       }
     });
