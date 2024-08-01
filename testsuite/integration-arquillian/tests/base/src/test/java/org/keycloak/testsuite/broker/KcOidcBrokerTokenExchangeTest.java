@@ -190,7 +190,7 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
 
     private static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        IdentityProviderModel idp = realm.getIdentityProviderByAlias(IDP_OIDC_ALIAS);
+        IdentityProviderModel idp = session.identityProviders().getByAlias(IDP_OIDC_ALIAS);
         org.junit.Assert.assertNotNull(idp);
 
         ClientModel client = realm.addClient("test-app");

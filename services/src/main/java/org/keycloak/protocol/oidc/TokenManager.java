@@ -1505,7 +1505,7 @@ public class TokenManager {
 
     private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
         try {
-            return realm.getIdentityProvidersStream()
+            return session.identityProviders().getAllStream()
                     .map(idpModel ->
                         IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel))
                     .filter(OIDCIdentityProvider.class::isInstance)

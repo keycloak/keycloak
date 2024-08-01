@@ -212,7 +212,7 @@ public class IdentityProvidersResource {
 
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
-            this.realm.addIdentityProvider(identityProvider);
+            session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
@@ -235,14 +235,12 @@ public class IdentityProvidersResource {
     @Path("instances/{alias}")
     public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderModel identityProviderModel =  this.realm.getIdentityProvidersStream()
-                .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
-                .findFirst().orElse(null);
+        IdentityProviderModel identityProviderModel = session.identityProviders().getByIdOrAlias(alias);
 
         return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
-    private IdentityProviderFactory getProviderFactoryById(String providerId) {
+    private IdentityProviderFactory<?> getProviderFactoryById(String providerId) {
         return getProviderFactories()
                 .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
                 .map(IdentityProviderFactory.class::cast)

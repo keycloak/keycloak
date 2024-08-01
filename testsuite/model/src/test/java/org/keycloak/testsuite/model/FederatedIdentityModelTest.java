@@ -58,7 +58,7 @@ public class FederatedIdentityModelTest extends KeycloakModelTest {
 
 		IdentityProviderModel identityProviderModel = identityProviderFactory.createConfig();
 		identityProviderModel.setAlias(IDENTITY_PROVIDER_ALIAS);
-		realm.addIdentityProvider(identityProviderModel);
+        s.identityProviders().create(identityProviderModel);
 
 		userId = s.users().addUser(realm, USERNAME).getId();
 	}
