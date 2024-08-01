@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa.session;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;

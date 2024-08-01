@@ -28,6 +28,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
@@ -183,7 +184,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
                             containsSession.get().add(localSessions.containsKey(userSessionId.get()));
                         }
 
-                        if (hotRodServer.isPresent()) {
+                        if (hotRodServer.isPresent() && !MultiSiteUtils.isPersistentSessionsEnabled()) {
                             RemoteCache<String, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
                             containsSession.get().add(remoteSessions.containsKey(userSessionId.get()));
                         }

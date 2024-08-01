@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import org.infinispan.api.annotations.indexing.Basic;
 import org.infinispan.protostream.annotations.ProtoField;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
