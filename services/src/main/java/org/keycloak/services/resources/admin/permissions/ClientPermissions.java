@@ -105,7 +105,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         return TOKEN_EXCHANGE + ".permission.client." + client.getId();
     }
 
-     private void initialize(ClientModel client) {
+    private void initialize(ClientModel client) {
         ResourceServer server = root.findOrCreateResourceServer(client);
         if (server==null) return;
         Scope manageScope = manageScope(server);
@@ -269,7 +269,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         return root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS);
     }
     public boolean canViewClientDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS);
+        return root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_REALM);
     }
 
     @Override
