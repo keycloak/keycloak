@@ -44,12 +44,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          check-latest: true
-          cache: maven
+        uses: ./.github/actions/java-setup
+
+      - id: maven-cache
+        name: Maven cache
+        uses: ./.github/actions/maven-cache
 
       - name: Build Keycloak
         run: |
@@ -164,10 +163,7 @@ jobs:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+        uses: ./.github/actions/java-setup
 
       - name: Start Keycloak server
         run: |
@@ -258,10 +254,7 @@ jobs:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+        uses: ./.github/actions/java-setup
 
       - name: Start Keycloak server
         run: |

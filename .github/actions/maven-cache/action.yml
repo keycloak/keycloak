@@ -28,6 +28,17 @@ runs:
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
+        # Enable cross-os archive use the cache on both Linux and Windows
+        enableCrossOsArchive: true
+
+    - id: download-node-for-windows
+      # This is necessary as the build which creates the cache will run on a Linux node and therefore will never download the Windows artifact by default.
+      # If we wouldn't download it manually, it would be downloaded on each Windows build, which proved to be unstable as downloads would randomly fail in the middle of the download.
+      if: inputs.create-cache-if-it-doesnt-exist == 'true' && steps.cache-maven-repository.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        export VERSION=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout  | cut -c 2-)
+        curl -Lf https://nodejs.org/dist/v${VERSION}/win-x64/node.exe --create-dirs -o ~/.m2/repository/repository/com/github/eirslett/node/${VERSION}/node-${VERSION}-win-x64.exe
 
     - id: restore-maven-repository
       name: Maven cache
@@ -40,3 +51,14 @@ runs:
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
+        enableCrossOsArchive: true
+
+    - shell: bash
+      name: Move downloaded Maven repository to the OS-dependent location
+      if: inputs.create-cache-if-it-doesnt-exist == 'false' && runner.os != 'Linux'
+      run: |
+        echo $(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+        ls -l ~/.m2/repository
+        ls -l $(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+        mv ~/.m2/repository/* $(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+        ls -l $(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
