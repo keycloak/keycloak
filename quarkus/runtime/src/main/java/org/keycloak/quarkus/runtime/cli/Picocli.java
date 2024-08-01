@@ -450,7 +450,7 @@ public final class Picocli {
     }
 
     private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper, String configValue,
-            DeprecatedMetadata metadata) {
+                                         DeprecatedMetadata metadata) {
         Set<String> deprecatedValuesInUse = new HashSet<>();
         if (!metadata.getDeprecatedValues().isEmpty()) {
             deprecatedValuesInUse.addAll(Arrays.asList(configValue.split(",")));
@@ -466,29 +466,35 @@ public final class Picocli {
             optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
         }
 
-        StringBuilder sb = new StringBuilder("\t- ");
-        sb.append(optionName);
+        StringBuilder sb = new StringBuilder();
+        if (mapper.getDeprecatedMetadata().isPresent()) {
 
-        if (!deprecatedValuesInUse.isEmpty()) {
-            sb.append("=").append(String.join(",", deprecatedValuesInUse));
-        }
+            if (!mapper.getDeprecatedMetadata().get().getNewOptionsKeys().isEmpty() || mapper.getDeprecatedMetadata().get().getNote() != null || !mapper.getDeprecatedMetadata().get().getDeprecatedValues().isEmpty()) {
+                sb.append("\t- ").append(optionName);
 
-        if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
-            sb.append(":");
-        }
-        if (metadata.getNote() != null) {
-            sb.append(" ");
-            sb.append(metadata.getNote());
-            if (!metadata.getNote().endsWith(".")) {
-                sb.append(".");
+                if (!deprecatedValuesInUse.isEmpty()) {
+                    sb.append("=").append(String.join(",", deprecatedValuesInUse));
+                }
+
+                if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
+                    sb.append(":");
+                }
+                if (metadata.getNote() != null) {
+                    sb.append(" ");
+                    sb.append(metadata.getNote());
+                    if (!metadata.getNote().endsWith(".")) {
+                        sb.append(".");
+                    }
+                }
+                if (!metadata.getNewOptionsKeys().isEmpty()) {
+                    sb.append(" Use ");
+                    sb.append(String.join(", ", metadata.getNewOptionsKeys()));
+                    sb.append(".");
+                }
+
+                deprecatedInUse.add(sb.toString());
             }
         }
-        if (!metadata.getNewOptionsKeys().isEmpty()) {
-            sb.append(" Use ");
-            sb.append(String.join(", ", metadata.getNewOptionsKeys()));
-            sb.append(".");
-        }
-        deprecatedInUse.add(sb.toString());
     }
 
     private static void handleDisabled(Set<String> disabledInUse, PropertyMapper<?> mapper) {
