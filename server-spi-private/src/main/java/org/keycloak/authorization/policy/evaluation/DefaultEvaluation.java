@@ -168,19 +168,33 @@ public class DefaultEvaluation implements Evaluation {
                 return user.isMemberOf(group);
             }
 
+            private final String USER_CACHE_SESSION_ATTRIBUTE = DefaultEvaluation.class.getName() + ".userCache";
             private UserModel getUser(String id, KeycloakSession session) {
-                RealmModel realm = session.getContext().getRealm();
-                UserModel user = session.users().getUserById(realm, id);
+                @SuppressWarnings("unchecked") HashMap<String, UserModel> cache = (HashMap<String, UserModel>) session.getAttribute(USER_CACHE_SESSION_ATTRIBUTE);
+                if (cache == null) {
+                    cache = new HashMap<>();
+                    session.setAttribute(USER_CACHE_SESSION_ATTRIBUTE, cache);
+                }
+                UserModel user = cache.get(id);
 
                 if (Objects.isNull(user)) {
-                    user = session.users().getUserByUsername(realm ,id);
+                    if (cache.containsKey(id)) {
+                        return null;
+                    }
+                    RealmModel realm = session.getContext().getRealm();
+                    user = session.users().getUserById(realm, id);
+                    if (Objects.isNull(user)) {
+                        user = session.users().getUserByUsername(realm, id);
+                    }
+                    if (Objects.isNull(user)) {
+                        user = session.users().getUserByEmail(realm, id);
+                    }
+                    if (Objects.isNull(user)) {
+                        user = session.users().getServiceAccount(realm.getClientById(id));
+                    }
                 }
-                if (Objects.isNull(user)) {
-                    user = session.users().getUserByEmail(realm, id);
-                }
-                if (Objects.isNull(user)) {
-                    user = session.users().getServiceAccount(realm.getClientById(id));
-                }
+
+                cache.put(id, user);
 
                 return user;
             }
