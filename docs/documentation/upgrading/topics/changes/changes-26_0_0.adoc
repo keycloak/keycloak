@@ -96,8 +96,8 @@ This is enforced by default, and can be disabled using the SPI option `spi-singl
 
 {project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
 
-- {project_name} deployments on each site are now able to handle user requests simultaneously, Active/Active vs the previous
-Active/Passive architecture.
+- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active
+setups are now supported, while previous configurations which leveraged active/passive LoadBalancer will continue to work.
 
 - The LoadBalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
 caused by DNS caching by clients.
