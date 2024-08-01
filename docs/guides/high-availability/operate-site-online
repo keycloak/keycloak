@@ -35,7 +35,7 @@ Follow these steps to re-add a Keycloak site to the AWS Global Accelerator so th
             "EndpointDescriptions": [
                 {
                     "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a3c75f239541c4a6e9c48cf8d48d602f/5ba333e87019ccf0",
-                    "Weight": 50,
+                    "Weight": 128,
                     "HealthState": "HEALTHY",
                     "ClientIPPreservationEnabled": false
                 }
@@ -62,12 +62,12 @@ aws globalaccelerator update-endpoint-group \
   [
     {
         "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a3c75f239541c4a6e9c48cf8d48d602f/5ba333e87019ccf0",
-        "Weight": 50,
+        "Weight": 128,
         "ClientIPPreservationEnabled": false
     },
     {
         "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a49e56e51e16843b9a3bc686327c907b/9b786f80ed4eba3d",
-        "Weight": 50,
+        "Weight": 128,
         "ClientIPPreservationEnabled": false
     }
   ]

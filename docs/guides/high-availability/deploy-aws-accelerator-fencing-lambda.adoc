@@ -9,18 +9,20 @@ tileVisible="false" >
 This guide explains how to reduce the impact when split-brain scenarios occur between two sites in a multi-site deployment.
 
 == Architecture
-In the event of a network communication failure between the two sites in a Multi-AZ deployment, it is no
+In the event of a network communication failure between the two sites in a multi-site deployment, it is no
 longer possible for the two sites to continue to replicate session state between themselves and the two sites
-will become increasingly out-of-sync. As it's possible for subsequent Keycloak requests to be routed to different
+will become increasingly out-of-sync. As it is possible for subsequent Keycloak requests to be routed to different
 sites, this may lead to unexpected behaviour as previous updates will not have been applied to both sites.
 
-Typically in such scenarios a quorum is used to determine which sites are marked as online or offline, however as multi-site
-deployments only consist of two sites, this is not possible. Instead, we leverage the STONITH (Shoot The Other In The Head)
-pattern to ensure that once a split-brain has been detected, only one site can continue to serve user requests.
+In such scenarios a quorum is commonly used to determine which sites are marked as online or offline, however as multi-site
+deployments only consist of two sites, this is not possible. Instead, we leverage "fencing" to ensure that when one of the
+sites is unable to connect to the other site, only one site remains in the LoadBalancer configuration and hence only this
+site is able to serve subsequent users requests.
 
-STONITH is implemented by using https://prometheus.io/docs/alerting/latest/overview/[Prometheus Alerts] to call an AWS
-Lambda based webhook whenever one of the sites is unable to establish or connect to the other side. The triggered Lambda
-function inspects the current Global Accelerator configuration and removes the site reported to be offline.
+In this guide we describe how to implement fencing using a combination of https://prometheus.io/docs/alerting/latest/overview/[Prometheus Alerts]
+and AWS Lambda functions. A Prometheus Alert is triggered when split-brain is detected by the Infinispan server metrics,
+which results in the Prometheus AlertManager calling the AWS Lambda based webhook. The triggered Lambda function inspects
+the current Global Accelerator configuration and removes the site reported to be offline.
 
 In a true split-brain scenario, where both sites are still up but network communication is down, it's probable that both
 sites will trigger the webhook. We guard against this by ensuring that only a single Lambda instance can be executed at
@@ -28,9 +30,9 @@ a given time.
 
 == Prerequisites
 
-* ROSA HCP based Multi-AZ Keycloak deployment
+* ROSA HCP based multi-site Keycloak deployment
 * AWS CLI Installed
-* AWS Global Accelerator Loadbalancer
+* AWS Global Accelerator LoadBalancer
 
 == Procedure
 . Enable Openshift user alert routing
@@ -152,7 +154,7 @@ aws iam attach-role-policy \
 </#noparse>
 ----
 +
-. Create a Lambda ZIP file containing the required STONITH logic
+. Create a Lambda ZIP file containing the required fencing logic
 +
 .Command:
 [source,bash]
@@ -161,11 +163,11 @@ aws iam attach-role-policy \
 LAMBDA_ZIP=/tmp/lambda.zip
 cat << EOF > /tmp/lambda.py
 
-include::examples/generated/stonith_lambda.py[tag=stonith-start]
+include::examples/generated/fencing_lambda.py[tag=fencing-start]
     expected_user = 'keycloak' # <1>
     secret_name = 'webhook-password' # <2>
     secret_region = 'eu-west-1' # <3>
-include::examples/generated/stonith_lambda.py[tag=stonith-end]
+include::examples/generated/fencing_lambda.py[tag=fencing-end]
 
 EOF
 zip -FS --junk-paths ${LAMBDA_ZIP} /tmp/lambda.py
@@ -254,12 +256,12 @@ LOCAL_SITE= # <3>
 REMOTE_SITE= # <4>
 
 kubectl apply -n ${NAMESPACE} -f - << EOF
-include::examples/generated/ispn-site-a.yaml[tag=stonith-secret]
+include::examples/generated/ispn-site-a.yaml[tag=fencing-secret]
 </#noparse>
 ---
-include::examples/generated/ispn-site-a.yaml[tag=stonith-alert-manager-config]
+include::examples/generated/ispn-site-a.yaml[tag=fencing-alert-manager-config]
 ---
-include::examples/generated/ispn-site-a.yaml[tag=stonith-prometheus-rule]
+include::examples/generated/ispn-site-a.yaml[tag=fencing-prometheus-rule]
 ----
 <1> The username required to authenticate Lambda requests
 <2> The password required to authenticate Lambda requests

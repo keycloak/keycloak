@@ -33,7 +33,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="deploy-infinispan-kubernetes-crossdc" />
 * <@links.ha id="connect-keycloak-to-external-infinispan" />
 * <@links.ha id="deploy-aws-accelerator-loadbalancer" />
-* <@links.ha id="deploy-aws-accelerator-stonith-lambda" />
+* <@links.ha id="deploy-aws-accelerator-fencing-lambda" />
 
 == Operational procedures
 

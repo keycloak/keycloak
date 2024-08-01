@@ -6,23 +6,23 @@ title="Deploy an AWS Global Accelerator loadbalancer"
 summary="Building block for a loadbalancer"
 tileVisible="false" >
 
-This topic describes the procedure required to deploy an AWS global accelerator to route traffic between multi-site Keycloak deployments.
+This topic describes the procedure required to deploy an AWS global accelerator to route traffic between multi-site {project_name} deployments.
 
 include::partials/blueprint-disclaimer.adoc[]
 
 == Audience
 
-This guide describes how to deploy an AWS Global Accelerator instance to handle Keycloak client connection failover for multiple
-availability-zone Keycloak deployments.
+This guide describes how to deploy an AWS Global Accelerator instance to handle {project_name} client connection failover for multiple
+availability-zone {project_name} deployments.
 
 == Architecture
 
-All Keycloak client requests are routed via an AWS Global Accelerator instance. It's the responsibility of the configured
-accelerator to ensure that requests are routed to Keycloak clusters deployed in both availability-zones. Utilising an
-AWS Global Accelerator prevents clients from erroneously caching IP addresses of failed Keycloak deployments which is
-possible with DNS based failover strategies.
+To ensure user requests are routed to each {project_name} site we need to utilise a LoadBalancer. To prevent issues with
+DNS caching on the client-side, the implementation ideally needs to provide a static IP address that remains the same
+when routing clients to both availability-zones.
 
-In the event of a Keycloak site failing, the Accelerator ensures that all client requests are routed to the remaining
+In this guide we describe how to route all {project_name} client requests via an AWS Global Accelerator LoadBalancer.
+In the event of a {project_name} site failing, the Accelerator ensures that all client requests are routed to the remaining
 healthy site. If both sites are marked as unhealthy, then the Accelerator will "fail-open" and forward requests to a site
 chosen at random.
 
@@ -36,12 +36,12 @@ when both clusters are healthy.
 
 == Prerequisites
 
-* ROSA based Multi-AZ Keycloak deployment
+* ROSA based Multi-AZ {project_name} deployment
 
 == Procedure
 . Create Network Load Balancers
 +
-Perform the following on each of the Keycloak clusters:
+Perform the following on each of the {project_name} clusters:
 +
 .. Login to the ROSA cluster
 +
@@ -79,7 +79,7 @@ cat <<EOF | kubectl apply -n $NAMESPACE -f - #<1>
 EOF
 </#noparse>
 ----
-<1> `$NAMESPACE` should be replaced with the namespace of your Keycloak deployment
+<1> `$NAMESPACE` should be replaced with the namespace of your {project_name} deployment
 <2> Add additional Tags to the resources created by AWS so that we can retrieve them later. `ACCELERATOR_NAME` should be
 the name of the Global Accelerator created in subsequent steps and `CLUSTER_NAME` should be the name of the current site.
 <3> How frequently the healthcheck probe is executed in seconds
@@ -151,8 +151,8 @@ aws globalaccelerator create-accelerator \
 
 ----
 <1> The ARN associated with the created Accelerator instance, this will be used in subsequent commands
-<2> The DNS name which IPv4 Keycloak clients should connect to
-<3> The DNS name which IPv6 Keycloak clients should connect to
+<2> The DNS name which IPv4 {project_name} clients should connect to
+<3> The DNS name which IPv6 {project_name} clients should connect to
 +
 . Create a Listener for the accelerator
 +
@@ -257,9 +257,9 @@ aws globalaccelerator create-endpoint-group \
 </#noparse>
 ----
 +
-. Update/Create Keycloak Deployment
+. Update/Create {project_name} Deployment
 +
-Perform the following on each of the Keycloak clusters:
+Perform the following on each of the {project_name} clusters:
 +
 .. Login to the ROSA cluster
 +
@@ -280,15 +280,15 @@ spec:
 </#noparse>
 ----
 <1> The hostname clients use to connect to Keycloak
-<2> Disable the default ingress as all Keycloak access should be via the provisioned NLB
+<2> Disable the default ingress as all {project_name} access should be via the provisioned NLB
 +
-To ensure that request forwarding works as expected, it's necessary for the Keycloak CR to specify the hostname through
-which clients will access the Keycloak instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
+To ensure that request forwarding works as expected, it is necessary for the Keycloak CR to specify the hostname through
+which clients will access the {project_name} instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
 with the Global Accelerator. Alternatively, this could be a more friendly hostname which utilises the Accelerator's IP
 addresses or one of the aforementioned hostnames.
 
 == Verify
 To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to the Accelerator's
-`DnsName` or `DualStackDnsName` in your browser, and you should be presented with the Keycloak admin console.
+`DnsName` or `DualStackDnsName` in your browser, and you should be presented with the {project_name} admin console.
 
 </@tmpl.guide>

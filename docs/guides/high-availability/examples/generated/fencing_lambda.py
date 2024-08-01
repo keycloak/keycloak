@@ -1,4 +1,4 @@
-# tag::stonith-start[]
+# tag::fencing-start[]
 import boto3
 import jmespath
 import json
@@ -90,11 +90,11 @@ def handler(event, context):
             "statusCode": 401
         }
 
-# end::stonith-start[]
+# end::fencing-start[]
     expected_user = 'keycloak'
     secret_name = 'keycloak-master-password'
     secret_region = 'eu-central-1'
-# tag::stonith-end[]
+# tag::fencing-end[]
     expectedPass = get_secret(secret_name, secret_region)
     username, password = decode_basic_auth_header(authorization)
     if username != expected_user and password != expectedPass:
@@ -117,4 +117,4 @@ def handler(event, context):
     return {
         "statusCode": 204
     }
-# end::stonith-end[]
+# end::fencing-end[]
