@@ -49,6 +49,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 
 import java.io.ByteArrayInputStream;
@@ -83,9 +84,9 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      * @param caPrivateKey the CA private key
      * @param caCert the CA certificate
      * @param subject the subject name
-     * 
+     *
      * @return the x509 certificate
-     * 
+     *
      * @throws Exception the exception
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
@@ -132,7 +133,16 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
             certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
 
             // Content Signer
-            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
+            ContentSigner sigGen;
+            switch (caPrivateKey.getAlgorithm()){
+                case "EC":
+                    sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
+                                                                           .build(caPrivateKey);
+                    break;
+                default:
+                    sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
+                                                                                   .build(caPrivateKey);
+            }
 
             // Certificate
             return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
@@ -146,9 +156,9 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      *
      * @param caKeyPair the CA key pair
      * @param subject the subject name
-     * 
+     *
      * @return the x509 certificate
-     * 
+     *
      * @throws Exception the exception
      */
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
@@ -213,7 +223,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
     @Override
     public List<String> getCertificatePolicyList(X509Certificate cert) throws GeneralSecurityException {
-        
+
         Extensions certExtensions = new JcaX509CertificateHolder(cert).getExtensions();
         if (certExtensions == null)
             throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");

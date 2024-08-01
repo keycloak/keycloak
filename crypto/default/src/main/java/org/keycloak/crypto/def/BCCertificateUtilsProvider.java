@@ -87,7 +87,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
      * @throws Exception the exception
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
-                                                 String subject) {
+                                                 String subject) throws Exception {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 
