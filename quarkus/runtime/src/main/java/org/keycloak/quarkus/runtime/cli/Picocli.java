@@ -449,8 +449,7 @@ public final class Picocli {
         }
     }
 
-    private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper, String configValue,
-                                         DeprecatedMetadata metadata) {
+    private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper, String configValue, DeprecatedMetadata metadata) {
         Set<String> deprecatedValuesInUse = new HashSet<>();
         if (!metadata.getDeprecatedValues().isEmpty()) {
             deprecatedValuesInUse.addAll(Arrays.asList(configValue.split(",")));
