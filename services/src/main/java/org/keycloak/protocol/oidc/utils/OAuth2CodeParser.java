@@ -29,7 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -99,10 +98,11 @@ public class OAuth2CodeParser {
         }
 
         // Retrieve UserSession
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID);
+        var userSessionProvider = session.sessions();
+        UserSessionModel userSession = userSessionProvider.getUserSessionIfClientExists(realm, userSessionId, false, clientUUID);
         if (userSession == null) {
             // Needed to track if code is invalid or was already used.
-            userSession = session.sessions().getUserSession(realm, userSessionId);
+            userSession = userSessionProvider.getUserSession(realm, userSessionId);
             if (userSession == null) {
                 return result.illegalCode();
             }
@@ -148,16 +148,6 @@ public class OAuth2CodeParser {
 
         private boolean isIllegalCode = false;
         private boolean isExpiredCode = false;
-
-
-        private ParseResult(String code, OAuth2Code codeData, AuthenticatedClientSessionModel clientSession) {
-            this.code = code;
-            this.codeData = codeData;
-            this.clientSession = clientSession;
-
-            this.isIllegalCode = false;
-            this.isExpiredCode = false;
-        }
 
 
         private ParseResult(String code) {

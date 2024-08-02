@@ -125,6 +125,11 @@ It used to be difficult to regain access to a {project_name} instance when all a
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
 
+= Deprecations in `keycloak-services` module
+
+The class `UserSessionCrossDCManager` is deprecated and planned to be removed in a future version of {project_name}.
+Read the `UserSessionCrossDCManager` Javadoc for the alternative methods to use.
+
 = Identity Providers no longer available from the realm representation
 
 As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
