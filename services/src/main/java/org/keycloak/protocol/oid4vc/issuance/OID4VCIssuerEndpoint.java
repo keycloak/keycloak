@@ -491,7 +491,7 @@ public class OID4VCIssuerEndpoint {
             return objectMapper.readValue(result.getClientSession().getNote(sessionCode), CredentialsOffer.class);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert JSON to POJO: %s", e);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
         } finally {
             result.getClientSession().removeNote(sessionCode);
         }
