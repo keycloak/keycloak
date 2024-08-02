@@ -1061,7 +1061,7 @@ public class RepresentationToModel {
             Set<String> keys = new HashSet<>(rep.getConfig().keySet());
             for (String k : keys) {
                 if (!internal && !providerConfiguration.containsKey(k)) {
-                    break;
+                    continue;
                 }
 
                 List<String> values = rep.getConfig().get(k);
