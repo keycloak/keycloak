@@ -286,6 +286,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
 
         Marshalling.configure(gcb);
+
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            // Disable JGroups, not required when the data is stored in the Remote Cache.
+            // The existing caches are local and do not require JGroups to work properly.
+            gcb.nonClusteredDefault();
+        }
+
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
             setTimeServiceToKeycloakTime(cacheManager);
