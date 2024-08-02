@@ -86,11 +86,9 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      * @param subject the subject name
      *
      * @return the x509 certificate
-     *
-     * @throws Exception the exception
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
-            String subject) throws Exception {
+            String subject) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 
@@ -134,7 +132,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
             // Content Signer
             ContentSigner sigGen;
-            switch (caPrivateKey.getAlgorithm()){
+            switch (caCert.getPublicKey().getAlgorithm()){
                 case "EC":
                     sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
                                                                            .build(caPrivateKey);
