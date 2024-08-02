@@ -16,6 +16,7 @@
  */
 package org.keycloak.keys;
 
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
@@ -41,7 +42,7 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
     // only support NIST P-256 for ES256, P-384 for ES384, P-521 for ES512
     protected static ProviderConfigProperty ECDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(ECDSA_ELLIPTIC_CURVE_KEY, "Elliptic Curve", "Elliptic Curve used in ECDSA", LIST_TYPE,
             String.valueOf(GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE),
-            "P-256", "P-384", "P-521");
+            "P-256", "P-384", "P-521", "secp256k1");
  
     public final static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
@@ -60,7 +61,7 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
 
     public static KeyPair generateEcdsaKeyPair(String keySpecName) {
         try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+            KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen("EC");
             SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
             ECGenParameterSpec ecSpec = new ECGenParameterSpec(keySpecName);
             keyGen.initialize(ecSpec, randomGen);
@@ -75,13 +76,16 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
         String ecInSecRep = null;
         switch(ecInNistRep) {
             case "P-256" :
-            	ecInSecRep = "secp256r1";
+                ecInSecRep = "secp256r1";
                 break;
             case "P-384" :
-            	ecInSecRep = "secp384r1";
+                ecInSecRep = "secp384r1";
                 break;
             case "P-521" :
-            	ecInSecRep = "secp521r1";
+                ecInSecRep = "secp521r1";
+                break;
+            case "secp256k1":
+                ecInSecRep = "secp256k1";
                 break;
             default :
                 // return null
@@ -97,6 +101,8 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
                 return Algorithm.ES384;
             case "P-521" :
                 return Algorithm.ES512;
+            case "secp256k1" :
+                return Algorithm.ES256K;
             default :
                 return null;
         }
@@ -110,6 +116,8 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
                 return "P-384";
             case Algorithm.ES512 :
                 return "P-521";
+            case Algorithm.ES256K :
+                return "secp256k1";
             default :
                 return null;
         }

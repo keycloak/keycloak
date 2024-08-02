@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,8 @@
  */
 package org.keycloak.crypto.elytron.test;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.jose.jwk.JWKTest;
+import org.keycloak.sdjwt.sdjwtvp.SdJwtVPTest;
 
-public class ElytronCryptoJWKTest extends JWKTest {
-    @Ignore("Test not supported by Elytron")
-    @Test
-    public void publicEs256kSecp256k1() throws Exception {
-        // Do nothing
-    }
+public class ElytronSdJwtVPTest extends SdJwtVPTest {
+
 }

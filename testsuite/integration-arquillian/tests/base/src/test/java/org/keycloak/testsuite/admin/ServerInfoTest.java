@@ -73,7 +73,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
                 Algorithm.EdDSA, Algorithm.PS256, Algorithm.PS384,
                 Algorithm.PS512, Algorithm.RS256, Algorithm.RS384,
-                Algorithm.RS512);
+                Algorithm.RS512, Algorithm.ES256K);
 
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()

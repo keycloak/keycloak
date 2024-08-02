@@ -82,6 +82,9 @@ public abstract class AbstractJWKParser {
             case "P-521" :
                 name = "secp521r1";
                 break;
+            case "secp256k1" :
+                name = "secp256k1";
+                break;
             default :
                 throw new RuntimeException("Unsupported curve");
         }

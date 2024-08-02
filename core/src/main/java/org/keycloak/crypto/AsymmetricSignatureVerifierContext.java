@@ -17,6 +17,7 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.security.PublicKey;
 import java.security.Signature;
@@ -42,7 +43,8 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
     @Override
     public boolean verify(byte[] data, byte[] signature) throws VerificationException {
         try {
-            Signature verifier = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+            Signature verifier = CryptoIntegration.getProvider().getSignature(
+                    JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
             verifier.initVerify((PublicKey) key.getPublicKey());
             verifier.update(data);
             return verifier.verify(signature);

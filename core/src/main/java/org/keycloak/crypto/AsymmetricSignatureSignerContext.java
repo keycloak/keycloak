@@ -19,6 +19,8 @@ package org.keycloak.crypto;
 import java.security.PrivateKey;
 import java.security.Signature;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+
 public class AsymmetricSignatureSignerContext implements SignatureSignerContext {
 
     private final KeyWrapper key;
@@ -45,7 +47,8 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
     @Override
     public byte[] sign(byte[] data) throws SignatureException {
         try {
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+            Signature signature = CryptoIntegration.getProvider().getSignature(
+                    JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
             signature.initSign((PrivateKey) key.getPrivateKey());
             signature.update(data);
             return signature.sign();
