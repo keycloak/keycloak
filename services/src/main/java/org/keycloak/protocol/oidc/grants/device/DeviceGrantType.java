@@ -17,15 +17,18 @@
 
 package org.keycloak.protocol.oidc.grants.device;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocolService.tokenServiceBaseUrl;
+import java.net.URI;
+import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -38,13 +41,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
-import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenResponseContext;
@@ -54,17 +55,11 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.net.URI;
-import java.util.Map;
+import static org.keycloak.protocol.oidc.OIDCLoginProtocolService.tokenServiceBaseUrl;
 
 /**
  * OAuth 2.0 Device Authorization Grant
@@ -279,11 +274,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         event.session(userSessionId);
 
         // Retrieve UserSession
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId,
-            client.getId());
+        var userSessionProvider = session.sessions();
+        UserSessionModel userSession = userSessionProvider.getUserSessionIfClientExists(realm, userSessionId, false, client.getId());
 
         if (userSession == null) {
-            userSession = session.sessions().getUserSession(realm, userSessionId);
+            userSession = userSessionProvider.getUserSession(realm, userSessionId);
             if (userSession == null) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING,
                     "The authorization request is verified but can not lookup the user session yet",
