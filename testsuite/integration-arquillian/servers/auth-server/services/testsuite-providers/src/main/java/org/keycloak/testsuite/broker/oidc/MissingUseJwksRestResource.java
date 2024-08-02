@@ -57,7 +57,9 @@ public class MissingUseJwksRestResource {
                         .filter(certs -> !certs.isEmpty())
                         .orElseGet(() -> Collections.singletonList(k.getCertificate()));
                     if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
+                        JWK rsaKey = b.rsa(k.getPublicKey(), certificates, k.getUse());
+                        rsaKey.setPublicKeyUse(null);
+                        return rsaKey;
                     } else if (k.getType().equals(KeyType.EC)) {
                         JWK ecKey = b.ec(k.getPublicKey(), k.getUse());
                         ecKey.setPublicKeyUse(null);

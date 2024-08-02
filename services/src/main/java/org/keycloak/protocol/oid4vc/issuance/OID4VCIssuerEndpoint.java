@@ -494,7 +494,11 @@ public class OID4VCIssuerEndpoint {
     private Response getErrorResponse(ErrorType errorType) {
         var errorResponse = new ErrorResponse();
         errorResponse.setError(errorType);
-        return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(errorResponse)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
     }
 
     // Return all {@link  OID4VCClient}s that support the given scope and format

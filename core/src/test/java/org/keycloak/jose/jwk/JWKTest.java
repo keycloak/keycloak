@@ -42,7 +42,6 @@ import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECPoint;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -50,6 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.util.CertificateUtils.generateV1SelfSignedCertificate;
+import static org.keycloak.common.util.CertificateUtils.generateV3Certificate;
 
 /**
  * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
@@ -143,6 +143,11 @@ public abstract class JWKTest {
         ECGenParameterSpec ecSpec = new ECGenParameterSpec(algorithm);
         keyGen.initialize(ecSpec, randomGen);
         KeyPair keyPair = keyGen.generateKeyPair();
+        KeyPair keyPair2 = keyGen.generateKeyPair();
+        X509Certificate certificate = generateV1SelfSignedCertificate(keyPair, "root");
+        X509Certificate certificate2 = generateV3Certificate(keyPair2, keyPair.getPrivate(), certificate, "child");
+        certificate.verify(keyPair.getPublic());
+        certificate2.verify(keyPair.getPublic());
 
         ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
 
