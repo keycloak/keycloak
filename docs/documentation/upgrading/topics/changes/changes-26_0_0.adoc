@@ -133,3 +133,9 @@ when exporting a realm.
 
 To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
 This endpoint supports filters and pagination.
+
+= CLI import placeholder replacement
+
+The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. 
+
+If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
