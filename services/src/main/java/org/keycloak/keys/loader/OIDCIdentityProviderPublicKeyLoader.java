@@ -56,7 +56,7 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
-            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
+            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
         } else {
             try {
             	KeyWrapper publicKey = getSavedPublicKey();
