@@ -84,7 +84,6 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           labelIcon={t("singleLogoutServiceUrlHelp")}
           type="url"
           readOnly={readOnly}
-          rules={{ required: t("required") }}
         />
         <DefaultSwitchControl
           name="config.backchannelSupported"
