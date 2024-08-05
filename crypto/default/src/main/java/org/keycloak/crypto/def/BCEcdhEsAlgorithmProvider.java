@@ -33,7 +33,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
@@ -41,7 +40,6 @@ import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.KeyAgreement;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
@@ -96,18 +94,17 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             JWEHeaderBuilder headerBuilder) throws Exception {
         JWEHeader header = headerBuilder.build();
         int keyDataLength = getKeyDataLength(header.getAlgorithm(), encryptionProvider);
-        String keySpecName = convertFieldSizeToSecRep(
-                ((ECPublicKey) encryptionKey).getParams().getCurve().getField().getFieldSize());
-        KeyPair ephemeralKeyPair = generateEcKeyPair(keySpecName);
+        ECParameterSpec params = ((ECPublicKey) encryptionKey).getParams();
+        KeyPair ephemeralKeyPair = generateEcKeyPair(params);
         ECPublicKey ephemeralPublicKey = (ECPublicKey) ephemeralKeyPair.getPublic();
         ECPrivateKey ephemeralPrivateKey = (ECPrivateKey) ephemeralKeyPair.getPrivate();
 
         byte[] agreementPartyUInfo = header.getAgreementPartyUInfo() != null
                 ? base64UrlDecode(header.getAgreementPartyUInfo())
-                : sha256(ephemeralPublicKey.getEncoded());
+                : new byte[0];
         byte[] agreementPartyVInfo = header.getAgreementPartyVInfo() != null
                 ? base64UrlDecode(header.getAgreementPartyVInfo())
-                : sha256(encryptionKey.getEncoded());
+                : new byte[0];
 
         headerBuilder.ephemeralPublicKey(toECPublicJWK(ephemeralPublicKey));
         headerBuilder.agreementPartyUInfo(Base64Url.encode(agreementPartyUInfo));
@@ -132,37 +129,15 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         return Base64Url.decode(encoded == null ? "" : encoded);
     }
 
-    private static String convertFieldSizeToSecRep(int fieldSize) {
-        switch (fieldSize) {
-        case 256:
-            return "secp256r1";
-        case 384:
-            return "secp384r1";
-        case 521:
-            return "secp521r1";
-        default:
-            throw new IllegalArgumentException("Unsupported field size");
-        }
-    }
-
-    private static KeyPair generateEcKeyPair(String keySpecName) {
+    private static KeyPair generateEcKeyPair(ECParameterSpec params) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
             SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
-            ECGenParameterSpec ecSpec = new ECGenParameterSpec(keySpecName);
-            keyGen.initialize(ecSpec, randomGen);
+            keyGen.initialize(params, randomGen);
             return keyGen.generateKeyPair();
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    private static byte[] sha256(byte[] data) {
-        Digest digest = DigestFactory.createSHA256();
-        digest.update(data, 0, data.length);
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
-        return hash;
     }
 
     private static byte[] deriveOtherInfo(int keyDataLength, String algorithmID, byte[] agreementPartyUInfo,
