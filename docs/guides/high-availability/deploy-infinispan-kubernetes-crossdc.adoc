@@ -19,7 +19,7 @@ See the <@links.ha id="introduction" /> {section} for an overview.
 
 [IMPORTANT]
 ====
-Only {jdgserver_name} server versions 15.0.0 or greater are supported for external {jdgserver_name} deployments.
+Only versions based on Infinispan version ${properties["infinispan.version"]} or more recent patch releases are supported for external {jdgserver_name} deployments.
 ====
 
 == Architecture

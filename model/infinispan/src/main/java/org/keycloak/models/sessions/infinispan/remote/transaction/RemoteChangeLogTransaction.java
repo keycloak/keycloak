@@ -182,6 +182,14 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         return entityChanges.computeIfAbsent(entry.getKey(), k -> factory.wrapFromCache(k, entry.getValue()));
     }
 
+    public T wrap(K key, V value, long version) {
+        return entityChanges.computeIfAbsent(key, k -> factory.wrapFromCache(k, value, version));
+    }
+
+    protected Map<K, T> getCachedEntities() {
+        return entityChanges;
+    }
+
     private T onEntityFromCache(K key, MetadataValue<V> entity) {
         if (entity == null) {
             return null;
