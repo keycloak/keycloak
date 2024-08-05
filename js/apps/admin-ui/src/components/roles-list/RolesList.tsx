@@ -30,14 +30,15 @@ const RoleDetailLink = ({
 }: RoleDetailLinkProps) => {
   const { t } = useTranslation(messageBundle);
   const { realm } = useRealm();
-  const { hasAccess } = useAccess();
-  const hasViewClients = hasAccess("view-clients");
+  const { hasAccess, hasSomeAccess } = useAccess();
+  const canViewUserRegistration =
+    hasAccess("view-realm") && hasSomeAccess("view-clients", "manage-clients");
 
   return role.name !== defaultRoleName ? (
     <Link to={toDetail(role.id!)}>{role.name}</Link>
   ) : (
     <>
-      {hasViewClients ? (
+      {canViewUserRegistration ? (
         <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
           {role.name}
         </Link>
