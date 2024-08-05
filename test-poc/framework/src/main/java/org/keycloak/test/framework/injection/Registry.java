@@ -61,7 +61,7 @@ public class Registry {
 
     private <T> T getDeployedDependency(Class<T> typeClass, InstanceContext dependent) {
         InstanceContext dependency;
-        if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
+        if(!dependent.getRealmRef().equals("")) {
             dependency = getDeployedInstance(typeClass, dependent.getRealmRef());
         } else {
             dependency = getDeployedInstance(typeClass);
@@ -84,7 +84,7 @@ public class Registry {
     private <T> T getRequestedDependency(Class<T> typeClass, InstanceContext dependent) {
         InstanceContext dependency;
         RequestedInstance requestedDependency;
-        if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
+        if(!dependent.getRealmRef().equals("")) {
              requestedDependency = getRequestedInstance(typeClass, dependent.getRealmRef());
         } else {
             requestedDependency = getRequestedInstance(typeClass);
@@ -113,7 +113,7 @@ public class Registry {
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            if(typeClass.equals(ManagedRealm.class) && !dependent.getRealmRef().equals("")) {
+            if(!dependent.getRealmRef().equals("")) {
                 dependency = new InstanceContext(this, supplier, typeClass, dependent.getRealmRef(), DefaultRealmConfig.class);
             } else {
                 dependency = new InstanceContext(this, supplier, null, typeClass);
@@ -207,6 +207,9 @@ public class Registry {
     private void injectFields(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
             InstanceContext<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
+            if(instance == null) { // a test class might have fields not meant for injection
+                continue;
+            }
             try {
                 f.setAccessible(true);
                 f.set(testInstance, instance.getValue());
