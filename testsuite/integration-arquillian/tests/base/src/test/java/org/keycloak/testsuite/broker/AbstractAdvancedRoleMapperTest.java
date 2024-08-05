@@ -146,6 +146,21 @@ public abstract class AbstractAdvancedRoleMapperTest extends AbstractRoleMapperT
         assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
+    @Test
+    public void valuesMatchIfNullClaimsSpecified() {
+        createAdvancedRoleMapper(null, false);
+        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String>builder().add("some value").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String>builder().add("some value").build())
+                .build());
+
+        logInAsUserInIDPForFirstTime();
+
+        assertThatRoleHasBeenAssignedInConsumerRealm();
+    }
+
     public void createMapperAndLoginAsUserTwiceWithMapper(IdentityProviderMapperSyncMode syncMode,
             boolean createAfterFirstLogin) {
         loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, createMatchingUserConfig());

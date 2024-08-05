@@ -347,6 +347,9 @@ public class CacheManagerFactory {
                   logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' Feature", cacheName, Profile.Feature.REMOTE_CACHE.getKey());
                builders.remove(cacheName);
             }
+            // Disable JGroups, not required when the data is stored in the Remote Cache.
+            // The existing caches are local and do not require JGroups to work properly.
+            builder.getGlobalConfigurationBuilder().nonClusteredDefault();
         }
 
         var start = isStartEagerly();
