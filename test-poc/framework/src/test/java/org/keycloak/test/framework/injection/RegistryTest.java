@@ -221,11 +221,12 @@ public class RegistryTest {
         Assertions.assertNotSame(refTest.a, refTest.b);
 
         assertRunning(refTest.def, refTest.a, refTest.b);
+        Assertions.assertSame(refTest.a, refTest.a2);
 
         registry.afterEach();
 
         registry.beforeEach(refTest);
-        assertRunning(refTest.def, refTest.a, refTest.b);
+        assertRunning(refTest.def, refTest.a2, refTest.b);
 
         Assertions.assertSame(def1, refTest.def);
         Assertions.assertSame(a1, refTest.a);
@@ -235,6 +236,16 @@ public class RegistryTest {
 
         registry.afterAll();
         assertClosed(refTest.def, refTest.a, refTest.b);
+    }
+
+    @Test
+    public void testRealmRef() {
+        RealmRefTest test = new RealmRefTest();
+        registry.beforeEach(test);
+
+        assertRunning(test.childABC, test.childABC.getParent(), test.child123, test.parent123);
+        Assertions.assertNotSame(test.childABC.getParent(), test.parent123);
+        Assertions.assertSame(test.child123.getParent(), test.parent123);
     }
 
     public static void assertRunning(Object... values) {
@@ -280,7 +291,21 @@ public class RegistryTest {
         @MockParentAnnotation(ref = "a")
         MockParentValue a;
 
+        @MockParentAnnotation(ref = "a")
+        MockParentValue a2;
+
         @MockParentAnnotation(ref = "b")
         MockParentValue b;
+    }
+
+    public static final class RealmRefTest {
+        @MockParentAnnotation(ref = "123")
+        MockParentValue parent123;
+
+        @MockChildAnnotation(ref = "123", realmRef = "123")
+        MockChildValue child123;
+
+        @MockChildAnnotation(ref = "ABC", realmRef = "ABC")
+        MockChildValue childABC;
     }
 }
