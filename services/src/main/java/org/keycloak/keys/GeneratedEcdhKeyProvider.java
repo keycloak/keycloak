@@ -52,9 +52,8 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);
-            
-            String algorithm = ecdhAlgorithm;
-            return createKeyWrapper(keyPair, algorithm, KeyUse.ENC);
+
+            return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC);
         } catch (Exception e) {
             logger.warnf("Exception at decodeEcdhPublicKey. %s", e.toString());
             return null;

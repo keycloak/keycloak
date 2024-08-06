@@ -106,7 +106,7 @@ public class GeneratedEcdhKeyProviderFactory extends AbstractGeneratedEcKeyProvi
 
     @Override
     protected String getEcEllipticCurveKey(String algorithm) {
-        if(Algorithm.ECDH_ES.equals(algorithm)) {
+        if (Algorithm.ECDH_ES.equals(algorithm)) {
             return DEFAULT_ECDH_ELLIPTIC_CURVE;
         }
         return convertJWEAlgorithmToECDomainParmNistRep(algorithm);

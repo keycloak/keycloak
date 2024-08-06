@@ -107,8 +107,6 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
                 : new byte[0];
 
         headerBuilder.ephemeralPublicKey(toECPublicJWK(ephemeralPublicKey));
-        headerBuilder.agreementPartyUInfo(Base64Url.encode(agreementPartyUInfo));
-        headerBuilder.agreementPartyVInfo(Base64Url.encode(agreementPartyVInfo));
 
         String algorithmID = getAlgorithmID(header.getAlgorithm(), header.getEncryptionAlgorithm());
         byte[] derivedKey = deriveKey(encryptionKey, ephemeralPrivateKey, keyDataLength, algorithmID,
