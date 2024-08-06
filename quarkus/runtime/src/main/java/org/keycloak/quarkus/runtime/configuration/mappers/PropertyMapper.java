@@ -378,7 +378,7 @@ public class PropertyMapper<T> {
 
     void validateSingleValue(ConfigValue configValue, String v) {
         List<String> expectedValues = getExpectedValues();
-        if (!expectedValues.isEmpty() && !expectedValues.contains(v)) {
+        if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
             throw new PropertyException(
                     String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
                             PropertyMapperParameterConsumer.getExpectedValuesMessage(expectedValues, expectedValues)));
