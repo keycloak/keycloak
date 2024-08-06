@@ -253,6 +253,7 @@ public class RealmManager {
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setPermanentLockout(false);
         realm.setMaxTemporaryLockouts(0);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
