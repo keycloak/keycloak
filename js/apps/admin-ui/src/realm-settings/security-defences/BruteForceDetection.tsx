@@ -4,6 +4,7 @@ import {
   KeycloakSelect,
   NumberControl,
   SelectVariant,
+  SelectControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -51,6 +52,8 @@ export const BruteForceDetection = ({
     BruteForceMode.TemporaryLockout,
     BruteForceMode.PermanentAfterTemporaryLockout,
   ];
+
+  const bruteForceStrategyTypes = ["MULTIPLE", "LINEAR"];
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -155,6 +158,16 @@ export const BruteForceDetection = ({
               bruteForceMode ===
                 BruteForceMode.PermanentAfterTemporaryLockout) && (
               <>
+                <SelectControl
+                  name="bruteForceStrategy"
+                  label={t("bruteForceStrategy")}
+                  labelIcon={t("bruteForceStrategyHelp")}
+                  controller={{ defaultValue: "" }}
+                  options={bruteForceStrategyTypes.map((key) => ({
+                    key,
+                    value: t(`bruteForceStrategy.${key}`),
+                  }))}
+                />
                 <Time name="waitIncrementSeconds" />
                 <Time name="maxFailureWaitSeconds" />
                 <Time name="maxDeltaTimeSeconds" />
