@@ -266,26 +266,26 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         };
     }
 
-    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, IdentityProviderRepresentation idp, boolean isVisible, boolean clickIdp) {
+    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         Assert.assertTrue(loginPage.isRegisterLinkPresent());
-        if (idp != null) {
+        if (idpAlias != null) {
             if (isVisible) {
-                Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertTrue(loginPage.isSocialButtonPresent(idpAlias));
             } else {
-                Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertFalse(loginPage.isSocialButtonPresent(idpAlias));
             }
         }
         loginPage.loginUsername(username);
 
         if (clickIdp) {
             assertTrue(loginPage.isPasswordInputPresent());
-            assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
-            loginPage.clickSocial(idp.getAlias());
+            assertTrue(loginPage.isSocialButtonPresent(idpAlias));
+            loginPage.clickSocial(idpAlias);
         }
 
         waitForPage(driver, "sign in to", true);
