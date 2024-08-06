@@ -132,7 +132,7 @@ export const RolesList = ({
         }
         actions={
           isReadOnly
-            ? []
+            ? undefined
             : [
                 {
                   title: t("delete"),
