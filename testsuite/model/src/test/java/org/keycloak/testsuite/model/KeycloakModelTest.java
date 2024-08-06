@@ -545,7 +545,7 @@ public abstract class KeycloakModelTest {
         KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
     }
 
-    protected <T> Stream<T> getParameters(Class<T> clazz) {
+    protected static <T> Stream<T> getParameters(Class<T> clazz) {
         return MODEL_PARAMETERS.stream().flatMap(mp -> mp.getParameters(clazz)).filter(Objects::nonNull);
     }
 
