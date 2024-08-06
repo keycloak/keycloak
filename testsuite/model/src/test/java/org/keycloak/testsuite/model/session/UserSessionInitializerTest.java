@@ -49,6 +49,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
@@ -158,6 +159,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
+        assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());
@@ -184,7 +186,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
                             containsSession.get().add(localSessions.containsKey(userSessionId.get()));
                         }
 
-                        if (hotRodServer.isPresent() && !MultiSiteUtils.isPersistentSessionsEnabled()) {
+                        if (hotRodServer.isPresent()) {
                             RemoteCache<String, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
                             containsSession.get().add(remoteSessions.containsKey(userSessionId.get()));
                         }

@@ -51,13 +51,13 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.remote.RemoteUserSessionProvider;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assume.assumeTrue;
 
 /**
  *
@@ -253,6 +253,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     public void testOfflineSessionLoadingAfterCacheRemoval() {
+        assumeTrue("Run only if Embedded Infinispan is used for storing/caching sessions.", InfinispanUtils.isEmbeddedInfinispan());
+
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
         assertOfflineSessionsExist(realmId, offlineSessionIds);
 
@@ -260,25 +262,21 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         reinitializeKeycloakSessionFactory();
         assertOfflineSessionsExist(realmId, offlineSessionIds);
 
-        if (InfinispanUtils.isEmbeddedInfinispan()) {
-            // remove sessions from the cache
-            withRealm(realmId, (session, realm) -> {
-                // Delete local user cache (persisted sessions are still kept)
-                UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
-                // Remove in-memory representation of the offline sessions
-                if (provider instanceof InfinispanUserSessionProvider) {
-                    ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
-                } else if (provider instanceof PersistentUserSessionProvider) {
-                    ((PersistentUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
-                } else if (provider instanceof RemoteUserSessionProvider) {
-                    //no-op, session not local
-                } else {
-                    throw new IllegalStateException("Unknown UserSessionProvider: " + provider);
-                }
+        // remove sessions from the cache
+        withRealm(realmId, (session, realm) -> {
+            // Delete local user cache (persisted sessions are still kept)
+            UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
+            // Remove in-memory representation of the offline sessions
+            if (provider instanceof InfinispanUserSessionProvider) {
+                ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else if (provider instanceof PersistentUserSessionProvider) {
+                ((PersistentUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else {
+                throw new IllegalStateException("Unknown UserSessionProvider: " + provider);
+            }
 
-                return null;
-            });
-        }
+            return null;
+        });
 
         // assert sessions are lazily loaded from DB
         assertOfflineSessionsExist(realmId, offlineSessionIds);
