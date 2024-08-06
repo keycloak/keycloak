@@ -109,6 +109,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
+        // the user has credentials set; do not redirect to allow the user to pick how to authenticate
+        if (user != null && user.credentialManager().getStoredCredentialsStream().findAny().isPresent()) {
+            return false;
+        }
+
         List<IdentityProviderModel> broker = resolveHomeBroker(session, user);
 
         if (broker.size() == 1) {
