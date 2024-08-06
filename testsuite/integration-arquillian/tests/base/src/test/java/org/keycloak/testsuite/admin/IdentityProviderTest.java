@@ -84,6 +84,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -564,6 +565,17 @@ public class IdentityProviderTest extends AbstractAdminTest {
         } catch (NotFoundException nfe) {
             // Expected
         }
+    }
+
+    @Test
+    public void testNotAvailableFromRealRepresentation() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("remove-identity-provider", "saml");
+
+        create(newIdentityProvider);
+
+        RealmRepresentation rep = this.realm.toRepresentation();
+        assertNull(rep.getIdentityProviders());
+        assertNull(rep.getIdentityProviderMappers());
     }
 
     private void create(IdentityProviderRepresentation idpRep) {

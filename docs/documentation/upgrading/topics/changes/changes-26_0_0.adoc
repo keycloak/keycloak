@@ -124,3 +124,12 @@ an existing Route53 configurations to avoid prolonged failover times due to clie
 It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
+This endpoint supports filters and pagination.

@@ -58,6 +58,7 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -186,7 +187,7 @@ public class IdentityProvidersResource {
             maxResults = 100; // always set a maximum of 100 by default
         }
 
-        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
+        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.<Boolean>ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
                 : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 

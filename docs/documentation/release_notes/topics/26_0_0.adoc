@@ -95,3 +95,11 @@ In the past, regaining access to a {project_name} instance when all admin users 
 It is now possible to run the `start` or `start-dev` commands with specific options to create a temporary admin account. Additionally, a new dedicated command has been introduced, which allows users to regain admin access without hassle.
 
 For detailed instructions and more information on this topic, refer to the link:{bootstrapadminrecovery_link}[{bootstrapadminrecovery_name}] guide.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
