@@ -19,7 +19,7 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import org.infinispan.api.annotations.indexing.Basic;
 import org.infinispan.protostream.annotations.ProtoField;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
 /**
@@ -71,14 +71,14 @@ public abstract class SessionEntity {
     public abstract int hashCode();
 
     public boolean isOffline() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             throw new IllegalArgumentException("Offline flags are not supported in non-persistent-session environments.");
         }
         return isOffline;
     }
 
     public void setOffline(boolean offline) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             throw new IllegalArgumentException("Offline flags are not supported in non-persistent-session environments.");
         }
         isOffline = offline;
