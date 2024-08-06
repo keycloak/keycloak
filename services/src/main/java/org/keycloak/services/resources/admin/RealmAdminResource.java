@@ -389,12 +389,6 @@ public class RealmAdminResource {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
             }
 
-            if (auth.realm().canViewIdentityProviders()) {
-                RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
-                rep.setIdentityProviders(r.getIdentityProviders());
-                rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
-            }
-
             return rep;
         }
     }
