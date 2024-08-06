@@ -270,7 +270,7 @@ function Keycloak (config) {
                     initPromise.setError(error);
                 });
             } else if (initOptions) {
-                if (initOptions.token && initOptions.refreshToken) {
+                if (initOptions.token) {
                     setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                     if (loginIframe.enable) {
@@ -288,17 +288,24 @@ function Keycloak (config) {
                             });
                         });
                     } else {
-                        kc.updateToken(-1).then(function() {
+                        if(initOptions.refreshToken) {
+                            kc.updateToken(-1).then(function () {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                            }).catch(function (error) {
+                                kc.onAuthError && kc.onAuthError();
+                                if (initOptions.onLoad) {
+                                    onLoad();
+                                } else {
+                                    initPromise.setError(error);
+                                }
+                            });
+                        } else if (kc.tokenParsed && !kc.isTokenExpired(-1)) {
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             initPromise.setSuccess();
-                        }).catch(function(error) {
-                            kc.onAuthError && kc.onAuthError();
-                            if (initOptions.onLoad) {
-                                onLoad();
-                            } else {
-                                initPromise.setError(error);
-                            }
-                        });
+                        } else {
+                            logInfo('[KEYCLOAK] Token expired');
+                        }
                     }
                 } else if (initOptions.onLoad) {
                     onLoad();
@@ -1439,7 +1446,7 @@ function Keycloak (config) {
             var getCordovaRedirectUri = function() {
                 return kc.redirectUri || 'http://localhost';
             }
-            
+
             return {
                 login: function(options) {
                     var promise = createPromise();
