@@ -137,7 +137,7 @@ importers:
         version: 1.26.0
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
-        version: 2.2.4(rollup@4.19.0)
+        version: 2.2.4(rollup@4.20.0)
       vite:
         specifier: ^5.4.0
         version: 5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3)
