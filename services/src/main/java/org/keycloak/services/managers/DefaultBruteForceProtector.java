@@ -217,12 +217,10 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             session.getTransactionManager().begin();
                             try {
                                 for (LoginEvent event : events) {
-                                    if (event instanceof FailedLogin) {
-                                        failure(session, event);
-                                    } else if (event instanceof SuccessfulLogin) {
-                                        success(session, event);
-                                    } else if (event instanceof ShutdownEvent) {
+                                    if (event instanceof ShutdownEvent) {
                                         run = false;
+                                    } else {
+                                        processLogin(session, event);
                                     }
                                 }
                             } catch (Exception e) {
@@ -297,6 +295,14 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
         queue.offer(event);
         logger.trace("sent success event");
+    }
+
+    protected void processLogin(KeycloakSession session, LoginEvent event) {
+        if (event instanceof SuccessfulLogin) {
+            success(session, event);
+        } else {
+            failure(session, event);
+        }
     }
 
     @Override

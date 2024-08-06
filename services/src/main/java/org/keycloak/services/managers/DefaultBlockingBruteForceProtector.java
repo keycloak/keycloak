@@ -20,7 +20,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -33,6 +35,7 @@ public class DefaultBlockingBruteForceProtector extends DefaultBruteForceProtect
     // make this configurable?
     private static final int DEFAULT_MAX_CONCURRENT_ATTEMPTS = 1000;
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final String OFF_THREAD_STARTED = "#brute_force_started";
 
     private final Map<String, String> loginAttempts = Collections.synchronizedMap(new LinkedHashMap(100, DEFAULT_LOAD_FACTOR) {
         @Override
@@ -73,46 +76,80 @@ public class DefaultBlockingBruteForceProtector extends DefaultBruteForceProtect
             return false;
         }
 
-        if (isCurrentLoginAttempt(user)) {
-            return !tryEnlistBlockingTransaction(session, user);
-        }
-
-        return true;
+        return !tryEnlistBlockingTransactionOrSameThread(session, user);
     }
 
-    // Return true if this thread successfully enlisted itself
-    private boolean tryEnlistBlockingTransaction(KeycloakSession session, UserModel user) {
-        String threadInProgress = loginAttempts.computeIfAbsent(user.getId(), k -> getThreadName());
+    // Return true if this thread successfully enlisted itself or it was already done by the same thread
+    private boolean tryEnlistBlockingTransactionOrSameThread(KeycloakSession session, UserModel user) {
+        AtomicBoolean inserted = new AtomicBoolean(false);
+        String threadInProgress = loginAttempts.computeIfAbsent(user.getId(), k -> {
+            inserted.set(true);
+            return getThreadName();
+        });
 
         // This means that this thread successfully added itself into the map. We can enlist transaction just in that case
-        if (threadInProgress.equals(getThreadName())) {
+        if (inserted.get()) {
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
-                    unblock();
+                    // remove or wait the brute force thread to finish
+                    loginAttempts.computeIfPresent(user.getId(), (k, v) -> v.endsWith(OFF_THREAD_STARTED)? "" : null);
                 }
 
                 @Override
                 protected void rollbackImpl() {
-                    unblock();
-                }
-
-                private void unblock() {
+                    // remove on rollback
                     loginAttempts.remove(user.getId());
                 }
             });
 
             return true;
         } else {
-            return false;
+            return isCurrentThread(threadInProgress);
         }
     }
 
-    private boolean isCurrentLoginAttempt(UserModel user) {
-        return loginAttempts.getOrDefault(user.getId(), getThreadName()).equals(getThreadName());
+    private boolean isCurrentThread(String name) {
+        return name.equals(getThreadName()) || name.equals(getThreadName() + OFF_THREAD_STARTED);
     }
 
     private String getThreadName() {
         return Thread.currentThread().getName();
+    }
+
+    private void enlistRemoval(KeycloakSession session, String userId) {
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                // remove or wait the main thread to finish
+                loginAttempts.computeIfPresent(userId, (k, v) -> v.isEmpty()? null : v.substring(0, v.length() - OFF_THREAD_STARTED.length()));
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                loginAttempts.remove(userId);
+            }
+        });
+    }
+
+    @Override
+    protected void processLogin(KeycloakSession session, LoginEvent event) {
+        // mark the off-thread is started for this request
+        loginAttempts.computeIfPresent(event.userId, (k, v) -> v + OFF_THREAD_STARTED);
+        super.processLogin(session, event);
+    }
+
+    @Override
+    protected void failure(KeycloakSession session, LoginEvent event) {
+        // remove the user from concurrent login attemps once it's processed
+        enlistRemoval(session, event.userId);
+        super.failure(session, event);
+    }
+
+    @Override
+    protected void success(KeycloakSession session, LoginEvent event) {
+        // remove the user from concurrent login attemps once it's processed
+        enlistRemoval(session, event.userId);
+        super.success(session, event);
     }
 }
