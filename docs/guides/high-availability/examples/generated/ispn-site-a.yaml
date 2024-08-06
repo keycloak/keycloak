@@ -214,10 +214,9 @@ spec:
       stateTransfer:
         chunkSize: 16
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
-        site-b: # <2>
+        site-b: # <1>
           backup:
-            strategy: "SYNC" # <3>
+            strategy: "SYNC" # <2>
             timeout: 4500
             stateTransfer:
               chunkSize: 16
@@ -244,10 +243,9 @@ spec:
       stateTransfer:
         chunkSize: 16
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
-        site-b: # <2>
+        site-b: # <1>
           backup:
-            strategy: "SYNC" # <3>
+            strategy: "SYNC" # <2>
             timeout: 4500
             stateTransfer:
               chunkSize: 16
@@ -303,10 +301,9 @@ spec:
       stateTransfer:
         chunkSize: 16
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
-        site-b: # <2>
+        site-b: # <1>
           backup:
-            strategy: "SYNC" # <3>
+            strategy: "SYNC" # <2>
             timeout: 4500
             stateTransfer:
               chunkSize: 16
@@ -333,10 +330,9 @@ spec:
       stateTransfer:
         chunkSize: 16
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
-        site-b: # <2>
+        site-b: # <1>
           backup:
-            strategy: "SYNC" # <3>
+            strategy: "SYNC" # <2>
             timeout: 4500
             stateTransfer:
               chunkSize: 16
@@ -365,10 +361,9 @@ spec:
       memory:
         maxCount: 10000 # <2>
       backups:
-        mergePolicy: ALWAYS_REMOVE # <3>
-        site-b: # <4>
+        site-b: # <3>
           backup:
-            strategy: "SYNC" # <5>
+            strategy: "SYNC" # <4>
             timeout: 13000
             stateTransfer:
               chunkSize: 16
