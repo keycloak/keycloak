@@ -59,7 +59,7 @@ export const CopyToClipboardButton = ({
     try {
       await navigator.clipboard.writeText(text);
       setCopyState(CopyState.Copied);
-    } catch (error) {
+    } catch {
       setCopyState(CopyState.Error);
     }
   };

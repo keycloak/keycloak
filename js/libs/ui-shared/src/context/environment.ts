@@ -44,7 +44,7 @@ export function getInjectedEnvironment<T>(): T {
 
   try {
     return JSON.parse(contents);
-  } catch (error) {
+  } catch {
     throw new Error("Unable to parse environment variables as JSON.");
   }
 }

@@ -13,7 +13,7 @@ export const JsonFileUpload = ({ onChange, ...props }: JsonFileUploadProps) => {
   const handleChange = (value: string) => {
     try {
       onChange(JSON.parse(value));
-    } catch (error) {
+    } catch {
       onChange({});
       console.warn("Invalid json, ignoring value using {}");
     }

@@ -25,26 +25,23 @@ export type Options = {
   options?: string[];
 };
 
-const INPUT_TYPES = [
-  "text",
-  "textarea",
-  "select",
-  "select-radiobuttons",
-  "multiselect",
-  "multiselect-checkboxes",
-  "html5-email",
-  "html5-tel",
-  "html5-url",
-  "html5-number",
-  "html5-range",
-  "html5-datetime-local",
-  "html5-date",
-  "html5-month",
-  "html5-time",
-  "multi-input",
-] as const;
-
-export type InputType = (typeof INPUT_TYPES)[number];
+export type InputType =
+  | "text"
+  | "textarea"
+  | "select"
+  | "select-radiobuttons"
+  | "multiselect"
+  | "multiselect-checkboxes"
+  | "html5-email"
+  | "html5-tel"
+  | "html5-url"
+  | "html5-number"
+  | "html5-range"
+  | "html5-datetime-local"
+  | "html5-date"
+  | "html5-month"
+  | "html5-time"
+  | "multi-input";
 
 export type UserProfileFieldProps = {
   t: TFunction;

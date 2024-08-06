@@ -1,9 +1,11 @@
 // @ts-check
+import { fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
 import mochaPlugin from "eslint-plugin-mocha";
 import playwright from "eslint-plugin-playwright";
 import prettierRecommended from "eslint-plugin-prettier/recommended";
+import reactHooks from "eslint-plugin-react-hooks";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
 import tseslint from "typescript-eslint";
@@ -28,10 +30,12 @@ export default tseslint.config(
   ...tseslint.configs.stylisticTypeChecked,
   reactRecommended,
   reactJsxRuntime,
-  ...compat.extends("plugin:react-hooks/recommended"),
   prettierRecommended,
   ...compat.plugins("lodash"),
   {
+    plugins: {
+      "react-hooks": fixupPluginRules(reactHooks),
+    },
     languageOptions: {
       parserOptions: {
         project: "./tsconfig.eslint.json",
@@ -44,6 +48,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      ...reactHooks.configs.recommended.rules,
       // ## Rules overwriting config, disabled for now, but will have to be evaluated. ##
       "no-undef": "off",
       "no-unused-private-class-members": "off",
@@ -72,6 +77,7 @@ export default tseslint.config(
       "@typescript-eslint/no-unnecessary-condition": "off",
       "@typescript-eslint/no-unnecessary-type-arguments": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
+      "@typescript-eslint/no-unnecessary-type-parameters": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
@@ -153,5 +159,17 @@ export default tseslint.config(
   {
     ...playwright.configs["flat/recommended"],
     files: ["js/apps/account-ui/test/**"],
+  },
+  {
+    files: ["js/libs/keycloak-admin-client/test/**"],
+    rules: {
+      "@typescript-eslint/no-unused-expressions": "off",
+    },
+  },
+  {
+    files: ["js/libs/keycloak-admin-client/src/**"],
+    rules: {
+      "@typescript-eslint/no-empty-object-type": "off",
+    },
   },
 );

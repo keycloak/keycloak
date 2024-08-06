@@ -6,7 +6,7 @@ import { UserProfileFieldProps } from "./UserProfileFields";
 const localeToDisplayName = (locale: string) => {
   try {
     return new Intl.DisplayNames([locale], { type: "language" }).of(locale);
-  } catch (error) {
+  } catch {
     return locale;
   }
 };
