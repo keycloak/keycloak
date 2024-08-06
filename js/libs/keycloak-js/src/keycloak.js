@@ -300,10 +300,11 @@ function Keycloak (config) {
                                     initPromise.setError(error);
                                 }
                             });
-                        } else if (kc.tokenParsed && !kc.isTokenExpired(-1)) {
+                        } else if (kc.tokenParsed && !(kc.tokenParsed["exp"] - Math.ceil(new Date().getTime() / 1000) < 0)) {
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             initPromise.setSuccess();
                         } else {
+                            console.log('Token is expired');
                             logInfo('[KEYCLOAK] Token expired');
                         }
                     }
