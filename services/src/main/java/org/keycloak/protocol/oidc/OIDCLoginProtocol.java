@@ -24,6 +24,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -229,6 +230,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         String kcActionStatus = authSession.getClientNote(Constants.KC_ACTION_STATUS);
         if (kcActionStatus != null) {
+            String requiredActionAlias = authSession.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION);
+            if (requiredActionAlias != null) {
+                redirectUri.addParam(Constants.KC_ACTION, requiredActionAlias);
+            }
             redirectUri.addParam(Constants.KC_ACTION_STATUS, kcActionStatus);
         }
 
