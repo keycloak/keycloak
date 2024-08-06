@@ -185,9 +185,9 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     ({ mapperList, effectiveRoles }) => {
       setEffectiveRoles(effectiveRoles);
       mapperList.map((mapper) => {
-        mapper.type = mapperTypes.filter(
+        mapper.type = mapperTypes.find(
           (type) => type.id === mapper.protocolMapper,
-        )[0];
+        )!;
       });
 
       setProtocolMappers(mapperList);

@@ -199,7 +199,13 @@ export const IdentityProviderSelect = ({
               const option = v?.toString();
               if (variant !== "typeaheadMulti") {
                 const removed = field.value.includes(option);
-                removed ? field.onChange([]) : field.onChange([option]);
+
+                if (removed) {
+                  field.onChange([]);
+                } else {
+                  field.onChange([option]);
+                }
+
                 setInputValue(removed ? "" : option || "");
                 setOpen(false);
               } else {

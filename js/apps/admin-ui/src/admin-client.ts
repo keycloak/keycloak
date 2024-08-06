@@ -30,7 +30,7 @@ export async function initAdminClient(
     async getAccessToken() {
       try {
         await keycloak.updateToken(5);
-      } catch (error) {
+      } catch {
         keycloak.login();
       }
 
