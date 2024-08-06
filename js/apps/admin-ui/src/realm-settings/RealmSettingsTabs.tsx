@@ -364,7 +364,7 @@ export const RealmSettingsTabs = () => {
           >
             <KeysTab />
           </Tab>
-          {canViewOrManageEvents ? (
+          {canViewOrManageEvents && (
             <Tab
               title={<TabTitleText>{t("events")}</TabTitleText>}
               data-testid="rs-realm-events-tab"
@@ -372,7 +372,7 @@ export const RealmSettingsTabs = () => {
             >
               <EventsTab realm={realm!} />
             </Tab>
-          ) : null}
+          )}
           <Tab
             title={<TabTitleText>{t("localization")}</TabTitleText>}
             data-testid="rs-localization-tab"
