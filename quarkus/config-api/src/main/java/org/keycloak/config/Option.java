@@ -14,9 +14,11 @@ public class Option<T> {
     private final String description;
     private final Optional<T> defaultValue;
     private final List<String> expectedValues;
+
+    private final boolean strictExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, DeprecatedMetadata deprecatedMetadata) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -25,6 +27,7 @@ public class Option<T> {
         this.description = getDescriptionByCategorySupportLevel(description, category);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
+        this.strictExpectedValues = strictExpectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
     }
 
@@ -56,6 +59,10 @@ public class Option<T> {
         return expectedValues;
     }
 
+    public boolean isStrictExpectedValues() {
+        return strictExpectedValues;
+    }
+
     public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
         return Optional.ofNullable(deprecatedMetadata);
     }
@@ -70,6 +77,7 @@ public class Option<T> {
             this.description,
             Optional.ofNullable(defaultValue),
             this.expectedValues,
+            this.strictExpectedValues,
             this.deprecatedMetadata
         );
     }

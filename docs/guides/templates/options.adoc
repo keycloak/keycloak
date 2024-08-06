@@ -1,7 +1,8 @@
 <#macro expectedValues option>
-<#list ctx.options.getOption(option).expectedValues as expectedValue>
-* ${expectedValue}
-</#list>
+    <#assign optionObj = ctx.options.getOption(option) />
+    <#list optionObj.expectedValues as expectedValue>
+        * ${expectedValue} <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if>
+    </#list>
 </#macro>
 
 <#macro list options buildIcon=true anchor=true>
