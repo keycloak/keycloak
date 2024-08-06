@@ -102,6 +102,9 @@ setups are now supported, while previous configurations which leveraged active/p
 - The LoadBalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
 caused by DNS caching by clients.
 
+- Persistent user sessions are now a requirement of the architecture. Consequently, no session loss will be encountered
+on {project_name} or Infinispan upgrades.
+
 - External Infinispan request handling has been improved to reduce memory usage and request latency.
 
 As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
