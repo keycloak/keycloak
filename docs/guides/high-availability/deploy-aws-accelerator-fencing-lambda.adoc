@@ -290,7 +290,8 @@ kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
 <1> Scale down the Infinispan Operator so that <2> does not result in the deployment being recreated by the operator
 <2> Scale down the Gossip Router deployment.Replace `$\{NAMESPACE}` with the namespace containing your Infinispan server
 +
-. Verify the `SiteOffline` event has been fired on a cluster by executing <TODO>
+. Verify the `SiteOffline` event has been fired on a cluster by inspecting the "Observe" -> "Alerting" menu in the Openshift
+console
 +
 . Inspect the Global Accelerator EndpointGroup in the AWS console and there should only be a single endpoint present
 +
@@ -310,6 +311,7 @@ kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
 +
 . Inspect the `vendor_jgroups_site_view_status` metric in each site. A value of `1` indicates that the site is reachable.
 +
-. Update the Accelerator EndpointGroup to contain both Endpoints <TODO add link to operating procedure>
+. Update the Accelerator EndpointGroup to contain both Endpoints. See the <@links.ha id="operate-site-online" /> operational
+guide for details.
 
 </@tmpl.guide>

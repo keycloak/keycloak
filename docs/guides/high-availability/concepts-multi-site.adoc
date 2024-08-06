@@ -62,7 +62,6 @@ Monitoring is necessary to detect degraded setups.
 | If the {jdgserver_name} cluster fails in one of the sites, {project_name} will not be able to communicate with the external {jdgserver_name} on that site, and the {project_name} service will be unavailable.
 The LoadBalancer will detect the situation as `/lb-check` returns an error, and will direct all traffic to the other site.
 
-// TODO currently the failed site will automatically resume with out-of-sync state
 The setup is degraded until the {jdgserver_name} cluster is restored and the session data is re-synchronized.
 | No data loss^3^
 | Seconds to minutes (depending on load balancer setup)
