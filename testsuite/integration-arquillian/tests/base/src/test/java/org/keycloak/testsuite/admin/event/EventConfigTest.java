@@ -42,8 +42,8 @@ public class EventConfigTest extends AbstractEventTest {
         assertFalse(configRep.isEventsEnabled());
 
         List<String> eventListeners = configRep.getEventsListeners();
-        assertEquals(1, eventListeners.size());
-        assertEquals("jboss-logging", eventListeners.get(0));
+        assertEquals(2, eventListeners.size());
+        assertTrue(eventListeners.containsAll(Arrays.asList("jboss-logging", "temp-admin-account")));
     }
 
     @Test
