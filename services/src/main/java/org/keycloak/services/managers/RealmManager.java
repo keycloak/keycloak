@@ -251,6 +251,7 @@ public class RealmManager {
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setPermanentLockout(false);
         realm.setMaxTemporaryLockouts(0);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
@@ -644,7 +645,7 @@ public class RealmManager {
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {
-        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase(); 
+        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase();
         if (! hasRealmRole(rep, defaultRoleName)) {
             return defaultRoleName;
         } else {
@@ -778,7 +779,7 @@ public class RealmManager {
                 ClientModel clientModel = Optional.ofNullable(client.getId())
                         .map(realmModel::getClientById)
                         .orElseGet(() -> realmModel.getClientByClientId(client.getClientId()));
-                
+
                 if (clientModel == null) {
                     throw new RuntimeException("Cannot find provided client by dir import.");
                 }

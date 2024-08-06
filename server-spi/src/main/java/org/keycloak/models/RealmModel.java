@@ -22,6 +22,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Map;
 import java.util.Set;
@@ -142,6 +143,8 @@ public interface RealmModel extends RoleContainerModel {
     void setPermanentLockout(boolean val);
     int getMaxTemporaryLockouts();
     void setMaxTemporaryLockouts(int val);
+    RealmRepresentation.BruteForceStrategy getBruteForceStrategy();
+    void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
