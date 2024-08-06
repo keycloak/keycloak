@@ -87,7 +87,7 @@ Some requests might receive an error message until the LoadBalancer detects Site
 | Less than one minute
 
 | Site B
-| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to Site B.
+| If none of the {project_name} nodes are available, the LoadBalancer will detect the outage and redirect the traffic to Site A.
 Some requests might receive an error message until the LoadBalancer detects Site A has failed.
 | No data loss^3^
 | Less than one minute
