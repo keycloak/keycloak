@@ -20,7 +20,7 @@ sites is unable to connect to the other site, only one site remains in the LoadB
 site is able to serve subsequent users requests.
 
 In this guide we describe how to implement fencing using a combination of https://prometheus.io/docs/alerting/latest/overview/[Prometheus Alerts]
-and AWS Lambda functions. A Prometheus Alert is triggered when split-brain is detected by the Infinispan server metrics,
+and AWS Lambda functions. A Prometheus Alert is triggered when split-brain is detected by the {jdgserver_name} server metrics,
 which results in the Prometheus AlertManager calling the AWS Lambda based webhook. The triggered Lambda function inspects
 the current Global Accelerator configuration and removes the site reported to be offline.
 
@@ -287,15 +287,15 @@ kubectl -n ${NAMESPACE} scale --replicas=0 deployment/infinispan-router #<2>
 kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
 </#noparse>
 ----
-<1> Scale down the Infinispan Operator so that <2> does not result in the deployment being recreated by the operator
-<2> Scale down the Gossip Router deployment.Replace `$\{NAMESPACE}` with the namespace containing your Infinispan server
+<1> Scale down the {jdgserver_name} Operator so that <2> does not result in the deployment being recreated by the operator
+<2> Scale down the Gossip Router deployment.Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
 +
 . Verify the `SiteOffline` event has been fired on a cluster by inspecting the "Observe" -> "Alerting" menu in the Openshift
 console
 +
 . Inspect the Global Accelerator EndpointGroup in the AWS console and there should only be a single endpoint present
 +
-. Scale up the Infinispan Operator and Gossip Router to re-establish a connection between sites:
+. Scale up the {jdgserver_name} Operator and Gossip Router to re-establish a connection between sites:
 +
 .Command:
 [source,bash]
@@ -307,7 +307,7 @@ kubectl -n ${NAMESPACE} scale --replicas=1 deployment/infinispan-router #<1>
 kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
 </#noparse>
 ----
-<1> Replace `$\{NAMESPACE}` with the namespace containing your Infinispan server
+<1> Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
 +
 . Inspect the `vendor_jgroups_site_view_status` metric in each site. A value of `1` indicates that the site is reachable.
 +

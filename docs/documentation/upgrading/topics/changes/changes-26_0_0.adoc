@@ -103,14 +103,14 @@ setups are now supported, while previous configurations which leveraged active/p
 caused by DNS caching by clients.
 
 - Persistent user sessions are now a requirement of the architecture. Consequently, no session loss will be encountered
-on {project_name} or Infinispan upgrades.
+on {project_name} or {jdgserver_name} upgrades.
 
-- External Infinispan request handling has been improved to reduce memory usage and request latency.
+- External {jdgserver_name} request handling has been improved to reduce memory usage and request latency.
 
 As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
 
 . `distributed-cache` definitions provided by a cache configuration file are ignored when the `multi-site` feature is enabled,
-so you must configure the connection to the external Infinispan deployment via the `cache-remote-*` command line arguments
+so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
 or Keycloak CR as outlined in the blueprints. If a `remote-store` configuration is detected in the cache configuration file,
 then a warning will be raised in the {project_name} logs.
 
