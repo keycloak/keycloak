@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;

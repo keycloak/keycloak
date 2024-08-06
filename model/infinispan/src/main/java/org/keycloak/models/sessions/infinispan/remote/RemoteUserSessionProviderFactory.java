@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;

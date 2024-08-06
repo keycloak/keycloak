@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import java.util.Collections;
