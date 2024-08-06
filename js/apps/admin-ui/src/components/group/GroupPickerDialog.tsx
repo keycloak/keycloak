@@ -165,7 +165,7 @@ export const GroupPickerDialog = ({
       ]}
     >
       <PaginatingTableToolbar
-        count={count - (groupId || isSearching ? first : 0)}
+        count={count}
         first={first}
         max={max}
         onNextClick={setFirst}
