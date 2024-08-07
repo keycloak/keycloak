@@ -135,6 +135,9 @@ importers:
       lightningcss:
         specifier: ^1.25.1
         version: 1.25.1
+      rollup-plugin-peer-deps-external:
+        specifier: ^2.2.4
+        version: 2.2.4(rollup@4.19.1)
       vite:
         specifier: ^5.3.5
         version: 5.3.5(@types/node@22.0.2)(lightningcss@1.25.1)(terser@5.31.3)

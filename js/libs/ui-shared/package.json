@@ -45,9 +45,6 @@
   },
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@patternfly/react-core": "^5.3.4",
-    "@patternfly/react-icons": "^5.3.2",
-    "@patternfly/react-styles": "^5.3.1",
     "i18next": "^23.12.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -55,6 +52,11 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "7.52.1",
     "react-i18next": "^15.0.0"
+  },
+  "peerDependencies": {
+    "@patternfly/react-core": "^5.3.4",
+    "@patternfly/react-icons": "^5.3.2",
+    "@patternfly/react-styles": "^5.3.1"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
