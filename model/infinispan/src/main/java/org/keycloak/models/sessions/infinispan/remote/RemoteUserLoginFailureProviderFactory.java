@@ -17,10 +17,15 @@
 package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
@@ -34,17 +39,23 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailu
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.getRemoteCache;
 
-public class RemoteUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<RemoteUserLoginFailureProvider>, UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater>, EnvironmentDependentProviderFactory {
+public class RemoteUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<RemoteUserLoginFailureProvider>, UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater>, EnvironmentDependentProviderFactory, RemoteChangeLogTransaction.SharedState<LoginFailureKey, LoginFailureEntity>, ServerInfoAwareProviderFactory {
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
     public static final String PROTO_ENTITY = Marshalling.protoEntity(LoginFailureEntity.class);
 
     private volatile RemoteCache<LoginFailureKey, LoginFailureEntity> cache;
+    private volatile BlockingManager blockingManager;
+    private volatile int maxRetries = InfinispanUtils.DEFAULT_MAX_RETRIES;
+    private volatile int backOffBaseTimeMillis = InfinispanUtils.DEFAULT_RETRIES_BASE_TIME_MILLIS;
 
     @Override
     public RemoteUserLoginFailureProvider create(KeycloakSession session) {
@@ -53,11 +64,17 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public void init(Config.Scope config) {
+        maxRetries = InfinispanUtils.getMaxRetries(config);
+        backOffBaseTimeMillis = InfinispanUtils.getRetryBaseTimeMillis(config);
     }
 
     @Override
     public void postInit(final KeycloakSessionFactory factory) {
-        cache = getRemoteCache(factory, LOGIN_FAILURE_CACHE_NAME);
+        try (var session = factory.create()) {
+            var provider = session.getProvider(InfinispanConnectionProvider.class);
+            cache = provider.getRemoteCache(LOGIN_FAILURE_CACHE_NAME);
+            blockingManager = provider.getBlockingManager();
+        }
         factory.register(event -> {
             if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
                 UserLoginFailureProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class, getId());
@@ -88,6 +105,22 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
     }
 
     @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+        InfinispanUtils.configureMaxRetries(builder);
+        InfinispanUtils.configureRetryBaseTime(builder);
+        return builder.build();
+    }
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> map = new HashMap<>();
+        InfinispanUtils.maxRetriesToOperationalInfo(map, maxRetries);
+        InfinispanUtils.retryBaseTimeMillisToOperationalInfo(map, backOffBaseTimeMillis);
+        return map;
+    }
+
+    @Override
     public LoginFailuresUpdater create(LoginFailureKey key, LoginFailureEntity entity) {
         return LoginFailuresUpdater.create(key, entity);
     }
@@ -102,8 +135,32 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
         return LoginFailuresUpdater.delete(key);
     }
 
+    @Override
+    public RemoteCache<LoginFailureKey, LoginFailureEntity> cache() {
+        return cache;
+    }
+
+    @Override
+    public int maxRetries() {
+        return maxRetries;
+    }
+
+    @Override
+    public int backOffBaseTimeMillis() {
+        return backOffBaseTimeMillis;
+    }
+
+    @Override
+    public BlockingManager blockingManager() {
+        return blockingManager;
+    }
+
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = Math.max(0, maxRetries);
+    }
+
     private LoginFailureChangeLogTransaction createAndEnlistTransaction(KeycloakSession session) {
-        var tx = new LoginFailureChangeLogTransaction(this, cache, new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY));
+        var tx = new LoginFailureChangeLogTransaction(this, this, new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY));
         session.getTransactionManager().enlistAfterCompletion(tx);
         return tx;
     }

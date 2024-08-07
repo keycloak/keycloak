@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import io.reactivex.rxjava3.core.Maybe;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.UserSessionQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
@@ -29,10 +28,10 @@ import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
  * {@code RemoteChangeLogTransaction<SessionKey, UserSessionEntity, UserSessionUpdater,
  * UserAndClientSessionConditionalRemover<UserSessionEntity>>}
  */
-public class UseSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, RemoteUserSessionEntity, UserSessionUpdater, UserSessionQueryConditionalRemover> {
+public class UserSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, RemoteUserSessionEntity, UserSessionUpdater, UserSessionQueryConditionalRemover> {
 
-    public UseSessionChangeLogTransaction(UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> factory, RemoteCache<String, RemoteUserSessionEntity> cache) {
-        super(factory, cache, new UserSessionQueryConditionalRemover());
+    public UserSessionChangeLogTransaction(UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> factory, SharedState<String, RemoteUserSessionEntity> sharedState) {
+        super(factory, sharedState, new UserSessionQueryConditionalRemover());
     }
 
     public UserSessionUpdater wrapFromProjection(Object[] projection) {

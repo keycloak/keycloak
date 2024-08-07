@@ -69,12 +69,19 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
     }
 
     /**
-     * @param offline If {@code true}, it creates offline {@link AuthenticatedClientSessionModel}.
-     * @return The {@link UpdaterFactory} implementation to create instances of
+     * @return The {@link UpdaterFactory} implementation to create online session instances of
      * {@link AuthenticatedClientSessionUpdater}.
      */
-    public static UpdaterFactory<ClientSessionKey, RemoteAuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> factory(boolean offline) {
-        return offline ? OFFLINE : ONLINE;
+    public static UpdaterFactory<ClientSessionKey, RemoteAuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> onlineFactory() {
+        return ONLINE;
+    }
+
+    /**
+     * @return The {@link UpdaterFactory} implementation to create offline session instances of
+     * {@link AuthenticatedClientSessionUpdater}.
+     */
+    public static UpdaterFactory<ClientSessionKey, RemoteAuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> offlineFactory() {
+        return OFFLINE;
     }
 
     @Override

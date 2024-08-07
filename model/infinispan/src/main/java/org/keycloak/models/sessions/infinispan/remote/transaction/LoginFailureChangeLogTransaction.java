@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ByRealmIdQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures.LoginFailuresUpdater;
@@ -31,8 +30,8 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
  */
 public class LoginFailureChangeLogTransaction extends RemoteChangeLogTransaction<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater, ByRealmIdQueryConditionalRemover<LoginFailureKey, LoginFailureEntity>> {
 
-    public LoginFailureChangeLogTransaction(UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> factory, RemoteCache<LoginFailureKey, LoginFailureEntity> cache, ByRealmIdQueryConditionalRemover<LoginFailureKey, LoginFailureEntity> conditionalRemover) {
-        super(factory, cache, conditionalRemover);
+    public LoginFailureChangeLogTransaction(UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater> factory, SharedState<LoginFailureKey, LoginFailureEntity> sharedState, ByRealmIdQueryConditionalRemover<LoginFailureKey, LoginFailureEntity> conditionalRemover) {
+        super(factory, sharedState, conditionalRemover);
     }
 
     public void removeByRealmId(String realmId) {
