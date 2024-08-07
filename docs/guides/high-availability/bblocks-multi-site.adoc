@@ -63,6 +63,6 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 == Load balancer
 
-A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site.
+A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site, plus an automation to detect {jdgserver_name} connectivity problems between the two sites.
 
-*Blueprint:* <@links.ha id="deploy-aws-accelerator-loadbalancer.adoc"/>
+*Blueprint:* <@links.ha id="deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="deploy-aws-accelerator-fencing-lambda"/>.

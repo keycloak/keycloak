@@ -111,7 +111,7 @@ For more information, see the {infinispan-operator-docs}#securing-cross-site-con
 +
 Upload the Keystore and the Truststore in an {ocp} Secret.
 The secret contains the file content, the password to access it, and the type of the store.
-Instructions for creating the certificates and the stores are beyond the scope of this guide.
+Instructions for creating the certificates and the stores are beyond the scope of this {section}.
 +
 To upload the Keystore as a Secret, use the following command:
 +
@@ -172,7 +172,7 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 --
 +
 When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
-
++
 [source,yaml]
 ----
 distributedCache:
@@ -195,7 +195,7 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 {project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
 +
-Due to the use of persistent-user-sessions, the configuration of the various `*sessions` caches is different to the `actionTokens`,
+Due to the use of persistent-user-sessions, the configuration of the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` is different to the `authenticationSessions`, `actionTokens`,
 `loginFailures` and `work` caches. In this section we detail how to configure both types of cache for multi-site deployments.
 +
 The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
@@ -204,7 +204,7 @@ The documentation contains more details about the options used by this {section}
 The following example shows the `Cache` CR for `{site-a}`.
 +
 --
-.*sessions caches in `{site-a}`
+.`sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` caches in `{site-a}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
@@ -222,7 +222,7 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
 ----
 <1> The cross-site merge policy, invoked when there is a write-write conflict.
-Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
+Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
 <2> The remote site name.
 <3> The cross-site communication, in this case, `SYNC`.
 --

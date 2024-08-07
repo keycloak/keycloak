@@ -92,17 +92,17 @@ To disable this behavior, use the SPI option `spi-single-use-object-infinispan-p
 The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
 This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
 
-= HA Multi-Site Deployments
+= Highly available multi-site deployments
 
 {project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
 
 - {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active
-setups are now supported, while previous configurations which leveraged active/passive LoadBalancer will continue to work.
+setups are now supported, while previous configurations which leveraged active/passive loadbalancer will continue to work.
 
-- The LoadBalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
 caused by DNS caching by clients.
 
-- Persistent user sessions are now a requirement of the architecture. Consequently, no session loss will be encountered
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
 on {project_name} or {jdgserver_name} upgrades.
 
 - External {jdgserver_name} request handling has been improved to reduce memory usage and request latency.
@@ -113,6 +113,8 @@ As a consequence of the above changes, the following changes are required to you
 so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
 or Keycloak CR as outlined in the blueprints. If a `remote-store` configuration is detected in the cache configuration file,
 then a warning will be raised in the {project_name} logs.
+
+. Review your current cache configurations in the external {jdgserver_name} and update them with those outlined in the latest version of the {project_name}'s documentation.
 
 . While previous LoadBalancer configurations will continue to work with {project_name}, consider upgrading
 an existing Route53 configurations to avoid prolonged failover times due to client side DNS caching.

@@ -6,24 +6,27 @@ title="Deploy an AWS Global Accelerator loadbalancer"
 summary="Building block for a loadbalancer"
 tileVisible="false" >
 
-This topic describes the procedure required to deploy an AWS global accelerator to route traffic between multi-site {project_name} deployments.
+This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-site {project_name} deployments.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
 
 include::partials/blueprint-disclaimer.adoc[]
 
 == Audience
 
-This guide describes how to deploy an AWS Global Accelerator instance to handle {project_name} client connection failover for multiple
+This {section} describes how to deploy an AWS Global Accelerator instance to handle {project_name} client connection failover for multiple
 availability-zone {project_name} deployments.
 
 == Architecture
 
-To ensure user requests are routed to each {project_name} site we need to utilise a LoadBalancer. To prevent issues with
-DNS caching on the client-side, the implementation ideally needs to provide a static IP address that remains the same
+To ensure user requests are routed to each {project_name} site we need to utilise a loadbalancer. To prevent issues with
+DNS caching on the client-side, the implementation should use a static IP address that remains the same
 when routing clients to both availability-zones.
 
-In this guide we describe how to route all {project_name} client requests via an AWS Global Accelerator LoadBalancer.
+In this {section} we describe how to route all {project_name} client requests via an AWS Global Accelerator loadbalancer.
 In the event of a {project_name} site failing, the Accelerator ensures that all client requests are routed to the remaining
-healthy site. If both sites are marked as unhealthy, then the Accelerator will "fail-open" and forward requests to a site
+healthy site. If both sites are marked as unhealthy, then the Accelerator will "`fail-open`" and forward requests to a site
 chosen at random.
 
 .AWS Global Accelerator Failover
@@ -45,7 +48,7 @@ Perform the following on each of the {project_name} clusters:
 +
 .. Login to the ROSA cluster
 +
-.. Create a Kubernetes LoadBalancer service
+.. Create a Kubernetes loadbalancer service
 +
 .Command:
 [source,bash]
@@ -57,13 +60,13 @@ cat <<EOF | kubectl apply -n $NAMESPACE -f - #<1>
   metadata:
     name: accelerator-loadbalancer
     annotations:
-      service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: accelerator=${ACCELERATOR_NAME},site=${CLUSTER_NAME},namespace=${NAMESPACE}# <2>
+      service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: accelerator=${ACCELERATOR_NAME},site=${CLUSTER_NAME},namespace=${NAMESPACE} # <2>
       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
       service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/lb-check"
       service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "https"
-      service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"# <3>
-      service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "3"# <4>
-      service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"# <5>
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10" # <3>
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "3" # <4>
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3" # <5>
   spec:
     ports:
     - name: https
@@ -106,8 +109,8 @@ abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com
 [source,bash]
 ----
 aws globalaccelerator create-accelerator \
-  --name example-accelerator \#<1>
-  --ip-address-type DUAL_STACK \#<2>
+  --name example-accelerator \ #<1>
+  --ip-address-type DUAL_STACK \ #<2>
   --region us-west-2 #<3>
 ----
 <1> The name of the accelerator to be created, update as required
@@ -119,7 +122,7 @@ aws globalaccelerator create-accelerator \
 ----
 {
     "Accelerator": {
-        "AcceleratorArn": "arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71",#<1>
+        "AcceleratorArn": "arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71", #<1>
         "Name": "example-accelerator",
         "IpAddressType": "DUAL_STACK",
         "Enabled": true,
@@ -141,11 +144,11 @@ aws globalaccelerator create-accelerator \
                 "IpAddressFamily": "IPv6"
             }
         ],
-        "DnsName": "a099f799900e5b10d.awsglobalaccelerator.com",#<2>
+        "DnsName": "a099f799900e5b10d.awsglobalaccelerator.com", #<2>
         "Status": "IN_PROGRESS",
         "CreatedTime": "2023-11-13T15:46:40+00:00",
         "LastModifiedTime": "2023-11-13T15:46:42+00:00",
-        "DualStackDnsName": "ac86191ca5121e885.dualstack.awsglobalaccelerator.com"#<3>
+        "DualStackDnsName": "ac86191ca5121e885.dualstack.awsglobalaccelerator.com" #<3>
     }
 }
 
@@ -191,13 +194,13 @@ aws globalaccelerator create-listener \
 ----
 <#noparse>
 CLUSTER_1_ENDPOINT_ARN=$(aws elbv2 describe-load-balancers \
-    --query "LoadBalancers[?DNSName=='abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \#<1>
-    --region eu-west-1 \#<2>
+    --query "LoadBalancers[?DNSName=='abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \ #<1>
+    --region eu-west-1 \ #<2>
     --output text
 )
 CLUSTER_2_ENDPOINT_ARN=$(aws elbv2 describe-load-balancers \
-    --query "LoadBalancers[?DNSName=='a1c76566e3c334e4ab7b762d9f8dcbcf-985941f9c8d108d4.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \#<1>
-    --region eu-west-1 \#<2>
+    --query "LoadBalancers[?DNSName=='a1c76566e3c334e4ab7b762d9f8dcbcf-985941f9c8d108d4.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \ #<1>
+    --region eu-west-1 \ #<2>
     --output text
 )
 ENDPOINTS='[
@@ -213,10 +216,10 @@ ENDPOINTS='[
   }
 ]'
 aws globalaccelerator create-endpoint-group \
-  --listener-arn 'arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71/listener/1f396d40' \#<2>
+  --listener-arn 'arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71/listener/1f396d40' \ #<2>
   --traffic-dial-percentage 100 \
   --endpoint-configurations ${ENDPOINTS} \
-  --endpoint-group-region eu-west-1 \#<3>
+  --endpoint-group-region eu-west-1 \ #<3>
   --region us-west-2
 </#noparse>
 ----
@@ -256,8 +259,11 @@ aws globalaccelerator create-endpoint-group \
 }
 </#noparse>
 ----
+. Optional: Configure your custom domain
 +
-. Update/Create {project_name} Deployment
+If you are using a custom domain, pointed your custom domain to the AWS Global Loadbalancer by configuring an Alias or CNAME in your custom domain.
++
+. Create or update the {project_name} Deployment
 +
 Perform the following on each of the {project_name} clusters:
 +
@@ -284,11 +290,15 @@ spec:
 +
 To ensure that request forwarding works as expected, it is necessary for the Keycloak CR to specify the hostname through
 which clients will access the {project_name} instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
-with the Global Accelerator. Alternatively, this could be a more friendly hostname which utilises the Accelerator's IP
-addresses or one of the aforementioned hostnames.
+with the Global Accelerator. If you are using a custom domain and pointed your custom domain to the AWS Global Loadbalancer, use your custom domain here.
 
 == Verify
-To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to the Accelerator's
-`DnsName` or `DualStackDnsName` in your browser, and you should be presented with the {project_name} admin console.
+To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to hostname configured above, and you should be presented with the {project_name} admin console.
+
+
+== Further reading
+
+* <@links.ha id="operate-site-online" />
+* <@links.ha id="operate-site-offline" />
 
 </@tmpl.guide>

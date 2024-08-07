@@ -3,7 +3,9 @@
 
 <@tmpl.guide
 title="Synchronize Sites"
-summary="This guide describes the procedures required to synchronize an offline site with an online site" >
+summary="This describes the procedures required to synchronize an offline site with an online site" >
+
+include::partials/infinispan/infinispan-attributes.adoc[]
 
 == When to use this procedure
 
@@ -17,7 +19,7 @@ contents of the active site. All caches in the offline site are cleared to preve
 
 === {jdgserver_name} Cluster
 
-For the context of this guide, `{keep-site-name}` is the currently active site and `{stale-site-name}` is an offline site that is not part
+For the context of this {section}, `{keep-site-name}` is the currently active site and `{stale-site-name}` is an offline site that is not part
 of the AWS Global Accelerator EndpointGroup and is therefore not receiving user requests.
 
 WARNING: Transferring state may impact {jdgserver_name} cluster performance by increasing the response time and/or resources usage.
@@ -57,7 +59,7 @@ No action required.
 === AWS Global Accelerator
 
 Once the two sites have been synchronized, it is safe to add the previously offline site back to the Global Accelerator
-EndpointGroup following the steps in the xref:running/bring-active-site-online.adoc[] guide.
+EndpointGroup following the steps in the <@links.ha id="operate-site-online" /> {section}.
 
 == Further reading
 
