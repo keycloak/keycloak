@@ -103,3 +103,11 @@ no longer holds the list of identity providers. However, they are still availabl
 when exporting a realm.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= OpenTelemetry Tracing support _(Preview)_
+
+The native support for OpenTelemetry Tracing has been added to {project_name} and allows obtaining application traces for better observability.
+It helps to find performance bottlenecks, determine the cause of application failures, trace a request through the distributed system, and much more.
+The support is in the preview mode and we would be happy to obtain any feedback.
+
+For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
