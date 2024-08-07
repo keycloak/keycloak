@@ -138,18 +138,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-actionTokens[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -167,18 +173,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <1>
           backup:
             strategy: "SYNC" # <2>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-authenticationSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -196,18 +208,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <1>
           backup:
             strategy: "SYNC" # <2>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-clientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -225,18 +243,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-loginFailures[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -254,18 +278,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <1>
           backup:
             strategy: "SYNC" # <2>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-offlineClientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -283,18 +313,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <1>
           backup:
             strategy: "SYNC" # <2>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-offlineSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -312,20 +348,24 @@ spec:
       mode: "SYNC"
       owners: "1" # <1>
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
-      memory:
-        maxCount: 10000 # <2>
+        chunkSize: "16"
       backups:
         site-a: # <3>
           backup:
             strategy: "SYNC" # <4>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-sessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -343,18 +383,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 5000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
       locking:
-        acquireTimeout: 4000
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_XA"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 4500
+            timeout: "4500"
+            failurePolicy: "FAIL"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-work[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
