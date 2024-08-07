@@ -22,13 +22,24 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Pojo to represent a VerifiableCredential for internal handling
@@ -42,14 +53,23 @@ public class VerifiableCredential {
     public static final String VC_CONTEXT_V2 = "https://www.w3.org/ns/credentials/v2";
 
     /**
-     * @context: The value of the @context property MUST be an ordered set where the first item is a URL with the
-     * value https://www.w3.org/ns/credentials/v2. Subsequent items in the ordered set MUST be composed of any
-     * combination of URLs and/or objects, where each is processable as a JSON-LD Context.
+     * @context: The value of the @context property MUST be an ordered set where the first item is a URL with the value
+     * https://www.w3.org/ns/credentials/v2. Subsequent items in the ordered set MUST be composed of any combination of
+     * URLs and/or objects, where each is processable as a JSON-LD Context.
      */
     @JsonProperty("@context")
     private List<String> context = new ArrayList<>(List.of(VC_CONTEXT_V1));
     private List<String> type = new ArrayList<>();
-    private URI issuer;
+
+    /**
+     * The value of the issuer property MUST be either a URL, or an object containing an id property whose value is a
+     * URL; in either case, the issuer selects this URL to identify itself in a globally unambiguous way. It is
+     * RECOMMENDED that the URL be one which, if dereferenced, results in a controller document, as defined in
+     * [VC-DATA-INTEGRITY] or [VC-JOSE-COSE], about the issuer that can be used to verify the information expressed in
+     * the credential.
+     */
+    @JsonDeserialize(using = IssuerDeserializer.class)
+    private Object issuer;
     private Instant issuanceDate;
     private URI id;
     private Instant expirationDate;
@@ -60,6 +80,11 @@ public class VerifiableCredential {
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return additionalProperties;
+    }
+
+    public VerifiableCredential setAdditionalProperties(Map<String, Object> additionalProperties) {
+        this.additionalProperties = additionalProperties;
+        return this;
     }
 
     @JsonAnySetter
@@ -86,11 +111,37 @@ public class VerifiableCredential {
         return this;
     }
 
-    public URI getIssuer() {
+    public Object getIssuer() {
         return issuer;
     }
 
-    public VerifiableCredential setIssuer(URI issuer) {
+    public VerifiableCredential setIssuer(Object issuer) {
+        if (issuer instanceof Map<?, ?> issuerMap) {
+
+            Optional.ofNullable(issuerMap).ifPresent(map -> {
+                String id = (String) Optional.ofNullable(map.get("id"))
+                                             .orElseThrow(() -> new IllegalArgumentException(
+                                                     "id is a required field for issuer"));
+                try {
+                    // id must be a URL: https://www.w3.org/TR/vc-data-model-2.0/#issuer
+                    new URI(id);
+                } catch (URISyntaxException e) {
+                    throw new IllegalStateException("id must be a valid URI", e);
+                }
+            });
+            this.issuer = issuerMap;
+        }
+        else {
+            try {
+                this.issuer = new URI(String.valueOf(issuer));
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("id must be a valid URI", e);
+            }
+        }
+        return this;
+    }
+
+    public VerifiableCredential setIssuerMap(Map<String, String> issuer) {
         this.issuer = issuer;
         return this;
     }
@@ -131,8 +182,24 @@ public class VerifiableCredential {
         return this;
     }
 
-    public VerifiableCredential setAdditionalProperties(Map<String, Object> additionalProperties) {
-        this.additionalProperties = additionalProperties;
-        return this;
+    public static class IssuerDeserializer extends JsonDeserializer<Object> {
+
+        @Override
+        public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            JsonNode node = p.readValueAsTree();
+            if (node instanceof TextNode) {
+                try {
+                    return new URI(node.textValue());
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else if (node instanceof ObjectNode objectNode) {
+                return JsonSerialization.mapper.convertValue(objectNode, Map.class);
+            }
+            else {
+                throw new IllegalArgumentException("Issuer must be a valid URI or a JSON object");
+            }
+        }
     }
 }
