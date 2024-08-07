@@ -98,8 +98,8 @@ It used to be difficult to regain access to a {project_name} instance when all a
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
 
-= kc import placeholder replacement
+= CLI import placeholder replacement
 
-kc.[sh|bat] import now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. 
+CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. 
 
 If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
