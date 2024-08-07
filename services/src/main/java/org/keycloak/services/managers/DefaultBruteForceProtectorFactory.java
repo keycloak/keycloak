@@ -17,9 +17,12 @@
 
 package org.keycloak.services.managers;
 
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,5 +59,17 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
     @Override
     public String getId() {
         return "default-brute-force-detector";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("allowConcurrentRequests")
+                .type("boolean")
+                .helpText("If concurrent logins are allowed by the brute force protection.")
+                .defaultValue(false)
+                .add()
+                .build();
     }
 }
