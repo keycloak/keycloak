@@ -17,44 +17,39 @@
 
 package org.keycloak.it.junit5.extension;
 
-import java.time.Duration;
 import java.util.Arrays;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.client.hotrod.configuration.ClientIntelligence;
-import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.commons.configuration.StringConfiguration;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
 
-public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
+public class InfinispanContainer extends org.infinispan.server.test.core.InfinispanContainer {
 
     private final Logger LOG = Logger.getLogger(getClass());
     public static final String PORT = System.getProperty("keycloak.externalInfinispan.port", "11222");
     public static final String USERNAME = System.getProperty("keycloak.externalInfinispan.username", "keycloak");
     public static final String PASSWORD = System.getProperty("keycloak.externalInfinispan.password", DatabaseContainer.DEFAULT_PASSWORD);
 
-    public static RemoteCacheManager remoteCacheManager;
+    private static RemoteCacheManager remoteCacheManager;
 
     @SuppressWarnings("resource")
     public InfinispanContainer() {
         super(getImageName());
-        withEnv("USER", USERNAME);
-        withEnv("PASS", PASSWORD);
-        withNetworkMode("host");
+        withUser(USERNAME);
+        withPassword(PASSWORD);
+
+        // Keycloak expects Infinispan to run on fixed ports
+        getExposedPorts().forEach(i -> {
+            addFixedExposedPort(i, i);
+        });
 
         // the images in the 'infinispan-test' repository point to tags that are frequently refreshed, therefore, always pull them
         if (getImageName().startsWith("quay.io/infinispan-test")) {
             withImagePullPolicy(PullPolicy.alwaysPull());
         }
 
-
-        //order of waitingFor and withStartupTimeout matters as the latter sets the timeout for WaitStrategy set by waitingFor
-        waitingFor(Wait.forLogMessage(".*Infinispan Server.*started in.*", 1));
-        withStartupTimeout(Duration.ofMinutes(5));
     }
 
     private static String getImageName() {
@@ -77,18 +72,7 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
     }
 
     private void establishHotRodConnection() {
-        ConfigurationBuilder configBuilder = new ConfigurationBuilder()
-                .addServers(getHost() + ":11222")
-                .security()
-                .authentication()
-                .username(getUsername())
-                .password(getPassword())
-                .clientIntelligence(ClientIntelligence.BASIC);
-
-        configBuilder.statistics().enable()
-                .statistics().jmxEnable();
-
-        remoteCacheManager = new RemoteCacheManager(configBuilder.build());
+        remoteCacheManager = getRemoteCacheManager();
     }
 
     @Override
