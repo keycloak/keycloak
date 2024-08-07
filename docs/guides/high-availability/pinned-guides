@@ -1,6 +1,6 @@
 introduction
-concepts-active-passive-sync
-bblocks-active-passive-sync
+concepts-multi-site
+bblocks-multi-site
 deploy-aurora-multi-az
 deploy-keycloak-kubernetes
 deploy-infinispan-kubernetes-crossdc

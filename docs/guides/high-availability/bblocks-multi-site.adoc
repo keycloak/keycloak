@@ -2,10 +2,10 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Building blocks active-passive deployments"
+title="Building blocks multi-site deployments"
 summary="Overview of building blocks, alternatives and not considered options" >
 
-The following building blocks are needed to set up an active-passive deployment with synchronous replication.
+The following building blocks are needed to set up a multi-site deployment with synchronous replication.
 
 The building blocks link to a blueprint with an example configuration.
 They are listed in the order in which they need to be installed.
@@ -14,7 +14,7 @@ include::partials/blueprint-disclaimer.adoc[]
 
 == Prerequisites
 
-* Understanding the concepts laid out in the <@links.ha id="concepts-active-passive-sync"/> {section}.
+* Understanding the concepts laid out in the <@links.ha id="concepts-multi-site"/> {section}.
 
 == Two sites with low-latency connection
 
@@ -50,7 +50,7 @@ It might be considered in the future.
 
 [IMPORTANT]
 ====
-Only {jdgserver_name} server versions 15.0.0 or greater are supported in Active/Passive deployments.
+Only {jdgserver_name} server versions 15.0.0 or greater are supported in multi-site deployments.
 ====
 
 == {project_name}
@@ -63,10 +63,6 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 == Load balancer
 
-A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site.
+A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site, plus an automation to detect {jdgserver_name} connectivity problems between the two sites.
 
-*Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>, optionally enhanced with <@links.ha id="deploy-aws-route53-failover-lambda"/>
-
-*Not considered:* AWS Global Accelerator as it supports only weighted traffic routing and not active-passive failover.
-To support active-passive failover, additional logic using, for example, AWS CloudWatch and AWS Lambda would be necessary to simulate the active-passive handling by adjusting the weights when the probes fail.
-
+*Blueprint:* <@links.ha id="deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="deploy-aws-accelerator-fencing-lambda"/>.

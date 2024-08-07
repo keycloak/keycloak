@@ -13,7 +13,7 @@ For simplicity, this topic uses the minimum configuration possible that allows {
 
 This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
 
-This is a building block following the concepts described in the <@links.ha id="concepts-active-passive-sync" /> {section}.
+This is a building block following the concepts described in the <@links.ha id="concepts-multi-site" /> {section}.
 See the <@links.ha id="introduction" /> {section} for an overview.
 
 
@@ -111,7 +111,7 @@ For more information, see the {infinispan-operator-docs}#securing-cross-site-con
 +
 Upload the Keystore and the Truststore in an {ocp} Secret.
 The secret contains the file content, the password to access it, and the type of the store.
-Instructions for creating the certificates and the stores are beyond the scope of this guide.
+Instructions for creating the certificates and the stores are beyond the scope of this {section}.
 +
 To upload the Keystore as a Secret, use the following command:
 +
@@ -172,7 +172,7 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 --
 +
 When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
-
++
 [source,yaml]
 ----
 distributedCache:
@@ -195,24 +195,39 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 {project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
 +
+Due to the use of persistent-user-sessions, the configuration of the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` is different to the `authenticationSessions`, `actionTokens`,
+`loginFailures` and `work` caches. In this section we detail how to configure both types of cache for multi-site deployments.
++
 The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
 Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
 The documentation contains more details about the options used by this {section}.
 The following example shows the `Cache` CR for `{site-a}`.
 +
 --
-.sessions in `{site-a}`
+.`sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` caches in `{site-a}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
 ----
+<1> Number of owners is only 1 as sessions are stored in the DB and so there is no need to hold redundant copies in memory.
+<2> The maximum number of entries which will be cached in memory.
+<3> The remote site name.
+<4> The cross-site communication, in this case, `SYNC`.
+--
++
+--
+.Remaining caches in `{site-a}`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
+----
 <1> The cross-site merge policy, invoked when there is a write-write conflict.
-Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
+Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
 <2> The remote site name.
 <3> The cross-site communication, in this case, `SYNC`.
 --
 +
-For `{site-b}`, the `Cache` CR is similar except in point 2.
+For `{site-b}`, the `Cache` CR is similar for both `*sessions` and all other caches, except for the `backups.<name>` outlined in point 2 of the above diagram.
 +
 .session in `{site-b}`
 [source,yaml]
