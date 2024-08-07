@@ -61,6 +61,14 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
         return offline ? OFFLINE : ONLINE;
     }
 
+    public static UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> onlineFactory() {
+        return ONLINE;
+    }
+
+    public static UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> offlineFactory() {
+        return OFFLINE;
+    }
+
     @Override
     public UserSessionEntity apply(String ignored, UserSessionEntity userSessionEntity) {
         initNotes(userSessionEntity);

@@ -84,14 +84,14 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public Executor getExecutor(String name) {
-        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class).asExecutor(name);
-    }
-
-    @Override
     public ScheduledExecutorService getScheduledExecutor() {
         //noinspection removal
         return GlobalComponentRegistry.of(cacheManager).getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
+    }
+
+    @Override
+    public BlockingManager getBlockingManager() {
+        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class);
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.Config;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -19,6 +20,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserS
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UseSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -33,8 +35,14 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
     private static final int DEFAULT_BATCH_SIZE = 1024;
     private static final String CONFIG_MAX_BATCH_SIZE = "batchSize";
 
-    private volatile RemoteCacheHolder remoteCacheHolder;
+    private volatile SharedStateImpl<String, UserSessionEntity> userSessionState;
+    private volatile SharedStateImpl<String, UserSessionEntity> offlineUserSessionState;
+    private volatile SharedStateImpl<UUID, AuthenticatedClientSessionEntity> clientSessionState;
+    private volatile SharedStateImpl<UUID, AuthenticatedClientSessionEntity> offlineClientSessionState;
+    private volatile BlockingManager blockingManager;
     private volatile int batchSize = DEFAULT_BATCH_SIZE;
+    private volatile int maxRetries = InfinispanUtils.DEFAULT_MAX_RETRIES;
+    private volatile int backOffBaseTimeMillis = InfinispanUtils.DEFAULT_RETRIES_BASE_TIME_MILLIS;
 
     @Override
     public RemoteUserSessionProvider create(KeycloakSession session) {
@@ -45,7 +53,9 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public void init(Config.Scope config) {
-        batchSize = config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_BATCH_SIZE);
+        batchSize = Math.max(1, config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_BATCH_SIZE));
+        maxRetries = InfinispanUtils.getMaxRetries(config);
+        backOffBaseTimeMillis = InfinispanUtils.getRetryBaseTimeMillis(config);
     }
 
     @Override
@@ -54,12 +64,15 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
             lazyInit(session);
         }
         factory.register(this);
-
     }
 
     @Override
     public void close() {
-        remoteCacheHolder = null;
+        blockingManager = null;
+        userSessionState = null;
+        offlineUserSessionState = null;
+        clientSessionState = null;
+        offlineClientSessionState = null;
     }
 
     @Override
@@ -81,6 +94,10 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
                 .helpText("Batch size when streaming session from the remote cache")
                 .defaultValue(DEFAULT_BATCH_SIZE)
                 .add();
+
+        InfinispanUtils.configureMaxRetries(builder);
+        InfinispanUtils.configureRetryBaseTime(builder);
+
         return builder.build();
     }
 
@@ -97,47 +114,53 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
     }
 
     private void lazyInit(KeycloakSession session) {
-        if (remoteCacheHolder != null) {
+        if (blockingManager != null) {
             return;
         }
-        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        RemoteCache<String, UserSessionEntity> userSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-        RemoteCache<String, UserSessionEntity> offlineUserSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
-        remoteCacheHolder = new RemoteCacheHolder(userSessionCache, offlineUserSessionsCache, clientSessionCache, offlineClientSessionsCache);
+        var connections = session.getProvider(InfinispanConnectionProvider.class);
+        userSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME));
+        offlineUserSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME));
+        clientSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME));
+        offlineClientSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME));
+        blockingManager = connections.getBlockingManager();
     }
 
     private UserSessionTransaction createTransaction(KeycloakSession session) {
         lazyInit(session);
         return new UserSessionTransaction(
-                createUserSessionTransaction(false),
-                createUserSessionTransaction(true),
-                createClientSessionTransaction(false),
-                createClientSessionTransaction(true)
+                new UseSessionChangeLogTransaction(UserSessionUpdater.onlineFactory(), userSessionState),
+                new UseSessionChangeLogTransaction(UserSessionUpdater.offlineFactory(), offlineUserSessionState),
+                new ClientSessionChangeLogTransaction(AuthenticatedClientSessionUpdater.onlineFactory(), clientSessionState),
+                new ClientSessionChangeLogTransaction(AuthenticatedClientSessionUpdater.offlineFactory(), offlineClientSessionState)
         );
     }
 
-    private UseSessionChangeLogTransaction createUserSessionTransaction(boolean offline) {
-        return new UseSessionChangeLogTransaction(UserSessionUpdater.factory(offline), remoteCacheHolder.userSessionCache(offline));
-    }
+    private class SharedStateImpl<K, V> implements RemoteChangeLogTransaction.SharedState<K, V> {
 
-    private ClientSessionChangeLogTransaction createClientSessionTransaction(boolean offline) {
-        return new ClientSessionChangeLogTransaction(AuthenticatedClientSessionUpdater.factory(offline), remoteCacheHolder.clientSessionCache(offline));
-    }
+        private final RemoteCache<K, V> cache;
 
-    private record RemoteCacheHolder(
-            RemoteCache<String, UserSessionEntity> userSession,
-            RemoteCache<String, UserSessionEntity> offlineUserSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSession) {
-
-        RemoteCache<String, UserSessionEntity> userSessionCache(boolean offline) {
-            return offline ? offlineUserSession : userSession;
+        private SharedStateImpl(RemoteCache<K, V> cache) {
+            this.cache = cache;
         }
 
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache(boolean offline) {
-            return offline ? offlineClientSession : clientSession;
+        @Override
+        public RemoteCache<K, V> cache() {
+            return cache;
+        }
+
+        @Override
+        public int maxRetries() {
+            return maxRetries;
+        }
+
+        @Override
+        public int backOffBaseTimeMillis() {
+            return backOffBaseTimeMillis;
+        }
+
+        @Override
+        public BlockingManager blockingManager() {
+            return blockingManager;
         }
     }
 }

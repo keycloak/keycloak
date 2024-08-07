@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 
@@ -146,7 +147,9 @@ public interface InfinispanConnectionProvider extends Provider {
      * @param name The name for trace logging purpose.
      * @return The Infinispan blocking {@link Executor}.
      */
-    Executor getExecutor(String name);
+    default Executor getExecutor(String name) {
+        return getBlockingManager().asExecutor(name);
+    }
 
     /**
      * @return The Infinispan {@link ScheduledExecutorService}. Long or blocking operations must not be executed directly.
@@ -163,5 +166,7 @@ public interface InfinispanConnectionProvider extends Provider {
             return session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(cacheName);
         }
     }
+
+    BlockingManager getBlockingManager();
 
 }

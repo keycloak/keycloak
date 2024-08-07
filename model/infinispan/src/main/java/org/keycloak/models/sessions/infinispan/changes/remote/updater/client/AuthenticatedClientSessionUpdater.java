@@ -78,6 +78,14 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
         return offline ? OFFLINE : ONLINE;
     }
 
+    public static UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> onlineFactory() {
+        return ONLINE;
+    }
+
+    public static UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> offlineFactory() {
+        return OFFLINE;
+    }
+
     @Override
     public AuthenticatedClientSessionEntity apply(UUID uuid, AuthenticatedClientSessionEntity entity) {
         initNotes(entity);
