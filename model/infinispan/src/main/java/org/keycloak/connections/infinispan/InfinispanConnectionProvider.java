@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 
@@ -131,11 +132,11 @@ public interface InfinispanConnectionProvider extends Provider {
     TopologyInfo getTopologyInfo();
 
     /**
-     * Migrates the JBoss Marshalling encoding to Infinispan Protostream
+     * Migrates the JBoss Marshalling encoding to Infinispan ProtoStream
      *
      * @return A {@link CompletionStage} to signal when the operator is completed.
      */
-    CompletionStage<Void> migrateToProtostream();
+    CompletionStage<Void> migrateToProtoStream();
 
     /**
      * Returns an executor that will run the given tasks on a blocking thread as required.
@@ -146,7 +147,9 @@ public interface InfinispanConnectionProvider extends Provider {
      * @param name The name for trace logging purpose.
      * @return The Infinispan blocking {@link Executor}.
      */
-    Executor getExecutor(String name);
+    default Executor getExecutor(String name) {
+        return getBlockingManager().asExecutor(name);
+    }
 
     /**
      * @return The Infinispan {@link ScheduledExecutorService}. Long or blocking operations must not be executed directly.
@@ -163,5 +166,15 @@ public interface InfinispanConnectionProvider extends Provider {
             return session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(cacheName);
         }
     }
+
+    /**
+     * Returns the Infinispan {@link BlockingManager}.
+     * <p>
+     * The {@link BlockingManager} should be used to execute blocking operation like disk I/O. It offloads the task to
+     * the Infinispan blocking thread pool.
+     *
+     * @return The Infinispan {@link BlockingManager}.
+     */
+    BlockingManager getBlockingManager();
 
 }

@@ -58,7 +58,7 @@ import org.keycloak.models.sessions.infinispan.query.ClientSessionQueries;
 import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.remote.transaction.UseSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
@@ -360,7 +360,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         transaction.removeUserSessionById(userSession.getId(), offline);
     }
 
-    private UseSessionChangeLogTransaction getUserSessionTransaction(boolean offline) {
+    private UserSessionChangeLogTransaction getUserSessionTransaction(boolean offline) {
         return transaction.getUserSessions(offline);
     }
 

@@ -19,7 +19,6 @@ package org.keycloak.connections.infinispan;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.infinispan.Cache;
@@ -71,7 +70,7 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public CompletionStage<Void> migrateToProtostream() {
+    public CompletionStage<Void> migrateToProtoStream() {
         // Only the CacheStore (persistence) stores data in binary format and needs to be deleted.
         // We assume rolling-upgrade between KC 25 and KC 26 is not available, in other words, KC 25 and KC 26 servers are not present in the same cluster.
         var stage = CompletionStages.aggregateCompletionStage();
@@ -84,14 +83,14 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public Executor getExecutor(String name) {
-        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class).asExecutor(name);
-    }
-
-    @Override
     public ScheduledExecutorService getScheduledExecutor() {
         //noinspection removal
         return GlobalComponentRegistry.of(cacheManager).getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
+    }
+
+    @Override
+    public BlockingManager getBlockingManager() {
+        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class);
     }
 
     @Override

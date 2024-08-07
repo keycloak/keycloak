@@ -52,11 +52,19 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
     }
 
     /**
-     * @param offline If {@code true}, it creates offline {@link UserSessionModel}.
-     * @return The {@link UpdaterFactory} implementation to create instances of {@link UserSessionModel}.
+     * @return The {@link UpdaterFactory} implementation to create online sessions instances of
+     * {@link UserSessionModel}.
      */
-    public static UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> factory(boolean offline) {
-        return offline ? OFFLINE : ONLINE;
+    public static UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> onlineFactory() {
+        return ONLINE;
+    }
+
+    /**
+     * @return The {@link UpdaterFactory} implementation to create offline sessions instances of
+     * {@link UserSessionModel}.
+     */
+    public static UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> offlineFactory() {
+        return OFFLINE;
     }
 
     @Override

@@ -29,12 +29,12 @@ import org.keycloak.models.KeycloakTransaction;
  */
 public class UserSessionTransaction extends AbstractKeycloakTransaction {
 
-    private final UseSessionChangeLogTransaction userSessions;
+    private final UserSessionChangeLogTransaction userSessions;
     private final ClientSessionChangeLogTransaction clientSessions;
-    private final UseSessionChangeLogTransaction offlineUserSessions;
+    private final UserSessionChangeLogTransaction offlineUserSessions;
     private final ClientSessionChangeLogTransaction offlineClientSessions;
 
-    public UserSessionTransaction(UseSessionChangeLogTransaction userSessions, UseSessionChangeLogTransaction offlineUserSessions, ClientSessionChangeLogTransaction clientSessions, ClientSessionChangeLogTransaction offlineClientSessions) {
+    public UserSessionTransaction(UserSessionChangeLogTransaction userSessions, UserSessionChangeLogTransaction offlineUserSessions, ClientSessionChangeLogTransaction clientSessions, ClientSessionChangeLogTransaction offlineClientSessions) {
         this.userSessions = userSessions;
         this.offlineUserSessions = offlineUserSessions;
         this.clientSessions = clientSessions;
@@ -73,7 +73,7 @@ public class UserSessionTransaction extends AbstractKeycloakTransaction {
         return offline ? offlineClientSessions : clientSessions;
     }
 
-    public UseSessionChangeLogTransaction getUserSessions(boolean offline) {
+    public UserSessionChangeLogTransaction getUserSessions(boolean offline) {
         return offline ? offlineUserSessions : userSessions;
     }
 
