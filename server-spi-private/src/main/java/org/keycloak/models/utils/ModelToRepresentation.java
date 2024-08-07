@@ -503,7 +503,7 @@ public class ModelToRepresentation {
             rep.setRequiredCredentials(reqCredentials);
         }
 
-        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
+        List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream()
                 .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
         rep.setIdentityProviders(identityProviders);
 

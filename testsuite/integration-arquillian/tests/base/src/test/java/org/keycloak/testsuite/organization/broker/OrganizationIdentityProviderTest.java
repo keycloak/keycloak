@@ -252,7 +252,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
                 RealmModel realm = session.realms().getRealmByName("master");
                 RealmModel current = session.getContext().getRealm();
                 session.getContext().setRealm(realm);
-                IdentityProviderModel idp = realm.getIdentityProviderByAlias("master-identity-provider");
+                IdentityProviderModel idp = session.identityProviders().getByAlias("master-identity-provider");
 
                 // restore the context and try to add the idp.
                 session.getContext().setRealm(current);

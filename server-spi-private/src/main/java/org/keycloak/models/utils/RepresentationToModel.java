@@ -27,6 +27,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1643,9 +1644,8 @@ public class RepresentationToModel {
             return;
         }
 
-        IdentityProviderModel existing = realm.getIdentityProvidersStream()
-                .filter(p -> Objects.equals(p.getAlias(), representation.getAlias()) || Objects.equals(p.getInternalId(), representation.getInternalId()))
-                .findFirst().orElse(null);
+        IdentityProviderModel existing = Optional.ofNullable(session.identityProviders().getByAlias(representation.getAlias()))
+                        .orElse(session.identityProviders().getById(representation.getInternalId()));
         String orgId = existing == null ? representation.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE) : existing.getOrganizationId();
 
         if (orgId != null) {
