@@ -188,11 +188,12 @@ public class RealmManager {
 
         adminConsole.setEnabled(true);
         adminConsole.setAlwaysDisplayInConsole(false);
+        adminConsole.setFullScopeAllowed(true);
         adminConsole.setPublicClient(true);
-        adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         adminConsole.setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, "S256");
+        adminConsole.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -214,10 +215,11 @@ public class RealmManager {
             adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
             adminCli.setEnabled(true);
             adminCli.setAlwaysDisplayInConsole(false);
-            adminCli.setFullScopeAllowed(false);
+            adminCli.setFullScopeAllowed(true);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
             adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            adminCli.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
         }
 
     }
@@ -644,7 +646,7 @@ public class RealmManager {
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {
-        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase(); 
+        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase();
         if (! hasRealmRole(rep, defaultRoleName)) {
             return defaultRoleName;
         } else {
@@ -778,7 +780,7 @@ public class RealmManager {
                 ClientModel clientModel = Optional.ofNullable(client.getId())
                         .map(realmModel::getClientById)
                         .orElseGet(() -> realmModel.getClientByClientId(client.getClientId()));
-                
+
                 if (clientModel == null) {
                     throw new RuntimeException("Cannot find provided client by dir import.");
                 }
