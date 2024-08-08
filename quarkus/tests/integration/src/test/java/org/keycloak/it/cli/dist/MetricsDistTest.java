@@ -20,7 +20,9 @@ package org.keycloak.it.cli.dist;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +39,12 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    void testMetricsEndpointNotEnabled() {
+    void testMetricsEndpointNotEnabled(KeycloakDistribution distribution) {
+        assertThrows(IOException.class, () -> when().get("/metrics"), "Connection refused must be thrown");
+        assertThrows(IOException.class, () -> when().get("/q/metrics"), "Connection refused must be thrown");
+
+        distribution.setRequestPort(8080);
+
         when().get("/metrics").then()
                 .statusCode(404);
         when().get("/q/metrics").then()
