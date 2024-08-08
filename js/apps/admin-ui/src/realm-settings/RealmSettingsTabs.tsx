@@ -210,12 +210,12 @@ export const RealmSettingsTabs = () => {
               if (response) {
                 setTableData([response]);
               }
-            } catch (error) {
+            } catch {
               return [];
             }
           }),
         );
-      } catch (error) {
+      } catch {
         return [];
       }
     };
@@ -288,6 +288,9 @@ export const RealmSettingsTabs = () => {
   const clientPoliciesTab = useTab("client-policies");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
+  const { hasAccess, hasSomeAccess } = useAccess();
+  const canViewOrManageEvents =
+    hasAccess("view-realm") && hasSomeAccess("view-events", "manage-events");
 
   const useClientPoliciesTab = (tab: ClientPoliciesTab) =>
     useRoutableTab(
@@ -361,13 +364,15 @@ export const RealmSettingsTabs = () => {
           >
             <KeysTab />
           </Tab>
-          <Tab
-            title={<TabTitleText>{t("events")}</TabTitleText>}
-            data-testid="rs-realm-events-tab"
-            {...eventsTab}
-          >
-            <EventsTab realm={realm!} />
-          </Tab>
+          {canViewOrManageEvents && (
+            <Tab
+              title={<TabTitleText>{t("events")}</TabTitleText>}
+              data-testid="rs-realm-events-tab"
+              {...eventsTab}
+            >
+              <EventsTab realm={realm!} />
+            </Tab>
+          )}
           <Tab
             title={<TabTitleText>{t("localization")}</TabTitleText>}
             data-testid="rs-localization-tab"

@@ -25,7 +25,7 @@ const DateTime = ({ name }: { name: string }) => {
       return value;
     }
 
-    const parts = value.match(DATE_TIME_FORMAT);
+    const parts = DATE_TIME_FORMAT.exec(value);
     const parsedDate = [
       date.getFullYear(),
       padDateSegment(date.getMonth() + 1),
@@ -42,7 +42,7 @@ const DateTime = ({ name }: { name: string }) => {
     hour?: number | null,
     minute?: number | null,
   ): string => {
-    const parts = value.match(DATE_TIME_FORMAT);
+    const parts = DATE_TIME_FORMAT.exec(value);
     if (minute !== undefined && minute !== null) {
       return `${parts ? parts[1] : ""} ${hour}:${
         minute < 10 ? `0${minute}` : minute

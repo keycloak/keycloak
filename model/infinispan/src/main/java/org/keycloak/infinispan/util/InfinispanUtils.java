@@ -18,9 +18,8 @@
 package org.keycloak.infinispan.util;
 
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.MultiSiteUtils;
 
-import static org.keycloak.common.Profile.Feature.MULTI_SITE;
 import static org.keycloak.common.Profile.Feature.REMOTE_CACHE;
 
 public final class InfinispanUtils {
@@ -39,11 +38,11 @@ public final class InfinispanUtils {
 
     // true if running with external infinispan mode only
     public static boolean isRemoteInfinispan() {
-        return Profile.isFeatureEnabled(Feature.MULTI_SITE) && Profile.isFeatureEnabled(REMOTE_CACHE);
+        return MultiSiteUtils.isMultiSiteEnabled() || Profile.isFeatureEnabled(REMOTE_CACHE);
     }
 
     // true if running with embedded caches.
     public static boolean isEmbeddedInfinispan() {
-        return !Profile.isFeatureEnabled(MULTI_SITE) || !Profile.isFeatureEnabled(REMOTE_CACHE);
+        return !isRemoteInfinispan();
     }
 }

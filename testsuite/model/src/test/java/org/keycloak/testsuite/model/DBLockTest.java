@@ -20,6 +20,8 @@ package org.keycloak.testsuite.model;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -188,19 +190,19 @@ public class DBLockTest extends KeycloakModelTest {
         for (int i = 0; i < 2; i++) {
             final DBLockProvider.Namespace lock = (i % 2 == 0)? lock1 : lock2;
             Thread thread = new Thread(() -> {
-                for (int j = 0; j < ITERATIONS_PER_THREAD_LONG; j++) {
+                IntStream.range(0, ITERATIONS_PER_THREAD_LONG).parallel().forEach(j -> {
                     try {
                         KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> lock(session1, lock, semaphore));
                     } catch (RuntimeException e) {
                         semaphore.setException(e);
                     }
-                }
+                });
             });
             threads.add(thread);
         }
-        for (Thread thread : threads) {
-            thread.start();
-        }
+
+        threads.parallelStream().forEach(Thread::start);
+
         for (Thread thread : threads) {
             try {
                 thread.join();

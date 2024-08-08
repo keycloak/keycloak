@@ -20,13 +20,17 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -34,8 +38,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -58,6 +62,14 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 public class SessionTimeoutsTest extends KeycloakModelTest {
+
+    @ClassRule
+    public static final TestRule SKIPPED_PROFILES = (base, description) -> {
+        // Embedded caches with the Remote Store uses asynchronous code with event listeners, making the test failing randomly.
+        // It is a deprecated configuration for cross-site, so we skip the tests.
+        Assume.assumeFalse(InfinispanUtils.isEmbeddedInfinispan() && getParameters(HotRodServerRule.class).findFirst().isPresent());
+        return base;
+    };
 
     private String realmId;
 
@@ -286,7 +298,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     return null;
                 });
 
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                if (MultiSiteUtils.isPersistentSessionsEnabled()) {
                     // The persistent session will write the update data asynchronously, wait for it to arrive.
                     Retry.executeWithBackoff(iteration -> {
                         withRealm(realmId, (session, realm) -> {

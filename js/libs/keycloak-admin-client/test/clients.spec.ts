@@ -293,7 +293,7 @@ describe("Clients", () => {
           clientScopeId: clientScopeId!,
           id: id!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -302,7 +302,7 @@ describe("Clients", () => {
         await kcAdminClient.clientScopes.delByName({
           name: dummyClientScope.name!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -387,7 +387,7 @@ describe("Clients", () => {
           clientScopeId: clientScopeId!,
           id: id!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -396,7 +396,7 @@ describe("Clients", () => {
         await kcAdminClient.clientScopes.delByName({
           name: dummyClientScope.name!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -480,7 +480,7 @@ describe("Clients", () => {
           id: clientUniqueId!,
           mapperId: mapperId!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -649,7 +649,7 @@ describe("Clients", () => {
             id: id!,
             roleName: dummyRoleName,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       });
@@ -804,7 +804,7 @@ describe("Clients", () => {
           await kcAdminClient.roles.delByName({
             name: dummyRoleName,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       });

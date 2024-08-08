@@ -30,7 +30,6 @@ import java.security.spec.ECPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.ClassRule;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
@@ -41,12 +40,12 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * Import test-settings from:
- * https://github.com/openwallet-foundation-labs/sd-jwt-python/blob/main/src/sd_jwt/utils/demo_settings.yml
- * 
+ * <a href="https://github.com/openwallet-foundation-labs/sd-jwt-python/blob/main/src/sd_jwt/utils/demo_settings.yml">
+ *     open wallet foundation labs</a>
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class TestSettings {

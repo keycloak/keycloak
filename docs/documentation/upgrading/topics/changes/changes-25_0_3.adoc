@@ -1,0 +1,10 @@
+= Concurrent login requests are blocked by default when brute force is enabled
+
+If an attacker launched many login attempts in parallel then the attacker could have more guesses at a password than the brute force protection configuration permits. This was due to the brute force check occurring before the brute force protector has locked the user. To prevent this race the Brute Force Protector now rejects all login attempts that occur while another login is in progress in the same server.
+
+If, for whatever reason, the new feature wants to be disabled there is a startup factory option:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-brute-force-protector-default-brute-force-detector-allow-concurrent-requests=true
+----

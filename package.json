@@ -7,13 +7,14 @@
     "prepare": "husky js/.husky"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.1.1",
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.8.0",
     "@types/node": "^22.0.2",
-    "eslint": "^8.52.0",
+    "eslint": "^9.8.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-cypress": "^3.4.0",
-    "eslint-plugin-lodash": "^7.4.0",
+    "eslint-plugin-lodash": "^8.0.0",
     "eslint-plugin-mocha": "^10.5.0",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-prettier": "^5.2.1",
@@ -24,7 +25,7 @@
     "prettier": "^3.3.3",
     "tslib": "^2.6.3",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^7.18.0",
+    "typescript-eslint": "^8.0.0",
     "wireit": "^0.14.5"
   },
   "pnpm": {

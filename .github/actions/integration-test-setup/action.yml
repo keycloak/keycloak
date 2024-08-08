@@ -40,6 +40,7 @@ runs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          choco install zstandard
+          # zstd binary might be missing in older versions, install only when necessary
+          which zstd > /dev/null || choco install zstandard
         fi
         tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts

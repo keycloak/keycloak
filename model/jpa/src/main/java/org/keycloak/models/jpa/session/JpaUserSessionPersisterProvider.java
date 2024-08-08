@@ -18,7 +18,7 @@
 package org.keycloak.models.jpa.session;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -253,7 +253,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         expire(realm, expiredClientOffline, expiredOffline, true);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
 
             int expired = Time.currentTime() - Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe()) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 

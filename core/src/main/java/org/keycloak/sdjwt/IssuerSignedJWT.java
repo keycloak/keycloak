@@ -20,8 +20,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSInput;
 
@@ -39,13 +42,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class IssuerSignedJWT extends SdJws {
 
-    public static IssuerSignedJWT fromJws(String jwsString) {
-        return new IssuerSignedJWT(jwsString);
+    public IssuerSignedJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+        super(payload, signer, jwsType);
     }
 
-    public IssuerSignedJWT toSignedJWT(SignatureSignerContext signer, String jwsType) {
-        JWSInput jwsInput = sign(getPayload(), signer, jwsType);
-        return new IssuerSignedJWT(getPayload(), jwsInput);
+    public static IssuerSignedJWT fromJws(String jwsString) {
+        return new IssuerSignedJWT(jwsString);
     }
 
     private IssuerSignedJWT(String jwsString) {
@@ -132,6 +134,43 @@ public class IssuerSignedJWT extends SdJws {
                 });
 
         return payload;
+    }
+
+    /**
+     * Returns `cnf` claim (establishing key binding)
+     */
+    public Optional<JsonNode> getCnfClaim() {
+        var cnf = getPayload().get("cnf");
+        return Optional.ofNullable(cnf);
+    }
+
+    /**
+     * Returns declared hash algorithm from SD hash claim.
+     */
+    public String getSdHashAlg() {
+        var hashAlgNode = getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM);
+        return hashAlgNode == null ? "sha-256" : hashAlgNode.asText();
+    }
+
+    /**
+     * Verifies that the SD hash algorithm is understood and deemed secure.
+     *
+     * @throws VerificationException if not
+     */
+    public void verifySdHashAlgorithm() throws VerificationException {
+        // Known secure algorithms
+        final Set<String> secureAlgorithms = Set.of(
+                "sha-256", "sha-384", "sha-512",
+                "sha3-256", "sha3-384", "sha3-512"
+        );
+
+        // Read SD hash claim
+        String hashAlg = getSdHashAlg();
+
+        // Safeguard algorithm
+        if (!secureAlgorithms.contains(hashAlg)) {
+            throw new VerificationException("Unexpected or insecure hash algorithm: " + hashAlg);
+        }
     }
 
     // SD-JWT Claims

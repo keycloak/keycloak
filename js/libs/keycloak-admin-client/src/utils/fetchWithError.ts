@@ -40,10 +40,9 @@ export async function parseResponse(response: Response): Promise<any> {
 
   try {
     return JSON.parse(data);
-    // eslint-disable-next-line no-empty
-  } catch (error) {}
-
-  return data;
+  } catch {
+    return data;
+  }
 }
 
 function getErrorMessage(data: unknown): string {

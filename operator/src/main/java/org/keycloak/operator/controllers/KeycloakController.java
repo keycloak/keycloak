@@ -154,7 +154,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         var statefulSet = context.getSecondaryResource(StatefulSet.class);
 
-        if (!status.isReady() || statefulSet.filter(watchedResources::hasMissing).isPresent()) {
+        if (!status.isReady()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         } else if (statefulSet.filter(watchedResources::isWatching).isPresent()) {
             updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);

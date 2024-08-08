@@ -68,6 +68,7 @@ import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
@@ -644,7 +645,7 @@ class KeycloakProcessor {
                     JsResource.class.getName())), false));
         }
 
-        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+        if (!MultiSiteUtils.isMultiSiteEnabled()) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     LoadBalancerResource.class.getName())), false));
         }

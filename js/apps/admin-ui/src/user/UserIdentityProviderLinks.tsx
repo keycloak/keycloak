@@ -39,7 +39,7 @@ export const UserIdentityProviderLinks = ({
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);
 
-  const { realm, realmRepresentation } = useRealm();
+  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
   const { hasAccess, hasSomeAccess } = useAccess();
@@ -74,8 +74,8 @@ export const UserIdentityProviderLinks = ({
     return allFedIds;
   };
 
-  const getAvailableIdPs = () => {
-    return realmRepresentation?.identityProviders;
+  const getAvailableIdPs = async () => {
+    return adminClient.identityProviders.find();
   };
 
   const linkedIdPsLoader = async () => {
@@ -87,7 +87,7 @@ export const UserIdentityProviderLinks = ({
       (x) => x.identityProvider,
     );
 
-    return getAvailableIdPs()?.filter(
+    return (await getAvailableIdPs())?.filter(
       (item) => !linkedNames.includes(item.alias),
     )!;
   };

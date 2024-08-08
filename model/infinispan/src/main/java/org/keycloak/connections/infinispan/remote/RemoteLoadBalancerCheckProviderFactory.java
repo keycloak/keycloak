@@ -20,9 +20,12 @@ package org.keycloak.connections.infinispan.remote;
 import org.infinispan.client.hotrod.impl.InternalRemoteCache;
 import org.infinispan.client.hotrod.impl.operations.PingResponse;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.util.concurrent.ActionSequencer;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.health.LoadBalancerCheckProvider;
 import org.keycloak.health.LoadBalancerCheckProviderFactory;
@@ -45,12 +48,11 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
-import static org.keycloak.connections.infinispan.InfinispanMultiSiteLoadBalancerCheckProviderFactory.ALWAYS_HEALTHY;
-import static org.keycloak.connections.infinispan.InfinispanMultiSiteLoadBalancerCheckProviderFactory.isAnyEmbeddedCachesDown;
 
 public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheckProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final int DEFAULT_POLL_INTERVAL = 5000;
+    private static final LoadBalancerCheckProvider ALWAYS_HEALTHY = () -> false;
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private volatile int pollIntervalMillis;
@@ -61,7 +63,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return MultiSiteUtils.isMultiSiteEnabled();
     }
 
     @Override
@@ -135,7 +137,22 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
     }
 
     private boolean isEmbeddedCachesDown() {
-        return isAnyEmbeddedCachesDown(connectionProvider, LOCAL_CACHE_NAMES, logger);
+        for (var name : LOCAL_CACHE_NAMES) {
+            var cache = connectionProvider.getCache(name, false);
+
+            // check if cache is started
+            if (cache == null || !cache.getStatus().allowInvocations()) {
+                logger.debugf("Cache '%s' is not started yet.", name);
+                return true; // no need to check other caches
+            }
+
+            var persistenceManager = ComponentRegistry.componentOf(cache, PersistenceManager.class);
+            if (persistenceManager != null && !persistenceManager.isAvailable()) {
+                logger.debugf("Persistence for embedded cache '%s' is down.", name);
+                return true; // no need to check other caches
+            }
+        }
+        return false;
     }
 
     private record RemoteCacheCheckList(List<RemoteCacheCheck> list, ActionSequencer sequencer) implements Runnable {

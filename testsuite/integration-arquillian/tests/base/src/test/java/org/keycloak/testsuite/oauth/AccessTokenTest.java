@@ -175,11 +175,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         testRealms.add(realm);
 
     }
-    
+
     @Test
     public void loginFormUsernameOrEmailLabel() throws Exception {
         oauth.openLoginForm();
-        
+
         assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
     }
 
@@ -389,6 +389,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenCodeExpired() {
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
+
         getTestingClient().testing().setTestingInfinispanTimeService();
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(1);
         oauth.doLogin("test-user@localhost", "password");
@@ -1323,7 +1325,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
         conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA);
     }
-    
+
     @Test
     public void validateECDSASignatures() {
         validateTokenECDSASignature(Algorithm.ES256);

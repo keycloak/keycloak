@@ -374,6 +374,8 @@ public final class Picocli {
             if (options.includeRuntime) {
                 disabledMappers.addAll(PropertyMappers.getDisabledRuntimeMappers().values());
             }
+            
+            checkSpiOptions(options, ignoredBuildTime, ignoredRunTime);
 
             for (OptionCategory category : abstractCommand.getOptionCategories()) {
                 List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
@@ -427,10 +429,10 @@ public final class Picocli {
             Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
 
             if (!ignoredBuildTime.isEmpty()) {
-                logger.warn(format("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
+                logger.warn(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                logger.warn(format("The following run time non-cli options were found, but will be ignored during build time: %s\n",
+                logger.warn(format("The following run time options were found, but will be ignored during build time: %s\n",
                         String.join(", ", ignoredRunTime)));
             }
 
@@ -446,6 +448,36 @@ public final class Picocli {
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
             PropertyMappingInterceptor.enable();
+        }
+    }
+
+    private static void checkSpiOptions(IncludeOptions options, final List<String> ignoredBuildTime,
+            final List<String> ignoredRunTime) {
+        String kcSpiPrefix = NS_KEYCLOAK_PREFIX + "spi";
+        for (String key : Configuration.getConfig().getPropertyNames()) {
+            if (!key.startsWith(kcSpiPrefix)) {
+                continue;
+            }
+            boolean buildTimeOption = key.endsWith("-provider") || key.endsWith("-provider-default") || key.endsWith("-enabled");
+            
+            ConfigValue configValue = Configuration.getConfigValue(key);
+            String configValueStr = configValue.getValue();
+
+            // don't consider missing or anything below standard env properties
+            if (configValueStr == null || configValue.getConfigSourceOrdinal() < 300) {
+                continue;
+            }
+            
+            if (!options.includeBuildTime) {
+                if (buildTimeOption) {
+                    String currentValue = getRawPersistedProperty(key).orElse(null);
+                    if (!configValueStr.equals(currentValue)) {
+                        ignoredBuildTime.add(key);
+                    }
+                }
+            } else if (!buildTimeOption) {
+                ignoredRunTime.add(key);
+            }
         }
     }
 
@@ -855,11 +887,11 @@ public final class Picocli {
         // change this once we are able to obtain properties from providers
         List<String> args = new ArrayList<>();
         ConfigArgsConfigSource.parseConfigArgs(List.of(rawArgs), (arg, value) -> {
-            if (!arg.startsWith("--spi") && !arg.startsWith("-D")) {
+            if (!arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX) && !arg.startsWith("-D")) {
                 args.add(arg + "=" + value);
             }
         }, arg -> {
-            if (arg.startsWith("--spi")) {
+            if (arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX)) {
                 throw new PropertyException(format("spi argument %s requires a value.", arg));
             }
             if (!arg.startsWith("-D")) {

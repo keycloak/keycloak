@@ -20,26 +20,33 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Optional;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.crypto.HashUtils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwtUtils {
 
     public static final ObjectMapper mapper = new ObjectMapper();
-    private static SecureRandom RANDOM = new SecureRandom();
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String encodeNoPad(byte[] bytes) {
         return Base64Url.encode(bytes);
+    }
+
+    public static byte[] decodeNoPad(String encoded) {
+        return Base64Url.decode(encoded);
     }
 
     public static String hashAndBase64EncodeNoPad(byte[] disclosureBytes, String hashAlg) {
@@ -69,6 +76,54 @@ public class SdJwtUtils {
             return arraySpacedPrettyPrinter.writer.writeValueAsString(array);
         } else {
             return mapper.writeValueAsString(array);
+        }
+    }
+
+    public static ArrayNode decodeDisclosureString(String disclosure) throws VerificationException {
+        JsonNode jsonNode;
+
+        // Decode Base64URL-encoded disclosure
+        var decoded = new String(decodeNoPad(disclosure));
+
+        // Parse the disclosure string into a JSON array
+        try {
+            jsonNode = mapper.readTree(decoded);
+        } catch (JsonProcessingException e) {
+            throw new VerificationException("Disclosure is not a valid JSON", e);
+        }
+
+        // Check if the parsed JSON is an array
+        if (!jsonNode.isArray()) {
+            throw new VerificationException("Disclosure is not a JSON array");
+        }
+
+        return (ArrayNode) jsonNode;
+    }
+
+    public static long readTimeClaim(JsonNode payload, String claimName) throws VerificationException {
+        JsonNode claim = payload.get(claimName);
+        if (claim == null || !claim.isNumber()) {
+            throw new VerificationException("Missing or invalid '" + claimName + "' claim");
+        }
+
+        return claim.asLong();
+    }
+
+    public static String readClaim(JsonNode payload, String claimName) throws VerificationException {
+        JsonNode claim = payload.get(claimName);
+        if (claim == null) {
+            throw new VerificationException("Missing '" + claimName + "' claim");
+        }
+
+        return claim.textValue();
+    }
+
+    public static JsonNode deepClone(JsonNode node) {
+        try {
+            byte[] serializedNode = mapper.writeValueAsBytes(node);
+            return mapper.readTree(serializedNode);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

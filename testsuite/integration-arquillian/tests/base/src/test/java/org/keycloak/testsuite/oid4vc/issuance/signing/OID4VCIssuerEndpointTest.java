@@ -39,7 +39,9 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -53,6 +55,8 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -80,6 +84,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 
 /**
  * Moved test to subclass. so we can reuse initialization code.
@@ -244,12 +249,19 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         });
     }
 
-    protected static String prepareNonce(AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
-        String nonce = SecretGenerator.getInstance().randomString();
+    protected static String prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
         UserSessionModel userSessionModel = authResult.getSession();
-        userSessionModel.getAuthenticatedClientSessionByClient(authResult.getClient().getId()).setNote(nonce, note);
-        return nonce;
+        AuthenticatedClientSessionModel authenticatedClientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
+        String codeId = SecretGenerator.getInstance().randomString();
+        String nonce = SecretGenerator.getInstance().randomString();
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, Time.currentTime() + 6000, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null,
+                authenticatedClientSessionModel.getUserSession().getId());
+
+        String oauthCode = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oAuth2Code);
+
+        authenticatedClientSessionModel.setNote(oauthCode, note);
+        return oauthCode;
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {

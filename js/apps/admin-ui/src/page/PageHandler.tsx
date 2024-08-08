@@ -11,7 +11,7 @@ import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
-import { PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
+import { type PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
 import { toPage } from "./routes";
 
 type PageHandlerProps = {

@@ -503,13 +503,14 @@ public class ModelToRepresentation {
             rep.setRequiredCredentials(reqCredentials);
         }
 
-        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
-        rep.setIdentityProviders(identityProviders);
-
-        List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
-                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-        rep.setIdentityProviderMappers(identityProviderMappers);
+        if (export) {
+            List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
+                    .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
+            rep.setIdentityProviders(identityProviders);
+            List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
+                    .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+            rep.setIdentityProviderMappers(identityProviderMappers);
+        }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));

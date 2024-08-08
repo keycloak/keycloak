@@ -18,7 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import java.util.Collections;
 import java.util.HashMap;
@@ -152,7 +152,7 @@ public class RemoteCacheInvoker {
 
             VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getWithMetadata(key);
             if (versioned == null) {
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+                if (MultiSiteUtils.isPersistentSessionsEnabled() &&
                     (remoteCache.getName().equals(USER_SESSION_CACHE_NAME)
                      || remoteCache.getName().equals(CLIENT_SESSION_CACHE_NAME)
                      || remoteCache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)

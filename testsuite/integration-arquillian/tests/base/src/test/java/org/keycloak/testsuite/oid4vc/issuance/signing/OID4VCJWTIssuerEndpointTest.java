@@ -42,8 +42,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -189,9 +189,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     .run((session -> {
                         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                         authenticator.setTokenString(token);
-                        String nonce = prepareNonce(authenticator, "invalidNote");
+                        String sessionCode = prepareSessionCode(session, authenticator, "invalidNote");
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                        issuerEndpoint.getCredentialOffer(nonce);
+                        issuerEndpoint.getCredentialOffer(sessionCode);
                     }));
         });
     }
@@ -199,41 +199,28 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testGetCredentialOffer() {
         String token = getBearerToken(oauth);
-        String rootURL = suiteContext.getAuthServerInfo().getContextRoot().toString();
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session) -> {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
+                    CredentialsOffer credentialsOffer = new CredentialsOffer()
+                            .setCredentialIssuer("the-issuer")
+                            .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("the-code")))
+                            .setCredentialConfigurationIds(List.of("credential-configuration-id"));
 
-                    SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration()
-                            .setId("test-credential")
-                            .setScope("VerifiableCredential")
-                            .setFormat(Format.JWT_VC);
-                    String nonce = prepareNonce(authenticator, JsonSerialization.writeValueAsString(supportedCredentialConfiguration));
-
+                    String sessionCode = prepareSessionCode(session, authenticator, JsonSerialization.writeValueAsString(credentialsOffer));
+                    // the cache transactions need to be commited explicitly in the test. Without that, the OAuth2Code will only be commited to
+                    // the cache after .run((session)-> ...)
+                    session.getTransactionManager().commit();
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(nonce);
+                    Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(sessionCode);
                     assertEquals("The offer should have been returned.", HttpStatus.SC_OK, credentialOfferResponse.getStatus());
                     Object credentialOfferEntity = credentialOfferResponse.getEntity();
                     assertNotNull("An actual offer should be in the response.", credentialOfferEntity);
 
-                    CredentialsOffer credentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
-                    assertNotNull("Credentials should have been offered.", credentialsOffer.getCredentialConfigurationIds());
-                    assertFalse("Credentials should have been offered.", credentialsOffer.getCredentialConfigurationIds().isEmpty());
-                    List<String> supportedCredentials = credentialsOffer.getCredentialConfigurationIds();
-                    assertEquals("Exactly one credential should have been returned.", 1, supportedCredentials.size());
-                    String offeredCredentialId = supportedCredentials.get(0);
-                    assertEquals("The credential should be as defined in the note.", supportedCredentialConfiguration.getId(), offeredCredentialId);
-
-                    PreAuthorizedGrant grant = credentialsOffer.getGrants();
-                    assertNotNull("The grant should be included.", grant);
-                    assertNotNull("The grant should contain the pre-authorized code.", grant.getPreAuthorizedCode());
-                    assertNotNull("The actual pre-authorized code should be included.", grant
-                            .getPreAuthorizedCode()
-                            .getPreAuthorizedCode());
-
-                    assertEquals("The correct issuer should be included.", rootURL + "/auth/realms/" + TEST_REALM_NAME, credentialsOffer.getCredentialIssuer());
+                    CredentialsOffer retrievedCredentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
+                    assertEquals("The offer should be the one prepared with for the session.", credentialsOffer, retrievedCredentialsOffer);
                 });
     }
 
@@ -355,7 +342,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Using the uri to get the actual credential offer
         HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
-        getCredentialOffer.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
 
         assertEquals("A valid offer should be returned", HttpStatus.SC_OK, credentialOfferResponse.getStatusLine().getStatusCode());

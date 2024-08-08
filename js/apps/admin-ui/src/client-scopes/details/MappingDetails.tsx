@@ -49,7 +49,7 @@ export default function MappingDetails() {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
-  const isUpdating = !!mapperId.match(isGuid);
+  const isUpdating = !!isGuid.exec(mapperId);
 
   const isOnClientScope = !!useMatch(MapperRoute.path);
   const toDetails = () =>
@@ -154,19 +154,23 @@ export default function MappingDetails() {
     try {
       const mapping = { ...config, ...convertFormValuesToObject(formMapping) };
       if (isUpdating) {
-        isOnClientScope
-          ? await adminClient.clientScopes.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            )
-          : await adminClient.clients.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            );
+        if (isOnClientScope) {
+          await adminClient.clientScopes.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        } else {
+          await adminClient.clients.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        }
       } else {
-        isOnClientScope
-          ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
-          : await adminClient.clients.addProtocolMapper({ id }, mapping);
+        if (isOnClientScope) {
+          await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
+        } else {
+          await adminClient.clients.addProtocolMapper({ id }, mapping);
+        }
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {

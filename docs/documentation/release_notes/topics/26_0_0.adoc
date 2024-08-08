@@ -75,6 +75,19 @@ The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2
 While it remains the default for the new realms for compatibility reasons, it is strongly recommended to switch all the
 realm themes to `keycloak.v2`.
 
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active setups are now supported.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Admin Bootstrapping and Recovery
 
 In the past, regaining access to a {project_name} instance when all admin users were locked out was a challenging and complex process. Recognizing these challenges and aiming to significantly enhance the user experience, {project_name} now offers several straightforward methods to bootstrap a temporary admin account and recover lost admin access.
@@ -82,3 +95,11 @@ In the past, regaining access to a {project_name} instance when all admin users 
 It is now possible to run the `start` or `start-dev` commands with specific options to create a temporary admin account. Additionally, a new dedicated command has been introduced, which allows users to regain admin access without hassle.
 
 For detailed instructions and more information on this topic, refer to the link:{bootstrapadminrecovery_link}[{bootstrapadminrecovery_name}] guide.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].

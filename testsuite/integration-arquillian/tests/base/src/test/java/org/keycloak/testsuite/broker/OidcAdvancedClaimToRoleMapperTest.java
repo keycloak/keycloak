@@ -6,7 +6,8 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <a href="mailto:external.benjamin.weimer@bosch-si.com">Benjamin Weimer</a>,
@@ -25,13 +26,14 @@ public class OidcAdvancedClaimToRoleMapperTest extends AbstractAdvancedRoleMappe
         IdentityProviderMapperRepresentation advancedClaimToRoleMapper = new IdentityProviderMapperRepresentation();
         advancedClaimToRoleMapper.setName("advanced-claim-to-role-mapper");
         advancedClaimToRoleMapper.setIdentityProviderMapper(AdvancedClaimToRoleMapper.PROVIDER_ID);
-        advancedClaimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
-                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-                .put(AdvancedClaimToRoleMapper.CLAIM_PROPERTY_NAME, claimsOrAttributeRepresentation)
-                .put(AdvancedClaimToRoleMapper.ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME,
-                        Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString())
-                .put(ConfigConstants.ROLE, roleValue)
-                .build());
+
+        final Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString());
+        config.put(AdvancedClaimToRoleMapper.CLAIM_PROPERTY_NAME, claimsOrAttributeRepresentation);
+        config.put(AdvancedClaimToRoleMapper.ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME,
+                Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString());
+        config.put(ConfigConstants.ROLE, roleValue);
+        advancedClaimToRoleMapper.setConfig(config);
 
         persistMapper(advancedClaimToRoleMapper);
     }

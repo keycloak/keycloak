@@ -281,10 +281,10 @@ export class Agent {
             value === "application/octet-stream",
         )
       ) {
-        return res.arrayBuffer();
+        return await res.arrayBuffer();
       }
 
-      return parseResponse(res);
+      return await parseResponse(res);
     } catch (err) {
       if (
         err instanceof NetworkError &&

@@ -92,7 +92,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   });
                 setTableData([updatedData]);
               }
-            } catch (error) {
+            } catch {
               console.error(`Error removing translations for ${locale}`);
             }
           }),

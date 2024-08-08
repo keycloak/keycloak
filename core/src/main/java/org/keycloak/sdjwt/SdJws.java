@@ -17,12 +17,15 @@
 package org.keycloak.sdjwt;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 
@@ -30,11 +33,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Handle jws, either the issuer jwt or the holder key binding jwt.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
-public class SdJws {
+public abstract class SdJws {
     private final JWSInput jwsInput;
     private final JsonNode payload;
 
@@ -47,10 +50,6 @@ public class SdJws {
 
     public JsonNode getPayload() {
         return payload;
-    }
-
-    public String getJwsString() {
-        return jwsInput.getWireString();
     }
 
     // Constructor for unsigned JWS
@@ -105,6 +104,77 @@ public class SdJws {
             return SdJwtUtils.mapper.readTree(jwsInput.getContent());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public JWSHeader getHeader() {
+        return this.jwsInput.getHeader();
+    }
+
+    public void verifyIssuedAtClaim() throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        long iat = SdJwtUtils.readTimeClaim(payload, "iat");
+
+        if (now < iat) {
+            throw new VerificationException("jwt issued in the future");
+        }
+    }
+
+    public void verifyExpClaim() throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        long exp = SdJwtUtils.readTimeClaim(payload, "exp");
+
+        if (now >= exp) {
+            throw new VerificationException("jwt has expired");
+        }
+    }
+
+    public void verifyNotBeforeClaim() throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        long nbf = SdJwtUtils.readTimeClaim(payload, "nbf");
+
+        if (now < nbf) {
+            throw new VerificationException("jwt not valid yet");
+        }
+    }
+
+    /**
+     * Verifies that the JWS is not too old.
+     *
+     * @param maxAge Maximum age in seconds
+     * @throws VerificationException if too old
+     */
+    public void verifyAge(int maxAge) throws VerificationException {
+        long now = Instant.now().getEpochSecond();
+        long iat = SdJwtUtils.readTimeClaim(getPayload(), "iat");
+
+        if (now - iat > maxAge) {
+            throw new VerificationException("jwt is too old");
+        }
+    }
+
+    /**
+     * Verifies that SD-JWT was issued by one of the provided issuers.
+     * @param issuers List of trusted issuers
+     */
+    public void verifyIssClaim(List<String> issuers) throws VerificationException {
+        verifyClaimAgainstTrustedValues(issuers, "iss");
+    }
+
+    /**
+     * Verifies that SD-JWT vct claim matches the expected one.
+     * @param vcts list of supported verifiable credential types
+     */
+    public void verifyVctClaim(List<String> vcts) throws VerificationException  {
+        verifyClaimAgainstTrustedValues(vcts, "vct");
+    }
+
+    private void verifyClaimAgainstTrustedValues(List<String> trustedValues, String claimName)
+            throws VerificationException {
+        String claimValue = SdJwtUtils.readClaim(payload, claimName);
+
+        if (!trustedValues.contains(claimValue)) {
+            throw new VerificationException(String.format("Unknown '%s' claim value: %s", claimName, claimValue));
         }
     }
 }

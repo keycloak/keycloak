@@ -114,10 +114,13 @@ export function UserDataTableAttributeSearchForm({
       ]);
       reset();
     } else {
-      errors.name?.message &&
+      if (errors.name?.message) {
         addAlert(errors.name.message, AlertVariant.danger);
-      errors.value?.message &&
+      }
+
+      if (errors.value?.message) {
         addAlert(errors.value.message, AlertVariant.danger);
+      }
     }
   };
 

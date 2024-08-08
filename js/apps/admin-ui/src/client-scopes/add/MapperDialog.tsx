@@ -56,9 +56,9 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
   const allRows = useMemo(
     () =>
       localeSort(builtInMappers, mapByKey("name")).map((mapper) => {
-        const mapperType = protocolMappers.filter(
+        const mapperType = protocolMappers.find(
           (type) => type.id === mapper.protocolMapper,
-        )[0];
+        )!;
         return {
           item: mapper,
           id: mapper.name!,

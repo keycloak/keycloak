@@ -21,7 +21,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -151,7 +151,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                     .forEach(userSessionLooper -> persistUserSession(session, userSessionLooper, true));
         });
 
-        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             inComittedTransaction(session -> {
                 // Persist 1 online session
                 RealmModel realm = session.realms().getRealm(realmId);
@@ -581,7 +581,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testMigrateSession() {
-        Assume.assumeTrue(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS));
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
 
         UserSessionModel[] sessions = inComittedTransaction(session -> {
             // Create some sessions in infinispan

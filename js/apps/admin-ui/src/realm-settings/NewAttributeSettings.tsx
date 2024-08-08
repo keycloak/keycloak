@@ -295,7 +295,7 @@ export default function NewAttributeSettings() {
               },
               translation.value,
             );
-          } catch (error) {
+          } catch {
             console.error(`Error saving translation for ${translation.locale}`);
           }
         },

@@ -184,6 +184,36 @@ public abstract class JWKTest {
     }
 
     @Test
+    public void testCertificateGenerationWithRsaAndEc() throws Exception {
+        KeyPairGenerator keyGenRsa = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
+        KeyPairGenerator keyGenEc = CryptoIntegration.getProvider().getKeyPairGen(KeyType.EC);
+        SecureRandom randomGen = new SecureRandom();
+        ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
+        keyGenEc.initialize(ecSpec, randomGen);
+        KeyPair keyPairRsa = keyGenRsa.generateKeyPair();
+        KeyPair keyPairEc = keyGenEc.generateKeyPair();
+        X509Certificate certificateRsa = generateV1SelfSignedCertificate(keyPairRsa, "root");
+        X509Certificate certificateEc = generateV3Certificate(keyPairEc, keyPairRsa.getPrivate(), certificateRsa, "child");
+        certificateRsa.verify(keyPairRsa.getPublic());
+        certificateEc.verify(keyPairRsa.getPublic());
+    }
+
+    @Test
+    public void testCertificateGenerationWithEcAndRsa() throws Exception {
+        KeyPairGenerator keyGenRsa = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
+        KeyPairGenerator keyGenEc = CryptoIntegration.getProvider().getKeyPairGen(KeyType.EC);
+        SecureRandom randomGen = new SecureRandom();
+        ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
+        keyGenEc.initialize(ecSpec, randomGen);
+        KeyPair keyPairRsa = keyGenRsa.generateKeyPair();
+        KeyPair keyPairEc = keyGenEc.generateKeyPair();
+        X509Certificate certificateEc = generateV1SelfSignedCertificate(keyPairEc, "root");
+        X509Certificate certificateRsa = generateV3Certificate(keyPairRsa, keyPairEc.getPrivate(), certificateEc, "child");
+        certificateRsa.verify(keyPairEc.getPublic());
+        certificateEc.verify(keyPairEc.getPublic());
+    }
+
+    @Test
     public void publicEs256P256() throws Exception {
         testPublicEs256("secp256r1");
     }

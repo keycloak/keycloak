@@ -25,6 +25,7 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -66,7 +67,7 @@ public class CrossDCInfinispan extends KeycloakModelParameters {
     }
 
     public CrossDCInfinispan() {
-        super(Infinispan.ALLOWED_SPIS, Infinispan.ALLOWED_FACTORIES);
+        super(Infinispan.ALLOWED_SPIS, Stream.concat(Infinispan.ALLOWED_FACTORIES.stream(), RemoteInfinispan.ALLOWED_FACTORIES.stream()).collect(Collectors.toSet()));
     }
 
     @Override

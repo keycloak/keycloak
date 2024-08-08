@@ -122,13 +122,4 @@ public class HealthDistTest {
             distribution.stop();
         }
     }
-
-    @Test
-    @Launch({ "start-dev", "--features=multi-site" })
-    void testLoadBalancerCheck(KeycloakDistribution distribution) {
-        distribution.setRequestPort(8080);
-
-        when().get("/lb-check").then()
-                .statusCode(200);
-    }
 }

@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import org.infinispan.commons.CacheConfigurationException;
 import org.junit.Test;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -60,8 +61,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
 
     @Test
     public void testRemoteCachesOnly() {
-        assumeTrue("Remote-Cache Feature disabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
-        assumeTrue("Multi-Site Feature disabled", Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE));
+        assumeTrue("Remote-Cache Feature disabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE) || MultiSiteUtils.isMultiSiteEnabled());
         assertTrue(InfinispanUtils.isRemoteInfinispan());
         assertFalse(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
@@ -73,21 +73,8 @@ public class FeatureEnabledTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testRemoteAndEmbeddedCaches() {
-        assumeTrue("Multi-Site Feature disabled", Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE));
-        assumeFalse("Remote-Cache Feature enabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
-        assertFalse(InfinispanUtils.isRemoteInfinispan());
-        assertTrue(InfinispanUtils.isEmbeddedInfinispan());
-        inComittedTransaction(session -> {
-            var clusterProvider = session.getProvider(InfinispanConnectionProvider.class);
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheExists(clusterProvider, s));
-        });
-    }
-
-    @Test
     public void testEmbeddedCachesOnly() {
-        assumeFalse("Multi-Site Feature enabled", Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE));
+        assumeFalse("Multi-Site Feature enabled", MultiSiteUtils.isMultiSiteEnabled());
         assumeFalse("Remote-Cache Feature enabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
         assertFalse(InfinispanUtils.isRemoteInfinispan());
         assertTrue(InfinispanUtils.isEmbeddedInfinispan());

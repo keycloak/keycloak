@@ -13,8 +13,8 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-
 import "./RolesList.css";
+import { useAccess } from "../../context/access/Access";
 
 type RoleDetailLinkProps = RoleRepresentation & {
   defaultRoleName?: string;
@@ -30,13 +30,21 @@ const RoleDetailLink = ({
 }: RoleDetailLinkProps) => {
   const { t } = useTranslation(messageBundle);
   const { realm } = useRealm();
+  const { hasAccess, hasSomeAccess } = useAccess();
+  const canViewUserRegistration =
+    hasAccess("view-realm") && hasSomeAccess("view-clients", "manage-clients");
+
   return role.name !== defaultRoleName ? (
     <Link to={toDetail(role.id!)}>{role.name}</Link>
   ) : (
     <>
-      <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
-        {role.name}{" "}
-      </Link>
+      {canViewUserRegistration ? (
+        <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
+          {role.name}
+        </Link>
+      ) : (
+        <span>{role.name}</span>
+      )}
       <HelpItem
         helpText={t(`${messageBundle}:defaultRole`)}
         fieldLabelId="defaultRole"
@@ -124,7 +132,7 @@ export const RolesList = ({
         }
         actions={
           isReadOnly
-            ? []
+            ? undefined
             : [
                 {
                   title: t("delete"),

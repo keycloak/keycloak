@@ -8,8 +8,8 @@ tileVisible="false" >
 
 This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.
 
-These instructions are intended for use with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
-Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
+These instructions are intended for use with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
 
 == Prerequisites
 

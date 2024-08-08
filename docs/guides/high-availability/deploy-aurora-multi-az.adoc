@@ -8,8 +8,8 @@ tileVisible="false" >
 
 This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.
 
-This deployment is intended to be used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
-Use this deployment with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
+This deployment is intended to be used with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
 
 include::partials/blueprint-disclaimer.adoc[]
 

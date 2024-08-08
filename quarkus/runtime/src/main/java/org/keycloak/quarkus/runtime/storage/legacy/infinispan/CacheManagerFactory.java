@@ -58,6 +58,7 @@ import org.jgroups.protocols.UDP;
 import org.jgroups.util.TLS;
 import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -297,7 +298,7 @@ public class CacheManagerFactory {
         Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
             if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                if (MultiSiteUtils.isPersistentSessionsEnabled()) {
                     if (configurationBuilder.memory().maxCount() == -1) {
                         logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries.", cacheName);
                         configurationBuilder.memory().maxCount(10000);
@@ -347,6 +348,9 @@ public class CacheManagerFactory {
                   logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' Feature", cacheName, Profile.Feature.REMOTE_CACHE.getKey());
                builders.remove(cacheName);
             }
+            // Disable JGroups, not required when the data is stored in the Remote Cache.
+            // The existing caches are local and do not require JGroups to work properly.
+            builder.getGlobalConfigurationBuilder().nonClusteredDefault();
         }
 
         var start = isStartEagerly();

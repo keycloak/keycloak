@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.infinispan.commons.CacheException;
 import org.junit.Test;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -50,13 +51,13 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.remote.RemoteUserSessionProvider;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assume.assumeTrue;
 
 /**
  *
@@ -252,6 +253,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     public void testOfflineSessionLoadingAfterCacheRemoval() {
+        assumeTrue("Run only if Embedded Infinispan is used for storing/caching sessions.", InfinispanUtils.isEmbeddedInfinispan());
+
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
         assertOfflineSessionsExist(realmId, offlineSessionIds);
 
@@ -268,8 +271,6 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                 ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
             } else if (provider instanceof PersistentUserSessionProvider) {
                 ((PersistentUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
-            } else if (provider instanceof RemoteUserSessionProvider) {
-                //no-op, session not local
             } else {
                 throw new IllegalStateException("Unknown UserSessionProvider: " + provider);
             }

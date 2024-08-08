@@ -27,13 +27,7 @@ export const fetchResources = async (
     { searchParams: shared ? requestParams : undefined, signal },
   );
 
-  let links: Links;
-
-  try {
-    links = parseLinks(response);
-  } catch (error) {
-    links = {};
-  }
+  const links = parseLinks(response);
 
   return {
     data: checkResponse(await response.json()),

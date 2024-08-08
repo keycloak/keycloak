@@ -342,7 +342,7 @@ describe("Users", () => {
           id: currentUser.id!,
           groupId: newGroup.id,
         });
-      } catch (e) {
+      } catch {
         fail("Didn't expect an error when deleting a valid group id");
       }
 

@@ -17,7 +17,10 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.crypto.CryptoIntegration;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Signature;
 
@@ -42,7 +45,7 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
     @Override
     public boolean verify(byte[] data, byte[] signature) throws VerificationException {
         try {
-            Signature verifier = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+            Signature verifier = getSignature();
             verifier.initVerify((PublicKey) key.getPublicKey());
             verifier.update(data);
             return verifier.verify(signature);
@@ -51,4 +54,13 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
         }
     }
 
+    private Signature getSignature()
+            throws NoSuchAlgorithmException, NoSuchProviderException {
+        try {
+            return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+        } catch (NoSuchAlgorithmException e) {
+            // Retry using the current crypto provider's override implementation
+            return CryptoIntegration.getProvider().getSignature(key.getAlgorithmOrDefault());
+        }
+    }
 }
