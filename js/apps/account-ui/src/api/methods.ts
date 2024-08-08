@@ -156,3 +156,17 @@ export async function getGroups({ signal, context }: CallOptions) {
   });
   return parseResponse<Group[]>(response);
 }
+
+export async function getSSHKeys({ signal, context }: CallOptions) {
+  const response = await request("/ssh-public-keys", context, { signal });
+  return parseResponse<string[]>(response);
+}
+
+export const updateSHHKeys = (
+  context: KeycloakContext<BaseEnvironment>,
+  sshKeys: string[],
+) =>
+  request("/ssh-public-keys", context, {
+    method: "PUT",
+    body: [...sshKeys],
+  });

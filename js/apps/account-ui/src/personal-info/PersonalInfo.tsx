@@ -52,6 +52,13 @@ export const PersonalInfo = () => {
         getSupportedLocales({ signal, context }),
       ]),
     ([personalInfo, supportedLocales]) => {
+      const sshPublicKeyIndex =
+        personalInfo.userProfileMetadata.attributes.findIndex(
+          (attribute: any) => attribute.name === "sshPublicKeys",
+        );
+      if (sshPublicKeyIndex !== -1) {
+        delete personalInfo.userProfileMetadata.attributes[sshPublicKeyIndex];
+      }
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       setSupportedLocales(supportedLocales);
       reset(personalInfo);
