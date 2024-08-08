@@ -531,8 +531,10 @@ declare class Keycloak {
 
 	/**
 	* Called when a AIA has been requested by the application.
+	* @param status the outcome of the required action
+	* @param action the name of the required action
 	*/
-	onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
+	onActionUpdate?(status: 'success'|'cancelled'|'error', action?: string): void;
 
 	/**
 	* Called to initialize the adapter.
