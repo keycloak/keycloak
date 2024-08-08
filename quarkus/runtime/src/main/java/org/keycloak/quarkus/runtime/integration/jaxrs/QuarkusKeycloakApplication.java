@@ -17,27 +17,22 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import io.quarkus.runtime.ShutdownEvent;
-import io.quarkus.runtime.StartupEvent;
-import io.smallrye.common.annotation.Blocking;
-
-import org.keycloak.Config;
 import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.utils.StringUtil;
 
+import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.StartupEvent;
+import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
@@ -85,23 +80,23 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
         try {
             //Integer expiration = Configuration.getOptionalKcValue(BootstrapAdminOptions.EXPIRATION.getKey()).map(Integer::valueOf).orElse(null);
-            if (StringUtil.isNotBlank(adminPassword)) {
-                createTemporaryMasterRealmAdminUser(adminUsername, adminPassword, /*expiration,*/ session);
+            if (StringUtil.isNotBlank(adminPassword) && !createTemporaryMasterRealmAdminUser(adminUsername, adminPassword, /*expiration,*/ session)) {
+                throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin user account could not be created.");
             }
-            if (StringUtil.isNotBlank(clientSecret)) {
-                createTemporaryMasterRealmAdminService(clientId, clientSecret, /*expiration,*/ session);
+            if (StringUtil.isNotBlank(clientSecret) && !createTemporaryMasterRealmAdminService(clientId, clientSecret, /*expiration,*/ session)) {
+                throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin service account could not be created.");
             }
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid admin expiration value provided. An integer is expected.", e);
         }
     }
 
-    public void createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
-        new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
+    public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
     }
 
-    public void createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
-        new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
+    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
     }
 
 }

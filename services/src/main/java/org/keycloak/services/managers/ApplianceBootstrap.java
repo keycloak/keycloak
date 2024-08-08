@@ -23,6 +23,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -113,7 +114,14 @@ public class ApplianceBootstrap {
         return true;
     }
 
-    public void createTemporaryMasterRealmAdminUser(String username, String password, /*Integer expriationMinutes,*/ boolean initialUser) {
+    /**
+     * Create a temporary admin user
+     * @param username
+     * @param password
+     * @param initialUser if true only create the user if no other users exist
+     * @return false if the user could not be created
+     */
+    public boolean createTemporaryMasterRealmAdminUser(String username, String password, /*Integer expriationMinutes,*/ boolean initialUser) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -121,26 +129,38 @@ public class ApplianceBootstrap {
         //expriationMinutes = expriationMinutes == null ? DEFAULT_TEMP_ADMIN_EXPIRATION : expriationMinutes;
 
         if (initialUser && session.users().getUsersCount(realm) > 0) {
-            ServicesLogger.LOGGER.addAdminUserFailedAdminExists(Config.getAdminRealm());
-            return;
+            ServicesLogger.LOGGER.addAdminUserFailedUsersExist(Config.getAdminRealm());
+            return false;
         }
 
-        UserModel adminUser = session.users().addUser(realm, username);
-        adminUser.setEnabled(true);
-        // TODO: is this appropriate, does it need to be managed?
-        // adminUser.setSingleAttribute("temporary_admin", Boolean.TRUE.toString());
-        // also set the expiration - could be relative to a creation timestamp, or computed
-
-        UserCredentialModel usrCredModel = UserCredentialModel.password(password);
-        adminUser.credentialManager().updateCredential(usrCredModel);
-
-        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
-        adminUser.grantRole(adminRole);
-
-        ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+        try {
+            UserModel adminUser = session.users().addUser(realm, username);
+            adminUser.setEnabled(true);
+            // TODO: is this appropriate, does it need to be managed?
+            // adminUser.setSingleAttribute("temporary_admin", Boolean.TRUE.toString());
+            // also set the expiration - could be relative to a creation timestamp, or computed
+    
+            UserCredentialModel usrCredModel = UserCredentialModel.password(password);
+            adminUser.credentialManager().updateCredential(usrCredModel);
+    
+            RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+            adminUser.grantRole(adminRole);
+    
+            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+        } catch (ModelDuplicateException e) {
+            ServicesLogger.LOGGER.addUserFailedUserExists(username, Config.getAdminRealm());
+            return false;
+        }
+        return true;
     }
 
-    public void createTemporaryMasterRealmAdminService(String clientId, String clientSecret /*, Integer expriationMinutes*/) {
+    /**
+     * Create a temporary admin service account
+     * @param clientId the client ID
+     * @param clientSecret the client secret
+     * @return false if the service account could not be created
+     */
+    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret /*, Integer expriationMinutes*/) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -154,17 +174,23 @@ public class ApplianceBootstrap {
         adminClient.setPublicClient(false);
         adminClient.setSecret(clientSecret);
 
-        ClientModel adminClientModel = ClientManager.createClient(session, realm, adminClient);
-
-        new ClientManager(new RealmManager(session)).enableServiceAccount(adminClientModel);
-        UserModel serviceAccount = session.users().getServiceAccount(adminClientModel);
-        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
-        serviceAccount.grantRole(adminRole);
-
-        // TODO: set temporary
-        // also set the expiration - could be relative to a creation timestamp, or computed
-
-        ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
+        try {
+            ClientModel adminClientModel = ClientManager.createClient(session, realm, adminClient);
+    
+            new ClientManager(new RealmManager(session)).enableServiceAccount(adminClientModel);
+            UserModel serviceAccount = session.users().getServiceAccount(adminClientModel);
+            RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+            serviceAccount.grantRole(adminRole);
+    
+            // TODO: set temporary
+            // also set the expiration - could be relative to a creation timestamp, or computed
+    
+            ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
+        } catch (ModelDuplicateException e) {
+            ServicesLogger.LOGGER.addClientFailedClientExists(clientId, Config.getAdminRealm());
+            return false;
+        }
+        return true;
     }
 
     public void createMasterRealmUser(String username, String password) {
