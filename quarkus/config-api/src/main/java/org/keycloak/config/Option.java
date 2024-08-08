@@ -14,7 +14,6 @@ public class Option<T> {
     private final String description;
     private final Optional<T> defaultValue;
     private final List<String> expectedValues;
-
     private final boolean strictExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
 
@@ -55,10 +54,20 @@ public class Option<T> {
         return defaultValue;
     }
 
+    /**
+     * If {@link #isStrictExpectedValues()} is false, custom values can be provided
+     * Otherwise, only specified expected values can be used
+     *
+     * @return expected values
+     */
     public List<String> getExpectedValues() {
         return expectedValues;
     }
 
+    /**
+     * Denotes whether a custom value can be provided among the expected values
+     * If strict, application fails when some custom value is provided
+     */
     public boolean isStrictExpectedValues() {
         return strictExpectedValues;
     }

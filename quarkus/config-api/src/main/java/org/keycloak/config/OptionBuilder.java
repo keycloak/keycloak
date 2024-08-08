@@ -23,7 +23,7 @@ public class OptionBuilder<T> {
     private String description;
     private Optional<T> defaultValue;
     private List<String> expectedValues = List.of();
-
+    // Denotes whether a custom value can be provided among the expected values
     private boolean strictExpectedValues;
     private DeprecatedMetadata deprecatedMetadata;
 
@@ -84,6 +84,10 @@ public class OptionBuilder<T> {
         return expectedValues(true, expected);
     }
 
+    /**
+     * @param strict   if only expected values are allowed, or some other custom value can be specified
+     * @param expected expected values
+     */
     public OptionBuilder<T> expectedValues(boolean strict, List<String> expected) {
         this.strictExpectedValues = strict;
         this.expectedValues = expected;
@@ -104,6 +108,10 @@ public class OptionBuilder<T> {
         return expectedValues(true, expected);
     }
 
+    /**
+     * @param strict   if only expected values are allowed, or some other custom value can be specified
+     * @param expected expected values - if empty and the {@link #type} or {@link #auxiliaryType} is enum, values are inferred
+     */
     public OptionBuilder<T> expectedValues(boolean strict, T... expected) {
         this.strictExpectedValues = strict;
         this.expectedValues = Stream.of(expected).map(Object::toString).collect(Collectors.toList());
