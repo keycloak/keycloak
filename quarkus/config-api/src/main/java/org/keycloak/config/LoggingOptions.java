@@ -105,7 +105,7 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description(format("Include tracing information to the console log. If '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
+            .description(format("Include tracing information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -140,7 +140,7 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description(format("Include tracing information to the file log. If '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
+            .description(format("Include tracing information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -184,7 +184,7 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description(format("Include tracing information to the syslog. If '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .description(format("Include tracing information in the syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 

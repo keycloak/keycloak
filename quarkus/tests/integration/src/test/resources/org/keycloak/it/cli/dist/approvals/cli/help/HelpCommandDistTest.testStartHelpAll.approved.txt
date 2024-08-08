@@ -337,9 +337,9 @@ Logging:
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
 --log-console-include-trace <true|false>
-                     Include tracing information to the console log. If 'log-console-format' option
-                       is specified, this option has no effect. Default: true. Available only when
-                       Console log handler and Tracing is activated.
+                     Include tracing information in the console log. If the 'log-console-format'
+                       option is specified, this option has no effect. Default: true. Available
+                       only when Console log handler and Tracing is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -351,8 +351,8 @@ Logging:
                        SSS} %-5p [%c] (%t) %s%e%n. Available only when File log handler is
                        activated.
 --log-file-include-trace <true|false>
-                     Include tracing information to the file log. If 'log-file-format' option is
-                       specified, this option has no effect. Default: true. Available only when
+                     Include tracing information in the file log. If the 'log-file-format' option
+                       is specified, this option has no effect. Default: true. Available only when
                        File log handler and Tracing is activated.
 --log-file-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
@@ -401,8 +401,8 @@ Logging:
                      Set a format specific to syslog entries. Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Syslog is activated.
 --log-syslog-include-trace <true|false>
-                     Include tracing information to the syslog. If 'log-syslog-format' option is
-                       specified, this option has no effect. Default: true. Available only when
+                     Include tracing information in the syslog. If the 'log-syslog-format' option
+                       is specified, this option has no effect. Default: true. Available only when
                        Syslog handler and Tracing is activated.
 --log-syslog-output <output>
                      Set the syslog output to JSON or default (plain) unstructured logging.
