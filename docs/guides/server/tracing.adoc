@@ -21,7 +21,7 @@ It is possible to enable exposing traces using the build time option `tracing-en
 
 <@kc.start parameters="--tracing-enabled=true"/>
 
-By default, the trace exporters send out data in batches, using the `gRPC` protocol and endpoint `http://localhost:4317`.
+By default, the trace exporters send out data in batches, using the `gRPC` protocol and endpoint `+http://localhost:4317+`.
 For more tracing settings, see all possible configurations below.
 
 == Development setup
@@ -48,7 +48,7 @@ jaegertracing/all-in-one
 * `:4317` - OpenTelemetry Protocol gRPC receiver (default)
 * `:4318` - OpenTelemetry Protocol HTTP receiver
 
-You can visit the http://localhost:16686/[Jaeger UI] (`localhost:16686`) to see the tracing information.
+You can visit the Jaeger UI on `+http://localhost:16686/+` to see the tracing information.
 The Jaeger UI might look like this with an arbitrary {project_name} trace:
 
 image::jaeger-tracing.png[Jaeger UI]
@@ -56,7 +56,12 @@ image::jaeger-tracing.png[Jaeger UI]
 == Traces in logs
 
 When the tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in the logging https://www.keycloak.org/server/logging[guide]).
-It means the format of the log records is changed and may start like follows:
+It can be useful for associating log events to request execution, which might provide better traceability and debugging.
+All log lines originating from the same request will have the same `traceId` in the log.
+
+The log message also contains a `sampled` flag, which relates to the sampling described below and indicates whether the span was sampled - sent to the collector.
+
+The format of the log records may start as follows:
 
 [source, bash]
 ----
@@ -74,7 +79,7 @@ NOTE: When you explicitly override the log format for the particular log handler
 
 == Sampling
 
-Sampler decides whether a trace should be discarded or forwarded, effectively managing noise and reducing overhead by limiting the number of collected traces sent to the collector.
+Sampler decides whether a trace should be discarded or forwarded, effectively reducing overhead by limiting the number of collected traces sent to the collector.
 It helps manage resource consumption, which leads to avoiding the huge storage costs of tracing every single request and potential performance penalty.
 
 WARNING: For a production-ready environment, sampling should be properly set to minimize infrastructure costs.
@@ -97,9 +102,16 @@ WARNING: For a production-ready environment, the trace ratio should be a smaller
 
 ==== Rationale
 
-The sampler makes its own sampling decisions based on the current ratio of sampled spans, regardless of the decision made on the parent span, as with using the `parentbased_traceidratio` sampler.
-The `parentbased_traceidratio` sampler could be the preferred default type, but it would require additional aspects to ensure safety.
+The sampler makes its own sampling decisions based on the current ratio of sampled spans, regardless of the decision made on the parent span,
+as with using the `parentbased_traceidratio` sampler.
 
-There might be potential security risks related to information exposure or DoS attacks - proper HTTP filtering and adequate measures of caller trust would need to be assessed.
+The `parentbased_traceidratio` sampler could be the preferred default type as it ensures the sampling consistency between parent and child spans.
+Specifically, if a parent span is sampled, all its child spans will be sampled as well - the same sampling decision for all.
+It helps to keep all spans together and prevents storing incomplete traces.
+
+However, it might introduce certain security risks leading to DoS attacks.
+External callers can manipulate trace headers, parent spans can be injected, and the trace store can be overwhelmed.
+Proper HTTP headers (especially `tracestate`) filtering and adequate measures of caller trust would need to be assessed.
+
 For more information, see the https://www.w3.org/TR/trace-context/#security-considerations[W3C Trace context] document.
 </@tmpl.guide>
