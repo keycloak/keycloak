@@ -7,7 +7,9 @@ import org.bouncycastle.crypto.KeyWrapper;
 import org.bouncycastle.crypto.SymmetricKey;
 import org.bouncycastle.crypto.SymmetricSecretKey;
 import org.bouncycastle.crypto.fips.FipsAES;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
@@ -17,7 +19,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 public class FIPSAesKeyWrapAlgorithmProvider implements JWEAlgorithmProvider {
 
     @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws Exception {
+    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey, JWEHeader header, JWEEncryptionProvider encryptionProvider) throws Exception {
         byte[] keyBytes = encryptionKey.getEncoded(); // bytes making up AES key doing the wrapping
         SymmetricKey aesKey = new SymmetricSecretKey(FipsAES.KW, keyBytes);
         FipsAES.KeyWrapOperatorFactory factory = new FipsAES.KeyWrapOperatorFactory();
@@ -26,7 +28,7 @@ public class FIPSAesKeyWrapAlgorithmProvider implements JWEAlgorithmProvider {
     }
 
     @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws Exception {
+    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey, JWEHeaderBuilder headerBuilder) throws Exception {
         byte[] inputKeyBytes = keyStorage.getCekBytes(); // bytes making up the key to be wrapped
         byte[] keyBytes = encryptionKey.getEncoded(); // bytes making up AES key doing the wrapping
         SymmetricKey aesKey = new SymmetricSecretKey(FipsAES.KW, keyBytes);

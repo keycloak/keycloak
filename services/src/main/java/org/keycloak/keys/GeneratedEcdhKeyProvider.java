@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,32 +30,32 @@ import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-public class GeneratedEcdsaKeyProvider extends AbstractEcKeyProvider {
-    private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProvider.class);
+public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
+    private static final Logger logger = Logger.getLogger(GeneratedEcdhKeyProvider.class);
 
-    public GeneratedEcdsaKeyProvider(RealmModel realm, ComponentModel model) {
+    public GeneratedEcdhKeyProvider(RealmModel realm, ComponentModel model) {
         super(realm, model);
     }
 
     @Override
     protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
-        String privateEcdsaKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_PRIVATE_KEY_KEY);
-        String publicEcdsaKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_PUBLIC_KEY_KEY);
-        String ecInNistRep = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY);
+        String privateEcdhKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_PRIVATE_KEY_KEY);
+        String publicEcdhKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_PUBLIC_KEY_KEY);
+        String ecdhAlgorithm = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_KEY);
 
         try {
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decode(privateEcdsaKeyBase64Encoded));
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decode(privateEcdhKeyBase64Encoded));
             KeyFactory kf = KeyFactory.getInstance("EC");
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdhKeyBase64Encoded));
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);
-            return createKeyWrapper(keyPair,
-                    GeneratedEcdsaKeyProviderFactory.convertECDomainParmNistRepToJWSAlgorithm(ecInNistRep), KeyUse.SIG);
+
+            return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC);
         } catch (Exception e) {
-            logger.warnf("Exception at decodeEcdsaPublicKey. %s", e.toString());
+            logger.warnf("Exception at decodeEcdhPublicKey. %s", e.toString());
             return null;
         }
 
