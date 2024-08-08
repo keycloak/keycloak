@@ -19,10 +19,21 @@ export class ServerInfo extends Resource {
     });
   }
 
-  public find = this.makeRequest<{}, ServerInfoRepresentation>({
-    method: "GET",
-    path: "/admin/serverinfo",
-  });
+  public find = async () => {
+    try {
+      const response = await this.makeRequest<{}, ServerInfoRepresentation>({
+        method: "GET",
+        path: "/admin/serverinfo",
+      });
+      return response;
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        window.location.href = "/realms/master/account/"; // or the path you want to redirect to
+      } else {
+        throw error;
+      }
+    }
+  };
 
   public findEffectiveMessageBundles = this.makeRequest<
     MessageBundleQuery,
