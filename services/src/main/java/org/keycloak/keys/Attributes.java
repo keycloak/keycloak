@@ -55,6 +55,14 @@ public interface Attributes {
     ProviderConfigProperty KEY_USE_PROPERTY = new ProviderConfigProperty(KEY_USE, "Key use", "Whether the key should be used for signing or encryption.", LIST_TYPE,
             KeyUse.SIG.getSpecName(), KeyUse.SIG.getSpecName(), KeyUse.ENC.getSpecName());
 
+    String EC_GENERATE_CERTIFICATE_KEY = "ecGenerateCertificate";
+    ProviderConfigProperty EC_GENERATE_CERTIFICATE_PROPERTY = new ProviderConfigProperty(
+            EC_GENERATE_CERTIFICATE_KEY,
+            "Generate Certificate",
+            "If a certificate should be build on creation",
+            BOOLEAN_TYPE,
+            false);
+
     String KID_KEY = "kid";
 
     String SECRET_KEY = "secret";
