@@ -14,21 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.cache.infinispan.organization;
+package org.keycloak.models.cache.infinispan.idp;
 
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.models.cache.infinispan.entities.InRealm;
 
-public class CachedOrganizationCount extends AbstractRevisioned implements InRealm {
+public class CachedIdentityProvider extends AbstractRevisioned implements InRealm {
 
     private final RealmModel realm;
-    private final long count;
+    private final IdentityProviderModel idp;
 
-    public CachedOrganizationCount(Long revision, RealmModel realm, long count) {
-        super(revision, InfinispanOrganizationProvider.cacheKeyOrgCount(realm));
+    public CachedIdentityProvider(Long revision, RealmModel realm, String cacheKey, IdentityProviderModel idp) {
+        super(revision, cacheKey);
         this.realm = realm;
-        this.count = count;
+        this.idp = idp;
     }
 
     @Override
@@ -36,7 +37,8 @@ public class CachedOrganizationCount extends AbstractRevisioned implements InRea
         return realm.getId();
     }
 
-    public long getCount() {
-        return count;
+    public IdentityProviderModel getIdentityProvider() {
+        return new IdentityProviderModel(idp);
     }
+
 }

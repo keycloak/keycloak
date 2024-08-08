@@ -142,13 +142,16 @@ public class JpaIDPProvider implements IDPProvider {
         IdentityProviderEntity entity = this.getEntityByAlias(alias);
 
         if (entity != null) {
+            //call toModel(entity) now as after em.remove(entity) and the flush it might throw LazyInitializationException 
+            //when accessing the config of the entity (entity.getConfig()) withing the toModel(entity)
+            IdentityProviderModel model = toModel(entity);
+
             em.remove(entity);
             // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
             em.flush();
 
             // send identity provider removed event.
             RealmModel realm = this.getRealm();
-            IdentityProviderModel model = toModel(entity);
             session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
 
                 @Override
