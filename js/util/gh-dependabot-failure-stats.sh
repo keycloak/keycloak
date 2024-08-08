@@ -46,7 +46,7 @@ function get_pr_details() {
 function get_failed_runs() {
   local pr_number=$1
   local commit_sha
-  commit_sha=$(gh pr view "$pr_number" --repo "${REPO_OWNER}/${REPO_NAME}" --json headRefOid -q .headRefOid)
+  commit_sha=$(gh pr view "$pr_number" --repo "${REPO_OWNER}/${REPO_NAME}" --json commits -q '.commits[-1].oid')
 
   gh api -X GET "/repos/${REPO_OWNER}/${REPO_NAME}/commits/${commit_sha}/check-runs" \
     --jq '.check_runs[] | select(.conclusion == "failure")'
@@ -162,7 +162,7 @@ function get_failed_dependabot_prs_details() {
 }
 
 function get_stats() {
-  echo "Total Open Dependabot PRs: $total_prs"
+  echo "Total Opened Dependabot PRs: $total_prs"
   echo "Total Admin UI E2E failures: $admin_failure_counter"
   echo "Total Account UI E2E failures: $account_failure_counter"
   echo ""
