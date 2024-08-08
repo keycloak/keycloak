@@ -24,6 +24,13 @@ import java.util.List;
  */
 public class ManagementOptions {
 
+    public static final Option<Boolean> HTTP_MANAGEMENT_ENABLED = new OptionBuilder<>("http-management-enabled", Boolean.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("Placeholder for resolving state of the management interface. If set, the value is ignored.")
+            .buildTime(true)
+            .hidden()
+            .build();
+
     public static final Option<Boolean> LEGACY_OBSERVABILITY_INTERFACE = new OptionBuilder<>("legacy-observability-interface", Boolean.class)
             .category(OptionCategory.MANAGEMENT)
             .deprecated()

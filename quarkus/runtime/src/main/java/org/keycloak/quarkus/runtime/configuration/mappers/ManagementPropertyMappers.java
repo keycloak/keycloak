@@ -16,15 +16,17 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
 
+import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -36,10 +38,11 @@ public class ManagementPropertyMappers {
 
     public static PropertyMapper<?>[] getManagementPropertyMappers() {
         return new PropertyMapper[]{
+                fromOption(ManagementOptions.HTTP_MANAGEMENT_ENABLED)
+                        .to("quarkus.management.enabled")
+                        .transformer((val, ctx) -> managementEnabledTransformer())
+                        .build(),
                 fromOption(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE)
-                        .to("quarkus.management.enabled") // ATM, the management interface state is only based on the legacy-observability-interface property
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .transformer(ManagementPropertyMappers::managementEnabledTransformer)
                         .build(),
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH)
                         .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
@@ -117,7 +120,15 @@ public class ManagementPropertyMappers {
     }
 
     public static boolean isManagementEnabled() {
-        return isTrue("quarkus.management.enabled");
+        if (isTrue(LEGACY_OBSERVABILITY_INTERFACE)) {
+            return false;
+        }
+        var isManagementOccupied = isTrue(HealthOptions.HEALTH_ENABLED) || isTrue(MetricsOptions.METRICS_ENABLED);
+        return isManagementOccupied;
+    }
+
+    private static Optional<String> managementEnabledTransformer() {
+        return Optional.of(Boolean.toString(isManagementEnabled()));
     }
 
     public static boolean isManagementTlsEnabled() {
@@ -134,13 +145,5 @@ public class ManagementPropertyMappers {
         if (!isHttpEnabled && !isManagementTlsEnabled()) {
             throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
-    }
-
-    private static Optional<String> managementEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext ctx) {
-        if (value.isPresent()) {
-            var b = Boolean.parseBoolean(value.get());
-            return Optional.of(Boolean.toString(!b)); // negate the output
-        }
-        return Optional.of(Boolean.TRUE.toString());
     }
 }
