@@ -51,6 +51,20 @@ public class StartCommandDistTest {
         assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
+    
+    @Test
+    @Launch({ "build", "--spi-events-listener-jboss-logging-success-level=debug" })
+    void warnSpiRuntimeAtBuildtime(LaunchResult result) {
+        assertTrue(result.getOutput().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+    
+    @Test
+    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false" })
+    void warnSpiBuildtimeAtRuntime(LaunchResult result) {
+        assertTrue(result.getOutput().contains("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
 
     @Test
     @Launch({ "--profile=dev", "start" })
@@ -175,7 +189,7 @@ public class StartCommandDistTest {
         cliResult.assertBuild();
         dist.setEnvVar("KC_DB", "postgres");
         cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
-        cliResult.assertMessage("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
+        cliResult.assertMessage("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
     @Test
