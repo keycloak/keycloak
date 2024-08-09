@@ -42,6 +42,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
@@ -65,7 +66,8 @@ public class KerberosFederationProvider implements UserStorageProvider,
         CredentialInputUpdater,
         CredentialAuthentication,
         ImportedUserValidation,
-        UserProfileDecorator {
+        UserProfileDecorator,
+        UserRegistrationProvider {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProvider.class);
     public static final String KERBEROS_PRINCIPAL = KerberosConstants.KERBEROS_PRINCIPAL;
@@ -310,5 +312,16 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
         AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
         return Collections.singletonList(UserProfileUtil.createAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL, metadata, metadataGroup, guiOrder++, model.getName()));
+    }
+
+    @Override
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        return true;
+    }
+
+    @Override
+    public UserModel addUser(RealmModel realm, String username) {
+        // no support for creating users
+        return null;
     }
 }
