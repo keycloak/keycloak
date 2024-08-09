@@ -123,7 +123,8 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
                         List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
                         Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
                         Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
-                        Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions())
+                        Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions(),
+                        GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
                 .flatMap(Collection::stream)
                 .toList();
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),

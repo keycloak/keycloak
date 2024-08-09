@@ -84,54 +84,69 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void createJksRSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.RSA, false);
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.RSA, Algorithm.RS256, false);
     }
 
     @Test
     public void createPkcs12RSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.RSA, true);
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.RSA, Algorithm.RS256, true);
     }
 
     @Test
     public void createBcfksRSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.RSA, false);
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.RSA, Algorithm.RS256, false);
     }
 
     @Test
     public void createJksECDSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ECDSA, true);
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ECDSA, Algorithm.ES256, true);
     }
 
     @Test
     public void createPkcs12ECDSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ECDSA, false);
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ECDSA, Algorithm.ES256, false);
     }
 
     @Test
     public void createBcfksECDSA() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA, true);
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA, Algorithm.ES256, true);
+    }
+
+    @Test
+    public void createJksECDSAECDHES() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ECDSA, Algorithm.ECDH_ES, true);
+    }
+
+    @Test
+    public void createPkcs12ECDSAECDHESA192KW() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ECDSA, Algorithm.ECDH_ES_A192KW, false);
+    }
+
+    @Test
+    public void createBcfksECDSAECDHESA256KW() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA, Algorithm.ECDH_ES_A256KW, true);
     }
 
     @Test
     public void createBcfksAES() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.AES, false);
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.AES, Algorithm.AES, false);
     }
 
     @Test
     public void createHMAC() throws Exception {
         // BC provider fails storing HMAC in BCFKS (although BCFIPS works)
-        createSuccess(isFips()? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.HMAC, true);
+        createSuccess(isFips()? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.HMAC, Algorithm.HS256, true);
     }
 
     @Test
     public void createJksEdDSA() throws Exception {
         // BCFIPS does not support EdEC keys as it does not implement JDK interfaces
-        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.EDDSA, true);
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
 
-    private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, boolean vault) throws Exception {
+    private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(keystoreType);
-        generateKeystore(keystoreType, algorithmType);
+        generateKeystore(keystoreType, algorithmType, keyAlgorithm);
 
         long priority = System.currentTimeMillis();
 
@@ -182,7 +197,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeystore() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType());
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "/nosuchfile");
 
@@ -192,7 +207,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeystorePassword() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType());
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "invalid");
 
@@ -202,7 +217,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeyAlias() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType());
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyAlias", "invalid");
 
@@ -222,7 +237,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
             keystoreType = Enum.valueOf(KeystoreUtil.KeystoreFormat.class, supportedKsTypes[1]);
             log.infof("Fallback to keystore type '%s' for the invalidKeyPassword() test", keystoreType);
         }
-        generateKeystore(keystoreType);
+        generateKeystore(keystoreType, AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyPassword", "invalid");
 
@@ -233,7 +248,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeyAlgorithmCreatedECButRegisteredRSA() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.ECDSA);
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.ECDSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), Algorithm.RS256);
 
         Response response = adminClient.realm("test").components().add(rep);
@@ -242,7 +257,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeyUsageForRS256() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA);
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), Algorithm.RS256);
         rep.getConfig().putSingle(Attributes.KEY_USE, "enc");
 
@@ -280,35 +295,27 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         return rep;
     }
 
-    private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
-        generateKeystore(keystoreType, AlgorithmType.RSA);
-    }
-
-    private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
+    private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm) throws Exception {
+        this.keyAlgorithm = keyAlgorithm;
         switch (algorithmType) {
             case RSA -> {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password");
-                this.keyAlgorithm = Algorithm.RS256;
             }
             case ECDSA -> {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateECKey(Algorithm.ES256));
-                this.keyAlgorithm = Algorithm.ES256;
             }
             case AES -> {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateSecretKey(Algorithm.AES, 256));
-                this.keyAlgorithm = Algorithm.AES;
             }
             case HMAC -> {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateSecretKey(Algorithm.HS256, 256));
-                this.keyAlgorithm = Algorithm.HS256;
             }
             case EDDSA -> {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
-                this.keyAlgorithm = Algorithm.EdDSA;
             }
         }
     }
