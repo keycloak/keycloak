@@ -212,6 +212,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
             }
             return signerBuilder.build(privateKey);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Could not create content signer.", e);
         }
     }

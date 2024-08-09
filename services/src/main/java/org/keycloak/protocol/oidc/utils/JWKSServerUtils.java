@@ -22,7 +22,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.wellknown.WellKnownProvider;
 
 import java.security.cert.X509Certificate;
 import java.util.Collections;
@@ -41,11 +40,12 @@ import java.util.Optional;
                     JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
                     List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
                             .filter(certs -> !certs.isEmpty())
-                            .orElseGet(() -> Collections.singletonList(k.getCertificate()));
+                            .orElseGet(() -> Optional.ofNullable(k.getCertificate()).map(Collections::singletonList)
+                                                     .orElseGet(Collections::emptyList));
                     if (k.getType().equals(KeyType.RSA)) {
                         return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey(), k.getUse());
+                        return b.ec(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.OKP)) {
                         return b.okp(k.getPublicKey(), k.getUse());
                     }
