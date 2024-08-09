@@ -103,3 +103,11 @@ no longer holds the list of identity providers. However, they are still availabl
 when exporting a realm.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Adding support for ECDH-ES encryption key management algorithms
+
+Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
+endif::[]
