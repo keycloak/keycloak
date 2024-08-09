@@ -84,6 +84,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyPasswordChangeException;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
@@ -566,16 +567,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     /**
-     * Searches LDAP using logical disjunction of params. It supports 
+     * Searches LDAP using logical disjunction of params. It supports
      * <ul>
      *     <li>{@link UserModel#FIRST_NAME}</li>
      *     <li>{@link UserModel#LAST_NAME}</li>
      *     <li>{@link UserModel#EMAIL}</li>
      *     <li>{@link UserModel#USERNAME}</li>
      * </ul>
-     * 
+     *
      * It uses multiple LDAP calls and results are combined together with respect to firstResult and maxResults
-     * 
+     *
      * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
      */
     private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
@@ -797,6 +798,22 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             try {
                 ldapIdentityStore.validatePassword(ldapUser, password);
+                return true;
+            } catch (PasswordPolicyPasswordChangeException e) {
+                // LDAP password policy requires a forced password change.
+                // Check for (1) import enabled, so that we can persist required actions and
+                // (2) edit mode writable, so that user can modify LDAP password.
+                if (!model.isImportEnabled() || editMode != EditMode.WRITABLE) {
+                    logger.debugf("User '%s' in realm '%s' is forced to change password but UPDATE_PASSWORD cannot be set: import not enabled or edit mode not writable. Failing login.", user.getUsername(), realm.getName());
+                    return false;
+                }
+                if (user.getRequiredActionsStream()
+                        .noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                    logger.debugf("Adding requiredAction UPDATE_PASSWORD to user %s", user.getUsername());
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                } else {
+                    logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), realm.getName());
+                }
                 return true;
             } catch (AuthenticationException ae) {
                 AtomicReference<Boolean> processed = new AtomicReference<>(false);
@@ -1070,11 +1087,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
     /**
      * This method leverages existing pagination support in {@link LDAPQuery#getResultList()}. It sets the limit for the query
      * based on {@code firstResult}, {@code maxResults} and {@link LDAPConfig#getBatchSizeForSync()}.
-     * 
+     *
      * <p/>
-     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)} 
-     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be 
-     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled 
+     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)}
+     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be
+     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled
      * "on demand".
      */
     private Stream<LDAPObject> paginatedSearchLDAP(LDAPQuery ldapQuery, Integer firstResult, Integer maxResults) {
@@ -1097,7 +1114,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 }
             }
 
-            return Stream.iterate(ldapQuery, 
+            return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
                         if (query.getPaginationContext() == null) try {
@@ -1108,7 +1125,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                             throw new ModelException("Querying of LDAP failed " + query, e);
                         }
                         return query.getPaginationContext().hasNextPage();
-                    }, 
+                    },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);
