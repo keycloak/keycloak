@@ -333,11 +333,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         String providerId = user.getFederationLink();
-
-        if (providerId == null) {
-            providerId = StorageId.providerId(user.getId());
-        }
-
         UserProvider userProvider = session.users();
 
         if (userProvider instanceof UserProfileDecorator) {

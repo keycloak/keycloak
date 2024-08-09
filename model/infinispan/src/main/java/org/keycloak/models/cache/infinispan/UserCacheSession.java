@@ -350,13 +350,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
         }
 
-        StorageId storageId = delegate.getFederationLink() != null ?
-                new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
-        CachedUser cached = null;
-        UserAdapter adapter = null;
+        CachedUser cached;
+        UserAdapter adapter;
 
-        if (!storageId.isLocal()) {
-            ComponentModel component = realm.getComponent(storageId.getProviderId());
+        if (delegate.getFederationLink() != null) {
+            ComponentModel component = realm.getComponent(delegate.getFederationLink());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {
                 return new ReadOnlyUserModelDelegate(delegate) {

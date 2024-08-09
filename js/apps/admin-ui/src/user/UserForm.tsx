@@ -208,7 +208,7 @@ export const UserForm = ({
           label="requiredUserActions"
           help="requiredUserActionsHelp"
         />
-        {(user?.federationLink || user?.origin) && canViewFederationLink && (
+        {user?.federationLink && canViewFederationLink && (
           <FormGroup
             label={t("federationLink")}
             labelIcon={

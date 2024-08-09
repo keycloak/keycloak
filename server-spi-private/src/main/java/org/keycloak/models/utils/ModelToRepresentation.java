@@ -220,8 +220,6 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
-        String providerId = StorageId.resolveProviderId(user);
-        rep.setOrigin(providerId);
         rep.setUsername(user.getUsername());
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
         rep.setLastName(user.getLastName());
