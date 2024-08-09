@@ -148,13 +148,13 @@ export default class TablePage extends CommonElements {
     return this;
   }
 
-  checkTemporaryAdminLabelExists(labelId: string) {
+  checkTemporaryAdminLabelExists(labelId: string, exist = true) {
     cy.get(
       (this.#tableInModal ? ".pf-v5-c-modal-box.pf-m-md " : "") +
         this.#tableRowItem,
     )
       .find(`#${labelId}`)
-      .should("exist");
+      .should((!exist ? "not." : "") + "exist");
     return this;
   }
 

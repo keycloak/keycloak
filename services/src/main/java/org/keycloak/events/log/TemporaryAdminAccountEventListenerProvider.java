@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 
-import static org.keycloak.services.managers.ApplianceBootstrap.TEMP_ADMIN_ATTR_NAME;
+import static org.keycloak.models.Constants.TEMP_ADMIN_ATTR_NAME;
 
 public class TemporaryAdminAccountEventListenerProvider implements EventListenerProvider {
 

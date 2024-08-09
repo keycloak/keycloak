@@ -37,6 +37,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.Constants.TEMP_ADMIN_ATTR_NAME;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -46,7 +48,6 @@ public class ApplianceBootstrap {
     public static final String DEFAULT_TEMP_ADMIN_USERNAME = "temp-admin";
     public static final String DEFAULT_TEMP_ADMIN_SERVICE = "temp-admin";
     public static final int DEFAULT_TEMP_ADMIN_EXPIRATION = 120;
-    public static final String TEMP_ADMIN_ATTR_NAME = "temporary_admin";
 
     private final KeycloakSession session;
 
