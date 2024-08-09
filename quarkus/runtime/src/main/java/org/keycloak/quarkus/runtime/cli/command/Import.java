@@ -35,7 +35,10 @@ public final class Import extends AbstractNonServerCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        System.setProperty(ExportImportConfig.ACTION, ACTION_IMPORT);
+        if (System.getProperty(ExportImportConfig.REPLACE_PLACEHOLDERS) == null) {
+            ExportImportConfig.setReplacePlaceholders(true);
+        }
+        ExportImportConfig.setAction(ACTION_IMPORT);
     }
 
     @Override

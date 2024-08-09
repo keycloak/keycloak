@@ -125,6 +125,12 @@ It used to be difficult to regain access to a {project_name} instance when all a
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
 
+= CLI import placeholder replacement
+
+CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. 
+
+If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
+
 = Identity Providers no longer available from the realm representation
 
 As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
@@ -133,3 +139,4 @@ when exporting a realm.
 
 To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
 This endpoint supports filters and pagination.
+
