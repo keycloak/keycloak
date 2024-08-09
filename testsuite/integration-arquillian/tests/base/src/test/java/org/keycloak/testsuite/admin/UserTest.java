@@ -724,6 +724,56 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createUserWithNotUsernameInvalidPassword() {
+        RealmRepresentation rep = realm.toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notUsername()");
+        realm.update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User8");
+        user.setEmail("User8@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user8");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        assertAdminEvents.clear();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Password policy not met", error.getErrorMessage());
+            rep.setPasswordPolicy(passwordPolicy);
+            assertAdminEvents.assertEmpty();
+            realm.update(rep);
+        }
+    }
+    
+    @Test
+    public void createUserWithNotEmailInvalidPassword() {
+        RealmRepresentation rep = realm.toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notEmail()");
+        realm.update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User9");
+        user.setEmail("User9@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user9@localhost");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        assertAdminEvents.clear();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Password policy not met", error.getErrorMessage());
+            rep.setPasswordPolicy(passwordPolicy);
+            assertAdminEvents.assertEmpty();
+            realm.update(rep);
+        }
+    }
+    
+    @Test
     public void createUserWithInvalidPolicyPassword() {
         RealmRepresentation rep = realm.toRepresentation();
         String passwordPolicy = rep.getPasswordPolicy();
