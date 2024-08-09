@@ -17,21 +17,32 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
+import io.reactivex.rxjava3.core.Maybe;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.keycloak.models.sessions.infinispan.changes.remote.remover.iteration.ByRealmIdConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.UserSessionQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 
 /**
  * Syntactic sugar for
  * {@code RemoteChangeLogTransaction<SessionKey, UserSessionEntity, UserSessionUpdater,
  * UserAndClientSessionConditionalRemover<UserSessionEntity>>}
  */
-public class UseSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater, ByRealmIdConditionalRemover<String, UserSessionEntity>> {
+public class UseSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, RemoteUserSessionEntity, UserSessionUpdater, UserSessionQueryConditionalRemover> {
 
-    public UseSessionChangeLogTransaction(UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> factory, RemoteCache<String, UserSessionEntity> cache) {
-        super(factory, cache, new ByRealmIdConditionalRemover<>());
+    public UseSessionChangeLogTransaction(UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> factory, RemoteCache<String, RemoteUserSessionEntity> cache) {
+        super(factory, cache, new UserSessionQueryConditionalRemover());
+    }
+
+    public UserSessionUpdater wrapFromProjection(Object[] projection) {
+        assert projection.length == 2;
+        RemoteUserSessionEntity entity = (RemoteUserSessionEntity) projection[0];
+        return wrap(entity.getUserSessionId(), entity, (long) projection[1]);
+    }
+
+    public Maybe<UserSessionUpdater> maybeGet(String userSessionId) {
+        return Maybe.fromCompletionStage(getAsync(userSessionId));
     }
 
 }

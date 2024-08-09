@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.infinispan.client.hotrod.MetadataValue;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
@@ -50,15 +49,15 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     public static LoginFailuresUpdater create(LoginFailureKey key, LoginFailureEntity entity) {
-        return new LoginFailuresUpdater(Objects.requireNonNull(key), Objects.requireNonNull(entity), -1, UpdaterState.CREATED);
+        return new LoginFailuresUpdater(key, Objects.requireNonNull(entity), -1, UpdaterState.CREATED);
     }
 
-    public static LoginFailuresUpdater wrap(LoginFailureKey key, MetadataValue<LoginFailureEntity> entity) {
-        return new LoginFailuresUpdater(Objects.requireNonNull(key), Objects.requireNonNull(entity.getValue()), entity.getVersion(), UpdaterState.READ);
+    public static LoginFailuresUpdater wrap(LoginFailureKey key, LoginFailureEntity value, long version) {
+        return new LoginFailuresUpdater(key, Objects.requireNonNull(value), version, UpdaterState.READ);
     }
 
     public static LoginFailuresUpdater delete(LoginFailureKey key) {
-        return new LoginFailuresUpdater(Objects.requireNonNull(key), null, -1, UpdaterState.DELETED);
+        return new LoginFailuresUpdater(key, null, -1, UpdaterState.DELETED);
     }
 
     @Override

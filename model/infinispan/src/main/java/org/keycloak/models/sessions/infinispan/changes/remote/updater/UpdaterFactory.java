@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater;
 
+import java.util.Objects;
+
 import org.infinispan.client.hotrod.MetadataValue;
 
 /**
@@ -43,7 +45,21 @@ public interface UpdaterFactory<K, V, T extends Updater<K, V>> {
      * @param entity The Infinispan value.
      * @return The {@link Updater} to be used when updating the entity state.
      */
-    T wrapFromCache(K key, MetadataValue<V> entity);
+    default T wrapFromCache(K key, MetadataValue<V> entity) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(entity);
+        return wrapFromCache(key, entity.getValue(), entity.getVersion());
+    }
+
+    /**
+     * Wraps an entity read from the Infinispan cache.
+     *
+     * @param key     The Infinispan key.
+     * @param value   The Infinispan value.
+     * @param version The entry version.
+     * @return The {@link Updater} to be used when updating the entity state.
+     */
+    T wrapFromCache(K key, V value, long version);
 
     /**
      * Deletes a entity that was not previous read by the Keycloak transaction.
@@ -52,5 +68,4 @@ public interface UpdaterFactory<K, V, T extends Updater<K, V>> {
      * @return The {@link Updater} for a deleted entity.
      */
     T deleted(K key);
-
 }

@@ -1,7 +1,7 @@
 package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.Config;
@@ -16,8 +16,9 @@ import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UseSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
@@ -45,7 +46,7 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public void init(Config.Scope config) {
-        batchSize = config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_BATCH_SIZE);
+        batchSize = Math.max(1, config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_BATCH_SIZE));
     }
 
     @Override
@@ -101,11 +102,12 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
             return;
         }
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        RemoteCache<String, UserSessionEntity> userSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-        RemoteCache<String, UserSessionEntity> offlineUserSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
-        remoteCacheHolder = new RemoteCacheHolder(userSessionCache, offlineUserSessionsCache, clientSessionCache, offlineClientSessionsCache);
+        RemoteCache<String, RemoteUserSessionEntity> userSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        RemoteCache<String, RemoteUserSessionEntity> offlineUserSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
+        RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> clientSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
+        RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> offlineClientSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
+        var executor = connections.getExecutor("query-delete");
+        remoteCacheHolder = new RemoteCacheHolder(userSessionCache, offlineUserSessionsCache, clientSessionCache, offlineClientSessionsCache, executor);
     }
 
     private UserSessionTransaction createTransaction(KeycloakSession session) {
@@ -127,16 +129,17 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
     }
 
     private record RemoteCacheHolder(
-            RemoteCache<String, UserSessionEntity> userSession,
-            RemoteCache<String, UserSessionEntity> offlineUserSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSession) {
+            RemoteCache<String, RemoteUserSessionEntity> userSession,
+            RemoteCache<String, RemoteUserSessionEntity> offlineUserSession,
+            RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> clientSession,
+            RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> offlineClientSession,
+            Executor executor) {
 
-        RemoteCache<String, UserSessionEntity> userSessionCache(boolean offline) {
+        RemoteCache<String, RemoteUserSessionEntity> userSessionCache(boolean offline) {
             return offline ? offlineUserSession : userSession;
         }
 
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache(boolean offline) {
+        RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> clientSessionCache(boolean offline) {
             return offline ? offlineClientSession : clientSession;
         }
     }

@@ -19,11 +19,10 @@ package org.keycloak.models.sessions.infinispan.changes.remote.remover.query;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletionStage;
 
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.impl.query.RemoteQuery;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
@@ -44,30 +43,27 @@ abstract class QueryBasedConditionalRemover<K, V> implements ConditionalRemover<
 
     private static final String QUERY_FMT = "DELETE FROM %s WHERE %s";
 
-    private final Executor executor;
-
-    QueryBasedConditionalRemover(Executor executor) {
-        this.executor = Objects.requireNonNull(executor);
-    }
-
     @Override
     public void executeRemovals(RemoteCache<K, V> cache, AggregateCompletionStage<Void> stage) {
         if (isEmpty()) {
             return;
         }
-        // TODO replace with async method: https://issues.redhat.com/browse/ISPN-16279
-        stage.dependsOn(CompletableFuture.runAsync(() -> executeDeleteStatement(cache), executor));
+        stage.dependsOn(executeDeleteStatement(cache));
     }
 
-    private void executeDeleteStatement(RemoteCache<K, V> cache) {
+    private CompletionStage<?> executeDeleteStatement(RemoteCache<K, V> cache) {
+        var isTrace = logger.isTraceEnabled();
         var deleteStatement = QUERY_FMT.formatted(getEntity(), getQueryConditions());
-        if (logger.isTraceEnabled()) {
+        if (isTrace) {
             logger.tracef("About to execute delete statement in cache '%s': %s", cache.getName(), deleteStatement);
         }
-        var removed = cache.query(deleteStatement)
-                .setParameters(getQueryParameters())
-                .executeStatement();
-        logger.debugf("Delete Statement removed %d entries from cache '%s'", removed, cache.getName());
+        RemoteQuery<?> query = (RemoteQuery<?>) cache.query(deleteStatement)
+                .setParameters(getQueryParameters());
+        var stage = query.executeStatementAsync();
+        if (isTrace) {
+            return stage.thenAccept(removed -> logger.debugf("Delete Statement removed %d entries from cache '%s'", removed, cache.getName()));
+        }
+        return stage;
     }
 
     /**
