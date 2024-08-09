@@ -52,15 +52,14 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -184,7 +183,8 @@ public class AdminConsole {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console client");
         }
-        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getUri().getBaseUri());    }
+        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getUri().getBaseUri());
+    }
 
     @Path("whoami")
     @OPTIONS
@@ -224,13 +224,13 @@ public class AdminConsole {
                 throw new ForbiddenException("No azp claim in the token");
             }
             // check the attribute to see if the app is defined as an admin console
-            ClientModel client  = session.clients().getClientByClientId(realm, issuedFor);
+            ClientModel client = session.clients().getClientByClientId(realm, issuedFor);
             if (client == null || !Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
                 throw new ForbiddenException("Token issued for an application that is not the admin console: " + issuedFor);
             }
         }
 
-        UserModel user= authResult.getUser();
+        UserModel user = authResult.getUser();
         String displayName;
         if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
             displayName = user.getFirstName();
@@ -285,9 +285,9 @@ public class AdminConsole {
 
     private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         Set<String> realmRoles = client.getRolesStream()
-          .filter(user::hasRole)
-          .map(RoleModel::getName)
-          .collect(Collectors.toSet());
+                .filter(user::hasRole)
+                .map(RoleModel::getName)
+                .collect(Collectors.toSet());
 
         realmAdminAccess.put(realm.getName(), realmRoles);
     }
@@ -335,7 +335,8 @@ public class AdminConsole {
 
             final var map = new HashMap<String, Object>();
             final var theme = AdminRoot.getTheme(session, realm);
-
+            Locale locale = getLocale();
+            map.put("locale", locale.toLanguageTag());
             map.put("serverBaseUrl", serverBaseUrl);
             map.put("adminBaseUrl", adminBaseUrl);
             // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
@@ -363,9 +364,9 @@ public class AdminConsole {
             if (devServerUrl == null && manifestFile != null) {
                 final var manifest = ViteManifest.parseFromInputStream(manifestFile);
                 final var entryChunk = manifest.getEntryChunk();
-                final var entryStyles = entryChunk.css().orElse(new String[] {});
+                final var entryStyles = entryChunk.css().orElse(new String[]{});
                 final var entryScript = entryChunk.file();
-                final var entryImports = entryChunk.imports().orElse(new String[] {});
+                final var entryImports = entryChunk.imports().orElse(new String[]{});
 
                 map.put("entryStyles", entryStyles);
                 map.put("entryScript", entryScript);
@@ -383,6 +384,14 @@ public class AdminConsole {
 
             return builder.build();
         }
+    }
+
+    private Locale getLocale() {
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+        if (authenticationSession == null)
+            return Locale.US;
+        UserModel authenticatedUser = authenticationSession.getAuthenticatedUser();
+        return session.getContext().resolveLocale(authenticatedUser);
     }
 
     @GET
