@@ -12,7 +12,10 @@ and then is immediately redirected back to the application. However, AIA allows 
 done even if the user is already authenticated on the client and has an active SSO session. It is triggered by adding the `kc_action` parameter to the OIDC login URL with the value containing the requested action.
 For instance `kc_action=UPDATE_PASSWORD` parameter.
 
-NOTE: The `kc_action` parameter is a {project_name} proprietary mechanism unsupported by the OIDC specification.
+A user may cancel an application initiated action. In this case the user is redirected back to the client application.
+The redirect URI will contain the query parameters `kc_action_status=cancelled` and `kc_action` with the name of the cancelled action.
+
+NOTE: The `kc_action` and `kc_action_status` parameters are a {project_name} proprietary mechanism unsupported by the OIDC specification.
 
 NOTE: Application initiated actions are supported only for OIDC clients.
 
