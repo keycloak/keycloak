@@ -461,3 +461,4 @@ To deploy the archive to {project_name}, add it to the `providers/` directory of
 === Additional resources for Themes
 * For the inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
 * {quickstartRepo_link}[{quickstartRepo_name}] - Directory `extension` of the quickstarts repository contains some theme examples, which can be also used as an inspiration.
+
