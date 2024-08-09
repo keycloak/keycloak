@@ -56,7 +56,17 @@
                                 <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
                             </button>
                         </div>
-
+                        <#if realm.resetPasswordAllowed>
+                            <div class="pf-v5-c-form__helper-text" aria-live="polite">
+                                <div class="pf-v5-c-helper-text">
+                                    <div class="pf-v5-c-helper-text__item">
+                                        <span class="pf-v5-c-helper-text__item-text">
+                                            <a tabindex="3" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </#if>
                         <#if usernameHidden?? && messagesPerField.existsError('username','password')>
                             <span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
                                     ${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
@@ -68,25 +78,18 @@
                     <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
                         <div id="kc-form-options">
                             <#if realm.rememberMe && !usernameHidden??>
-                                <div class="checkbox">
-                                    <label>
-                                        <span class="pf-v5-c-form__label-text">
-                                        <#if login.rememberMe??>
-                                            <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox" checked> ${msg("rememberMe")}
-                                        <#else>
-                                            <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox"> ${msg("rememberMe")}
-                                        </#if>
-                                        </span>
+                                <div class="pf-v5-c-check">
+                                    <#if login.rememberMe??>
+                                        <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox" checked="${login.rememberMe}" class="pf-v5-c-check__input">
+                                    <#else>
+                                        <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox" class="pf-v5-c-check__input">
+                                    </#if>
+                                    <label class="pf-v5-c-check__label" for="rememberMe">
+                                        ${msg("rememberMe")}
                                     </label>
                                 </div>
                             </#if>
-                            </div>
-                            <div class="${properties.kcFormOptionsWrapperClass!}">
-                                <#if realm.resetPasswordAllowed>
-                                    <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
-                                </#if>
-                            </div>
-
+                        </div>
                       </div>
 
                       <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
