@@ -109,6 +109,7 @@ public class TokenEndpoint {
     public Response processGrantRequest() {
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        checkContentType(request);
         MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
 
         if (formParameters == null) {
@@ -189,6 +190,13 @@ public class TokenEndpoint {
         }
 
 
+    }
+
+    private void checkContentType(HttpRequest request) {
+        String contentTypeHeader = request.getHttpHeaders().getRequestHeaders().getFirst("Content-Type");
+        if (contentTypeHeader == null) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing Request Header: Content-Type", Response.Status.BAD_REQUEST);
+        }
     }
 
     private void checkGrantType() {
