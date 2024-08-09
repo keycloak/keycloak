@@ -831,7 +831,11 @@ public final class Picocli {
                 }
                 return value;
             }).toList();
-            transformedDesc.append(" Possible values are: " + String.join(", ", decoratedExpectedValues) + ".");
+
+            var isStrictExpectedValues = mapper.getOption().isStrictExpectedValues();
+            var printableValues = String.join(", ", decoratedExpectedValues) + (!isStrictExpectedValues ? ", or a custom one" : "");
+
+            transformedDesc.append(String.format(" Possible values are: %s.", printableValues));
         }
 
         mapper.getDefaultValue()
