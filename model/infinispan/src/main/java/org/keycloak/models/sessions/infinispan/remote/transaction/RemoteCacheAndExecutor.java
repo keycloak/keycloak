@@ -20,15 +20,16 @@ package org.keycloak.models.sessions.infinispan.remote.transaction;
 import java.util.concurrent.Executor;
 
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public record RemoteCacheAndExecutor<K, V>(RemoteCache<K, V> cache, Executor executor) {
+public record RemoteCacheAndExecutor<K, V>(RemoteCache<K, V> cache, Executor executor, BlockingManager blockingManager) {
 
     public static <K1, V1> RemoteCacheAndExecutor<K1, V1> create(KeycloakSession session, String cacheName) {
         var connection = session.getProvider(InfinispanConnectionProvider.class);
-        return new RemoteCacheAndExecutor<>(connection.getRemoteCache(cacheName), connection.getExecutor(cacheName + "-query-delete"));
+        return new RemoteCacheAndExecutor<>(connection.getRemoteCache(cacheName), connection.getExecutor(cacheName + "-query-delete"), connection.getBlockingManager());
     }
 
     public static <K1, V1> RemoteCacheAndExecutor<K1, V1> create(KeycloakSessionFactory factory, String cacheName) {

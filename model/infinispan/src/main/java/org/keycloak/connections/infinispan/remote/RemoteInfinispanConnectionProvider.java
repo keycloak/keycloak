@@ -72,14 +72,14 @@ public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCa
     }
 
     @Override
-    public Executor getExecutor(String name) {
-        return GlobalComponentRegistry.componentOf(embeddedCacheManager, BlockingManager.class).asExecutor(name);
-    }
-
-    @Override
     public ScheduledExecutorService getScheduledExecutor() {
         //noinspection removal
         return GlobalComponentRegistry.of(embeddedCacheManager).getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
+    }
+
+    @Override
+    public BlockingManager getBlockingManager() {
+        return GlobalComponentRegistry.componentOf(embeddedCacheManager, BlockingManager.class);
     }
 
     @Override

@@ -29,6 +29,8 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.util.concurrent.BlockingManager;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
@@ -46,16 +48,15 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFac
  */
 public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends ConditionalRemover<K, V>> extends AbstractKeycloakTransaction {
 
-
     private final Map<K, T> entityChanges;
     private final UpdaterFactory<K, V, T> factory;
-    private final RemoteCache<K, V> cache;
     private final R conditionalRemover;
+    private final SharedState<K, V> sharedState;
 
-    RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache, R conditionalRemover) {
+    RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, SharedState<K, V> sharedState, R conditionalRemover) {
         this.factory = Objects.requireNonNull(factory);
-        this.cache = Objects.requireNonNull(cache);
         this.conditionalRemover = Objects.requireNonNull(conditionalRemover);
+        this.sharedState = Objects.requireNonNull(sharedState);
         entityChanges = new ConcurrentHashMap<>(8);
     }
 
@@ -83,30 +84,30 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     }
 
     private void doCommit(AggregateCompletionStage<Void> stage) {
-        conditionalRemover.executeRemovals(cache, stage);
+        conditionalRemover.executeRemovals(getCache(), stage);
 
         for (var updater : entityChanges.values()) {
             if (updater.isReadOnly() || updater.isTransient() || conditionalRemover.willRemove(updater)) {
                 continue;
             }
             if (updater.isDeleted()) {
-                stage.dependsOn(cache.removeAsync(updater.getKey()));
+                stage.dependsOn(commitRemove(updater));
                 continue;
             }
 
             var expiration = updater.computeExpiration();
 
             if (expiration.isExpired()) {
-                stage.dependsOn(cache.removeAsync(updater.getKey()));
+                stage.dependsOn(commitRemove(updater));
                 continue;
             }
 
             if (updater.isCreated()) {
-                stage.dependsOn(putIfAbsent(updater, expiration));
+                stage.dependsOn(commitPutIfAbsent(updater, expiration));
                 continue;
             }
 
-            stage.dependsOn(replace(updater, expiration));
+            stage.dependsOn(commitReplace(updater, expiration));
         }
     }
 
@@ -114,7 +115,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
      * @return The {@link RemoteCache} tracked by the transaction.
      */
     public RemoteCache<K, V> getCache() {
-        return cache;
+        return sharedState.cache();
     }
 
     /**
@@ -130,7 +131,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         if (updater != null) {
             return updater.isDeleted() ? null : updater;
         }
-        return onEntityFromCache(key, cache.getWithMetadata(key));
+        return onEntityFromCache(key, getCache().getWithMetadata(key));
     }
 
     /**
@@ -144,7 +145,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         if (updater != null) {
             return updater.isDeleted() ? CompletableFutures.completedNull() : CompletableFuture.completedFuture(updater);
         }
-        return cache.getWithMetadataAsync(key).thenApply(e -> onEntityFromCache(key, e));
+        return getCache().getWithMetadataAsync(key).thenApply(e -> onEntityFromCache(key, e));
     }
 
     /**
@@ -191,24 +192,79 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         return updater.isDeleted() ? null : updater;
     }
 
-    private CompletionStage<V> putIfAbsent(Updater<K, V> updater, Expiration expiration) {
-        return cache.withFlags(Flag.FORCE_RETURN_VALUE)
+    private CompletionStage<Void> commitRemove(Updater<K, V> updater) {
+        return executeWithRetries(this::invokeCacheRemove, result -> CompletableFutures.completedNull(), updater, null, 0);
+    }
+
+    private CompletionStage<Void> commitPutIfAbsent(Updater<K, V> updater, Expiration expiration) {
+        return executeWithRetries(this::invokeCachePutIfAbsent, result -> result ? CompletableFutures.completedNull() : merge(updater, expiration), updater, expiration, 0);
+    }
+
+    private CompletionStage<Void> commitReplace(Updater<K, V> updater, Expiration expiration) {
+        return executeWithRetries(this::invokeCacheReplace, result -> result ? CompletableFutures.completedNull() : merge(updater, expiration), updater, expiration, 0);
+    }
+
+    private CompletionStage<Void> merge(Updater<K, V> updater, Expiration expiration) {
+        return executeWithRetries(this::invokeCacheCompute, result -> CompletableFutures.completedNull(), updater, expiration, 0);
+    }
+
+    private CompletionStage<V> invokeCacheRemove(Updater<K, V> updater, Expiration ignored) {
+        return getCache().removeAsync(updater.getKey());
+    }
+
+    private CompletionStage<Boolean> invokeCachePutIfAbsent(Updater<K, V> updater, Expiration expiration) {
+        return getCache().withFlags(Flag.FORCE_RETURN_VALUE)
                 .putIfAbsentAsync(updater.getKey(), updater.getValue(), expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS)
-                .thenApply(Objects::isNull)
-                .thenCompose(completed -> handleResponse(completed, updater, expiration));
+                .thenApply(Objects::isNull);
     }
 
-    private CompletionStage<V> replace(Updater<K, V> updater, Expiration expiration) {
-        return cache.replaceWithVersionAsync(updater.getKey(), updater.getValue(), updater.getVersionRead(), expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS)
-                .thenCompose(completed -> handleResponse(completed, updater, expiration));
+    private CompletionStage<Boolean> invokeCacheReplace(Updater<K, V> updater, Expiration expiration) {
+        return getCache().replaceWithVersionAsync(updater.getKey(), updater.getValue(), updater.getVersionRead(), expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
     }
 
-    private CompletionStage<V> handleResponse(boolean completed, Updater<K, V> updater, Expiration expiration) {
-        return completed ? CompletableFutures.completedNull() : merge(updater, expiration);
+    private CompletionStage<V> invokeCacheCompute(Updater<K, V> updater, Expiration expiration) {
+        return getCache().computeIfPresentAsync(updater.getKey(), updater, expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
     }
 
-    private CompletionStage<V> merge(Updater<K, V> updater, Expiration expiration) {
-        return cache.computeIfPresentAsync(updater.getKey(), updater, expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
+    private <OR> CompletionStage<Void> executeWithRetries(RetryOperation<OR, K, V> operation, RetryOperationSuccess<OR> onSuccessAction, Updater<K, V> updater, Expiration expiration, int retry) {
+        return operation.apply(updater, expiration)
+                .handle((result, throwable) -> handleOperationResult(result, throwable, operation, onSuccessAction, updater, expiration, retry))
+                .thenCompose(CompletableFutures.identity());
     }
 
+    private <OR> CompletionStage<Void> handleOperationResult(OR result, Throwable throwable, RetryOperation<OR, K, V> operation, RetryOperationSuccess<OR> onSuccessAction, Updater<K, V> updater, Expiration expiration, int retry) {
+        if (throwable == null) {
+            return onSuccessAction.onSuccess(result);
+        }
+        if (retry == sharedState.maxRetries()) {
+            return CompletableFuture.failedFuture(throwable);
+        }
+        return backOffAndExecuteWithRetries(operation, onSuccessAction, updater, expiration, retry + 1);
+    }
+
+    private <OR> CompletionStage<Void> backOffAndExecuteWithRetries(RetryOperation<OR, K, V> operation, RetryOperationSuccess<OR> onSuccessAction, Updater<K, V> updater, Expiration expiration, int retry) {
+        var delayMillis = Retry.computeBackoffInterval(sharedState.backOffBaseTimeMillis(), retry);
+        return sharedState.blockingManager().scheduleRunBlocking(
+                        () -> executeWithRetries(operation, onSuccessAction, updater, expiration, retry),
+                        delayMillis, TimeUnit.MILLISECONDS, "retry-" + updater)
+                .thenCompose(CompletableFutures.identity());
+    }
+
+    private interface RetryOperation<R, K, V> {
+        CompletionStage<R> apply(Updater<K, V> updater, Expiration expiration);
+    }
+
+    private interface RetryOperationSuccess<R> {
+        CompletionStage<Void> onSuccess(R result);
+    }
+
+    public interface SharedState<K, V> {
+        RemoteCache<K, V> cache();
+
+        int maxRetries();
+
+        int backOffBaseTimeMillis();
+
+        BlockingManager blockingManager();
+    }
 }

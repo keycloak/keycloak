@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.iteration.ByRealmIdConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
@@ -30,8 +29,8 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
  */
 public class UseSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater, ByRealmIdConditionalRemover<String, UserSessionEntity>> {
 
-    public UseSessionChangeLogTransaction(UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> factory, RemoteCache<String, UserSessionEntity> cache) {
-        super(factory, cache, new ByRealmIdConditionalRemover<>());
+    public UseSessionChangeLogTransaction(UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> factory, SharedState<String, UserSessionEntity> sharedState) {
+        super(factory, sharedState, new ByRealmIdConditionalRemover<>());
     }
 
 }
