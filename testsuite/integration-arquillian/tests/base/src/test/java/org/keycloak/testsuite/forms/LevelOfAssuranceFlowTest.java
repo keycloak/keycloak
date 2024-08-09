@@ -754,7 +754,8 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
@@ -803,7 +804,8 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         String otp2CredentialId = getCredentialIdByLabel("totp2-label");
@@ -818,7 +820,8 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         deleteCredentialPage.assertCredentialInMessage("totp2-label");
         deleteCredentialPage.confirm();
 
-        events.expectRequiredAction(EventType.REMOVE_TOTP).assertEvent();
+        events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
         assertLoggedInWithAcr("gold");
     }
 
@@ -841,7 +844,8 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("otp");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.REMOVE_TOTP).assertEvent();
+            events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
             assertLoggedInWithAcr("gold");
 
             // Trying to add OTP. No 2nd factor should be required as user doesn't have any
@@ -850,7 +854,8 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             totpSetupPage.assertCurrent();
             String totp2Secret = totpSetupPage.getTotpSecret();
             totpSetupPage.configure(totp.generateTOTP(totp2Secret), "totp2-label");
-            events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
             assertLoggedInWithAcr("silver");
 
             // set time offset for OTP as it is not permitted to authenticate with same OTP code multiple times
@@ -881,7 +886,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("Recovery codes");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).assertEvent();
             assertLoggedInWithAcr("gold");
         } finally {
             setOtpTimeOffset(0, totp);
