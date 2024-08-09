@@ -24,8 +24,11 @@ import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.utils.StringUtil;
@@ -72,8 +75,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
-        var adminUsername = Configuration.getOptionalKcValue(BootstrapAdminOptions.USERNAME.getKey()).orElse(System.getenv(KEYCLOAK_ADMIN_ENV_VAR));
-        var adminPassword = Configuration.getOptionalKcValue(BootstrapAdminOptions.PASSWORD.getKey()).orElse(System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR));
+        var adminUsername = getOption(BootstrapAdminOptions.USERNAME.getKey(), KEYCLOAK_ADMIN_ENV_VAR);
+        var adminPassword = getOption(BootstrapAdminOptions.PASSWORD.getKey(), KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
 
         var clientId = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_ID.getKey()).orElse(null);
         var clientSecret = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_SECRET.getKey()).orElse(null);
@@ -89,6 +92,16 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid admin expiration value provided. An integer is expected.", e);
         }
+    }
+
+    private String getOption(String option, String envVar) {
+        return Configuration.getOptionalKcValue(option).orElseGet(() -> {
+            String value = System.getenv(envVar);
+            if (value != null) {
+                ServicesLogger.LOGGER.usingDeprecatedEnvironmentVariable(envVar, Configuration.toEnvVarFormat(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + option));
+            }
+            return value;
+        });
     }
 
     public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {

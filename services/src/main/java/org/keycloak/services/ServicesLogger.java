@@ -475,5 +475,9 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=109, value="Failed to add client '%s' to realm '%s': client with client ID exists")
     void addClientFailedClientExists(String clientId, String realm);
+    
+    @LogMessage(level = WARN)
+    @Message(id=110, value="Environment variable '%s' is deprecated, use '%s' instead")
+    void usingDeprecatedEnvironmentVariable(String deprecated, String supported);
 
 }
