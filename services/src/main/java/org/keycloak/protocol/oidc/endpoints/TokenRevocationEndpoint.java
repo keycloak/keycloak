@@ -28,8 +28,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-
-import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -38,6 +36,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -53,7 +52,6 @@ import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.UserConsentManager;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.TokenUtil;
 
@@ -212,12 +210,11 @@ public class TokenRevocationEndpoint {
         if (token.getSessionState() == null) {
             user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
         } else {
-            UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
-                    token.getSessionState(), false, client.getId());
+            var userSessionProvider = session.sessions();
+            UserSessionModel userSession = userSessionProvider.getUserSessionIfClientExists(realm, token.getSessionId(), false, client.getId());
 
             if (userSession == null) {
-                userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true,
-                        client.getId());
+                userSession = userSessionProvider.getUserSessionIfClientExists(realm, token.getSessionId(), true, client.getId());
 
                 if (userSession == null) {
                     event.error(Errors.USER_SESSION_NOT_FOUND);
