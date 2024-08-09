@@ -146,10 +146,10 @@ public final class HttpPropertyMappers {
             try {
                 TlsUtils.computeTrustOptions(config, config.trustStorePassword);
             } catch (IOException e) {
-                throw new PropertyException(Messages.httpsConfigurationNotSet());
+                throw new IllegalArgumentException("Failed to load 'https-trust-store' material.", e);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Unable to determine 'https-trust-store-type' automatically. " +
-                        "Adjust the file extension or specify the property.");
+                        "Adjust the file extension or specify the property.", e);
             }
         }
 
@@ -170,10 +170,10 @@ public final class HttpPropertyMappers {
             try {
                 TlsUtils.computeKeyStoreOptions(config, config.keyStorePassword, config.keyStoreAliasPassword);
             } catch (IOException e) {
-                throw new PropertyException(Messages.httpsConfigurationNotSet());
+                throw new IllegalArgumentException("Failed to load 'https-key-store' material.", e);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Unable to determine 'https-key-store-type' automatically. " +
-                        "Adjust the file extension or specify the property.");
+                        "Adjust the file extension or specify the property.", e);
             }
         }
 
