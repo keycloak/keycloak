@@ -117,6 +117,7 @@ export default interface RealmRepresentation {
   clientSessionIdleTimeout?: number;
   clientSessionMaxLifespan?: number;
   supportedLocales?: string[];
+  userFriendlyMessage?: boolean;
   // UserFederationMapperRepresentation
   userFederationMappers?: any[];
   // UserFederationProviderRepresentation

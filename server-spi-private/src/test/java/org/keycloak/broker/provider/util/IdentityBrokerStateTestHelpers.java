@@ -669,6 +669,14 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public boolean isUserFriendlyMessage() { return false; }
+
+        @Override
+        public void setUserFriendlyMessage(boolean value) {
+
+        }
+
+        @Override
         public boolean isPermanentLockout() {
             return false;
         }
