@@ -168,6 +168,9 @@ The server supports some of the most commons TLS termination proxies such as:
 |===
 |Proxy|Provider
 
+|AWS ALB
+|awsalb
+
 |Apache HTTP Server
 |apache
 
@@ -196,7 +199,9 @@ The available options for configuring a provider are:
 |Option|Description
 
 |ssl-client-cert
-| The name of the header holding the client certificate
+| The name of the header holding the client certificate. +
+* For AWS ALB in passthrough mode use `x-amzn-mtls-clientcert`. +
+* For AWS ALB in verify mode use `x-amzn-mtls-clientcert-leaf`.
 
 |ssl-cert-chain-prefix
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
@@ -207,7 +212,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | The maximum length of the certificate chain.
 
 |trust-proxy-verification
-| Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
+| Enable trusting AWS ALB and NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
 |===
 
 === Configuring the NGINX provider
