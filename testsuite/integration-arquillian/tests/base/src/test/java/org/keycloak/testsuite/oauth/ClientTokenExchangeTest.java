@@ -1087,6 +1087,45 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void testExchangeForDifferentClient() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        // generate the first token for a public client
+        oauth.realm(TEST);
+        oauth.clientId("direct-public");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+        Assert.assertNotNull(token.getSessionId());
+        String sid = token.getSessionId();
+
+        // perform token exchange with client-exchanger simulating it received the previous token
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("client-exchanger", token.getIssuedFor());
+        Assert.assertEquals("target", token.getAudience()[0]);
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        Assert.assertEquals(sid, token.getSessionId());
+
+        // perform a second token exchange just to check everything is OK
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("client-exchanger", token.getIssuedFor());
+        Assert.assertEquals("target", token.getAudience()[0]);
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        Assert.assertEquals(sid, token.getSessionId());
+    }
+
     private static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
