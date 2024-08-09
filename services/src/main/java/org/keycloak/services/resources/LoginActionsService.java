@@ -136,7 +136,7 @@ public class LoginActionsService {
 
     public static final String SESSION_CODE = "session_code";
     public static final String AUTH_SESSION_ID = "auth_session_id";
-    
+
     public static final String CANCEL_AIA = "cancel-aia";
 
     private final RealmModel realm;
@@ -444,10 +444,10 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
 
+        event.event(EventType.RESET_PASSWORD);
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         if (authSession == null && code == null && clientData == null) {
             if (!realm.isResetPasswordAllowed()) {
-                event.event(EventType.RESET_PASSWORD);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
@@ -456,7 +456,6 @@ public class LoginActionsService {
             return processResetCredentials(false, null, authSession, null);
         }
 
-        event.event(EventType.RESET_PASSWORD);
         return resetCredentials(authSessionId, code, execution, clientId, tabId, clientData);
     }
 
@@ -661,7 +660,7 @@ public class LoginActionsService {
 
             LoginActionsServiceChecks.checkIsUserValid(token, tokenContext, event);
             LoginActionsServiceChecks.checkIsClientValid(token, tokenContext);
-            
+
             sessionContext.setClient(authSession.getClient());
 
             TokenVerifier.createWithoutSignature(token)
@@ -1147,7 +1146,7 @@ public class LoginActionsService {
 
 
         Response response;
-        
+
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
@@ -1180,7 +1179,7 @@ public class LoginActionsService {
 
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
     }
-    
+
     private Response interruptionResponse(RequiredActionContextResult context, AuthenticationSessionModel authSession, String action, Error error) {
         LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
         protocol.setRealm(context.getRealm())
@@ -1189,11 +1188,11 @@ public class LoginActionsService {
                 .setEventBuilder(event);
 
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
-        
+
         event.error(Errors.REJECTED_BY_USER);
         return protocol.sendError(authSession, error);
     }
-    
+
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
         if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
                 && !Boolean.TRUE.toString().equals(authSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
