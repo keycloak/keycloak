@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - backport/**
       - quarkus-next
   pull_request:
      branches: [main]
