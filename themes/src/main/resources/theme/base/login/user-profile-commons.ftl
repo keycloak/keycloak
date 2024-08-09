@@ -90,7 +90,7 @@
 <#macro inputTag attribute value>
 	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-		<#if attribute.readOnly>disabled</#if>
+		<#if attribute.readOnly || (isUpdateProfile?has_content && !isUpdateProfile)>readOnly</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
 		<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
 		<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
@@ -124,7 +124,7 @@
 <#macro textareaTag attribute>
 	<textarea id="${attribute.name}" name="${attribute.name}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-		<#if attribute.readOnly>disabled</#if>
+		<#if attribute.readOnly || (isUpdateProfile?has_content && !isUpdateProfile)>readOnly</#if>
 		<#if attribute.annotations.inputTypeCols??>cols="${attribute.annotations.inputTypeCols}"</#if>
 		<#if attribute.annotations.inputTypeRows??>rows="${attribute.annotations.inputTypeRows}"</#if>
 		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
@@ -134,7 +134,7 @@
 <#macro selectTag attribute>
 	<select id="${attribute.name}" name="${attribute.name}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-		<#if attribute.readOnly>disabled</#if>
+		<#if attribute.readOnly || (isUpdateProfile?has_content && !isUpdateProfile)>readOnly</#if>
 		<#if attribute.annotations.inputType=='multiselect'>multiple</#if>
 		<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
 	>
@@ -182,10 +182,10 @@
 		<div class="${classDiv}">
 			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
 				aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-				<#if attribute.readOnly>disabled</#if>
+				<#if attribute.readOnly || (isUpdateProfile?has_content && !isUpdateProfile)>readOnly</#if>
 				<#if attribute.values?seq_contains(option)>checked</#if>
 			/>
-			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
+			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly || (isUpdateProfile?has_content && !isUpdateProfile)> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
 		</div>
 	</#list>
 </#macro>
