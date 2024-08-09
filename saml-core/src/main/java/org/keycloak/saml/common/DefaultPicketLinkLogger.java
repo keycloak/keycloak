@@ -452,6 +452,12 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
     }
 
     @Override
+    public RuntimeException parserExpectedTag(String tag, String foundElementTag, Integer line, Integer column) {
+        return new RuntimeException(ErrorCodes.EXPECTED_TAG + " " + tag + ".  Found " + foundElementTag +
+                ".\nAt line " + line.toString() + ", column " + column);
+    }
+
+    @Override
     public RuntimeException parserExpectedNamespace(String ns, String foundElementNs) {
         return new RuntimeException(ErrorCodes.EXPECTED_NAMESPACE + ns + ">.  Found <" + foundElementNs + ">");
     }
