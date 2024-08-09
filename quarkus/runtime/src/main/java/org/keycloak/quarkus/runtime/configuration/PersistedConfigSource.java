@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 
@@ -54,7 +55,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     private static final ThreadLocal<Boolean> ENABLED = ThreadLocal.withInitial(() -> true);
 
     private PersistedConfigSource() {
-        super(readProperties(), "", 200);
+        super(readProperties(), NAME, 200);
     }
 
     public static PersistedConfigSource getInstance() {
@@ -67,15 +68,15 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     @Override
-    public String getValue(String propertyName) {
+    public ConfigValue getConfigValue(String propertyName) {
         if (isEnabled()) {
-            String value = super.getValue(propertyName);
+            ConfigValue value = super.getConfigValue(propertyName);
 
             if (value != null) {
                 return value;
             }
 
-            return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
+            return super.getConfigValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
         }
 
         return null;

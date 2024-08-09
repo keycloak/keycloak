@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -91,15 +92,14 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     @Override
-    public String getValue(String propertyName) {
-        Map<String, String> properties = getProperties();
-        String value = properties.get(propertyName);
+    public ConfigValue getConfigValue(String propertyName) {
+        ConfigValue value = super.getConfigValue(propertyName);
 
         if (value != null) {
             return value;
         }
 
-        return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
+        return super.getConfigValue(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArguments() {

@@ -87,7 +87,7 @@ public class HttpOptions {
     public static final Option<String> HTTPS_KEY_STORE_TYPE = new OptionBuilder<>("https-key-store-type", String.class)
             .category(OptionCategory.HTTP)
             .description("The type of the key store file. " +
-                    "If not given, the type is automatically detected based on the file name. " +
+                    "If not given, the type is automatically detected based on the file extension. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
@@ -106,7 +106,7 @@ public class HttpOptions {
     public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
             .category(OptionCategory.HTTP)
             .description("The type of the trust store file. " +
-                    "If not given, the type is automatically detected based on the file name. " +
+                    "If not given, the type is automatically detected based on the file extension. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
