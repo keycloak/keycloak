@@ -55,7 +55,7 @@ image::jaeger-tracing.png[Jaeger UI]
 
 == Traces in logs
 
-When the tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in the logging https://www.keycloak.org/server/logging[guide]).
+When tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in the logging https://www.keycloak.org/server/logging[guide]).
 It can be useful for associating log events to request execution, which might provide better traceability and debugging.
 All log lines originating from the same request will have the same `traceId` in the log.
 
@@ -75,7 +75,7 @@ For instance, to disable trace info in the `console` log, you can turn it off as
 
 <@kc.start parameters="--tracing-enabled=true --log=console --log-console-include-trace=false"/>
 
-NOTE: When you explicitly override the log format for the particular log handlers, the `*-include-trace` options do not have any effect, and no tracing is printed out.
+NOTE: When you explicitly override the log format for the particular log handlers, the `*-include-trace` options do not have any effect, and no tracing is included.
 
 == Sampling
 
