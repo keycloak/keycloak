@@ -1,13 +1,13 @@
 /*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -153,7 +153,7 @@ public class BrokerTest extends AbstractSamlTest {
             reviewProfileAuthenticator = executions.stream()
               .filter(ex -> Objects.equals(ex.getProviderId(), IdpReviewProfileAuthenticatorFactory.PROVIDER_ID))
               .findFirst()
-              .orElseGet(() -> { Assert.fail("Could not find update profile in first broker login flow"); return null; });
+              .orElseGet(() -> { fail("Could not find update profile in first broker login flow"); return null; });
 
             reviewProfileAuthenticator.setRequirement(Requirement.DISABLED.name());
             realm.flows().updateExecutions(firstBrokerLoginFlowAlias, reviewProfileAuthenticator);
@@ -242,6 +242,10 @@ public class BrokerTest extends AbstractSamlTest {
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.toString());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "user");
 
+        UserRepresentation userRepresentation = null;
+
+        List<UserSessionRepresentation> userSessions = null;
+
         try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, rep)) {
             new SamlClientBuilder()
                     .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
@@ -282,18 +286,21 @@ public class BrokerTest extends AbstractSamlTest {
                     .followOneRedirect() // redirect to client
                     .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(200))
                     .execute();
+
+            userRepresentation= realm.users()
+                    .search(userName)
+                    .stream()
+                    .findFirst()
+                    .get();
+            userSessions=realm.users()
+                    .get(userRepresentation.getId())
+                    .getUserSessions();
+
         }
 
-        final UserRepresentation userRepresentation = realm.users()
-                .search(userName)
-                .stream()
-                .findFirst()
-                .get();
-
-        final List<UserSessionRepresentation> userSessions = realm.users()
-                .get(userRepresentation.getId())
-                .getUserSessions();
         assertThat(userSessions, hasSize(1));
+
+
     }
 
     @Test
@@ -318,7 +325,7 @@ public class BrokerTest extends AbstractSamlTest {
               .doNotFollowRedirects()
               .executeAndTransform(resp -> resp.getHeaders(HttpHeaders.LOCATION));
 
-            assertThat(headers.length, Matchers.is(1));
+            assertThat(headers.length, is(1));
             assertThat(headers[0].getValue(), Matchers.containsString("https://saml.idp/?service=name&serviceType=prod"));
             assertThat(headers[0].getValue(), Matchers.containsString("SAMLRequest"));
         }

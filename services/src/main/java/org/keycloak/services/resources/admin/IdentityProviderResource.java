@@ -65,7 +65,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -116,6 +116,7 @@ public class IdentityProviderResource {
         return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, this.identityProviderModel));
     }
 
+
     /**
      * Delete the identity provider
      *
@@ -132,6 +133,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
+        updateUsersAfterProviderDeleted(realm,session,identityProviderModel.getAlias());
         String alias = this.identityProviderModel.getAlias();
         session.users().preRemove(realm, identityProviderModel);
         this.realm.removeIdentityProviderByAlias(alias);
@@ -239,6 +241,18 @@ public class IdentityProviderResource {
                 session.users().addFederatedIdentity(realm, user, newFederatedIdentity);
             }
         });
+    }
+
+    private static void updateUsersAfterProviderDeleted(RealmModel realm, KeycloakSession session, String identityProviderAlias){
+        realm.getClientsStream()
+                .forEach(c->{
+                    session.sessions()
+                            .getUserSessionsStream(realm,c)
+                            .forEach(userSessionModel -> {
+                                FederatedIdentityModel federatedIdentityModel=session.users().getFederatedIdentity(realm,userSessionModel.getUser(),identityProviderAlias);
+                                if(federatedIdentityModel!=null) session.sessions().removeUserSession(realm,userSessionModel);
+                            });
+                });
     }
 
 
