@@ -1220,4 +1220,27 @@ public class RealmTest extends AbstractAdminTest {
             adminClient.realm(realmName).remove();
         }
     }
+
+    @Test
+    public void testRefreshTokenPersistence() {
+        setupTestAppAndUser();
+
+        // Step 1: Obtain initial access token and refresh token
+        oauth.doLogin("testuser", "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        // Step 2: Refresh the token and save it
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+        String newRefreshToken = tokenResponse.getRefreshToken();
+
+        // Step 3: Simulate cache purge or keycloak restart
+        realm.clearRealmCache();
+        realm.clearUserCache();
+
+        // Step 4: Refresh the token again using the new refresh token and validate
+        tokenResponse = oauth.doRefreshTokenRequest(newRefreshToken, "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+    }
 }
