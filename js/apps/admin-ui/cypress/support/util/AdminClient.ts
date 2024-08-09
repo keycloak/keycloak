@@ -191,10 +191,18 @@ class AdminClient {
     });
   }
 
-  async deleteUser(username: string) {
+  async deleteUser(username: string, ignoreNonExisting: boolean = false) {
     await this.#login();
-    const user = await this.#client.users.find({ username });
-    await this.#client.users.del({ id: user[0].id! });
+    const foundUsers = await this.#client.users.find({ username });
+    if (foundUsers.length == 0) {
+      if (ignoreNonExisting) {
+        return;
+      } else {
+        throw new Error(`User not found: ${username}`);
+      }
+    }
+
+    await this.#client.users.del({ id: foundUsers[0].id! });
   }
 
   async createClientScope(scope: ClientScopeRepresentation) {

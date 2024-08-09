@@ -1,4 +1,3 @@
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
@@ -40,6 +39,8 @@ import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
+import { UiRealmInfo } from "../../context/auth/uiRealmInfo";
+import { fetchRealmInfo } from "../../context/auth/admin-ui-endpoint";
 
 export type UserAttribute = {
   name: string;
@@ -99,7 +100,7 @@ export function UserDataTable() {
   const { addAlert, addError } = useAlerts();
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const navigate = useNavigate();
-  const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
+  const [uiRealmInfo, setUiRealmInfo] = useState<UiRealmInfo>({});
   const [searchUser, setSearchUser] = useState("");
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const [searchType, setSearchType] = useState<SearchType>("default");
@@ -113,23 +114,17 @@ export function UserDataTable() {
 
   useFetch(
     async () => {
-      const testParams = {
-        type: "org.keycloak.storage.UserStorageProvider",
-      };
-
       try {
         return await Promise.all([
-          adminClient.components.find(testParams),
+          fetchRealmInfo(adminClient),
           adminClient.users.getProfile(),
         ]);
       } catch {
-        return [[], {}] as [ComponentRepresentation[], UserProfileConfig];
+        return [{}, {}] as [UiRealmInfo, UserProfileConfig];
       }
     },
-    ([storageProviders, profile]) => {
-      setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
-      );
+    ([uiRealmInfo, profile]) => {
+      setUiRealmInfo(uiRealmInfo);
       setProfile(profile);
     },
     [],
@@ -157,7 +152,7 @@ export function UserDataTable() {
         ...params,
       });
     } catch (error) {
-      if (userStorage?.length) {
+      if (uiRealmInfo.userProfileProvidersEnabled) {
         addError("noUsersFoundErrorStorage", error);
       } else {
         addError("noUsersFoundError", error);
@@ -202,12 +197,12 @@ export function UserDataTable() {
 
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
-  if (!userStorage || !realm) {
+  if (!uiRealmInfo || !realm) {
     return <KeycloakSpinner />;
   }
 
   //should *only* list users when no user federation is configured
-  const listUsers = !(userStorage.length > 0);
+  const listUsers = !uiRealmInfo.userProfileProvidersEnabled;
 
   const clearAllFilters = () => {
     const filtered = [...activeFilters].filter(
@@ -238,6 +233,7 @@ export function UserDataTable() {
               return (
                 <ChipGroup
                   className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                  data-testid={"user-attribute-search-chips-group"}
                   key={entry.name}
                   categoryName={
                     entry.displayName.length ? entry.displayName : entry.name
