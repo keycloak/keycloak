@@ -1,8 +1,10 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { label } from "@keycloak/keycloak-ui-shared";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import { saveAs } from "file-saver";
 import { flatten } from "flat";
+import { TFunction } from "i18next";
 import { cloneDeep } from "lodash-es";
 import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 import {
@@ -154,6 +156,12 @@ export const upperCaseFormatter =
     const value = data?.toString();
 
     return (value ? toUpperCase(value) : undefined) as string;
+  };
+
+export const translationFormatter =
+  (t: TFunction): IFormatter =>
+  (data?: IFormatterValueType) => {
+    return data ? label(t, data as string) || "—" : "—";
   };
 
 export const alphaRegexPattern = /[^A-Za-z]/g;
