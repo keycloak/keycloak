@@ -37,6 +37,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.Constants.TEMP_ADMIN_ATTR_NAME;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -137,15 +139,15 @@ public class ApplianceBootstrap {
             UserModel adminUser = session.users().addUser(realm, username);
             adminUser.setEnabled(true);
             // TODO: is this appropriate, does it need to be managed?
-            // adminUser.setSingleAttribute("temporary_admin", Boolean.TRUE.toString());
+            adminUser.setSingleAttribute(TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
             // also set the expiration - could be relative to a creation timestamp, or computed
-    
+
             UserCredentialModel usrCredModel = UserCredentialModel.password(password);
             adminUser.credentialManager().updateCredential(usrCredModel);
-    
+
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             adminUser.grantRole(adminRole);
-    
+
             ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
         } catch (ModelDuplicateException e) {
             ServicesLogger.LOGGER.addUserFailedUserExists(username, Config.getAdminRealm());
@@ -176,15 +178,15 @@ public class ApplianceBootstrap {
 
         try {
             ClientModel adminClientModel = ClientManager.createClient(session, realm, adminClient);
-    
+
             new ClientManager(new RealmManager(session)).enableServiceAccount(adminClientModel);
             UserModel serviceAccount = session.users().getServiceAccount(adminClientModel);
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             serviceAccount.grantRole(adminRole);
-    
-            // TODO: set temporary
+
+            adminClientModel.setAttribute(TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
             // also set the expiration - could be relative to a creation timestamp, or computed
-    
+
             ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
         } catch (ModelDuplicateException e) {
             ServicesLogger.LOGGER.addClientFailedClientExists(clientId, Config.getAdminRealm());

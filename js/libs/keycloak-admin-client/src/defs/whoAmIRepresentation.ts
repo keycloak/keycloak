@@ -32,4 +32,5 @@ export default interface WhoAmIRepresentation {
   locale: string;
   createRealm: boolean;
   realm_access: { [key: string]: AccessType[] };
+  temporary: boolean;
 }

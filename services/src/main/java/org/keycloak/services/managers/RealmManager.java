@@ -63,6 +63,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -261,7 +263,7 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
-        realm.setEventsListeners(Collections.singleton("jboss-logging"));
+        realm.setEventsListeners(Set.of("jboss-logging", "temp-admin-account"));
     }
 
     public boolean removeRealm(RealmModel realm) {
@@ -644,7 +646,7 @@ public class RealmManager {
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {
-        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase(); 
+        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase();
         if (! hasRealmRole(rep, defaultRoleName)) {
             return defaultRoleName;
         } else {
@@ -778,7 +780,7 @@ public class RealmManager {
                 ClientModel clientModel = Optional.ofNullable(client.getId())
                         .map(realmModel::getClientById)
                         .orElseGet(() -> realmModel.getClientByClientId(client.getClientId()));
-                
+
                 if (clientModel == null) {
                     throw new RuntimeException("Cannot find provided client by dir import.");
                 }

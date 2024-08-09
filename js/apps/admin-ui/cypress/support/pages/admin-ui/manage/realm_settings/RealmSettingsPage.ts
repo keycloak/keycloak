@@ -768,9 +768,14 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldRemoveAllEventListeners() {
     cy.get(".pf-v5-c-chip__actions").first().click();
+    cy.get(".pf-v5-c-chip__actions").first().click();
     cy.get(".pf-v5-c-chip__actions").click();
     cy.findByTestId(this.#eventListenersSaveBtn).click();
     cy.get(this.#eventListenersDrpDwn).should("not.have.text", "jboss-logging");
+    cy.get(this.#eventListenersDrpDwn).should(
+      "not.have.text",
+      "temp-admin-account",
+    );
     cy.get(this.#eventListenersDrpDwn).should("not.have.text", "email");
   }
 
