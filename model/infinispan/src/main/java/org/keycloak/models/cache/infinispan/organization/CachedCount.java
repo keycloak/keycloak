@@ -16,19 +16,27 @@
  */
 package org.keycloak.models.cache.infinispan.organization;
 
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.models.cache.infinispan.entities.InRealm;
 
-public class CachedOrganizationCount extends AbstractRevisioned implements InRealm {
+public class CachedCount extends AbstractRevisioned implements InRealm {
 
     private final RealmModel realm;
-    private final long count;
+    private long orgCount;
+    private long membersCount;
 
-    public CachedOrganizationCount(Long revision, RealmModel realm, long count) {
+    public CachedCount(Long revision, RealmModel realm, long orgCount) {
         super(revision, InfinispanOrganizationProvider.cacheKeyOrgCount(realm));
         this.realm = realm;
-        this.count = count;
+        this.orgCount = orgCount;
+    }
+
+    public CachedCount(Long revision, RealmModel realm, OrganizationModel organization, long membersCount) {
+        super(revision, InfinispanOrganizationProvider.cacheKeyOrgMemberCount(realm, organization));
+        this.realm = realm;
+        this.membersCount = membersCount;
     }
 
     @Override
@@ -36,7 +44,11 @@ public class CachedOrganizationCount extends AbstractRevisioned implements InRea
         return realm.getId();
     }
 
-    public long getCount() {
-        return count;
+    public long getOrgCount() {
+        return orgCount;
+    }
+
+    public long getMembersCount() {
+        return membersCount;
     }
 }

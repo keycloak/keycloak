@@ -202,6 +202,16 @@ public class OrganizationMemberResource {
         });
     }
 
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation( summary = "Returns number of members in the organization.")
+    public Long count() {
+        return provider.getMembersCount(organization);
+    }
+
     private UserModel getMember(String id) {
         UserModel member = provider.getMemberById(organization, id);
 

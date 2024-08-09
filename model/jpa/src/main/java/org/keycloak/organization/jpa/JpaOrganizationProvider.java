@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -269,6 +270,14 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         GroupModel group = getOrganizationGroup(organization);
 
         return userProvider.getGroupMembersStream(getRealm(), group, search, exact, first, max);
+    }
+
+    @Override
+    public long getMembersCount(OrganizationModel organization) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        String groupId = getOrganizationGroup(organization).getId();
+
+        return userProvider.getUsersCount(getRealm(), Set.of(groupId));
     }
 
     @Override
