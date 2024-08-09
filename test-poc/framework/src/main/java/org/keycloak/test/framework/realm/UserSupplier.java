@@ -8,6 +8,7 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
+import org.keycloak.test.framework.util.ApiUtil;
 
 public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
