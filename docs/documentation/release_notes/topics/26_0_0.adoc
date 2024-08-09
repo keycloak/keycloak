@@ -114,8 +114,8 @@ endif::[]
 
 = OpenTelemetry Tracing support _(Preview)_
 
-The native support for OpenTelemetry Tracing has been added to {project_name} and allows obtaining application traces for better observability.
+The underlying Quarkus support for OpenTelemetry Tracing has been exposed to {project_name} and allows obtaining application traces for better observability.
 It helps to find performance bottlenecks, determine the cause of application failures, trace a request through the distributed system, and much more.
-The support is in the preview mode and we would be happy to obtain any feedback.
+The support is in preview mode, and we would be happy to obtain any feedback.
 
 For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
