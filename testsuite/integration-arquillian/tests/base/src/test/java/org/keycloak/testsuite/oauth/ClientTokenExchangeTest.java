@@ -24,6 +24,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
@@ -331,6 +332,49 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
         }
+    }
+
+    @Test
+    public void testExchangeRequestAccessTokenTypeWithConsent() throws Exception {
+        //token exchange must not ask for consent even if target client has consent
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+        testingClient.server().run(ClientTokenExchangeTest::setConsentToTargetClient);
+
+        try {
+            oauth.realm(TEST);
+            oauth.clientId("client-exchanger");
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+            String accessToken = response.getAccessToken();
+            TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+            AccessToken token = accessTokenVerifier.parse().getToken();
+            Assert.assertNotNull(token.getSessionId());
+            Assert.assertEquals(token.getPreferredUsername(), "user");
+            assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+            {
+                response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret", Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+                Assert.assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+                String exchangedTokenString = response.getAccessToken();
+                TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+                AccessToken exchangedToken = verifier.parse().getToken();
+                Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+                Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            }
+        } finally {
+            testingClient.server().run(ClientTokenExchangeTest::removeConsentToTargetClient);
+        }
+    }
+
+    static void setConsentToTargetClient(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        ClientModel target = realm.getClientByClientId("target");
+        target.setConsentRequired(true);
+    }
+
+    static void removeConsentToTargetClient(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        ClientModel target = realm.getClientByClientId("target");
+        target.setConsentRequired(false);
     }
 
     @Test
