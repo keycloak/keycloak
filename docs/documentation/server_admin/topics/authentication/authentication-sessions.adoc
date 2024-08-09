@@ -7,7 +7,7 @@ Whenever a new login page is opened from a different tab in the same browser, {p
 Authentication requests can come from any type of clients such as the Admin CLI. In that case, a new authentication session is also created with one authentication sub-session.
 Please note that authentication sessions can be created also in other ways than using a browser flow.
 
-The authentication session usually expires after 30 minutes by default. The exact time is specified by the *Login timeout* switch in the *Sessions* tab of the admin console when <<configuring-realms,configuring realm>>.
+The authentication session usually expires after 30 minutes by default. The exact time is specified by the *Login timeout* switch in the *Sessions* tab of the admin console when <<_configuring-realms,configuring realms>>.
 
 ==== Authentication in more browser tabs
 
