@@ -143,6 +143,14 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "revoke");
     }
 
+    @GET
+    @Path("redirect.js")
+    @Produces("text/javascript")
+    public Response redirectScript() {
+        String script = "document.forms[0].submit();\n";
+        return Response.ok(script).build();
+    }
+
     /**
      * Authorization endpoint
      */

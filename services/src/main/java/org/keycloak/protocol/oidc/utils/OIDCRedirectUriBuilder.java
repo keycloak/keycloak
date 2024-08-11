@@ -157,8 +157,9 @@ public abstract class OIDCRedirectUriBuilder {
             builder.append("<HTML>");
             builder.append("  <HEAD>");
             builder.append("    <TITLE>OIDC Form_Post Response</TITLE>");
+            builder.append("    <script src=\"" + HtmlUtils.escapeAttribute(params.get("iss")) + "/protocol/openid-connect/redirect.js\" defer></script>");
             builder.append("  </HEAD>");
-            builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
+            builder.append("  <BODY>");
 
             builder.append("    <FORM METHOD=\"POST\" ACTION=\"")
                     .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
