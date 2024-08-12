@@ -24,6 +24,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -59,6 +60,7 @@ public class StripSecretsUtils {
         REPRESENTATION_FORMATTER.put(ClientRepresentation.class, (session, o) -> StripSecretsUtils.stripClient((ClientRepresentation) o));
         REPRESENTATION_FORMATTER.put(IdentityProviderRepresentation.class, (session, o) -> StripSecretsUtils.stripBroker((IdentityProviderRepresentation) o));
         REPRESENTATION_FORMATTER.put(ComponentRepresentation.class, (session, o) -> StripSecretsUtils.stripComponent(session, (ComponentRepresentation) o));
+        REPRESENTATION_FORMATTER.put(CredentialRepresentation.class, (session, o) -> StripSecretsUtils.stripCredentials((CredentialRepresentation) o));
     }
 
     public static <T> T stripSecrets(KeycloakSession session, T representation) {
@@ -80,6 +82,11 @@ public class StripSecretsUtils {
              ? value
              : ComponentRepresentation.SECRET_VALUE
             );
+    }
+
+    protected static CredentialRepresentation stripCredentials(CredentialRepresentation rep) {
+        rep.setValue("**********");
+        return rep;
     }
 
     private static ComponentRepresentation stripComponent(KeycloakSession session, ComponentRepresentation rep) {
