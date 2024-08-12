@@ -62,7 +62,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         (attribute) => attribute.name === attributeToDelete,
       )?.displayName;
 
-      // Remove the the `${}` from translationsToDelete string
+      // Remove the `${}` from translationsToDelete string
       const formattedTranslationsToDelete = translationsToDelete?.substring(
         2,
         translationsToDelete.length - 1,

@@ -22,7 +22,7 @@ export interface FileUploadProps
   > {
   /** Unique id for the TextArea, also used to generate ids for accessible labels. */
   id: string;
-  /** What type of file. Determines what is is passed to `onChange` and expected by `value`
+  /** What type of file. Determines what is passed to `onChange` and expected by `value`
    * (a string for 'text' and 'dataURL', or a File object otherwise. */
   type?: "text" | "dataURL";
   /** Value of the file's contents
