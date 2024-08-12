@@ -30,6 +30,7 @@ echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-js/package.
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-admin-client/package.json)" > js/libs/keycloak-admin-client/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/ui-shared/package.json)" > js/libs/ui-shared/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/apps/account-ui/package.json)" > js/apps/account-ui/package.json
+echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/apps/admin-ui/package.json)" > js/apps/admin-ui/package.json
 
 echo "New Mvn Version: $NEW_VERSION" >&2
 echo "New NPM Version: $NEW_NPM_VERSION" >&2
