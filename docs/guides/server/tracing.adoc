@@ -30,12 +30,11 @@ In order to see the captured {project_name} traces, the basic setup with leverag
 For development purposes, the Jaeger-all-in-one can be used to see traces as easily as possible.
 
 NOTE: Jaeger-all-in-one includes the Jaeger agent, an OTel collector, and the query service/UI.
-You do not need to install a separated collector. You can directly send the trace data to Jaeger (after enabling OTLP receivers there, see e.g. this https://medium.com/jaegertracing/introducing-native-support-for-opentelemetry-in-jaeger-eb661be8183c[blog] entry for details).
+You do not need to install a separate collector, as you can directly send the trace data to Jaeger.
 
 [source, bash]
 ----
 podman|docker run --name jaeger \
--e COLLECTOR_OTLP_ENABLED=true \
 -p 16686:16686 \
 -p 4317:4317 \
 -p 4318:4318 \
