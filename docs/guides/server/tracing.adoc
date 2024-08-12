@@ -55,7 +55,7 @@ image::jaeger-tracing.png[Jaeger UI]
 
 == Traces in logs
 
-When tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in the logging https://www.keycloak.org/server/logging[guide]).
+When tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in <@links.server id="logging"/>).
 It can be useful for associating log events to request execution, which might provide better traceability and debugging.
 All log lines originating from the same request will have the same `traceId` in the log.
 
