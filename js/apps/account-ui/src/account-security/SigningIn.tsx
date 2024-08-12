@@ -101,7 +101,7 @@ export const SigningIn = () => {
         className="pf-v5-u-max-width"
         style={maxWidth}
       >
-        {credential.userLabel || t(credential.type as TFuncKey)}
+        {t(credential.userLabel) || t(credential.type as TFuncKey)}
       </DataListCell>,
     ];
 
