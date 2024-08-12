@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node create.js"
   },
+  "bin": {
+    "create-keycloak-theme": "./create.js"
+  },
   "publishConfig": {
     "access": "public"
   },
