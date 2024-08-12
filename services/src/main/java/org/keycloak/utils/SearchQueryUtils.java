@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SearchQueryUtils {
-    public static final Pattern queryPattern = Pattern.compile("\\s*(?:(?<name>[^\"][^: ]+|.)|\"(?<nameEsc>(?:\\\\.|[^\\\\\"])+)\"):(?:(?<value>[^\"][^ ]*)|\"(?<valueEsc>(?:\\\\.|[^\\\\\"])+)\")\\s*");
+    public static final Pattern queryPattern = Pattern.compile("\\s*(?:(?<name>[^\"][^: ]+|.)|\"(?<nameEsc>(?:\\\\.|[^\\\\\"])+)\"):(?:(?<value>[^\"][^ ]*)|\"(?<valueEsc>(?:\\\\.|[^\\\\\"])+)\"|(?<emptyValue>))\\s*");
     public static final Pattern escapedCharsPattern = Pattern.compile("\\\\(.)");
 
     public static Map<String, String> getFields(final String query) {
@@ -40,7 +40,12 @@ public class SearchQueryUtils {
 
             String value = matcher.group("value");
             if (value == null) {
-                value = unescape(matcher.group("valueEsc"));
+                value = matcher.group("valueEsc");
+                if (value == null) {
+                    value = matcher.group("emptyValue");
+                } else {
+                    value = unescape(value);
+                }
             }
 
             ret.put(name, value);

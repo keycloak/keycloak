@@ -915,6 +915,15 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmptyAttribute() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test", "");
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(attributes)), hasSize(0));
+    }
+
+    @Test
     public void searchByMultipleAttributes() {
         createUsers();
 
