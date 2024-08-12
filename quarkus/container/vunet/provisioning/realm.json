@@ -1863,6 +1863,22 @@
             "access.token.claim": "true",
             "claim.name": "privilege"
           }
+        },
+        {
+          "id": "8ffde2e5-faef-4b16-9a47-7a6ab4c0f0c4",
+          "name": "Data Access Role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "data_access_role",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "data_access_role",
+            "jsonType.label": "String"
+          }
         }
       ]
     },
