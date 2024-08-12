@@ -43,6 +43,7 @@ export const NumberControl = <
     control,
     formState: { errors },
   } = useFormContext();
+
   return (
     <FormLabel
       name={name}
@@ -59,9 +60,12 @@ export const NumberControl = <
           const required = !!controller.rules?.required;
           const min = controller.rules?.min;
           const value =
-            field.value === 0 ? controller.defaultValue : field.value;
-          const setValue = (newValue: number) =>
-            field.onChange(min ? Math.max(newValue, Number(min)) : newValue);
+            field.value === undefined ? controller.defaultValue : field.value;
+          const setValue = (newValue: number) => {
+            return field.onChange(
+              min !== undefined ? Math.max(newValue, Number(min)) : newValue,
+            );
+          };
 
           return (
             <NumberInput
