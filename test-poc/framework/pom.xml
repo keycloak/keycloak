@@ -86,6 +86,10 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>mssqlserver</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-free</artifactId>
+        </dependency>
         <!-- Temporary dependency until we figure out how we want to support OAuth -->
         <dependency>
             <groupId>com.nimbusds</groupId>
