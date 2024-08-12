@@ -130,7 +130,7 @@ Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PAS
 The required action provider name is now returned via the `kc_action` parameter when redirecting back from an application initiated required action execution.
 This eases the detection of which required action was executed for a client. The outcome of the execution can be determined via the `kc_action_status` parameter.
 
-Note: This feature required changes in `Keycloak.js`, therefore it is recommended to upgrade to the latest `Keycloak.js` library when upgrading to this Keycloak version.
+Note: This feature required changes in `Keycloak.js`, therefore it is recommended to upgrade to the latest `Keycloak.js` library when upgrading to this {project_name} version.
 
 = Deprecations in `keycloak-services` module
 
