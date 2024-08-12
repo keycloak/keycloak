@@ -94,6 +94,22 @@ To import a realm previously exported in a single file, you can use the `--file 
 
 <@kc.import parameters="--file <file>"/>
 
+== Using Environment Variables within the Realm Configuration Files
+
+You are able to use placeholders to resolve values from environment variables for any realm configuration.
+
+.Realm configuration using placeholders
+[source, bash]
+----
+{
+    "realm": "${r"${MY_REALM_NAME}"}",
+    "enabled": true,
+    ...
+}
+----
+
+In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
+
 == Importing a Realm during Startup
 
 You are also able to import realms when the server is starting by using the `--import-realm` option.
@@ -110,22 +126,6 @@ realms and potentially lose state between server restarts.
 To re-create realms you should explicitly run the `import` command prior to starting the server.
 
 Importing the `master` realm is not supported because as it is a very sensitive operation.
-
-=== Using Environment Variables within the Realm Configuration Files
-
-When importing a realm at startup, you are able to use placeholders to resolve values from environment variables for any realm configuration.
-
-.Realm configuration using placeholders
-[source, bash]
-----
-{
-    "realm": "${r"${MY_REALM_NAME}"}",
-    "enabled": true,
-    ...
-}
-----
-
-In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
 
 == Importing and Exporting by using the Admin Console
 
