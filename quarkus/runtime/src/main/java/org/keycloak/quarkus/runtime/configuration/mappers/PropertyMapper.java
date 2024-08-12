@@ -194,13 +194,17 @@ public class PropertyMapper<T> {
     }
 
     /**
-     * If {@link Option#isStrictExpectedValues()} is false, custom values can be provided
+     * If {@link #isStrictExpectedValues()} is false, custom values can be provided
      * Otherwise, only specified expected values can be used.
      *
      * @return expected values
      */
     public List<String> getExpectedValues() {
         return this.option.getExpectedValues();
+    }
+
+    public boolean isStrictExpectedValues() {
+        return this.option.isStrictExpectedValues();
     }
 
     public Optional<T> getDefaultValue() { return this.option.getDefaultValue(); }
