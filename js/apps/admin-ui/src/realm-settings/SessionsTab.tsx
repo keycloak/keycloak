@@ -338,7 +338,15 @@ export const RealmSettingsSessionsTab = ({
                   data-testid="login-timeout-input"
                   aria-label="login-timeout-input"
                   value={field.value!}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    if (typeof value === "number") {
+                      if (value <= 0) {
+                        value = 1;
+                      }
+                    }
+                    field.onChange(value);
+                  }}
+                  min={1}
                   units={["minute", "hour", "day"]}
                 />
               )}
@@ -363,7 +371,15 @@ export const RealmSettingsSessionsTab = ({
                   className="kc-login-action-timeout"
                   data-testid="login-action-timeout-input"
                   value={field.value!}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    if (typeof value === "number") {
+                      if (value <= 0) {
+                        value = 1;
+                      }
+                    }
+                    field.onChange(value);
+                  }}
+                  min={1}
                   units={["minute", "hour", "day"]}
                 />
               )}
