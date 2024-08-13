@@ -10,7 +10,12 @@ import { join, resolve, dirname } from "node:path";
 import { simpleGit } from "simple-git";
 import { fileURLToPath } from "url";
 
-const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+const packageJson = JSON.parse(
+  fs.readFileSync(
+    join(fileURLToPath(import.meta.url), "..", "package.json"),
+    "utf8",
+  ),
+);
 
 function main() {
   new Command(packageJson.name)
@@ -72,7 +77,7 @@ async function createProject(name, type) {
     const data = Mustache.render(contents, {
       name,
       type,
-      version: packageJson.version,
+      version: "^25.0.0",
     });
     await fs.writeFile(destPath, data);
   });

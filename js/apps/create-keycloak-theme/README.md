@@ -1,4 +1,4 @@
-=== kc-create
+# kc-create
 
 Create a new Keycloak ui project based on a template
 
