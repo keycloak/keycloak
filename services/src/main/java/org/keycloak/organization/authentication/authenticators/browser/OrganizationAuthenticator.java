@@ -45,6 +45,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareRealmBean;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
@@ -63,7 +64,16 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        initialChallenge(context);
+        OrganizationModel organization = resolveOrganization(session);
+
+        if (organization == null) {
+            initialChallenge(context);
+        } else {
+            // make sure the organization is set to the auth session to remember it when processing subsequent requests
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+            action(context);
+        }
     }
 
     @Override
@@ -148,6 +158,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private UserModel resolveUser(AuthenticationFlowContext context, String username) {
+        if (username == null) {
+            return null;
+        }
+
         UserProvider users = session.users();
         RealmModel realm = session.getContext().getRealm();
         UserModel user = Optional.ofNullable(users.getUserByEmail(realm, username)).orElseGet(() -> users.getUserByUsername(realm, username));

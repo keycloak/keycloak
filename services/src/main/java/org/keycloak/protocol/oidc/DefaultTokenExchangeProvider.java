@@ -415,7 +415,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
         updateUserSessionFromClientAuth(targetUserSession);
@@ -480,7 +480,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession,
                 authSession);
 

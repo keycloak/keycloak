@@ -33,6 +33,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
@@ -78,18 +79,26 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     }
 
     @Override
-    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-        OrganizationProvider provider = keycloakSession.getProvider(OrganizationProvider.class);
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
         if (!isEnabledAndOrganizationsPresent(provider)) {
             return;
         }
 
+        OrganizationModel organization = Organizations.resolveOrganizationFromScopeParam(session, clientSessionCtx.getScopeString());
         UserModel user = userSession.getUser();
-        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
+        Stream<OrganizationModel> organizations = Stream.empty();
+
+        if (organization == null) {
+            organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
+        } else if (provider.isMember(organization, user)) {
+            organizations = Stream.of(organization);
+        }
+
         Map<String, Map<String, Object>> claim = new HashMap<>();
 
-        organizations.forEach(organization -> claim.put(organization.getAlias(), Map.of()));
+        organizations.forEach(o -> claim.put(o.getAlias(), Map.of()));
 
         if (claim.isEmpty()) {
             return;

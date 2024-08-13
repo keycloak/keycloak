@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.member;
+package org.keycloak.testsuite.organization.authentication;
 
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;

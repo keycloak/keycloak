@@ -96,7 +96,7 @@ public class UserSessionUtil {
         authSession.setAuthenticatedUser(userSession.getUser());
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         TokenManager.attachAuthenticationSession(session, userSession, authSession);
         return userSession;
     }

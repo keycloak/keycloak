@@ -225,4 +225,14 @@ public interface OrganizationProvider extends Provider {
      * @return long Number of organizations
      */
     long count();
+
+    /**
+     * Returns an {@link OrganizationModel} with the given {@code alias}.
+     *
+     * @param alias the alias
+     * @return the organization
+     */
+    default OrganizationModel getByAlias(String alias) {
+        return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
+    }
 }

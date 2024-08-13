@@ -87,7 +87,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         String requestedScopesString = authenticationSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
         ClientModel client = authenticationSession.getClient();
 
-        return getRequestedClientScopes(requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(configuredScopes::contains);
+        return getRequestedClientScopes(session, requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(configuredScopes::contains);
     }
 
     private final KeycloakSession session;

@@ -61,7 +61,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     @Override
     public Response process(Context context) {
         setContext(context);
-        
+
         if (client.isBearerOnly()) {
             event.detail(Details.REASON, "Bearer-only client not allowed to retrieve service account");
             event.error(Errors.INVALID_CLIENT);
@@ -120,7 +120,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
                 clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
         event.session(userSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
