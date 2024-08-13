@@ -111,3 +111,11 @@ Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
 endif::[]
+
+= OpenTelemetry Tracing support _(Preview)_
+
+The underlying Quarkus support for OpenTelemetry Tracing has been exposed to {project_name} and allows obtaining application traces for better observability.
+It helps to find performance bottlenecks, determine the cause of application failures, trace a request through the distributed system, and much more.
+The support is in preview mode, and we would be happy to obtain any feedback.
+
+For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
