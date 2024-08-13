@@ -215,6 +215,7 @@ public class IdentityProvidersResource {
             session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
+            representation.setHideOnLogin(identityProvider.isHideOnLogin()); // update in case of legacy hide on login attr was used.
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
                     .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
 

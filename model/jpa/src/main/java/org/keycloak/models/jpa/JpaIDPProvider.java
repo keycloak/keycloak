@@ -31,7 +31,6 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -51,6 +50,9 @@ import static org.keycloak.models.IdentityProviderModel.ALIAS;
 import static org.keycloak.models.IdentityProviderModel.AUTHENTICATE_BY_DEFAULT;
 import static org.keycloak.models.IdentityProviderModel.ENABLED;
 import static org.keycloak.models.IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID;
+import static org.keycloak.models.IdentityProviderModel.HIDE_ON_LOGIN;
+import static org.keycloak.models.IdentityProviderModel.LINK_ONLY;
+import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID;
 import static org.keycloak.models.IdentityProviderModel.POST_BROKER_LOGIN_FLOW_ID;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -92,8 +94,10 @@ public class JpaIDPProvider implements IDPProvider {
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
+        entity.setOrganizationId(identityProvider.getOrganizationId());
         entity.setConfig(identityProvider.getConfig());
         entity.setLinkOnly(identityProvider.isLinkOnly());
+        entity.setHideOnLogin(identityProvider.isHideOnLogin());
         em.persist(entity);
         // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
         em.flush();
@@ -113,10 +117,12 @@ public class JpaIDPProvider implements IDPProvider {
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
+        entity.setOrganizationId(identityProvider.getOrganizationId());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setConfig(identityProvider.getConfig());
         entity.setLinkOnly(identityProvider.isLinkOnly());
+        entity.setHideOnLogin(identityProvider.isHideOnLogin());
 
         // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
         em.flush();
@@ -148,7 +154,7 @@ public class JpaIDPProvider implements IDPProvider {
         IdentityProviderEntity entity = this.getEntityByAlias(alias);
 
         if (entity != null) {
-            //call toModel(entity) now as after em.remove(entity) and the flush it might throw LazyInitializationException 
+            //call toModel(entity) now as after em.remove(entity) and the flush it might throw LazyInitializationException
             //when accessing the config of the entity (entity.getConfig()) withing the toModel(entity)
             IdentityProviderModel model = toModel(entity);
 
@@ -218,7 +224,7 @@ public class JpaIDPProvider implements IDPProvider {
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
+    public Stream<IdentityProviderModel> getAllStream(Map<String, Object> attrs, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
         Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
@@ -227,19 +233,27 @@ public class JpaIDPProvider implements IDPProvider {
         predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
         if (attrs != null) {
-            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+            for (Map.Entry<String, Object> entry : attrs.entrySet()) {
                 String key = entry.getKey();
-                String value = entry.getValue();
+                Object value = entry.getValue();
                 if (StringUtil.isBlank(key)) {
                     continue;
                 }
                 switch(key) {
+                    case AUTHENTICATE_BY_DEFAULT:
                     case ENABLED:
-                    case AUTHENTICATE_BY_DEFAULT: {
-                        predicates.add(builder.equal(idp.get(key), Boolean.valueOf(value)));
+                    case HIDE_ON_LOGIN:
+                    case LINK_ONLY: {
+                        if (Boolean.parseBoolean(value.toString())) {
+                            predicates.add(builder.isTrue(idp.get(key)));
+                        } else {
+                            predicates.add(builder.isFalse(idp.get(key)));
+                        }
                         break;
-                    } case FIRST_BROKER_LOGIN_FLOW_ID: {
-                        if (StringUtils.isBlank(value)) {
+                    }
+                    case FIRST_BROKER_LOGIN_FLOW_ID:
+                    case ORGANIZATION_ID: {
+                        if (value == null || value.toString().isEmpty()) {
                             predicates.add(builder.isNull(idp.get(key)));
                         } else {
                             predicates.add(builder.equal(idp.get(key), value));
@@ -377,10 +391,12 @@ public class JpaIDPProvider implements IDPProvider {
         identityProviderModel.setConfig(config);
         identityProviderModel.setEnabled(entity.isEnabled());
         identityProviderModel.setLinkOnly(entity.isLinkOnly());
+        identityProviderModel.setHideOnLogin(entity.isHideOnLogin());
         identityProviderModel.setTrustEmail(entity.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
         identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
         identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
+        identityProviderModel.setOrganizationId(entity.getOrganizationId());
         identityProviderModel.setStoreToken(entity.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 

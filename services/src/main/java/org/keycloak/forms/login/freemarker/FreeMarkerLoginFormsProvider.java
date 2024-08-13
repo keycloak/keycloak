@@ -62,7 +62,6 @@ import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -101,7 +100,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 import static org.keycloak.organization.utils.Organizations.resolveOrganization;
@@ -480,12 +478,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
 
-            Stream<IdentityProviderModel> identityProviders = LoginFormsUtil
-                    .filterIdentityProvidersForTheme(realm.getIdentityProvidersStream(), session, context);
-            IdentityProviderBean idpBean = new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId);
+            IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
-            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-                idpBean = new OrganizationAwareIdentityProviderBean(idpBean, session);
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && realm.isOrganizationsEnabled()) {
+                idpBean = new OrganizationAwareIdentityProviderBean(idpBean);
             }
 
             attributes.put("social", idpBean);

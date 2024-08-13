@@ -819,6 +819,7 @@ public class ModelToRepresentation {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
+        providerRep.setHideOnLogin(identityProviderModel.isHideOnLogin());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
@@ -849,8 +850,8 @@ public class ModelToRepresentation {
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
         }
 
-        if (export) {
-            providerRep.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (!export) {
+            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
         }
 
         return providerRep;

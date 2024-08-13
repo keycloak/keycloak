@@ -16,6 +16,7 @@
  */
 package org.keycloak.models;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -118,7 +119,7 @@ public interface IDPProvider extends Provider {
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
-    Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max);
+    Stream<IdentityProviderModel> getAllStream(Map<String, Object> attrs, Integer first, Integer max);
 
     /**
      * Returns all identity providers associated with the organization with the provided id.
@@ -129,7 +130,7 @@ public interface IDPProvider extends Provider {
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
     default Stream<IdentityProviderModel> getByOrganization(String orgId, Integer first, Integer max) {
-        return getAllStream(Map.of(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId), first, max);
+        return getAllStream(Map.of(IdentityProviderModel.ORGANIZATION_ID, orgId), first, max);
     }
 
     /**
@@ -148,6 +149,51 @@ public interface IDPProvider extends Provider {
     Stream<String> getByFlow(String flowId, String search, Integer first, Integer max);
 
     /**
+     * Returns all identity providers available for login, according to the specified mode. An IDP can be used for login
+     * if it is enabled, is not a link-only IDP, and is not configured to be hidden on login page.
+     * </p>
+     * The mode parameter may narrow the list of IDPs that are available. {@code FETCH_MODE.REALM_ONLY} fetches only realm-level
+     * IDPs (i.e. those not associated with any org). {@code FETCH_MODE.ORG_ONLY} will work together with the {@code organizationId}
+     * parameter. If the latter is set, only the IDPs associated with that org will be returned. Otherwise, the method returns
+     * the IDPs associated with any org. {@code FETCH_MODE.ALL} combines both approaches, returning both the realm-level
+     * IDPs with those associated with organizations (or a specific organization as per the {@code organizationId} param).
+     *
+     * @param mode the fetch mode to be used. Can be {@code REALM_ONLY}, {@code ORG_ONLY}, or {@code ALL}.
+     * @param organizationId an optional organization ID. If present and the mode is not {@code REALM_ONLY}, the param indicates
+     *                       that only IDPs associated with the specified organization are to be returned.
+     * @return a non-null stream of {@link IdentityProviderModel}s that are suitable for being displayed in the login pages.
+     */
+    default Stream<IdentityProviderModel> getForLogin(FETCH_MODE mode, String organizationId) {
+        Stream<IdentityProviderModel> result = Stream.of();
+        if (mode == FETCH_MODE.REALM_ONLY || mode == FETCH_MODE.ALL) {
+            // fetch all realm-only IDPs - i.e. those not associated with orgs.
+            Map<String, Object> searchOptions = getBasicSearchOptionsForLogin();
+            searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, null);
+            result = Stream.concat(result, getAllStream(searchOptions, null, null));
+        }
+        if (mode == FETCH_MODE.ORG_ONLY || mode == FETCH_MODE.ALL) {
+            // fetch IDPs associated with organizations.
+            Map<String, Object> searchOptions = getBasicSearchOptionsForLogin();
+            if (organizationId != null) {
+                // we want the IDPs associated with a specific org.
+                searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, organizationId);
+            }
+            searchOptions.put(OrganizationModel.BROKER_PUBLIC, "true");
+            result = Stream.concat(result, getAllStream(searchOptions, null, null));
+        }
+        return result;
+    }
+
+    private static Map<String, Object> getBasicSearchOptionsForLogin() {
+        Map<String, Object> searchOptions = new LinkedHashMap<>();
+        searchOptions.put(IdentityProviderModel.ENABLED, "true");
+        searchOptions.put(IdentityProviderModel.LINK_ONLY, "false");
+        searchOptions.put(IdentityProviderModel.HIDE_ON_LOGIN, "false");
+        return searchOptions;
+    }
+
+
+    /**
      * Returns the number of IDPs in the realm.
      *
      * @return the number of IDPs found in the realm.
@@ -163,4 +209,6 @@ public interface IDPProvider extends Provider {
     default boolean isIdentityFederationEnabled() {
         return count() > 0;
     }
+
+    enum FETCH_MODE {REALM_ONLY, ORG_ONLY, ALL}
 }

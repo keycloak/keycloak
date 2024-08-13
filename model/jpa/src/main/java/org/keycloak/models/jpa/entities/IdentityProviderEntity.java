@@ -65,6 +65,9 @@ public class IdentityProviderEntity {
     @Column(name="LINK_ONLY")
     private boolean linkOnly;
 
+    @Column(name="HIDE_ON_LOGIN")
+    private boolean hideOnLogin;
+
     @Column(name="ADD_TOKEN_ROLE")
     protected boolean addReadTokenRoleOnCreate;
 
@@ -76,6 +79,9 @@ public class IdentityProviderEntity {
 
     @Column(name="POST_BROKER_LOGIN_FLOW_ID")
     private String postBrokerLoginFlowId;
+
+    @Column(name="ORGANIZATION_ID")
+    private String organizationId;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -161,6 +167,22 @@ public class IdentityProviderEntity {
 
     public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
         this.postBrokerLoginFlowId = postBrokerLoginFlowId;
+    }
+
+    public String getOrganizationId() {
+        return this.organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
+    }
+
+    public boolean isHideOnLogin() {
+        return this.hideOnLogin;
+    }
+
+    public void setHideOnLogin(boolean hideOnLogin) {
+        this.hideOnLogin = hideOnLogin;
     }
 
     public Map<String, String> getConfig() {

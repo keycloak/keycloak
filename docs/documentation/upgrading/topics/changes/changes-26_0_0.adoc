@@ -147,3 +147,11 @@ If you wish to disable placeholder replacement for the `import` command, add the
 You can still override automatic detection by specifying the `https-key-store-type` and `https-trust-store-type` explicitly. The same applies to the management interface and its `https-management-key-store-type`. Restrictions for the FIPS strict mode stay unchanged.
 
 NOTE: The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated, we strongly recommend to use System Truststore. For more details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+= Improving performance for selection of identity providers
+
+New indexes were added to the `IDENTITY_PROVIDER` table to improve the performance of queries that fetch the IDPs associated with an organization, and fetch IDPs that are available for login (those that are `enabled`, not `link_only`, not marked as `hide_on_login`).
+
+If the table currently contains more than 300.000 entries,
+{project_name} will skip the creation of the indexes by default during the automatic schema migration, and will instead log the SQL statements
+on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.

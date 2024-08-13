@@ -47,6 +47,7 @@ import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -587,6 +588,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
         idpRep = StripSecretsUtils.stripSecrets(null, idpRep);
+        // if legacy hide on login page attribute was used, the attr will be removed when converted to model
+        idpRep.setHideOnLogin(Boolean.parseBoolean(idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR)));
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 
@@ -1044,6 +1047,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("alias", expected.getAlias(), actual.getAlias());
         Assert.assertEquals("providerId", expected.getProviderId(), actual.getProviderId());
         Assert.assertEquals("enabled", expected.isEnabled(), actual.isEnabled());
+        Assert.assertEquals("hideOnLogin", expected.isHideOnLogin(), actual.isHideOnLogin());
         Assert.assertEquals("firstBrokerLoginFlowAlias", expected.getFirstBrokerLoginFlowAlias(), actual.getFirstBrokerLoginFlowAlias());
         Assert.assertEquals("config", expected.getConfig(), actual.getConfig());
     }
@@ -1055,32 +1059,36 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("alias", "saml", idp.getAlias());
         Assert.assertEquals("providerId", "saml", idp.getProviderId());
         Assert.assertEquals("enabled",enabled, idp.isEnabled());
+        Assert.assertTrue("hideOnLogin", idp.isHideOnLogin());
         Assert.assertNull("firstBrokerLoginFlowAlias", idp.getFirstBrokerLoginFlowAlias());
-        assertSamlConfig(idp.getConfig(), postBindingResponse);
+        assertSamlConfig(idp.getConfig(), postBindingResponse, false);
     }
 
-    private void assertSamlConfig(Map<String, String> config, boolean postBindingResponse) {
+    private void assertSamlConfig(Map<String, String> config, boolean postBindingResponse, boolean hasHideOnLoginPage) {
         // import endpoint simply converts IDPSSODescriptor into key value pairs.
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
-        assertThat(config.keySet(), containsInAnyOrder(
-          "syncMode",
-          "validateSignature",
-          "singleLogoutServiceUrl",
-          "postBindingLogout",
-          "postBindingResponse",
-          "artifactBindingResponse",
-          "postBindingAuthnRequest",
-          "singleSignOnServiceUrl",
-          "artifactResolutionServiceUrl",
-          "wantAuthnRequestsSigned",
-          "nameIDPolicyFormat",
-          "signingCertificate",
-          "addExtensionsElementWithKeyInfo",
-          "loginHint",
-          "hideOnLoginPage",
-          "idpEntityId"
+        List<String> configKeys = new ArrayList<>(List.of(
+                "syncMode",
+                "validateSignature",
+                "singleLogoutServiceUrl",
+                "postBindingLogout",
+                "postBindingResponse",
+                "artifactBindingResponse",
+                "postBindingAuthnRequest",
+                "singleSignOnServiceUrl",
+                "artifactResolutionServiceUrl",
+                "wantAuthnRequestsSigned",
+                "nameIDPolicyFormat",
+                "signingCertificate",
+                "addExtensionsElementWithKeyInfo",
+                "loginHint",
+                "idpEntityId"
         ));
+        if (hasHideOnLoginPage) {
+            configKeys.add("hideOnLoginPage");
+        }
+        assertThat(config.keySet(), containsInAnyOrder(configKeys.toArray()));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml/resolve"));
@@ -1091,9 +1099,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
-        assertThat(config, hasEntry("hideOnLoginPage", "true"));
         assertThat(config, hasEntry("idpEntityId", "http://localhost:8080/auth/realms/master"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
+        if (hasHideOnLoginPage) {
+            assertThat(config, hasEntry("hideOnLoginPage", "true"));
+        }
     }
 
     private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates, boolean enabled, boolean postBindingResponse) {
@@ -1101,7 +1111,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         boolean enabledFromMetadata = Boolean.valueOf(config.get(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA));
         config.remove(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA);
         Assert.assertEquals(enabledFromMetadata,enabled);
-        assertSamlConfig(config, postBindingResponse);
+        assertSamlConfig(config, postBindingResponse, true);
         assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
     }
 
