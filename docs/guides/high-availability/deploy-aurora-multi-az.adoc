@@ -60,3 +60,7 @@ To do this, create a `Keycloak` CR with the following adjustments:
 . Ensure that the Secrets referenced by `spec.db.usernameSecret` and `spec.db.passwordSecret` contain usernames and passwords defined when creating Aurora.
 
 </@tmpl.guide>
+
+== Next steps
+
+After successful deployment of the Aurora database continue with <@links.ha id="deploy-infinispan-kubernetes-crossdc" />

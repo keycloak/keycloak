@@ -12,8 +12,7 @@ include::partials/infinispan/infinispan-attributes.adoc[]
 Use this when the state of {jdgserver_name} clusters of two sites become disconnected and the contents of the caches are out-of-sync.
 Perform this for example after a split-brain or when one site has been taken offline for maintenance.
 
-At the end of the procedure, the session contents on the secondary site have been discarded and replaced by the session
-contents of the active site. All caches in the offline site are cleared to prevent invalid cache contents.
+At the end of the procedure, the data on the secondary site have been discarded and replaced by the data of the active site. All caches in the offline site are cleared to prevent invalid cache contents.
 
 == Procedures
 

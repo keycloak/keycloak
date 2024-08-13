@@ -18,8 +18,8 @@ In other environments, add the necessary certificates to {project_name}'s trusts
 
 == Prerequisites
 
-* <@links.ha id="deploy-keycloak-kubernetes" /> as it will be extended.
 * <@links.ha id="deploy-infinispan-kubernetes-crossdc" />.
+* <@links.ha id="deploy-keycloak-kubernetes" /> as it will be extended.
 
 == Procedure
 
