@@ -743,6 +743,19 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertSamlExport(body, true);
     }
 
+   @Test
+    public void testSamlImportWithBom() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata_utf8_bom.xml", true);
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        String body = response.readEntity(String.class);
+        response.close();
+
+        assertSamlExport(body, true);
+    }
+
     @Test
     public void testSamlImportAndExportDifferentBindings() throws URISyntaxException, IOException, ParsingException {
         testSamlImport("saml-idp-metadata-different-bindings.xml", false);
