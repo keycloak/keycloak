@@ -117,6 +117,12 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         return createOrganization(realm, getCleanup(), name, brokerConfigFunction.apply(name).setUpIdentityProvider(), orgDomains);
     }
 
+    protected OrganizationRepresentation createOrganization(String name, Map<String, String> brokerConfig) {
+        IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
+        broker.getConfig().putAll(brokerConfig);
+        return createOrganization(testRealm(), getCleanup(), name, broker, name + ".org");
+    }
+
     protected OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
                                                                    IdentityProviderRepresentation broker, String... orgDomains) {
         OrganizationRepresentation org = createRepresentation(name, orgDomains);

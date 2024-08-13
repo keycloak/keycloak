@@ -1210,14 +1210,14 @@ public class AuthenticationManager {
     }
 
 
-    public static void setClientScopesInSession(AuthenticationSessionModel authSession) {
+    public static void setClientScopesInSession(KeycloakSession session, AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();
         UserModel user = authSession.getAuthenticatedUser();
 
         // todo scope param protocol independent
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
 
-        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
+        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client)
                 .map(ClientScopeModel::getId).collect(Collectors.toSet());
 
         authSession.setClientScopes(requestedClientScopes);

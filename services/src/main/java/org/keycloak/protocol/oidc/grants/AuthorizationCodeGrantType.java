@@ -187,7 +187,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = codeData.getScope();
-        Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(scopeParam, client);
+        Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(session, scopeParam, client);
         if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);

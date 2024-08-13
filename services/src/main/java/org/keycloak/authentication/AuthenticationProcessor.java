@@ -1170,7 +1170,7 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
-        AuthenticationManager.setClientScopesInSession(authenticationSession);
+        AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
         String nextRequiredAction = nextRequiredAction();
         if (nextRequiredAction != null) {

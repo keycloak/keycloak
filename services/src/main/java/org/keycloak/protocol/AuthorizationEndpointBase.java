@@ -132,7 +132,7 @@ public abstract class AuthorizationEndpointBase {
                     }
                 }
 
-                AuthenticationManager.setClientScopesInSession(authSession);
+                AuthenticationManager.setClientScopesInSession(session, authSession);
 
                 if (processor.nextRequiredAction() != null) {
                     Response response = protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);

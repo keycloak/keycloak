@@ -28,6 +28,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.TokenVerifier;
@@ -46,13 +48,18 @@ import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 public class Organizations {
+
+    private static final Pattern SCOPE_PATTERN = Pattern.compile("organization:*".replace("*", "(.*)"));
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
         if (!Type.ORGANIZATION.equals(group.getType())) {
@@ -69,7 +76,7 @@ public class Organizations {
     }
 
     public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
-        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        OrganizationProvider provider = getProvider(session);
         RealmModel realm = session.getContext().getRealm();
         List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
                 .filter(OrganizationModel::isEnabled)
@@ -117,7 +124,7 @@ public class Organizations {
             OrganizationModel current = resolveOrganization(session);
 
             try {
-                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                OrganizationProvider provider = getProvider(session);
 
                 session.setAttribute(OrganizationModel.class.getName(), provider.getById(group.getName()));
 
@@ -134,6 +141,16 @@ public class Organizations {
 
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
         return orgProvider != null && orgProvider.isEnabled() && orgProvider.count() != 0;
+    }
+
+    public static boolean isEnabledAndOrganizationsPresent(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        OrganizationProvider provider = getProvider(session);
+
+        return isEnabledAndOrganizationsPresent(provider);
     }
 
     public static void checkEnabled(OrganizationProvider provider) {
@@ -236,13 +253,22 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
+        OrganizationProvider provider = getProvider(session);
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession != null) {
+            Optional<OrganizationModel> organization = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE)).map(provider::getById);
+
+            if (organization.isPresent()) {
+                return organization.get();
+            }
+        }
+
         Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
 
         if (organization.isPresent()) {
             return organization.get();
         }
-
-        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
         organization = ofNullable(user).stream().flatMap(provider::getByMember)
                 .filter(o -> o.isEnabled() && provider.isManagedMember(o, user))
@@ -259,5 +285,33 @@ public class Organizations {
         return ofNullable(domain)
                 .map(provider::getByDomainName)
                 .orElse(null);
+    }
+
+    public static OrganizationModel resolveOrganizationFromScopeParam(KeycloakSession session, String scopeParam) {
+        return TokenManager.parseScopeParameter(scopeParam)
+                .map((s) -> resolveOrganizationFromScope(session, s))
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElse(null);
+    }
+
+    public static OrganizationModel resolveOrganizationFromScope(KeycloakSession session, String scope) {
+        if (scope == null) {
+            return null;
+        }
+
+        Matcher matcher = SCOPE_PATTERN.matcher(scope);
+
+        if (matcher.matches()) {
+            return Optional.ofNullable(getProvider(session).getByAlias(matcher.group(1)))
+                    .filter(OrganizationModel::isEnabled)
+                    .orElse(null);
+        }
+
+        return null;
+    }
+
+    private static OrganizationProvider getProvider(KeycloakSession session) {
+        return session.getProvider(OrganizationProvider.class);
     }
 }
