@@ -156,13 +156,13 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
     public void addTokenStoreUpdaters(ServletContext servletContext) {
         SessionIdMapperUpdater updater = this.idMapperUpdater;
 
+        servletContext.addListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
+
         try {
             String idMapperSessionUpdaterClasses = servletContext.getInitParameter("keycloak.sessionIdMapperUpdater.classes");
             if (idMapperSessionUpdaterClasses == null) {
                 return;
             }
-
-            servletContext.addListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
 
             updater = SessionIdMapperUpdater.DIRECT;
 
