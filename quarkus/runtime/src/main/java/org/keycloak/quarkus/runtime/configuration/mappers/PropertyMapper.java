@@ -193,8 +193,18 @@ public class PropertyMapper<T> {
         return this.option.getDescription();
     }
 
+    /**
+     * If {@link #isStrictExpectedValues()} is false, custom values can be provided
+     * Otherwise, only specified expected values can be used.
+     *
+     * @return expected values
+     */
     public List<String> getExpectedValues() {
         return this.option.getExpectedValues();
+    }
+
+    public boolean isStrictExpectedValues() {
+        return this.option.isStrictExpectedValues();
     }
 
     public Optional<T> getDefaultValue() { return this.option.getDefaultValue(); }
@@ -378,7 +388,7 @@ public class PropertyMapper<T> {
 
     void validateSingleValue(ConfigValue configValue, String v) {
         List<String> expectedValues = getExpectedValues();
-        if (!expectedValues.isEmpty() && !expectedValues.contains(v)) {
+        if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
             throw new PropertyException(
                     String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
                             PropertyMapperParameterConsumer.getExpectedValuesMessage(expectedValues, expectedValues)));

@@ -50,9 +50,8 @@ public class CachingOptions {
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
-            .expectedValues(List.of())
-            .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
-                    + "if 'cache' is set to 'ispn'. Default: udp. Built-in values include: " + Stream.of(Stack.values()).map(Stack::name).collect(Collectors.joining(", ")))
+            .expectedValues(false)
+            .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect if 'cache' is set to 'ispn'. Default: udp.")
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
