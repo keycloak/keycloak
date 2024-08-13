@@ -87,8 +87,8 @@ importers:
         specifier: ^5.3.4
         version: 5.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
-        specifier: ^23.12.2
-        version: 23.12.2
+        specifier: ^23.12.3
+        version: 23.12.3
       i18next-http-backend:
         specifier: ^2.5.2
         version: 2.5.2
@@ -109,7 +109,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.12.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.12.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.24.1
         version: 6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -187,8 +187,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       i18next:
-        specifier: ^23.12.2
-        version: 23.12.2
+        specifier: ^23.12.3
+        version: 23.12.3
       i18next-http-backend:
         specifier: ^2.5.2
         version: 2.5.2
@@ -218,7 +218,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.12.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.12.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.24.1
         version: 6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -427,8 +427,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1
       i18next:
-        specifier: ^23.12.2
-        version: 23.12.2
+        specifier: ^23.12.3
+        version: 23.12.3
       keycloak-js:
         specifier: workspace:*
         version: link:../keycloak-js
@@ -446,7 +446,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.12.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.12.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -1026,10 +1026,6 @@ packages:
 
   '@eslint/eslintrc@3.1.0':
     resolution: {integrity: sha512-4Bfj15dVJdoy3RfZmmo86RK1Fwzn6SstsvK9JS+BaVKqC6QQQQyXekNaC+g+LKNgkQ+2VhGAzm6hO40AhMR3zQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@eslint/js@9.8.0':
-    resolution: {integrity: sha512-MfluB7EUfxXtv3i/++oh89uzAr4PDI4nn201hsp+qaXqsjAWzinlZEHEfPgAX4doIlKvPG/i0A9dpKxOLII8yA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/js@9.9.0':
@@ -3235,8 +3231,8 @@ packages:
   i18next-http-backend@2.5.2:
     resolution: {integrity: sha512-+K8HbDfrvc1/2X8jpb7RLhI9ZxBDpx3xogYkQwGKlWAUXLSEGXzgdt3EcUjLlBCdMwdQY+K+EUF6oh8oB6rwHw==}
 
-  i18next@23.12.2:
-    resolution: {integrity: sha512-XIeh5V+bi8SJSWGL3jqbTEBW5oD6rbP5L+E7dVQh1MNTxxYef0x15rhJVcRb7oiuq4jLtgy2SD8eFlf6P2cmqg==}
+  i18next@23.12.3:
+    resolution: {integrity: sha512-DyigQmrR10V9U2N6pjhbfahW13GY7n8BQD9swN09JuRRropgsksWVi4vRLeex0Qf7zCPnBfIqQfhcBzdZBQBYw==}
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -5605,8 +5601,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@9.8.0': {}
-
   '@eslint/js@9.9.0': {}
 
   '@eslint/object-schema@2.1.4': {}
@@ -5671,7 +5665,7 @@ snapshots:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 6.0.1
-      i18next: 23.12.2
+      i18next: 23.12.3
       i18next-http-backend: 2.5.2
       keycloak-js: link:js/libs/keycloak-js
       lodash-es: 4.17.21
@@ -5681,7 +5675,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-dropzone: 14.2.3(react@18.3.1)
       react-hook-form: 7.52.2(react@18.3.1)
-      react-i18next: 15.0.1(i18next@23.12.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-i18next: 15.0.1(i18next@23.12.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -8168,7 +8162,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  i18next@23.12.2:
+  i18next@23.12.3:
     dependencies:
       '@babel/runtime': 7.24.8
 
@@ -9066,11 +9060,11 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.0.1(i18next@23.12.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-i18next@15.0.1(i18next@23.12.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.24.8
       html-parse-stringify: 3.0.1
-      i18next: 23.12.2
+      i18next: 23.12.3
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
