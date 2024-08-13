@@ -20,6 +20,7 @@ package org.keycloak.config;
 import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class TracingOptions {
 
@@ -43,6 +44,16 @@ public class TracingOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<String> TRACING_SERVICE_NAME = new OptionBuilder<>("tracing-service-name", String.class)
+            .category(OptionCategory.TRACING)
+            .description("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'tracing-resource-attributes' property.")
+            .defaultValue("keycloak")
+            .build();
+
+    public static final Option<List<String>> TRACING_RESOURCE_ATTRIBUTES = OptionBuilder.listOptionBuilder("tracing-resource-attributes", String.class)
+            .category(OptionCategory.TRACING)
+            .description("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer. Values in format 'key1=val1,key2=val2'. For more information, check the Tracing guide.")
+            .build();
     public static final Option<String> TRACING_PROTOCOL = new OptionBuilder<>("tracing-protocol", String.class)
             .category(OptionCategory.TRACING)
             .description("OpenTelemetry protocol used for the telemetry data.")

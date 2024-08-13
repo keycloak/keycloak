@@ -31,8 +31,10 @@ import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
 import static org.keycloak.config.TracingOptions.TRACING_ENDPOINT;
 import static org.keycloak.config.TracingOptions.TRACING_JDBC_ENABLED;
 import static org.keycloak.config.TracingOptions.TRACING_PROTOCOL;
+import static org.keycloak.config.TracingOptions.TRACING_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_RATIO;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_TYPE;
+import static org.keycloak.config.TracingOptions.TRACING_SERVICE_NAME;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TracingPropertyMappers {
@@ -51,6 +53,16 @@ public class TracingPropertyMappers {
                         .to("quarkus.otel.exporter.otlp.traces.endpoint")
                         .paramLabel("url")
                         .validator(TracingPropertyMappers::validateEndpoint)
+                        .build(),
+                fromOption(TRACING_SERVICE_NAME)
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .to("quarkus.otel.service.name")
+                        .paramLabel("name")
+                        .build(),
+                fromOption(TRACING_RESOURCE_ATTRIBUTES)
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .to("quarkus.otel.resource.attributes")
+                        .paramLabel("attributes")
                         .build(),
                 fromOption(TRACING_PROTOCOL)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
