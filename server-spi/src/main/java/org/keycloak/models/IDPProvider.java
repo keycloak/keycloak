@@ -245,4 +245,62 @@ public interface IDPProvider extends Provider {
                     .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(Predicate::and).get());
         }
     }
+
+    /**
+     * Creates a new identity provider mapper from the specified model.
+     *
+     * @param model a {@link IdentityProviderMapperModel} containing the identity provider mapper's data.
+     * @return the model of the created identity provider mapper.
+     */
+    IdentityProviderMapperModel createMapper(IdentityProviderMapperModel model);
+
+    /**
+     * Updates the identity provider mapper using the specified model.
+     *
+     * @param model a {@link IdentityProviderMapperModel} containing the identity provider mapper's data.
+     */
+    void updateMapper(IdentityProviderMapperModel model);
+
+    /**
+     * Removes the given identity provider mapper.
+     *
+     * @param model a {@link IdentityProviderMapperModel} to be deleted.
+     * @return {@code true} if an identity provider mapper was removed; {@code false} otherwise.
+     */
+    boolean removeMapper(IdentityProviderMapperModel model);
+
+    /**
+     * Removes all identity provider mappers from the realm.
+     */
+    void removeAllMappers();
+
+    /**
+     * Obtains the identity provider mapper with the specified id.
+     *
+     * @param id the identity provider mapper's id.
+     * @return a reference to the identity provider mapper, or {@code null} if no mapper is found.
+     */
+    IdentityProviderMapperModel getMapperById(String id);
+
+    /**
+     * Obtains the identity provider mapper with the provided identity provider alias and name.
+     *
+     * @param identityProviderAlias the identity provider alias.
+     * @param name the identity provider mapper's name.
+     * @return a reference to the identity provider mapper, or {@code null} if no provider is found.
+     */
+    IdentityProviderMapperModel getMapperByName(String identityProviderAlias, String name);
+
+    /**
+     * Returns all identity provider mappers as a stream.
+     * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
+     */
+    Stream<IdentityProviderMapperModel> getMappersStream();
+
+    /**
+     * Returns identity provider mappers by the provided alias as a stream.
+     * @param identityProviderAlias {@code String} Identity provider alias to filter results.
+     * @return Stream of {@link IdentityProviderMapperModel} Never returns {@code null}.
+     */
+    Stream<IdentityProviderMapperModel> getMappersByAliasStream(String identityProviderAlias);
 }
