@@ -58,14 +58,15 @@ export const NumberControl = <
         control={control}
         render={({ field }) => {
           const required = !!controller.rules?.required;
-          const min = controller.rules?.min;
-          const value =
-            field.value === undefined ? controller.defaultValue : field.value;
-          const setValue = (newValue: number) => {
-            return field.onChange(
+          const min =
+            typeof controller.rules?.min === "number"
+              ? controller.rules?.min
+              : (controller.rules?.min as { value: number })?.value;
+          const value = field.value ?? controller.defaultValue;
+          const setValue = (newValue: number) =>
+            field.onChange(
               min !== undefined ? Math.max(newValue, Number(min)) : newValue,
             );
-          };
 
           return (
             <NumberInput
