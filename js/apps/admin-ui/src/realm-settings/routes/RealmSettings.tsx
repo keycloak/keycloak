@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type RealmSettingsTab =
@@ -45,6 +44,6 @@ export const toRealmSettings = (params: RealmSettingsParams): Partial<Path> => {
     : RealmSettingsRoute.path;
 
   return {
-    pathname: generateEncodedPath(path, params),
+    pathname: generatePath(path, params),
   };
 };

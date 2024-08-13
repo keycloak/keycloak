@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type AuthorizationTab =
@@ -33,5 +32,5 @@ export const AuthorizationRoute: AppRouteObject = {
 export const toAuthorizationTab = (
   params: AuthorizationParams,
 ): Partial<Path> => ({
-  pathname: generateEncodedPath(AuthorizationRoute.path, params),
+  pathname: generatePath(AuthorizationRoute.path, params),
 });

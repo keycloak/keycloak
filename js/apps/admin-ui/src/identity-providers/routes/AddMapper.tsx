@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderAddMapperParams = {
@@ -24,5 +23,5 @@ export const IdentityProviderAddMapperRoute: AppRouteObject = {
 export const toIdentityProviderAddMapper = (
   params: IdentityProviderAddMapperParams,
 ): Partial<Path> => ({
-  pathname: generateEncodedPath(IdentityProviderAddMapperRoute.path, params),
+  pathname: generatePath(IdentityProviderAddMapperRoute.path, params),
 });

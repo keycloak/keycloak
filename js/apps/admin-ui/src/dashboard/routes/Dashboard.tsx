@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type DashboardTab = "info" | "providers" | "welcome";
@@ -36,6 +35,6 @@ export const toDashboard = (params: DashboardParams): Partial<Path> => {
     : DashboardRoute.path;
 
   return {
-    pathname: generateEncodedPath(pathname, params),
+    pathname: generatePath(pathname, params),
   };
 };

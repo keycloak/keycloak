@@ -1,7 +1,6 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
 
 type OrganizationsRouteParams = {
   realm: string;
@@ -24,6 +23,6 @@ export const toOrganizations = (
   const path = OrganizationsRoute.path;
 
   return {
-    pathname: generateEncodedPath(path, params),
+    pathname: generatePath(path, params),
   };
 };

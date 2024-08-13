@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 import type { PermissionType } from "./NewPermission";
 
@@ -32,5 +31,5 @@ export const PermissionDetailsRoute: AppRouteObject = {
 export const toPermissionDetails = (
   params: PermissionDetailsParams,
 ): Partial<Path> => ({
-  pathname: generateEncodedPath(PermissionDetailsRoute.path, params),
+  pathname: generatePath(PermissionDetailsRoute.path, params),
 });

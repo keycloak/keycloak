@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type AuthenticationTab = "flows" | "required-actions" | "policies";
@@ -31,6 +30,6 @@ export const toAuthentication = (
     : AuthenticationRoute.path;
 
   return {
-    pathname: generateEncodedPath(path, params),
+    pathname: generatePath(path, params),
   };
 };

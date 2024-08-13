@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type UserFederationParams = { realm: string };
@@ -19,5 +18,5 @@ export const UserFederationRoute: AppRouteObject = {
 export const toUserFederation = (
   params: UserFederationParams,
 ): Partial<Path> => ({
-  pathname: generateEncodedPath(UserFederationRoute.path, params),
+  pathname: generatePath(UserFederationRoute.path, params),
 });

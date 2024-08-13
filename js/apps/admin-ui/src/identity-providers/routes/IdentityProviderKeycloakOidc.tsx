@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderKeycloakOidcParams = { realm: string };
@@ -19,5 +18,5 @@ export const IdentityProviderKeycloakOidcRoute: AppRouteObject = {
 export const toIdentityProviderKeycloakOidc = (
   params: IdentityProviderKeycloakOidcParams,
 ): Partial<Path> => ({
-  pathname: generateEncodedPath(IdentityProviderKeycloakOidcRoute.path, params),
+  pathname: generatePath(IdentityProviderKeycloakOidcRoute.path, params),
 });

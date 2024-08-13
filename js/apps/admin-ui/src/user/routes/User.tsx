@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type UserTab =
@@ -31,5 +30,5 @@ export const UserRoute: AppRouteObject = {
 };
 
 export const toUser = (params: UserParams): Partial<Path> => ({
-  pathname: generateEncodedPath(UserRoute.path, params),
+  pathname: generatePath(UserRoute.path, params),
 });

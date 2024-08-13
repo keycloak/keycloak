@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type ScopeDetailsParams = {
@@ -32,6 +31,6 @@ export const toScopeDetails = (params: ScopeDetailsParams): Partial<Path> => {
     : ScopeDetailsRoute.path;
 
   return {
-    pathname: generateEncodedPath(path, params),
+    pathname: generatePath(path, params),
   };
 };

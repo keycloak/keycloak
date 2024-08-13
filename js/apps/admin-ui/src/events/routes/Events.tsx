@@ -1,6 +1,5 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import { generatePath, type Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type EventsTab = "user-events" | "admin-events";
@@ -30,6 +29,6 @@ export const toEvents = (params: EventsParams): Partial<Path> => {
   const path = params.tab ? EventsRouteWithTab.path : EventsRoute.path;
 
   return {
-    pathname: generateEncodedPath(path, params),
+    pathname: generatePath(path, params),
   };
 };
