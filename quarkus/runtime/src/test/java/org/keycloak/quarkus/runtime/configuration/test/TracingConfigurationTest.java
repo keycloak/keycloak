@@ -43,9 +43,11 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "log-file-include-trace", "true",
                 "log-syslog-include-trace", "true"
         ));
+        assertConfig("tracing-service-name", "keycloak");
 
         assertExternalConfig(Map.of(
                 "quarkus.otel.traces.enabled", "false",
+                "quarkus.otel.service.name", "keycloak",
                 "quarkus.otel.exporter.otlp.traces.endpoint", "http://localhost:4317",
                 "quarkus.otel.exporter.otlp.traces.protocol", "grpc",
                 "quarkus.datasource.jdbc.telemetry", "false",
@@ -69,6 +71,10 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "KC_LOG_FILE_INCLUDE_TRACE", "false",
                 "KC_LOG_SYSLOG_INCLUDE_TRACE", "false"
         ));
+        putEnvVars(Map.of(
+                "KC_TRACING_SERVICE_NAME", "keycloak-42",
+                "KC_TRACING_RESOURCE_ATTRIBUTES", "host.name=unknown,service.version=30"
+        ));
 
         initConfig();
 
@@ -80,6 +86,10 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "tracing-sampler-type", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
                 "tracing-sampler-ratio", "0.5",
                 "tracing-compression", TracingOptions.TracingCompression.gzip.name(),
+                "tracing-service-name", "keycloak-42",
+                "tracing-resource-attributes", "host.name=unknown,service.version=30"
+        ));
+        assertConfig(Map.of(
                 "log-console-include-trace", "false",
                 "log-file-include-trace", "false",
                 "log-syslog-include-trace", "false"
@@ -92,8 +102,47 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.jdbc.telemetry", "false",
                 "quarkus.otel.traces.sampler", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
                 "quarkus.otel.traces.sampler.arg", "0.5",
-                "quarkus.otel.exporter.otlp.traces.compression", TracingOptions.TracingCompression.gzip.name()
+                "quarkus.otel.exporter.otlp.traces.compression", TracingOptions.TracingCompression.gzip.name(),
+                "quarkus.otel.service.name", "keycloak-42",
+                "quarkus.otel.resource.attributes", "host.name=unknown,service.version=30"
         ));
+    }
+
+    @Test
+    public void serviceNamePreference() {
+        putEnvVars(Map.of(
+                "KC_TRACING_ENABLED", "true",
+                "KC_TRACING_SERVICE_NAME", "service-name",
+                "KC_TRACING_RESOURCE_ATTRIBUTES", "service.name=new-service-name"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "tracing-enabled", "true",
+                "tracing-service-name", "service-name",
+                "tracing-resource-attributes", "service.name=new-service-name"
+        ));
+
+        assertExternalConfig("quarkus.otel.service.name", "service-name");
+    }
+
+    @Test
+    public void serviceNameResourceAttributes() {
+        putEnvVars(Map.of(
+                "KC_TRACING_ENABLED", "true",
+                "KC_TRACING_RESOURCE_ATTRIBUTES", "service.name=new-service-name"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "tracing-enabled", "true",
+                "tracing-resource-attributes", "service.name=new-service-name"
+        ));
+
+        // the default value should be used
+        assertExternalConfig("quarkus.otel.service.name", "keycloak");
     }
 
     @Test

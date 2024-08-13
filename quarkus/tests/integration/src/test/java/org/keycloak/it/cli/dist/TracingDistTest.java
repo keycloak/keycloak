@@ -34,12 +34,12 @@ public class TracingDistTest {
 
     private void assertTracingEnabled(CLIResult result) {
         result.assertMessage("opentelemetry");
-        result.assertMessage("service.name=\"Keycloak\"");
+        result.assertMessage("service.name=\"keycloak\"");
     }
 
     private void assertTracingDisabled(CLIResult result) {
         result.assertMessage("opentelemetry");
-        result.assertNoMessage("service.name=\"Keycloak\"");
+        result.assertNoMessage("service.name=\"keycloak\"");
         result.assertNoMessage("Failed to export spans.");
         result.assertNoMessage("Connection refused: localhost/127.0.0.1:4317");
     }
@@ -63,7 +63,6 @@ public class TracingDistTest {
         cliResult.assertStartedDevMode();
         assertTracingEnabled(cliResult);
     }
-
     @Test
     @Order(3)
     @Launch({"build", "--tracing-enabled=true"})
@@ -148,6 +147,41 @@ public class TracingDistTest {
 
         // Initial system logs do not have any tracing data
         cliResult.assertNoMessage("traceId=, parentId=, spanId=, sampled=");
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-service-name=my-service"})
+    void differentServiceName(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        cliResult.assertMessage("opentelemetry");
+        cliResult.assertMessage("service.name=\"my-service\"");
+
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-resource-attributes=service.name=new-service"})
+    void serviceNameResourceAttributes(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        // the default value should be used
+        assertTracingEnabled(cliResult);
+
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-resource-attributes=some.key1=some.val1,some.key2=some.val2",})
+    void resourceAttributes(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        assertTracingEnabled(cliResult);
+
+        cliResult.assertMessage("some.key1=\"some.val1\"");
+        cliResult.assertMessage("some.key2=\"some.val2\"");
+
         cliResult.assertStarted();
     }
 }
