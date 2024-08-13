@@ -454,6 +454,23 @@ spec:
       value: 'true'
     - name: http-pool-max-threads # <6>
       value: "66"
+    # end::keycloak[]
+    # This block is just for documentation purposes as we need both versions of Infinispan config, with and without numbers to corresponding tests
+    # tag::keycloak[]
+    - name: cache-remote-host
+      value: "infinispan.keycloak.svc"
+    - name: cache-remote-port
+      value: "11222"
+    - name: cache-remote-username
+      secret:
+        name: remote-store-secret
+        key: username
+    - name: cache-remote-password
+      secret:
+        name: remote-store-secret
+        key: password
+    - name: spi-connections-infinispan-quarkus-site-name
+      value: keycloak
     - name: db-driver
       value: software.amazon.jdbc.Driver
   http:

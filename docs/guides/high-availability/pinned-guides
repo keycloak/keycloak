@@ -4,7 +4,6 @@ bblocks-multi-site
 deploy-aurora-multi-az
 deploy-infinispan-kubernetes-crossdc
 deploy-keycloak-kubernetes
-connect-keycloak-to-external-infinispan
 deploy-aws-route53-loadbalancer
 deploy-aws-route53-failover-lambda
 operate-failover

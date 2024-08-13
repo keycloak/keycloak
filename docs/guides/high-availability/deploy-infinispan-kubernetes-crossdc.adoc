@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
 summary="Building block for an {jdgserver_name} deployment on Kubernetes"
-tileVisible="false" >
+tileVisible="false"
+includedOptions="cache-remote-*">
 
 include::partials/infinispan/infinispan-attributes.adoc[]
 
@@ -251,8 +252,48 @@ kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.or
 kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
 ----
 
+== Connecting {jdgserver_name} with {project_name}
+[#connecting-to-keycloak]
+
+Now that an {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
+
+. Create a Secret with the username and password to connect to the external {jdgserver_name} deployment:
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
+----
+
+. Extend the {project_name} Custom Resource with `additionalOptions` as shown below.
++
+[NOTE]
+====
+All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
+Administrators should leave those configurations untouched.
+====
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
+----
+<1> The hostname of the remote {jdgserver_name} cluster.
+<2> The port of the remote {jdgserver_name} cluster.
+This is optional and it default to `11222`.
+<3> The Secret `name` and `key` with the {jdgserver_name} username credential.
+<4> The Secret `name` and `key` with the {jdgserver_name} password credential.
+<5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its Infinispan caches deployment when a remote store is used.
+This site-name is related only to the Infinispan caches and does not need to match any value from the external {jdgserver_name} deployment.
+If you are using multiple sites for {project_name} in a cross-DC setup such as <@links.ha id="deploy-infinispan-kubernetes-crossdc" />, the site name must be different in each site.
+
+=== Architecture
+
+This connects {project_name} to {jdgserver_name} using TCP connections secured by TLS 1.3.
+It uses the {project_name}'s truststore to verify {jdgserver_name}'s server certificate.
+As {project_name} is deployed using its Operator on OpenShift in the prerequisites listed below, the Operator already added the `service-ca.crt` to the truststore which is used to sign {jdgserver_name}'s server certificates.
+In other environments, add the necessary certificates to {project_name}'s truststore.
+
 == Next steps
 
-After {jdgserver_name} is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
+After Aurora AWS database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
 
 </@tmpl.guide>
