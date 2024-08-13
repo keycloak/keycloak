@@ -160,7 +160,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     for (AttributeType attribute : entityType.getExtensions().getEntityAttributes().getAttribute()) {
                         if (MACEDIR_ENTITY_CATEGORY.equals(attribute.getName())
                                 && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
-                            samlIdentityProviderConfig.setHideOnLogin(true);
+                            samlIdentityProviderConfig.getConfig().put(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR, Boolean.TRUE.toString());
                         }
                     }
 

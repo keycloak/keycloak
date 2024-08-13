@@ -56,12 +56,12 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation expected = orgIdPResource.toRepresentation();
 
         // organization link set
-        Assert.assertEquals(expected.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
+        Assert.assertEquals(expected.getOrganizationId(), organization.getId());
 
         IdentityProviderResource idpResource = testRealm().identityProviders().get(expected.getAlias());
         IdentityProviderRepresentation actual = idpResource.toRepresentation();
-        Assert.assertEquals(actual.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
-        actual.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, "somethingelse");
+        Assert.assertEquals(actual.getOrganizationId(), organization.getId());
+        actual.setOrganizationId("somethingelse");
         try {
             idpResource.update(actual);
             Assert.fail("Should fail because it maps to an invalid org");
@@ -69,19 +69,19 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         }
 
         OrganizationRepresentation secondOrg = createOrganization("secondorg");
-        actual.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, secondOrg.getId());
+        actual.setOrganizationId(secondOrg.getId());
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
-        Assert.assertEquals(actual.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
+        Assert.assertEquals(actual.getOrganizationId(), organization.getId());
 
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assert.assertEquals(actual.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
-        actual.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        Assert.assertEquals(actual.getOrganizationId(), organization.getId());
+        actual.setOrganizationId(null);
         idpResource.update(actual);
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
-        Assert.assertEquals(actual.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
+        Assert.assertEquals(actual.getOrganizationId(), organization.getId());
 
         String domain = actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE);
 
@@ -112,18 +112,19 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
                 .identityProviders().get(bc.getIDPAlias()).toRepresentation();
 
         //remove Org related stuff from the template
-        idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        idpTemplate.setOrganizationId(null);
         idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        idpTemplate.getConfig().remove(OrganizationModel.BROKER_PUBLIC);
         idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
 
         for (int i = 0; i < 5; i++) {
             idpTemplate.setAlias("idp-" + i);
             idpTemplate.setInternalId(null);
             try (Response response = testRealm().identityProviders().create(idpTemplate)) {
-                assertThat("Falied to create idp-" + i, response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                assertThat("Failed to create idp-" + i, response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             }
             try (Response response = organization.identityProviders().addIdentityProvider(idpTemplate.getAlias())) {
-                assertThat("Falied to add idp-" + i, response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+                assertThat("Failed to add idp-" + i, response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
             }
         }
 
@@ -191,7 +192,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         // broker not removed from realm
         IdentityProviderRepresentation idpRep = testRealm().identityProviders().get(bc.getIDPAlias()).toRepresentation();
         // broker no longer linked to the org
-        Assert.assertNull(idpRep.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+        Assert.assertNull(idpRep.getOrganizationId());
         Assert.assertNull(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
         Assert.assertNull(idpRep.getConfig().get(BROKER_PUBLIC));
     }

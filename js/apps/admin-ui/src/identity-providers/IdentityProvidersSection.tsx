@@ -76,7 +76,7 @@ const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  if (!identityProvider.config?.["kc.org"]) {
+  if (!identityProvider?.organizationId) {
     return "—";
   }
 
@@ -85,7 +85,7 @@ const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
       key={identityProvider.providerId}
       to={toEditOrganization({
         realm,
-        id: identityProvider.config["kc.org"],
+        id: identityProvider.organizationId,
         tab: "identityProviders",
       })}
     >
@@ -299,7 +299,7 @@ export default function IdentityProvidersSection() {
                 cellFormatters: [upperCaseFormatter()],
               },
               {
-                name: "config['kc.org']",
+                name: "organizationId",
                 displayKey: "linkedOrganization",
                 cellRenderer: OrganizationLink,
               },

@@ -180,7 +180,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 .setAttributeMapper(attributes -> {
                     if (hasPublicBrokers(organization)) {
                         attributes.computeIfPresent("social",
-                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session, true)
+                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, true)
                         );
                         // do not show the self-registration link if there are public brokers available from the organization to force the user to register using a broker
                         attributes.computeIfPresent("realm",
@@ -188,7 +188,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                         );
                     } else {
                         attributes.computeIfPresent("social",
-                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session, false, true)
+                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
                         );
                     }
 
@@ -208,7 +208,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         LoginFormsProvider form = context.form()
                 .setAttributeMapper(attributes -> {
                     attributes.computeIfPresent("social",
-                            (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session, false, true)
+                            (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
                     );
                     attributes.computeIfPresent("auth",
                             (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)

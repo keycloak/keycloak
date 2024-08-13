@@ -143,7 +143,7 @@ public class InfinispanIDPProvider implements IDPProvider {
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
+    public Stream<IdentityProviderModel> getAllStream(Map<String, Object> attrs, Integer first, Integer max) {
         return idpDelegate.getAllStream(attrs, first, max);
     }
 

@@ -197,6 +197,8 @@ public class IdentityProviderResource {
         }
 
         session.identityProviders().update(updated);
+        // update in case of legacy hide on login attr was used.
+        providerRep.setHideOnLogin(updated.isHideOnLogin());
 
         if (oldProviderAlias != null && !oldProviderAlias.equals(newProviderAlias)) {
 

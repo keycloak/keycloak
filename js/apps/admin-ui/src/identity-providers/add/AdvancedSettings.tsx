@@ -150,7 +150,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label="accountLinkingOnly"
         fieldType="boolean"
       />
-      <SwitchField field="config.hideOnLoginPage" label="hideOnLoginPage" />
+      <SwitchField
+        field="hideOnLogin"
+        label="hideOnLoginPage"
+        fieldType="boolean"
+      />
 
       {(!isSAML || isOIDC) && (
         <FormGroupField label="filteredByClaim">
