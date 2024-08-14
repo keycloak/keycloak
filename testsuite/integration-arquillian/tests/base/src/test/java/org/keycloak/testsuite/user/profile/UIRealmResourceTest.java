@@ -118,6 +118,10 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(rep, upConfig));
         assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
         assertAdminEvents.assertEmpty();
+        
+        rep.setAccessCodeLifespanLogin(0);
+        rep.setAccessCodeLifespanUserAction(0);
+        updateRealmMustFail(toUIRealmRepresentation(rep, upConfig));
     }
 
     private void updateRealmExt(UIRealmRepresentation rep) {
@@ -128,6 +132,17 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
                     .request(MediaType.APPLICATION_JSON)
                     .put(Entity.entity(rep, MediaType.APPLICATION_JSON));
             Assert.assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    private void updateRealmMustFail(UIRealmRepresentation rep) {
+        try (Client client = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            Response response = client.target(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth")
+                    .path("/admin/realms/" + rep.getRealm() + "/ui-ext")
+                    .register(new BearerAuthFilter(adminClient.tokenManager()))
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(Entity.entity(rep, MediaType.APPLICATION_JSON));
+            Assert.assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
         }
     }
 

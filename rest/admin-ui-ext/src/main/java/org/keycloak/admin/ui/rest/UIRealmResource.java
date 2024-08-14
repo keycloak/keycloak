@@ -58,13 +58,17 @@ public class UIRealmResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation( hidden = true )
     public Response updateRealm(UIRealmRepresentation rep) {
-        Response response = delegate.updateRealm(rep);
 
-        if (isSuccessful(response)) {
-            updateUserProfileConfiguration(rep);
+        if (rep.getAccessCodeLifespanLogin() >= 1 && rep.getAccessCodeLifespanUserAction() >= 1) {
+            Response response = delegate.updateRealm(rep);
+
+            if (isSuccessful(response)) {
+                updateUserProfileConfiguration(rep);
+            }
+            return response;
+        } else {
+            throw new InternalServerErrorException("clientSessionIdleTimeout or clientSessionMaxLifespan cannot be 0");
         }
-
-        return response;
     }
 
     private void updateUserProfileConfiguration(UIRealmRepresentation rep) {
