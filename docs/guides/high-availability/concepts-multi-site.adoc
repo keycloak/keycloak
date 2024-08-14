@@ -107,7 +107,7 @@ This situation is currently difficult to monitor, and it would need a full manua
 Monitoring the number of cache entries in both sites and the {project_name} log file can show when resynch would become necessary.
 
 Manual operations::
-Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system (network, CPU, Java heap in {jdgserver_name} and {project_name}).
+Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system.
 
 Two sites restriction::
 This setup is tested and supported only with two sites.
