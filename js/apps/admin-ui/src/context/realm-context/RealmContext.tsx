@@ -36,17 +36,15 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   });
 
   const realmParam = routeMatch?.params.realm;
-  const realm = useMemo(
-    () => decodeURIComponent(realmParam ?? environment.realm),
-    [realmParam],
-  );
+  const realm = useMemo(() => realmParam ?? environment.realm, [realmParam]);
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => {
     (async () => {
-      adminClient.setConfig({ realmName: realm });
-      await i18n.loadNamespaces(realm);
-      i18n.setDefaultNamespace(realm);
+      const realmParam = encodeURIComponent(realm);
+      adminClient.setConfig({ realmName: realmParam });
+      await i18n.loadNamespaces(realmParam);
+      i18n.setDefaultNamespace(realmParam);
     })();
   }, [realm]);
   useFetch(
