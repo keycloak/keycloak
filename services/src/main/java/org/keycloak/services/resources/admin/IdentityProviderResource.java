@@ -137,9 +137,6 @@ public class IdentityProviderResource {
         session.users().preRemove(realm, identityProviderModel);
         session.identityProviders().remove(alias);
 
-        realm.getIdentityProviderMappersByAliasStream(alias)
-                .collect(Collectors.toList()).forEach(realm::removeIdentityProviderMapper);
-
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
         return Response.noContent().build();
