@@ -7,4 +7,14 @@ if [ ! -f "$FILE" ]; then
   exit 0;
 fi
 
+# Exit if dependencies are not installed.
+if [ ! -d "node_modules" ]; then
+  exit 0;
+fi
+
+# Exit if pnpm is not installed.
+if ! [ -x "$(command -v pnpm)" ]; then
+  exit 0;
+fi
+
 pnpm exec lint-staged
