@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type KeySubTab = "list" | "providers";
@@ -21,5 +22,5 @@ export const KeysRoute: AppRouteObject = {
 };
 
 export const toKeysTab = (params: KeysParams): Partial<Path> => ({
-  pathname: generatePath(KeysRoute.path, params),
+  pathname: generateEncodedPath(KeysRoute.path, params),
 });

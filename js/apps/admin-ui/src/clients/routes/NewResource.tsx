@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type NewResourceParams = { realm: string; id: string };
@@ -17,5 +18,5 @@ export const NewResourceRoute: AppRouteObject = {
 };
 
 export const toCreateResource = (params: NewResourceParams): Partial<Path> => ({
-  pathname: generatePath(NewResourceRoute.path, params),
+  pathname: generateEncodedPath(NewResourceRoute.path, params),
 });

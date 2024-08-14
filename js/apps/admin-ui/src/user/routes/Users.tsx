@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
+import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
 export type UserTab = "list" | "permissions";
@@ -26,6 +27,6 @@ export const toUsers = (params: UsersParams): Partial<Path> => {
   const path = params.tab ? UsersRouteWithTab.path : UsersRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

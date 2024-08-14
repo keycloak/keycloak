@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type AttributeParams = {
@@ -19,5 +20,5 @@ export const AttributeRoute: AppRouteObject = {
 };
 
 export const toAttribute = (params: AttributeParams): Partial<Path> => ({
-  pathname: generatePath(AttributeRoute.path, params),
+  pathname: generateEncodedPath(AttributeRoute.path, params),
 });

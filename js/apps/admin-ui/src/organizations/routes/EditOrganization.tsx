@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type OrganizationTab =
@@ -28,5 +29,5 @@ export const EditOrganizationRoute: AppRouteObject = {
 export const toEditOrganization = (
   params: EditOrganizationParams,
 ): Partial<Path> => ({
-  pathname: generatePath(EditOrganizationRoute.path, params),
+  pathname: generateEncodedPath(EditOrganizationRoute.path, params),
 });

@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type AddOrganizationParams = { realm: string };
@@ -18,5 +19,5 @@ export const AddOrganizationRoute: AppRouteObject = {
 export const toAddOrganization = (
   params: AddOrganizationParams,
 ): Partial<Path> => ({
-  pathname: generatePath(AddOrganizationRoute.path, params),
+  pathname: generateEncodedPath(AddOrganizationRoute.path, params),
 });

@@ -1,6 +1,7 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 
 export type DedicatedScopeTab = "mappers" | "scope";
 
@@ -34,6 +35,6 @@ export const toDedicatedScope = (
     : DedicatedScopeDetailsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

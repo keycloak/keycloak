@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type EditClientPolicyParams = {
@@ -21,5 +22,5 @@ export const EditClientPolicyRoute: AppRouteObject = {
 export const toEditClientPolicy = (
   params: EditClientPolicyParams,
 ): Partial<Path> => ({
-  pathname: generatePath(EditClientPolicyRoute.path, params),
+  pathname: generateEncodedPath(EditClientPolicyRoute.path, params),
 });

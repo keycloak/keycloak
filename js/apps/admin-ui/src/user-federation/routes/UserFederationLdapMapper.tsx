@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { generatePath, type Path } from "react-router-dom";
+import type { Path } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type UserFederationLdapMapperParams = {
@@ -24,5 +25,5 @@ export const UserFederationLdapMapperRoute: AppRouteObject = {
 export const toUserFederationLdapMapper = (
   params: UserFederationLdapMapperParams,
 ): Partial<Path> => ({
-  pathname: generatePath(UserFederationLdapMapperRoute.path, params),
+  pathname: generateEncodedPath(UserFederationLdapMapperRoute.path, params),
 });
