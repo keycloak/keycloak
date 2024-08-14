@@ -172,17 +172,6 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <14> The secret with the access token to authenticate into the remote site.
 --
 +
-When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
-+
-[source,yaml]
-----
-distributedCache:
-  owners: "1"
-  memory:
-    maxCount: 10000
-  # ...
-----
-+
 For `{site-b}`, the `Infinispan` CR looks similar to the above.
 Note the differences in point 4, 11 and 13.
 +
@@ -196,31 +185,16 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 {project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
 +
-Due to the use of persistent-user-sessions, the configuration of the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` is different to the `authenticationSessions`, `actionTokens`,
-`loginFailures` and `work` caches. In this section we detail how to configure both types of cache for multi-site deployments.
-+
 The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
 Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
 The documentation contains more details about the options used by this {section}.
 The following example shows the `Cache` CR for `{site-a}`.
 +
 --
-.`sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions` caches in `{site-a}`
+. In `{site-a}` create a `Cache` CR for each of the caches mentioned above with the following content.
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
-----
-<1> Number of owners is only 1 as sessions are stored in the DB and so there is no need to hold redundant copies in memory.
-<2> The maximum number of entries which will be cached in memory.
-<3> The remote site name.
-<4> The cross-site communication, in this case, `SYNC`.
---
-+
---
-.Remaining caches in `{site-a}`
-[source,yaml]
-----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
 ----
 <1> The cross-site merge policy, invoked when there is a write-write conflict.
 Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
@@ -228,9 +202,9 @@ Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `off
 <3> The cross-site communication, in this case, `SYNC`.
 --
 +
-For `{site-b}`, the `Cache` CR is similar for both `*sessions` and all other caches, except for the `backups.<name>` outlined in point 2 of the above diagram.
+For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 2 of the above diagram.
 +
-.session in `{site-b}`
+.sessions `Cache` CR in `{site-b}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-sessions]
