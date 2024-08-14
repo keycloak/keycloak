@@ -692,6 +692,15 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
         assertEquals(Boolean.FALSE, rep.isUserManagedAccessAllowed());
+
+        rep.setAccessCodeLifespanLogin(0);
+        rep.setAccessCodeLifespanUserAction(0);
+        try {
+            realm.update(rep);
+        } catch (Exception expected) {
+            // Expected exception
+            assertEquals("HTTP 400 Bad Request", expected.getMessage());
+        }
     }
 
     @Test
