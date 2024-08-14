@@ -62,9 +62,10 @@ public class RolePolicyProvider implements PolicyProvider {
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
             if (role != null) {
-                boolean hasRole = hasRole(identity, role, realm, authorizationProvider, policyRep.isFetchRoles());
+                boolean isFetchRoles = policyRep.isFetchRoles() != null && policyRep.isFetchRoles();
+                boolean hasRole = hasRole(identity, role, realm, authorizationProvider, isFetchRoles);
 
-                if (!hasRole && roleDefinition.isRequired()) {
+                if (!hasRole && roleDefinition.isRequired() != null && roleDefinition.isRequired()) {
                     evaluation.deny();
                     return;
                 } else if (hasRole) {
