@@ -440,6 +440,7 @@ spec:
   startOptimized: false # <2>
   features:
     enabled:
+      - multi-site # <3>
   transaction:
     xaEnabled: false # <4>
   # tag::keycloak-ispn[]
