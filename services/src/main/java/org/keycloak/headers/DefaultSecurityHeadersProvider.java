@@ -28,6 +28,7 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.models.BrowserSecurityHeaders.CONTENT_SECURITY_POLICY;
@@ -121,6 +122,20 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
                 String allowedFrameSrc = options.getAllowedFrameSrc();
                 if (allowedFrameSrc != null) {
                     csp.addFrameSrc(allowedFrameSrc);
+                }
+
+                List<String> allowedScriptSrc = options.getAllowedScriptSrc();
+                if (allowedScriptSrc != null && !csp.isDefaultScriptSrc()) {
+                    for (String stmt : allowedScriptSrc) {
+                        csp.addScriptSrc(stmt);
+                    }
+                }
+
+                List<String> allowedStyleSrc = options.getAllowedStyleSrc();
+                if (allowedStyleSrc != null && !csp.isDefaultStyleSrc()) {
+                    for (String stmt : allowedStyleSrc) {
+                        csp.addStyleSrc(stmt);
+                    }
                 }
 
                 headers.putSingle(CONTENT_SECURITY_POLICY.getHeaderName(), csp.build());

@@ -22,6 +22,10 @@ public interface SecurityHeadersOptions {
 
     SecurityHeadersOptions allowAnyFrameAncestor();
 
+    SecurityHeadersOptions addScriptSrc(String source);
+
+    SecurityHeadersOptions addStyleSrc(String source);
+
     SecurityHeadersOptions skipHeaders();
 
     SecurityHeadersOptions allowEmptyContentType();

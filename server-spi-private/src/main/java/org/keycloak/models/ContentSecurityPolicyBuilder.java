@@ -25,10 +25,13 @@ public class ContentSecurityPolicyBuilder {
     public static final String DIRECTIVE_NAME_FRAME_SRC = "frame-src";
     public static final String DIRECTIVE_NAME_FRAME_ANCESTORS = "frame-ancestors";
     public static final String DIRECTIVE_NAME_OBJECT_SRC = "object-src";
+    public static final String DIRECTIVE_NAME_SCRIPT_SRC = "script-src";
+    public static final String DIRECTIVE_NAME_STYLE_SRC = "style-src";
 
     // constants for specific directive value keywords
     public static final String DIRECTIVE_VALUE_SELF = "'self'";
     public static final String DIRECTIVE_VALUE_NONE = "'none'";
+    public static final String DIRECTIVE_VALUE_ANY = "*";
 
     private final Map<String, String> directives = new LinkedHashMap<>();
 
@@ -36,7 +39,9 @@ public class ContentSecurityPolicyBuilder {
         return new ContentSecurityPolicyBuilder()
                 .add(DIRECTIVE_NAME_FRAME_SRC, DIRECTIVE_VALUE_SELF)
                 .add(DIRECTIVE_NAME_FRAME_ANCESTORS, DIRECTIVE_VALUE_SELF)
-                .add(DIRECTIVE_NAME_OBJECT_SRC, DIRECTIVE_VALUE_NONE);
+                .add(DIRECTIVE_NAME_OBJECT_SRC, DIRECTIVE_VALUE_NONE)
+                .add(DIRECTIVE_NAME_SCRIPT_SRC, DIRECTIVE_VALUE_ANY)
+                .add(DIRECTIVE_NAME_STYLE_SRC, DIRECTIVE_VALUE_ANY);
     }
 
     public static ContentSecurityPolicyBuilder create(String directives) {
@@ -71,6 +76,40 @@ public class ContentSecurityPolicyBuilder {
 
     public ContentSecurityPolicyBuilder addFrameAncestors(String frameancestors) {
         return add(DIRECTIVE_NAME_FRAME_ANCESTORS, frameancestors);
+    }
+
+    public boolean isDefaultScriptSrc() {
+        return DIRECTIVE_VALUE_ANY.equals(directives.get(DIRECTIVE_NAME_SCRIPT_SRC)) || !directives.containsKey(DIRECTIVE_NAME_SCRIPT_SRC);
+    }
+
+    public ContentSecurityPolicyBuilder scriptSrc(String scriptSrc) {
+        if (scriptSrc == null) {
+            directives.remove(DIRECTIVE_NAME_SCRIPT_SRC);
+        } else {
+            put(DIRECTIVE_NAME_SCRIPT_SRC, scriptSrc);
+        }
+        return this;
+    }
+
+    public ContentSecurityPolicyBuilder addScriptSrc(String scriptSrc) {
+        return add(DIRECTIVE_NAME_SCRIPT_SRC, scriptSrc);
+    }
+
+    public boolean isDefaultStyleSrc() {
+        return DIRECTIVE_VALUE_ANY.equals(directives.get(DIRECTIVE_NAME_STYLE_SRC)) || !directives.containsKey(DIRECTIVE_NAME_STYLE_SRC);
+    }
+
+    public ContentSecurityPolicyBuilder styleSrc(String styleSrc) {
+        if (styleSrc == null) {
+            directives.remove(DIRECTIVE_NAME_STYLE_SRC);
+        } else {
+            put(DIRECTIVE_NAME_STYLE_SRC, styleSrc);
+        }
+        return this;
+    }
+
+    public ContentSecurityPolicyBuilder addStyleSrc(String styleSrc) {
+        return add(DIRECTIVE_NAME_STYLE_SRC, styleSrc);
     }
 
     public String build() {

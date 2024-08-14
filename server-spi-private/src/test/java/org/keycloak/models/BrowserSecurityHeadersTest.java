@@ -20,13 +20,15 @@ public class BrowserSecurityHeadersTest {
 
     @Test
     public void contentSecurityPolicyBuilderTest() {
-        assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';", ContentSecurityPolicyBuilder.create().build());
-        assertEquals("frame-ancestors 'self'; object-src 'none';", ContentSecurityPolicyBuilder.create().frameSrc(null).build());
-        assertEquals("frame-src 'self'; object-src 'none';", ContentSecurityPolicyBuilder.create().frameAncestors(null).build());
-        assertEquals("frame-src 'custom-frame-src'; frame-ancestors 'custom-frame-ancestors'; object-src 'none';", ContentSecurityPolicyBuilder.create().frameSrc("'custom-frame-src'").frameAncestors("'custom-frame-ancestors'").build());
-        assertEquals("frame-src localhost; frame-ancestors 'self'; object-src 'none';", ContentSecurityPolicyBuilder.create().frameSrc("localhost").build());
-        assertEquals("frame-src 'self' localhost; frame-ancestors 'self'; object-src 'none';",
+        assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src *; style-src *;", ContentSecurityPolicyBuilder.create().build());
+        assertEquals("frame-ancestors 'self'; object-src 'none'; script-src *; style-src *;", ContentSecurityPolicyBuilder.create().frameSrc(null).build());
+        assertEquals("frame-src 'self'; object-src 'none'; script-src *; style-src *;", ContentSecurityPolicyBuilder.create().frameAncestors(null).build());
+        assertEquals("frame-src 'custom-frame-src'; frame-ancestors 'custom-frame-ancestors'; object-src 'none'; script-src *; style-src *;", ContentSecurityPolicyBuilder.create().frameSrc("'custom-frame-src'").frameAncestors("'custom-frame-ancestors'").build());
+        assertEquals("frame-src localhost; frame-ancestors 'self'; object-src 'none'; script-src *; style-src *;", ContentSecurityPolicyBuilder.create().frameSrc("localhost").build());
+        assertEquals("frame-src 'self' localhost; frame-ancestors 'self'; object-src 'none'; script-src *; style-src *;",
                 ContentSecurityPolicyBuilder.create().addFrameSrc("localhost").build());
+        assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src localhost; style-src *;", ContentSecurityPolicyBuilder.create().scriptSrc("localhost").build());
+        assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src *; style-src localhost;", ContentSecurityPolicyBuilder.create().styleSrc("localhost").build());
     }
 
     private void assertParsedDirectives(String directives) {
