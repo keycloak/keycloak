@@ -3,6 +3,7 @@ import {
   GroupQuery,
   SubGroupQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import { PaginatingTableToolbar, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,9 +22,7 @@ import { AngleRightIcon } from "@patternfly/react-icons";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";

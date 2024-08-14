@@ -3,15 +3,15 @@ import { Tab, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { KeySubTab, toKeysTab } from "../routes/KeysTab";
 import { KeysListTab } from "./KeysListTab";
 import { KeysProvidersTab } from "./KeysProvidersTab";

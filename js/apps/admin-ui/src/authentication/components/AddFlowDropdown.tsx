@@ -1,11 +1,16 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import { DropdownList, Tooltip } from "@patternfly/react-core";
-import { Dropdown, DropdownItem, MenuToggle } from "@patternfly/react-core";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
+  Tooltip,
+} from "@patternfly/react-core";
 import { PlusIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./modals/AddSubFlowModal";

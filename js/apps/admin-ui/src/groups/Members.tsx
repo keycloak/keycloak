@@ -2,14 +2,21 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
+  Action,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Checkbox,
   Dropdown,
   DropdownItem,
   DropdownList,
+  Label,
   MenuToggle,
   ToolbarItem,
-  Label,
 } from "@patternfly/react-core";
 import { EllipsisVIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
@@ -17,19 +24,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { GroupPath } from "../components/group/GroupPath";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emptyFormatter } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";

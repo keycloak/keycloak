@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { TableToolbar } from "@keycloak/keycloak-ui-shared";
 import { ExpandableSection, PageSection } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 
 export const ProviderInfo = () => {
   const { t } = useTranslation();

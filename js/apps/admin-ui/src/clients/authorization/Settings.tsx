@@ -1,4 +1,5 @@
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import { HelpItem, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -10,15 +11,12 @@ import {
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAccess } from "../../context/access/Access";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { DecisionStrategySelect } from "./DecisionStrategySelect";
 import { ImportDialog } from "./ImportDialog";

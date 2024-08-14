@@ -6,6 +6,12 @@ import type {
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import {
+  KeycloakSelect,
+  SelectVariant,
+  useFetch,
+  Variant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   ButtonVariant,
   Chip,
@@ -22,13 +28,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import {
-  KeycloakSelect,
-  SelectVariant,
-  Variant,
-} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toCreatePolicy } from "../routes/NewPolicy";
 import { toPolicyDetails } from "../routes/PolicyDetails";

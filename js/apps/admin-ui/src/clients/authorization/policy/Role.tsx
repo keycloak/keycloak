@@ -1,15 +1,18 @@
+import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../../admin-client";
 import { DefaultSwitchControl } from "../../../components/SwitchControl";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
-import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {

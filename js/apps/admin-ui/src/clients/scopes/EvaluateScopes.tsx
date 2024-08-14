@@ -4,8 +4,10 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   HelpItem,
+  KeycloakDataTable,
   KeycloakSelect,
   SelectVariant,
+  useFetch,
   useHelp,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -30,13 +32,11 @@ import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
 
 import "./evaluate.css";

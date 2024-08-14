@@ -1,5 +1,5 @@
 import { DependencyList, useEffect } from "react";
-import { useErrorBoundary } from "../context/ErrorBoundary";
+import { useErrorBoundary } from "./ErrorBoundary";
 
 /**
  * Util function to only set the state when the component is still mounted.

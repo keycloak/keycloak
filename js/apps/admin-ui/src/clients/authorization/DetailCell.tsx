@@ -1,10 +1,10 @@
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { DescriptionList } from "@patternfly/react-core";
 import { useState } from "react";
 import { useAdminClient } from "../../admin-client";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import { toPermissionDetails } from "../routes/PermissionDetails";
 import { toScopeDetails } from "../routes/Scope";
 import { DetailDescription, DetailDescriptionLink } from "./DetailDescription";

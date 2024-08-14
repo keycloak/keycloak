@@ -1,4 +1,5 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -19,7 +20,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
@@ -28,7 +28,6 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
 import { toUpperCase } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { ManagePriorityDialog } from "./ManagePriorityDialog";
 import { toCustomUserFederation } from "./routes/CustomUserFederation";
 import { toNewCustomUserFederation } from "./routes/NewCustomUserFederation";
