@@ -457,10 +457,12 @@ spec:
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
+    # end::keycloak[]
     - name: http-metrics-histograms-enabled
       value: 'true'
     - name: http-metrics-slos
       value: '5,10,25,50,250,500'
+    # tag::keycloak[]
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
