@@ -475,20 +475,48 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Returns identity provider mappers as a stream.
      * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
+     * @deprecated Use {@link IDPProvider#getMappersStream()} instead.
      */
+    @Deprecated
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream();
 
     /**
      * Returns identity provider mappers by the provided alias as a stream.
      * @param brokerAlias {@code String} Broker's alias to filter results.
      * @return Stream of {@link IdentityProviderMapperModel} Never returns {@code null}.
+     * @deprecated Use {@link IDPProvider#getMappersByAliasStream(String)} instead.
      */
+    @Deprecated
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias);
 
+    /**
+     * @deprecated Use {@link IDPProvider#createMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
+
+    /**
+     * @deprecated Use {@link IDPProvider#removeMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     void removeIdentityProviderMapper(IdentityProviderMapperModel mapping);
+
+    /**
+     * @deprecated Use {@link IDPProvider#updateMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
+
+    /**
+     * @deprecated Use {@link IDPProvider#getMapperById(String)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel getIdentityProviderMapperById(String id);
+
+    /**
+     * @deprecated Use {@link IDPProvider#getMapperByName(String, String)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
