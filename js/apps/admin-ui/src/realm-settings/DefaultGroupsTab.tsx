@@ -31,6 +31,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toUserFederation } from "../user-federation/routes/UserFederation";
 import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
+import { useAccess } from "../context/access/Access";
 
 export const DefaultsGroupsTab = () => {
   const { adminClient } = useAdminClient();
@@ -49,6 +50,9 @@ export const DefaultsGroupsTab = () => {
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();
+
+  const { hasAccess } = useAccess();
+  const canAddOrRemoveGroups = hasAccess("view-users", "manage-realm");
 
   useFetch(
     () => adminClient.realms.getDefaultGroups({ realm }),
@@ -160,59 +164,65 @@ export const DefaultsGroupsTab = () => {
         ariaLabelKey="defaultGroups"
         searchPlaceholderKey="searchForGroups"
         toolbarItem={
-          <>
-            <ToolbarItem>
-              <Button
-                data-testid="openCreateGroupModal"
-                variant="primary"
-                onClick={toggleGroupPicker}
-              >
-                {t("addGroups")}
-              </Button>
-            </ToolbarItem>
-            <ToolbarItem>
-              <Dropdown
-                onOpenChange={toggleKebab}
-                toggle={(ref) => (
-                  <MenuToggle
-                    ref={ref}
-                    isExpanded={isKebabOpen}
-                    variant="plain"
-                    onClick={toggleKebab}
-                    isDisabled={selectedRows!.length === 0}
-                  >
-                    <EllipsisVIcon />
-                  </MenuToggle>
-                )}
-                isOpen={isKebabOpen}
-                shouldFocusToggleOnSelect
-              >
-                <DropdownList>
-                  <DropdownItem
-                    key="action"
-                    component="button"
-                    onClick={() => {
-                      toggleRemoveDialog();
-                      toggleKebab();
-                    }}
-                  >
-                    {t("remove")}
-                  </DropdownItem>
-                </DropdownList>
-              </Dropdown>
-            </ToolbarItem>
-          </>
+          canAddOrRemoveGroups && (
+            <>
+              <ToolbarItem>
+                <Button
+                  data-testid="openCreateGroupModal"
+                  variant="primary"
+                  onClick={toggleGroupPicker}
+                >
+                  {t("addGroups")}
+                </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Dropdown
+                  onOpenChange={toggleKebab}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      isExpanded={isKebabOpen}
+                      variant="plain"
+                      onClick={toggleKebab}
+                      isDisabled={selectedRows!.length === 0}
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
+                  isOpen={isKebabOpen}
+                  shouldFocusToggleOnSelect
+                >
+                  <DropdownList>
+                    <DropdownItem
+                      key="action"
+                      component="button"
+                      onClick={() => {
+                        toggleRemoveDialog();
+                        toggleKebab();
+                      }}
+                    >
+                      {t("remove")}
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
+              </ToolbarItem>
+            </>
+          )
         }
-        actions={[
-          {
-            title: t("remove"),
-            onRowClick: (group) => {
-              setSelectedRows([group]);
-              toggleRemoveDialog();
-              return Promise.resolve(false);
-            },
-          } as Action<GroupRepresentation>,
-        ]}
+        actions={
+          canAddOrRemoveGroups
+            ? [
+                {
+                  title: t("remove"),
+                  onRowClick: (group) => {
+                    setSelectedRows([group]);
+                    toggleRemoveDialog();
+                    return Promise.resolve(false);
+                  },
+                } as Action<GroupRepresentation>,
+              ]
+            : []
+        }
         columns={[
           {
             name: "name",
@@ -239,7 +249,7 @@ export const DefaultsGroupsTab = () => {
                 Add groups...
               </Trans>
             }
-            primaryActionText={t("addGroups")}
+            primaryActionText={canAddOrRemoveGroups ? t("addGroups") : ""}
             onPrimaryAction={toggleGroupPicker}
           />
         }
