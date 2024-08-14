@@ -111,8 +111,8 @@ Manual operations that re-synchronize the {jdgserver_name} state between the sit
 
 Two sites restriction::
 This setup is tested and supported only with two sites.
-Once more sites are added, the overall latency between the sites increases, and the likeliness of network failures, and therefore short downtimes, increases as well.
-Since such a deployment is expected to have worse performance and an inferior, adding additional sites would require a non-trivial effort to optimize and test.
+Each additional site increases overall latency as it is necessary for data to be synchronously written to each site.
+Furthermore, the probability of network failures, and therefore downtime, also increases. Therefore, we do not support more than two sites as we believe it would lead to a deployment with inferior stability and performance.
 
 == Questions and answers
 
