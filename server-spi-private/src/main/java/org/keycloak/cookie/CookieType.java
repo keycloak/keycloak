@@ -4,6 +4,12 @@ import jakarta.annotation.Nullable;
 
 public final class CookieType {
 
+    public static final CookieType[] OLD_UNUSED_COOKIES = new CookieType[] {
+            CookieType.create("AUTH_SESSION_ID_LEGACY").build(),
+            CookieType.create("KEYCLOAK_IDENTITY_LEGACY").build(),
+            CookieType.create("KEYCLOAK_SESSION_LEGACY").build()
+    };
+
     public static final CookieType AUTH_DETACHED = CookieType.create("KC_STATE_CHECKER")
             .scope(CookieScope.INTERNAL)
             .build();
@@ -16,12 +22,10 @@ public final class CookieType {
     public static final CookieType AUTH_SESSION_ID = CookieType.create("AUTH_SESSION_ID")
             .scope(CookieScope.FEDERATION)
             .defaultMaxAge(CookieMaxAge.SESSION)
-            .supportSameSiteLegacy()
             .build();
 
     public static final CookieType IDENTITY = CookieType.create("KEYCLOAK_IDENTITY")
             .scope(CookieScope.FEDERATION)
-            .supportSameSiteLegacy()
             .build();
 
     public static final CookieType LOCALE = CookieType.create("KEYCLOAK_LOCALE")
@@ -36,7 +40,6 @@ public final class CookieType {
 
     public static final CookieType SESSION = CookieType.create("KEYCLOAK_SESSION")
             .scope(CookieScope.FEDERATION_JS)
-            .supportSameSiteLegacy()
             .build();
 
     public static final CookieType WELCOME_CSRF = CookieType.create("WELCOME_STATE_CHECKER")
@@ -45,15 +48,13 @@ public final class CookieType {
             .build();
 
     private final String name;
-    private final String sameSiteLegacyName;
     private final CookiePath path;
     private final CookieScope scope;
 
     private final Integer defaultMaxAge;
 
-    private CookieType(String name, boolean supportsSameSiteLegacy, CookiePath path, CookieScope scope, @Nullable Integer defaultMaxAge) {
+    private CookieType(String name, CookiePath path, CookieScope scope, @Nullable Integer defaultMaxAge) {
         this.name = name;
-        this.sameSiteLegacyName = supportsSameSiteLegacy ? name + "_LEGACY" : null;
         this.path = path;
         this.scope = scope;
         this.defaultMaxAge = defaultMaxAge;
@@ -65,16 +66,6 @@ public final class CookieType {
 
     public String getName() {
         return name;
-    }
-
-    @Deprecated
-    public boolean supportsSameSiteLegacy() {
-        return sameSiteLegacyName != null;
-    }
-
-    @Deprecated
-    public String getSameSiteLegacyName() {
-        return sameSiteLegacyName;
     }
 
     public CookiePath getPath() {
@@ -92,7 +83,6 @@ public final class CookieType {
     private static class CookieTypeBuilder {
 
         private String name;
-        private boolean supportSameSiteLegacy = false;
         private CookiePath path = CookiePath.REALM;
         private CookieScope scope = CookieScope.INTERNAL;
         private Integer defaultMaxAge;
@@ -111,18 +101,13 @@ public final class CookieType {
             return this;
         }
 
-        CookieTypeBuilder supportSameSiteLegacy() {
-            this.supportSameSiteLegacy = true;
-            return this;
-        }
-
         CookieTypeBuilder defaultMaxAge(int defaultMaxAge) {
             this.defaultMaxAge = defaultMaxAge;
             return this;
         }
 
         CookieType build() {
-            return new CookieType(name, supportSameSiteLegacy, path, scope, defaultMaxAge);
+            return new CookieType(name, path, scope, defaultMaxAge);
         }
 
     }
