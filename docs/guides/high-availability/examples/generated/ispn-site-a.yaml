@@ -146,7 +146,7 @@ spec:
     groupBy:
       - accelerator
     groupInterval: 90s
-    groupWait: 0s
+    groupWait: 60s
     matchers:
       - matchType: =
         name: alertname

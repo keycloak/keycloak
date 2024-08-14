@@ -463,7 +463,7 @@ spec:
     - name: http-pool-max-threads # <6>
       value: "66"
     # end::keycloak[]
-    # This block is just for documentation purposes as we need both versions of Infinispan config, with and without numbers to corresponding tests
+    # This block is just for documentation purposes as we need both versions of Infinispan config, with and without numbers to corresponding options
     # tag::keycloak[]
     - name: cache-remote-host
       value: "infinispan.keycloak.svc"
