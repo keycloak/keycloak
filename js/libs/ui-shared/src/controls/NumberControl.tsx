@@ -11,6 +11,8 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
+
+import { getRuleValue } from "../utils/getRuleValue";
 import { FormLabel } from "./FormLabel";
 
 export type NumberControlOption = {
@@ -58,10 +60,7 @@ export const NumberControl = <
         control={control}
         render={({ field }) => {
           const required = !!controller.rules?.required;
-          const min =
-            typeof controller.rules?.min === "number"
-              ? controller.rules?.min
-              : (controller.rules?.min as { value: number })?.value;
+          const min = getRuleValue(controller.rules?.min);
           const value = field.value ?? controller.defaultValue;
           const setValue = (newValue: number) =>
             field.onChange(
