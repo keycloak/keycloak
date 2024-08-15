@@ -29,11 +29,11 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
         KeycloakTestServer server = instanceContext.getDependency(KeycloakTestServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class);
 
-        RealmConfig config = (RealmConfig) SupplierHelpers.getInstance(instanceContext.getConfig());
+        RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         RealmRepresentation realmRepresentation = config.getRepresentation();
 
         if (realmRepresentation.getRealm() == null) {
-            String realmName = instanceContext.getRef();
+            String realmName = SupplierHelpers.createName(instanceContext);
             realmRepresentation.setRealm(realmName);
         }
 

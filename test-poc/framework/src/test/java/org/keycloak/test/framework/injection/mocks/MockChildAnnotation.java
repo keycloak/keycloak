@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface MockChildAnnotation {
 
     String ref() default "";
-    String realmRef() default "";
+    String parentRef() default "";
 }
