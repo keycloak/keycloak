@@ -1,6 +1,6 @@
 ---
 # Source: ispn-helm/templates/infinispan-alerts.yaml
-# tag::stonith-secret[]
+# tag::fencing-secret[]
 apiVersion: v1
 kind: Secret
 type: kubernetes.io/basic-auth
@@ -9,7 +9,7 @@ metadata:
 stringData:
   username: 'keycloak' # <1>
   password: 'changme' # <2>
-# end::stonith-secret[]
+# end::fencing-secret[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # There are several callouts in this YAML marked with `# <1>' etc. See 'running/infinispan-deployment.adoc` for the details.# tag::infinispan-credentials[]
@@ -135,7 +135,7 @@ data:
 # end::infinispan-crossdc-clear-caches[]
 ---
 # Source: ispn-helm/templates/infinispan-alerts.yaml
-# tag::stonith-alert-manager-config[]
+# tag::fencing-alert-manager-config[]
 apiVersion: monitoring.coreos.com/v1beta1
 kind: AlertmanagerConfig
 metadata:
@@ -165,7 +165,7 @@ spec:
                 name: webhook-credentials
             tlsConfig:
               insecureSkipVerify: true
-# end::stonith-alert-manager-config[]
+# end::fencing-alert-manager-config[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]
@@ -525,7 +525,7 @@ spec:
     # end::infinispan-crossdc[]
 ---
 # Source: ispn-helm/templates/infinispan-alerts.yaml
-# tag::stonith-prometheus-rule[]
+# tag::fencing-prometheus-rule[]
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -540,4 +540,4 @@ spec:
             severity: critical
             reporter: site-a # <5>
             accelerator: a3da6a6cbd4e27b02.awsglobalaccelerator.com # <6>
-# end::stonith-prometheus-rule[]
+# end::fencing-prometheus-rule[]
