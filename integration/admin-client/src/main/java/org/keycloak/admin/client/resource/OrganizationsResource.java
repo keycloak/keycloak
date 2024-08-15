@@ -105,4 +105,7 @@ public interface OrganizationsResource {
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
+
+    @Path("members")
+    OrganizationsMembersResource members();
 }
