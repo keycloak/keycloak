@@ -6,23 +6,23 @@
     ${msg("recovery-code-config-header")}
 <#elseif section = "form">
     <!-- warning -->
-    <div class="pf-v5-c-alert pf-m-warning pf-m-inline pf-v5-u-mb-md ${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
-        <div class="pf-v5-c-alert__icon">
+    <div class="${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
+        <div class="${properties.kcAlertIconClass!}">
             <i class="fas fa-fw fa-bell" aria-hidden="true"></i>
         </div>
-        <h4 class="pf-v5-c-alert__title">
+        <h4 class="${properties.kcAlertTitleClass!}">
             <span class="pf-screen-reader">Warning alert:</span>
             ${msg("recovery-code-config-warning-title")}
         </h4>
-        <div class="pf-v5-c-alert__description">
+        <div class="${properties.kcAlertDescriptionClass!}">
             <p>${msg("recovery-code-config-warning-message")}</p>
         </div>
     </div>
 
-    <div class="pf-v5-c-panel pf-m-raised">
-        <div class="pf-v5-c-panel__main">
-            <div class="pf-v5-c-panel__main-body">
-            <ol id="kc-recovery-codes-list" class="pf-v5-c-list" role="list">
+    <div class="${properties.kcPanelClass!}">
+        <div class="${properties.kcPanelMainClass!}">
+            <div class="${properties.kcPanelMainBodyClass!}">
+            <ol id="kc-recovery-codes-list" class="${properties.kcListClass!}" role="list">
                 <#list recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesList as code>
                     <li>${code[0..3]}-${code[4..7]}-${code[8..]}</li>
                 </#list>
@@ -33,13 +33,13 @@
 
     <!-- actions -->
     <div class="${properties.kcRecoveryCodesActions!}">
-        <button id="printRecoveryCodes" class="pf-v5-c-button pf-m-link" type="button" onclick="printRecoveryCodes()">
+        <button id="printRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="printRecoveryCodes()">
             <i class="fas fa-print"></i> ${msg("recovery-codes-print")}
         </button>
-        <button id="downloadRecoveryCodes" class="pf-v5-c-button pf-m-link" type="button" onclick="downloadRecoveryCodes()">
+        <button id="downloadRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="downloadRecoveryCodes()">
             <i class="fas fa-download"></i> ${msg("recovery-codes-download")}
         </button>
-        <button id="copyRecoveryCodes" class="pf-v5-c-button pf-m-link" type="button" onclick="copyRecoveryCodes()">
+        <button id="copyRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="copyRecoveryCodes()">
             <i class="fas fa-copy"></i> ${msg("recovery-codes-copy")}
         </button>
     </div>
