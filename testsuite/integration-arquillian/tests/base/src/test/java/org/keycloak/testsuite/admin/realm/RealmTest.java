@@ -697,6 +697,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setAccessCodeLifespanUserAction(0);
         try {
             realm.update(rep);
+            Assert.fail("Not expected to successfully update the realm");
         } catch (Exception expected) {
             // Expected exception
             assertEquals("HTTP 400 Bad Request", expected.getMessage());

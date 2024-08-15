@@ -389,12 +389,6 @@ public class RealmAdminResource {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
             }
 
-            if (auth.realm().canViewIdentityProviders()) {
-                RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
-                rep.setIdentityProviders(r.getIdentityProviders());
-                rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
-            }
-
             return rep;
         }
     }
@@ -470,8 +464,9 @@ public class RealmAdminResource {
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (org.keycloak.services.ErrorResponseException e) {
-            throw ErrorResponse.error("AccessCodeLifespanLogin or AccessCodeLifespanUserAction cannot be 0", Status.BAD_REQUEST);
+            throw e;
         } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             throw ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
