@@ -97,10 +97,8 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         String idToken = response.getIdToken();
 
         // simulate browser restart by deleting an identity cookie
-        log.debugf("Deleting %s and %s cookies", CookieType.IDENTITY.getName(),
-                CookieType.IDENTITY.getSameSiteLegacyName());
+        log.debugf("Deleting %s cookie", CookieType.IDENTITY.getName());
         driver.manage().deleteCookieNamed(CookieType.IDENTITY.getName());
-        driver.manage().deleteCookieNamed(CookieType.IDENTITY.getSameSiteLegacyName());
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());

@@ -1819,9 +1819,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Cookie identityCookie = driver.manage().getCookieNamed(CookieType.IDENTITY.getName());
         Assert.assertNotNull(identityCookie);
         driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName());
         driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getName(), "invalid-value", identityCookie.getPath()));
-        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName(), "invalid-value", identityCookie.getPath()));
 
         // go back to the app page, re-login should work with the invalid cookie
         testRealmSAMLPostLoginPage.navigateTo();

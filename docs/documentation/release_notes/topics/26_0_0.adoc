@@ -119,3 +119,13 @@ It helps to find performance bottlenecks, determine the cause of application fai
 The support is in preview mode, and we would be happy to obtain any feedback.
 
 For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
+
+= Removal of legacy cookies
+
+Keycloak no longer sends `_LEGACY` cookies, which where introduced as a work-around to older browsers not supporting
+the `SameSite` flag on cookies.
+
+The `_LEGACY` cookies also served another purpose, which was to allow login from an insecure context. Although, this is
+not recommended at all in production deployments of Keycloak, it is fairly frequent to access Keycloak over `http` outside
+of `localhost`. As an alternative to the `_LEGACY` cookies Keycloak now doesn't set the `secure` flag and sets `SameSite=Lax`
+instead of `SameSite=None` when it detects an insecure context is used.
