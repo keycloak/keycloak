@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "field.ftl" as field>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
@@ -63,13 +64,7 @@
                            dir="ltr"
                     />
 
-                    <#if messagesPerField.existsError('totp')>
-                        <span class="pf-v5-c-form-control__utilities">
-                            <span class="pf-v5-c-form-control__icon pf-m-status">
-                                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-                            </span>
-                        </span>
-                    </#if>
+                    <@field.errorIcon error=kcSanitize(messagesPerField.get('totp'))?no_esc/>
                 </div>
                 <#if messagesPerField.existsError('totp')>
                     <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -92,13 +87,7 @@
                            dir="ltr"
                     />
 
-                    <#if messagesPerField.existsError('userLabel')>
-                        <span class="pf-v5-c-form-control__utilities">
-                            <span class="pf-v5-c-form-control__icon pf-m-status">
-                                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-                            </span>
-                        </span>
-                    </#if>
+                    <@field.errorIcon error=kcSanitize(messagesPerField.get('userLabel'))?no_esc/>
                 </div>
                 <#if messagesPerField.existsError('userLabel')>
                     <span id="input-error-otp-label" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
