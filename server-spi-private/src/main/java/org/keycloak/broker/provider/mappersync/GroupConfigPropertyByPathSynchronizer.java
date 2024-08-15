@@ -19,6 +19,7 @@ package org.keycloak.broker.provider.mappersync;
 
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -47,6 +48,11 @@ public class GroupConfigPropertyByPathSynchronizer extends AbstractConfigPropert
     @Override
     public RealmModel extractRealm(GroupModel.GroupPathChangeEvent event) {
         return event.getRealm();
+    }
+
+    @Override
+    public KeycloakSession getKeycloakSession(GroupModel.GroupPathChangeEvent event) {
+        return event.getKeycloakSession();
     }
 
     @Override
