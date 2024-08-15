@@ -18,11 +18,11 @@ public class Config {
     }
 
     public static String getAdminClientId() {
-        return "kc-test-admin";
+        return "admin";
     }
 
     public static String getAdminClientSecret() {
-        return "kc-test-secret";
+        return "mysecret";
     }
 
     public static SmallRyeConfig initConfig() {
