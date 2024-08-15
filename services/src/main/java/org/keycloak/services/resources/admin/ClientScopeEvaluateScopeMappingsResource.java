@@ -112,7 +112,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
             return roleContainer.getRolesStream();
         }
 
-        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client)
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client, null)
                 .collect(Collectors.toSet());
 
         Predicate<RoleModel> hasClientScope = role ->

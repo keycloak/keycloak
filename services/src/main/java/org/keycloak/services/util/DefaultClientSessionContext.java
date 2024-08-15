@@ -92,7 +92,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
             session.getContext().setClient(clientSession.getClient());
             requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
         } else {
-            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient());
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
         }
         return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), session);
     }

@@ -188,7 +188,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         if (!TokenManager
                 .verifyConsentStillAvailable(session,
-                        user, client, TokenManager.getRequestedClientScopes(session, scopeParam, client))) {
+                        user, client, TokenManager.getRequestedClientScopes(session, scopeParam, client, user))) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
