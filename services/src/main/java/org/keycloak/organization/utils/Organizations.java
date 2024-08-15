@@ -28,10 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
@@ -48,9 +47,8 @@ import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -58,8 +56,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 public class Organizations {
-
-    private static final Pattern SCOPE_PATTERN = Pattern.compile("organization:*".replace("*", "(.*)"));
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
         if (!Type.ORGANIZATION.equals(group.getType())) {
@@ -257,10 +253,21 @@ public class Organizations {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
         if (authSession != null) {
-            Optional<OrganizationModel> organization = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE)).map(provider::getById);
+            OrganizationModel organization = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
+                    .map(provider::getById)
+                    .orElseGet(() -> {
+                        String rawScopes = authSession.getClientNote(OAuth2Constants.SCOPE);
+                        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
 
-            if (organization.isPresent()) {
-                return organization.get();
+                        if (OrganizationScope.SINGLE.equals(scope)) {
+                            return scope.resolveOrganizations(user, rawScopes, session).findAny().orElse(null);
+                        }
+
+                        return null;
+                    });
+
+            if (organization != null) {
+                return organization;
             }
         }
 
@@ -287,31 +294,7 @@ public class Organizations {
                 .orElse(null);
     }
 
-    public static OrganizationModel resolveOrganizationFromScopeParam(KeycloakSession session, String scopeParam) {
-        return TokenManager.parseScopeParameter(scopeParam)
-                .map((s) -> resolveOrganizationFromScope(session, s))
-                .filter(Objects::nonNull)
-                .findAny()
-                .orElse(null);
-    }
-
-    public static OrganizationModel resolveOrganizationFromScope(KeycloakSession session, String scope) {
-        if (scope == null) {
-            return null;
-        }
-
-        Matcher matcher = SCOPE_PATTERN.matcher(scope);
-
-        if (matcher.matches()) {
-            return Optional.ofNullable(getProvider(session).getByAlias(matcher.group(1)))
-                    .filter(OrganizationModel::isEnabled)
-                    .orElse(null);
-        }
-
-        return null;
-    }
-
-    private static OrganizationProvider getProvider(KeycloakSession session) {
+    public static OrganizationProvider getProvider(KeycloakSession session) {
         return session.getProvider(OrganizationProvider.class);
     }
 }

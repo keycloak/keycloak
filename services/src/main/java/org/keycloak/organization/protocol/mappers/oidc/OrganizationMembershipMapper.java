@@ -30,10 +30,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
@@ -44,8 +41,6 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
-
-import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
 public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
@@ -80,22 +75,14 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        String rawScopes = clientSessionCtx.getScopeString();
+        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
 
-        if (!isEnabledAndOrganizationsPresent(provider)) {
+        if (scope == null) {
             return;
         }
 
-        OrganizationModel organization = Organizations.resolveOrganizationFromScopeParam(session, clientSessionCtx.getScopeString());
-        UserModel user = userSession.getUser();
-        Stream<OrganizationModel> organizations = Stream.empty();
-
-        if (organization == null) {
-            organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
-        } else if (provider.isMember(organization, user)) {
-            organizations = Stream.of(organization);
-        }
-
+        Stream<OrganizationModel> organizations = scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
         Map<String, Map<String, Object>> claim = new HashMap<>();
 
         organizations.forEach(o -> claim.put(o.getAlias(), Map.of()));

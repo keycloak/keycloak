@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -61,7 +62,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
-import org.keycloak.organization.utils.Organizations;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
@@ -587,13 +588,14 @@ public class TokenManager {
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
 
+        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
+
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
+            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
                     .collect(Collectors.toSet());
         } else {
-            clientScopes = authSession.getClientScopes().stream()
-                    .map(id -> KeycloakModelUtils.findClientScopeById(realm, client, id))
+            clientScopes = getRequestedClientScopes(session, scopeParam, client, userSession.getUser())
                     .collect(Collectors.toSet());
         }
 
@@ -664,7 +666,7 @@ public class TokenManager {
 
 
     /** Return client itself + all default client scopes of client + optional client scopes requested by scope parameter **/
-    public static Stream<ClientScopeModel> getRequestedClientScopes(KeycloakSession session, String scopeParam, ClientModel client) {
+    public static Stream<ClientScopeModel> getRequestedClientScopes(KeycloakSession session, String scopeParam, ClientModel client, UserModel user) {
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
                 client.getClientScopes(true).values().stream(),
@@ -674,7 +676,6 @@ public class TokenManager {
             return clientScopes;
         }
 
-        boolean orgEnabled = Organizations.isEnabledAndOrganizationsPresent(session);
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
         // Add optional client scopes requested by scope parameter
@@ -686,21 +687,24 @@ public class TokenManager {
                                 return scope;
                             }
 
-                            if (orgEnabled) {
-                                OrganizationModel organization = Organizations.resolveOrganizationFromScope(session, name);
-
-                                if (organization != null) {
-                                    ClientScopeModel orgScope = allOptionalScopes.get(OIDCLoginProtocolFactory.ORGANIZATION);
-                                    return Optional.ofNullable(orgScope)
-                                            .map((s) -> new ClientScopeDecorator(s, name))
-                                            .orElse(null);
-                                }
-                            }
-
-                            return null;
+                            return tryResolveDynamicClientScope(session, scopeParam, client, user, name);
                         })
                         .filter(Objects::nonNull),
                 clientScopes).distinct();
+    }
+
+    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, String name) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            OrganizationScope orgScope = OrganizationScope.valueOfScope(scopeParam);
+
+            if (orgScope == null) {
+                return null;
+            }
+
+            return orgScope.toClientScope(name, user, session);
+        }
+
+        return null;
     }
 
     /**
@@ -711,7 +715,7 @@ public class TokenManager {
      * @param client
      * @return
      */
-    public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+    public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client, UserModel user) {
         if (scopes == null) {
             return true;
         }
@@ -730,7 +734,7 @@ public class TokenManager {
 
         if (authorizationRequestContext == null) {
             // only true when dynamic scopes feature is enabled
-            clientScopes = getRequestedClientScopes(session, scopes, client)
+            clientScopes = getRequestedClientScopes(session, scopes, client, user)
                     .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toSet());
@@ -753,19 +757,7 @@ public class TokenManager {
             return false;
         }
 
-        var orgEnabled = Organizations.isEnabledAndOrganizationsPresent(session);
-
         for (String requestedScope : rawScopes) {
-            if (orgEnabled) {
-                OrganizationModel organization = Organizations.resolveOrganizationFromScope(session, requestedScope);
-
-                if (organization != null) {
-                    // propagate the organization to authenticators to provide a hint about the organization the client wants to authenticate
-                    session.setAttribute(OrganizationModel.class.getName(), organization);
-                    continue;
-                }
-            }
-
             // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
                 return false;
@@ -775,8 +767,8 @@ public class TokenManager {
         return true;
     }
 
-    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client) {
-        return isValidScope(session, scopes, null, client);
+    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
+        return isValidScope(session, scopes, null, client, user);
     }
 
     public static Stream<String> parseScopeParameter(String scopeParam) {

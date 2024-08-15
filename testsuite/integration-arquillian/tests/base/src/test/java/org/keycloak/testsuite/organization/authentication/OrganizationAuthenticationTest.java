@@ -18,37 +18,19 @@
 package org.keycloak.testsuite.organization.authentication;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.OAuthClient;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
@@ -122,68 +104,5 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             loginPage.login(member.getEmail(), memberPassword);
             appPage.assertCurrent();
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testOrganizationScopeMapsSpecificOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
-        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
-        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
-
-        // resolve organization based on the organization scope value
-        oauth.clientId("broker-app");
-        oauth.scope("organization:" + orgA.getAlias());
-        loginPage.open(bc.consumerRealmName());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
-
-        // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
-        oauth.clientId("broker-app");
-        String orgScope = "organization:" + orgB.getAlias();
-        oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
-        loginPage.loginUsername(member.getEmail());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
-        loginPage.login(memberPassword);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
-        assertThat(response.getScope(), containsString(orgScope));
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(orgScope));
-        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
-        assertThat(response.getRefreshToken(), notNullValue());
-        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertThat(refreshToken.getScope(), containsString(orgScope));
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
-        assertThat(response.getScope(), containsString(orgScope));
-        accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(orgScope));
-        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
-        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertThat(refreshToken.getScope(), containsString(orgScope));
-    }
-
-    @Test
-    public void testInvalidOrganizationScope() throws MalformedURLException {
-        oauth.clientId("broker-app");
-        oauth.scope("organization:unknown");
-        oauth.realm(TEST_REALM_NAME);
-        oauth.openLoginForm();
-        MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
-        assertEquals("invalid_scope", queryParams.getFirst("error"));
     }
 }

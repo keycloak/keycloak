@@ -129,7 +129,7 @@ public class ClientScopeEvaluateResource {
     public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
-        return TokenManager.getRequestedClientScopes(session, scopeParam, client)
+        return TokenManager.getRequestedClientScopes(session, scopeParam, client, null)
                 .flatMap(mapperContainer -> mapperContainer.getProtocolMappersStream()
                     .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
                     .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
