@@ -86,6 +86,7 @@ public class PersistentUserSessionEntity {
     protected String brokerSessionId;
 
     @Version
+    @Column(name="VERSION")
     private int version;
 
     @Id
