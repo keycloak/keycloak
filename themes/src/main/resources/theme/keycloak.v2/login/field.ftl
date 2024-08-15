@@ -33,9 +33,9 @@
 
 <#macro errorIcon error="">
   <#if error?has_content>
-    <span class="pf-v5-c-form-control__utilities">
-        <span class="pf-v5-c-form-control__icon pf-m-status">
-          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+    <span class="${properties.kcFormControlUtilClass}">
+        <span class="${properties.kcInputErrorIconStatusClass}">
+          <i class="${properties.kcInputErrorIconClass}" aria-hidden="true"></i>
         </span>
     </span>
   </#if>
