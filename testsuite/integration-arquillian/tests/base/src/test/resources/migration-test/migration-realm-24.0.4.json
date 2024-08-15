@@ -2875,7 +2875,7 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "roles", "profile", "email" ],
+    "defaultClientScopes" : [ "acr", "web-origins", "roles", "profile", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   }, {
     "id" : "c11d03ac-b4b0-4581-995c-cc9c2f868b17",

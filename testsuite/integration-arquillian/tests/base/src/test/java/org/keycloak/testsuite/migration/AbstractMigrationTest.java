@@ -441,6 +441,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         assertThat(defaultClientScopes, Matchers.hasItems(
                 OIDCLoginProtocolFactory.BASIC_SCOPE,
+                OIDCLoginProtocolFactory.ACR_SCOPE,
                 OAuth2Constants.SCOPE_PROFILE,
                 OAuth2Constants.SCOPE_EMAIL
         ));
@@ -1189,9 +1190,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testDefaultRoles(RealmResource realm) {
         String realmName = realm.toRepresentation().getRealm().toLowerCase();
         assertThat(realm.roles().get("default-roles-" + realmName).getRoleComposites().stream()
-                .map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                .map(RoleRepresentation::getName).collect(Collectors.toSet()),
             allOf(
-                hasItem(realmName + "-test-realm-role"), 
+                hasItem(realmName + "-test-realm-role"),
                 hasItem(realmName + "-test-client-role"))
             );
     }
@@ -1217,7 +1218,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         realm.clients().findByClientId("migration-saml-client")
           .forEach(clientRepresentation -> {
-                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute", 
+                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute",
                       "     00000     00010     00020     00030     00040     00050     00060     00070     00080     00090"
                     + "     00100     00110     00120     00130     00140     00150     00160     00170     00180     00190"
                     + "     00200     00210     00220     00230     00240     00250     00260     00270     00280     00290"
