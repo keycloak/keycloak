@@ -162,4 +162,14 @@ public class OrganizationsResource {
 
         return new OrganizationResource(session, organizationModel, adminEvent);
     }
+
+    @Path("members/{id}/organizations")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns the organizations associated with the user that has the specified id")
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
+        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(id);
+    }
 }

@@ -86,4 +86,9 @@ public interface OrganizationMembersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     Long count();
+
+    @Path("{id}/organizations")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> getOrganizations(@PathParam("id") String id);
 }

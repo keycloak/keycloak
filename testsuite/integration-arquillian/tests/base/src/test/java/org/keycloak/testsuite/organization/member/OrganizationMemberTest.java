@@ -115,10 +115,20 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     public void testGetMemberOrganization() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
+        OrganizationRepresentation orgB = createOrganization("orgb");
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         OrganizationRepresentation expected = organization.toRepresentation();
         List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations();
         assertNotNull(actual);
+        assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
+
+        actual = testRealm().organizations().members().getOrganizations(member.getId());
+        assertNotNull(actual);
+        assertEquals(2, actual.size());
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
     }
 
     @Test
