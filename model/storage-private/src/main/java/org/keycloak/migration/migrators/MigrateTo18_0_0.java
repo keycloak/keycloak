@@ -22,8 +22,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
@@ -56,8 +58,14 @@ public class MigrateTo18_0_0 implements Migration {
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
 
-            // create 'acr' default client scope in the realm.
-            migrationProvider.addOIDCAcrClientScope(realm);
+            ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(realm, "acr");
+            if (acrScope == null) {
+                // create 'acr' default client scope in the realm.
+                acrScope = migrationProvider.addOIDCAcrClientScope(realm);
+
+                //add acr scope to all existing OIDC clients
+                session.clients().addClientScopeToAllClients(realm, acrScope, true);
+            }
         }
     }
 }
