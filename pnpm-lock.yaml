@@ -142,8 +142,8 @@ importers:
         specifier: ^0.7.2
         version: 0.7.2(eslint@9.9.0)(optionator@0.9.4)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))(vue-tsc@2.0.29(typescript@5.5.4))
       vite-plugin-dts:
-        specifier: ^4.0.2
-        version: 4.0.2(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
+        specifier: ^4.0.3
+        version: 4.0.3(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
 
   js/apps/admin-ui:
     dependencies:
@@ -296,8 +296,8 @@ importers:
         specifier: ^0.7.2
         version: 0.7.2(eslint@9.9.0)(optionator@0.9.4)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))(vue-tsc@2.0.29(typescript@5.5.4))
       vite-plugin-dts:
-        specifier: ^4.0.2
-        version: 4.0.2(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
+        specifier: ^4.0.3
+        version: 4.0.3(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
       vitest:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@22.2.0)(jsdom@24.1.1)(lightningcss@1.26.0)(terser@5.31.3)
@@ -470,8 +470,8 @@ importers:
         specifier: ^0.7.2
         version: 0.7.2(eslint@9.9.0)(optionator@0.9.4)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))(vue-tsc@2.0.29(typescript@5.5.4))
       vite-plugin-dts:
-        specifier: ^4.0.2
-        version: 4.0.2(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
+        specifier: ^4.0.3
+        version: 4.0.3(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
       vite-plugin-lib-inject-css:
         specifier: ^2.1.1
         version: 2.1.1(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3))
@@ -4891,8 +4891,8 @@ packages:
       vue-tsc:
         optional: true
 
-  vite-plugin-dts@4.0.2:
-    resolution: {integrity: sha512-Ni3EPG8yeLc5ivEzT4szreJ0rXpEQgvdYq3PaZ7OMoHc8uET4/HRUfzVPejJaUAojbxsKgaZbp6Zgm41sxb86Q==}
+  vite-plugin-dts@4.0.3:
+    resolution: {integrity: sha512-+xnTsaONwU2kV6zhRjtbRJSGN41uFR/whqmcb4k4fftLFDJElxthp0PP5Fq8gMeM9ytWMt1yk5gGgekLREWYQQ==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       typescript: '*'
@@ -9844,7 +9844,7 @@ snapshots:
       typescript: 5.5.4
       vue-tsc: 2.0.29(typescript@5.5.4)
 
-  vite-plugin-dts@4.0.2(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3)):
+  vite-plugin-dts@4.0.3(@types/node@22.2.0)(rollup@4.20.0)(typescript@5.5.4)(vite@5.4.0(@types/node@22.2.0)(lightningcss@1.26.0)(terser@5.31.3)):
     dependencies:
       '@microsoft/api-extractor': 7.47.4(@types/node@22.2.0)
       '@rollup/pluginutils': 5.1.0(rollup@4.20.0)
