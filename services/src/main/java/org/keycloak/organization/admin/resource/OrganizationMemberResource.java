@@ -49,6 +49,7 @@ import org.keycloak.models.UserModel;
 
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -192,14 +193,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getUser(id);
 
-        return provider.getByMember(member).map((org) -> {
-            OrganizationRepresentation organization = new OrganizationRepresentation();
-
-            organization.setId(org.getId());
-            organization.setName(org.getName());
-
-            return organization;
-        });
+        return provider.getByMember(member).map(Organizations::toRepresentation);
     }
 
     @Path("count")
