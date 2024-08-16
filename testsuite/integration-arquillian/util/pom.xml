@@ -95,9 +95,5 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-policy-enforcer-tests</artifactId>
-        </dependency>
     </dependencies>
 </project>
