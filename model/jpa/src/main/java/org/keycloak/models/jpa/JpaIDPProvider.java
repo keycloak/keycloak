@@ -224,7 +224,7 @@ public class JpaIDPProvider implements IDPProvider {
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, Object> attrs, Integer first, Integer max) {
+    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
         Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
@@ -233,9 +233,9 @@ public class JpaIDPProvider implements IDPProvider {
         predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
         if (attrs != null) {
-            for (Map.Entry<String, Object> entry : attrs.entrySet()) {
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
                 String key = entry.getKey();
-                Object value = entry.getValue();
+                String value = entry.getValue();
                 if (StringUtil.isBlank(key)) {
                     continue;
                 }
@@ -244,7 +244,7 @@ public class JpaIDPProvider implements IDPProvider {
                     case ENABLED:
                     case HIDE_ON_LOGIN:
                     case LINK_ONLY: {
-                        if (Boolean.parseBoolean(value.toString())) {
+                        if (Boolean.parseBoolean(value)) {
                             predicates.add(builder.isTrue(idp.get(key)));
                         } else {
                             predicates.add(builder.isFalse(idp.get(key)));
@@ -253,7 +253,7 @@ public class JpaIDPProvider implements IDPProvider {
                     }
                     case FIRST_BROKER_LOGIN_FLOW_ID:
                     case ORGANIZATION_ID: {
-                        if (value == null || value.toString().isEmpty()) {
+                        if (StringUtil.isBlank(value)) {
                             predicates.add(builder.isNull(idp.get(key)));
                         } else {
                             predicates.add(builder.equal(idp.get(key), value));

@@ -42,6 +42,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
     public static final String FIRST_BROKER_LOGIN_FLOW_ID = "firstBrokerLoginFlowId";
     public static final String HIDE_ON_LOGIN = "hideOnLogin";
+    @Deprecated
     public static final String LEGACY_HIDE_ON_LOGIN_ATTR = "hideOnLoginPage";
     public static final String LINK_ONLY = "linkOnly";
     public static final String LOGIN_HINT = "loginHint";
