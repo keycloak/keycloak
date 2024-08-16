@@ -1,4 +1,5 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -22,7 +23,6 @@ import {
   nameFilter,
   typeFilter,
 } from "../../client-scopes/details/SearchFilter";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AllClientScopeType,
   AllClientScopes,
@@ -40,8 +40,8 @@ import {
 } from "../../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import { translationFormatter } from "../ClientsSection";
 import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
 import { AddScopeDialog } from "./AddScopeDialog";
 
