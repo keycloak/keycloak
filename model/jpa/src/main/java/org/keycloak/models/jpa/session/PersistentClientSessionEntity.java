@@ -75,6 +75,7 @@ public class PersistentClientSessionEntity {
     protected int timestamp;
 
     @Version
+    @Column(name="VERSION")
     private int version;
 
     @Id
