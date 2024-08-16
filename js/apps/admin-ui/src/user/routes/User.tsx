@@ -6,6 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type UserTab =
   | "settings"
   | "groups"
+  | "organizations"
   | "consents"
   | "attributes"
   | "sessions"

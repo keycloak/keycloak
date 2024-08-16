@@ -5,6 +5,7 @@ import type {
 import {
   isUserProfileError,
   setUserProfileServerError,
+  useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -23,7 +24,6 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -36,7 +36,9 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
+import { Organizations } from "./Organizations";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
 import { UserCredentials } from "./UserCredentials";
@@ -87,6 +89,11 @@ export default function EditUser() {
   const lightweightUser = isLightweightUser(user?.id);
   const [upConfig, setUpConfig] = useState<UserProfileConfig>();
 
+  const [realmHasOrganizations, setRealmHasOrganizations] = useState(false);
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const showOrganizations =
+    isFeatureEnabled(Feature.Organizations) && realm?.organizationsEnabled;
+
   const toTab = (tab: UserTab) =>
     toUser({
       realm: realmName,
@@ -101,6 +108,7 @@ export default function EditUser() {
   const credentialsTab = useTab("credentials");
   const roleMappingTab = useTab("role-mapping");
   const groupsTab = useTab("groups");
+  const organizationsTab = useTab("organizations");
   const consentsTab = useTab("consents");
   const identityProviderLinksTab = useTab("identity-provider-links");
   const sessionsTab = useTab("sessions");
@@ -115,8 +123,15 @@ export default function EditUser() {
         adminClient.attackDetection.findOne({ id: id! }),
         adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
+        adminClient.organizations.find({ first: 0, max: 1 }),
       ]),
-    ([userData, attackDetection, unmanagedAttributes, upConfig]) => {
+    ([
+      userData,
+      attackDetection,
+      unmanagedAttributes,
+      upConfig,
+      organizations,
+    ]) => {
       if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
       }
@@ -140,6 +155,7 @@ export default function EditUser() {
       const isLocked = isBruteForceProtected && attackDetection.disabled;
 
       setBruteForced({ isBruteForceProtected, isLocked });
+      setRealmHasOrganizations(organizations.length === 1);
 
       form.reset(toUserFormFields(user));
     },
@@ -355,6 +371,15 @@ export default function EditUser() {
                   {...groupsTab}
                 >
                   <UserGroups user={user} />
+                </Tab>
+              )}
+              {showOrganizations && realmHasOrganizations && (
+                <Tab
+                  data-testid="user-organizations-tab"
+                  title={<TabTitleText>{t("organizations")}</TabTitleText>}
+                  {...organizationsTab}
+                >
+                  <Organizations />
                 </Tab>
               )}
               <Tab
