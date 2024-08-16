@@ -77,7 +77,7 @@ async function createProject(name, type) {
     const data = Mustache.render(contents, {
       name,
       type,
-      version: "^25.0.0",
+      version: packageJson.version,
     });
     await fs.writeFile(destPath, data);
   });
@@ -106,7 +106,7 @@ function done(appName) {
   console.log("Inside that directory, you can run several commands:");
   console.log();
   console.log(chalk.cyan(`  npm run start-keycloak`));
-  console.log("    Downloads and starts a keycloak server.");
+  console.log("    Download and starts a keycloak server.");
   console.log();
   console.log(chalk.cyan(`  npm run dev`));
   console.log("    Starts development server.");
@@ -122,6 +122,7 @@ function done(appName) {
   console.log("We suggest that you begin by typing:");
   console.log();
   console.log(chalk.cyan("  cd"), appName);
+  console.log(`  ${chalk.cyan(`npm install`)}`);
   console.log(`  ${chalk.cyan(`npm run start-keycloak &`)}`);
   console.log();
   console.log(`  ${chalk.cyan(`npm run dev`)}`);
