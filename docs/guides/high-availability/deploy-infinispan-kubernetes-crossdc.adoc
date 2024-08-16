@@ -20,7 +20,12 @@ See the <@links.ha id="introduction" /> {section} for an overview.
 
 [IMPORTANT]
 ====
-Only versions based on Infinispan version ${properties["infinispan.version"]} or more recent patch releases are supported for external {jdgserver_name} deployments.
+<@profile.ifCommunity>
+Only Infinispan version ${properties["infinispan.version"]} or more recent patch releases are supported for external {jdgserver_name} deployments.
+</@profile.ifCommunity>
+<@profile.ifProduct>
+Only {jdgserver_name} version {jdgserver_min_version} or more recent patch releases are supported for external {jdgserver_name} deployments.
+</@profile.ifProduct>
 ====
 
 == Architecture
