@@ -1022,9 +1022,13 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             // ignoring old and unknown realm found in the session
             return;
         }
-        sessionEntityWrapper.getEntity().getAuthenticatedClientSessions().forEach((k, uuid) -> {
+        sessionEntityWrapper.getEntity().getAuthenticatedClientSessions().forEach((clientId, uuid) -> {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(uuid);
             if (clientSession != null) {
+                // This is necessary because client sessions created by a KC version < 22 do not have clientId set within the entity.
+                if (clientSession.getEntity().getClientId() == null) {
+                    clientSession.getEntity().setClientId(clientId);
+                }
                 clientSession.getEntity().setUserSessionId(sessionEntityWrapper.getEntity().getId());
                 MergedUpdate<AuthenticatedClientSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), clientSession, 1, 1);
                 clientSessionPerformer.registerChange(Map.entry(uuid, new SessionUpdatesList<>(realm, clientSession)), merged);
