@@ -123,7 +123,9 @@ export default function EditUser() {
         adminClient.attackDetection.findOne({ id: id! }),
         adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
-        adminClient.organizations.find({ first: 0, max: 1 }),
+        showOrganizations
+          ? adminClient.organizations.find({ first: 0, max: 1 })
+          : [],
       ]),
     ([
       userData,
