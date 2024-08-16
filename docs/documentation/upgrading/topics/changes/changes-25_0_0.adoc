@@ -142,7 +142,7 @@ The first starting node will:
 . Migrate the database to the schema version 25.
 . Copy all session information from either the remote {jdgserver_name} or the JDBC persistence configured for {project_name}'s embedded cache to the database of {project_name}.
 +
-The data will be stored in the tables `offline_user_session` and `online_user_session` with `offline_flag` set to `false`.
+The data will be stored in the tables `offline_user_session` and `offline_client_session` with `offline_flag` set to `false`.
 
 . Clear the caches.
 +
