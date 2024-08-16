@@ -148,6 +148,10 @@ public class UsersResource {
                 return response;
             }
 
+            if (rep.getId() != null) {
+                session.setAttribute(UserModel.CREATE_ID_OVERRIDE, rep.getId());
+            }
+
             UserModel user = profile.create();
 
             UserResource.updateUserFromRep(profile, user, rep, session, false);
@@ -159,7 +163,7 @@ public class UsersResource {
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            throw ErrorResponse.exists("User exists with same username or email");
+            throw ErrorResponse.exists("User exists with same username or email or id");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
