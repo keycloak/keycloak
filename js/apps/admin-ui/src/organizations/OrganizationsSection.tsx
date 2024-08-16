@@ -63,6 +63,7 @@ export default function OrganizationSection() {
         <OrganizationTable
           key={key}
           loader={loader}
+          isPaginated
           toolbarItem={
             <ToolbarItem>
               <Button
