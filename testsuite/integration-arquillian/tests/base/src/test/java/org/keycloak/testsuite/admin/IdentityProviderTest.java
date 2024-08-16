@@ -1068,7 +1068,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // import endpoint simply converts IDPSSODescriptor into key value pairs.
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
-        List<String> configKeys = new ArrayList<>(List.of(
+        assertThat(config.keySet(), containsInAnyOrder(
                 "syncMode",
                 "validateSignature",
                 "singleLogoutServiceUrl",
@@ -1083,12 +1083,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 "signingCertificate",
                 "addExtensionsElementWithKeyInfo",
                 "loginHint",
+                "hideOnLoginPage",
                 "idpEntityId"
         ));
-        if (hasHideOnLoginPage) {
-            configKeys.add("hideOnLoginPage");
-        }
-        assertThat(config.keySet(), containsInAnyOrder(configKeys.toArray()));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml/resolve"));
@@ -1099,11 +1096,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
+        assertThat(config, hasEntry("hideOnLoginPage", "true"));
         assertThat(config, hasEntry("idpEntityId", "http://localhost:8080/auth/realms/master"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
-        if (hasHideOnLoginPage) {
-            assertThat(config, hasEntry("hideOnLoginPage", "true"));
-        }
     }
 
     private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates, boolean enabled, boolean postBindingResponse) {

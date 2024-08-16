@@ -70,7 +70,7 @@ public class IdentityProviderBean {
     public List<IdentityProvider> getProviders() {
         if (this.providers == null) {
             String existingIDP = this.getExistingIDP(session, context);
-            Set<String> federatedIdentities = this.getFederatedIdentities(session, realm, context);
+            Set<String> federatedIdentities = this.getLinkedBrokerAliases(session, realm, context);
             if (federatedIdentities != null) {
                 this.providers = getFederatedIdentityProviders(federatedIdentities, existingIDP);
             } else {
@@ -167,7 +167,7 @@ public class IdentityProviderBean {
     }
 
     /**
-     * Returns the list of IDPs associated with the user's federated identities, if any. In case these IDPs exist, the login
+     * Returns the list of IDPs linked with the user's federated identities, if any. In case these IDPs exist, the login
      * page should show only the IDPs already linked to the user. Returning {@code null} indicates that all public enabled IDPs
      * should be available.
      * </p>
@@ -179,7 +179,7 @@ public class IdentityProviderBean {
      * @return a {@link Set} containing the aliases of the IDPs that should be available for login. An empty set indicates
      * that no IDPs should be available.
      */
-    protected Set<String> getFederatedIdentities(KeycloakSession session, RealmModel realm, AuthenticationFlowContext context) {
+    protected Set<String> getLinkedBrokerAliases(KeycloakSession session, RealmModel realm, AuthenticationFlowContext context) {
         Set<String> result = null;
         if (context != null) {
             UserModel currentUser = context.getUser();
@@ -223,7 +223,7 @@ public class IdentityProviderBean {
      * @return the custom {@link Predicate} used as a last filter before conversion into {@link IdentityProvider}
      */
     protected Predicate<IdentityProviderModel> federatedProviderPredicate() {
-        return idp -> Objects.nonNull(idp) && idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin();
+        return IDPProvider.LoginFilter.getLoginPredicate();
     }
 
     /**
@@ -235,7 +235,7 @@ public class IdentityProviderBean {
      * @return a {@link List} containing the constructed {@link IdentityProvider}s.
      */
     protected List<IdentityProvider> searchForIdentityProviders(String existingIDP) {
-        return session.identityProviders().getForLogin(IDPProvider.FETCH_MODE.REALM_ONLY, null)
+        return session.identityProviders().getForLogin(IDPProvider.FetchMode.REALM_ONLY, null)
                 .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();

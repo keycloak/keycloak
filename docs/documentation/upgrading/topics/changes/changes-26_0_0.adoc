@@ -155,3 +155,5 @@ New indexes were added to the `IDENTITY_PROVIDER` table to improve the performan
 If the table currently contains more than 300.000 entries,
 {project_name} will skip the creation of the indexes by default during the automatic schema migration, and will instead log the SQL statements
 on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.
+
+Also, the `kc.org` and `hideOnLoginPage` configuration attributes were migrated to the identity provider itself, to allow for more efficient queries when searching for providers. As such, API clients should use the `getOrganizationId/setOrganizationId` and `isHideOnLogin/setHideOnLogin` methods in the `IdentityProviderRepresentation`, and avoid setting these properties using the legacy config attributes that are now deprecated.

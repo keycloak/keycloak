@@ -38,7 +38,7 @@ public final class UsernameForm extends UsernamePasswordForm {
     public void authenticate(AuthenticationFlowContext context) {
         if (context.getUser() != null) {
             // We can skip the form when user is re-authenticating. Unless current user has some IDP set, so he can re-authenticate with that IDP
-            if (!this.contextUserHasFederatedIDPs(context)) {
+            if (!this.hasLinkedBrokers(context)) {
                 context.success();
                 return;
             }
@@ -79,7 +79,7 @@ public final class UsernameForm extends UsernamePasswordForm {
      * @param context a reference to the {@link AuthenticationFlowContext}
      * @return {@code true} if the context user has federated IDPs that can be used for authentication; {@code false} otherwise.
      */
-    private boolean contextUserHasFederatedIDPs(AuthenticationFlowContext context) {
+    private boolean hasLinkedBrokers(AuthenticationFlowContext context) {
         KeycloakSession session = context.getSession();
         UserModel user = context.getUser();
         if (user == null) {
