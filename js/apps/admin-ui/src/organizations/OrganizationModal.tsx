@@ -1,17 +1,23 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { TableText } from "@patternfly/react-table";
 
 type OrganizationModalProps = {
+  isJoin?: boolean;
+  existingOrgs: OrganizationRepresentation[];
   onAdd: (orgs: OrganizationRepresentation[]) => Promise<void>;
   onClose: () => void;
 };
 
 export const OrganizationModal = ({
+  isJoin = true,
+  existingOrgs,
   onAdd,
   onClose,
 }: OrganizationModalProps) => {
@@ -21,13 +27,20 @@ export const OrganizationModal = ({
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    return await adminClient.organizations.find({ first, max, search });
+    const params = {
+      first,
+      search,
+      max: max! + existingOrgs.length,
+    };
+
+    const orgs = await adminClient.organizations.find(params);
+    return differenceBy(orgs, existingOrgs, "id");
   };
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("joinOrganization")}
+      title={isJoin ? t("joinOrganization") : t("sendInvitation")}
       isOpen
       onClose={onClose}
       actions={[
@@ -40,7 +53,7 @@ export const OrganizationModal = ({
             onClose();
           }}
         >
-          {t("join")}
+          {isJoin ? t("join") : t("send")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -66,6 +79,9 @@ export const OrganizationModal = ({
           },
           {
             name: "description",
+            cellRenderer: (row) => (
+              <TableText wrapModifier="truncate">{row.description}</TableText>
+            ),
           },
         ]}
       />

@@ -57,7 +57,9 @@ const Domains = (org: OrganizationRepresentation) => {
 };
 
 type OrganizationTableProps = PropsWithChildren & {
-  loader: LoaderFunction<OrganizationRepresentation>;
+  loader:
+    | LoaderFunction<OrganizationRepresentation>
+    | OrganizationRepresentation[];
   toolbarItem?: ReactNode;
   isPaginated?: boolean;
   onSelect?: (orgs: OrganizationRepresentation[]) => void;

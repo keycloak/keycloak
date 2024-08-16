@@ -17,6 +17,7 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { OrganizationModal } from "../organizations/OrganizationModal";
 import { OrganizationTable } from "../organizations/OrganizationTable";
+import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 
@@ -30,10 +31,18 @@ export const Organizations = () => {
   const refresh = () => setKey(key + 1);
 
   const [joinToggle, toggle, setJoinToggle] = useToggle();
-  const [joinOrganization, setJoinOrganization] = useState(false);
+  const [shouldJoin, setShouldJoin] = useState(true);
+  const [openOrganizationPicker, setOpenOrganizationPicker] = useState(false);
+  const [userOrgs, setUserOrgs] = useState<OrganizationRepresentation[]>([]);
   const [selectedOrgs, setSelectedOrgs] = useState<
     OrganizationRepresentation[]
   >([]);
+
+  useFetch(
+    () => adminClient.organizations.memberOrganizations({ userId: id! }),
+    setUserOrgs,
+    [key],
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "removeConfirmOrganizationTitle",
@@ -51,6 +60,7 @@ export const Organizations = () => {
           ),
         );
         addAlert(t("organizationRemovedSuccess"));
+        setSelectedOrgs([]);
         refresh();
       } catch (error) {
         addError("organizationRemoveError", error);
@@ -60,18 +70,29 @@ export const Organizations = () => {
 
   return (
     <>
-      {joinOrganization && (
+      {openOrganizationPicker && (
         <OrganizationModal
-          onClose={() => setJoinOrganization(false)}
+          isJoin={shouldJoin}
+          existingOrgs={userOrgs}
+          onClose={() => setOpenOrganizationPicker(false)}
           onAdd={async (orgs) => {
             try {
               await Promise.all(
-                orgs.map((org) =>
-                  adminClient.organizations.addMember({
-                    orgId: org.id!,
-                    userId: id!,
-                  }),
-                ),
+                orgs.map((org) => {
+                  const form = new FormData();
+                  form.append("id", id!);
+                  return shouldJoin
+                    ? adminClient.organizations.addMember({
+                        orgId: org.id!,
+                        userId: id!,
+                      })
+                    : adminClient.organizations.inviteExistingUser(
+                        {
+                          orgId: org.id!,
+                        },
+                        form,
+                      );
+                }),
               );
               addAlert(t("userAddedOrganization", { count: orgs.length }));
               refresh();
@@ -83,14 +104,13 @@ export const Organizations = () => {
       )}
       <DeleteConfirm />
       <OrganizationTable
-        key={key}
-        loader={() =>
-          adminClient.organizations.memberOrganizations({
-            userId: id!,
-          })
-        }
+        loader={userOrgs}
         onSelect={(orgs) => setSelectedOrgs(orgs)}
         deleteLabel="remove"
+        onDelete={(org) => {
+          setSelectedOrgs([org]);
+          toggleDeleteDialog();
+        }}
         toolbarItem={
           <>
             <ToolbarItem>
@@ -112,13 +132,20 @@ export const Organizations = () => {
                   <DropdownItem
                     key="join"
                     onClick={() => {
-                      setJoinOrganization(true);
+                      setShouldJoin(true);
+                      setOpenOrganizationPicker(true);
                     }}
                   >
                     {t("joinOrganization")}
                   </DropdownItem>
-                  <DropdownItem key="invite" component="button">
-                    {t("invite")}
+                  <DropdownItem
+                    key="invite"
+                    onClick={() => {
+                      setShouldJoin(false);
+                      setOpenOrganizationPicker(true);
+                    }}
+                  >
+                    {t("sentInvite")}
                   </DropdownItem>
                 </DropdownList>
               </Dropdown>
@@ -142,11 +169,17 @@ export const Organizations = () => {
           secondaryActions={[
             {
               text: t("joinOrganization"),
-              onClick: () => alert("join organization"),
+              onClick: () => {
+                setShouldJoin(true);
+                setOpenOrganizationPicker(true);
+              },
             },
             {
               text: t("sendInvitation"),
-              onClick: () => alert("send invitation"),
+              onClick: () => {
+                setShouldJoin(false);
+                setOpenOrganizationPicker(true);
+              },
             },
           ]}
         />
