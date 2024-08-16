@@ -439,6 +439,12 @@ public class RealmAdminResource {
                 }
             }
 
+            if (rep.getAccessCodeLifespanLogin() != null && rep.getAccessCodeLifespanUserAction() != null) {
+                if (rep.getAccessCodeLifespanLogin() < 1 || rep.getAccessCodeLifespanUserAction() < 1) {
+                    throw ErrorResponse.error("AccessCodeLifespanLogin or AccessCodeLifespanUserAction cannot be 0", Status.BAD_REQUEST);
+                }
+            }
+
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
@@ -457,6 +463,8 @@ public class RealmAdminResource {
             throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        } catch (org.keycloak.services.ErrorResponseException e) {
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
