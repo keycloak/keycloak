@@ -41,6 +41,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -58,6 +59,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -106,6 +108,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -118,7 +121,6 @@ import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-import static org.keycloak.testsuite.AbstractKeycloakTest.PREFERRED_DEFAULT_LOGIN_THEME;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
@@ -428,6 +430,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testClientContainsExpectedClientScopes();
     }
 
+    protected void testMigrationTo26_0_0(boolean testIdentityProviderConfigMigration) {
+        if (testIdentityProviderConfigMigration) {
+            testIdentityProviderConfigMigration(migrationRealm2);
+        }
+    }
 
     private void testClientContainsExpectedClientScopes() {
         // Test OIDC client contains expected client scopes
@@ -1336,5 +1343,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals(100, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
+    }
+
+    private void testIdentityProviderConfigMigration(final RealmResource realm) {
+        IdentityProviderRepresentation rep = realm.identityProviders().get("gitlab").toRepresentation();
+        // gitlab identity provider should have it's hideOnLoginPage attribute migrated from the config to the provider itself.
+        assertThat(rep.isHideOnLogin(), is(true));
+        assertThat(rep.getConfig().containsKey(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR), is(false));
     }
 }

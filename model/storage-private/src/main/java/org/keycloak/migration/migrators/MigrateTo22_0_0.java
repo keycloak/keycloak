@@ -41,7 +41,15 @@ public class MigrateTo22_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> removeHttpChallengeFlow(session, realm));
+        session.realms().getRealmsStream().forEach(realm -> {
+            RealmModel currentRealm = session.getContext().getRealm();
+            session.getContext().setRealm(realm);
+            try {
+                removeHttpChallengeFlow(session, realm);
+            } finally {
+                session.getContext().setRealm(currentRealm);
+            }
+        });
         //login, account, email themes are handled by JpaUpdate22_0_0_RemoveRhssoThemes
     }
 
