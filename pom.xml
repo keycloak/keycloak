@@ -1052,11 +1052,6 @@
                 <artifactId>keycloak-authz-policy-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-policy-enforcer-tests</artifactId>
-                <version>${project.version}</version>
-            </dependency>
 
             <!-- Quarkus -->
             <dependency>
