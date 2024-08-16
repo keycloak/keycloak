@@ -7,7 +7,7 @@
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>
-                <form id="kc-form-login" class="pf-v5-c-form" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
+                <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
                         <#assign label>
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -17,13 +17,13 @@
 
                     <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed/>
 
-                    <div class="pf-v5-c-form__group">
+                    <div class="${properties.kcFormGroupClass!}">
                         <#if realm.rememberMe && !usernameHidden??>
                             <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
                         </#if>
                     </div>
 
-                    <div id="kc-form-buttons" class="pf-v5-c-form__group">
+                    <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
                         <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
                         <input tabindex="4" class="pf-v5-c-button pf-m-primary pf-m-block" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
                     </div>
@@ -34,8 +34,8 @@
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-            <div id="kc-registration-container" class="pf-v5-c-login__main-footer-band">
-                <div id="kc-registration" class="pf-v5-c-login__main-footer-band-item">
+            <div id="kc-registration-container" class="${properties.kcLoginFooterBand!}">
+                <div id="kc-registration" class="${properties.kcLoginFooterBandItem!}">
                     <span>${msg("noAccount")} <a tabindex="6"
                                                  href="${url.registrationUrl}">${msg("doRegister")}</a></span>
                 </div>
