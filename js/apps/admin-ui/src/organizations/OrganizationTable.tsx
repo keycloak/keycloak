@@ -57,17 +57,21 @@ const Domains = (org: OrganizationRepresentation) => {
 };
 
 type OrganizationTableProps = PropsWithChildren & {
-  loader:
-    | LoaderFunction<OrganizationRepresentation>
-    | OrganizationRepresentation[];
-  onDelete?: (org: OrganizationRepresentation) => void;
+  loader: LoaderFunction<OrganizationRepresentation>;
   toolbarItem?: ReactNode;
+  isPaginated?: boolean;
+  onSelect?: (orgs: OrganizationRepresentation[]) => void;
+  onDelete?: (org: OrganizationRepresentation) => void;
+  deleteLabel?: string;
 };
 
 export const OrganizationTable = ({
   loader,
   toolbarItem,
+  isPaginated = false,
+  onSelect,
   onDelete,
+  deleteLabel = "delete",
   children,
 }: OrganizationTableProps) => {
   const { t } = useTranslation();
@@ -75,13 +79,15 @@ export const OrganizationTable = ({
   return (
     <KeycloakDataTable
       loader={loader}
-      isPaginated
+      isPaginated={isPaginated}
       ariaLabelKey="organizationList"
       searchPlaceholderKey="searchOrganization"
       toolbarItem={toolbarItem}
+      onSelect={onSelect}
+      canSelectAll={onSelect !== undefined}
       actions={[
         {
-          title: t("delete"),
+          title: t(deleteLabel),
           onRowClick: onDelete,
         },
       ]}
