@@ -85,9 +85,11 @@ export default function CreateInitialAccessToken() {
             label={t("count")}
             labelIcon={t("countHelp")}
             controller={{
+              rules: {
+                min: 1,
+              },
               defaultValue: 1,
             }}
-            min={1}
           />
           <ActionGroup>
             <Button
