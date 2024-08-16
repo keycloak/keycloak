@@ -136,6 +136,14 @@ This endpoint supports filters and pagination.
 
 = CLI import placeholder replacement
 
-The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. 
+The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup.
 
 If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
+
+= Keystore and trust store default format change
+
+{project_name} now determines the format of the keystore and trust store based on the file extension. If the file extension is `.p12`, `.pkcs12` or `.pfx`, the format is PKCS12. If the file extension is `.jks`, `.keystore` or `.truststore`, the format is JKS. If the file extension is `.pem`, `.crt` or `.key`, the format is PEM.
+
+You can still override automatic detection by specifying the `https-key-store-type` and `https-trust-store-type` explicitly. The same applies to the management interface and its `https-management-key-store-type`. Restrictions for the FIPS strict mode stay unchanged.
+
+NOTE: The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated, we strongly recommend to use System Truststore. For more details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
