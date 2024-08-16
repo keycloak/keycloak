@@ -111,6 +111,15 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["orgId"],
   });
 
+  public inviteExistingUser = this.makeUpdateRequest<
+    { orgId: string },
+    FormData
+  >({
+    method: "POST",
+    path: "/{orgId}/members/invite-existing-user",
+    urlParamKeys: ["orgId"],
+  });
+
   public listIdentityProviders = this.makeRequest<
     { orgId: string },
     IdentityProviderRepresentation[]
