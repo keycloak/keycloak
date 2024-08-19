@@ -145,7 +145,7 @@ export const Organizations = () => {
                       setOpenOrganizationPicker(true);
                     }}
                   >
-                    {t("sentInvite")}
+                    {t("sendInvite")}
                   </DropdownItem>
                 </DropdownList>
               </Dropdown>
