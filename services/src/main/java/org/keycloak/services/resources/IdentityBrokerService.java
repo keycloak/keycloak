@@ -1060,15 +1060,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email));
-        setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
-        setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
+        setDiffAttrToConsumer("email", federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email), federatedUser);
+        setDiffAttrToConsumer("firstName", federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName, federatedUser);
+        setDiffAttrToConsumer("lastName", federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName, federatedUser);
     }
 
-    private void setDiffAttrToConsumer(String actualValue, String newValue, Consumer<String> consumer) {
+    private void setDiffAttrToConsumer(String attributeName, String actualValue, String newValue, Consumer<String> consumer, UserModel user) {
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
         if (newValue != null && !newValue.equals(actualValueNotNull)) {
             consumer.accept(newValue);
+            this.event.event(EventType.UPDATE_PROFILE)
+                    .detail("attribute", attributeName)
+                    .detail("new_value", newValue)
+                    .detail("old_value", actualValueNotNull)
+                    .user(user)
+                    .success();
         }
     }
 
