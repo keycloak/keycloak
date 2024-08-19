@@ -52,7 +52,7 @@ It might be considered in the future.
 
 A clustered deployment of {project_name} in each site, connected to an external {jdgserver_name}.
 
-*Blueprint:* <@links.ha id="deploy-keycloak-kubernetes" /> together with <@links.ha id="connect-keycloak-to-external-infinispan"/> and the Aurora database.
+*Blueprint:* <@links.ha id="deploy-keycloak-kubernetes" /> that includes connecting to the Aurora database and the {jdgserver_name} server.
 
 </@tmpl.guide>
 

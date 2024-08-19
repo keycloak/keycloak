@@ -15,7 +15,7 @@ include::partials/blueprint-disclaimer.adoc[]
 
 == Architecture
 In the event of a network communication failure between the two sites in a multi-site deployment, it is no
-longer possible for the two sites to continue to replicate session state between themselves and the two sites
+longer possible for the two sites to continue to replicate data between themselves and the two sites
 will become increasingly out-of-sync. As it is possible for subsequent Keycloak requests to be routed to different
 sites, this may lead to unexpected behaviour as previous updates will not have been applied to both sites.
 
@@ -247,6 +247,7 @@ aws lambda get-function-url-config \
 </#noparse>
 ----
 <1> The AWS region where the Lambda was created
+
 +
 .Output:
 [source,bash]
@@ -296,7 +297,7 @@ kubectl -n ${NAMESPACE} scale --replicas=0 deployment/infinispan-router #<2>
 kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
 </#noparse>
 ----
-<1> Scale down the {jdgserver_name} Operator so that the next steop does not result in the deployment being recreated by the operator
+<1> Scale down the {jdgserver_name} Operator so that the next step does not result in the deployment being recreated by the operator
 <2> Scale down the Gossip Router deployment.Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
 +
 . Verify the `SiteOffline` event has been fired on a cluster by inspecting the *Observe* -> *Alerting* menu in the Openshift

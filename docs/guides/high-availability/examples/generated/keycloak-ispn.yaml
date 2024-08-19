@@ -54,7 +54,7 @@ metadata:
   name: keycloak-providers
   namespace: keycloak
 binaryData:
-  keycloak-benchmark-dataset-0.12-SNAPSHOT.jar: ...
+  keycloak-benchmark-dataset-0.13-SNAPSHOT.jar: ...
 ---
 # Source: keycloak/templates/postgres/postgres-exporter-configmap.yaml
 apiVersion: v1
@@ -206,12 +206,11 @@ spec:
               value: keycloak
             - name: POSTGRES_DB
               value: keycloak
-          image: postgres:13.2
-          args:
-            # default of max_prepared_transactions is 0, and this setting should match the number of active connections
-            # so that running Quarkus with JTA and more than one data store can prepare transactions.
-            - -c
-            - max_prepared_transactions=100
+          image: postgres:15
+          volumeMounts:
+            # Using volume mount for PostgreSQL's data folder as it is otherwise not writable
+            - mountPath: /var/lib/postgresql
+              name: cache-volume
           resources:
             requests:
               cpu: "0"
@@ -235,6 +234,9 @@ spec:
           ports:
             - containerPort: 5432
               protocol: TCP
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
       restartPolicy: Always
       # The rhel9/postgresql-13 is known to take ~30 seconds to shut down
       # As this is a deployment with ephemeral storage, there is no need to wait as the data will be gone anyway
@@ -455,6 +457,12 @@ spec:
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
+    # end::keycloak[]
+    - name: http-metrics-histograms-enabled
+      value: 'true'
+    - name: http-metrics-slos
+      value: '5,10,25,50,250,500'
+    # tag::keycloak[]
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
@@ -491,7 +499,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: 385f54cb8e4bf326f6970aa2a0c8e573d35d9071e69ab2baee252728748bca76-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
+          checksum/config: d0810a69cecfbd99a7527cb6d30decb179d7a7ee548119fc19d34f3ce2a777a7-9bfd430c6539df907f0421bb34c92fb32194d461565bd342f7f96ff5a5408273-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
       spec:
         containers:
           - env:
@@ -508,6 +516,7 @@ spec:
                     name: keycloak-preconfigured-admin
                     key: password
                     optional: false
+              # JMX is disabled as it breaks Quarkus configuration. Issue is tracked in https://github.com/keycloak/keycloak-benchmark/issues/840
               - name: JAVA_OPTS_APPEND # <5>
                 value: ""
             ports:
@@ -522,8 +531,8 @@ spec:
             #       - 'true'
             volumeMounts:
               - name: keycloak-providers
-                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.12-SNAPSHOT.jar
-                subPath: keycloak-benchmark-dataset-0.12-SNAPSHOT.jar
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.13-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-0.13-SNAPSHOT.jar
                 readOnly: true
         volumes:
           - name: keycloak-providers
@@ -541,8 +550,7 @@ spec:
     matchLabels:
       app: keycloak
   podMetricsEndpoints:
-    # todo: targetPort is deprecated, ask the operator to specify a name instead
-    - targetPort: 8443
+    - port: management
       scheme: https
       tlsConfig:
         insecureSkipVerify: true

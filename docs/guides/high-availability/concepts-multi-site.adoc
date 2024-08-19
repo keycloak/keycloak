@@ -14,12 +14,9 @@ Use this setup to provide {project_name} deployments that are able to tolerate s
 == Deployment, data storage and caching
 
 Two independent {project_name} deployments running in different sites are connected with a low latency network connection.
-Users, realms, clients, offline sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
+Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
 The data is also cached in the {project_name} Infinispan caches as local caches.
 When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the replicated `work` cache.
-
-Session-related data is stored in the replicated caches of the Infinispan caches of {project_name}, and forwarded to the external {jdgserver_name}, which forwards information to the external {jdgserver_name} running synchronously in the other site.
-As session data of the external {jdgserver_name} is also cached in the Infinispan caches, invalidation messages of the replicated `work` cache are needed for invalidation.
 
 In the following paragraphs and diagrams, references to deploying {jdgserver_name} apply to the external {jdgserver_name}.
 
@@ -54,7 +51,7 @@ Monitoring is necessary to detect degraded setups.
 | Less than one minute
 
 | {jdgserver_name} node
-| Multiple {jdgserver_name} instances run in each site. If one instance fails, it takes a few seconds for the other nodes to notice the change. Sessions are stored in at least two {jdgserver_name} nodes, so a single node failure does not lead to data loss.
+| Multiple {jdgserver_name} instances run in each site. If one instance fails, it takes a few seconds for the other nodes to notice the change. Entities are stored in at least two {jdgserver_name} nodes, so a single node failure does not lead to data loss.
 | No data loss
 | Less than one minute
 
@@ -62,15 +59,15 @@ Monitoring is necessary to detect degraded setups.
 | If the {jdgserver_name} cluster fails in one of the sites, {project_name} will not be able to communicate with the external {jdgserver_name} on that site, and the {project_name} service will be unavailable.
 The loadbalancer will detect the situation as `/lb-check` returns an error, and will direct all traffic to the other site.
 
-The setup is degraded until the {jdgserver_name} cluster is restored and the session data is re-synchronized.
+The setup is degraded until the {jdgserver_name} cluster is restored and the data is re-synchronized.
 | No data loss^3^
 | Seconds to minutes (depending on load balancer setup)
 
 | Connectivity {jdgserver_name}
-| If the connectivity between the two sites is lost, session information cannot be sent to the other site.
+| If the connectivity between the two sites is lost, data cannot be sent to the other site.
 Incoming requests might receive an error message or are delayed for some seconds.
 The {jdgserver_name} will mark the other site offline, and will stop sending data.
-One of the sites needs to be taken offline in the load balancer until the connection is restored and the session data is re-synchronized between the two sites.
+One of the sites needs to be taken offline in the loadbalancer until the connection is restored and the data is re-synchronized between the two sites.
 In the blueprints, we show how this can be automated.
 | No data loss^3^
 | Seconds to minutes (depending on load balancer setup)
@@ -100,17 +97,22 @@ The statement "`No data loss`" depends on the setup not being degraded from prev
 == Known limitations
 
 Site Failure::
-* A successful failover requires a setup not degraded from previous failures.
+A successful failover requires a setup not degraded from previous failures.
 All manual operations like a re-synchronization after a previous failure must be complete to prevent data loss.
 Use monitoring to ensure degradations are detected and handled in a timely manner.
 
 Out-of-sync sites::
-* The sites can become out of sync when a synchronous {jdgserver_name} request fails.
+The sites can become out of sync when a synchronous {jdgserver_name} request fails.
 This situation is currently difficult to monitor, and it would need a full manual re-sync of {jdgserver_name} to recover.
 Monitoring the number of cache entries in both sites and the {project_name} log file can show when resynch would become necessary.
 
 Manual operations::
-* Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system (network, CPU, Java heap in {jdgserver_name} and {project_name}).
+Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system.
+
+Two sites restriction::
+This setup is tested and supported only with two sites.
+Each additional site increases overall latency as it is necessary for data to be synchronously written to each site.
+Furthermore, the probability of network failures, and therefore downtime, also increases. Therefore, we do not support more than two sites as we believe it would lead to a deployment with inferior stability and performance.
 
 == Questions and answers
 
@@ -125,12 +127,6 @@ It also ensures that the next request will not return stale data, independent on
 Why is a low-latency network between sites needed?::
 Synchronous replication defers the response to the caller until the data is received at the other site.
 For synchronous database replication and synchronous {jdgserver_name} replication, a low latency is necessary as each request can have potentially multiple interactions between the sites when data is updated which would amplify the latency.
-
-Is this setup limited to two sites?::
-This setup could be extended to multiple sites, and there are no fundamental changes necessary to have, for example, three sites.
-Once more sites are added, the overall latency between the sites increases, and the likeliness of network failures, and therefore short downtimes, increases as well.
-Therefore, such a deployment is expected to have worse performance and an inferior.
-For now, it has been tested and documented with blueprints only for two sites.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
 An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database on the other site.

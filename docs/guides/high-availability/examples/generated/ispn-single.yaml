@@ -23,7 +23,6 @@ data:
       cacheContainer:
         metrics:
           namesAsTags: true
-          gauges: true
           histograms: false
       server:
         endpoints:
@@ -52,9 +51,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-actionTokens[]
 ---
@@ -73,9 +79,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-authenticationSessions[]
 ---
@@ -94,9 +107,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-clientSessions[]
 ---
@@ -115,9 +135,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-loginFailures[]
 ---
@@ -136,9 +163,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-offlineClientSessions[]
 ---
@@ -157,9 +191,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-offlineSessions[]
 ---
@@ -178,9 +219,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-sessions[]
 ---
@@ -199,9 +247,16 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       
 # end::infinispan-cache-work[]
 ---
@@ -217,6 +272,8 @@ metadata:
     infinispan.org/monitoring: 'true' # <2>
 spec:
   replicas: 3
+  jmx:
+    enabled: true
 # end::infinispan-single[]
 # end::infinispan-crossdc[]
   # This exposes the http endpoint to interact with its caches - more info - https://infinispan.org/docs/stable/titles/rest/rest.html
@@ -224,7 +281,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.7.Final
+  image: quay.io/infinispan-test/server:15.0.x
+  version: 15.0.4
   configListener:
     enabled: false
   container:
