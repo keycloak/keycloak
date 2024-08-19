@@ -65,6 +65,13 @@ public interface RealmProvider extends Provider {
     Stream<RealmModel> getRealmsStream();
 
     /**
+     * Returns realms as a stream filtered by search.
+     * @param search String to search for in realm names
+     * @return Stream of {@link RealmModel}. Never returns {@code null}.
+     */
+    Stream<RealmModel> getRealmsStream(String search);
+
+    /**
      * Returns stream of realms which has component with the given provider type.
      * @param type {@code Class<?>} Type of the provider.
      * @return Stream of {@link RealmModel}. Never returns {@code null}.
@@ -101,7 +108,7 @@ public interface RealmProvider extends Provider {
      * Removes all expired client initial accesses from all realms.
      */
     void removeExpiredClientInitialAccess();
-    
+
     default void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) { // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
         realm.decreaseRemainingCount(clientInitialAccess);
     }

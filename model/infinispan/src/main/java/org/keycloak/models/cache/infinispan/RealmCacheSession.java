@@ -563,6 +563,12 @@ public class RealmCacheSession implements CacheRealmProvider {
         return getRealms(getRealmDelegate().getRealmsStream());
     }
 
+    @Override
+    public Stream<RealmModel> getRealmsStream(String search) {
+        // Retrieve realms from backend
+        return getRealms(getRealmDelegate().getRealmsStream(search));
+    }
+
     private Stream<RealmModel> getRealms(Stream<RealmModel> backendRealms) {
         // Return cache delegates to ensure cache invalidated during write operations
         return backendRealms.map(RealmModel::getId).map(this::getRealm);

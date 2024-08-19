@@ -152,6 +152,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return getRealms(query);
     }
 
+    @Override
+    public Stream<RealmModel> getRealmsStream(String search) {
+        if (search.trim().isEmpty()) {
+            return getRealmsStream();
+        }
+        TypedQuery<String> query = em.createNamedQuery("getRealmIdsWithNameContaining", String.class);
+        query.setParameter("search", search);
+        return getRealms(query);
+    }
+
     private Stream<RealmModel> getRealms(TypedQuery<String> query) {
         return closing(query.getResultStream().map(session.realms()::getRealm).filter(Objects::nonNull));
     }
