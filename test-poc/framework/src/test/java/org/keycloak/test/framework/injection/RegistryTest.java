@@ -302,10 +302,10 @@ public class RegistryTest {
         @MockParentAnnotation(ref = "123")
         MockParentValue parent123;
 
-        @MockChildAnnotation(ref = "123", realmRef = "123")
+        @MockChildAnnotation(ref = "123", parentRef = "123")
         MockChildValue child123;
 
-        @MockChildAnnotation(ref = "ABC", realmRef = "ABC")
+        @MockChildAnnotation(ref = "ABC", parentRef = "ABC")
         MockChildValue childABC;
     }
 }

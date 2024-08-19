@@ -17,5 +17,5 @@ public @interface InjectRealm {
 
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
-    String ref() default "default";
+    String ref() default "";
 }

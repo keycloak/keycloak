@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -39,17 +40,18 @@ public class Registry {
         this.currentContext = currentContext;
     }
 
-    public <T> T getDependency(Class<T> typeClass, InstanceContext dependent) {
+    public <T> T getDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        ref = StringUtil.convertEmptyToNull(ref);
         T dependency;
-        dependency = getDeployedDependency(typeClass, dependent);
+        dependency = getDeployedDependency(typeClass, ref, dependent);
         if (dependency != null) {
             return dependency;
         } else {
-            dependency = getRequestedDependency(typeClass, dependent);
+            dependency = getRequestedDependency(typeClass, ref, dependent);
             if(dependency != null) {
                 return dependency;
             } else {
-                dependency = getUnConfiguredDependency(typeClass, dependent);
+                dependency = getUnConfiguredDependency(typeClass, ref, dependent);
                 if(dependency != null) {
                     return dependency;
                 }
@@ -59,14 +61,8 @@ public class Registry {
         throw new RuntimeException("Dependency not found: " + typeClass);
     }
 
-    private <T> T getDeployedDependency(Class<T> typeClass, InstanceContext dependent) {
-        InstanceContext dependency;
-        if(!dependent.getRealmRef().equals("")) {
-            dependency = getDeployedInstance(typeClass, dependent.getRealmRef());
-        } else {
-            dependency = getDeployedInstance(typeClass);
-        }
-
+    private <T> T getDeployedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        InstanceContext dependency = getDeployedInstance(typeClass, ref);
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
@@ -81,16 +77,10 @@ public class Registry {
         return null;
     }
 
-    private <T> T getRequestedDependency(Class<T> typeClass, InstanceContext dependent) {
-        InstanceContext dependency;
-        RequestedInstance requestedDependency;
-        if(!dependent.getRealmRef().equals("")) {
-             requestedDependency = getRequestedInstance(typeClass, dependent.getRealmRef());
-        } else {
-            requestedDependency = getRequestedInstance(typeClass);
-        }
+    private <T> T getRequestedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        RequestedInstance requestedDependency = getRequestedInstance(typeClass, ref);
         if (requestedDependency != null) {
-            dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
+            InstanceContext dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
@@ -108,16 +98,13 @@ public class Registry {
         return null;
     }
 
-    private <T> T getUnConfiguredDependency(Class<T> typeClass, InstanceContext dependent) {
+    private <T> T getUnConfiguredDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency;
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            if(!dependent.getRealmRef().equals("")) {
-                dependency = new InstanceContext(this, supplier, typeClass, dependent.getRealmRef(), DefaultRealmConfig.class);
-            } else {
-                dependency = new InstanceContext(this, supplier, null, typeClass);
-            }
+            Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+            dependency = new InstanceContext(this, supplier, defaultAnnotation, typeClass);
 
             dependency.registerDependency(dependent);
             dependency.setValue(supplier.getValue(dependency));
@@ -258,7 +245,7 @@ public class Registry {
                 Supplier supplier = i.getSupplier();
                 if (supplier.getAnnotationClass().equals(a.annotationType())
                         && valueType.isAssignableFrom(i.getValue().getClass())
-                        && supplier.getAnnotationElementValue(a, SupplierHelpers.REF).equals(i.getRef()) ) {
+                        && Objects.equals(supplier.getRef(a), i.getRef()) ) {
                     return i;
                 }
             }
@@ -284,7 +271,7 @@ public class Registry {
         String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
-            if(!i.getRef().equals(requestedRef)) {
+            if(!Objects.equals(i.getRef(), requestedRef)) {
                 continue;
             }
 
@@ -345,20 +332,16 @@ public class Registry {
         }
     }
 
-    private InstanceContext getDeployedInstance(Class typeClass) {
-        return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
+    private InstanceContext getDeployedInstance(Class typeClass, String ref) {
+        return deployedInstances.stream()
+                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .findFirst().orElse(null);
     }
 
-    private InstanceContext getDeployedInstance(Class typeClass, String realmRef) {
-        return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).filter(j -> j.getRef().equals(realmRef)).findFirst().orElse(null);
-    }
-
-    private RequestedInstance getRequestedInstance(Class typeClass) {
-        return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
-    }
-
-    private RequestedInstance getRequestedInstance(Class typeClass, String realmRef) {
-        return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).filter(j -> j.getRef().equals(realmRef)).findFirst().orElse(null);
+    private RequestedInstance getRequestedInstance(Class typeClass, String ref) {
+        return requestedInstances.stream()
+                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .findFirst().orElse(null);
     }
 
 }

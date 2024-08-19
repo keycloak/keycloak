@@ -14,10 +14,8 @@ public class InstanceContext<T, A extends Annotation> {
     private final Set<InstanceContext<T, A>> dependencies = new HashSet<>();
     private T value;
     private Class<? extends T> requestedValueType;
-    private final Class<?> config;
     private LifeCycle lifeCycle;
     private final String ref;
-    private final String realmRef;
     private final Map<String, Object> notes = new HashMap<>();
 
     public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
@@ -25,25 +23,16 @@ public class InstanceContext<T, A extends Annotation> {
         this.supplier = supplier;
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
-        this.config = (Class<?>) supplier.getAnnotationElementValue(annotation, SupplierHelpers.CONFIG);
-        this.lifeCycle = (LifeCycle) supplier.getAnnotationElementValue(annotation, SupplierHelpers.LIFECYCLE);
-        this.ref = (String) supplier.getAnnotationElementValue(annotation, SupplierHelpers.REF);
-        this.realmRef = (String) supplier.getAnnotationElementValue(annotation, SupplierHelpers.REALM_REF);
-    }
-
-    public InstanceContext(Registry registry, Supplier<T, A> supplier, Class<? extends T> requestedValueType, String ref, Class<?> config) {
-        this.registry = registry;
-        this.supplier = supplier;
-        this.annotation = null;
-        this.requestedValueType = requestedValueType;
-        this.config = config;
-        this.lifeCycle = supplier.getDefaultLifecycle();
-        this.ref = ref;
-        this.realmRef = "";
+        this.lifeCycle = supplier.getLifeCycle(annotation);
+        this.ref = StringUtil.convertEmptyToNull(supplier.getRef(annotation));
     }
 
     public <D> D getDependency(Class<D> typeClazz) {
-        return registry.getDependency(typeClazz, this);
+        return getDependency(typeClazz, null);
+    }
+
+    public <D> D getDependency(Class<D> typeClazz, String ref) {
+        return registry.getDependency(typeClazz, ref, this);
     }
 
     public Registry getRegistry() {
@@ -66,20 +55,12 @@ public class InstanceContext<T, A extends Annotation> {
         return requestedValueType;
     }
 
-    public Class<?> getConfig() {
-        return config;
-    }
-
     public LifeCycle getLifeCycle() {
         return lifeCycle;
     }
 
     public String getRef() {
         return ref;
-    }
-
-    public String getRealmRef() {
-        return realmRef;
     }
 
     public A getAnnotation() {

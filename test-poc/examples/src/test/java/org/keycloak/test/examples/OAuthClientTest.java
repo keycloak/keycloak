@@ -25,9 +25,6 @@ import java.net.URL;
 @KeycloakIntegrationTest
 public class OAuthClientTest {
 
-    @InjectRealm
-    ManagedRealm realm; // Need to specify realm as otherwise there's a bug when annotation is not present
-
     @InjectUser(config = UserConfig.class)
     ManagedUser user;
 

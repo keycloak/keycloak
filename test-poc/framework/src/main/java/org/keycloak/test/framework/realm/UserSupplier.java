@@ -25,13 +25,13 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     @Override
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {
-        ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class);
+        ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
         UserConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         UserRepresentation userRepresentation = config.getRepresentation();
 
         if (userRepresentation.getUsername() == null) {
-            String username = instanceContext.getRef();
+            String username = SupplierHelpers.createName(instanceContext);
             userRepresentation.setUsername(username);
         }
 
