@@ -52,8 +52,6 @@ export default class IdentityProviderLinksTab {
 
   public clickUnlinkAccountModalUnlinkBtn() {
     modalUtils.confirmModal();
-    cy.intercept("/admin/realms/master").as("load");
-    cy.wait(["@load"]);
     return this;
   }
 
