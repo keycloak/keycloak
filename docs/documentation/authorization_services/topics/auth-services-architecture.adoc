@@ -20,7 +20,7 @@ For more information, see <<_service_obtaining_permissions, Obtaining Permission
 * **Policy Enforcement Point (PEP)**
 +
 Provides implementations for different environments to actually enforce authorization decisions at the resource server side.
-{project_name} provides some built-in <<_enforcer_overview, Policy Enforcers>>.
+{project_name} provides some built-in Policy Enforcers.
 +
 
 * **Policy Information Point (PIP)**
@@ -78,7 +78,7 @@ what you want to protect (resource or scope) and the policies that must be satis
 
 image:images/pep-pattern-diagram.png[alt="PEP overview"]
 
-{project_name} provides some built-in <<_enforcer_overview, Policy Enforcers>> implementations that you can use to protect your applications depending on the platform they are running on.
+{project_name} provides some built-in Policy Enforcers implementations that you can use to protect your applications depending on the platform they are running on.
 
 
 == Authorization services
