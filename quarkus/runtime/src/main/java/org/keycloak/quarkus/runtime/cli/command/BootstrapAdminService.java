@@ -18,11 +18,11 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.common.util.IoUtils;
+import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
-import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import picocli.CommandLine.ArgGroup;
@@ -38,7 +38,7 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
 
     static class ClientIdOptions {
         @Option(names = { "--client-id" }, description = "Client id, defaults to "
-                + ApplianceBootstrap.DEFAULT_TEMP_ADMIN_SERVICE)
+                + BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_SERVICE)
         String clientId;
 
         @Option(names = { "--client-id:env" }, description = "Environment variable name for the client id")
@@ -69,7 +69,7 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
                 clientId = clientIdOptions.clientId;
             }
         } else if (!bootstrap.noPrompt) {
-            clientId = IoUtils.readLineFromConsole("client id", ApplianceBootstrap.DEFAULT_TEMP_ADMIN_SERVICE);
+            clientId = IoUtils.readLineFromConsole("client id", BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_SERVICE);
         }
 
         if (clientSecretEnv == null) {
