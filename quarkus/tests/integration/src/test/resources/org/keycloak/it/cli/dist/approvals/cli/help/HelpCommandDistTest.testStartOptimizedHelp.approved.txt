@@ -166,25 +166,27 @@ HTTP(S):
 Management:
 
 --http-management-port <port>
-                     Port of the management interface. Default: 9000. Available only when
-                       Management interface is enabled.
+                     Port of the management interface. Relevant only when something is exposed on
+                       the management interface - see the guide for details. Default: 9000.
 --https-management-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. If not given, the value is inherited from HTTP
-                       options. Available only when Management interface is enabled.
+                       options. Relevant only when something is exposed on the management interface
+                       - see the guide for details.
 --https-management-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server. If not
-                       given, the value is inherited from HTTP options. Available only when
-                       Management interface is enabled.
+                       given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for details.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
-                       inherited from HTTP options. Available only when Management interface is
-                       enabled.
+                       inherited from HTTP options. Relevant only when something is exposed on the
+                       management interface - see the guide for details.
 --https-management-key-store-password <password>
                      The password of the key store file for the management server. If not given,
-                       the value is inherited from HTTP options. Default: password. Available only
-                       when Management interface is enabled.
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Default:
+                       password.
 
 Proxy:
 

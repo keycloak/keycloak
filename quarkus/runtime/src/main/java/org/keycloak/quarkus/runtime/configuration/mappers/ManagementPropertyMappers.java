@@ -16,90 +16,82 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
 
+import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class ManagementPropertyMappers {
-    private static final String MANAGEMENT_ENABLED_MSG = "Management interface is enabled";
 
     private ManagementPropertyMappers() {
     }
 
     public static PropertyMapper<?>[] getManagementPropertyMappers() {
         return new PropertyMapper[]{
+                fromOption(ManagementOptions.HTTP_MANAGEMENT_ENABLED)
+                        .to("quarkus.management.enabled")
+                        .transformer((val, ctx) -> managementEnabledTransformer())
+                        .build(),
                 fromOption(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE)
-                        .to("quarkus.management.enabled") // ATM, the management interface state is only based on the legacy-observability-interface property
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .transformer(ManagementPropertyMappers::managementEnabledTransformer)
                         .build(),
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTP_RELATIVE_PATH.getKey())
                         .to("quarkus.management.root-path")
                         .paramLabel("path")
                         .build(),
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_PORT)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .to("quarkus.management.port")
                         .paramLabel("port")
                         .build(),
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_HOST)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTP_HOST.getKey())
                         .to("quarkus.management.host")
                         .paramLabel("host")
                         .build(),
                 // HTTPS
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CLIENT_AUTH)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_CLIENT_AUTH.getKey())
                         .to("quarkus.management.ssl.client-auth")
                         .paramLabel("auth")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CIPHER_SUITES)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_CIPHER_SUITES.getKey())
                         .to("quarkus.management.ssl.cipher-suites")
                         .paramLabel("ciphers")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_PROTOCOLS)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_PROTOCOLS.getKey())
                         .to("quarkus.management.ssl.protocols")
                         .paramLabel("protocols")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_CERTIFICATE_FILE.getKey())
                         .to("quarkus.management.ssl.certificate.files")
                         .validator((mapper, value) -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE.getKey())
                         .to("quarkus.management.ssl.certificate.key-files")
                         .validator((mapper, value) -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_FILE.getKey())
                         .to("quarkus.management.ssl.certificate.key-store-file")
                         .validator((mapper, value) -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_PASSWORD)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_PASSWORD.getKey())
                         .to("quarkus.management.ssl.certificate.key-store-password")
                         .validator((mapper, value) -> validateTlsProperties())
@@ -107,7 +99,6 @@ public class ManagementPropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_TYPE)
-                        .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey())
                         .to("quarkus.management.ssl.certificate.key-store-file-type")
                         .transformer((value, config) -> value.or(() -> Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey())))
@@ -117,7 +108,15 @@ public class ManagementPropertyMappers {
     }
 
     public static boolean isManagementEnabled() {
-        return isTrue("quarkus.management.enabled");
+        if (isTrue(LEGACY_OBSERVABILITY_INTERFACE)) {
+            return false;
+        }
+        var isManagementOccupied = isTrue(HealthOptions.HEALTH_ENABLED) || isTrue(MetricsOptions.METRICS_ENABLED);
+        return isManagementOccupied;
+    }
+
+    private static Optional<String> managementEnabledTransformer() {
+        return Optional.of(Boolean.toString(isManagementEnabled()));
     }
 
     public static boolean isManagementTlsEnabled() {
@@ -134,13 +133,5 @@ public class ManagementPropertyMappers {
         if (!isHttpEnabled && !isManagementTlsEnabled()) {
             throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
-    }
-
-    private static Optional<String> managementEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext ctx) {
-        if (value.isPresent()) {
-            var b = Boolean.parseBoolean(value.get());
-            return Optional.of(Boolean.toString(!b)); // negate the output
-        }
-        return Optional.of(Boolean.TRUE.toString());
     }
 }
