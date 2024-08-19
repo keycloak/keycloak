@@ -224,6 +224,7 @@ export default function MappingDetails() {
             <DynamicComponents
               properties={mapping?.properties || []}
               isNew={!isUpdating}
+              stringify
             />
             <ActionGroup>
               <Button variant="primary" type="submit">
