@@ -24,9 +24,9 @@ Use it together with the other building blocks outlined in the <@links.ha id="bb
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
-. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="deploy-aurora-multi-az" anchor="connecting-to-keycloak" />
+. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="deploy-aurora-multi-az" anchor="connecting-aurora-to-keycloak" />
 
-. Notice the configuration file below options relevant for connecting to the {jdgserver_name} server from <@links.ha id="deploy-infinispan-kubernetes-crossdc" anchor="connecting-to-keycloak" />
+. Notice the configuration file below options relevant for connecting to the {jdgserver_name} server from <@links.ha id="deploy-infinispan-kubernetes-crossdc" anchor="connecting-infinispan-to-keycloak" />
 
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 

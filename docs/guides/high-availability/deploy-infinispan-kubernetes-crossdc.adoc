@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
@@ -231,8 +232,8 @@ kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.or
 kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
 ----
 
+[#connecting-infinispan-to-keycloak]
 == Connecting {jdgserver_name} with {project_name}
-[#connecting-to-keycloak]
 
 Now that an {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
 
@@ -273,6 +274,6 @@ In other environments, add the necessary certificates to {project_name}'s trusts
 
 == Next steps
 
-After Aurora AWS database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
+After the Aurora AWS database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
 
 </@tmpl.guide>
