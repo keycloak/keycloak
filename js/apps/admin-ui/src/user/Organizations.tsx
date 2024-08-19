@@ -94,10 +94,20 @@ export const Organizations = () => {
                       );
                 }),
               );
-              addAlert(t("userAddedOrganization", { count: orgs.length }));
+              addAlert(
+                t(
+                  shouldJoin
+                    ? "userAddedOrganization"
+                    : "userInvitedOrganization",
+                  { count: orgs.length },
+                ),
+              );
               refresh();
             } catch (error) {
-              addError("userAddedOrganizationError", error);
+              addError(
+                shouldJoin ? "userAddedOrganizationError" : "userInvitedError",
+                error,
+              );
             }
           }}
         />
