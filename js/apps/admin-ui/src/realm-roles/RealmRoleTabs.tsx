@@ -80,6 +80,8 @@ export default function RealmRoleTabs() {
     "manage-authorization",
   );
 
+  const [canManageClientRole, setCanManageClientRole] = useState(false);
+
   const [open, setOpen] = useState(false);
   const convert = (role: RoleRepresentation) => {
     const { attributes, ...rest } = role;
@@ -114,6 +116,14 @@ export default function RealmRoleTabs() {
       setAttributes(convertedRole.attributes);
     },
     [key],
+  );
+
+  useFetch(
+    async () => adminClient.clients.findOne({ id: clientId }),
+    (client) => {
+      if (clientId) setCanManageClientRole(client?.access?.manage as boolean);
+    },
+    [],
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
@@ -312,6 +322,7 @@ export default function RealmRoleTabs() {
                 <AttributesForm
                   form={form}
                   save={onSubmit}
+                  fineGrainedAccess={canManageClientRole}
                   reset={() =>
                     setValue("attributes", attributes, { shouldDirty: false })
                   }
