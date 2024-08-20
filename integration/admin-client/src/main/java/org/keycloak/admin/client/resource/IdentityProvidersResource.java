@@ -47,7 +47,15 @@ public interface IdentityProvidersResource {
     @GET
     @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)
-    List<IdentityProviderRepresentation> find(@QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
+    List<IdentityProviderRepresentation> find(@QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                              @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Path("instances")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<IdentityProviderRepresentation> find(@QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                              @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults,
+                                              @QueryParam("realmOnly") Boolean realmOnly);
 
     @POST
     @Path("instances")

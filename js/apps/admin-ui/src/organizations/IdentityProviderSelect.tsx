@@ -63,13 +63,14 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
+        realmOnly: true,
       };
       if (search) {
         params.search = search;
       }
 
       const idps = await adminClient.identityProviders.find(params);
-      return idps.filter((i) => !i.config?.["kc.org"]);
+      return idps;
     },
     setIdps,
     [search],

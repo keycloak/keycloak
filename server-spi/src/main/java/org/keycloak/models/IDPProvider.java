@@ -16,7 +16,6 @@
  */
 package org.keycloak.models;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -99,21 +98,8 @@ public interface IDPProvider extends Provider {
      * @return a non-null stream of {@link IdentityProviderModel}s.
      */
     default Stream<IdentityProviderModel> getAllStream() {
-        return getAllStream("", null, null);
+        return getAllStream(Map.of(), null, null);
     }
-
-    /**
-     * Returns all identity providers in the realm filtered according to the specified parameters.
-     *
-     * @param search a {@link String} representing an identity provider alias (partial or exact). If the value is enclosed
-     *               in double quotes, the method treats it as an exact search (e.g. {@code "name"}). If the value is enclosed in
-     *               wildcards, the method treats it as an infix search (e.g. {@code *name*}). Otherwise, the method treats it as a
-     *               prefix search (i.e. {@code name*} and {@code name} return the same results).
-     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
-     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
-     * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
-    */
-    Stream<IdentityProviderModel> getAllStream(String search, Integer first, Integer max);
 
     /**
      * Returns all identity providers in the realm filtered according to the specified parameters.
@@ -134,7 +120,7 @@ public interface IDPProvider extends Provider {
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
     default Stream<IdentityProviderModel> getByOrganization(String orgId, Integer first, Integer max) {
-        return getAllStream(Map.of(IdentityProviderModel.ORGANIZATION_ID, orgId), first, max);
+        return getAllStream(Map.of(IdentityProviderModel.ORGANIZATION_ID, orgId != null ? orgId : ""), first, max);
     }
 
     /**
