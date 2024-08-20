@@ -106,6 +106,7 @@
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
+        <servlet.api.31.version>1.0.2.Final</servlet.api.31.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
@@ -152,7 +153,6 @@
         <osgi.version>6.0.0</osgi.version>
         <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
         <pax.web.version>7.4.6</pax.web.version>
-        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
 
@@ -1644,6 +1644,11 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_3.0_spec</artifactId>
                 <version>${servlet.api.30.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+                <version>${servlet.api.31.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>

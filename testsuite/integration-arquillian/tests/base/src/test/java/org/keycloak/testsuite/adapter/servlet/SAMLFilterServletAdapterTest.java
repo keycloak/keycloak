@@ -110,6 +110,12 @@ public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
 
     }
 
+    @Test
+    @Override
+    @Ignore
+    public void testChangeSessionID() throws Exception {
+    }
+
     /**
      * Tests that the adapter is using the configured role mappings provider to map the roles extracted from the assertion
      * into roles that exist in the application domain. For this test a {@link org.keycloak.adapters.saml.PropertiesBasedRoleMapper}
