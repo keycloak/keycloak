@@ -50,6 +50,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String PASS_MAX_AGE = "passMaxAge";
     public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
+    public static final String SEARCH = "search";
     public static final String SYNC_MODE = "syncMode";
 
     private String internalId;

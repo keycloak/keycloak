@@ -55,7 +55,10 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.utils.StringUtil;
+
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -180,18 +183,28 @@ public class IdentityProvidersResource {
             @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
-            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+            @Parameter(description = "Boolean which defines if only realm-level IDPs (not associated with orgs) should be returned (default: false)") @QueryParam("realmOnly") Boolean realmOnly) {
         this.auth.realm().requireViewIdentityProviders();
 
         if (maxResults == null) {
             maxResults = 100; // always set a maximum of 100 by default
         }
 
-        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.<Boolean>ofNullable(briefRepresentation).orElse(false)
+        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
                 : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 
-        return session.identityProviders().getAllStream(search, firstResult, maxResults).map(toRepresentation);
+        boolean searchRealmOnlyIDPs = Optional.ofNullable(realmOnly).orElse(false);
+
+        Map<String, String> searchOptions = new HashMap<>();
+        if (StringUtil.isNotBlank(search)) {
+            searchOptions.put(IdentityProviderModel.SEARCH, search);
+        }
+        if (searchRealmOnlyIDPs) {
+            searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, null);
+        }
+        return session.identityProviders().getAllStream(searchOptions, firstResult, maxResults).map(toRepresentation);
     }
 
     /**

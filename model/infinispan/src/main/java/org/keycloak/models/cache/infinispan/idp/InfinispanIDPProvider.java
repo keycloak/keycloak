@@ -138,11 +138,6 @@ public class InfinispanIDPProvider implements IDPProvider {
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(String search, Integer first, Integer max) {
-        return idpDelegate.getAllStream(search, first, max);
-    }
-
-    @Override
     public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
         return idpDelegate.getAllStream(attrs, first, max);
     }

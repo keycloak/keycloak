@@ -54,6 +54,7 @@ import static org.keycloak.models.IdentityProviderModel.HIDE_ON_LOGIN;
 import static org.keycloak.models.IdentityProviderModel.LINK_ONLY;
 import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID;
 import static org.keycloak.models.IdentityProviderModel.POST_BROKER_LOGIN_FLOW_ID;
+import static org.keycloak.models.IdentityProviderModel.SEARCH;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -206,24 +207,6 @@ public class JpaIDPProvider implements IDPProvider {
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(String search, Integer first, Integer max) {
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
-        Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
-
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
-
-        if (StringUtil.isNotBlank(search)) {
-            predicates.add(this.getAliasSearchPredicate(search, builder, idp));
-        }
-
-        query.orderBy(builder.asc(idp.get(ALIAS)));
-        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
-        return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
-    }
-
-    @Override
     public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
@@ -257,6 +240,12 @@ public class JpaIDPProvider implements IDPProvider {
                             predicates.add(builder.isNull(idp.get(key)));
                         } else {
                             predicates.add(builder.equal(idp.get(key), value));
+                        }
+                        break;
+                    }
+                    case SEARCH: {
+                        if (StringUtil.isNotBlank(value)) {
+                            predicates.add(this.getAliasSearchPredicate(value, builder, idp));
                         }
                         break;
                     } default: {
