@@ -52,7 +52,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
     }
 
-    public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, boolean offline) {
+    public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
@@ -63,7 +63,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
-                wrappedEntity = getSessionEntityFromPersister(realm, key, offline);
+                wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
             } else {
                 LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
@@ -96,15 +96,17 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         }
     }
 
-    private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, boolean offline) {
-        UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
-        UserSessionModel persistentUserSession = persister.loadUserSession(realm, key, offline);
+    private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
+        if (userSession == null) {
+            UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
+            userSession = persister.loadUserSession(realm, key, offline);
+        }
 
-        if (persistentUserSession == null) {
+        if (userSession == null) {
             return null;
         }
 
-        return importUserSession(persistentUserSession);
+        return importUserSession(userSession);
     }
 
     private SessionEntityWrapper<UserSessionEntity> importUserSession(UserSessionModel persistentUserSession) {
