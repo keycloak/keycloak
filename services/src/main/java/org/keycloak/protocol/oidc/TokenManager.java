@@ -396,7 +396,9 @@ public class TokenManager {
         //if scope parameter is not null, remove every scope that is not part of scope parameter
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
-            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc))
+            oldTokenScope = Arrays.stream(oldTokenScope.split(" "))
+                    .map(transformScopes(scopeParamScopes))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
 
@@ -436,6 +438,21 @@ public class TokenManager {
         }
 
         return responseBuilder;
+    }
+
+    private Function<String, String> transformScopes(Set<String> requestedScopes) {
+        return scope -> {
+            if (requestedScopes.contains(scope)) {
+                return scope;
+            }
+
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                OrganizationScope oldScope = OrganizationScope.valueOfScope(scope);
+                return oldScope == null ? null : oldScope.resolveName(requestedScopes, scope);
+            }
+
+            return null;
+        };
     }
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,

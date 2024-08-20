@@ -75,6 +75,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         this.requestedScopes = requestedScopes;
         this.clientSession = clientSession;
         this.session = session;
+        this.session.setAttribute(ClientSessionContext.class.getName(), this);
     }
 
 

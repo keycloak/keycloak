@@ -20,20 +20,25 @@ package org.keycloak.organization.authentication.authenticators.browser;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
-import static org.keycloak.organization.utils.Organizations.resolveOrganization;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
+import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
@@ -45,6 +50,8 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareRealmBean;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
@@ -64,7 +71,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        OrganizationModel organization = resolveOrganization(session);
+        OrganizationModel organization = Organizations.resolveOrganization(session);
 
         if (organization == null) {
             initialChallenge(context);
@@ -84,9 +91,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         RealmModel realm = context.getRealm();
         UserModel user = resolveUser(context, username);
         String domain = getEmailDomain(username);
-        OrganizationModel organization = resolveOrganization(session, user, domain);
+        OrganizationModel organization = resolveOrganization(user, domain);
 
         if (organization == null) {
+            if (shouldUserSelectOrganization(context, user)) {
+                return;
+            }
             // request does not map to any organization, go to the next step/sub-flow
             context.attempted();
             return;
@@ -100,7 +110,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         if (user == null) {
-            unkownUserChallenge(context, organization, realm);
+            unknownUserChallenge(context, organization, realm);
             return;
         }
 
@@ -116,6 +126,61 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return realm.isOrganizationsEnabled();
+    }
+
+    private OrganizationModel resolveOrganization(UserModel user, String domain) {
+        KeycloakContext context = session.getContext();
+        HttpRequest request = context.getHttpRequest();
+        MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
+        List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
+
+        if (alias.isEmpty()) {
+            return Organizations.resolveOrganization(session, user, domain);
+        }
+
+        OrganizationProvider provider = getOrganizationProvider();
+        OrganizationModel organization = provider.getByAlias(alias.get(0));
+
+        if (organization == null) {
+            return null;
+        }
+
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
+        authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+
+        return organization;
+    }
+
+    private boolean shouldUserSelectOrganization(AuthenticationFlowContext context, UserModel user) {
+        OrganizationProvider provider = getOrganizationProvider();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String rawScope = authSession.getClientNote(OAuth2Constants.SCOPE);
+        OrganizationScope scope = OrganizationScope.valueOfScope(rawScope);
+
+        if (!OrganizationScope.ANY.equals(scope)) {
+            return false;
+        }
+
+        Stream<OrganizationModel> organizations = provider.getByMember(user);
+
+        if (organizations.count() > 1) {
+            LoginFormsProvider form = context.form();
+            form.setAttribute("user", new ProfileBean(user, session));
+            form.setAttributeMapper(new Function<Map<String, Object>, Map<String, Object>>() {
+                @Override
+                public Map<String, Object> apply(Map<String, Object> attributes) {
+                    attributes.computeIfPresent("auth",
+                            (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                    );
+                    return attributes;
+                }
+            });
+            context.challenge(form.createForm("select-organization.ftl"));
+            return true;
+        }
+
+        return false;
     }
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
@@ -158,6 +223,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private UserModel resolveUser(AuthenticationFlowContext context, String username) {
+        if (context.getUser() != null) {
+            return context.getUser();
+        }
+
         if (username == null) {
             return null;
         }
@@ -166,14 +235,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = Optional.ofNullable(users.getUserByEmail(realm, username)).orElseGet(() -> users.getUserByUsername(realm, username));
 
-        if (user != null) {
-            context.setUser(user);
-        }
+        context.setUser(user);
 
         return user;
     }
 
-    private void unkownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
+    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
         // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
         LoginFormsProvider form = context.form()

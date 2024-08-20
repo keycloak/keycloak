@@ -54,6 +54,7 @@ import org.keycloak.testsuite.organization.broker.BrokerConfigurationWrapper;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.TestCleanup;
 
@@ -70,6 +71,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected SelectOrganizationPage selectOrganizationPage;
 
     @Page
     protected IdpConfirmLinkPage idpConfirmLinkPage;
