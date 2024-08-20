@@ -79,6 +79,8 @@ public class KeycloakMain implements QuarkusApplication {
                 return;
             }
 
+            Environment.setParsedCommand(new Start());
+
             try {
                 PropertyMappers.sanitizeDisabledMappers();
                 Picocli.validateConfig(cliArgs, new Start());
