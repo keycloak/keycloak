@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,9 +23,9 @@ import org.keycloak.testsuite.model.KeycloakModelParameters;
 
 import java.util.Collections;
 
-public class PersistentUserSessions extends KeycloakModelParameters {
+public class VolatileUserSessions extends KeycloakModelParameters {
 
-    public PersistentUserSessions() {
+    public VolatileUserSessions() {
         super(Collections.emptySet(), Collections.emptySet());
     }
 
@@ -35,6 +35,6 @@ public class PersistentUserSessions extends KeycloakModelParameters {
     }
 
     public static void updateConfigForJpa(Config cf) {
-        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS), "enabled");
+        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS), "disabled");
     }
 }

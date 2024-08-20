@@ -96,6 +96,7 @@
 
         <auth.server.profile/>
         <auth.server.feature/>
+        <auth.server.feature.disable/>
 
         <auth.server.host2>${auth.server.host}</auth.server.host2> <!-- for broker and JS adapter tests; defaults to auth.server.host -->
         <app.server.host>localhost</app.server.host>
@@ -454,6 +455,7 @@
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
+                            <auth.server.feature.disable>${auth.server.feature.disable}</auth.server.feature.disable>
 
                             <auth.server.host2>${auth.server.host2}</auth.server.host2> <!-- for broker tests -->
 

@@ -236,9 +236,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     protected void addFeaturesOption(List<String> commands) {
-        String defaultFeatures = configuration.getDefaultFeatures();
+        String enabledFeatures = configuration.getEnabledFeatures();
+        String disabledFeatures = configuration.getDisabledFeatures();
 
-        if (StringUtil.isBlank(defaultFeatures)) {
+        if (StringUtil.isBlank(enabledFeatures) && StringUtil.isBlank(disabledFeatures)) {
             return;
         }
 
@@ -246,24 +247,32 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             return;
         }
 
-        StringBuilder featuresOption = new StringBuilder("--features=").append(defaultFeatures);
-        Iterator<String> iterator = commands.iterator();
+        if (!StringUtil.isBlank(enabledFeatures)) {
+            appendOrAddCommand(commands, "--features=", enabledFeatures);
+        }
 
-        while (iterator.hasNext()) {
-            String command = iterator.next();
-
-            if (command.startsWith("--features")) {
-                featuresOption = new StringBuilder(command);
-                featuresOption.append(",").append(defaultFeatures);
-                iterator.remove();
-                break;
-            }
+        if (!StringUtil.isBlank(disabledFeatures)) {
+            appendOrAddCommand(commands, "--features-disabled=", disabledFeatures);
         }
 
         // enabling or disabling features requires rebuilding the image
         prepareCommandsForRebuilding(commands);
+    }
 
-        commands.add(featuresOption.toString());
+    private void appendOrAddCommand(List<String> commands, String command, String addition) {
+        Iterator<String> iterator = commands.iterator();
+
+        while (iterator.hasNext()) {
+            String existingCommand = iterator.next();
+
+            if (existingCommand.startsWith(command)) {
+                iterator.remove();
+                commands.add(existingCommand + "," + addition);
+                return;
+            }
+        }
+
+        commands.add(command + addition);
     }
 
     protected List<String> configureArgs(List<String> commands) {
@@ -425,7 +434,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private Collection<String> getDefaultFeatures() {
-        var features = configuration.getDefaultFeatures();
+        var features = configuration.getEnabledFeatures();
         if (features == null || features.isBlank()) {
             return List.of();
         }

@@ -48,7 +48,8 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     private FipsMode fipsMode = FipsMode.valueOfOption(System.getProperty("auth.server.fips.mode"));
 
-    private String defaultFeatures;
+    private String enabledFeatures;
+    private String disabledFeatures;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -241,11 +242,19 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.fipsMode = fipsMode;
     }
 
-    public void setDefaultFeatures(String defaultFeatures) {
-        this.defaultFeatures = defaultFeatures;
+    public void setEnabledFeatures(String enabledFeatures) {
+        this.enabledFeatures = enabledFeatures;
     }
 
-    public String getDefaultFeatures() {
-        return defaultFeatures;
+    public String getEnabledFeatures() {
+        return enabledFeatures;
+    }
+
+    public String getDisabledFeatures() {
+        return disabledFeatures;
+    }
+
+    public void setDisabledFeatures(String disabledFeatures) {
+        this.disabledFeatures = disabledFeatures;
     }
 }
