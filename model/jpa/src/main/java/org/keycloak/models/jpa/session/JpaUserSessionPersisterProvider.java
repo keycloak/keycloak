@@ -190,11 +190,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        int deletedClientSessions = em.createNamedQuery("deleteClientSessionsByRealm")
+        em.createNamedQuery("deleteClientSessionsByRealm")
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
 
-        int deletedUserSessions = em.createNamedQuery("deleteUserSessionsByRealm")
+        em.createNamedQuery("deleteUserSessionsByRealm")
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
     }
@@ -205,12 +205,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private void onClientRemoved(String clientUUID) {
-        int num = 0;
         StorageId clientStorageId = new StorageId(clientUUID);
         if (clientStorageId.isLocal()) {
-            num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
+            em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
         } else {
-            num = em.createNamedQuery("deleteClientSessionsByExternalClient")
+            em.createNamedQuery("deleteClientSessionsByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
                     .setParameter("externalClientId", clientStorageId.getExternalId())
                     .executeUpdate();
@@ -223,8 +222,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private void onUserRemoved(RealmModel realm, String userId) {
-        int num = em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", userId).executeUpdate();
-        num = em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", userId).executeUpdate();
+        em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", userId).executeUpdate();
+        em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", userId).executeUpdate();
     }
 
 
