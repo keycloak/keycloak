@@ -6,7 +6,7 @@ public class BootstrapAdminOptions {
     public static final String DEFAULT_TEMP_ADMIN_SERVICE = DEFAULT_TEMP_ADMIN_USERNAME;
     public static final int DEFAULT_TEMP_ADMIN_EXPIRATION = 120;
     private static final String USED_ONLY_WHEN = " Used only when the master realm is created.";
-    private static final String NON_CLI = " Use a non-CLI configration option for this option if possible.";
+    private static final String NON_CLI = " Use a non-CLI configuration option for this option if possible.";
 
     public static final Option<String> PASSWORD = new OptionBuilder<>("bootstrap-admin-password", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
