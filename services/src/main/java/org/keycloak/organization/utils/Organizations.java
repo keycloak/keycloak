@@ -249,32 +249,32 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
+        Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
+
+        if (organization.isPresent()) {
+            // resolved from current keycloak session
+            return organization.get();
+        }
+
         OrganizationProvider provider = getProvider(session);
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
         if (authSession != null) {
-            OrganizationModel organization = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
+            String rawScopes = authSession.getClientNote(OAuth2Constants.SCOPE);
+            OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+
+            List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                     .map(provider::getById)
-                    .orElseGet(() -> {
-                        String rawScopes = authSession.getClientNote(OAuth2Constants.SCOPE);
-                        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+                    .map(List::of)
+                    .orElseGet(() -> scope == null ? List.of() : scope.resolveOrganizations(user, rawScopes, session).toList());
 
-                        if (OrganizationScope.SINGLE.equals(scope)) {
-                            return scope.resolveOrganizations(user, rawScopes, session).findAny().orElse(null);
-                        }
-
-                        return null;
-                    });
-
-            if (organization != null) {
-                return organization;
+            if (organizations.size() == 1) {
+                // single organization mapped from authentication session
+                return organizations.get(0);
+            } else if (scope != null) {
+                // organization scope requested but no single organization mapped from the scope
+                return null;
             }
-        }
-
-        Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
-
-        if (organization.isPresent()) {
-            return organization.get();
         }
 
         organization = ofNullable(user).stream().flatMap(provider::getByMember)

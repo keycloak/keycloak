@@ -23,16 +23,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.TriFunction;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeDecorator;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -43,33 +46,37 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.utils.StringUtil;
 
 /**
- * An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
+ * <p>An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
+ *
+ * <p>The {@link OrganizationScope} behaves like a dynamic scopes so that access to organizations is granted depending
+ * on how the client requests the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  */
 public enum OrganizationScope {
 
     /**
-     * Maps to any organization a user is a member
+     * Maps to any organization a user is a member. When this scope is requested by clients, all the organizations
+     * the user is a member are granted.
      */
     ALL("*"::equals,
-            (organizations) -> true,
             (user, scopes, session) -> {
                 if (user == null) {
                     return Stream.empty();
                 }
-                return getProvider(session).getByMember(user).filter(OrganizationModel::isEnabled);
-            }),
+                return getProvider(session).getByMember(user);
+            },
+            (organizations) -> true,
+            (current, previous) -> valueOfScope(current) == null ? previous : current),
 
     /**
-     * Maps to a specific organization the user is a member.
+     * Maps to a specific organization the user is a member. When this scope is requested by clients, only the
+     * organization specified in the scope is granted.
      */
     SINGLE(StringUtil::isNotBlank,
-            (organizations) -> organizations.findAny().isPresent(),
             (user, scopes, session) -> {
                 OrganizationModel organization = parseScopeParameter(scopes)
                         .map(OrganizationScope::parseScopeValue)
                         .map(alias -> getProvider(session).getByAlias(alias))
                         .filter(Objects::nonNull)
-                        .filter(OrganizationModel::isEnabled)
                         .findAny()
                         .orElse(null);
 
@@ -82,32 +89,94 @@ public enum OrganizationScope {
                 }
 
                 return Stream.empty();
+            },
+            (organizations) -> organizations.findAny().isPresent(),
+            (current, previous) -> {
+                if (current.equals(previous)) {
+                    return current;
+                }
+
+                if (OrganizationScope.ALL.equals(valueOfScope(current))) {
+                    return previous;
+                }
+
+                return null;
             }),
 
     /**
-     * Maps to a single organization if the user is a member of a single organization.
+     * Maps to a single organization if the user is a member of a single organization. When this scope is requested by clients,
+     * the user will be asked to select and organization if a member of multiple organizations or, in case the user is a
+     * member of a single organization, grant access to that organization.
      */
     ANY(""::equals,
-            (organizations) -> true,
             (user, scopes, session) -> {
+                if (user == null) {
+                    return Stream.empty();
+                }
+
                 List<OrganizationModel> organizations = getProvider(session).getByMember(user).toList();
 
                 if (organizations.size() == 1) {
                     return organizations.stream();
                 }
 
-                return Stream.empty();
+                ClientSessionContext context = (ClientSessionContext) session.getAttribute(ClientSessionContext.class.getName());
+
+                if (context == null) {
+                    return Stream.empty();
+                }
+
+                AuthenticatedClientSessionModel clientSession = context.getClientSession();
+                String orgId = clientSession.getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+
+                if (orgId == null) {
+                    return Stream.empty();
+                }
+
+                return organizations.stream().filter(o -> o.getId().equals(orgId));
+            },
+            (organizations) -> true,
+            (current, previous) -> {
+                if (current.equals(previous)) {
+                    return current;
+                }
+
+                if (OrganizationScope.ALL.equals(valueOfScope(current))) {
+                    return previous;
+                }
+
+                return null;
             });
 
     private static final Pattern SCOPE_PATTERN = Pattern.compile(OIDCLoginProtocolFactory.ORGANIZATION + ":*".replace("*", "(.*)"));
-    private final Predicate<String> valueMatcher;
-    private final Predicate<Stream<OrganizationModel>> valueValidator;
-    private final TriFunction<UserModel, String, KeycloakSession, Stream<OrganizationModel>> orgResolver;
 
-    OrganizationScope(Predicate<String> valueMatcher, Predicate<Stream<OrganizationModel>> valueValidator, TriFunction<UserModel, String, KeycloakSession, Stream<OrganizationModel>> orgResolver) {
+    /**
+     * <p>Resolves the value of the scope from its raw format. For instance, {@code organization:<value>} will resolve to {@code <value>}.
+     *
+     * <p>If no value is provided, like in {@code organization}, an empty string is returned instead.
+     */
+    private final Predicate<String> valueMatcher;
+
+    /**
+     * Resolves the organizations based on the values of the scope.
+     */
+    private final TriFunction<UserModel, String, KeycloakSession, Stream<OrganizationModel>> valueResolver;
+
+    /**
+     * Validate the value of the scope based on how they map to existing organizations.
+     */
+    private final Predicate<Stream<OrganizationModel>> valueValidator;
+
+    /**
+     * Resolves the name of the scope when requesting a scope using a different format.
+     */
+    private final BiFunction<String, String, String> nameResolver;
+
+    OrganizationScope(Predicate<String> valueMatcher, TriFunction<UserModel, String, KeycloakSession, Stream<OrganizationModel>> valueResolver, Predicate<Stream<OrganizationModel>> valueValidator, BiFunction<String, String, String> nameResolver) {
         this.valueMatcher = valueMatcher;
+        this.valueResolver = valueResolver;
         this.valueValidator = valueValidator;
-        this.orgResolver = orgResolver;
+        this.nameResolver = nameResolver;
     }
 
     /**
@@ -122,7 +191,7 @@ public enum OrganizationScope {
         if (scope == null) {
             return Stream.empty();
         }
-        return orgResolver.apply(user, scope, session);
+        return valueResolver.apply(user, scope, session).filter(OrganizationModel::isEnabled);
     }
 
     /**
@@ -134,6 +203,12 @@ public enum OrganizationScope {
      * @return the {@link ClientScopeModel}
      */
     public ClientScopeModel toClientScope(String name, UserModel user, KeycloakSession session) {
+        OrganizationScope scope = valueOfScope(name);
+
+        if (scope == null) {
+            return null;
+        }
+
         KeycloakContext context = session.getContext();
         ClientModel client = context.getClient();
         ClientScopeModel orgScope = getOrganizationClientScope(client, session);
@@ -142,16 +217,35 @@ public enum OrganizationScope {
             return null;
         }
 
-        OrganizationScope scope = OrganizationScope.valueOfScope(name);
-
-        if (scope == null) {
-            return null;
-        }
-
         Stream<OrganizationModel> organizations = scope.resolveOrganizations(user, name, session);
 
         if (valueValidator.test(organizations)) {
             return new ClientScopeDecorator(orgScope, name);
+        }
+
+        return null;
+    }
+
+    /**
+     * <p>Resolves the name of this scope based on the given set of {@code scopes} and the {@code previous} name.
+     *
+     * <p>The scope name can be mapped to another scope depending on its semantics. Otherwise, it will map to
+     * the same name. This method is mainly useful to recognize if a scope previously granted is still valid
+     * and can be mapped to the new scope being requested. For instance, when refreshing tokens.
+     *
+     * @param scopes the scopes to resolve the name from
+     * @param previous the previous name of this scope
+     * @return the name of the scope
+     */
+    public String resolveName(Set<String> scopes, String previous) {
+        for (String scope : scopes) {
+            String resolved = nameResolver.apply(scope, previous);
+
+            if (resolved == null) {
+                continue;
+            }
+
+            return resolved;
         }
 
         return null;

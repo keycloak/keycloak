@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -31,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
@@ -82,10 +84,19 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
             return;
         }
 
-        Stream<OrganizationModel> organizations = scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
+        String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        Stream<OrganizationModel> organizations;
+
+        if (orgId == null) {
+            organizations = scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
+        } else {
+            organizations = Stream.of(session.getProvider(OrganizationProvider.class).getById(orgId));
+        }
+
+
         Map<String, Map<String, Object>> claim = new HashMap<>();
 
-        organizations.forEach(o -> claim.put(o.getAlias(), Map.of()));
+        organizations.filter(Objects::nonNull).forEach(o -> claim.put(o.getAlias(), Map.of()));
 
         if (claim.isEmpty()) {
             return;
