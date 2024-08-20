@@ -69,7 +69,9 @@ public interface RealmProvider extends Provider {
      * @param search String to search for in realm names
      * @return Stream of {@link RealmModel}. Never returns {@code null}.
      */
-    Stream<RealmModel> getRealmsStream(String search);
+    default Stream<RealmModel> getRealmsStream(String search) {
+        return getRealmsStream().filter(realm -> search.isEmpty() || realm.getName().toLowerCase().contains(search.trim().toLowerCase()));
+    }
 
     /**
      * Returns stream of realms which has component with the given provider type.
