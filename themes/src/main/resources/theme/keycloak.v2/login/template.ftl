@@ -43,10 +43,6 @@
     </#if>
     <script type="module">
         import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
-
-        checkCookiesAndSetTimer(
-            "${url.ssoLoginInOtherTabsUrl?no_esc}"
-        );
     </script>
 </head>
 
@@ -99,8 +95,15 @@
           </div>
         </div>
         </#if>
-      </div>
-      <div class="${properties.kcLoginMainBody!}">
+        <#if displayInfo>
+          <p id="kc-info" class="${properties.kcSignUpClass!}">
+              <span id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                  <#nested "info">
+              </span>
+          </p>
+        </#if>
+        </div>
+        <div class="${properties.kcLoginMainBody!}">
         <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
             <#if displayRequiredFields>
                 <div class="${properties.kcContentWrapperClass!}">
@@ -164,19 +167,13 @@
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <div class="${properties.kcFormGroupClass!}">
                   <input type="hidden" name="tryAnotherWay" value="on"/>
-                  <a href="#" id="try-another-way"
-                      onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                  <button id="try-another-way" class="${properties.kcButtonSecondary}" type="button"
+                      onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}
+                  </button>
               </div>
           </form>
         </#if>
 
-        <#if displayInfo>
-          <div id="kc-info" class="${properties.kcSignUpClass!}">
-              <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                  <#nested "info">
-              </div>
-          </div>
-        </#if>
       </div>
       <footer class="pf-v5-c-login__main-footer">
         <#nested "socialProviders">
