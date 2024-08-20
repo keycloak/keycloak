@@ -106,6 +106,7 @@ export const RoleMapping = ({
   const loader = async () => {
     let effectiveRoles: Row[] = [];
     let effectiveClientRoles: Row[] = [];
+
     if (!hide) {
       effectiveRoles = await getEffectiveRoles(adminClient, type, id);
 
@@ -118,6 +119,13 @@ export const RoleMapping = ({
         client: { clientId: e.client, id: e.clientId },
         role: { id: e.id, name: e.role, description: e.description },
       }));
+
+      effectiveRoles = effectiveRoles.filter(
+        (role) =>
+          !effectiveClientRoles.some(
+            (clientRole) => clientRole.role.id === role.role.id,
+          ),
+      );
     }
 
     const roles = await getMapping(adminClient, type, id);
@@ -134,7 +142,7 @@ export const RoleMapping = ({
 
     return [
       ...mapRoles(
-        [...realmRolesMapping, ...clientMapping],
+        [...clientMapping, ...realmRolesMapping],
         [...effectiveClientRoles, ...effectiveRoles],
         hide,
       ),
