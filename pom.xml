@@ -105,6 +105,7 @@
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
+        <servlet.api.31.version>1.0.2.Final</servlet.api.31.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.logmanager>2.1.19.Final</jboss.logmanager>
@@ -1678,6 +1679,11 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_3.0_spec</artifactId>
                 <version>${servlet.api.30.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+                <version>${servlet.api.31.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>
