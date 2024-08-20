@@ -87,8 +87,8 @@ importers:
         specifier: ^5.3.4
         version: 5.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
-        specifier: ^23.13.0
-        version: 23.13.0
+        specifier: ^23.14.0
+        version: 23.14.0
       i18next-http-backend:
         specifier: ^2.6.0
         version: 2.6.0
@@ -109,7 +109,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.13.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.26.1
         version: 6.26.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -187,8 +187,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       i18next:
-        specifier: ^23.13.0
-        version: 23.13.0
+        specifier: ^23.14.0
+        version: 23.14.0
       i18next-http-backend:
         specifier: ^2.6.0
         version: 2.6.0
@@ -218,7 +218,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.13.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.26.1
         version: 6.26.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -427,8 +427,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1
       i18next:
-        specifier: ^23.13.0
-        version: 23.13.0
+        specifier: ^23.14.0
+        version: 23.14.0
       keycloak-js:
         specifier: workspace:*
         version: link:../keycloak-js
@@ -446,7 +446,7 @@ importers:
         version: 7.52.2(react@18.3.1)
       react-i18next:
         specifier: ^15.0.1
-        version: 15.0.1(i18next@23.13.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.0.1(i18next@23.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -3311,8 +3311,8 @@ packages:
   i18next-http-backend@2.6.0:
     resolution: {integrity: sha512-WX5pXYNrAz2fj8ajsAuCIsogOEvJL+aHw4RTQAD/uqPoLV1FHqa6IsUULTfa3GtREVQbApp0U3woLhz9EuR2pQ==}
 
-  i18next@23.13.0:
-    resolution: {integrity: sha512-B+g0/KTKmN3+NeMKPljQxdrih6Q6lyDF5O2e/Ofd0JQsTLojJD/BSTTN04iw6OVc0yBiHeypu5hoBNV6ag44Zw==}
+  i18next@23.14.0:
+    resolution: {integrity: sha512-Y5GL4OdA8IU2geRrt2+Uc1iIhsjICdHZzT9tNwQ3TVqdNzgxHToGCKf/TPRP80vTCAP6svg2WbbJL+Gx5MFQVA==}
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -5742,7 +5742,7 @@ snapshots:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 6.0.1
-      i18next: 23.13.0
+      i18next: 23.14.0
       i18next-http-backend: 2.6.0
       keycloak-js: link:js/libs/keycloak-js
       lodash-es: 4.17.21
@@ -5752,7 +5752,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-dropzone: 14.2.3(react@18.3.1)
       react-hook-form: 7.52.2(react@18.3.1)
-      react-i18next: 15.0.1(i18next@23.13.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-i18next: 15.0.1(i18next@23.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.26.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.26.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -8285,7 +8285,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  i18next@23.13.0:
+  i18next@23.14.0:
     dependencies:
       '@babel/runtime': 7.24.8
 
@@ -9183,11 +9183,11 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.0.1(i18next@23.13.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-i18next@15.0.1(i18next@23.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.24.8
       html-parse-stringify: 3.0.1
-      i18next: 23.13.0
+      i18next: 23.14.0
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
