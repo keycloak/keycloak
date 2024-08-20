@@ -3,6 +3,7 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
 import terser from "@rollup/plugin-terser";
+import path from "node:path";
 
 const plugins = [
   nodeResolve(),
@@ -16,6 +17,8 @@ const plugins = [
   terser(),
 ];
 
+const targetDir = "target/classes/theme/keycloak/common/resources/vendor";
+
 export default defineConfig([
   {
     input: [
@@ -23,7 +26,7 @@ export default defineConfig([
       "node_modules/react/cjs/react-jsx-runtime.production.min.js",
     ],
     output: {
-      dir: "vendor/react",
+      dir: path.join(targetDir, "react"),
       format: "es",
     },
     plugins,
@@ -31,7 +34,7 @@ export default defineConfig([
   {
     input: "node_modules/react-dom/cjs/react-dom.production.min.js",
     output: {
-      dir: "vendor/react-dom",
+      dir: path.join(targetDir, "react-dom"),
       format: "es",
     },
     external: ["react"],

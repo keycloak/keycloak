@@ -167,3 +167,19 @@ If the table currently contains more than 300.000 entries,
 on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.
 
 Also, the `kc.org` and `hideOnLoginPage` configuration attributes were migrated to the identity provider itself, to allow for more efficient queries when searching for providers. As such, API clients should use the `getOrganizationId/setOrganizationId` and `isHideOnLogin/setHideOnLogin` methods in the `IdentityProviderRepresentation`, and avoid setting these properties using the legacy config attributes that are now deprecated.
+
+= Paths for `common` theme resources have changed
+
+Some of the paths for the `common` resources of the `keycloak` theme have changed, specifically the resources for third-party libraries. Make sure to update your custom themes accordingly:
+
+- `node_modules/patternfly/dist` is now `vendor/patternfly-v3`
+- `node_modules/@patternfly/patternfly` is now `vendor/patternfly-v4`
+- `node_modules/@patternfly-v5/patternfly` is now `vendor/patternfly-v5`
+- `node_modules/rfc4648/lib` is now `vendor/rfc4648`
+
+Additionally, the following resources have been removed from the `common` theme:
+
+- `node_modules/alpinejs`
+- `node_modules/jquery`
+
+If you previously used any of the removed resources in your theme, make sure to add them to your own theme resources instead.
