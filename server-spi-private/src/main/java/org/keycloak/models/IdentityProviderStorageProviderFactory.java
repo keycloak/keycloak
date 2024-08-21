@@ -18,5 +18,5 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderFactory;
 
-public interface IDPProviderFactory<T extends IDPProvider> extends ProviderFactory<T> {
+public interface IdentityProviderStorageProviderFactory<T extends IdentityProviderStorageProvider> extends ProviderFactory<T> {
 }

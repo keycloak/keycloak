@@ -209,7 +209,7 @@ public interface KeycloakSession extends AutoCloseable {
      *
      * @return the default IDP provider.
      */
-    IDPProvider identityProviders();
+    IdentityProviderStorageProvider identityProviders();
 
     @Override
     void close();

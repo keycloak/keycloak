@@ -14,25 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.jpa;
+package org.keycloak.models.cache.infinispan.idp;
 
 import org.keycloak.Config;
-import org.keycloak.models.IDPProviderFactory;
+import org.keycloak.models.IdentityProviderStorageProvider;
+import org.keycloak.models.IdentityProviderStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-/**
- * A JPA based implementation of {@link IDPProviderFactory}.
- *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
- */
-public class JpaIDPProviderFactory implements IDPProviderFactory<JpaIDPProvider> {
+public class InfinispanIdentityProviderStorageProviderFactory implements IdentityProviderStorageProviderFactory<IdentityProviderStorageProvider> {
 
-    public static final String ID = "jpa";
+    public static final String PROVIDER_ID = "infinispan";
 
     @Override
-    public JpaIDPProvider create(KeycloakSession session) {
-        return new JpaIDPProvider(session);
+    public IdentityProviderStorageProvider create(KeycloakSession session) {
+        return new InfinispanIdentityProviderStorageProvider(session);
     }
 
     @Override
@@ -49,6 +45,11 @@ public class JpaIDPProviderFactory implements IDPProviderFactory<JpaIDPProvider>
 
     @Override
     public String getId() {
-        return ID;
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public int order() {
+        return 10;
     }
 }
