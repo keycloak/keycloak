@@ -80,6 +80,12 @@ In order to dynamically resolve it from request headers, you need to set the `ho
 
 For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
 
+== `security-admin-console` Client Redirect URIs
+
+The handling of the `${authAdminUrl}` has changed in hostname v1. Previously with hostname v1 the admin URL was resolved dynamically from the request if the `hostname-admin` or `hostname-admin-url` options were not set. With hostname v2 the admin URL will default instead to the frontend URL. 
+If the `hostname` option is set and `hostname-strict` is true, this change will prevent redirect URIs with alternative hostnames from working for Clients using the Root URL `${authAdminUrl}`. 
+You should consider using the `hostname-admin` option instead of the redirect URIs to allow a single alternative hostname. Alternative hostname redirects should be removed as the `security-admin-console` Client only needs the default redirect URI of `/admin/master/console/*` with Root URL of `${authAdminUrl}`.
+
 = Persistent user sessions
 
 Previous versions of {project_name} stored only offline user and offline client sessions in the databases.

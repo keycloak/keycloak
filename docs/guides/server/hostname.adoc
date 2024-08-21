@@ -46,15 +46,17 @@ As you can observe, the HTTPS protocol is the default choice, adhering to {proje
 
 The result of this configuration is that you can continue to access {project_name} at `https://my.keycloak.org` via HTTPS, while the proxy interacts with the instance using HTTP and port `8080`.
 
-== Relying on a trusted proxy for the dynamic hostname resolution
+== Relying on a trusted proxy for dynamic URL resolution
 
-If you fully trust your proxy, which correctly sets the Forwarded header, and you don't want to hardcode the hostname, {project_name} can accommodate this. You simply need to initiate the server as follows:
+If you fully trust your proxy, the `proxy-headers` option is used to dynamically resolve the URL.
+
+For example if your reverse proxy correctly sets the Forwarded header, and you don't want to hardcode the hostname, {project_name} can accommodate this. You simply need to initiate the server as follows:
 
 <@kc.start parameters="--hostname-strict false --proxy-headers forwarded"/>
 
 With this configuration, the server respects the value set by the Forwarded header. This also implies that all endpoints are dynamically resolved.
 
-The `proxy-headers` option can be also used to resolve the URL partially dynamically when `hostname` option is not specified as a full URL. For example:
+The `proxy-headers` option can be also used to resolve the URL partially dynamically when the `hostname` option is not specified as a full URL. For example:
 
 <@kc.start parameters="--hostname my.keycloak.org --proxy-headers xforwarded"/>
 
