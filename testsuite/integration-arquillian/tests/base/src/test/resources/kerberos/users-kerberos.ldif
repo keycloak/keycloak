@@ -76,6 +76,20 @@ userPassword: secret
 krb5PrincipalName: hnelson@KEYCLOAK.ORG
 krb5KeyVersionNumber: 0
 
+dn: uid=ssiemel@a.com,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: Sasha
+sn: Siemel
+mail: ssiemel@keycloak.org
+uid: ssiemel\@a.com
+userPassword: tigrero
+krb5PrincipalName: ssiemel\@a.com@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
 dn: uid=jduke,ou=People,dc=keycloak,dc=org
 objectClass: top
 objectClass: person

@@ -29,7 +29,7 @@ public class KerberosPrincipal {
     private final String prefix; // Something like "john"
     private final String realm; // Something like "KEYCLOAK.ORG"
     public KerberosPrincipal(String kerberosPrincipal) {
-        String[] parts = kerberosPrincipal.split("@");
+        String[] parts = kerberosPrincipal.split("(?!\\\\)@");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Kerberos principal '" + kerberosPrincipal + "' not valid");
         }

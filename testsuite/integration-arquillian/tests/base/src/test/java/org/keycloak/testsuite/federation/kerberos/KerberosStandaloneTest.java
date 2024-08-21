@@ -109,6 +109,13 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
                 "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM), false);
     }
 
+    @Test
+    public void spnegoLoginTestEscapedAt() throws Exception {
+        assertSuccessfulSpnegoLogin("ssiemel\\\\@a.com", "ssiemel\\@a.com", "tigrero");
+
+        // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
+        assertUser("ssiemel\\@a.com", "ssiemel@keycloak.org", null, null, "ssiemel\\@a.com@KEYCLOAK.ORG", false);
+    }
 
     @Test
     public void updateProfileEnabledTest() throws Exception {

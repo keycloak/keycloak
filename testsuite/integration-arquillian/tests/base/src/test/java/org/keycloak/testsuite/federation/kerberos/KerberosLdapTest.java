@@ -73,6 +73,14 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
     }
 
     @Test
+    public void spnegoLoginTestEscapedAt() throws Exception {
+        assertSuccessfulSpnegoLogin("ssiemel\\\\@a.com", "ssiemel\\@a.com", "tigrero");
+
+        // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
+        assertUser("ssiemel\\@a.com", "ssiemel@keycloak.org", "Sasha", "Siemel", "ssiemel\\@a.com@KEYCLOAK.ORG", false);
+    }
+
+    @Test
     public void validatePasswordPolicyTest() throws Exception{
          updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
 

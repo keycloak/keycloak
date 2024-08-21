@@ -154,7 +154,7 @@ public class KerberosUsernamePasswordAuthenticator {
 
 
     public String getKerberosPrincipal(String username) throws LoginException {
-        if (username.contains("@")) {
+        if (username.matches(".*[^\\\\]@.*")) {
             return new KerberosPrincipal(username).toString();
         } else {
             return username + "@" + config.getKerberosRealm();
