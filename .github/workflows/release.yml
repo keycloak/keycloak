@@ -48,7 +48,6 @@ jobs:
           context: ./quarkus/container/
           file: ./quarkus/container/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.new_tag }}
+          tags: ghcr.io/vunetsystems/keycloak:${{ steps.tag.outputs.new_tag }}
           build-args: |
             KEYCLOAK_VERSION=${{ steps.tag.outputs.new_tag }}
-            REPOSITORY=${{ github.repository }}
