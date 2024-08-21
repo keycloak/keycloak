@@ -470,6 +470,22 @@ Security:
                        feature is enabled. Possible values are: non-strict, strict. Default:
                        disabled.
 
+Bootstrap Admin:
+
+--bootstrap-admin-client-id <client id>
+                     Client id for the temporary bootstrap admin service account. Used only when
+                       the master realm is created. Default: temp-admin.
+--bootstrap-admin-client-secret <client secret>
+                     Client secret for the temporary bootstrap admin service account. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible.
+--bootstrap-admin-password <password>
+                     Temporary bootstrap admin password. Used only when the master realm is
+                       created. Use a non-CLI configuration option for this option if possible.
+--bootstrap-admin-username <username>
+                     Temporary bootstrap admin username. Used only when the master realm is
+                       created. Default: temp-admin.
+
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.sh start-dev --help-all' to list all available options, including build

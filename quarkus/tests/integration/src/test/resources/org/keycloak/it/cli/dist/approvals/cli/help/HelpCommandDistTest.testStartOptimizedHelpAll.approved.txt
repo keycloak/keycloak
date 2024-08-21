@@ -403,6 +403,22 @@ Truststore:
                      List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
                        containing those files that will be used as a system truststore.
 
+Bootstrap Admin:
+
+--bootstrap-admin-client-id <client id>
+                     Client id for the temporary bootstrap admin service account. Used only when
+                       the master realm is created. Default: temp-admin.
+--bootstrap-admin-client-secret <client secret>
+                     Client secret for the temporary bootstrap admin service account. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible.
+--bootstrap-admin-password <password>
+                     Temporary bootstrap admin password. Used only when the master realm is
+                       created. Use a non-CLI configuration option for this option if possible.
+--bootstrap-admin-username <username>
+                     Temporary bootstrap admin username. Used only when the master realm is
+                       created. Default: temp-admin.
+
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the
 '--optimized' option:

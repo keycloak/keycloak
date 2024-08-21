@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -44,10 +45,6 @@ import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
  * @version $Revision: 1 $
  */
 public class ApplianceBootstrap {
-
-    public static final String DEFAULT_TEMP_ADMIN_USERNAME = "temp-admin";
-    public static final String DEFAULT_TEMP_ADMIN_SERVICE = "temp-admin";
-    public static final int DEFAULT_TEMP_ADMIN_EXPIRATION = 120;
 
     private final KeycloakSession session;
 
@@ -127,7 +124,7 @@ public class ApplianceBootstrap {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
-        username = StringUtil.isBlank(username) ? DEFAULT_TEMP_ADMIN_USERNAME : username;
+        username = StringUtil.isBlank(username) ? BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_USERNAME : username;
         //expriationMinutes = expriationMinutes == null ? DEFAULT_TEMP_ADMIN_EXPIRATION : expriationMinutes;
 
         if (initialUser && session.users().getUsersCount(realm) > 0) {
@@ -165,7 +162,7 @@ public class ApplianceBootstrap {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
-        clientId = StringUtil.isBlank(clientId) ? DEFAULT_TEMP_ADMIN_SERVICE : clientId;
+        clientId = StringUtil.isBlank(clientId) ? BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_SERVICE : clientId;
         //expriationMinutes = expriationMinutes == null ? DEFAULT_TEMP_ADMIN_EXPIRATION : expriationMinutes;
 
         ClientRepresentation adminClient = new ClientRepresentation();
