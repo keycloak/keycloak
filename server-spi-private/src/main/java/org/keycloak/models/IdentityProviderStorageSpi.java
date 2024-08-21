@@ -20,18 +20,18 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
-public class IDPSpi implements Spi {
+public class IdentityProviderStorageSpi implements Spi {
 
-    public static final String NAME = "idp";
+    public static final String NAME = "identity-provider-storage";
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return IDPProviderFactory.class;
+        return IdentityProviderStorageProviderFactory.class;
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return IDPProvider.class;
+        return IdentityProviderStorageProvider.class;
     }
 
     @Override

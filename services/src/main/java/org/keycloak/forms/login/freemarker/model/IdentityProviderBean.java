@@ -22,7 +22,7 @@ import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticato
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.common.Profile;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IDPProvider;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrderedModel;
@@ -223,19 +223,19 @@ public class IdentityProviderBean {
      * @return the custom {@link Predicate} used as a last filter before conversion into {@link IdentityProvider}
      */
     protected Predicate<IdentityProviderModel> federatedProviderPredicate() {
-        return IDPProvider.LoginFilter.getLoginPredicate();
+        return IdentityProviderStorageProvider.LoginFilter.getLoginPredicate();
     }
 
     /**
      * Builds and returns a list of {@link IdentityProvider} instances that will be available for login. This method goes
-     * to the {@link IDPProvider} to fetch the IDPs that can be used for login (enabled, not link-only and not set to be
+     * to the {@link IdentityProviderStorageProvider} to fetch the IDPs that can be used for login (enabled, not link-only and not set to be
      * hidden on login page).
      *
      * @param existingIDP the alias of the IDP that must be filtered out from the result (used when linking a new IDP to a user's account).
      * @return a {@link List} containing the constructed {@link IdentityProvider}s.
      */
     protected List<IdentityProvider> searchForIdentityProviders(String existingIDP) {
-        return session.identityProviders().getForLogin(IDPProvider.FetchMode.REALM_ONLY, null)
+        return session.identityProviders().getForLogin(IdentityProviderStorageProvider.FetchMode.REALM_ONLY, null)
                 .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();

@@ -22,10 +22,13 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
-import org.keycloak.models.IDPProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
+
+import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ALL;
+import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ORG_ONLY;
+import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.REALM_ONLY;
 
 public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean {
 
@@ -52,7 +55,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     protected List<IdentityProvider> searchForIdentityProviders(String existingIDP) {
         if (onlyRealmBrokers) {
             // we only want the realm-level IDPs - i.e. those not associated with any orgs.
-            return session.identityProviders().getForLogin(IDPProvider.FetchMode.REALM_ONLY, null)
+            return session.identityProviders().getForLogin(REALM_ONLY, null)
                     .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
@@ -68,12 +71,12 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
             }
             // we don't have a specific organization - fetch public enabled IDPs linked to any org.
-            return session.identityProviders().getForLogin(IDPProvider.FetchMode.ORG_ONLY, null)
+            return session.identityProviders().getForLogin(ORG_ONLY, null)
                     .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
-        return session.identityProviders().getForLogin(IDPProvider.FetchMode.ALL, this.organization != null ? this.organization.getId() : null)
+        return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
                 .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();

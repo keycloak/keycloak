@@ -26,16 +26,16 @@ import java.util.stream.Stream;
 import org.keycloak.provider.Provider;
 
 /**
- * The {@code IDPProvider} is concerned with the storage/retrieval of the configured identity providers in Keycloak. In
- * other words, it is a provider of identity providers (IDPs) and, as such, handles the CRUD operations for IDPs.
+ * The {@link IdentityProviderStorageProvider} is concerned with the storage/retrieval of the configured identity providers
+ * in Keycloak. In other words, it is a provider of identity providers (IDPs) and, as such, handles the CRUD operations for IDPs.
  * </p>
  * It is not to be confused with the {@code IdentityProvider} found in server-spi-private as that provider is meant to be
  * implemented by actual identity providers that handle the logic of authenticating users with third party brokers, such
- * as Microsoft, Google, Github, LinkedIn, etc.
+ * as Microsoft, Google, GitHub, LinkedIn, etc.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public interface IDPProvider extends Provider {
+public interface IdentityProviderStorageProvider extends Provider {
 
     /**
      * Creates a new identity provider from the specified model.

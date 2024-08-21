@@ -19,8 +19,8 @@ package org.keycloak.models.cache.infinispan.idp;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.common.Profile;
-import org.keycloak.models.IDPProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -31,18 +31,18 @@ import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.organization.OrganizationProvider;
 
-public class InfinispanIDPProvider implements IDPProvider {
+public class InfinispanIdentityProviderStorageProvider implements IdentityProviderStorageProvider {
 
     private static final String IDP_COUNT_KEY_SUFFIX = ".idp.count";
     private static final String IDP_ALIAS_KEY_SUFFIX = ".idp.alias";
 
     private final KeycloakSession session;
-    private final IDPProvider idpDelegate;
+    private final IdentityProviderStorageProvider idpDelegate;
     private final RealmCacheSession realmCache;
 
-    public InfinispanIDPProvider(KeycloakSession session) {
+    public InfinispanIdentityProviderStorageProvider(KeycloakSession session) {
         this.session = session;
-        this.idpDelegate = session.getProvider(IDPProvider.class, "jpa");
+        this.idpDelegate = session.getProvider(IdentityProviderStorageProvider.class, "jpa");
         this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
     }
 

@@ -31,15 +31,14 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.IDPProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -62,18 +61,18 @@ import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
- * A JPA based implementation of {@link IDPProvider}.
+ * A JPA based implementation of {@link IdentityProviderStorageProvider}.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaIDPProvider implements IDPProvider {
+public class JpaIdentityProviderStorageProvider implements IdentityProviderStorageProvider {
 
-    protected static final Logger logger = Logger.getLogger(IDPProvider.class);
+    protected static final Logger logger = Logger.getLogger(IdentityProviderStorageProvider.class);
 
     private final EntityManager em;
     private final KeycloakSession session;
 
-    public JpaIDPProvider(KeycloakSession session) {
+    public JpaIdentityProviderStorageProvider(KeycloakSession session) {
         this.session = session;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
@@ -166,8 +165,7 @@ public class JpaIDPProvider implements IDPProvider {
             // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
             em.flush();
 
-            session.identityProviders().getMappersByAliasStream(alias).collect(Collectors.toList())
-                    .forEach(session.identityProviders()::removeMapper);
+            session.identityProviders().getMappersByAliasStream(alias).forEach(session.identityProviders()::removeMapper);
 
             // send identity provider removed event.
             RealmModel realm = this.getRealm();

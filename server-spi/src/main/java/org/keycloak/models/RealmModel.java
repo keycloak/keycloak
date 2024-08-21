@@ -443,31 +443,31 @@ public interface RealmModel extends RoleContainerModel {
      * Returns identity providers as a stream.
      *
      * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
-     * @deprecated Use {@link IDPProvider#getAllStream()} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream()} instead.
      */
     @Deprecated
     Stream<IdentityProviderModel> getIdentityProvidersStream();
 
     /**
-     * @deprecated Use {@link IDPProvider#getByAlias(String)} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#getByAlias(String)} instead.
      */
     @Deprecated
     IdentityProviderModel getIdentityProviderByAlias(String alias);
 
     /**
-     * @deprecated Use {@link IDPProvider#create(IdentityProviderModel)} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#create(IdentityProviderModel)} instead.
      */
     @Deprecated
     void addIdentityProvider(IdentityProviderModel identityProvider);
 
     /**
-     * @deprecated Use {@link IDPProvider#remove(String)} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#remove(String)} instead.
      */
     @Deprecated
     void removeIdentityProviderByAlias(String alias);
 
     /**
-     * @deprecated Use {@link IDPProvider#update(IdentityProviderModel)} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#update(IdentityProviderModel)} instead.
      */
     @Deprecated
     void updateIdentityProvider(IdentityProviderModel identityProvider);
@@ -667,7 +667,7 @@ public interface RealmModel extends RoleContainerModel {
     void setDefaultRole(RoleModel role);
 
     /**
-     * @deprecated use {@link IDPProvider#isIdentityFederationEnabled()} instead.
+     * @deprecated use {@link IdentityProviderStorageProvider#isIdentityFederationEnabled()} instead.
      */
     @Deprecated
     boolean isIdentityFederationEnabled();
