@@ -80,7 +80,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (statusCode >= 500 && statusCode <= 599) {
             logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
         } else {
-            logger.debugv(throwable, ERROR_RESPONSE_TEXT, statusCode);
+            logger.warnv(throwable, ERROR_RESPONSE_TEXT, statusCode);
         }
 
         HttpHeaders headers = session.getContext().getRequestHeaders();
@@ -89,7 +89,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
 
             error.setError(getErrorCode(throwable));
-            error.setErrorDescription("For more on this error consult the server log at the debug level.");
+            error.setErrorDescription("For more on this error consult the server logs.");
 
             return Response.status(statusCode)
                     .header(HttpHeaders.CONTENT_TYPE, jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
