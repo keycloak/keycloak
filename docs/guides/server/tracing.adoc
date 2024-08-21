@@ -118,4 +118,18 @@ External callers can manipulate trace headers, parent spans can be injected, and
 Proper HTTP headers (especially `tracestate`) filtering and adequate measures of caller trust would need to be assessed.
 
 For more information, see the https://www.w3.org/TR/trace-context/#security-considerations[W3C Trace context] document.
+
+== Tracing in Kubernetes environment
+When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
+
+NOTE: There is no support for tracing configuration in {project_name} CR yet, so the `additionalOptions` can be used to the `tracing-enabled` property and other tracing options.
+
+You can filter out the required traces in your tracing backend based on their tags:
+
+* `service.name` - {project_name} deployment name
+* `k8s.namespace.name` - Namespace
+* `host.name` - Pod name
+
+{project_name} Operator automatically sets the `KC_TRACING_SERVICE_NAME` and `KC_TRACING_RESOURCE_ATTRIBUTES` environment variables for each {project_name} container included in pods it manages.
+
 </@tmpl.guide>

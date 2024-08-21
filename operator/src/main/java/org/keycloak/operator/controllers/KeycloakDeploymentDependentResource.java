@@ -77,13 +77,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
     private static final String ZONE_KEY = "topology.kubernetes.io/zone";
-    
+
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
     private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
     public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
     public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
+
+    // Tracing
+    public static final String KC_TRACING_SERVICE_NAME = "KC_TRACING_SERVICE_NAME";
+    public static final String KC_TRACING_RESOURCE_ATTRIBUTES = "KC_TRACING_RESOURCE_ATTRIBUTES";
 
     static final String JGROUPS_DNS_QUERY_PARAM = "-Djgroups.dns.query=";
 
@@ -419,6 +423,21 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
         varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
+
+        varMap.putIfAbsent(KC_TRACING_SERVICE_NAME,
+                new EnvVarBuilder().withName(KC_TRACING_SERVICE_NAME)
+                        .withValue(keycloakCR.getMetadata().getName())
+                        .build()
+        );
+
+        // Possible OTel k8s attributes convention can be found here: https://opentelemetry.io/docs/specs/semconv/attributes-registry/k8s/#kubernetes-attributes
+        var tracingAttributes = Map.of("k8s.namespace.name", keycloakCR.getMetadata().getNamespace());
+
+        varMap.putIfAbsent(KC_TRACING_RESOURCE_ATTRIBUTES,
+                new EnvVarBuilder().withName(KC_TRACING_RESOURCE_ATTRIBUTES)
+                        .withValue(tracingAttributes.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
+                        .build()
+        );
 
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
