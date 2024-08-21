@@ -37,6 +37,7 @@ export const TypeaheadSelect = ({
   chipGroupComponent,
   chipGroupProps,
   footer,
+  isDisabled,
   children,
   ...rest
 }: KeycloakSelectProps) => {
@@ -124,6 +125,7 @@ export const TypeaheadSelect = ({
           variant="typeahead"
           onClick={() => onToggle?.(true)}
           icon={toggleIcon}
+          isDisabled={isDisabled}
           isExpanded={rest.isOpen}
           isFullWidth
           status={validated === "error" ? MenuToggleStatus.danger : undefined}
