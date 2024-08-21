@@ -594,7 +594,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids) {
-        return ids.map(id -> session.groups().getGroupById(realm, id)).sorted(GroupModel.COMPARE_BY_NAME);
+        return ids.map(id -> session.groups().getGroupById(realm, id)).filter(Objects::nonNull).sorted(GroupModel.COMPARE_BY_NAME);
     }
 
     @Override
