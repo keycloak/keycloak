@@ -1,5 +1,9 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -14,10 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { OrganizationModal } from "../organizations/OrganizationModal";
 import { OrganizationTable } from "../organizations/OrganizationTable";
-import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 
