@@ -18,13 +18,16 @@ package org.keycloak.models.cache.infinispan.idp;
 
 import java.util.Map;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IDPProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
+import org.keycloak.organization.OrganizationProvider;
 
 public class InfinispanIDPProvider implements IDPProvider {
 
@@ -88,8 +91,7 @@ public class InfinispanIDPProvider implements IDPProvider {
 
     @Override
     public IdentityProviderModel getById(String internalId) {
-        if (internalId == null)
-            return null;
+        if (internalId == null) return null;
         CachedIdentityProvider cached = realmCache.getCache().get(internalId, CachedIdentityProvider.class);
         String realmId = getRealm().getId();
         if (cached != null && !cached.getRealm().equals(realmId)) {
@@ -100,13 +102,13 @@ public class InfinispanIDPProvider implements IDPProvider {
             Long loaded = realmCache.getCache().getCurrentRevision(internalId);
             IdentityProviderModel model = idpDelegate.getById(internalId);
             if (model == null) return null;
-            if (isInvalid(internalId)) return model;
+            if (isInvalid(internalId)) return createOrganizationAwareIdentityProviderModel(model);
             cached = new CachedIdentityProvider(loaded, getRealm(), internalId, model);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         } else if (isInvalid(internalId)) {
-            return idpDelegate.getById(internalId);
+            return createOrganizationAwareIdentityProviderModel(idpDelegate.getById(internalId));
         }
-        return cached.getIdentityProvider();
+        return createOrganizationAwareIdentityProviderModel(cached.getIdentityProvider());
     }
 
     @Override
@@ -114,7 +116,7 @@ public class InfinispanIDPProvider implements IDPProvider {
         String cacheKey = cacheKeyIdpAlias(getRealm(), alias);
 
         if (isInvalid(cacheKey)) {
-            return idpDelegate.getByAlias(alias);
+            return createOrganizationAwareIdentityProviderModel(idpDelegate.getByAlias(alias));
         }
 
         CachedIdentityProvider cached = realmCache.getCache().get(cacheKey, CachedIdentityProvider.class);
@@ -129,7 +131,7 @@ public class InfinispanIDPProvider implements IDPProvider {
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
 
-        return cached.getIdentityProvider();
+        return createOrganizationAwareIdentityProviderModel(cached.getIdentityProvider());
     }
 
     @Override
@@ -139,7 +141,7 @@ public class InfinispanIDPProvider implements IDPProvider {
 
     @Override
     public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
-        return idpDelegate.getAllStream(attrs, first, max);
+        return idpDelegate.getAllStream(attrs, first, max).map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
@@ -184,5 +186,21 @@ public class InfinispanIDPProvider implements IDPProvider {
 
     private boolean isInvalid(String cacheKey) {
         return realmCache.getInvalidations().contains(cacheKey);
+    }
+
+    private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
+        return new IdentityProviderModel(idp) {
+            @Override
+            public boolean isEnabled() {
+                // if IdP is bound to an org
+                if (getOrganizationId() != null) {
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
+                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
+                }
+                return super.isEnabled();
+            }
+        };
     }
 }

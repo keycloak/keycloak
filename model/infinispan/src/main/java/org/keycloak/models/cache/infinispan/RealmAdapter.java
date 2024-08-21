@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -35,7 +36,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -60,8 +60,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.keycloak.common.Profile;
-import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -906,30 +904,12 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return session.identityProviders().getAllStream().map(this::createOrganizationAwareIdentityProviderModel);
+        return session.identityProviders().getAllStream();
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        IdentityProviderModel idp = session.identityProviders().getByAlias(alias);
-        return idp != null ? createOrganizationAwareIdentityProviderModel(idp) : null;
-    }
-
-    // TODO move this to the infinispan IDPProvider implementation.
-    private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
-        return new IdentityProviderModel(idp) {
-            @Override
-            public boolean isEnabled() {
-                // if IdP is bound to an org
-                if (getOrganizationId() != null) {
-                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
-                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
-                }
-                return super.isEnabled();
-            }
-        };
+        return session.identityProviders().getByAlias(alias);
     }
 
     @Override
