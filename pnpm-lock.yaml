@@ -48,8 +48,8 @@ importers:
         specifier: ^4.6.2
         version: 4.6.2(eslint@9.9.0)
       husky:
-        specifier: ^9.1.4
-        version: 9.1.4
+        specifier: ^9.1.5
+        version: 9.1.5
       lint-staged:
         specifier: ^15.2.9
         version: 15.2.9
@@ -3306,8 +3306,8 @@ packages:
   humanize-duration@3.32.0:
     resolution: {integrity: sha512-6WsXYTHJr7hXKqoqf5zoWza/lANRAqGlbnZnm0cjDykbXuez1JVXOQGmq0EPB45pXYAJyueRA3S3hfhmMbrMEQ==}
 
-  husky@9.1.4:
-    resolution: {integrity: sha512-bho94YyReb4JV7LYWRWxZ/xr6TtOTt8cMfmQ39MQYJ7f/YE268s3GdghGwi+y4zAeqewE5zYLvuhV0M0ijsDEA==}
+  husky@9.1.5:
+    resolution: {integrity: sha512-rowAVRUBfI0b4+niA4SJMhfQwc107VLkBUgEYYAOQAbqDCnra1nYh83hF/MDmhYs9t9n1E3DuKOrs2LYNC+0Ag==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -8280,7 +8280,7 @@ snapshots:
 
   humanize-duration@3.32.0: {}
 
-  husky@9.1.4: {}
+  husky@9.1.5: {}
 
   i18next-http-backend@2.6.0:
     dependencies:
