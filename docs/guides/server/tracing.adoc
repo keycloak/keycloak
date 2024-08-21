@@ -122,7 +122,7 @@ For more information, see the https://www.w3.org/TR/trace-context/#security-cons
 == Tracing in Kubernetes environment
 When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
 
-NOTE: There is no support for tracing configuration in {project_name} CR yet, so the `additionalValues` can be used for demonstrating purposes by adding the `tracing-enabled` property.
+NOTE: There is no support for tracing configuration in {project_name} CR yet, so the `additionalOptions` can be used to the `tracing-enabled` property and other tracing options.
 
 You can filter out the required traces in your tracing backend based on their tags:
 
