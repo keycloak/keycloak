@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class Registry {
+public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private static final Logger LOGGER = Logger.getLogger(Registry.class);
 
@@ -127,6 +127,7 @@ public class Registry {
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
         injectFields(testInstance);
+        invokeBeforeEachOnSuppliers();
     }
 
     private void findRequestedInstances(Object testInstance) {
@@ -342,6 +343,12 @@ public class Registry {
         return requestedInstances.stream()
                 .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
                 .findFirst().orElse(null);
+    }
+
+    private void invokeBeforeEachOnSuppliers() {
+        for (InstanceContext i : deployedInstances) {
+            i.getSupplier().onBeforeEach(i);
+        }
     }
 
 }

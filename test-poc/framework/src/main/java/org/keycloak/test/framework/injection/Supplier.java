@@ -31,4 +31,7 @@ public interface Supplier<T, S extends Annotation> {
         return getClass().getSimpleName();
     }
 
+    default void onBeforeEach(InstanceContext<T, S> instanceContext) {
+    }
+
 }
