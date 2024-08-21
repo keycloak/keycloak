@@ -145,6 +145,11 @@ The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Pr
 
 If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
 
+= New Java API to search realms by name
+
+The `RealmProvider` Java API now contains a new method `Stream<RealmModel> getRealmsStream(String search)` which allows searching for a realm by name.
+While there is a default implementation which filters the stream after loading it from the provider, implementations are encouraged to provide this with more efficient implementation.
+
 = Keystore and trust store default format change
 
 {project_name} now determines the format of the keystore and trust store based on the file extension. If the file extension is `.p12`, `.pkcs12` or `.pfx`, the format is PKCS12. If the file extension is `.jks`, `.keystore` or `.truststore`, the format is JKS. If the file extension is `.pem`, `.crt` or `.key`, the format is PEM.
