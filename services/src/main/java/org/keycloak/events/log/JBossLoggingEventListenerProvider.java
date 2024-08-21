@@ -18,7 +18,6 @@
 package org.keycloak.events.log;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -26,7 +25,6 @@ import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
@@ -34,9 +32,6 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.Map;
-import java.util.function.Supplier;
-
-import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -139,24 +134,6 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             }
 
             logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
-        }
-
-        if (event.getRealmName().equals(Config.getAdminRealm())) {
-            Supplier<RealmModel> getRealm = () -> session.realms().getRealm(event.getRealmId());
-            switch (event.getType()) {
-                case LOGIN:
-                    var user = session.users().getUserById(getRealm.get(), event.getUserId());
-                    if (Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME))) {
-                        logger.warn(user.getUsername() + " is a temporary admin user account. To harden security, create a permanent account and delete the temporary one.");
-                    }
-                    break;
-                case CLIENT_LOGIN:
-                    var client = session.clients().getClientByClientId(getRealm.get(), event.getClientId());
-                    if (Boolean.parseBoolean(client.getAttribute(IS_TEMP_ADMIN_ATTR_NAME))) {
-                        logger.warn(client.getClientId() + " is a temporary admin service account. To harden security, create a permanent account and delete the temporary one.");
-                    }
-                    break;
-            }
         }
     }
 
