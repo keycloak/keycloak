@@ -1,4 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Drawer,
@@ -25,7 +26,6 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useToggle from "../utils/useToggle";
 import { GroupAttributes } from "./GroupAttributes";

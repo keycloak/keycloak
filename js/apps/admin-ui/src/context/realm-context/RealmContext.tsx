@@ -2,6 +2,7 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import {
   createNamedContext,
   useEnvironment,
+  useFetch,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
@@ -9,7 +10,6 @@ import { useMatch } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import { i18n } from "../../i18n/i18n";
-import { useFetch } from "../../utils/useFetch";
 
 type RealmContextType = {
   realm: string;

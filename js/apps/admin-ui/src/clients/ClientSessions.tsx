@@ -3,7 +3,7 @@ import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import type { LoaderFunction } from "../components/table-toolbar/KeycloakDataTable";
+import type { LoaderFunction } from "@keycloak/keycloak-ui-shared";
 import SessionsTable from "../sessions/SessionsTable";
 
 type ClientSessionsProps = {

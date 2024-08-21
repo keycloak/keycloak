@@ -426,6 +426,9 @@ importers:
       '@patternfly/react-styles':
         specifier: ^5.3.1
         version: 5.3.1
+      '@patternfly/react-table':
+        specifier: ^5.3.4
+        version: 5.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.14.0
         version: 23.14.0

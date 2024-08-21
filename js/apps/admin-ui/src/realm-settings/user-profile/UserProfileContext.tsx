@@ -1,15 +1,15 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  createNamedContext,
+  useAlerts,
+  useFetch,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 import { AlertVariant } from "@patternfly/react-core";
 import { PropsWithChildren, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  createNamedContext,
-  useRequiredContext,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 
 type UserProfileProps = {
   config: UserProfileConfig | null;

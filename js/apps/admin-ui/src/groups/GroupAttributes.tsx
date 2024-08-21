@@ -1,4 +1,5 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   PageSection,
@@ -9,14 +10,12 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
 import { convertFormValuesToObject } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {

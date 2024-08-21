@@ -3,32 +3,34 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
   InputGroup,
   InputGroupItem,
+  MenuToggle,
   Spinner,
   Tooltip,
   TreeView,
   TreeViewDataItem,
-  Dropdown,
-  MenuToggle,
-  DropdownList,
-  Divider,
-  DropdownItem,
 } from "@patternfly/react-core";
 
+import {
+  PaginatingTableToolbar,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../../context/access/Access";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { GroupsModal } from "../GroupsModal";
 import { useSubGroups } from "../SubGroupsContext";

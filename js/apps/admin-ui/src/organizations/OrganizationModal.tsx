@@ -1,12 +1,12 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import { TableText } from "@patternfly/react-table";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { TableText } from "@patternfly/react-table";
 
 type OrganizationModalProps = {
   isJoin?: boolean;

@@ -3,6 +3,8 @@ import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/de
 import {
   isUserProfileError,
   setUserProfileServerError,
+  useAlerts,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { TFunction } from "i18next";
@@ -11,11 +13,9 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 import { UserForm } from "./UserForm";
 import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";

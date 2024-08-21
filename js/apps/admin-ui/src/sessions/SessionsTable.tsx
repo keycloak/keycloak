@@ -18,13 +18,13 @@ import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import {
   Action,
   Field,
   KeycloakDataTable,
   LoaderFunction,
-} from "../components/table-toolbar/KeycloakDataTable";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { UserRoute, toUser } from "../user/routes/User";

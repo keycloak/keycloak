@@ -1,6 +1,8 @@
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { ButtonVariant, DropdownItem } from "@patternfly/react-core";
 import { get } from "lodash-es";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -11,9 +13,6 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./PageList";
 import { PageParams, toPage } from "./routes";
-import { useFetch } from "../utils/useFetch";
-import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useState } from "react";
 
 export default function Page() {
   const { adminClient } = useAdminClient();

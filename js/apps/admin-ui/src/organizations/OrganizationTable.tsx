@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import {
   KeycloakDataTable,
   LoaderFunction,
-} from "../components/table-toolbar/KeycloakDataTable";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toEditOrganization } from "./routes/EditOrganization";
 

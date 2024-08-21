@@ -4,6 +4,13 @@ import {
   UserProfileConfig,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  FormErrorText,
+  HelpItem,
+  SelectControl,
+  TextControl,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ClipboardCopy,
   FormGroup,
   PageSection,
@@ -13,26 +20,19 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  FormErrorText,
-  HelpItem,
-  SelectControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
   convertAttributeNameToForm,
   convertToFormValues,
 } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";

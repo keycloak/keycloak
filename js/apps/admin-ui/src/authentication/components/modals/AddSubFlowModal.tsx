@@ -1,5 +1,10 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
+  SelectControl,
+  TextControl,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   ButtonVariant,
   Form,
@@ -9,9 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../../admin-client";
-import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
   name: string;

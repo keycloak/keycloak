@@ -32,12 +32,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useStoredState } from "@keycloak/keycloak-ui-shared";
+import { useStoredState } from "../../utils/useStoredState";
 import { useFetch } from "../../utils/useFetch";
-import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { ListEmptyState } from "./ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { SyncAltIcon } from "@patternfly/react-icons";
+import { KeycloakSpinner } from "../KeycloakSpinner";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;

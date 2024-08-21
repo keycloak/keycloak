@@ -119,7 +119,7 @@ export const FileUpload = ({
   const onDropAccepted = (acceptedFiles: File[], event: DropEvent) => {
     if (acceptedFiles.length > 0) {
       const fileHandle = acceptedFiles[0];
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
       if (event?.type === "drop") {
         onFileInputChange?.(event, fileHandle);
       }

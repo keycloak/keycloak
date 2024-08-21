@@ -1,5 +1,5 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
-import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, useFetch, useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   Form,
   FormGroup,
@@ -20,7 +20,6 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
-import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 
 type DownloadDialogProps = {

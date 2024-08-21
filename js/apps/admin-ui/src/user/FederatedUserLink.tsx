@@ -1,5 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button } from "@patternfly/react-core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -7,7 +8,6 @@ import { useAdminClient } from "../admin-client";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toCustomUserFederation } from "../user-federation/routes/CustomUserFederation";
-import { useFetch } from "../utils/useFetch";
 
 type FederatedUserLinkProps = {
   user: UserRepresentation;

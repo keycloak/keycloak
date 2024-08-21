@@ -1,6 +1,11 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
 import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Chip,
   ChipGroup,
@@ -13,16 +18,14 @@ import {
   TextInputGroupMain,
   TextInputGroupUtilities,
 } from "@patternfly/react-core";
+import { TimesIcon } from "@patternfly/react-icons";
 import { debounce } from "lodash-es";
 import { useCallback, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import type { ComponentProps } from "../dynamic/components";
-import { TimesIcon } from "@patternfly/react-icons";
 
 type UserSelectVariant = "typeaheadMulti" | "typeahead";
 
