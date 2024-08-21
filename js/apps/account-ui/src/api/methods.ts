@@ -159,6 +159,6 @@ export async function getGroups({ signal, context }: CallOptions) {
 }
 
 export async function getUserOrganizations({ signal, context }: CallOptions) {
-  const response = await request("/organization", context, { signal });
+  const response = await request("/organizations", context, { signal });
   return parseResponse<OrganizationRepresentation[]>(response);
 }

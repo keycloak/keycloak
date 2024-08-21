@@ -41,11 +41,14 @@ const Domains = (org: OrganizationRepresentation) => {
       expandedText={t("hide")}
       collapsedText={t("showRemaining")}
     >
-      {org.domains?.map((dn) => (
-        <Chip key={dn.name} isReadOnly>
-          {dn.name}
-        </Chip>
-      ))}
+      {org.domains?.map((dn) => {
+        const name = typeof dn === "string" ? dn : dn.name;
+        return (
+          <Chip key={name} isReadOnly>
+            {name}
+          </Chip>
+        );
+      })}
     </ChipGroup>
   );
 };
@@ -85,12 +88,16 @@ export const OrganizationTable = ({
       toolbarItem={toolbarItem}
       onSelect={onSelect}
       canSelectAll={onSelect !== undefined}
-      actions={[
-        {
-          title: t(deleteLabel),
-          onRowClick: onDelete,
-        },
-      ]}
+      actions={
+        onDelete
+          ? [
+              {
+                title: t(deleteLabel),
+                onRowClick: onDelete,
+              },
+            ]
+          : undefined
+      }
       columns={[
         {
           name: "name",
