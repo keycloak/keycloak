@@ -80,7 +80,7 @@ In order to dynamically resolve it from request headers, you need to set the `ho
 
 For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
 
-== security-admin-console Client Redirect URIs
+== `security-admin-console` Client Redirect URIs
 
 In hostname v1 the admin URL was resolved dynamically from the request if the `hostname-admin` or `hostname-admin-url` options were not set. With hostname v2 the admin URL will default instead to the frontend URL. 
 If the `hostname` option is set and `hostname-strict` is true, this change will prevent redirect URIs with alternative hostnames from working as they did previously. 
