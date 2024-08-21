@@ -92,3 +92,4 @@ export {
   ErrorBoundaryProvider,
 } from "./utils/ErrorBoundary";
 export type { FallbackProps } from "./utils/ErrorBoundary";
+export { OrganizationTable } from "./controls/OrganizationTable";

@@ -19,6 +19,11 @@
     "isVisible": "isViewGroupsEnabled"
   },
   {
+    "label": "organizations",
+    "path": "organizations",
+    "isVisible": "isViewOrganizationsEnabled"
+  },
+  {
     "label": "resources",
     "path": "resources",
     "isVisible": "isMyResourcesEnabled"

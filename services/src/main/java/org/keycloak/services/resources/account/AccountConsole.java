@@ -160,6 +160,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("deleteAccountAllowed", deleteAccountAllowed);
 
         map.put("isViewGroupsEnabled", isViewGroupsEnabled);
+        map.put("isViewOrganizationsEnabled", Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION));
         map.put("isOid4VciEnabled", Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI));
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
