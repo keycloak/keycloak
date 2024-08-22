@@ -205,6 +205,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.groups().preRemove(adapter);
 
         session.identityProviders().removeAll();
+        session.identityProviders().removeAllMappers();
 
         em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();

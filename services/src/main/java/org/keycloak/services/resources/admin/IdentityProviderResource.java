@@ -344,7 +344,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        return realm.getIdentityProviderMappersByAliasStream(identityProviderModel.getAlias())
+        return session.identityProviders().getMappersByAliasStream(identityProviderModel.getAlias())
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -368,7 +368,8 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         try {
-            model = realm.addIdentityProviderMapper(model);
+//            model = realm.addIdentityProviderMapper(model);
+            model = session.identityProviders().createMapper(model);
         } catch (Exception e) {
             throw ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
         }
@@ -399,7 +400,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
     }
@@ -423,10 +424,10 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
-        realm.updateIdentityProviderMapper(model);
+        session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
 
     }
@@ -448,9 +449,9 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        realm.removeIdentityProviderMapper(model);
+        session.identityProviders().removeMapper(model);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
     }

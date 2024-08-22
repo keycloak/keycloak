@@ -436,11 +436,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             // Create the AttributeConsumingService if at least one attribute importer mapper exists
             List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();
-            realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias())
+            session.identityProviders().getMappersByAliasStream(getConfig().getAlias())
                 .forEach(mapper -> {
                     IdentityProviderMapper target = (IdentityProviderMapper) session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    if (target instanceof SamlMetadataDescriptorUpdater)
-                        metadataAttrProviders.add(new java.util.AbstractMap.SimpleEntry<>(mapper, (SamlMetadataDescriptorUpdater)target));
+                    if (target instanceof SamlMetadataDescriptorUpdater samlMetadataDescriptorUpdater)
+                        metadataAttrProviders.add(new java.util.AbstractMap.SimpleEntry<>(mapper, samlMetadataDescriptorUpdater));
                 });
 
             if (!metadataAttrProviders.isEmpty()) {

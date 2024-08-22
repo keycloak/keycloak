@@ -188,9 +188,6 @@ public class RealmEntity {
     protected String defaultRoleId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<IdentityProviderMapperEntity> identityProviderMappers = new LinkedList<>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticatorConfigEntity> authenticators = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
@@ -638,17 +635,6 @@ public class RealmEntity {
 
     public void setDefaultLocale(String defaultLocale) {
         this.defaultLocale = defaultLocale;
-    }
-
-    public Collection<IdentityProviderMapperEntity> getIdentityProviderMappers() {
-        if (identityProviderMappers == null) {
-            identityProviderMappers = new LinkedList<>();
-        }
-        return identityProviderMappers;
-    }
-
-    public void setIdentityProviderMappers(Collection<IdentityProviderMapperEntity> identityProviderMappers) {
-        this.identityProviderMappers = identityProviderMappers;
     }
 
     public Collection<AuthenticatorConfigEntity> getAuthenticatorConfigs() {

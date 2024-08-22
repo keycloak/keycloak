@@ -77,6 +77,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         this.realm = realm;
     }
 
+    @Override
     public RealmEntity getEntity() {
         return realm;
     }
@@ -225,7 +226,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public Map<String, String> getAttributes() {
         // should always return a copy
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             result.put(attr.getName(), attr.getValue());
         }
@@ -1279,106 +1280,37 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream() {
-        return realm.getIdentityProviderMappers().stream().map(this::entityToModel);
+        return session.identityProviders().getMappersStream();
     }
 
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias) {
-        return realm.getIdentityProviderMappers().stream()
-                .filter(e -> Objects.equals(e.getIdentityProviderAlias(), brokerAlias))
-                .map(this::entityToModel);
+        return session.identityProviders().getMappersByAliasStream(brokerAlias);
     }
 
     @Override
     public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
-        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getName()) != null) {
-            throw new RuntimeException("identity provider mapper name must be unique per identity provider");
-        }
-        String id = KeycloakModelUtils.generateId();
-        IdentityProviderMapperEntity entity = new IdentityProviderMapperEntity();
-        entity.setId(id);
-        entity.setName(model.getName());
-        entity.setIdentityProviderAlias(model.getIdentityProviderAlias());
-        entity.setIdentityProviderMapper(model.getIdentityProviderMapper());
-        entity.setRealm(this.realm);
-        entity.setConfig(model.getConfig());
-
-        em.persist(entity);
-        this.realm.getIdentityProviderMappers().add(entity);
-        return entityToModel(entity);
-    }
-
-    protected IdentityProviderMapperEntity getIdentityProviderMapperEntity(String id) {
-        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
-            if (entity.getId().equals(id)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected IdentityProviderMapperEntity getIdentityProviderMapperEntityByName(String alias, String name) {
-        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
-            if (entity.getIdentityProviderAlias().equals(alias) && entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        return null;
-
+        return session.identityProviders().createMapper(model);
     }
 
     @Override
     public void removeIdentityProviderMapper(IdentityProviderMapperModel mapping) {
-        IdentityProviderMapperEntity toDelete = getIdentityProviderMapperEntity(mapping.getId());
-        if (toDelete != null) {
-            this.realm.getIdentityProviderMappers().remove(toDelete);
-            em.remove(toDelete);
-        }
-
+        session.identityProviders().removeMapper(mapping);
     }
 
     @Override
     public void updateIdentityProviderMapper(IdentityProviderMapperModel mapping) {
-        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntity(mapping.getId());
-        entity.setIdentityProviderAlias(mapping.getIdentityProviderAlias());
-        entity.setIdentityProviderMapper(mapping.getIdentityProviderMapper());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapping.getConfig());
-        } else {
-            entity.getConfig().clear();
-            if (mapping.getConfig() != null) {
-                entity.getConfig().putAll(mapping.getConfig());
-            }
-        }
-        em.flush();
-
+        session.identityProviders().updateMapper(mapping);
     }
 
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
-        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntity(id);
-        if (entity == null) return null;
-        return entityToModel(entity);
+        return session.identityProviders().getMapperById(id);
     }
 
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
-        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntityByName(alias, name);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    protected IdentityProviderMapperModel entityToModel(IdentityProviderMapperEntity entity) {
-        IdentityProviderMapperModel mapping = new IdentityProviderMapperModel();
-        mapping.setId(entity.getId());
-        mapping.setName(entity.getName());
-        mapping.setIdentityProviderAlias(entity.getIdentityProviderAlias());
-        mapping.setIdentityProviderMapper(entity.getIdentityProviderMapper());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapping.setConfig(config);
-        return mapping;
+        return session.identityProviders().getMapperByName(alias, name);
     }
 
     @Override
