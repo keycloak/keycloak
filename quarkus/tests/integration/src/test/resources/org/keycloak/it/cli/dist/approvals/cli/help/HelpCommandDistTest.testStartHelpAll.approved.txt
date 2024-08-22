@@ -475,7 +475,8 @@ Bootstrap Admin:
 
 --bootstrap-admin-client-id <client id>
                      Client id for the temporary bootstrap admin service account. Used only when
-                       the master realm is created. Default: temp-admin.
+                       the master realm is created. Available only when bootstrap admin client
+                       secret is set. Default: temp-admin.
 --bootstrap-admin-client-secret <client secret>
                      Client secret for the temporary bootstrap admin service account. Used only
                        when the master realm is created. Use a non-CLI configuration option for
@@ -485,7 +486,8 @@ Bootstrap Admin:
                        created. Use a non-CLI configuration option for this option if possible.
 --bootstrap-admin-username <username>
                      Temporary bootstrap admin username. Used only when the master realm is
-                       created. Default: temp-admin.
+                       created. Available only when bootstrap admin password is set. Default:
+                       temp-admin.
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the
