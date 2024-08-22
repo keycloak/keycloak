@@ -25,7 +25,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.services.ServicesLogger;
@@ -95,13 +95,18 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     private String getOption(String option, String envVar) {
-        return Configuration.getOptionalKcValue(option).orElseGet(() -> {
-            String value = System.getenv(envVar);
-            if (value != null) {
-                ServicesLogger.LOGGER.usingDeprecatedEnvironmentVariable(envVar, Configuration.toEnvVarFormat(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + option));
-            }
-            return value;
-        });
+        PropertyMappingInterceptor.disable(); // disable default handling
+        try {
+            return Configuration.getOptionalKcValue(option).orElseGet(() -> {
+                String value = System.getenv(envVar);
+                if (value != null) {
+                    ServicesLogger.LOGGER.usingDeprecatedEnvironmentVariable(envVar, Configuration.toEnvVarFormat(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + option));
+                }
+                return value;
+            });
+        } finally {
+            PropertyMappingInterceptor.enable();
+        }
     }
 
     public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
