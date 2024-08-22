@@ -159,43 +159,6 @@ Hostname v2:
                        the Host header. If enabled, the 'hostname' option needs to be specified.
                        Default: true. Available only when hostname:v2 feature is enabled.
 
-Hostname v1 (Deprecated):
-
---hostname <hostname>
-                     DEPRECATED. Hostname for the Keycloak server. Available only when hostname:v1
-                       feature is enabled.
---hostname-admin <hostname>
-                     DEPRECATED. The hostname for accessing the administration console. Use this
-                       option if you are exposing the administration console using a hostname other
-                       than the value set to the 'hostname' option. Available only when hostname:v1
-                       feature is enabled.
---hostname-admin-url <url>
-                     DEPRECATED. Set the base URL for accessing the administration console,
-                       including scheme, host, port and path Available only when hostname:v1
-                       feature is enabled.
---hostname-debug <true|false>
-                     DEPRECATED. Toggle the hostname debug page that is accessible at
-                       /realms/master/hostname-debug Default: false. Available only when hostname:
-                       v1 feature is enabled.
---hostname-path <path>
-                     DEPRECATED. This should be set if proxy uses a different context-path for
-                       Keycloak. Available only when hostname:v1 feature is enabled.
---hostname-port <port>
-                     DEPRECATED. The port used by the proxy when exposing the hostname. Set this
-                       option if the proxy uses a port other than the default HTTP and HTTPS ports.
-                       Default: -1. Available only when hostname:v1 feature is enabled.
---hostname-strict <true|false>
-                     DEPRECATED. Disables dynamically resolving the hostname from request headers.
-                       Should always be set to true in production, unless proxy verifies the Host
-                       header. Default: true. Available only when hostname:v1 feature is enabled.
---hostname-strict-backchannel <true|false>
-                     DEPRECATED. By default backchannel URLs are dynamically resolved from request
-                       headers to allow internal and external applications. If all applications use
-                       the public URL this option should be enabled. Default: false. Available only
-                       when hostname:v1 feature is enabled.
---hostname-url <url> DEPRECATED. Set the base URL for frontend URLs, including scheme, host, port
-                       and path. Available only when hostname:v1 feature is enabled.
-
 HTTP(S):
 
 --http-enabled <true|false>
@@ -310,10 +273,6 @@ Metrics:
 
 Proxy:
 
---proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
-                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
-                       Default: none. Use the following options instead: http-enabled,
-                       proxy-headers.
 --proxy-headers <headers>
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence

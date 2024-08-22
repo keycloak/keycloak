@@ -31,31 +31,6 @@ NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes preceden
 
 NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
 
-== Proxy modes (deprecated)
-NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
-
-For {project_name}, your choice of proxy modes depends on the TLS termination in your environment. The following proxy modes are available:
-
-edge:: Enables communication through HTTP between the proxy and {project_name}.
-This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with {project_name} using HTTP.
-
-reencrypt:: Requires communication through HTTPS between the proxy and {project_name}.
-This mode is suitable for deployments where internal communication between the reverse proxy and {project_name} should also be protected.
-Different keys and certificates are used on the reverse proxy as well as on {project_name}.
-
-passthrough:: The proxy forwards the HTTPS connection to {project_name} without terminating TLS.
-The secure connections between the server and clients are based on the keys and certificates used by the {project_name} server.
-
-When in **edge** or **reencrypt** proxy mode, {project_name} will parse the following headers and expects the reverse proxy to set them:
-
-* `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
-* Non-standard `X-Forwarded-*`, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`
-
-=== Configure the proxy mode in {project_name}
-To select the proxy mode, enter this command:
-
-<@kc.start parameters="--proxy <mode>"/>
-
 == Different context-path on reverse proxy
 
 {project_name} assumes it is exposed through the reverse proxy under the same context path as {project_name} is configured for. By default {project_name} is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.

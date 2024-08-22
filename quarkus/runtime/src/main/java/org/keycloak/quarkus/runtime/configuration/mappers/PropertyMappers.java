@@ -48,7 +48,6 @@ public final class PropertyMappers {
         MAPPERS.addAll(CachingPropertyMappers.getClusteringPropertyMappers());
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnameV2PropertyMappers.getHostnamePropertyMappers());
-        MAPPERS.addAll(HostnameV1PropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
         MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());

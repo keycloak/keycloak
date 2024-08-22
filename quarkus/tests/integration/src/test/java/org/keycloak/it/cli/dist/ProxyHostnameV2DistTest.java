@@ -70,32 +70,6 @@ public class ProxyHostnameV2DistTest {
         assertXForwardedHeaders();
     }
 
-    @Test
-    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy=reencrypt" })
-    public void testProxyHeadersTakePrecedenceOverProxyReencryptOption() {
-        assertForwardedHeaderIsIgnored();
-        assertXForwardedHeaders();
-    }
-
-    @Test
-    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy=none" })
-    public void testProxyHeadersTakePrecedenceOverProxyNoneOption() {
-        assertForwardedHeaderIsIgnored();
-        assertXForwardedHeaders();
-    }
-
-    @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=forwarded", "--proxy=none" })
-    public void testExplicitlySetHostnameTakesPrecedenceOverProxyHeaders() {
-        assertForwardedHeader("https://mykeycloak.org:1234/admin");
-    }
-
-    @Test
-    @Launch({ "start-dev", "--hostname=http://mykeycloak.org:8080", "--proxy-headers=forwarded", "--proxy=none" })
-    public void testExplicitlySetHostnameUrlTakesPrecedenceOverProxyHeaders() {
-        assertForwardedHeader("http://mykeycloak.org:8080/admin");
-    }
-
     private void assertForwardedHeader() {
         assertForwardedHeader("https://test:1234/admin");
     }
