@@ -56,6 +56,7 @@ public class PropertyMapper<T> {
             null,
             null,
             false,
+            null,
             null) {
         @Override
         public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
@@ -74,10 +75,12 @@ public class PropertyMapper<T> {
     private final String envVarFormat;
     private final String cliFormat;
     private final BiConsumer<PropertyMapper<T>, ConfigValue> validator;
+    private final String description;
 
     PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
                    BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
-                   String mapFrom, String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator) {
+                   String mapFrom, String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
+                   String description) {
         this.option = option;
         this.to = to == null ? getFrom() : to;
         this.enabled = enabled;
@@ -89,6 +92,7 @@ public class PropertyMapper<T> {
         this.cliFormat = toCliFormat(option.getKey());
         this.envVarFormat = toEnvVarFormat(getFrom());
         this.validator = validator;
+        this.description = description;
     }
 
     private static Optional<String> defaultTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
@@ -190,7 +194,7 @@ public class PropertyMapper<T> {
     }
 
     public String getDescription() {
-        return this.option.getDescription();
+        return this.description;
     }
 
     /**
@@ -294,9 +298,11 @@ public class PropertyMapper<T> {
         private String enabledWhen = "";
         private String paramLabel;
         private BiConsumer<PropertyMapper<T>, ConfigValue> validator = (mapper, value) -> mapper.validateExpectedValues(value, mapper::validateSingleValue);
+        private String description;
 
         public Builder(Option<T> option) {
             this.option = option;
+            this.description = this.option.getDescription();
         }
 
         public Builder<T> to(String to) {
@@ -344,12 +350,29 @@ public class PropertyMapper<T> {
             this.validator = validator;
             return this;
         }
+        
+        /**
+         * Similar to {@link #enabledWhen}, but uses the condition as a validator. This allows the option
+         * to appear in help. 
+         * @param isEnabled
+         * @param enabledWhen
+         * @return
+         */
+        public Builder<T> validateEnabled(BooleanSupplier isEnabled, String enabledWhen) {
+            this.validator = (mapper, value) -> {
+                if (!isEnabled.getAsBoolean()) {
+                    throw new PropertyException(mapper.getOption().getKey() + " available only when " + enabledWhen);
+                }
+            };
+            this.description = String.format("%s Available only when %s.", this.description, enabledWhen);
+            return this;
+        }
 
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            return new PropertyMapper<T>(option, to, isEnabled, enabledWhen, mapper, mapFrom, paramLabel, isMasked, validator);
+            return new PropertyMapper<T>(option, to, isEnabled, enabledWhen, mapper, mapFrom, paramLabel, isMasked, validator, description);
         }
     }
 

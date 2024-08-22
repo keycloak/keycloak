@@ -36,11 +36,7 @@ public final class BootstrapAdminPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
-                        .validator((mapper, value) -> {
-                            if (!isPasswordSet()) {
-                                throw new PropertyException(mapper.getOption().getKey() + " available only when " + PASSWORD_SET);
-                            }
-                        })
+                        .validateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.PASSWORD)
                         .paramLabel("password")
@@ -52,11 +48,7 @@ public final class BootstrapAdminPropertyMappers {
                         .build(),*/
                 fromOption(BootstrapAdminOptions.CLIENT_ID)
                         .paramLabel("client id")
-                        .validator((mapper, value) -> {
-                            if (!isClientSecretSet()) {
-                                throw new PropertyException(mapper.getOption().getKey() + " available only when " + CLIENT_SECRET_SET);
-                            }
-                        })
+                        .validateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.CLIENT_SECRET)
                         .paramLabel("client secret")
