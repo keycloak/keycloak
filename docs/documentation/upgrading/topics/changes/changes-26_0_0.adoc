@@ -224,3 +224,14 @@ Update your custom embedded Infinispan cache configuration file with configurati
 
 For more details proceed to the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
 
+= Support for legacy `redirect_uri` parameter and SPI options has been removed
+
+Previous versions of {project_name} had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as
+`http(s)://example-host/auth/realms/my-realm-name/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri`. This functionality was deprecated in {project_name} 18 and has been removed in this version in favor of following the OpenID Connect specification.
+
+As part of this change the following related configuration options for the SPI have been removed:
+
+- `--spi-login-protocol-openid-connect-legacy-logout-redirect-uri`
+- `--spi-login-protocol-openid-connect-suppress-logout-confirmation-screen`
+
+If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:|https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.

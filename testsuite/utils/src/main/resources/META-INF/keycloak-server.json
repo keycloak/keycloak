@@ -148,9 +148,6 @@
     },
 
     "login-protocol": {
-        "openid-connect": {
-            "legacy-logout-redirect-uri": "${keycloak.oidc.legacyLogoutRedirectUri:false}"
-        },
         "saml": {
             "knownProtocols": [
                 "http=${auth.server.http.port}",

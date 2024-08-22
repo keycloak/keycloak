@@ -64,7 +64,6 @@ public class OIDCLoginProtocolService {
     private final RealmModel realm;
     private final TokenManager tokenManager;
     private final EventBuilder event;
-    private final OIDCProviderConfig providerConfig;
 
     private final KeycloakSession session;
 
@@ -74,13 +73,12 @@ public class OIDCLoginProtocolService {
 
     private final ClientConnection clientConnection;
 
-    public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event, OIDCProviderConfig providerConfig) {
+    public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.tokenManager = new TokenManager();
         this.event = event;
-        this.providerConfig = providerConfig;
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
@@ -212,11 +210,9 @@ public class OIDCLoginProtocolService {
         return new UserInfoEndpoint(session, tokenManager);
     }
 
-    /* old deprecated logout endpoint needs to be removed in the future
-    * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        return new LogoutEndpoint(session, tokenManager, event, providerConfig);
+        return new LogoutEndpoint(session, tokenManager, event);
     }
 
     @Path("revoke")
