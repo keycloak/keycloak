@@ -12,7 +12,7 @@ const plugins = [
     preventAssignment: true,
     // React depends on process.env.NODE_ENV to determine which code to include for production.
     // This ensures that no additional code meant for development is included in the build.
-    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env.NODE_ENV": '"production"',
   }),
   terser(),
 ];

@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm build:clean && rollup --config",
+    "build": "pnpm build:clean && rollup --config && pnpm build:rewrite-import",
+    "build:rewrite-import": "node scripts/rewrite-imports.js",
     "build:clean": "shx rm -rf vendor"
   },
   "dependencies": {
