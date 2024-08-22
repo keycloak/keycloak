@@ -16,6 +16,9 @@ The default count of users per file and per transaction is fifty.
 Increasing this to a larger number leads to an exponentially increasing execution time.
 ====
 
+All {project_name} nodes need to be stopped prior to using `kc.[sh|bat] import | export` commands. This ensures that the resulting operations will have no consistency issues with concurrent requests. 
+It also ensures that running an import or export command from the same machine as a server instance will not result in port or other conflicts.
+
 == Providing options for database connection parameters
 
 When using the `export` and the `import` commands below, {project_name} needs to know how to connect to the database where the information about realms, clients, users and other entities is stored.
@@ -27,6 +30,8 @@ As default, {project_name} will re-build automatically for the `export` and `imp
 
 If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
 When doing this, remove the build time options from the command line and keep only the runtime options.
+
+NOTE: if you do not use `--optimized` keep in mind that an `import` or `export` command will implicitly create or update an optimized image for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server. 
 
 == Exporting a Realm to a Directory
 
