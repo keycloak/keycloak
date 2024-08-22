@@ -13,12 +13,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <!-- ignore folders for incremental builds by the maven build cache plugin -->
-        <maven.build.cache.exclude.value.1>src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.value.1>
-        <maven.build.cache.exclude.value.2>src/main/resources/theme/keycloak/common/resources/vendor</maven.build.cache.exclude.value.2>
-        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.3>
-        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.4>
+        <dir.vendor>theme/keycloak/common/resources/vendor</dir.vendor>
     </properties>
 
     <dependencies>
@@ -41,19 +36,91 @@
 
         <plugins>
             <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/node_modules/**</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <configuration>
-                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
-                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-rfc4648</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/rfc4648</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/rfc4648/lib</directory>
+                                    <includes>
+                                        <include>rfc4648.js</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-patternfly-v3</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v3</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/patternfly/dist</directory>
+                                    <includes>
+                                        <include>css/patternfly.min.css</include>
+                                        <include>css/patternfly-additions.min.css</include>
+                                        <include>fonts/**</include>
+                                        <include>img/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-patternfly-v4</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v4</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/@patternfly/patternfly</directory>
+                                    <includes>
+                                        <include>patternfly.min.css</include>
+                                        <include>assets/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-patternfly-v5</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v5</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/@patternfly-v5/patternfly</directory>
+                                    <includes>
+                                        <include>patternfly.min.css</include>
+                                        <include>patternfly-addons.css</include>
+                                        <include>assets/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

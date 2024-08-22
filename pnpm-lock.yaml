@@ -482,7 +482,7 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@22.4.1)(jsdom@24.1.1)(lightningcss@1.26.0)(terser@5.31.3)
 
-  themes/src/main/resources/theme/keycloak/common/resources:
+  themes:
     dependencies:
       '@patternfly-v5/patternfly':
         specifier: npm:@patternfly/patternfly@^5.3.1
@@ -490,12 +490,6 @@ importers:
       '@patternfly/patternfly':
         specifier: ^4.224.5
         version: 4.224.5
-      alpinejs:
-        specifier: ^3.14.1
-        version: 3.14.1
-      jquery:
-        specifier: ^3.7.1
-        version: 3.7.1
       patternfly:
         specifier: ^3.59.5
         version: 3.59.5
@@ -1928,12 +1922,6 @@ packages:
       typescript:
         optional: true
 
-  '@vue/reactivity@3.1.5':
-    resolution: {integrity: sha512-1tdfLmNjWG6t/CsPldh+foumYFo3cpyCHgBYQ34ylaMsJ+SNHQ1kApMIa8jN+i593zQuaw3AdWH0nJTARzCFhg==}
-
-  '@vue/shared@3.1.5':
-    resolution: {integrity: sha512-oJ4F3TnvpXaQwZJNF3ZK+kLPHKarDmJjJ6jyzVNDKH9md1dptjC7lWR//jrGuLdek/U6iltWxqAnYOu8gCiOvA==}
-
   '@vue/shared@3.4.27':
     resolution: {integrity: sha512-DL3NmY2OFlqmYYrzp39yi3LDkKxa5vZVwxWdQ3rG0ekuWscHraeIbnI8t+aZK7qhYqEqWKTUdijadunb9pnrgA==}
 
@@ -1991,9 +1979,6 @@ packages:
 
   ajv@8.13.0:
     resolution: {integrity: sha512-PRA911Blj99jR5RMeTunVbNXMF6Lp4vZXnk5GQjcnUWUTsrXtekg/pnmFFI2u/I36Y/2bITGS30GZCXei6uNkA==}
-
-  alpinejs@3.14.1:
-    resolution: {integrity: sha512-ICar8UsnRZAYvv/fCNfNeKMXNoXGUfwHrjx7LqXd08zIP95G2d9bAOuaL97re+1mgt/HojqHsfdOLo/A5LuWgQ==}
 
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
@@ -3492,9 +3477,6 @@ packages:
 
   jquery@3.4.1:
     resolution: {integrity: sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==}
-
-  jquery@3.7.1:
-    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -5980,7 +5962,7 @@ snapshots:
   '@rollup/plugin-replace@5.0.7(rollup@4.21.0)':
     dependencies:
       '@rollup/pluginutils': 5.1.0(rollup@4.21.0)
-      magic-string: 0.30.10
+      magic-string: 0.30.11
     optionalDependencies:
       rollup: 4.21.0
 
@@ -6622,12 +6604,6 @@ snapshots:
     optionalDependencies:
       typescript: 5.5.4
 
-  '@vue/reactivity@3.1.5':
-    dependencies:
-      '@vue/shared': 3.1.5
-
-  '@vue/shared@3.1.5': {}
-
   '@vue/shared@3.4.27': {}
 
   abstract-logging@2.0.1: {}
@@ -6685,10 +6661,6 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
       uri-js: 4.4.1
-
-  alpinejs@3.14.1:
-    dependencies:
-      '@vue/reactivity': 3.1.5
 
   ansi-colors@4.1.3: {}
 
@@ -8374,8 +8346,6 @@ snapshots:
   jju@1.4.0: {}
 
   jquery@3.4.1: {}
-
-  jquery@3.7.1: {}
 
   js-tokens@4.0.0: {}
 
