@@ -15,5 +15,6 @@ org.keycloak.test.framework.database.MySQLDatabaseSupplier
 org.keycloak.test.framework.database.PostgresDatabaseSupplier
 org.keycloak.test.framework.database.MariaDBDatabaseSupplier
 org.keycloak.test.framework.database.MSSQLServerDatabaseSupplier
+org.keycloak.test.framework.database.OracleDatabaseSupplier
 org.keycloak.test.framework.page.PageSupplier
 org.keycloak.test.framework.oauth.OAuthClientSupplier
