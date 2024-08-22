@@ -1,29 +1,23 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import { Badge, Chip, ChipGroup } from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
-import { PropsWithChildren, ReactNode } from "react";
+import { FunctionComponent, PropsWithChildren, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import {
-  KeycloakDataTable,
-  LoaderFunction,
-} from "@keycloak/keycloak-ui-shared";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { toEditOrganization } from "./routes/EditOrganization";
+import { KeycloakDataTable, LoaderFunction } from "./table/KeycloakDataTable";
 
-const OrgDetailLink = (organization: OrganizationRepresentation) => {
+type OrgDetailLinkProps = {
+  link: FunctionComponent<
+    PropsWithChildren<{ organization: OrganizationRepresentation }>
+  >;
+  organization: OrganizationRepresentation;
+};
+
+const OrgDetailLink = ({ link, organization }: OrgDetailLinkProps) => {
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const Component = link;
   return (
     <TableText wrapModifier="truncate">
-      <Link
-        key={organization.id}
-        to={toEditOrganization({
-          realm,
-          id: organization.id!,
-          tab: "settings",
-        })}
-      >
+      <Component organization={organization}>
         {organization.name}
         {!organization.enabled && (
           <Badge
@@ -34,7 +28,7 @@ const OrgDetailLink = (organization: OrganizationRepresentation) => {
             {t("disabled")}
           </Badge>
         )}
-      </Link>
+      </Component>
     </TableText>
   );
 };
@@ -47,11 +41,14 @@ const Domains = (org: OrganizationRepresentation) => {
       expandedText={t("hide")}
       collapsedText={t("showRemaining")}
     >
-      {org.domains?.map((dn) => (
-        <Chip key={dn.name} isReadOnly>
-          {dn.name}
-        </Chip>
-      ))}
+      {org.domains?.map((dn) => {
+        const name = typeof dn === "string" ? dn : dn.name;
+        return (
+          <Chip key={name} isReadOnly>
+            {name}
+          </Chip>
+        );
+      })}
     </ChipGroup>
   );
 };
@@ -60,6 +57,9 @@ type OrganizationTableProps = PropsWithChildren & {
   loader:
     | LoaderFunction<OrganizationRepresentation>
     | OrganizationRepresentation[];
+  link: FunctionComponent<
+    PropsWithChildren<{ organization: OrganizationRepresentation }>
+  >;
   toolbarItem?: ReactNode;
   isPaginated?: boolean;
   onSelect?: (orgs: OrganizationRepresentation[]) => void;
@@ -74,6 +74,7 @@ export const OrganizationTable = ({
   onSelect,
   onDelete,
   deleteLabel = "delete",
+  link,
   children,
 }: OrganizationTableProps) => {
   const { t } = useTranslation();
@@ -87,17 +88,23 @@ export const OrganizationTable = ({
       toolbarItem={toolbarItem}
       onSelect={onSelect}
       canSelectAll={onSelect !== undefined}
-      actions={[
-        {
-          title: t(deleteLabel),
-          onRowClick: onDelete,
-        },
-      ]}
+      actions={
+        onDelete
+          ? [
+              {
+                title: t(deleteLabel),
+                onRowClick: onDelete,
+              },
+            ]
+          : undefined
+      }
       columns={[
         {
           name: "name",
           displayKey: "name",
-          cellRenderer: OrgDetailLink,
+          cellRenderer: (row) => (
+            <OrgDetailLink link={link} organization={row} />
+          ),
         },
         {
           name: "domains",

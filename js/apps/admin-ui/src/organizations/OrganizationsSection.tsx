@@ -1,5 +1,9 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  ListEmptyState,
+  OrganizationTable,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -11,10 +15,9 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { OrganizationTable } from "./OrganizationTable";
+import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import { toAddOrganization } from "./routes/AddOrganization";
 
 export default function OrganizationSection() {
@@ -61,6 +64,18 @@ export default function OrganizationSection() {
       <PageSection variant="light" className="pf-v5-u-p-0">
         <DeleteConfirm />
         <OrganizationTable
+          link={({ organization, children }) => (
+            <Link
+              key={organization.id}
+              to={toEditOrganization({
+                realm,
+                id: organization.id!,
+                tab: "settings",
+              })}
+            >
+              {children}
+            </Link>
+          )}
           key={key}
           loader={loader}
           isPaginated
