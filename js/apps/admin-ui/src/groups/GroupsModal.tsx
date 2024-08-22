@@ -16,6 +16,7 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 type GroupsModalProps = {
   id?: string;
   rename?: GroupRepresentation;
+  duplicate?: GroupRepresentation;
   handleModalToggle: () => void;
   refresh: (group?: GroupRepresentation) => void;
 };
@@ -23,16 +24,18 @@ type GroupsModalProps = {
 export const GroupsModal = ({
   id,
   rename,
+  duplicate,
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
+  const defaultName = duplicate ? `Copy of ${duplicate.name}` : rename?.name;
+
   const form = useForm({
-    defaultValues: { name: rename?.name },
+    defaultValues: { name: defaultName },
   });
   const { handleSubmit, formState } = form;
 
@@ -47,6 +50,10 @@ export const GroupsModal = ({
           { id },
           { ...rename, name: group.name },
         );
+      } else if (duplicate) {
+        const newGroup = { ...duplicate, name: group.name };
+        delete newGroup.id;
+        await adminClient.groups.create(newGroup);
       } else {
         await (group.id
           ? adminClient.groups.updateChildGroup({ id }, group)
@@ -56,7 +63,13 @@ export const GroupsModal = ({
       refresh(rename ? { ...rename, name: group.name } : undefined);
       handleModalToggle();
       addAlert(
-        t(rename ? "groupUpdated" : "groupCreated"),
+        t(
+          rename
+            ? "groupUpdated"
+            : duplicate
+              ? "groupDuplicated"
+              : "groupCreated",
+        ),
         AlertVariant.success,
       );
     } catch (error) {
@@ -67,19 +80,25 @@ export const GroupsModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t(rename ? "renameAGroup" : "createAGroup")}
+      title={t(
+        rename
+          ? "renameAGroup"
+          : duplicate
+            ? "duplicateAGroup"
+            : "createAGroup",
+      )}
       isOpen={true}
       onClose={handleModalToggle}
       actions={[
         <FormSubmitButton
           formState={formState}
-          data-testid={`${rename ? "rename" : "create"}Group`}
+          data-testid={`${rename ? "rename" : duplicate ? "duplicate" : "create"}Group`}
           key="confirm"
           form="group-form"
           allowInvalid
           allowNonDirty
         >
-          {t(rename ? "rename" : "create")}
+          {t(rename ? "rename" : duplicate ? "duplicate" : "create")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
