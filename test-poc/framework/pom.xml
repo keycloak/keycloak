@@ -32,7 +32,8 @@
     <description>PoC JUnit 5 testing framework for Keycloak</description>
 
     <properties>
-        <selenium.version>4.21.0</selenium.version>
+        <selenium.version>4.23.1</selenium.version>
+        <selenium.html.unit.version>4.23.0</selenium.html.unit.version>
     </properties>
 
     <dependencies>
@@ -65,6 +66,11 @@
             <artifactId>selenium-chrome-driver</artifactId>
             <version>${selenium.version}</version>
             <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>htmlunit3-driver</artifactId>
+            <version>${selenium.html.unit.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>

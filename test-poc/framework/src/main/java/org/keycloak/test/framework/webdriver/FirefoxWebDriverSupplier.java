@@ -14,7 +14,7 @@ public class FirefoxWebDriverSupplier extends AbstractWebDriverSupplier {
     @Override
     public WebDriver getWebDriver() {
         FirefoxOptions options = new FirefoxOptions();
-        setGlobalOptions(options);
+        setCommonCapabilities(options);
         return new FirefoxDriver(options);
     }
 }

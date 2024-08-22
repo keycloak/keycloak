@@ -5,11 +5,13 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.remote.AbstractDriverOptions;
+import org.openqa.selenium.remote.CapabilityType;
 
 import java.time.Duration;
+import java.util.Map;
 
 public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, InjectWebDriver> {
 
@@ -45,9 +47,9 @@ public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, I
 
     public abstract WebDriver getWebDriver();
 
-    public void setGlobalOptions(AbstractDriverOptions<?> options) {
-        options.setImplicitWaitTimeout(Duration.ofSeconds(5));
-        options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
+    public void setCommonCapabilities(MutableCapabilities capabilities) {
+        capabilities.setCapability(CapabilityType.PAGE_LOAD_STRATEGY, PageLoadStrategy.NORMAL.toString());
+        capabilities.setCapability("timeouts", Map.of("implicit", Duration.ofSeconds(5).toMillis()));
     }
 
 }
