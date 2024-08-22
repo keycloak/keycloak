@@ -128,6 +128,7 @@ export const Members = () => {
 
     let members = await adminClient.groups.listMembers({
       id: id!,
+      briefRepresentation: true,
       first,
       max,
     });
@@ -138,7 +139,12 @@ export const Members = () => {
         currentGroup.subGroupCount,
       );
       await Promise.all(
-        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+        subGroups.map((g) =>
+          adminClient.groups.listMembers({
+            id: g.id!,
+            briefRepresentation: true,
+          }),
+        ),
       ).then((values: UserRepresentation[][]) => {
         values.forEach((users) => (members = members.concat(users)));
       });
