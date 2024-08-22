@@ -14,7 +14,7 @@ public class ChromeHeadlessWebDriverSupplier extends AbstractWebDriverSupplier {
     @Override
     public WebDriver getWebDriver() {
         ChromeOptions options = new ChromeOptions();
-        setGlobalOptions(options);
+        setCommonCapabilities(options);
         options.addArguments(
                 "--headless",
                 "--disable-gpu",

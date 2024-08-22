@@ -18,7 +18,7 @@ public class Config {
     }
 
     public static String getAdminClientId() {
-        return "admin";
+        return "temp-admin";
     }
 
     public static String getAdminClientSecret() {
