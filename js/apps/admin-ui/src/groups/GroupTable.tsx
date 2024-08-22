@@ -32,6 +32,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
 
   const [rename, setRename] = useState<GroupRepresentation>();
   const [isCreateModalOpen, toggleCreateOpen] = useToggle();
+  const [duplicate, setDuplicate] = useState<GroupRepresentation>();
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
@@ -103,6 +104,17 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
           }}
         />
       )}
+      {duplicate && (
+        <GroupsModal
+          id={duplicate.id}
+          duplicate={duplicate}
+          refresh={() => {
+            refresh();
+            viewRefresh();
+          }}
+          handleModalToggle={() => setDuplicate(undefined)}
+        />
+      )}
       {move && (
         <MoveDialog
           source={move}
@@ -169,6 +181,13 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                   onRowClick: async (group) => {
                     setSelectedRows([group]);
                     toggleCreateOpen();
+                    return false;
+                  },
+                },
+                {
+                  title: t("duplicateGroup"),
+                  onRowClick: async (group) => {
+                    setDuplicate(group);
                     return false;
                   },
                 },
