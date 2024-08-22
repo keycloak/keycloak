@@ -18,12 +18,14 @@
 package org.keycloak.testsuite.organization.mapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.oneOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,24 +33,31 @@ import static org.junit.Assert.assertTrue;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -61,6 +70,12 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest {
+
+    @Before
+    public void onBefore() {
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
+        setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
+    }
 
     @Test
     public void testPasswordGrantType() throws Exception {
@@ -85,13 +100,12 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
 
-        Map<String, Object> claim = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> claim = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(claim, notNullValue());
-        assertThat(claim.get(orga.toRepresentation().getName()), notNullValue());
-        String orgaId = orga.toRepresentation().getName();
-        String orgbId = orgb.toRepresentation().getName();
-        assertThat(claim.get(orgaId), notNullValue());
-        assertThat(claim.get(orgbId), notNullValue());
+        String orgaName = orga.toRepresentation().getName();
+        String orgbName = orgb.toRepresentation().getName();
+        assertThat(claim.contains(orgaName), is(true));
+        assertThat(claim.contains(orgbName), is(true));
     }
 
     @Test
@@ -171,10 +185,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(2));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
         assertThat(response.getRefreshToken(), notNullValue());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
@@ -183,10 +197,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(2));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
     }
@@ -229,10 +243,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // once we support the user to select an organization, the selected organization will be mapped
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(false));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(false));
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
     }
 
     @Test
@@ -254,7 +268,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(2));
         orgScope = "organization:orga";
         oauth.scope(orgScope);
@@ -263,9 +277,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
     }
 
     @Test
@@ -288,9 +302,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
         orgScope = "organization:*";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
@@ -298,9 +312,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(originalScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
     }
 
     @Test
@@ -323,9 +337,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
         orgScope = "organization:orgb";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
@@ -358,9 +372,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // once we support the user to select an organization, the selected organization will be mapped
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
         String orgScope = "organization:*";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
@@ -368,8 +382,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(originalScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
     }
 
     @Test
@@ -390,13 +404,11 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.login(memberPassword);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
-        // for now, return the organization scope in the response and access token even though no organization is mapped into the token
-        // once we support the user to select an organization, the selected organization will be mapped
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        assertThat(organizations.containsKey(orgB.getAlias()), is(true));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
         String orgScope = "organization:orgb";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
@@ -404,6 +416,80 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), not(containsString(orgScope)));
         assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+    }
+
+    @Test
+    public void testIncludeOrganizationAttributes() throws Exception {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        addMember(organization);
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
+
+        oauth.clientId("direct-grant");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        Map<String, Map<String, List<String>>> organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet(), hasItem("key"));
+        assertThat(organizations.get(organizationName).get("key"), containsInAnyOrder("value1", "value2"));
+
+        // when attributes are added to tokens, the claim type is a json regardless of the value set in the config
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet(), hasItem("key"));
+        assertThat(organizations.get(organizationName).get("key"), containsInAnyOrder("value1", "value2"));
+
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testOrganizationsClaimAsList() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        oauth.clientId("direct-grant");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", member.getEmail(), memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+    }
+
+    @Test
+    public void testOrganizationsClaimSingleValued() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        setMapperConfig(ProtocolMapperUtils.MULTIVALUED, Boolean.FALSE.toString());
+        oauth.clientId("direct-grant");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", member.getEmail(), memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        String organization = (String) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organization, is(oneOf("orga", "orgb")));
     }
 
     @Test
@@ -429,16 +515,15 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         return groupMapper;
     }
 
-    private void assertScopeAndClaims(String orgScope, OrganizationRepresentation orgA) {
+    private void assertScopeAndClaims(String orgScope, OrganizationRepresentation org) {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         assertThat(response.getScope(), containsString(orgScope));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        Map<String, Object> organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.contains(org.getAlias()), is(true));
         assertThat(response.getRefreshToken(), notNullValue());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
@@ -447,10 +532,32 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), containsString(orgScope));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
-        assertThat(organizations.containsKey(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(org.getAlias()), is(true));
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
+    }
+
+    private void setMapperConfig(String key, String value) {
+        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+
+        Map<String, String> config = orgMapper.getConfig();
+
+        if (value == null) {
+            config.remove(key);
+        } else {
+            config.put(key, value);
+        }
+
+        orgScopeResource.getProtocolMappers().update(orgMapper.getId(), orgMapper);
     }
 }

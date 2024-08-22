@@ -442,18 +442,17 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties) {
+        addJsonTypeConfig(configProperties, List.of("String", "long", "int", "boolean", "JSON"), null);
+    }
+
+    public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties, List<String> supportedTypes, String defaultValue) {
         ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
-        List<String> types = new ArrayList<>(5);
-        types.add("String");
-        types.add("long");
-        types.add("int");
-        types.add("boolean");
-        types.add("JSON");
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setOptions(types);
+        property.setOptions(supportedTypes);
         property.setHelpText(JSON_TYPE_TOOLTIP);
+        property.setDefaultValue(defaultValue);
         configProperties.add(property);
     }
 
