@@ -25,11 +25,14 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
@@ -58,7 +61,7 @@ public class OrganizationResource {
         this.session = session;
         this.provider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION);
     }
 
     @GET
@@ -74,8 +77,13 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Deletes the organization")
     public Response delete() {
-        provider.remove(organization);
-        return Response.noContent().build();
+        boolean removed = provider.remove(organization);
+        if (removed) {
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+            return Response.noContent().build();
+        } else {
+            throw ErrorResponse.error("organization couldn't be deleted", Status.BAD_REQUEST);
+        }
     }
 
     @PUT
@@ -85,6 +93,7 @@ public class OrganizationResource {
     public Response update(OrganizationRepresentation organizationRep) {
         try {
             Organizations.toModel(organizationRep, organization);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(organizationRep).success();
             return Response.noContent().build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);

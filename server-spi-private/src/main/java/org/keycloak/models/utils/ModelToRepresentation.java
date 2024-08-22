@@ -1291,4 +1291,23 @@ public class ModelToRepresentation {
         rep.setConfig(model.getConfig());
         return rep;
     }
+
+    public static OrganizationDomainRepresentation toRepresentation(OrganizationDomainModel domain) {
+        OrganizationDomainRepresentation rep = new OrganizationDomainRepresentation(domain.getName());
+        rep.setVerified(domain.isVerified());
+        return rep;
+    }
+
+    public static OrganizationRepresentation toRepresentation(RealmModel realm, OrganizationModel organization) {
+        OrganizationRepresentation rep = new OrganizationRepresentation();
+        rep.setId(organization.getId());
+        rep.setName(organization.getName());
+        rep.setAlias(organization.getAlias());
+        rep.setEnabled(organization.isEnabled());
+        rep.setDescription(organization.getDescription());
+        rep.setAttributes(organization.getAttributes());
+        rep.setDomains(ofNullable(organization.getDomains()).orElse(Stream.of()).collect(Collectors.mapping(ModelToRepresentation::toRepresentation, Collectors.toUnmodifiableSet())));
+        rep.setIdentityProviders(ofNullable(organization.getIdentityProviders()).orElse(Stream.of()).collect(Collectors.mapping(provider -> toRepresentation(realm, provider), Collectors.toUnmodifiableList())));
+        return rep;
+    }
 }

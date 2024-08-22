@@ -28,11 +28,13 @@ import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -59,7 +61,7 @@ public class OrganizationInvitationResource {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.organization = organization;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
         this.tokenExpiration = getTokenExpiration();
     }
 

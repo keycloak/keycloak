@@ -51,7 +51,6 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public create = this.makeRequest<OrganizationRepresentation, { id: string }>({
     method: "POST",
-    path: "/",
     returnResourceIdInLocationHeader: { field: "id" },
   });
 
