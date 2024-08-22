@@ -451,6 +451,13 @@ declare class Keycloak {
 	timeSkew?: number;
 
 	/**
+	* Wether the 'Keycloak' instance is initialized or not (you should only
+	* initialize once!). Undefined when we are still initializing, if 
+	* you called init() :)
+	*/
+	didInitialize?: true
+	
+	/**
 	* @private Undocumented.
 	*/
 	loginRequired?: boolean;
