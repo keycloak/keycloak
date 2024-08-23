@@ -165,6 +165,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         // Disable probes since we are not really starting the server
         keycloakContainer.setReadinessProbe(null);
         keycloakContainer.setLivenessProbe(null);
+        keycloakContainer.setStartupProbe(null);
 
         addResources(keycloakRealmImport.getSpec().getResourceRequirements(), config, keycloakContainer);
     }
