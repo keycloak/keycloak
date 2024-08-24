@@ -66,7 +66,7 @@ export const token = (keycloak: Keycloak) =>
   async function getAccessToken() {
     try {
       await keycloak.updateToken(5);
-    } catch (error) {
+    } catch {
       await keycloak.login();
     }
 

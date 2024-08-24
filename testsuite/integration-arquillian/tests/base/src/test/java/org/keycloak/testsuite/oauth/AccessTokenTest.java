@@ -28,7 +28,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,16 +40,20 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSAAlgorithm;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.keys.GeneratedEddsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
@@ -64,6 +67,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -114,7 +118,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.*;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -175,11 +178,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         testRealms.add(realm);
 
     }
-    
+
     @Test
     public void loginFormUsernameOrEmailLabel() throws Exception {
         oauth.openLoginForm();
-        
+
         assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
     }
 
@@ -389,6 +392,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenCodeExpired() {
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
+
         getTestingClient().testing().setTestingInfinispanTimeService();
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(1);
         oauth.doLogin("test-user@localhost", "password");
@@ -1323,7 +1328,31 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
         conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA);
     }
-    
+
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmEdDSA_Ed448() throws Exception {
+        // create the generated EdDSA key with Ed448 before performing the test
+        RealmResource realm = adminClient.realm("test");
+        ComponentRepresentation comp = new ComponentRepresentation();
+        comp.setName("eddsa-es448-test");
+        comp.setProviderId(GeneratedEddsaKeyProviderFactory.ID);
+        comp.setProviderType(KeyProvider.class.getName());
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("eddsaEllipticCurveKey", JavaAlgorithm.Ed448);
+        config.putSingle("priority", "100");
+        comp.setConfig(config);
+        String compId = null;
+        try (Response response = realm.components().add(comp)) {
+            assertEquals(201, response.getStatus());
+            compId = ApiUtil.getCreatedId(response);
+            conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA, JavaAlgorithm.Ed448);
+        } finally {
+            if (compId != null) {
+                realm.components().removeComponent(compId);
+            }
+        }
+    }
+
     @Test
     public void validateECDSASignatures() {
         validateTokenECDSASignature(Algorithm.ES256);
@@ -1359,18 +1388,22 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     private void conductAccessTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        conductAccessTokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg, null);
+    }
+
+    private void conductAccessTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg, String idTokenCurve) throws Exception {
         try {
             /// Realm Setting is used for ID Token Signature Algorithm
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedIdTokenAlg);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAccessAlg);
-            tokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
+            tokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg, idTokenCurve);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
-    private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+    private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg, String idTokenCurve) throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -1399,6 +1432,9 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         verifySignatureAlgorithm(header, expectedRefreshAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
+
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+        assertEquals(idToken.getAccessTokenHash(), HashUtils.accessTokenHash(expectedIdTokenAlg, idTokenCurve, response.getAccessToken()));
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 

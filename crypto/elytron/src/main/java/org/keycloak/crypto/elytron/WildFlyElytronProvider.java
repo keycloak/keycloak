@@ -30,8 +30,11 @@ import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,6 +61,10 @@ public class WildFlyElytronProvider implements CryptoProvider {
         providers.put(CryptoConstants.RSA1_5, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding"));
         providers.put(CryptoConstants.RSA_OAEP, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
         providers.put(CryptoConstants.RSA_OAEP_256, new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
+        providers.put(CryptoConstants.ECDH_ES, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A128KW, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A192KW, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A256KW, new ElytronEcdhEsAlgorithmProvider());
     }
 
     @Override
@@ -140,7 +147,7 @@ public class WildFlyElytronProvider implements CryptoProvider {
     public SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException {
         return SecretKeyFactory.getInstance(keyAlgorithm);
     }
-    
+
     @Override
     public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException {
             return KeyStore.getInstance(format.toString());
@@ -165,8 +172,28 @@ public class WildFlyElytronProvider implements CryptoProvider {
 
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException {
-        return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName));
-            
+        String javaAlgorithm = JavaAlgorithm.getJavaAlgorithm(sigAlgName);
+
+        switch (javaAlgorithm) {
+            case JavaAlgorithm.PS256, JavaAlgorithm.PS384, JavaAlgorithm.PS512:
+                var signature = Signature.getInstance("RSASSA-PSS");
+
+                int digestLength = Integer.parseInt(javaAlgorithm.substring(3, 6));
+                MGF1ParameterSpec ps = new MGF1ParameterSpec("SHA-" + digestLength);
+                AlgorithmParameterSpec params = new PSSParameterSpec(
+                        ps.getDigestAlgorithm(), "MGF1", ps, digestLength / 8, 1);
+
+                try {
+                    signature.setParameter(params);
+                } catch (InvalidAlgorithmParameterException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return signature;
+
+            default:
+                return Signature.getInstance(javaAlgorithm);
+        }
     }
 
     @Override

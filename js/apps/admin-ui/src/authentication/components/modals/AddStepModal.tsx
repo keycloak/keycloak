@@ -1,4 +1,5 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { PaginatingTableToolbar, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -10,11 +11,9 @@ import {
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { useFetch } from "../../../utils/useFetch";
+import { useAdminClient } from "../../../admin-client";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { providerConditionFilter } from "../../FlowDetails";
-import { useAdminClient } from "../../../admin-client";
 
 type AuthenticationProviderListProps = {
   list?: AuthenticationProviderRepresentation[];

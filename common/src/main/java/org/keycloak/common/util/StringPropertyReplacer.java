@@ -101,12 +101,7 @@ public final class StringPropertyReplacer
         if (props == null) {
             return replaceProperties(string, (PropertyResolver) null);
         }
-        return replaceProperties(string, new PropertyResolver() {
-            @Override
-            public String resolve(String property) {
-                return props.getProperty(property);
-            }
-        });
+        return replaceProperties(string, props::getProperty);
     }
 
     public static String replaceProperties(final String string, PropertyResolver resolver)
@@ -247,29 +242,6 @@ public final class StringPropertyReplacer
         
         // Done
         return buffer.toString();
-    }
-
-    /**
-     * Try to resolve a "key" from the provided properties by
-     * checking if it is actually a "key1,key2", in which case
-     * try first "key1", then "key2". If all fails, return null.
-     *
-     * It also accepts "key1," and ",key2".
-     *
-     * @param key the key to resolve
-     * @param props the properties to use
-     * @return the resolved key or null
-     */
-    private static String resolveCompositeKey(String key, final Properties props) {
-        if (props == null) {
-            return resolveCompositeKey(key, (PropertyResolver) null);
-        }
-        return resolveCompositeKey(key, new PropertyResolver() {
-            @Override
-            public String resolve(String property) {
-                return props.getProperty(property);
-            }
-        });        
     }
 
     private static String resolveCompositeKey(String key, PropertyResolver resolver)

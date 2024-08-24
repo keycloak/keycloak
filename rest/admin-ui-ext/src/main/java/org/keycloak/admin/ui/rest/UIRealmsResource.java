@@ -55,9 +55,8 @@ public class UIRealmsResource {
                                                      @QueryParam("search") @DefaultValue("") String search) {
         final RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
 
-        return session.realms().getRealmsStream()
+        return session.realms().getRealmsStream(search)
                 .filter(realm -> eval.canView(realm) || eval.isAdmin(realm))
-                .filter(realm -> search.isEmpty() || realm.getName().toLowerCase().contains(search.trim().toLowerCase()))
                 .skip(first)
                 .limit(max)
                 .map((RealmModel realm) -> new RealmNameRepresentation(realm.getName(), realm.getDisplayName()));

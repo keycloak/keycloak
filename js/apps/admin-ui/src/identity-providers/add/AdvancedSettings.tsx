@@ -6,6 +6,7 @@ import {
   KeycloakSelect,
   SelectControl,
   SelectVariant,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   FormGroup,
@@ -18,7 +19,6 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
@@ -150,7 +150,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label="accountLinkingOnly"
         fieldType="boolean"
       />
-      <SwitchField field="config.hideOnLoginPage" label="hideOnLoginPage" />
+      <SwitchField
+        field="hideOnLogin"
+        label="hideOnLoginPage"
+        fieldType="boolean"
+      />
 
       {(!isSAML || isOIDC) && (
         <FormGroupField label="filteredByClaim">

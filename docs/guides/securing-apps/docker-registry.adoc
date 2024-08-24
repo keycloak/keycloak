@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Docker registry"
-priority=40
+priority=90
 summary="Configuring a Docker registry to use {project_name}">
 
 NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.

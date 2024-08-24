@@ -53,7 +53,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/> <!--2-->
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -77,7 +77,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -100,7 +100,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -123,7 +123,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -146,7 +146,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -169,7 +169,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -199,7 +199,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
@@ -235,7 +235,7 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
-                    <remote-server host="localhost"
+                    <remote-server host="127.0.0.1"
                                    port="11222"/>
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>

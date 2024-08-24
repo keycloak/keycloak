@@ -39,7 +39,6 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -158,18 +157,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected String defaultRoleId;
     private boolean allowUserManagedAccess;
 
-    public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
-        return identityProviderMapperSet;
-    }
-
     protected List<String> defaultGroups;
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
-    protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
-    protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
 
     protected Map<String, String> attributes;
 
@@ -244,13 +237,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         requiredCredentials = model.getRequiredCredentialsStream().collect(Collectors.toList());
         userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
-
-        this.identityProviderMapperSet = model.getIdentityProviderMappersStream().collect(Collectors.toSet());
-        for (IdentityProviderMapperModel mapper : identityProviderMapperSet) {
-            identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
-        }
-
-
 
         smtpConfig = model.getSmtpConfig();
         browserSecurityHeaders = model.getBrowserSecurityHeaders();
@@ -615,10 +601,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public String getDefaultLocale() {
         return defaultLocale;
-    }
-
-    public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers() {
-        return identityProviderMappers;
     }
 
     public Map<String, AuthenticationFlowModel> getAuthenticationFlows() {

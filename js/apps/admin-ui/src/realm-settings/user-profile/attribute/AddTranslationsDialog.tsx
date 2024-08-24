@@ -1,4 +1,8 @@
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import {
+  PaginatingTableToolbar,
+  TextControl,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Flex,
@@ -18,12 +22,10 @@ import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
-import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { localeToDisplayName } from "../../../util";
-import { useFetch } from "../../../utils/useFetch";
 import useLocale from "../../../utils/useLocale";
 
 export type TranslationsType =

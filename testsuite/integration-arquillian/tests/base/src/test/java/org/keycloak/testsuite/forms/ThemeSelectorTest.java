@@ -12,9 +12,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
 
-    // At this moment, the default login theme as defined in ThemeSelectorProvider is "keycloak".
-    // Once the ThemeSelectorProvider.DEFAULT_V2 becomes default, this needs to be reflected in this constant.
-    private static final String SYSTEM_DEFAULT_LOGIN_THEME = ThemeSelectorProvider.DEFAULT;
+    private static final String SYSTEM_DEFAULT_LOGIN_THEME = ThemeSelectorProvider.DEFAULT_V2;
 
     @Page
     protected LoginPage loginPage;

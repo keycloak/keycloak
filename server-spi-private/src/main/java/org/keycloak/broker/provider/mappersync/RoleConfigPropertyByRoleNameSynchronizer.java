@@ -18,6 +18,7 @@
 package org.keycloak.broker.provider.mappersync;
 
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -47,6 +48,11 @@ public class RoleConfigPropertyByRoleNameSynchronizer
     @Override
     public RealmModel extractRealm(RoleModel.RoleNameChangeEvent event) {
         return event.getRealm();
+    }
+
+    @Override
+    public KeycloakSession getKeycloakSession(RoleModel.RoleNameChangeEvent event) {
+        return event.getKeycloakSession();
     }
 
     @Override

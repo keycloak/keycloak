@@ -78,6 +78,12 @@
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-tests-base</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-quarkus-server</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
@@ -103,6 +109,11 @@
             <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql-jdbc.version}</version>
@@ -112,6 +123,10 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-component-annotations</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-remote-query-server</artifactId>
         </dependency>
     </dependencies>
 
@@ -209,30 +224,10 @@
         </profile>
 
         <profile>
-            <id>jpa+infinispan+persistentsessions</id>
+            <id>jpa+infinispan+volatilesessions</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,Jpa,VolatileUserSessions</keycloak.model.parameters>
             </properties>
-        </profile>
-
-        <profile>
-            <id>jpa+cross-dc-infinispan+persistentsessions</id>
-            <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>

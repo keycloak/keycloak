@@ -168,7 +168,12 @@ export const UserForm = ({
             }}
             canBrowse={isManager}
             onConfirm={(groups) => {
-              user?.id ? addGroups(groups || []) : addChips(groups || []);
+              if (user?.id) {
+                addGroups(groups || []);
+              } else {
+                addChips(groups || []);
+              }
+
               setOpen(false);
             }}
             onClose={() => setOpen(false)}
@@ -203,7 +208,7 @@ export const UserForm = ({
           label="requiredUserActions"
           help="requiredUserActionsHelp"
         />
-        {(user?.federationLink || user?.origin) && canViewFederationLink && (
+        {user?.federationLink && canViewFederationLink && (
           <FormGroup
             label={t("federationLink")}
             labelIcon={

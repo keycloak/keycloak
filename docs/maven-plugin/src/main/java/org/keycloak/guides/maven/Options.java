@@ -50,6 +50,7 @@ public class Options {
                         m.getDescription(),
                         m.getDefaultValue().map(Object::toString).orElse(null),
                         m.getExpectedValues(),
+                        m.isStrictExpectedValues(),
                         m.getEnabledWhen().orElse(""),
                         m.getDeprecatedMetadata().orElse(null)))
                 .forEach(o -> options.computeIfAbsent(o.category, k -> new TreeSet<>(Comparator.comparing(Option::getKey))).add(o));
@@ -76,6 +77,7 @@ public class Options {
                                 m.getHelpText(),
                                 m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
                                 m.getOptions() == null ? Collections.emptyList() : m.getOptions(),
+                                true,
                                 "",
                                 null))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
@@ -169,6 +171,9 @@ public class Options {
         private String description;
         private final String defaultValue;
         private List<String> expectedValues;
+
+        private final boolean strictExpectedValues;
+
         private final String enabledWhen;
         private final DeprecatedMetadata deprecated;
 
@@ -179,6 +184,7 @@ public class Options {
                       String description,
                       String defaultValue,
                       Iterable<String> expectedValues,
+                      boolean strictExpectedValues,
                       String enabledWhen,
                       DeprecatedMetadata deprecatedMetadata) {
             this.key = key;
@@ -188,6 +194,7 @@ public class Options {
             this.description = description;
             this.defaultValue = defaultValue;
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
+            this.strictExpectedValues = strictExpectedValues;
             this.enabledWhen = enabledWhen;
             this.deprecated = deprecatedMetadata;
         }
@@ -237,6 +244,10 @@ public class Options {
 
         public List<String> getExpectedValues() {
             return expectedValues;
+        }
+
+        public boolean isStrictExpectedValues() {
+            return strictExpectedValues;
         }
 
         public String getEnabledWhen() {

@@ -74,3 +74,22 @@ export { generateId } from "./utils/generateId";
 export { default as KeycloakMasthead } from "./masthead/Masthead";
 export { KeycloakSelect } from "./select/KeycloakSelect";
 export type { Variant, KeycloakSelectProps } from "./select/KeycloakSelect";
+export { KeycloakDataTable } from "./controls/table/KeycloakDataTable";
+export type {
+  Action,
+  Field,
+  DetailField,
+  LoaderFunction,
+} from "./controls/table/KeycloakDataTable";
+export { PaginatingTableToolbar } from "./controls/table/PaginatingTableToolbar";
+export { TableToolbar } from "./controls/table/TableToolbar";
+export { ListEmptyState } from "./controls/table/ListEmptyState";
+export { KeycloakSpinner } from "./controls/KeycloakSpinner";
+export { useFetch } from "./utils/useFetch";
+export {
+  useErrorBoundary,
+  ErrorBoundaryFallback,
+  ErrorBoundaryProvider,
+} from "./utils/ErrorBoundary";
+export type { FallbackProps } from "./utils/ErrorBoundary";
+export { OrganizationTable } from "./controls/OrganizationTable";

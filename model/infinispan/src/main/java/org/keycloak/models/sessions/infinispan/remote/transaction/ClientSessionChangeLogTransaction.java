@@ -17,23 +17,50 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import java.util.UUID;
+import java.util.stream.Stream;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.keycloak.models.sessions.infinispan.changes.remote.remover.iteration.ByRealmIdConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ClientSessionQueryConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 
 /**
  * Syntactic sugar for
  * {@code RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater,
  * UserAndClientSessionConditionalRemover<AuthenticatedClientSessionEntity>>}
  */
-public class ClientSessionChangeLogTransaction extends RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater, ByRealmIdConditionalRemover<UUID, AuthenticatedClientSessionEntity>> {
+public class ClientSessionChangeLogTransaction extends RemoteChangeLogTransaction<ClientSessionKey, RemoteAuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater, ClientSessionQueryConditionalRemover> {
 
-    public ClientSessionChangeLogTransaction(UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> factory, RemoteCache<UUID, AuthenticatedClientSessionEntity> cache) {
-        super(factory, cache, new ByRealmIdConditionalRemover<>());
+    public ClientSessionChangeLogTransaction(UpdaterFactory<ClientSessionKey, RemoteAuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> factory, SharedState<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> sharedState) {
+        super(factory, sharedState, new ClientSessionQueryConditionalRemover());
     }
 
+    /**
+     * Wraps a Query project results, where the first argument is the entity, and the second the version.
+     */
+    public void wrapFromProjection(Object[] projection) {
+        assert projection.length == 2;
+        RemoteAuthenticatedClientSessionEntity entity = (RemoteAuthenticatedClientSessionEntity) projection[0];
+        wrap(entity.createCacheKey(), entity, (long) projection[1]);
+    }
+
+    /**
+     * Remove all client sessions belonging to the user session.
+     */
+    public void removeByUserSessionId(String userSessionId) {
+        getConditionalRemover().removeByUserSessionId(userSessionId);
+        // make cached entities as deleted too
+        getClientSessions()
+                .filter(getConditionalRemover()::willRemove)
+                .forEach(BaseUpdater::markDeleted);
+    }
+
+    /**
+     * @return A stream with all currently cached {@link AuthenticatedClientSessionUpdater} in this transaction.
+     */
+    public Stream<AuthenticatedClientSessionUpdater> getClientSessions() {
+        return getCachedEntities().values().stream();
+    }
 }

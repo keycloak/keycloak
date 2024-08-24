@@ -30,7 +30,7 @@ public class DisclosureRedList {
     private final Set<SdJwtClaimName> redListClaimNames;
     public static final DisclosureRedList defaultList = defaultList();
 
-    public DisclosureRedList of(Set<SdJwtClaimName> redListClaimNames) {
+    public static DisclosureRedList of(Set<SdJwtClaimName> redListClaimNames) {
         return new DisclosureRedList(redListClaimNames);
     }
 

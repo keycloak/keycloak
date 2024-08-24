@@ -12,7 +12,7 @@ export const NewRoleRoute: AppRouteObject = {
   element: <CreateClientRole />,
   breadcrumb: (t) => t("createRole"),
   handle: {
-    access: "manage-clients",
+    access: "query-clients",
   },
 };
 

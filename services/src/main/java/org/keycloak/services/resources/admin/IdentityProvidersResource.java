@@ -55,9 +55,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.utils.StringUtil;
+
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -179,18 +183,28 @@ public class IdentityProvidersResource {
             @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
-            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+            @Parameter(description = "Boolean which defines if only realm-level IDPs (not associated with orgs) should be returned (default: false)") @QueryParam("realmOnly") Boolean realmOnly) {
         this.auth.realm().requireViewIdentityProviders();
 
         if (maxResults == null) {
             maxResults = 100; // always set a maximum of 100 by default
         }
 
-        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
+        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
                 : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 
-        return session.identityProviders().getAllStream(search, firstResult, maxResults).map(toRepresentation);
+        boolean searchRealmOnlyIDPs = Optional.ofNullable(realmOnly).orElse(false);
+
+        Map<String, String> searchOptions = new HashMap<>();
+        if (StringUtil.isNotBlank(search)) {
+            searchOptions.put(IdentityProviderModel.SEARCH, search);
+        }
+        if (searchRealmOnlyIDPs) {
+            searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, null);
+        }
+        return session.identityProviders().getAllStream(searchOptions, firstResult, maxResults).map(toRepresentation);
     }
 
     /**
@@ -211,9 +225,10 @@ public class IdentityProvidersResource {
 
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
-            this.realm.addIdentityProvider(identityProvider);
+            session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
+            representation.setHideOnLogin(identityProvider.isHideOnLogin()); // update in case of legacy hide on login attr was used.
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
                     .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
 
@@ -234,14 +249,12 @@ public class IdentityProvidersResource {
     @Path("instances/{alias}")
     public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderModel identityProviderModel =  this.realm.getIdentityProvidersStream()
-                .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
-                .findFirst().orElse(null);
+        IdentityProviderModel identityProviderModel = session.identityProviders().getByIdOrAlias(alias);
 
         return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
-    private IdentityProviderFactory getProviderFactoryById(String providerId) {
+    private IdentityProviderFactory<?> getProviderFactoryById(String providerId) {
         return getProviderFactories()
                 .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
                 .map(IdentityProviderFactory.class::cast)

@@ -18,76 +18,89 @@
 package org.keycloak.organization.forms.login.freemarker.model;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
+import org.keycloak.models.IDPProvider;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.organization.utils.Organizations;
 
 public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean {
 
-    private final KeycloakSession session;
-    private final List<IdentityProvider> providers;
+    private final OrganizationModel organization;
+    private final boolean onlyRealmBrokers;
+    private final boolean onlyOrganizationBrokers;
 
-    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, KeycloakSession session, boolean onlyOrganizationBrokers) {
-        this(delegate, session, onlyOrganizationBrokers, false);
+    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate) {
+        this(delegate, false);
     }
 
-    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, KeycloakSession session, boolean onlyOrganizationBrokers, boolean onlyRealmBrokers) {
-        this.session = session;
+    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate,  boolean onlyOrganizationBrokers) {
+        this(delegate, onlyOrganizationBrokers, false);
+    }
+
+    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, boolean onlyOrganizationBrokers, boolean onlyRealmBrokers) {
+        super(delegate.getSession(), delegate.getRealm(), delegate.getBaseURI(), delegate.getFlowContext());
+        this.organization = Organizations.resolveOrganization(super.session);
+        this.onlyRealmBrokers = onlyRealmBrokers;
+        this.onlyOrganizationBrokers = onlyOrganizationBrokers;
+    }
+
+    @Override
+    protected List<IdentityProvider> searchForIdentityProviders(String existingIDP) {
         if (onlyRealmBrokers) {
-            providers = Optional.ofNullable(delegate.getProviders()).orElse(List.of()).stream()
-                    .filter(Predicate.not(this::isPublicOrganizationBroker))
-                    .toList();
-        } else if (onlyOrganizationBrokers) {
-            providers = Optional.ofNullable(delegate.getProviders()).orElse(List.of()).stream()
-                    .filter(this::isPublicOrganizationBroker)
-                    .toList();
-        } else {
-            providers = Optional.ofNullable(delegate.getProviders()).orElse(List.of()).stream()
-                    .filter(p -> isRealmBroker(p) || isPublicOrganizationBroker(p))
-                    .toList();
+            // we only want the realm-level IDPs - i.e. those not associated with any orgs.
+            return session.identityProviders().getForLogin(IDPProvider.FetchMode.REALM_ONLY, null)
+                    .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                    .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
+                    .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
-    }
-    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, KeycloakSession session) {
-        this(delegate, session, false);
+        if (onlyOrganizationBrokers) {
+            // we already have the organization, just fetch the organization's public enabled IDPs.
+            if (this.organization != null) {
+                return organization.getIdentityProviders()
+                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin()
+                                && Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.BROKER_PUBLIC)))
+                        .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                        .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
+                        .sorted(IDP_COMPARATOR_INSTANCE).toList();
+            }
+            // we don't have a specific organization - fetch public enabled IDPs linked to any org.
+            return session.identityProviders().getForLogin(IDPProvider.FetchMode.ORG_ONLY, null)
+                    .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                    .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
+                    .sorted(IDP_COMPARATOR_INSTANCE).toList();
+        }
+        return session.identityProviders().getForLogin(IDPProvider.FetchMode.ALL, this.organization != null ? this.organization.getId() : null)
+                .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
+                .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }
 
     @Override
-    public List<IdentityProvider> getProviders() {
-        return providers;
+    protected Predicate<IdentityProviderModel> federatedProviderPredicate() {
+        // use the predicate from the superclass combined with the organization filter.
+        return super.federatedProviderPredicate().and(idp -> {
+            if (onlyRealmBrokers) {
+                return idp.getOrganizationId() == null;
+            } else if (onlyOrganizationBrokers) {
+                return isPublicOrganizationBroker(idp);
+            } else {
+                return idp.getOrganizationId() == null || isPublicOrganizationBroker(idp);
+            }
+        });
     }
 
-    @Override
-    public boolean isDisplayInfo() {
-        return !providers.isEmpty();
-    }
+    private boolean isPublicOrganizationBroker(IdentityProviderModel idp) {
 
-    private boolean isPublicOrganizationBroker(IdentityProvider idp) {
-        RealmModel realm = session.getContext().getRealm();
-        IdentityProviderModel model = realm.getIdentityProviderByAlias(idp.getAlias());
-
-        if (model.getOrganizationId() == null) {
+        if (idp.getOrganizationId() == null) {
             return false;
         }
-
-        OrganizationModel organization = Organizations.resolveOrganization(session);
-
-        if (organization != null && !organization.getId().equals(model.getOrganizationId())) {
+        if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
             return false;
         }
-
-        return Boolean.parseBoolean(model.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString()));
-    }
-
-    private boolean isRealmBroker(IdentityProvider idp) {
-        RealmModel realm = session.getContext().getRealm();
-        IdentityProviderModel model = realm.getIdentityProviderByAlias(idp.getAlias());
-
-        return model.getOrganizationId() == null;
+        return Boolean.parseBoolean(idp.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString()));
     }
 }

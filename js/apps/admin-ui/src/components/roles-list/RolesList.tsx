@@ -1,18 +1,18 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, useAlerts } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { translationFormatter } from "../../clients/ClientsSection";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { translationFormatter } from "../../utils/translationFormatter";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 
 import "./RolesList.css";
 
@@ -30,13 +30,21 @@ const RoleDetailLink = ({
 }: RoleDetailLinkProps) => {
   const { t } = useTranslation(messageBundle);
   const { realm } = useRealm();
+  const { hasAccess, hasSomeAccess } = useAccess();
+  const canViewUserRegistration =
+    hasAccess("view-realm") && hasSomeAccess("view-clients", "manage-clients");
+
   return role.name !== defaultRoleName ? (
     <Link to={toDetail(role.id!)}>{role.name}</Link>
   ) : (
     <>
-      <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
-        {role.name}{" "}
-      </Link>
+      {canViewUserRegistration ? (
+        <Link to={toRealmSettings({ realm, tab: "user-registration" })}>
+          {role.name}
+        </Link>
+      ) : (
+        <span>{role.name}</span>
+      )}
       <HelpItem
         helpText={t(`${messageBundle}:defaultRole`)}
         fieldLabelId="defaultRole"
@@ -124,7 +132,7 @@ export const RolesList = ({
         }
         actions={
           isReadOnly
-            ? []
+            ? undefined
             : [
                 {
                   title: t("delete"),

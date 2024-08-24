@@ -1,7 +1,8 @@
 <#macro expectedValues option>
-<#list ctx.options.getOption(option).expectedValues as expectedValue>
-* ${expectedValue}
-</#list>
+    <#assign optionObj = ctx.options.getOption(option) />
+    <#list optionObj.expectedValues as expectedValue>
+        * ${expectedValue} <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if>
+    </#list>
 </#macro>
 
 <#macro list options buildIcon=true anchor=true>
@@ -39,7 +40,7 @@ ${option.deprecated.note!}<#if option.deprecated.newOptionsKeys?has_content><#if
 </#if>
 
 |<#if option.expectedValues?has_content>
-<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list>
+<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list><#if !option.strictExpectedValues>, or any</#if>
 <#else>
 <#if option.defaultValue?has_content>[.options-default]#`+${option.defaultValue!}+`# (default)</#if><#if option.type?has_content && option.defaultValue?has_content> or </#if><#if option.type?has_content && !option.expectedValues?has_content>any `+${option.type!}+`</#if>
 </#if>

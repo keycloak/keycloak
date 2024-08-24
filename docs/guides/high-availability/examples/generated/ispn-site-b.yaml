@@ -23,7 +23,6 @@ data:
       cacheContainer:
         metrics:
           namesAsTags: true
-          gauges: true
           histograms: false
       server:
         endpoints:
@@ -138,16 +137,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-actionTokens[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -165,17 +172,25 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-authenticationSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -193,17 +208,25 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-clientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -221,16 +244,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-loginFailures[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -248,17 +279,25 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-offlineClientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -276,17 +315,25 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-offlineSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -304,17 +351,25 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
-        mergePolicy: ALWAYS_REMOVE # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-sessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -332,16 +387,24 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
-      remoteTimeout: 14000
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NONE"
+        locking: "PESSIMISTIC"
       stateTransfer:
-        chunkSize: 16
+        chunkSize: "16"
       backups:
         site-a: # <2>
           backup:
             strategy: "SYNC" # <3>
-            timeout: 13000
+            timeout: "4500"
+            failurePolicy: "WARN"
             stateTransfer:
-              chunkSize: 16
+              chunkSize: "16"
 # end::infinispan-cache-work[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -356,6 +419,8 @@ metadata:
     infinispan.org/monitoring: 'true' # <2>
 spec:
   replicas: 3
+  jmx:
+    enabled: true
 # end::infinispan-single[]
 # end::infinispan-crossdc[]
   # This exposes the http endpoint to interact with its caches - more info - https://infinispan.org/docs/stable/titles/rest/rest.html
@@ -363,7 +428,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.5.Final
+  image: quay.io/infinispan-test/server:15.0.x
+  version: 15.0.4
   configListener:
     enabled: false
   container:

@@ -204,6 +204,30 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void createClientResponseTypeNone() throws ClientRegistrationException {
+        OIDCClientRepresentation client = createRep();
+        client.setResponseTypes(List.of("none"));
+        OIDCClientRepresentation response = reg.oidc().create(client);
+
+        assertNotNull(response.getRegistrationAccessToken());
+        assertNotNull(response.getClientIdIssuedAt());
+        assertNotNull(response.getClientId());
+        assertNotNull(response.getClientSecret());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
+        assertEquals("RegistrationAccessTokenTest", response.getClientName());
+        assertEquals("http://root", response.getClientUri());
+        assertEquals(1, response.getRedirectUris().size());
+        assertEquals("http://redirect", response.getRedirectUris().get(0));
+        assertEquals(List.of("code", "none"), response.getResponseTypes());
+        assertEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes());
+        assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
+        Assert.assertNull(response.getUserinfoSignedResponseAlg());
+        assertEquals("http://frontchannel", response.getFrontChannelLogoutUri());
+        assertTrue(response.getFrontchannelLogoutSessionRequired());
+    }
+
+    @Test
     public void updateClientError() throws ClientRegistrationException {
         try {
             OIDCClientRepresentation response = create();

@@ -545,7 +545,7 @@ public abstract class KeycloakModelTest {
         KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
     }
 
-    protected <T> Stream<T> getParameters(Class<T> clazz) {
+    protected static <T> Stream<T> getParameters(Class<T> clazz) {
         return MODEL_PARAMETERS.stream().flatMap(mp -> mp.getParameters(clazz)).filter(Objects::nonNull);
     }
 
@@ -600,6 +600,13 @@ public abstract class KeycloakModelTest {
             return what.apply(session, realm);
         });
     }
+
+   protected void withRealmConsumer(String realmId, BiConsumer<KeycloakSession, RealmModel> what) {
+       withRealm(realmId, (session, realm) -> {
+          what.accept(session, realm);
+          return null;
+       });
+   }
 
     protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
         return false;

@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -46,7 +47,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ClientScopeDecorator;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -59,6 +62,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
@@ -82,7 +86,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserConsentManager;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.util.AuthorizationContextUtil;
@@ -189,7 +192,7 @@ public class TokenManager {
 
         // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
         if (clientSession == null) {
-            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSession.getId(), offline, client.getId());
+            userSession = session.sessions().getUserSessionIfClientExists(realm, userSession.getId(), offline, client.getId());
             if (userSession != null) {
                 clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             } else {
@@ -393,7 +396,9 @@ public class TokenManager {
         //if scope parameter is not null, remove every scope that is not part of scope parameter
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
-            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc))
+            oldTokenScope = Arrays.stream(oldTokenScope.split(" "))
+                    .map(transformScopes(scopeParamScopes))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
 
@@ -433,6 +438,21 @@ public class TokenManager {
         }
 
         return responseBuilder;
+    }
+
+    private Function<String, String> transformScopes(Set<String> requestedScopes) {
+        return scope -> {
+            if (requestedScopes.contains(scope)) {
+                return scope;
+            }
+
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                OrganizationScope oldScope = OrganizationScope.valueOfScope(scope);
+                return oldScope == null ? null : oldScope.resolveName(requestedScopes, scope);
+            }
+
+            return null;
+        };
     }
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
@@ -573,23 +593,26 @@ public class TokenManager {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (clientSession != null && !AuthenticationManager.isClientSessionValid(userSession.getRealm(), client, userSession, clientSession)) {
+        RealmModel realm = userSession.getRealm();
+        if (clientSession != null && !AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
             // session exists but not active so re-start it
             clientSession.restartClientSession();
         } else if (clientSession == null) {
-            clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
+            clientSession = session.sessions().createClientSession(realm, client, userSession);
         }
 
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
 
-        Set<String> clientScopeIds;
+        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
+        Set<ClientScopeModel> clientScopes;
+
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
-                    .map(ClientScopeModel::getId)
+            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
                     .collect(Collectors.toSet());
         } else {
-            clientScopeIds = authSession.getClientScopes();
+            clientScopes = getRequestedClientScopes(session, scopeParam, client, userSession.getUser())
+                    .collect(Collectors.toSet());
         }
 
         Map<String, String> transferredNotes = authSession.getClientNotes();
@@ -605,10 +628,9 @@ public class TokenManager {
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(session, authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
         clientSession.setTimestamp(userSession.getLastSessionRefresh());
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
-        new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(userSession.getRealm(), authSession);
+        new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(realm, authSession);
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
-        return clientSessionCtx;
+        return DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, session);
     }
 
 
@@ -660,7 +682,7 @@ public class TokenManager {
 
 
     /** Return client itself + all default client scopes of client + optional client scopes requested by scope parameter **/
-    public static Stream<ClientScopeModel> getRequestedClientScopes(String scopeParam, ClientModel client) {
+    public static Stream<ClientScopeModel> getRequestedClientScopes(KeycloakSession session, String scopeParam, ClientModel client, UserModel user) {
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
                 client.getClientScopes(true).values().stream(),
@@ -671,9 +693,34 @@ public class TokenManager {
         }
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
+
         // Add optional client scopes requested by scope parameter
-        return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
+        return Stream.concat(parseScopeParameter(scopeParam)
+                        .map(name -> {
+                            ClientScopeModel scope = allOptionalScopes.get(name);
+
+                            if (scope != null) {
+                                return scope;
+                            }
+
+                            return tryResolveDynamicClientScope(session, scopeParam, client, user, name);
+                        })
+                        .filter(Objects::nonNull),
                 clientScopes).distinct();
+    }
+
+    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, String name) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            OrganizationScope orgScope = OrganizationScope.valueOfScope(scopeParam);
+
+            if (orgScope == null) {
+                return null;
+            }
+
+            return orgScope.toClientScope(name, user, session);
+        }
+
+        return null;
     }
 
     /**
@@ -684,59 +731,49 @@ public class TokenManager {
      * @param client
      * @return
      */
-    public static boolean isValidScope(String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+    public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client, UserModel user) {
         if (scopes == null) {
             return true;
         }
-        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
-        Set<String> rarScopes = authorizationRequestContext.getAuthorizationDetailEntries()
-                .stream()
-                .map(AuthorizationDetails::getAuthorizationDetails)
-                .map(AuthorizationDetailsJSONRepresentation::getScopeNameFromCustomData)
-                .collect(Collectors.toSet());
+
+        Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
         if (TokenUtil.isOIDCRequest(scopes)) {
-            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+            rawScopes.remove(OAuth2Constants.SCOPE_OPENID);
         }
 
-        if ((authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) && requestedScopes.size()>0) {
-            return false;
+        if (rawScopes.isEmpty()) {
+            return true;
+        }
+
+        Set<String> clientScopes;
+
+        if (authorizationRequestContext == null) {
+            // only true when dynamic scopes feature is enabled
+            clientScopes = getRequestedClientScopes(session, scopes, client, user)
+                    .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
+                    .map(ClientScopeModel::getName)
+                    .collect(Collectors.toSet());
+        } else {
+            List<AuthorizationDetails> details = Optional.ofNullable(authorizationRequestContext.getAuthorizationDetailEntries()).orElse(List.of());
+
+            clientScopes = details
+                    .stream()
+                    .map(AuthorizationDetails::getAuthorizationDetails)
+                    .map(AuthorizationDetailsJSONRepresentation::getScopeNameFromCustomData)
+                    .collect(Collectors.toSet());
         }
 
         if (logger.isTraceEnabled()) {
-            logger.tracef("Rar scopes to validate requested scopes against: %1s", String.join(" ", rarScopes));
-            logger.tracef("Requested scopes: %1s", String.join(" ", requestedScopes));
+            logger.tracef("Scopes to validate requested scopes against: %1s", String.join(" ", clientScopes));
+            logger.tracef("Requested scopes: %1s", String.join(" ", rawScopes));
         }
 
-        for (String requestedScope : requestedScopes) {
-            // We keep the check to the getDynamicClientScope for the OpenshiftSAClientAdapter
-            if (!rarScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isValidScope(String scopes, ClientModel client) {
-        if (scopes == null) {
-            return true;
-        }
-
-        Set<String> clientScopes = getRequestedClientScopes(scopes, client)
-                .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
-                .map(ClientScopeModel::getName)
-                .collect(Collectors.toSet());
-        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
-
-        if (TokenUtil.isOIDCRequest(scopes)) {
-            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
-        }
-
-        if (!requestedScopes.isEmpty() && clientScopes.isEmpty()) {
+        if (clientScopes.isEmpty()) {
             return false;
         }
 
-        for (String requestedScope : requestedScopes) {
+        for (String requestedScope : rawScopes) {
             // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
                 return false;
@@ -744,6 +781,10 @@ public class TokenManager {
         }
 
         return true;
+    }
+
+    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
+        return isValidScope(session, scopes, null, client, user);
     }
 
     public static Stream<String> parseScopeParameter(String scopeParam) {
@@ -1472,7 +1513,7 @@ public class TokenManager {
 
     private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
         try {
-            return realm.getIdentityProvidersStream()
+            return session.identityProviders().getAllStream()
                     .map(idpModel ->
                         IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel))
                     .filter(OIDCIdentityProvider.class::isInstance)

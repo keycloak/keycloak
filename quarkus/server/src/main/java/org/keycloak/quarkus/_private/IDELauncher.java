@@ -29,6 +29,18 @@ import io.quarkus.runtime.Quarkus;
 public class IDELauncher {
 
     public static void main(String[] args) {
+        if (System.getProperty("java.util.logging.manager") == null) {
+            System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        }
+
+        if (System.getProperty("picocli.disable.closures") == null) {
+            System.setProperty("picocli.disable.closures", "true");
+        }
+
+        if (System.getProperty("java.util.concurrent.ForkJoinPool.common.threadFactory") == null) {
+            System.setProperty("java.util.concurrent.ForkJoinPool.common.threadFactory", "io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory");
+        }
+
         List<String> devArgs = new ArrayList<>(Picocli.parseArgs(args));
 
         if (System.getProperty("kc.home.dir") == null) {

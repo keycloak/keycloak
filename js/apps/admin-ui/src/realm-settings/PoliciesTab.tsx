@@ -1,4 +1,10 @@
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
+import {
+  Action,
+  KeycloakDataTable,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   AlertVariant,
@@ -19,18 +25,12 @@ import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { translationFormatter } from "../clients/ClientsSection";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
-import { useFetch } from "../utils/useFetch";
+import { translationFormatter } from "../utils/translationFormatter";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toClientPolicies } from "./routes/ClientPolicies";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
@@ -78,9 +78,9 @@ export const PoliciesTab = () => {
 
       const allClientPolicies = globalPolicies?.concat(policies ?? []);
 
-      setPolicies(allClientPolicies),
-        setTablePolicies(allClientPolicies || []),
-        setCode(prettyPrintJSON(allClientPolicies));
+      setPolicies(allClientPolicies);
+      setTablePolicies(allClientPolicies || []);
+      setCode(prettyPrintJSON(allClientPolicies));
     },
     [key],
   );

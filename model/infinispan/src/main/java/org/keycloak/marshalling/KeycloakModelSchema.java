@@ -17,9 +17,17 @@
 
 package org.keycloak.marshalling;
 
+import java.util.Objects;
+import java.util.Optional;
+
+import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.ProtoSchema;
 import org.infinispan.protostream.annotations.ProtoSyntax;
+import org.infinispan.protostream.config.Configuration;
+import org.infinispan.protostream.descriptors.Descriptor;
+import org.infinispan.protostream.descriptors.FileDescriptor;
+import org.infinispan.protostream.impl.parser.ProtostreamProtoParser;
 import org.infinispan.protostream.types.java.CommonTypes;
 import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
@@ -40,6 +48,7 @@ import org.keycloak.models.cache.infinispan.authorization.stream.InResourcePredi
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourceServerPredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicate;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientScopeAddedEvent;
@@ -49,7 +58,6 @@ import org.keycloak.models.cache.infinispan.events.GroupAddedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
-import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
@@ -74,8 +82,11 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
@@ -92,7 +103,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
 
 @ProtoSchema(
         syntax = ProtoSyntax.PROTO3,
-        schemaPackageName = "keycloak",
+        schemaPackageName = Marshalling.PROTO_SCHEMA_PACKAGE,
         schemaFilePath = "proto/generated",
         allowNullFields = true,
 
@@ -191,8 +202,11 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 AuthenticatedClientSessionStore.class,
                 AuthenticatedClientSessionEntity.class,
                 AuthenticationSessionEntity.class,
+                ClientSessionKey.class,
                 LoginFailureEntity.class,
                 LoginFailureKey.class,
+                RemoteAuthenticatedClientSessionEntity.class,
+                RemoteUserSessionEntity.class,
                 RootAuthenticationSessionEntity.class,
                 SingleUseObjectValueEntity.class,
                 UserSessionEntity.class,
@@ -203,5 +217,23 @@ public interface KeycloakModelSchema extends GeneratedSchema {
 
     KeycloakModelSchema INSTANCE = new KeycloakModelSchemaImpl();
 
+    /**
+     * Parses a Google Protocol Buffers schema file.
+     */
+    static FileDescriptor parseProtoSchema(String fileContent) {
+        var files = FileDescriptorSource.fromString("a", fileContent);
+        var builder = Configuration.builder();
+        KeycloakIndexSchemaUtil.configureAnnotationProcessor(builder);
+        var parser = new ProtostreamProtoParser(builder.build());
+        return parser.parse(files).get("a");
+    }
 
+    /**
+     * Finds an entity in a Google Protocol Buffers schema file
+     */
+    static Optional<Descriptor> findEntity(FileDescriptor fileDescriptor, String entity) {
+        return fileDescriptor.getMessageTypes().stream()
+                .filter(descriptor -> Objects.equals(entity, descriptor.getFullName()))
+                .findFirst();
+    }
 }

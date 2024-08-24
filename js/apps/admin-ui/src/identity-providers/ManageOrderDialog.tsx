@@ -1,4 +1,5 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -22,9 +23,7 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../utils/useFetch";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 
 type ManageOrderDialogProps = {
   onClose: () => void;

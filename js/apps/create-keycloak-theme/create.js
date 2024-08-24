@@ -10,7 +10,12 @@ import { join, resolve, dirname } from "node:path";
 import { simpleGit } from "simple-git";
 import { fileURLToPath } from "url";
 
-const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+const packageJson = JSON.parse(
+  fs.readFileSync(
+    join(fileURLToPath(import.meta.url), "..", "package.json"),
+    "utf8",
+  ),
+);
 
 function main() {
   new Command(packageJson.name)
@@ -101,7 +106,7 @@ function done(appName) {
   console.log("Inside that directory, you can run several commands:");
   console.log();
   console.log(chalk.cyan(`  npm run start-keycloak`));
-  console.log("    Downloads and starts a keycloak server.");
+  console.log("    Download and starts a keycloak server.");
   console.log();
   console.log(chalk.cyan(`  npm run dev`));
   console.log("    Starts development server.");
@@ -117,6 +122,7 @@ function done(appName) {
   console.log("We suggest that you begin by typing:");
   console.log();
   console.log(chalk.cyan("  cd"), appName);
+  console.log(`  ${chalk.cyan(`npm install`)}`);
   console.log(`  ${chalk.cyan(`npm run start-keycloak &`)}`);
   console.log();
   console.log(`  ${chalk.cyan(`npm run dev`)}`);

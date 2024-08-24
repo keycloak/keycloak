@@ -24,7 +24,9 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -36,20 +38,10 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    void testHealthEndpointNotEnabled() {
+    void testHealthEndpointNotEnabled(KeycloakDistribution distribution) {
+        assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");
+        distribution.setRequestPort(8080);
         when().get("/health").then()
-                .statusCode(404);
-        when().get("/q/health").then()
-                .statusCode(404);
-        when().get("/health/live").then()
-                .statusCode(404);
-        when().get("/q/health/live").then()
-                .statusCode(404);
-        when().get("/health/ready").then()
-                .statusCode(404);
-        when().get("/q/health/ready").then()
-                .statusCode(404);
-        when().get("/lb-check").then()
                 .statusCode(404);
     }
 
@@ -121,14 +113,5 @@ public class HealthDistTest {
 
             distribution.stop();
         }
-    }
-
-    @Test
-    @Launch({ "start-dev", "--features=multi-site" })
-    void testLoadBalancerCheck(KeycloakDistribution distribution) {
-        distribution.setRequestPort(8080);
-
-        when().get("/lb-check").then()
-                .statusCode(200);
     }
 }

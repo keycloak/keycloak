@@ -36,12 +36,43 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "http-management-host", "0.0.0.0"
         ));
 
-        assertManagementEnabled(true);
-        assertManagementHttpsEnabled(false);
+        assertManagementEnabled(false);
+    }
+
+    @Test
+    public void healthOccupied() {
+        assertOccupied("KC_HEALTH_ENABLED");
+    }
+
+    @Test
+    public void metricsOccupied() {
+        assertOccupied("KC_METRICS_ENABLED");
+    }
+
+    @Test
+    public void healthMetricsOccupied() {
+        assertOccupied("KC_HEALTH_ENABLED", "KC_METRICS_ENABLED");
+    }
+
+    @Test
+    public void immutableManagementEnabledProperty() {
+        initConfig();
+        assertConfig("http-management-enabled", "false");
+
+        putEnvVar("KC_MANAGEMENT_ENABLED", "true");
+
+        initConfig();
+        assertConfig("http-management-enabled", "false");
+
+        putEnvVar("KC_MANAGEMENT_ENABLED", "something-wrong");
+
+        initConfig();
+        assertConfig("http-management-enabled", "false");
     }
 
     @Test
     public void managementBasicChanges() {
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTP_MANAGEMENT_PORT", "9999",
                 "KC_HTTP_MANAGEMENT_RELATIVE_PATH", "/management2",
@@ -61,6 +92,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementRelativePath() {
+        makeInterfaceOccupied();
         putEnvVar("KC_HTTP_RELATIVE_PATH", "/management3");
 
         initConfig();
@@ -74,6 +106,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementHttpsValues() {
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTP_MANAGEMENT_HOST", "host1",
                 "KC_HTTPS_MANAGEMENT_CLIENT_AUTH", "requested",
@@ -105,6 +138,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementMappedValues() {
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTP_HOST", "host123",
                 "KC_HTTPS_CLIENT_AUTH", "required",
@@ -136,6 +170,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementDefaultHttps() {
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
                 "KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem"
@@ -155,6 +190,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementDefaultHttpsManagementProps() {
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
                 "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem"
@@ -172,6 +208,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementDefaultHttpsCertDisabled() {
+        makeInterfaceOccupied();
         putEnvVar("KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem");
 
         initConfig();
@@ -183,6 +220,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementDefaultHttpsKeyDisabled() {
+        makeInterfaceOccupied();
         putEnvVar("KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem");
 
         initConfig();
@@ -194,6 +232,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void managementEnabledDefaultHttpsKeystore(){
+        makeInterfaceOccupied();
         putEnvVar("KC_HTTPS_KEY_STORE_FILE", "keystore.p12");
 
         initConfig();
@@ -208,6 +247,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void fipsKeystoreType(){
+        makeInterfaceOccupied();
         putEnvVar("KC_FIPS_MODE", "strict");
 
         initConfig();
@@ -221,6 +261,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void keystoreType(){
+        makeInterfaceOccupied();
         putEnvVars(Map.of(
                 "KC_HTTPS_KEY_STORE_TYPE", "pkcs12",
                 "KC_HTTPS_MANAGEMENT_KEY_STORE_TYPE", "BCFKS"
@@ -237,6 +278,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void legacyObservabilityInterface() {
+        makeInterfaceOccupied();
         putEnvVar("KC_LEGACY_OBSERVABILITY_INTERFACE", "true");
 
         initConfig();
@@ -247,6 +289,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void legacyObservabilityInterfaceFalse() {
+        makeInterfaceOccupied();
         putEnvVar("KC_LEGACY_OBSERVABILITY_INTERFACE", "false");
 
         initConfig();
@@ -255,11 +298,32 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         assertManagementEnabled(true);
     }
 
+    private void makeInterfaceOccupied() {
+        putEnvVar("KC_HEALTH_ENABLED", "true");
+    }
+
     private void assertManagementEnabled(boolean expected) {
         assertThat("Expected value for Management interface state is different", ManagementPropertyMappers.isManagementEnabled(), is(expected));
     }
 
     private void assertManagementHttpsEnabled(boolean expected) {
         assertThat("Expected value for Management HTTPS is different", ManagementPropertyMappers.isManagementTlsEnabled(), is(expected));
+    }
+
+    private void assertOccupied(String... envVarChangeState) {
+        for (var env : envVarChangeState) {
+            putEnvVar(env, "true");
+        }
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "http-management-port", "9000",
+                "http-management-relative-path", "/",
+                "http-management-host", "0.0.0.0"
+        ));
+
+        assertManagementEnabled(true);
+        assertManagementHttpsEnabled(false);
     }
 }

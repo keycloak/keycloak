@@ -28,6 +28,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
@@ -48,6 +49,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
@@ -157,6 +159,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
+        assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());

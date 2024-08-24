@@ -43,6 +43,8 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
  */
 public final class Marshalling {
 
+    public static final String PROTO_SCHEMA_PACKAGE = "keycloak";
+
     private Marshalling() {
     }
 
@@ -147,6 +149,11 @@ public final class Marshalling {
     public static final int CACHE_KEY_INVALIDATION_EVENT = 65603;
     public static final int CLEAR_CACHE_EVENT = 65604;
 
+    public static final int REMOTE_USER_SESSION_ENTITY = 65605;
+
+    public static final int CLIENT_SESSION_KEY = 65606;
+    public static final int REMOTE_CLIENT_SESSION_ENTITY = 65607;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);
@@ -154,5 +161,9 @@ public final class Marshalling {
 
     public static void configure(ConfigurationBuilder builder) {
         builder.addContextInitializer(KeycloakModelSchema.INSTANCE);
+    }
+
+    public static String protoEntity(Class<?> clazz) {
+        return PROTO_SCHEMA_PACKAGE + "." + clazz.getSimpleName();
     }
 }

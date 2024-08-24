@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="{project_name} SAML Galleon feature pack detailed configuration"
-priority=20
+priority=70
 tileVisible="false"
 summary="Detailed list of elements for the `keycloak-saml.xml` configuration file">
 

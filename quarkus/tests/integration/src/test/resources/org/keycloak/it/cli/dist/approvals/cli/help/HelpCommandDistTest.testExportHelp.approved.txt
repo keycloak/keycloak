@@ -71,35 +71,37 @@ Feature:
 Management:
 
 --http-management-port <port>
-                     Port of the management interface. Default: 9000. Available only when
-                       Management interface is enabled.
+                     Port of the management interface. Relevant only when something is exposed on
+                       the management interface - see the guide for details. Default: 9000.
 --http-management-relative-path <path>
                      Set the path relative to '/' for serving resources from management interface.
                        The path must start with a '/'. If not given, the value is inherited from
-                       HTTP options. Default: /. Available only when Management interface is
-                       enabled.
+                       HTTP options. Relevant only when something is exposed on the management
+                       interface - see the guide for details. Default: /.
 --https-management-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. If not given, the value is inherited from HTTP
-                       options. Available only when Management interface is enabled.
+                       options. Relevant only when something is exposed on the management interface
+                       - see the guide for details.
 --https-management-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server. If not
-                       given, the value is inherited from HTTP options. Available only when
-                       Management interface is enabled.
+                       given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for details.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
-                       If not given, the value is inherited from HTTP options. Possible values are:
-                       none, request, required. Default: none. Available only when Management
-                       interface is enabled.
+                       If not given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for
+                       details. Possible values are: none, request, required. Default: none.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
-                       inherited from HTTP options. Available only when Management interface is
-                       enabled.
+                       inherited from HTTP options. Relevant only when something is exposed on the
+                       management interface - see the guide for details.
 --https-management-key-store-password <password>
                      The password of the key store file for the management server. If not given,
-                       the value is inherited from HTTP options. Default: password. Available only
-                       when Management interface is enabled.
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Default:
+                       password.
 --legacy-observability-interface <true|false>
                      DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
                        server (not recommended). If set to true, the management interface is
@@ -157,3 +159,21 @@ Export:
                      Set the number of users per file. It is used only if 'users' is set to
                        'different_files'. Increasing this number leads to exponentially increasing
                        export times. Default: 50.
+
+Bootstrap Admin:
+
+--bootstrap-admin-client-id <client id>
+                     Client id for the temporary bootstrap admin service account. Used only when
+                       the master realm is created. Available only when bootstrap admin client
+                       secret is set. Default: temp-admin.
+--bootstrap-admin-client-secret <client secret>
+                     Client secret for the temporary bootstrap admin service account. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible.
+--bootstrap-admin-password <password>
+                     Temporary bootstrap admin password. Used only when the master realm is
+                       created. Use a non-CLI configuration option for this option if possible.
+--bootstrap-admin-username <username>
+                     Temporary bootstrap admin username. Used only when the master realm is
+                       created. Available only when bootstrap admin password is set. Default:
+                       temp-admin.

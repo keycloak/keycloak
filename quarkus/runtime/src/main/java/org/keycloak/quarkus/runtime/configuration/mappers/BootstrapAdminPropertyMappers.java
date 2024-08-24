@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -30,25 +31,28 @@ public final class BootstrapAdminPropertyMappers {
     private BootstrapAdminPropertyMappers() {
     }
 
+    // We prefer validators here to isEnabled so that the options show up in help
     public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[]{
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
-                        .isEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
+                        .validateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.PASSWORD)
                         .paramLabel("password")
+                        .isMasked(true)
                         .build(),
-                fromOption(BootstrapAdminOptions.EXPIRATION)
+                /*fromOption(BootstrapAdminOptions.EXPIRATION)
                         .paramLabel("expiration")
                         .isEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
-                        .build(),
+                        .build(),*/
                 fromOption(BootstrapAdminOptions.CLIENT_ID)
                         .paramLabel("client id")
-                        .isEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
+                        .validateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.CLIENT_SECRET)
                         .paramLabel("client secret")
+                        .isMasked(true)
                         .build(),
         };
     }

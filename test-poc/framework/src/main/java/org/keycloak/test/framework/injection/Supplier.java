@@ -1,9 +1,6 @@
 package org.keycloak.test.framework.injection;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Optional;
 
 public interface Supplier<T, S extends Annotation> {
 
@@ -13,32 +10,12 @@ public interface Supplier<T, S extends Annotation> {
 
     T getValue(InstanceContext<T, S> instanceContext);
 
-    default LifeCycle getLifeCycle(S annotation) {
-        if (annotation != null) {
-            Optional<Method> lifecycle = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("lifecycle")).findFirst();
-            if (lifecycle.isPresent()) {
-                try {
-                    return (LifeCycle) lifecycle.get().invoke(annotation);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        return getDefaultLifecycle();
+    default String getRef(S annotation) {
+        return StringUtil.convertEmptyToNull(SupplierHelpers.getAnnotationField(annotation, AnnotationFields.REF));
     }
 
-    default String getRef(S annotation) {
-        if (annotation != null) {
-            Optional<Method> ref = Arrays.stream(annotation.annotationType().getMethods()).filter(m -> m.getName().equals("ref")).findFirst();
-            if (ref.isPresent()) {
-                try {
-                    return (String) ref.get().invoke(annotation);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        return "";
+    default LifeCycle getLifeCycle(S annotation) {
+        return SupplierHelpers.getAnnotationField(annotation, AnnotationFields.LIFECYCLE, getDefaultLifecycle());
     }
 
     default LifeCycle getDefaultLifecycle() {
@@ -52,6 +29,9 @@ public interface Supplier<T, S extends Annotation> {
 
     default String getAlias() {
         return getClass().getSimpleName();
+    }
+
+    default void onBeforeEach(InstanceContext<T, S> instanceContext) {
     }
 
 }

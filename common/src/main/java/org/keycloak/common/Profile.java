@@ -103,6 +103,7 @@ public class Profile {
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+
         REMOTE_CACHE("Remote caches support. Requires Multi-site support to be enabled as well.", Type.EXPERIMENTAL),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
@@ -110,7 +111,7 @@ public class Profile {
         HOSTNAME_V1("Hostname Options V1", Type.DEPRECATED, 1),
         HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
-        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.PREVIEW),
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT),
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 

@@ -142,11 +142,11 @@ public class PolicyEvaluationService {
 
     private EvaluationDecisionCollector evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
         List<ResourcePermission> permissions = createPermissions(evaluationRequest, evaluationContext, authorization, request);
-        
+
         if (permissions.isEmpty()) {
             return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
         }
-        
+
         return authorization.evaluators().from(permissions, evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
     }
 
@@ -261,7 +261,7 @@ public class PolicyEvaluationService {
         UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(realm, subject);
-            
+
             if (userModel == null) {
                 userModel = keycloakSession.users().getUserByUsername(realm, subject);
             }
@@ -283,7 +283,7 @@ public class PolicyEvaluationService {
                     userSession = new UserSessionManager(keycloakSession).createUserSession(authSession.getParentSession().getId(), realm, userModel,
                             userModel.getUsername(), "127.0.0.1", "passwd", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
-                    AuthenticationManager.setClientScopesInSession(authSession);
+                    AuthenticationManager.setClientScopesInSession(keycloakSession, authSession);
                     ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
 
                     accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, clientModel, userModel, userSession, clientSessionCtx);

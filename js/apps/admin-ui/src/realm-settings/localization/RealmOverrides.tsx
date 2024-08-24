@@ -1,5 +1,11 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSelect,
+  ListEmptyState,
+  PaginatingTableToolbar,
+  SelectVariant,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -42,11 +48,8 @@ import { ChangeEvent, useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
@@ -137,7 +140,7 @@ export const RealmOverrides = ({
         }
 
         return Object.entries(result).slice(first, first + max);
-      } catch (error) {
+      } catch {
         return [];
       }
     };
@@ -245,12 +248,12 @@ export const RealmOverrides = ({
               string,
               string
             >
-          )[key],
-            await adminClient.realms.deleteRealmLocalizationTexts({
-              realm: currentRealm!,
-              selectedLocale: selectMenuLocale,
-              key: key,
-            });
+          )[key];
+          await adminClient.realms.deleteRealmLocalizationTexts({
+            realm: currentRealm!,
+            selectedLocale: selectMenuLocale,
+            key: key,
+          });
         }
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
@@ -322,7 +325,7 @@ export const RealmOverrides = ({
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
-    } catch (error) {
+    } catch {
       addAlert(t("updateTranslationError"), AlertVariant.danger);
     }
 
@@ -598,8 +601,11 @@ export const RealmOverrides = ({
                             setSelectedRowKeys([
                               (row.cells?.[0] as IRowCell).props.value,
                             ]);
-                            translations.length === 1 &&
+
+                            if (translations.length === 1) {
                               setAreAllRowsSelected(true);
+                            }
+
                             toggleDeleteDialog();
                             setKebabOpen(false);
                           },

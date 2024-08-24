@@ -53,6 +53,10 @@
             <artifactId>keycloak-quarkus-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-testdriver-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

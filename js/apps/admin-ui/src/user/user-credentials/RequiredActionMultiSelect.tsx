@@ -1,10 +1,13 @@
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
+import {
+  SelectControl,
+  SelectVariant,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { FieldPathByValue, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 
 export type RequiredActionMultiSelectProps<
   T extends FieldValues,

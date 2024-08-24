@@ -1,10 +1,12 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
 summary="Building block for an {jdgserver_name} deployment on Kubernetes"
-tileVisible="false" >
+tileVisible="false"
+includedOptions="cache-remote-*">
 
 include::partials/infinispan/infinispan-attributes.adoc[]
 
@@ -13,13 +15,18 @@ For simplicity, this topic uses the minimum configuration possible that allows {
 
 This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
 
-This is a building block following the concepts described in the <@links.ha id="concepts-active-passive-sync" /> {section}.
+This is a building block following the concepts described in the <@links.ha id="concepts-multi-site" /> {section}.
 See the <@links.ha id="introduction" /> {section} for an overview.
 
 
 [IMPORTANT]
 ====
-Only {jdgserver_name} server versions 15.0.0 or greater are supported for external {jdgserver_name} deployments.
+<@profile.ifCommunity>
+Only Infinispan version ${properties["infinispan.version"]} or more recent patch releases are supported for external {jdgserver_name} deployments.
+</@profile.ifCommunity>
+<@profile.ifProduct>
+Only {jdgserver_name} version {jdgserver_min_version} or more recent patch releases are supported for external {jdgserver_name} deployments.
+</@profile.ifProduct>
 ====
 
 == Architecture
@@ -111,7 +118,7 @@ For more information, see the {infinispan-operator-docs}#securing-cross-site-con
 +
 Upload the Keystore and the Truststore in an {ocp} Secret.
 The secret contains the file content, the password to access it, and the type of the store.
-Instructions for creating the certificates and the stores are beyond the scope of this guide.
+Instructions for creating the certificates and the stores are beyond the scope of this {section}.
 +
 To upload the Keystore as a Secret, use the following command:
 +
@@ -171,17 +178,6 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <14> The secret with the access token to authenticate into the remote site.
 --
 +
-When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
-
-[source,yaml]
-----
-distributedCache:
-  owners: "1"
-  memory:
-    maxCount: 10000
-  # ...
-----
-+
 For `{site-b}`, the `Infinispan` CR looks similar to the above.
 Note the differences in point 4, 11 and 13.
 +
@@ -201,20 +197,20 @@ The documentation contains more details about the options used by this {section}
 The following example shows the `Cache` CR for `{site-a}`.
 +
 --
-.sessions in `{site-a}`
+. In `{site-a}` create a `Cache` CR for each of the caches mentioned above with the following content.
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
 ----
 <1> The cross-site merge policy, invoked when there is a write-write conflict.
-Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
+Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
 <2> The remote site name.
 <3> The cross-site communication, in this case, `SYNC`.
 --
 +
-For `{site-b}`, the `Cache` CR is similar except in point 2.
+For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 2 of the above diagram.
 +
-.session in `{site-b}`
+.sessions `Cache` CR in `{site-b}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-sessions]
@@ -236,8 +232,48 @@ kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.or
 kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
 ----
 
+[#connecting-infinispan-to-keycloak]
+== Connecting {jdgserver_name} with {project_name}
+
+Now that an {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
+
+. Create a Secret with the username and password to connect to the external {jdgserver_name} deployment:
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
+----
+
+. Extend the {project_name} Custom Resource with `additionalOptions` as shown below.
++
+[NOTE]
+====
+All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
+Administrators should leave those configurations untouched.
+====
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
+----
+<1> The hostname of the remote {jdgserver_name} cluster.
+<2> The port of the remote {jdgserver_name} cluster.
+This is optional and it default to `11222`.
+<3> The Secret `name` and `key` with the {jdgserver_name} username credential.
+<4> The Secret `name` and `key` with the {jdgserver_name} password credential.
+<5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its Infinispan caches deployment when a remote store is used.
+This site-name is related only to the Infinispan caches and does not need to match any value from the external {jdgserver_name} deployment.
+If you are using multiple sites for {project_name} in a cross-DC setup such as <@links.ha id="deploy-infinispan-kubernetes-crossdc" />, the site name must be different in each site.
+
+=== Architecture
+
+This connects {project_name} to {jdgserver_name} using TCP connections secured by TLS 1.3.
+It uses the {project_name}'s truststore to verify {jdgserver_name}'s server certificate.
+As {project_name} is deployed using its Operator on OpenShift in the prerequisites listed below, the Operator already added the `service-ca.crt` to the truststore which is used to sign {jdgserver_name}'s server certificates.
+In other environments, add the necessary certificates to {project_name}'s truststore.
+
 == Next steps
 
-After {jdgserver_name} is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
+After the Aurora AWS database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
 
 </@tmpl.guide>

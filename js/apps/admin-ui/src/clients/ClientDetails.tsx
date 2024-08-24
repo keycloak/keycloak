@@ -1,4 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -17,14 +18,13 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { RolesList } from "../components/roles-list/RolesList";
 import {
@@ -43,7 +43,6 @@ import {
   convertToFormValues,
   exportClient,
 } from "../util";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";

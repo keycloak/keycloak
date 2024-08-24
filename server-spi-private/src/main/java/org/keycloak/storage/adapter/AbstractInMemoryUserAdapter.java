@@ -28,10 +28,12 @@ import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.storage.StorageId;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -235,7 +237,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public String getFederationLink() {
-        return federationLink;
+        return Optional.ofNullable(federationLink).orElse(StorageId.providerId(getId()));
     }
 
     @Override

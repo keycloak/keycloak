@@ -107,6 +107,8 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
                     loadRSAKey(keyStore, keyAlias, KeyUse.ENC);
                 case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 ->
                     loadECKey(keyStore, keyAlias, KeyUse.SIG);
+                case Algorithm.ECDH_ES, Algorithm.ECDH_ES_A128KW, Algorithm.ECDH_ES_A192KW, Algorithm.ECDH_ES_A256KW ->
+                    loadECKey(keyStore, keyAlias, KeyUse.ENC);
                 case Algorithm.EdDSA ->
                     loadEdDSAKey(keyStore, keyAlias, KeyUse.SIG);
                 case Algorithm.AES ->

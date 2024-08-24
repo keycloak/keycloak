@@ -20,6 +20,7 @@ interface PaginatedQuery {
 
 interface SummarizedQuery {
   briefRepresentation?: boolean;
+  populateHierarchy?: boolean;
 }
 
 export type GroupQuery = Query & PaginatedQuery & SummarizedQuery;
@@ -42,6 +43,7 @@ export class Groups extends Resource<{ realm?: string }> {
       "q",
       "exact",
       "briefRepresentation",
+      "populateHierarchy",
       "first",
       "max",
     ],

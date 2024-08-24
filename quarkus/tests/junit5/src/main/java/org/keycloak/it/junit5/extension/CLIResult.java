@@ -79,6 +79,11 @@ public interface CLIResult extends LaunchResult {
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
+    default void assertNoError(String msg) {
+        assertFalse(getErrorOutput().contains(msg),
+                () -> "The Error Output:\n " + getErrorOutput() + "\n contains " + msg);
+    }
+
     default void assertMessage(String message) {
         assertThat(getOutput(), containsString(message));
     }

@@ -6,6 +6,7 @@ import {
   KeycloakSelect,
   SelectControl,
   SelectVariant,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
@@ -31,9 +32,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import useToggle from "../../../utils/useToggle";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
@@ -42,7 +43,6 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./AddTranslationsDialog";
-import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 import "../../realm-settings-section.css";
 

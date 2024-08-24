@@ -17,6 +17,9 @@
 
 package org.keycloak.storage.datastore;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
@@ -29,6 +32,7 @@ import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.services.scheduled.ClearExpiredAdminEvents;
 import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
+import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
@@ -38,8 +42,6 @@ import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
-import java.util.Arrays;
-import java.util.List;
 
 public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 
@@ -79,7 +81,7 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     public String getId() {
         return PROVIDER_ID;
     }
-    
+
     public long getClientStorageProviderTimeout() {
         return clientStorageProviderTimeout;
     }
@@ -99,20 +101,18 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
             StoreMigrateRepresentationEvent ev = (StoreMigrateRepresentationEvent) event;
             MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
         }
-    }    
+    }
 
-    public void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
-
+    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         try (KeycloakSession session = sessionFactory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
             if (timer != null) {
-                scheduleTasks(sessionFactory, timer, interval);
+                scheduleTasks(sessionFactory, timer, getScheduledInterval());
             }
         }
     }
 
-    protected void scheduleTasks(KeycloakSessionFactory sessionFactory, TimerProvider timer, long interval) {
+    protected static void scheduleTasks(KeycloakSessionFactory sessionFactory, TimerProvider timer, long interval) {
         for (ScheduledTask task : getScheduledTasks()) {
             scheduleTask(timer, sessionFactory, task, interval);
         }
@@ -120,13 +120,26 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
     }
 
-    protected List<ScheduledTask> getScheduledTasks() {
+    protected static List<ScheduledTask> getScheduledTasks() {
         return Arrays.asList(new ClearExpiredEvents(), new ClearExpiredAdminEvents(), new ClearExpiredClientInitialAccessTokens(), new ClearExpiredUserSessions());
     }
 
-    protected void scheduleTask(TimerProvider timer, KeycloakSessionFactory sessionFactory, ScheduledTask task, long interval) {
+    protected static void scheduleTask(TimerProvider timer, KeycloakSessionFactory sessionFactory, ScheduledTask task, long interval) {
         timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, task, interval), interval);
         logger.debugf("Scheduled cluster task %s with interval %s ms", task.getTaskName(), interval);
+    }
+
+    public static void setupClearExpiredRevokedTokensScheduledTask(KeycloakSessionFactory sessionFactory) {
+        try (KeycloakSession session = sessionFactory.create()) {
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            if (timer != null) {
+                scheduleTask(timer, sessionFactory, new ClearExpiredRevokedTokens(), getScheduledInterval());
+            }
+        }
+    }
+
+    public static long getScheduledInterval() {
+        return Config.scope("scheduled").getLong("interval", 900L) * 1000;
     }
 
 }

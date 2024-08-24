@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionAttributeListener;
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionIdListener;
 import jakarta.servlet.http.HttpSessionListener;
 import org.jboss.logging.Logger;
 
@@ -31,7 +32,7 @@ import org.jboss.logging.Logger;
  *
  * @author hmlnarik
  */
-public class IdMapperUpdaterSessionListener implements HttpSessionListener, HttpSessionAttributeListener {
+public class IdMapperUpdaterSessionListener implements HttpSessionListener, HttpSessionAttributeListener, HttpSessionIdListener {
 
     private static final Logger LOG = Logger.getLogger(IdMapperUpdaterSessionListener.class);
 
@@ -54,6 +55,15 @@ public class IdMapperUpdaterSessionListener implements HttpSessionListener, Http
         LOG.debugf("Session destroyed");
         HttpSession session = hse.getSession();
         unmap(session.getId(), session.getAttribute(SamlSession.class.getName()));
+    }
+
+    @Override
+    public void sessionIdChanged(HttpSessionEvent hse, String oldSessionId) {
+        LOG.debugf("Session changed ID from %s", oldSessionId);
+        HttpSession session = hse.getSession();
+        Object value = session.getAttribute(SamlSession.class.getName());
+        unmap(oldSessionId, value);
+        map(session.getId(), value);
     }
 
     @Override

@@ -37,8 +37,8 @@ Conformance to a required security standards and profiles such as FAPI and OAuth
 
 == Protocol
 
-The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{securing_apps_link}[OpenID Connect (OIDC) protocol], but there is
-also a client profile available for the link:{adapterguide_link}#_saml[SAML protocol].
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{adminguide_link}#con-oidc_server_administration_guide[OpenID Connect (OIDC) protocol], but there is
+also a client profile available for the link:{adminguide_link}#_saml[SAML protocol].
 
 == Architecture
 
@@ -86,6 +86,10 @@ for marking that particular client policy for particular clients.
 
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
+
+Client Attribute::
+    Applies to clients with the client attribute of the specified name and value. If you specify multiple client attributes, they will be evaluated using AND conditions.
+    If you want to evaluate using OR conditions, set this condition multiple times.
 
 Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.

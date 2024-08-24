@@ -1,5 +1,6 @@
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,10 +15,8 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -25,7 +24,6 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
@@ -49,7 +47,7 @@ export default function MappingDetails() {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
-  const isUpdating = !!mapperId.match(isGuid);
+  const isUpdating = !!isGuid.exec(mapperId);
 
   const isOnClientScope = !!useMatch(MapperRoute.path);
   const toDetails = () =>
@@ -154,19 +152,23 @@ export default function MappingDetails() {
     try {
       const mapping = { ...config, ...convertFormValuesToObject(formMapping) };
       if (isUpdating) {
-        isOnClientScope
-          ? await adminClient.clientScopes.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            )
-          : await adminClient.clients.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            );
+        if (isOnClientScope) {
+          await adminClient.clientScopes.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        } else {
+          await adminClient.clients.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        }
       } else {
-        isOnClientScope
-          ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
-          : await adminClient.clients.addProtocolMapper({ id }, mapping);
+        if (isOnClientScope) {
+          await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
+        } else {
+          await adminClient.clients.addProtocolMapper({ id }, mapping);
+        }
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {
@@ -220,6 +222,7 @@ export default function MappingDetails() {
             <DynamicComponents
               properties={mapping?.properties || []}
               isNew={!isUpdating}
+              stringify
             />
             <ActionGroup>
               <Button variant="primary" type="submit">

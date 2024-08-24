@@ -8,13 +8,15 @@ tileVisible="false" >
 
 This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.
 
-These instructions are intended for use with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
-Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
+These instructions are intended for use with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
 
 == Prerequisites
 
 * OpenShift or Kubernetes cluster running.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
+* Aurora AWS database deployed using the <@links.ha id="deploy-aurora-multi-az" /> {section}.
+* {jdgserver_name} server deployed using the <@links.ha id="deploy-infinispan-kubernetes-crossdc" /> {section}.
 
 == Procedure
 
@@ -22,7 +24,9 @@ Use it together with the other building blocks outlined in the <@links.ha id="bb
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
-. Deploy Aurora AWS as described in the <@links.ha id="deploy-aurora-multi-az" /> {section}.
+. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="deploy-aurora-multi-az" anchor="connecting-aurora-to-keycloak" />
+
+. Notice the configuration file below options relevant for connecting to the {jdgserver_name} server from <@links.ha id="deploy-infinispan-kubernetes-crossdc" anchor="connecting-infinispan-to-keycloak" />
 
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 

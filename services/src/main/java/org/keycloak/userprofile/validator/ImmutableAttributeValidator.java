@@ -62,7 +62,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         Stream<String> rawValues = user.getAttributeStream(inputHint).filter(Objects::nonNull);
 
         // force usernames to lower-case to avoid validation errors if the external storage is using a different format
-        if (user.isLocal() && UserModel.USERNAME.equals(inputHint)) {
+        if (!user.isFederated() && UserModel.USERNAME.equals(inputHint)) {
             rawValues = rawValues.map(String::toLowerCase);
         }
 

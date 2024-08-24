@@ -32,11 +32,6 @@
         For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client` module.
     </description>
 
-    <properties>
-        <jakarta-transformer-sources>${project.basedir}/../admin-client-jee/src</jakarta-transformer-sources>
-        <jakarta-transformer-target>${project.basedir}/src</jakarta-transformer-target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -79,62 +74,5 @@
             <version>${resteasy.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>transform</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <property name="plugin_classpath" refid="maven.plugin.classpath"/>
-                                <delete dir="${jakarta-transformer-target}"/>
-                                <java classname="org.eclipse.transformer.cli.JakartaTransformerCLI" fork="true">
-                                    <arg value="${jakarta-transformer-sources}"/>
-                                    <arg value="${jakarta-transformer-target}"/>
-                                    <classpath>
-                                        <pathelement path="${plugin_classpath}"/>
-                                    </classpath>
-                                </java>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.transformer</groupId>
-                        <artifactId>org.eclipse.transformer.cli</artifactId>
-                        <version>0.5.0</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.ant</groupId>
-                        <artifactId>ant</artifactId>
-                        <version>1.10.14</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <!-- delete the files created by the transformer -->
-                            <directory>src</directory>
-                            <includes>
-                                <include>**/*.java</include>
-                            </includes>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

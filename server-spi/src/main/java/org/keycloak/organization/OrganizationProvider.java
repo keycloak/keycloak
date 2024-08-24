@@ -131,6 +131,13 @@ public interface OrganizationProvider extends Provider {
     Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max);
 
     /**
+     * Returns number of members in the organization.
+     * @param organization the organization
+     * @return Number of members in the organization.
+     */
+    long getMembersCount(OrganizationModel organization);
+
+    /**
      * Returns the member of the {@link OrganizationModel} by its {@code id}.
      *
      * @param organization the organization
@@ -225,4 +232,14 @@ public interface OrganizationProvider extends Provider {
      * @return long Number of organizations
      */
     long count();
+
+    /**
+     * Returns an {@link OrganizationModel} with the given {@code alias}.
+     *
+     * @param alias the alias
+     * @return the organization
+     */
+    default OrganizationModel getByAlias(String alias) {
+        return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
+    }
 }

@@ -4,6 +4,7 @@ import com.nimbusds.oauth2.sdk.AuthorizationResponse;
 import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -24,9 +25,6 @@ import java.net.URL;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
-
-    @InjectRealm
-    ManagedRealm realm; // Need to specify realm as otherwise there's a bug when annotation is not present
 
     @InjectUser(config = UserConfig.class)
     ManagedUser user;
@@ -73,6 +71,24 @@ public class OAuthClientTest {
         TokenResponse tokenResponse = oAuthClient.tokenRequest(authorizationResponse.toSuccessResponse().getAuthorizationCode());
         Assertions.assertTrue(tokenResponse.indicatesSuccess());
         Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
+    }
+
+    @Test
+    public void testAccessTokenRevocation() throws Exception {
+        TokenResponse tokenResponse = oAuthClient.clientCredentialGrant();
+        Assertions.assertTrue(tokenResponse.indicatesSuccess());
+        Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
+
+        AccessToken accessToken = tokenResponse.toSuccessResponse().getTokens().getAccessToken();
+        TokenIntrospectionResponse introspectionResponse = oAuthClient.introspection(accessToken);
+        Assertions.assertTrue(introspectionResponse.indicatesSuccess());
+        Assertions.assertNotNull(introspectionResponse.toSuccessResponse().getScope());
+
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), oAuthClient.revokeAccessToken(accessToken).getStatusCode());
+
+        introspectionResponse = oAuthClient.introspection(accessToken);
+        Assertions.assertTrue(introspectionResponse.indicatesSuccess());
+        Assertions.assertNull(introspectionResponse.toSuccessResponse().getScope());
     }
 
     public static class UserConfig implements org.keycloak.test.framework.realm.UserConfig {

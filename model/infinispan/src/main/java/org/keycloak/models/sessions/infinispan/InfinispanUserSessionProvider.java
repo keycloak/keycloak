@@ -253,7 +253,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         // Unable to read the cached data.
         if ("26.0.0".equals(modelVersion)) {
             log.debug("Clear caches to migrate to Infinispan Protostream");
-            CompletionStages.join(session.getProvider(InfinispanConnectionProvider.class).migrateToProtostream());
+            CompletionStages.join(session.getProvider(InfinispanConnectionProvider.class).migrateToProtoStream());
         }
     }
 

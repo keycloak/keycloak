@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 
+import java.util.Objects;
+
 /**
  * Container for the pre-authorized code to be used in a Credential Offer
  * <p>
@@ -42,5 +44,17 @@ public class PreAuthorizedGrant {
     public PreAuthorizedGrant setPreAuthorizedCode(PreAuthorizedCode preAuthorizedCode) {
         this.preAuthorizedCode = preAuthorizedCode;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PreAuthorizedGrant grant)) return false;
+        return Objects.equals(getPreAuthorizedCode(), grant.getPreAuthorizedCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPreAuthorizedCode());
     }
 }

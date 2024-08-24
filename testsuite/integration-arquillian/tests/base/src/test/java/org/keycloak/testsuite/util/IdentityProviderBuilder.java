@@ -50,9 +50,9 @@ public class IdentityProviderBuilder {
         rep.setDisplayName(displayName);
         return this;
     }
-    
+
     public IdentityProviderBuilder hideOnLoginPage() {
-        setAttribute("hideOnLoginPage", "true");
+        rep.setHideOnLogin(true);
         return this;
     }
 

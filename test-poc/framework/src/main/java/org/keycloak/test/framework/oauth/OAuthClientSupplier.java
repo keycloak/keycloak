@@ -34,7 +34,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
     }
 
     @Override
-    public LifeCycle getLifeCycle(InjectOAuthClient annotation) {
+    public LifeCycle getDefaultLifecycle() {
         return LifeCycle.GLOBAL;
     }
 

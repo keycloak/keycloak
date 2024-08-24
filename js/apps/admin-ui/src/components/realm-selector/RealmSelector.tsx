@@ -1,5 +1,5 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
-import { label } from "@keycloak/keycloak-ui-shared";
+import { label, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Divider,
@@ -32,7 +32,6 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
-import { useFetch } from "../../utils/useFetch";
 
 import "./realm-selector.css";
 

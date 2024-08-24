@@ -172,10 +172,12 @@ public class SessionResource {
 
         for (String clientUUID : s.getAuthenticatedClientSessions().keySet()) {
             ClientModel client = realm.getClientById(clientUUID);
-            ClientRepresentation clientRep = new ClientRepresentation();
-            clientRep.setClientId(client.getClientId());
-            clientRep.setClientName(client.getName());
-            sessionRep.getClients().add(clientRep);
+            if (client != null) {
+                ClientRepresentation clientRep = new ClientRepresentation();
+                clientRep.setClientId(client.getClientId());
+                clientRep.setClientName(client.getName());
+                sessionRep.getClients().add(clientRep);
+            }
         }
         return sessionRep;
     }

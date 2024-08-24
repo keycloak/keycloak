@@ -17,11 +17,9 @@
 
 package org.keycloak.models;
 
-import static org.keycloak.utils.StringUtil.isBlank;
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.storage.StorageId;
-import org.keycloak.utils.StringUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -51,6 +49,12 @@ public interface UserModel extends RoleMapperModel {
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
     interface UserRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface UserPreRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         UserModel getUser();
         KeycloakSession getKeycloakSession();
@@ -215,10 +219,10 @@ public interface UserModel extends RoleMapperModel {
      * Indicates if this {@link UserModel} maps to a local account or an account
      * federated from an external user storage.
      *
-     * @return {@code true} if a local account. Otherwise, {@code false}.
+     * @return {@code true} if a federated account. Otherwise, {@code false}.
      */
-    default boolean isLocal() {
-        return isBlank(getFederationLink()) && StorageId.isLocalStorage(getId());
+    default boolean isFederated() {
+        return isNotBlank(getFederationLink());
     }
 
     /**

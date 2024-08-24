@@ -34,8 +34,20 @@ import static io.restassured.RestAssured.when;
 public class ExternalInfinispanTest {
 
     @Test
-    @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "--spi-connections-infinispan-quarkus-site-name=ISPN" })
-    void testLoadBalancerCheckFailure() {
+    @Launch({
+            "start-dev",
+            "--features=multi-site",
+            "--cache=ispn",
+            "--cache-remote-host=127.0.0.1",
+            "--cache-remote-username=keycloak",
+            "--cache-remote-password=Password1!",
+            "--cache-remote-tls-enabled=false",
+            "--spi-connections-infinispan-quarkus-site-name=ISPN",
+            "--spi-load-balancer-check-remote-poll-interval=500",
+            "-Dkc.cache-remote-create-caches=true",
+            "--verbose"
+    })
+    void testLoadBalancerCheckFailureWithMultiSite() {
         runLoadBalancerCheckFailureTest();
     }
 
@@ -44,12 +56,13 @@ public class ExternalInfinispanTest {
             "start-dev",
             "--features=multi-site,remote-cache",
             "--cache=ispn",
-            "--cache-remote-host=localhost",
+            "--cache-remote-host=127.0.0.1",
             "--cache-remote-username=keycloak",
             "--cache-remote-password=Password1!",
+            "--cache-remote-tls-enabled=false",
             "--spi-connections-infinispan-quarkus-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
-            "-Dkc.cache-remote-tls-enabled=false",
+            "-Dkc.cache-remote-create-caches=true",
             "--verbose"
     })
     void testLoadBalancerCheckFailureWithRemoteOnlyCaches() {
@@ -71,7 +84,12 @@ public class ExternalInfinispanTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "-Djboss.site.name=ISPN" })
+    @Launch({
+            "start-dev",
+            "--cache=ispn",
+            "-Djboss.site.name=ISPN",
+            "--verbose"
+    })
     void testSiteNameAsSystemProperty(LaunchResult result) {
         ((CLIResult) result).assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
     }

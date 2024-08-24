@@ -147,8 +147,18 @@ public class FipsDistTest {
             RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
             Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.keystore").toAbsolutePath();
 
-            // https-trust-store-type should be automatically set to pkcs12 in fips-mode=non-strict
             CLIResult cliResult = dist.run("--verbose", "start", "--fips-mode=non-strict", "--https-key-store-password=passwordpassword",
+                    "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
+            cliResult.assertError("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
+
+            dist.stop();
+
+            dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
+
+            rawDist = dist.unwrap(RawKeycloakDistribution.class);
+            truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.p12").toAbsolutePath();
+
+            cliResult = dist.run("--verbose", "start", "--fips-mode=non-strict", "--https-key-store-password=passwordpassword",
                     "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
             cliResult.assertStarted();
         });

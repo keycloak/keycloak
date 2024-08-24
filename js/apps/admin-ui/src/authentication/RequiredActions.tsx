@@ -1,19 +1,18 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type RequiredActionProviderSimpleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderSimpleRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, Button, Switch } from "@patternfly/react-core";
 import { CogIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { addTrailingSlash, toKey } from "../util";
-import { useFetch } from "../utils/useFetch";
+import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { DraggableTable } from "./components/DraggableTable";
 import { RequiredActionConfigModal } from "./components/RequiredActionConfigModal";
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
-import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
-import { useRealm } from "../context/realm-context/RealmContext";
 
 type DataType = RequiredActionProviderRepresentation &
   RequiredActionProviderSimpleRepresentation & {

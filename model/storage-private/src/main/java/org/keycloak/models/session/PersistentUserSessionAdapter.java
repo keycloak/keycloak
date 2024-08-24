@@ -18,7 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -216,7 +216,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        if (isOffline() || !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (isOffline() || !MultiSiteUtils.isPersistentSessionsEnabled()) {
             return getUser().getUsername();
         } else {
             return getData().getLoginUsername();

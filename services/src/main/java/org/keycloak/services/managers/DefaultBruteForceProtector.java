@@ -180,7 +180,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         logger.trace("sent success event");
     }
 
-    private void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, boolean success) {
+    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, boolean success) {
         ExecutorService executor = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
             ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
             return provider.getExecutor("bruteforce");

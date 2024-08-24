@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
@@ -194,7 +194,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         RealmRepresentation export = testRealm().partialExport(exportGroupsAndRoles, exportClients);
         assertTrue(Optional.ofNullable(export.getGroups()).orElse(List.of()).stream().noneMatch(g -> g.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE)));
         assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(g -> g.getConfig().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE)));
+        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
         PartialImportRepresentation rep = new PartialImportRepresentation();
         rep.setUsers(export.getUsers());
         rep.setClients(export.getClients());

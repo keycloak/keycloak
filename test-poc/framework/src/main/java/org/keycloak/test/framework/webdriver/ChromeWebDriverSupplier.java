@@ -14,7 +14,7 @@ public class ChromeWebDriverSupplier extends AbstractWebDriverSupplier {
     @Override
     public WebDriver getWebDriver() {
         ChromeOptions options = new ChromeOptions();
-        setGlobalOptions(options);
+        setCommonCapabilities(options);
         return new ChromeDriver(options);
     }
 }

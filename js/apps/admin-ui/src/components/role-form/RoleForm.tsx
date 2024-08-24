@@ -50,6 +50,7 @@ export const RoleForm = ({
           onSubmit={handleSubmit(onSubmit)}
           role={role}
           className="pf-v5-u-mt-lg"
+          fineGrainedAccess={true} // We would never want to show this form in read-only mode
         >
           <TextControl
             name="name"

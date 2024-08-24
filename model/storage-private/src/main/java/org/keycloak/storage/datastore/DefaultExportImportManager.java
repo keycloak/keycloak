@@ -337,7 +337,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
 
         importIdentityProviders(rep, newRealm, session);
-        importIdentityProviderMappers(rep, newRealm);
+        importIdentityProviderMappers(rep, session);
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
@@ -556,15 +556,15 @@ public class DefaultExportImportManager implements ExportImportManager {
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
-                newRealm.addIdentityProvider(RepresentationToModel.toModel(newRealm, representation, session));
+                session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
             }
         }
     }
 
-    private static void importIdentityProviderMappers(RealmRepresentation rep, RealmModel newRealm) {
+    private static void importIdentityProviderMappers(RealmRepresentation rep, KeycloakSession session) {
         if (rep.getIdentityProviderMappers() != null) {
             for (IdentityProviderMapperRepresentation representation : rep.getIdentityProviderMappers()) {
-                newRealm.addIdentityProviderMapper(RepresentationToModel.toModel(representation));
+                session.identityProviders().createMapper(RepresentationToModel.toModel(representation));
             }
         }
     }
@@ -1595,7 +1595,7 @@ public class DefaultExportImportManager implements ExportImportManager {
                 org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
-                    IdentityProviderModel idp = newRealm.getIdentityProviderByAlias(identityProvider.getAlias());
+                    IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
                     provider.addIdentityProvider(org, idp);
                 }
 

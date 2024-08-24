@@ -84,10 +84,9 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
      * @param caCert       the CA certificate
      * @param subject      the subject name
      * @return the x509 certificate
-     * @throws Exception the exception
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
-                                                 String subject) throws Exception {
+                                                 String subject) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 
@@ -130,7 +129,17 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
             certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
 
             // Content Signer
-            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
+            ContentSigner sigGen;
+            switch (caCert.getPublicKey().getAlgorithm())
+            {
+                case "EC":
+                    sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
+                                                                               .build(caPrivateKey);
+                    break;
+                default:
+                    sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
+                                                                                       .build(caPrivateKey);
+            }
 
             // Certificate
             return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
@@ -185,6 +194,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
                 }
+                case "EC":
                 case "ECDSA": {
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithECDSA")
                             .setProvider(BouncyIntegration.PROVIDER);

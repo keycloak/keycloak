@@ -20,6 +20,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -129,7 +130,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         //  skip for persistent user sessions as the periodic task is not used there
         TimerProvider timer = kcSession.getProvider(TimerProvider.class);
         TimerProvider.TimerTaskContext timerTaskCtx = null;
-        if (timer != null && !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (timer != null && !MultiSiteUtils.isPersistentSessionsEnabled()) {
             timerTaskCtx = timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
             log.info("Cancelled periodic task " + PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
         }
@@ -181,7 +182,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             setTimeOffset(0);
             kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             // Enable periodic task again, skip for persistent user sessions as the periodic task is not used there
-            if (timer != null && timerTaskCtx != null && !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            if (timer != null && timerTaskCtx != null && !MultiSiteUtils.isPersistentSessionsEnabled()) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
             }
 

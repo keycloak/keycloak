@@ -175,7 +175,7 @@ public class SimpleUndertowLoadBalancer {
     private HttpHandler createHandler() throws Exception {
 
         // TODO: configurable options if needed
-        String[] sessionIds = {CookieType.AUTH_SESSION_ID.getName(), CookieType.AUTH_SESSION_ID.getSameSiteLegacyName()};
+        String[] sessionIds = {CookieType.AUTH_SESSION_ID.getName()};
         int connectionsPerThread = 20;
         int problemServerRetry = 5; // In case of unavailable node, we will try to ping him every 5 seconds to check if it's back
         int maxTime = 3600000; // 1 hour for proxy request timeout, so we can debug the backend keycloak servers
@@ -233,11 +233,11 @@ public class SimpleUndertowLoadBalancer {
         @Override
         protected Iterator<CharSequence> parseRoutes(HttpServerExchange exchange) {
             Iterator<CharSequence> stickyHostsIt = super.parseRoutes(exchange);
-            
+
             if (stickyHostsIt == null) {
                 return null;
             }
-            
+
             List<CharSequence> stickyHosts = new LinkedList<>();
             stickyHostsIt.forEachRemaining(stickyHosts::add);
             CharSequence stickyHostName = stickyHosts.isEmpty() ? null : stickyHosts.iterator().next();

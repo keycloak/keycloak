@@ -92,8 +92,94 @@ To disable this behavior, use the SPI option `spi-single-use-object-infinispan-p
 The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
 This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
 
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active
+setups are now supported, while previous configurations which leveraged active/passive loadbalancer will continue to work.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
+caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+- External {jdgserver_name} request handling has been improved to reduce memory usage and request latency.
+
+As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
+
+. `distributed-cache` definitions provided by a cache configuration file are ignored when the `multi-site` feature is enabled,
+so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
+or Keycloak CR as outlined in the blueprints. If a `remote-store` configuration is detected in the cache configuration file,
+then a warning will be raised in the {project_name} logs.
+
+. Review your current cache configurations in the external {jdgserver_name} and update them with those outlined in the latest version of the {project_name}'s documentation.
+
+. While previous LoadBalancer configurations will continue to work with {project_name}, consider upgrading
+an existing Route53 configurations to avoid prolonged failover times due to client side DNS caching.
+
 = Admin Bootstrapping and Recovery
 
 It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
+
+= Deprecations in `keycloak-services` module
+
+The class `UserSessionCrossDCManager` is deprecated and planned to be removed in a future version of {project_name}.
+Read the `UserSessionCrossDCManager` Javadoc for the alternative methods to use.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
+This endpoint supports filters and pagination.
+
+= CLI import placeholder replacement
+
+The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup.
+
+If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
+
+= New Java API to search realms by name
+
+The `RealmProvider` Java API now contains a new method `Stream<RealmModel> getRealmsStream(String search)` which allows searching for a realm by name.
+While there is a default implementation which filters the stream after loading it from the provider, implementations are encouraged to provide this with more efficient implementation.
+
+= Keystore and trust store default format change
+
+{project_name} now determines the format of the keystore and trust store based on the file extension. If the file extension is `.p12`, `.pkcs12` or `.pfx`, the format is PKCS12. If the file extension is `.jks`, `.keystore` or `.truststore`, the format is JKS. If the file extension is `.pem`, `.crt` or `.key`, the format is PEM.
+
+You can still override automatic detection by specifying the `https-key-store-type` and `https-trust-store-type` explicitly. The same applies to the management interface and its `https-management-key-store-type`. Restrictions for the FIPS strict mode stay unchanged.
+
+NOTE: The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated, we strongly recommend to use System Truststore. For more details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+= Improving performance for selection of identity providers
+
+New indexes were added to the `IDENTITY_PROVIDER` table to improve the performance of queries that fetch the IDPs associated with an organization, and fetch IDPs that are available for login (those that are `enabled`, not `link_only`, not marked as `hide_on_login`).
+
+If the table currently contains more than 300.000 entries,
+{project_name} will skip the creation of the indexes by default during the automatic schema migration, and will instead log the SQL statements
+on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.
+
+Also, the `kc.org` and `hideOnLoginPage` configuration attributes were migrated to the identity provider itself, to allow for more efficient queries when searching for providers. As such, API clients should use the `getOrganizationId/setOrganizationId` and `isHideOnLogin/setHideOnLogin` methods in the `IdentityProviderRepresentation`, and avoid setting these properties using the legacy config attributes that are now deprecated.
+
+= Paths for `common` theme resources have changed
+
+Some of the paths for the `common` resources of the `keycloak` theme have changed, specifically the resources for third-party libraries. Make sure to update your custom themes accordingly:
+
+- `node_modules/patternfly/dist` is now `vendor/patternfly-v3`
+- `node_modules/@patternfly/patternfly` is now `vendor/patternfly-v4`
+- `node_modules/@patternfly-v5/patternfly` is now `vendor/patternfly-v5`
+- `node_modules/rfc4648/lib` is now `vendor/rfc4648`
+
+Additionally, the following resources have been removed from the `common` theme:
+
+- `node_modules/alpinejs`
+- `node_modules/jquery`
+
+If you previously used any of the removed resources in your theme, make sure to add them to your own theme resources instead.

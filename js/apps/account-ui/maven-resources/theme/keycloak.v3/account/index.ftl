@@ -128,6 +128,7 @@
           "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
           "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
           "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+          "isViewOrganizationsEnabled": ${isViewOrganizationsEnabled?c},
           "deleteAccountAllowed": ${deleteAccountAllowed?c},
           "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
           "updateEmailActionEnabled": ${updateEmailActionEnabled?c},

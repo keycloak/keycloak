@@ -8,6 +8,8 @@
 :authorizationguide_name: Authorization Services Guide
 :authorizationguide_name_short: Authorization Services
 :authorizationguide_link: {project_doc_base_url}/authorization_services/
+:developerguide_name: Server Developer Guide
+:developerguide_link: {project_doc_base_url}/server_development/
 :section: guide
 :sections: guides
 :archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip
@@ -26,3 +28,4 @@
 :quickstartRepo_dir: keycloak-quickstarts
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
 :kc_js_path: /js
+:kc_realms_path: /realms

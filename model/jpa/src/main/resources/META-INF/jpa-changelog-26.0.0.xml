@@ -67,4 +67,29 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RT" tableName="REVOKED_TOKEN"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="31725-index-persist-revoked-access-tokens">
+        <createIndex indexName="IDX_REV_TOKEN_ON_EXPIRE" tableName="REVOKED_TOKEN">
+            <column name="EXPIRE" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-idps-for-login">
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="ORGANIZATION_ID" type="VARCHAR(255)"/>
+            <column name="HIDE_ON_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
+        </addColumn>
+        <createIndex indexName="IDX_IDP_REALM_ORG" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_IDP_FOR_LOGIN" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ENABLED"/>
+            <column name="LINK_ONLY"/>
+            <column name="HIDE_ON_LOGIN"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_IdentityProviderAttributesMigration"/>
+    </changeSet>
+
 </databaseChangeLog>

@@ -19,8 +19,8 @@ Additional performance tuning and security hardening are still recommended when 
 <@profile.ifCommunity>
 == Concept and building block overview
 
-* <@links.ha id="concepts-active-passive-sync" />
-* <@links.ha id="bblocks-active-passive-sync" />
+* <@links.ha id="concepts-multi-site" />
+* <@links.ha id="bblocks-multi-site" />
 * <@links.ha id="concepts-database-connections" />
 * <@links.ha id="concepts-threads" />
 * <@links.ha id="concepts-memory-and-cpu-sizing" />
@@ -29,18 +29,16 @@ Additional performance tuning and security hardening are still recommended when 
 == Blueprints for building blocks
 
 * <@links.ha id="deploy-aurora-multi-az" />
-* <@links.ha id="deploy-keycloak-kubernetes" />
 * <@links.ha id="deploy-infinispan-kubernetes-crossdc" />
-* <@links.ha id="connect-keycloak-to-external-infinispan" />
-* <@links.ha id="deploy-aws-route53-loadbalancer" />
-* <@links.ha id="deploy-aws-route53-failover-lambda" />
+* <@links.ha id="deploy-keycloak-kubernetes" />
+* <@links.ha id="deploy-aws-accelerator-loadbalancer" />
+* <@links.ha id="deploy-aws-accelerator-fencing-lambda" />
 
 == Operational procedures
 
-* <@links.ha id="operate-failover" />
-* <@links.ha id="operate-switch-over" />
-* <@links.ha id="operate-network-partition-recovery" />
-* <@links.ha id="operate-switch-back" />
+* <@links.ha id="operate-synchronize" />
+* <@links.ha id="operate-site-offline" />
+* <@links.ha id="operate-site-online" />
 
 </@profile.ifCommunity>
 

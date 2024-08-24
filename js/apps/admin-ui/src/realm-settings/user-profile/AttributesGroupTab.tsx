@@ -9,11 +9,8 @@ import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
 import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
@@ -101,7 +98,7 @@ export const AttributesGroupTab = ({
                   });
                 setTableData([updatedData]);
               }
-            } catch (error) {
+            } catch {
               console.error(`Error removing translations for ${locale}`);
             }
           }),

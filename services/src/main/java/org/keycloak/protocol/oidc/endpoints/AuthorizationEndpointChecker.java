@@ -226,9 +226,9 @@ public class AuthorizationEndpointChecker {
     public void checkValidScope() throws AuthorizationCheckException {
         boolean validScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            validScopes = TokenManager.isValidScope(request.getScope(), request.getAuthorizationRequestContext(), client);
+            validScopes = TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client, null);
         } else {
-            validScopes = TokenManager.isValidScope(request.getScope(), client);
+            validScopes = TokenManager.isValidScope(session, request.getScope(), client, null);
         }
         if (!validScopes) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);

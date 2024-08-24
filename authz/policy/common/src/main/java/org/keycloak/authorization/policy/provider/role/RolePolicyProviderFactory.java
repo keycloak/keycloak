@@ -142,7 +142,9 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     }
 
     private void updateRoles(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
-        policy.putConfig("fetchRoles", String.valueOf(representation.isFetchRoles()));
+        if (representation.isFetchRoles() != null) {
+            policy.putConfig("fetchRoles", String.valueOf(representation.isFetchRoles()));
+        }
         updateRoles(policy, authorization, representation.getRoles());
     }
 

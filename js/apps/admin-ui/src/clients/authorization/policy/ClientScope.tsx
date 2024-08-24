@@ -1,13 +1,16 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../../admin-client";
-import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { AddScopeDialog } from "../../scopes/AddScopeDialog";
 

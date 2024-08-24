@@ -1,4 +1,5 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -24,7 +25,6 @@ import {
   ClientRoleTab,
   toClientRole,
 } from "../clients/routes/ClientRole";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
   AttributeForm,
@@ -35,7 +35,7 @@ import {
   arrayToKeyValue,
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { RoleForm } from "../components/role-form/RoleForm";
 import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
@@ -45,14 +45,13 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
-import { useAccess } from "../context/access/Access";
 
 export default function RealmRoleTabs() {
   const { adminClient } = useAdminClient();
@@ -79,6 +78,8 @@ export default function RealmRoleTabs() {
     "query-clients",
     "manage-authorization",
   );
+
+  const [canManageClientRole, setCanManageClientRole] = useState(false);
 
   const [open, setOpen] = useState(false);
   const convert = (role: RoleRepresentation) => {
@@ -114,6 +115,14 @@ export default function RealmRoleTabs() {
       setAttributes(convertedRole.attributes);
     },
     [key],
+  );
+
+  useFetch(
+    async () => adminClient.clients.findOne({ id: clientId }),
+    (client) => {
+      if (clientId) setCanManageClientRole(client?.access?.manage as boolean);
+    },
+    [],
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
@@ -312,6 +321,7 @@ export default function RealmRoleTabs() {
                 <AttributesForm
                   form={form}
                   save={onSubmit}
+                  fineGrainedAccess={canManageClientRole}
                   reset={() =>
                     setValue("attributes", attributes, { shouldDirty: false })
                   }

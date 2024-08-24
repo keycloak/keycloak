@@ -3,6 +3,7 @@ package org.keycloak.test.framework.server;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.database.TestDatabase;
+import org.keycloak.test.framework.events.SysLogServer;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
@@ -35,6 +36,14 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
 
         rawOptions.add("--bootstrap-admin-client-id=" + Config.getAdminClientId());
         rawOptions.add("--bootstrap-admin-client-secret=" + Config.getAdminClientSecret());
+
+        if (serverConfig.enableSysLog()) {
+            SysLogServer sysLogServer = instanceContext.getDependency(SysLogServer.class);
+
+            rawOptions.add("--log=console,syslog");
+            rawOptions.add("--log-syslog-endpoint=" + sysLogServer.getEndpoint());
+            rawOptions.add("--spi-events-listener-jboss-logging-success-level=INFO");
+        }
 
         if (!serverConfig.features().isEmpty()) {
             rawOptions.add("--features=" + String.join(",", serverConfig.features()));

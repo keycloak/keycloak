@@ -127,7 +127,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
 
         }
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
 
         ClientSessionContext clientSessionCtx = processor.attachSession();
         UserSessionModel userSession = processor.getUserSession();

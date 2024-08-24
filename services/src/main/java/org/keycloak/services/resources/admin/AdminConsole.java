@@ -68,6 +68,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -98,6 +100,7 @@ public class AdminConsole {
         protected String realm;
         protected String displayName;
         protected Locale locale;
+        protected boolean isTemporary;
 
         @JsonProperty("createRealm")
         protected boolean createRealm;
@@ -107,13 +110,14 @@ public class AdminConsole {
         public WhoAmI() {
         }
 
-        public WhoAmI(String userId, String realm, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess, Locale locale) {
+        public WhoAmI(String userId, String realm, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess, Locale locale, boolean isTemporary) {
             this.userId = userId;
             this.realm = realm;
             this.displayName = displayName;
             this.createRealm = createRealm;
             this.realmAccess = realmAccess;
             this.locale = locale;
+            this.isTemporary = isTemporary;
         }
 
         public String getUserId() {
@@ -167,6 +171,14 @@ public class AdminConsole {
         @JsonProperty(value = "locale")
         public String getLocaleLanguageTag() {
             return locale != null ? locale.toLanguageTag() : null;
+        }
+
+        public boolean isTemporary() {
+            return isTemporary;
+        }
+
+        public void setTemporary(boolean temporary) {
+            isTemporary = temporary;
         }
     }
 
@@ -269,7 +281,7 @@ public class AdminConsole {
                 .allowedOrigins(authResult.getToken())
                 .allowedMethods("GET")
                 .auth()
-                .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)));
+                .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale, Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME)))));
     }
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {

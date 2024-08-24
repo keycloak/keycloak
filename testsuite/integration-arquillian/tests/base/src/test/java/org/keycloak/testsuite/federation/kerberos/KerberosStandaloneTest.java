@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.kerberos;
 
 import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -273,5 +274,22 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
         infoPage.assertCurrent();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+    }
+
+    @Test
+    public void testRemoveUserTest() throws Exception {
+        assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+
+        // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
+        johnResource.remove();
+
+        try {
+            john = johnResource.toRepresentation(true);
+            Assert.fail("should remove the user");
+        } catch (NotFoundException expected) {
+        }
     }
 }

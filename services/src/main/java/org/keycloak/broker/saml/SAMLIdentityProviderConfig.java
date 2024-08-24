@@ -71,6 +71,12 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public SAMLIdentityProviderConfig() {
     }
 
+    @Override
+    public void setHideOnLogin(boolean hideOnLogin) {
+        super.setHideOnLogin(hideOnLogin);
+        getConfig().put(LEGACY_HIDE_ON_LOGIN_ATTR, String.valueOf(hideOnLogin));
+    }
+
     public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
     }
@@ -375,7 +381,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public void setSignSpMetadata(boolean signSpMetadata) {
         getConfig().put(SIGN_SP_METADATA, String.valueOf(signSpMetadata));
     }
-    
+
     public boolean isAllowCreate() {
         return Boolean.valueOf(getConfig().get(ALLOW_CREATE));
     }
@@ -448,6 +454,6 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         //transient name id format is not accepted together with principaltype SubjectnameId
         if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
             throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");
-        
+
     }
 }

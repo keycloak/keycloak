@@ -123,6 +123,16 @@ public class StripSecretsUtilsTest {
     }
 
     @Test
+    public void stripCredentials(){
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setId("test");
+        rep.setValue("secretValue");
+        StripSecretsUtils.stripCredentials(rep);
+        assertEquals("test", rep.getId());
+        assertEquals("**********", rep.getValue());
+    }
+
+    @Test
     public void stripComponent() {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setId("componentId");

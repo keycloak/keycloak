@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.account;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.SortedSet;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -33,13 +34,16 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.broker.provider.util.SimpleHttp.Response;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
+import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.TokenUtil;
+import org.keycloak.testsuite.util.UserBuilder;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationAccountTest extends AbstractOrganizationTest {
@@ -87,6 +91,29 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         }
     }
 
+    @Test
+    public void testGetOrganizations() throws Exception {
+        UserRepresentation member = createUser();
+        org.keycloak.representations.idm.OrganizationRepresentation orgA = createOrganization("orga");
+        testRealm().organizations().get(orgA.getId()).members().addMember(member.getId()).close();
+        org.keycloak.representations.idm.OrganizationRepresentation orgB = createOrganization("orgb");
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        List<OrganizationRepresentation> organizations = getOrganizations();
+        Assert.assertEquals(2, organizations.size());
+        OrganizationRepresentation organization = organizations.stream()
+                .filter(o -> orgA.getId().equals(o.getId()))
+                .findAny()
+                .orElse(null);
+        Assert.assertNotNull(organization);
+        Assert.assertEquals(orgA.getId(), organization.getId());
+        Assert.assertEquals(orgA.getAlias(), organization.getAlias());
+        Assert.assertEquals(orgA.getName(), organization.getName());
+        Assert.assertEquals(orgA.getDescription(), organization.getDescription());
+        Assert.assertEquals(orgA.getDomains().size(), organization.getDomains().size());
+        Assert.assertTrue(organization.getDomains().containsAll(orgA.getDomains().stream().map(OrganizationDomainRepresentation::getName).toList()));
+    }
+
     private SortedSet<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {
         return SimpleHttpDefault.doGet(getAccountUrl("linked-accounts"), client).auth(tokenUtil.getToken())
                 .asJson(new TypeReference<>() {});
@@ -102,5 +129,22 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         }
 
         return null;
+    }
+
+    private List<OrganizationRepresentation> getOrganizations() throws IOException {
+        return SimpleHttpDefault.doGet(getAccountUrl("organizations"), client).auth(tokenUtil.getToken())
+                .asJson(new TypeReference<>() {});
+    }
+
+    private UserRepresentation createUser() {
+        testRealm().users().create(UserBuilder.create()
+                .username(bc.getUserEmail())
+                .email(bc.getUserEmail())
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build()).close();
+        UserRepresentation member = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
+        getCleanup().addUserId(member.getId());
+        return member;
     }
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @ProtoTypeId(Marshalling.ROOT_AUTHENTICATION_SESSION_ENTITY)
+@Indexed
 public class RootAuthenticationSessionEntity extends SessionEntity {
 
     private final String id;

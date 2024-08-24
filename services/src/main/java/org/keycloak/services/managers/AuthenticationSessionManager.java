@@ -17,6 +17,8 @@
 
 package org.keycloak.services.managers;
 
+import java.util.Objects;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
@@ -26,11 +28,14 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
+
+import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
 
 /**
@@ -233,7 +238,7 @@ public class AuthenticationSessionManager {
 
     // Check to see if we already have authenticationSession with same ID
     public UserSessionModel getUserSession(AuthenticationSessionModel authSession) {
-        return session.sessions().getUserSession(authSession.getRealm(), authSession.getParentSession().getId());
+        return getUserSessionProvider().getUserSession(authSession.getRealm(), authSession.getParentSession().getId());
     }
 
 
@@ -241,5 +246,44 @@ public class AuthenticationSessionManager {
     public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client, String tabId) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
+    }
+
+    public UserSessionModel getUserSessionFromAuthenticationCookie(RealmModel realm) {
+        String oldEncodedId = getAuthSessionCookies(realm);
+
+        if (oldEncodedId == null) {
+            // ideally, we should not rely on auth session id to retrieve user sessions
+            // in case the auth session was removed, we fall back to the identity cookie
+            // we are here doing the user session lookup twice, however the second lookup is going to make sure the
+            // session exists in remote caches
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, true);
+
+            if (authResult != null && authResult.getSession() != null) {
+                oldEncodedId = authResult.getSession().getId();
+            } else {
+                return null;
+            }
+        }
+
+        AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
+        String sessionId = authSessionId.getDecodedId();
+
+        // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
+        // This will remove userSession "locally" if it doesn't exist on remoteCache
+        var userSessionProvider = getUserSessionProvider();
+        userSessionProvider.getUserSessionWithPredicate(realm, sessionId, false, Objects::isNull);
+
+        UserSessionModel userSession = userSessionProvider.getUserSession(realm, sessionId);
+
+        if (userSession != null) {
+            reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
+            return userSession;
+        } else {
+            return null;
+        }
+    }
+
+    private UserSessionProvider getUserSessionProvider() {
+        return session.sessions();
     }
 }

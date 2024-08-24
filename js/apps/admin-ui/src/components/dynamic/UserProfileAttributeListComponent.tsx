@@ -1,11 +1,14 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { FormGroup } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 import { KeySelect } from "../key-value-form/KeySelect";
 import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";

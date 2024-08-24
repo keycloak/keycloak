@@ -43,17 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          check-latest: true
-          cache: maven
-
       - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - name: Prepare archive for upload
         run: |
-          ./mvnw clean install --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
@@ -164,10 +158,7 @@ jobs:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+        uses: ./.github/actions/java-setup
 
       - name: Start Keycloak server
         run: |
@@ -258,10 +249,7 @@ jobs:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+        uses: ./.github/actions/java-setup
 
       - name: Start Keycloak server
         run: |
@@ -270,6 +258,8 @@ jobs:
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+          KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
+          KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
       - name: Start LDAP server
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &

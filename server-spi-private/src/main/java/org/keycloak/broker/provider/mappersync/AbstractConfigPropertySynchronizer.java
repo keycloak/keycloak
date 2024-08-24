@@ -64,7 +64,7 @@ public abstract class AbstractConfigPropertySynchronizer<T extends ProviderEvent
                     "Reference of type '%s' changed from '%s' to '%s' in realm '%s'. Adjusting the reference from mapper '%s' of IDP '%s'.",
                     configPropertyName, configuredValue, newConfiguredValue, realm.getName(), idpMapper.getName(),
                     idpMapper.getIdentityProviderAlias());
-            realm.updateIdentityProviderMapper(idpMapper);
+            getKeycloakSession(event).identityProviders().updateMapper(idpMapper);
         }
     }
 

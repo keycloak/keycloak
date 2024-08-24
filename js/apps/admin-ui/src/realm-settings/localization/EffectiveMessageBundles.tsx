@@ -21,8 +21,8 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
@@ -148,7 +148,7 @@ export const EffectiveMessageBundles = ({
       const sortedMessages = localeSort([...filteredMessages], mapByKey("key"));
 
       return sortedMessages;
-    } catch (error) {
+    } catch {
       return [];
     }
   };

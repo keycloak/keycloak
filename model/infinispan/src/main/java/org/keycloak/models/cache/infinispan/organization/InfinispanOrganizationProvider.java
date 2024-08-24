@@ -26,12 +26,14 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.organization.OrganizationProvider;
 
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
+    private static final String ORG_MEMBERS_COUNT_KEY_SUFFIX = ".members.count";
 
     private final KeycloakSession session;
     private final OrganizationProvider orgDelegate;
@@ -44,8 +46,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
     }
 
-    static String cacheKeyOrgCount(RealmModel realm) {
+    private static String cacheKeyOrgCount(RealmModel realm) {
         return realm.getId() + ORG_COUNT_KEY_SUFFIX;
+    }
+
+    public static String cacheKeyOrgMemberCount(RealmModel realm, OrganizationModel organization) {
+        return realm.getId() + ".org." + organization.getId() + ORG_MEMBERS_COUNT_KEY_SUFFIX;
     }
 
     @Override
@@ -154,6 +160,24 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public long getMembersCount(OrganizationModel organization) {
+        String cacheKey = cacheKeyOrgMemberCount(getRealm(), organization);
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+
+        // cached and not invalidated
+        if (cached != null && !isInvalid(cacheKey)) {
+            return cached.getCount();
+        }
+
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        long membersCount = orgDelegate.getMembersCount(organization);
+        cached = new CachedCount(loaded, getRealm(), cacheKey, membersCount);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+
+        return membersCount;
+    }
+
+    @Override
     public UserModel getMemberById(OrganizationModel organization, String id) {
         RealmModel realm = getRealm();
         UserModel user = session.users().getUserById(realm, id);
@@ -251,7 +275,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public long count() {
         String cacheKey = cacheKeyOrgCount(getRealm());
-        CachedOrganizationCount cached = realmCache.getCache().get(cacheKey, CachedOrganizationCount.class);
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
 
         // cached and not invalidated
         if (cached != null && !isInvalid(cacheKey)) {
@@ -260,7 +284,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
         long count = orgDelegate.count();
-        cached = new CachedOrganizationCount(loaded, getRealm(), count);
+        cached = new CachedCount(loaded, getRealm(), cacheKey, count);
         realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
 
         return count;
@@ -318,6 +342,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     void registerMemberInvalidation(OrganizationModel organization, UserModel member) {
         realmCache.registerInvalidation(cacheKeyByMember(member));
         realmCache.registerInvalidation(cacheKeyMembership(getRealm(), organization, member));
+        realmCache.registerInvalidation(cacheKeyOrgMemberCount(getRealm(), organization));
     }
 
     private boolean isInvalid(String cacheKey) {

@@ -73,22 +73,22 @@ public class PodTemplateTest {
 
     @InjectMock
     WatchedResources watchedResources;
-    
+
     @Inject
     Config operatorConfig;
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
-    
+
     KeycloakDeploymentDependentResource deployment;
-    
+
     @BeforeEach
     protected void setup() {
         this.deployment = new KeycloakDeploymentDependentResource(operatorConfig, watchedResources, distConfigurator);
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
-        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").endMetadata().build();
+        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").withNamespace("keycloak-ns").endMetadata().build();
         existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
                 .withMatchLabels(Utils.allInstanceLabels(kc))
                 .endSelector().endSpec().build();
@@ -402,7 +402,11 @@ public class PodTemplateTest {
         // Assert
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
-        assertThat(container.getEnv().stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
+
+        var envVars = container.getEnv();
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
 
         var readiness = container.getReadinessProbe().getHttpGet();
         assertNotNull(readiness);
@@ -421,29 +425,31 @@ public class PodTemplateTest {
 
         var affinity = podTemplate.getSpec().getAffinity();
         assertNotNull(affinity);
-        assertThat(Serialization.asYaml(affinity)).isEqualTo("---\n"
-                + "podAffinity:\n"
-                + "  preferredDuringSchedulingIgnoredDuringExecution:\n"
-                + "  - podAffinityTerm:\n"
-                + "      labelSelector:\n"
-                + "        matchLabels:\n"
-                + "          app: \"keycloak\"\n"
-                + "          app.kubernetes.io/managed-by: \"keycloak-operator\"\n"
-                + "          app.kubernetes.io/instance: \"instance\"\n"
-                + "          app.kubernetes.io/component: \"server\"\n"
-                + "      topologyKey: \"topology.kubernetes.io/zone\"\n"
-                + "    weight: 10\n"
-                + "podAntiAffinity:\n"
-                + "  preferredDuringSchedulingIgnoredDuringExecution:\n"
-                + "  - podAffinityTerm:\n"
-                + "      labelSelector:\n"
-                + "        matchLabels:\n"
-                + "          app: \"keycloak\"\n"
-                + "          app.kubernetes.io/managed-by: \"keycloak-operator\"\n"
-                + "          app.kubernetes.io/instance: \"instance\"\n"
-                + "          app.kubernetes.io/component: \"server\"\n"
-                + "      topologyKey: \"kubernetes.io/hostname\"\n"
-                + "    weight: 50\n");
+        assertThat(Serialization.asYaml(affinity)).isEqualTo("""
+                ---
+                podAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app: "keycloak"
+                          app.kubernetes.io/managed-by: "keycloak-operator"
+                          app.kubernetes.io/instance: "instance"
+                          app.kubernetes.io/component: "server"
+                      topologyKey: "topology.kubernetes.io/zone"
+                    weight: 10
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app: "keycloak"
+                          app.kubernetes.io/managed-by: "keycloak-operator"
+                          app.kubernetes.io/instance: "instance"
+                          app.kubernetes.io/component: "server"
+                      topologyKey: "kubernetes.io/hostname"
+                    weight: 50
+                """);
     }
 
     @Test

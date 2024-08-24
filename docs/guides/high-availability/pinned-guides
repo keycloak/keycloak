@@ -1,10 +1,9 @@
 introduction
-concepts-active-passive-sync
-bblocks-active-passive-sync
+concepts-multi-site
+bblocks-multi-site
 deploy-aurora-multi-az
-deploy-keycloak-kubernetes
 deploy-infinispan-kubernetes-crossdc
-connect-keycloak-to-external-infinispan
+deploy-keycloak-kubernetes
 deploy-aws-route53-loadbalancer
 deploy-aws-route53-failover-lambda
 operate-failover
