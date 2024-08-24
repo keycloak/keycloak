@@ -784,6 +784,10 @@ function Keycloak (config) {
                 params += '&code_verifier=' + oauth.pkceCodeVerifier;
             }
 
+            if (config.credentials && config.credentials.secret) {
+                params += '&client_secret=' + config.credentials.secret;
+            }
+            
             req.withCredentials = true;
 
             req.onreadystatechange = function() {
