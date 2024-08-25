@@ -9,6 +9,8 @@ import {
   HelpItem,
   SelectControl,
   TextControl,
+  useAlerts,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -27,7 +29,6 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form/FormAccess";
 import {
@@ -37,7 +38,6 @@ import {
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";

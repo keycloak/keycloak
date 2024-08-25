@@ -240,7 +240,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      */
     @Override
     public String getFederationLink() {
-        return null;
+        return StorageId.providerId(getId());
     }
 
     /**

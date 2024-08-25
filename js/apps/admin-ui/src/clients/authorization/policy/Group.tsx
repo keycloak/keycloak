@@ -3,6 +3,7 @@ import {
   FormErrorText,
   HelpItem,
   TextControl,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
@@ -12,7 +13,6 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
-import { useFetch } from "../../../utils/useFetch";
 
 type GroupForm = {
   groups?: GroupValue[];

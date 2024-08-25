@@ -5,7 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static java.lang.String.format;
 
 public class LoggingOptions {
 
@@ -16,6 +19,12 @@ public class LoggingOptions {
     public static final String DEFAULT_LOG_FILENAME = "keycloak.log";
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
     public static final Boolean GELF_ACTIVATED = isGelfActivated();
+
+    // Log format + tracing
+    private static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
+            "%d{yyyy-MM-dd HH:mm:ss,SSS} " + additionalFields + "%-5p [%c] (%t) %s%e%n";
+    public static final String DEFAULT_LOG_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("");
+    public static final String DEFAULT_LOG_TRACING_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
 
     public enum Handler {
         console,
@@ -91,7 +100,13 @@ public class LoggingOptions {
     public static final Option<String> LOG_CONSOLE_FORMAT = new OptionBuilder<>("log-console-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("The format of unstructured console log entries. If the format has spaces in it, escape the value using \"<format>\".")
-            .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
+            .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include tracing information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
+            .defaultValue(true)
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_COLOR = new OptionBuilder<>("log-console-color", Boolean.class)
@@ -120,7 +135,13 @@ public class LoggingOptions {
     public static final Option<String> LOG_FILE_FORMAT = new OptionBuilder<>("log-file-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("Set a format specific to file log entries.")
-            .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
+            .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include tracing information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
+            .defaultValue(true)
             .build();
 
     public static final Option<Output> LOG_FILE_OUTPUT = new OptionBuilder<>("log-file-output", Output.class)
@@ -158,7 +179,13 @@ public class LoggingOptions {
     public static final Option<String> LOG_SYSLOG_FORMAT = new OptionBuilder<>("log-syslog-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("Set a format specific to syslog entries.")
-            .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
+            .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include tracing information in the syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .defaultValue(true)
             .build();
 
     public static final Option<Output> LOG_SYSLOG_OUTPUT = new OptionBuilder<>("log-syslog-output", Output.class)

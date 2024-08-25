@@ -18,11 +18,11 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.common.util.IoUtils;
+import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
-import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import picocli.CommandLine.ArgGroup;
@@ -38,7 +38,7 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
 
     static class UsernameOptions {
         @Option(names = { "--username" }, description = "Username of admin user, defaults to "
-                + ApplianceBootstrap.DEFAULT_TEMP_ADMIN_USERNAME)
+                + BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_USERNAME)
         String username;
 
         @Option(names = { "--username:env" }, description = "Environment variable name for the admin username")
@@ -69,7 +69,7 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
                 username = usernameOptions.username;
             }
         } else if (!bootstrap.noPrompt) {
-            username = IoUtils.readLineFromConsole("username", ApplianceBootstrap.DEFAULT_TEMP_ADMIN_USERNAME);
+            username = IoUtils.readLineFromConsole("username", BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_USERNAME);
         }
 
         if (passwordEnv == null) {

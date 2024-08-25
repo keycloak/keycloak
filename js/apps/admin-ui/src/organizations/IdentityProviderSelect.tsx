@@ -1,6 +1,10 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
+import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Chip,
@@ -21,8 +25,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { ComponentProps } from "../components/dynamic/components";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../utils/useFetch";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../utils/useToggle";
 
 type IdentityProviderSelectProps = ComponentProps & {
@@ -63,13 +66,14 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
+        realmOnly: true,
       };
       if (search) {
         params.search = search;
       }
 
       const idps = await adminClient.identityProviders.find(params);
-      return idps.filter((i) => !i.config?.["kc.org"]);
+      return idps;
     },
     setIdps,
     [search],

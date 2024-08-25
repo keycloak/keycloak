@@ -56,9 +56,9 @@ public abstract class AbstractUserSessionLimitsBrokerTest extends AbstractInitia
 
             configureSessionLimits(realm, postBrokerFlow, behavior, realmLimit, clientLimit);
 
-            IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
-            realm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         });
     }
 

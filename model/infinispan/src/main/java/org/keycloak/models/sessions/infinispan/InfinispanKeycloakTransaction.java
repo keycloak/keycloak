@@ -122,11 +122,12 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
         Object taskKey = getTaskKey(cache, key);
         CacheTask current = tasks.get(taskKey);
-        if (current != null && current != TOMBSTONE && current.getOperation() != Operation.REMOVE) {
+        if (current != null) {
             if (current instanceof CacheTaskWithValue) {
                 ((CacheTaskWithValue<V>) current).setValue(value);
                 ((CacheTaskWithValue<V>) current).updateLifespan(lifespan, lifespanUnit);
-            } else {
+            } else if (current != TOMBSTONE && current.getOperation() != Operation.REMOVE) {
+                // A previous delete operation will take precedence over any new replace
                 throw new IllegalStateException("Can't replace entry: task " + current + " in progress for session");
             }
         } else {
@@ -152,7 +153,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
-            if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
+            if (current instanceof CacheTaskWithValue && current.getOperation() == Operation.PUT) {
                 tasks.put(taskKey, TOMBSTONE);
                 return;
             }

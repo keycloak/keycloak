@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -113,7 +114,7 @@ public class LinkedAccountsResource {
 
     public SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<String> socialIds = findSocialIds();
-        return realm.getIdentityProvidersStream().filter(IdentityProviderModel::isEnabled)
+        return session.identityProviders().getAllStream(Map.of(IdentityProviderModel.ENABLED, "true"), null, null)
                 .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(realm, user)))
                 .collect(Collectors.toCollection(TreeSet::new));
     }
@@ -266,6 +267,6 @@ public class LinkedAccountsResource {
     }
 
     private boolean isValidProvider(String providerAlias) {
-        return realm.getIdentityProvidersStream().anyMatch(model -> Objects.equals(model.getAlias(), providerAlias));
+        return session.identityProviders().getByAlias(providerAlias) != null;
     }
 }

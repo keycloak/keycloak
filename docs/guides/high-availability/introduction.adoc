@@ -29,9 +29,8 @@ Additional performance tuning and security hardening are still recommended when 
 == Blueprints for building blocks
 
 * <@links.ha id="deploy-aurora-multi-az" />
-* <@links.ha id="deploy-keycloak-kubernetes" />
 * <@links.ha id="deploy-infinispan-kubernetes-crossdc" />
-* <@links.ha id="connect-keycloak-to-external-infinispan" />
+* <@links.ha id="deploy-keycloak-kubernetes" />
 * <@links.ha id="deploy-aws-accelerator-loadbalancer" />
 * <@links.ha id="deploy-aws-accelerator-fencing-lambda" />
 

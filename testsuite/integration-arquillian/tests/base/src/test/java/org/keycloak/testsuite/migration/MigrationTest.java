@@ -71,6 +71,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo23_x(true);
         testMigrationTo24_x(true, true);
         testMigrationTo25_0_0();
+        testMigrationTo26_0_0(true);
     }
 
     @Test
@@ -83,5 +84,6 @@ public class MigrationTest extends AbstractMigrationTest {
         testExtremelyLongClientAttribute(migrationRealm);
 
         testMigrationTo25_0_0();
+        testMigrationTo26_0_0(true);
     }
 }

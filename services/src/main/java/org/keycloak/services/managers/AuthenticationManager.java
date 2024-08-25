@@ -417,7 +417,7 @@ public class AuthenticationManager {
         if (logoutBroker) {
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
-                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
                 try {
                     identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
                 } catch (Exception e) {
@@ -648,7 +648,7 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
-            IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+            IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
             Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) {
                 return response;
@@ -1210,14 +1210,14 @@ public class AuthenticationManager {
     }
 
 
-    public static void setClientScopesInSession(AuthenticationSessionModel authSession) {
+    public static void setClientScopesInSession(KeycloakSession session, AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();
         UserModel user = authSession.getAuthenticatedUser();
 
         // todo scope param protocol independent
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
 
-        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
+        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client, user)
                 .map(ClientScopeModel::getId).collect(Collectors.toSet());
 
         authSession.setClientScopes(requestedClientScopes);

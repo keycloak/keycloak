@@ -322,16 +322,12 @@ jobs:
         with:
           job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
 
-  persistent-sessions-tests:
-    name: Persistent Sessions IT
+  volatile-sessions-tests:
+    name: Volatile Sessions IT
     needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    strategy:
-      matrix:
-        variant: [ "pus-ec", "pus-rc" ]
-      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -341,22 +337,9 @@ jobs:
 
       - name: Run base tests
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh volatile-sessions`
           echo "Tests: $TESTS"
-          case "${{ matrix.variant }}" in
-            pus-ec)
-              VARIANT="-Dauth.server.feature=persistent-user-sessions"
-              ;;
-            pus-rc)
-              VARIANT="-Pinfinispan-server -Dauth.server.feature=persistent-user-sessions,multi-site,remote-cache"
-              ;;
-            *)
-              echo "Unknown Matrix element"
-              exit 1
-              ;;
-          esac
-          echo "Variant: $VARIANT"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" $VARIANT -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -403,7 +386,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh remote-cache`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -973,7 +956,7 @@ jobs:
       - quarkus-integration-tests
       - jdk-integration-tests
       - store-integration-tests
-      - persistent-sessions-tests
+      - volatile-sessions-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests

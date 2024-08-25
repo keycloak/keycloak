@@ -1,5 +1,6 @@
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { HelpItem, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -18,14 +19,11 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { toUpperCase } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { CredentialRow } from "./user-credentials/CredentialRow";
 import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
@@ -354,7 +352,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     toggleDeleteDialog();
   };
 
-  const useFederatedCredentials = user.federationLink || user.origin;
+  const useFederatedCredentials = user.federationLink;
   const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
 
   useFetch(

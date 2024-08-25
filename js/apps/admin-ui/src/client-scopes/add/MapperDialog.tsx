@@ -19,8 +19,8 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type Row = {

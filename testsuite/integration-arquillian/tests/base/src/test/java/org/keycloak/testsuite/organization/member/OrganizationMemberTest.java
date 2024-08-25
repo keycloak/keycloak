@@ -115,10 +115,20 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     public void testGetMemberOrganization() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
+        OrganizationRepresentation orgB = createOrganization("orgb");
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         OrganizationRepresentation expected = organization.toRepresentation();
         List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations();
         assertNotNull(actual);
+        assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
+
+        actual = testRealm().organizations().members().getOrganizations(member.getId());
+        assertNotNull(actual);
+        assertEquals(2, actual.size());
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
     }
 
     @Test
@@ -507,6 +517,17 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(orga.members().getAll().size(), is(1));
         assertThat(orga.members().getAll().get(0).getId(), is(memberOrgA.getId()));
         assertThat(orgb.members().getAll().size(), is(0));
+    }
+
+    @Test
+    public void testMembersCount() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        for (int i = 0; i < 10; i++) {
+            addMember(organization, "user" + i +"@neworg.org", "First" + i, "Last" + i);
+        }
+
+        assertEquals(10, (long) organization.members().count());
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {

@@ -1,10 +1,13 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
+import {
+  SelectControl,
+  SelectVariant,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
 type ClientSelectProps = ComponentProps & { variant?: `${SelectVariant}` };

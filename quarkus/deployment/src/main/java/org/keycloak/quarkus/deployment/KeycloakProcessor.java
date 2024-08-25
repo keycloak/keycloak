@@ -22,7 +22,6 @@ import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
-import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
@@ -50,10 +49,12 @@ import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.AnnotationTransformation;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
@@ -318,7 +319,7 @@ class KeycloakProcessor {
         List<String> userManagedEntities = new ArrayList<>();
 
         for (PersistenceXmlDescriptorBuildItem item : descriptors) {
-            ParsedPersistenceXmlDescriptor descriptor = item.getDescriptor();
+            ParsedPersistenceXmlDescriptor descriptor = (ParsedPersistenceXmlDescriptor) item.getDescriptor();
 
             if ("keycloak-default".equals(descriptor.getName())) {
                 defaultUnitDescriptor = descriptor;
@@ -469,7 +470,7 @@ class KeycloakProcessor {
             Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
         descriptors.stream()
                 .map(PersistenceXmlDescriptorBuildItem::getDescriptor)
-                .map(ParsedPersistenceXmlDescriptor::getName)
+                .map(PersistenceUnitDescriptor::getName)
                 .filter(Predicate.not("keycloak-default"::equals)).forEach((String unitName) -> {
                     NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
 
@@ -625,9 +626,9 @@ class KeycloakProcessor {
     // bean without the @Readiness annotation so it won't be used as a health check on it's own.
     @BuildStep
     AnnotationsTransformerBuildItem disableDefaultDataSourceHealthCheck() {
-        return new AnnotationsTransformerBuildItem(AnnotationsTransformer.appliedToClass()
+        return new AnnotationsTransformerBuildItem(AnnotationTransformation.forClasses()
                 .whenClass(c -> c.name().equals(DotName.createSimple(DataSourceHealthCheck.class)))
-                .thenTransform(t -> t.remove(
+                .transform(t -> t.remove(
                         a -> a.name().equals(DotName.createSimple(Readiness.class)))));
     }
 

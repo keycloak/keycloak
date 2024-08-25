@@ -149,10 +149,8 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
-        var replaceOption = (replacePlaceholders) ? " -Dkeycloak.migration.replace-placeholders=true": "";
-
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh" + replaceOption + " --verbose import --optimized --file='" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json' " + override);
 
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);

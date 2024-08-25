@@ -266,15 +266,10 @@ public class UserStorageTest extends AbstractAuthTest {
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + testRealmResource().toRepresentation().getRealm() + "/login-actions/authenticate/" );
 
         Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
-        Cookie legacySessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getSameSiteLegacyName());
 
         String cookieValue = sameSiteSessionCookie.getValue();
         assertThat(cookieValue.contains("spécial"), is(false));
         assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
-
-        String legacyCookieValue = legacySessionCookie.getValue();
-        assertThat(legacyCookieValue.contains("spécial"), is(false));
-        assertThat(legacyCookieValue.contains("sp%C3%A9cial"), is(true));
 
         AccountHelper.logout(testRealmResource(), "spécial");
     }
@@ -426,8 +421,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
         memuser = user(uid).toRepresentation();
         assertNotNull(memuser);
-        assertNotNull(memuser.getOrigin());
-        ComponentRepresentation origin = testRealmResource().components().component(memuser.getOrigin()).toRepresentation();
+        assertNotNull(memuser.getFederationLink());
+        ComponentRepresentation origin = testRealmResource().components().component(memuser.getFederationLink()).toRepresentation();
         Assert.assertEquals("memory", origin.getName());
 
         testRealmResource().users().get(memuser.getId()).remove();

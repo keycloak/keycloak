@@ -109,8 +109,6 @@ export { KeyValueInput } from "./components/key-value-form/KeyValueInput";
 export { ValueSelect } from "./components/key-value-form/ValueSelect";
 export { ClickableCard } from "./components/keycloak-card/ClickableCard";
 export { KeycloakCard } from "./components/keycloak-card/KeycloakCard";
-export { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
-export { ListEmptyState } from "./components/list-empty-state/ListEmptyState";
 export { MultiLineInput } from "./components/multi-line-input/MultiLineInput";
 export { PermissionsTab } from "./components/permission-tab/PermissionTab";
 export { RealmSelector } from "./components/realm-selector/RealmSelector";
@@ -119,9 +117,6 @@ export { AddRoleMappingModal } from "./components/role-mapping/AddRoleMappingMod
 export { RoleMapping } from "./components/role-mapping/RoleMapping";
 export { RolesList } from "./components/roles-list/RolesList";
 export { RoutableTabs } from "./components/routable-tabs/RoutableTabs";
-export { KeycloakDataTable } from "./components/table-toolbar/KeycloakDataTable";
-export { PaginatingTableToolbar } from "./components/table-toolbar/PaginatingTableToolbar";
-export { TableToolbar } from "./components/table-toolbar/TableToolbar";
 export { TimeSelector } from "./components/time-selector/TimeSelector";
 export { TimeSelectorControl } from "./components/time-selector/TimeSelectorControl";
 export { TimeSelectorForm } from "./components/time-selector/TimeSelectorForm";
@@ -145,7 +140,7 @@ export { useWhoAmI, WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 export {
   useErrorBoundary,
   ErrorBoundaryProvider,
-} from "./context/ErrorBoundary";
+} from "@keycloak/keycloak-ui-shared";
 export { useRecentRealms, RecentRealmsProvider } from "./context/RecentRealms";
 export * as DashboardSection from "./dashboard/Dashboard";
 export { ProviderInfo } from "./dashboard/ProviderInfo";

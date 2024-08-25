@@ -16,6 +16,8 @@ const LOCAL_DIST_NAME = "keycloak-999.0.0-SNAPSHOT.tar.gz";
 const SCRIPT_EXTENSION = process.platform === "win32" ? ".bat" : ".sh";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
+const CLIENT_ID = "temporary-admin-service";
+const CLIENT_SECRET = "temporary-admin-service";
 
 const options = {
   local: {
@@ -39,6 +41,8 @@ async function startServer() {
   const env = {
     KC_BOOTSTRAP_ADMIN_USERNAME: ADMIN_USERNAME,
     KC_BOOTSTRAP_ADMIN_PASSWORD: ADMIN_PASSWORD,
+    KC_BOOTSTRAP_ADMIN_CLIENT_ID: CLIENT_ID,
+    KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: CLIENT_SECRET,
     ...process.env,
   };
 
@@ -56,7 +60,7 @@ async function startServer() {
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
-      `--features="login2,account3,admin-fine-grained-authz,transient-users,oid4vc-vci"`,
+      `--features="login2,account3,admin-fine-grained-authz,transient-users,oid4vc-vci,organization"`,
       ...keycloakArgs,
     ],
     {

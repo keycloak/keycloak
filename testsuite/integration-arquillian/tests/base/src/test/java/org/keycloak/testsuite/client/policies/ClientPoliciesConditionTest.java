@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAttributesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceHostsConditionConfig;
@@ -60,6 +61,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
@@ -83,7 +85,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * This test class is for testing a condition of client policies.
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 @EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
@@ -377,6 +379,71 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
             failLoginByNotFollowingPKCE(clientId);
 
             successfulLoginAndLogoutWithPKCE(clientId, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
+        } catch (Exception e) {
+            fail();
+        }
+    }
+
+    @Test
+    public void testClientAttributesCondition() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                        .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
+                                createPKCEEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientAttributesConditionFactory.PROVIDER_ID,
+                                createClientAttributesConditionConfig(new HashMap<String, String>() {
+                                    {
+                                        put("attr1", "Apple");
+                                        put("attr2", "Orange");
+                                    }
+                                }))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientAlphaId = generateSuffixedName("Alpha-App");
+        String clientSecret = "secret";
+        createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setAttributes(new HashMap<String, String>() {
+                {
+                    put("attr1", "Apple");
+                    put("attr2", "Orange");
+                    put("attr3", "Banana");
+                }
+            });
+        });
+
+        String clientBetaId = generateSuffixedName("Beta-App");
+        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setAttributes(new HashMap<String, String>() {
+                {
+                    put("attr1", "Apple");
+                    put("attr2", "Peach"); // attr2 is not "Orange"
+                    put("attr3", "Banana");
+                }
+            });
+        });
+
+        try {
+            successfulLoginAndLogout(clientBetaId, clientSecret);
+        } catch (Exception e) {
+            fail();
+        }
+
+        try {
+            failLoginByNotFollowingPKCE(clientAlphaId);
+            successfulLoginAndLogoutWithPKCE(clientAlphaId, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
         } catch (Exception e) {
             fail();
         }

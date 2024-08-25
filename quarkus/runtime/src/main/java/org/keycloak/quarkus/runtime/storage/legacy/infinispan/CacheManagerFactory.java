@@ -20,14 +20,12 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -67,7 +65,6 @@ import org.keycloak.marshalling.KeycloakModelSchema;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import javax.net.ssl.SSLContext;
@@ -80,7 +77,6 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
@@ -88,7 +84,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
@@ -192,32 +187,14 @@ public class CacheManagerFactory {
         logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
         var baseConfig = defaultRemoteCacheBuilder().build();
 
-        Stream.of(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME, ACTION_TOKEN_CACHE, WORK_CACHE_NAME)
+        Arrays.stream(CLUSTERED_CACHE_NAMES)
                 .forEach(name -> builder.remoteCache(name).configuration(baseConfig.toStringConfiguration(name)));
-
-        // We need indexed caches because the delete statement fails for non-indexed cache.
-        createIndexedRemoteCache(builder, LOGIN_FAILURE_CACHE_NAME, List.of(LoginFailureEntity.class));
-        createIndexedRemoteCache(builder, AUTHENTICATION_SESSIONS_CACHE_NAME, List.of(RootAuthenticationSessionEntity.class));
-    }
-
-    private static void createIndexedRemoteCache(org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder, String name, List<Class<?>> entities) {
-        var config = indexedRemoteCacheBuilder(entities).build();
-        builder.remoteCache(name).configuration(config.toStringConfiguration(name));
     }
 
     private static ConfigurationBuilder defaultRemoteCacheBuilder() {
         var builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(CacheMode.DIST_SYNC);
         builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
-        return builder;
-    }
-
-    private static ConfigurationBuilder indexedRemoteCacheBuilder(List<Class<?>> entities) {
-        var builder = defaultRemoteCacheBuilder();
-        var indexBuilder = builder.indexing().enable();
-        entities.stream()
-                .map(Marshalling::protoEntity)
-                .forEach(indexBuilder::addIndexedEntity);
         return builder;
     }
 
@@ -229,22 +206,22 @@ public class CacheManagerFactory {
         var stored = protostreamMetadataCache.getWithMetadata(key);
         if (stored == null) {
             if (protostreamMetadataCache.putIfAbsent(key, current) == null) {
-                logger.info("Infinispan Protostream schema uploaded for the first time.");
+                logger.info("Infinispan ProtoStream schema uploaded for the first time.");
             } else {
-                logger.info("Failed to update Infinispan Protostream schema. Assumed it was updated by other Keycloak server.");
+                logger.info("Failed to update Infinispan ProtoStream schema. Assumed it was updated by other Keycloak server.");
             }
             checkForProtoSchemaErrors(protostreamMetadataCache);
             return;
         }
         if (Objects.equals(stored.getValue(), current)) {
-            logger.info("Infinispan Protostream schema is up to date!");
+            logger.info("Infinispan ProtoStream schema is up to date!");
             return;
         }
         if (protostreamMetadataCache.replaceWithVersion(key, current, stored.getVersion())) {
-            logger.info("Infinispan Protostream schema successful updated.");
+            logger.info("Infinispan ProtoStream schema successful updated.");
             reindexCaches(remoteCacheManager, stored.getValue(), current);
         } else {
-            logger.info("Failed to update Infinispan Protostream schema. Assumed it was updated by other Keycloak server.");
+            logger.info("Failed to update Infinispan ProtoStream schema. Assumed it was updated by other Keycloak server.");
         }
         checkForProtoSchemaErrors(protostreamMetadataCache);
     }

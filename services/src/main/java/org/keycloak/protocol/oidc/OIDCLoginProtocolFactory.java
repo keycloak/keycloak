@@ -393,7 +393,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public void addAcrClientScope(RealmModel newRealm) {
+    public ClientScopeModel addAcrClientScope(RealmModel newRealm) {
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(newRealm, ACR_SCOPE);
             if (acrScope == null) {
@@ -411,8 +411,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             } else {
                 logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", ACR_SCOPE, newRealm.getName());
             }
+            return acrScope;
         } else {
             logger.debugf("Skip creating client scope '%s' in the realm '%s' due the step-up authentication feature is disabled.", ACR_SCOPE, newRealm.getName());
+            return null;
         }
     }
 

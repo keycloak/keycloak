@@ -20,6 +20,7 @@ package org.keycloak.testsuite.organization.cache;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgMemberCount;
 
 import java.util.List;
 import java.util.Set;
@@ -33,6 +34,9 @@ import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.infinispan.RealmCacheSession;
+import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -185,6 +189,94 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
             assertEquals(0, orgProvider.getByMember(member).count());
+        });
+    }
+
+    @Test
+    public void testMembersCount() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            RealmModel realm = session.getContext().getRealm();
+            UserModel member = session.users().addUser(realm, "member");
+            member.setEnabled(true);
+            orgProvider.addMember(orgb, member);
+
+            String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedCount cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+
+            // initially members count is not cached
+            assertNull(cached);
+
+            // members count is cached after first call of getMembersCount()
+            long membersCount = orgProvider.getMembersCount(orgb);
+            assertEquals(1, membersCount);
+            cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+            assertNotNull(cached);
+            assertEquals(1, cached.getCount());
+
+            UserModel user = session.users().addUser(realm, "another-member");
+            user.setEnabled(true);
+            orgProvider.addMember(orgb, user);
+        });
+
+        // addMember invalidates cached members count
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            RealmModel realm = session.getContext().getRealm();
+
+            String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedCount cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+
+            assertNull(cached);
+            assertEquals(2, orgProvider.getMembersCount(orgb));
+
+            cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+            assertNotNull(cached);
+            assertEquals(2, cached.getCount());
+
+            orgProvider.removeMember(orgb, session.users().getUserByUsername(realm, "another-member"));
+        });
+
+        // removeMember invalidates cached members count
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            RealmModel realm = session.getContext().getRealm();
+
+            String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedCount cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+
+            assertNull(cached);
+            assertEquals(1, orgProvider.getMembersCount(orgb));
+
+            cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+            assertNotNull(cached);
+            assertEquals(1, cached.getCount());
+
+            session.users().removeUser(realm, session.users().getUserByUsername(realm, "member"));
+        });
+
+        // remove user from the realm invalidates cached members count
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            RealmModel realm = session.getContext().getRealm();
+
+            String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            CachedCount cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+
+            assertNull(cached);
+            assertEquals(0, orgProvider.getMembersCount(orgb));
+
+            cached = realmCache.getCache().get(cachedKey, CachedCount.class);
+            assertNotNull(cached);
+            assertEquals(0, cached.getCount());
         });
     }
 }

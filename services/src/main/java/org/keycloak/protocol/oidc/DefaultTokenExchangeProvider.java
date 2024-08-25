@@ -260,14 +260,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
     protected Response exchangeToIdentityProvider(UserModel targetUser, UserSessionModel targetUserSession, String requestedIssuer) {
         event.detail(Details.REQUESTED_ISSUER, requestedIssuer);
-        IdentityProviderModel providerModel = realm.getIdentityProviderByAlias(requestedIssuer);
+        IdentityProviderModel providerModel = session.identityProviders().getByAlias(requestedIssuer);
         if (providerModel == null) {
             event.detail(Details.REASON, "unknown requested_issuer");
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid issuer", Response.Status.BAD_REQUEST);
         }
 
-        IdentityProvider provider = IdentityBrokerService.getIdentityProvider(session, realm, requestedIssuer);
+        IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, requestedIssuer);
         if (!(provider instanceof ExchangeTokenToIdentityProviderToken)) {
             event.detail(Details.REASON, "exchange unsupported by requested_issuer");
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
@@ -415,7 +415,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
         updateUserSessionFromClientAuth(targetUserSession);
@@ -480,7 +480,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession,
                 authSession);
 
@@ -518,20 +518,26 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         AtomicReference<ExchangeExternalToken> externalIdp = new AtomicReference<>(null);
         AtomicReference<IdentityProviderModel> externalIdpModel = new AtomicReference<>(null);
 
-        realm.getIdentityProvidersStream().filter(idpModel -> {
-            IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
-            IdentityProvider idp = factory.create(session, idpModel);
-            if (idp instanceof ExchangeExternalToken) {
-                ExchangeExternalToken external = (ExchangeExternalToken) idp;
-                if (idpModel.getAlias().equals(issuer) || external.isIssuer(issuer, formParams)) {
-                    externalIdp.set(external);
-                    externalIdpModel.set(idpModel);
-                    return true;
-                }
-            }
-            return false;
-        }).findFirst();
+        // try to find the IDP whose alias matches the issuer or the subject issuer in the form params.
+        this.locateExchangeExternalTokenByAlias(issuer, externalIdp, externalIdpModel);
+        if (externalIdp.get() == null && formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER) != null) {
+            this.locateExchangeExternalTokenByAlias(formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER), externalIdp, externalIdpModel);
+        }
 
+        if (externalIdp.get() == null) { // searching by alias didn't work, search all IDPs using ExchangeExternalToken.isIssuer to find a match
+            session.identityProviders().getAllStream().filter(idpModel -> {
+                IdentityProvider idp = IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel);
+                if (idp instanceof ExchangeExternalToken) {
+                    ExchangeExternalToken external = (ExchangeExternalToken) idp;
+                    if (external.isIssuer(issuer, formParams)) {
+                        externalIdp.set(external);
+                        externalIdpModel.set(idpModel);
+                        return true;
+                    }
+                }
+                return false;
+            }).findFirst();
+        }
 
         if (externalIdp.get() == null) {
             event.error(Errors.INVALID_ISSUER);
@@ -568,7 +574,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         String providerId = identityProviderConfig.getAlias();
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
-        Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
+        Set<IdentityProviderMapperModel> mappers = session.identityProviders().getMappersByAliasStream(context.getIdpConfig().getAlias())
                 .collect(Collectors.toSet());
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (IdentityProviderMapperModel mapper : mappers) {
@@ -684,6 +690,17 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     private void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
+        }
+    }
+
+    private void locateExchangeExternalTokenByAlias(String alias,  AtomicReference<ExchangeExternalToken> externalIdp,
+                                                    AtomicReference<IdentityProviderModel> externalIdpModel) {
+
+        IdentityProviderModel idpModel = session.identityProviders().getByAlias(alias);
+        IdentityProvider idp = IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel);
+        if (idp instanceof ExchangeExternalToken) {
+            externalIdp.set((ExchangeExternalToken) idp);
+            externalIdpModel.set(idpModel);
         }
     }
 

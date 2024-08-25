@@ -13,6 +13,7 @@ export const FileComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export const FileComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

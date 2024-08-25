@@ -39,5 +39,16 @@ public class ExportDistTest {
 
         cliResult = dist.run("export", "--realm=master");
         cliResult.assertError("Must specify either --dir or --file options.");
+
+        cliResult = dist.run("export", "--file=master", "--users=skip");
+        cliResult.assertError("Property '--users' can be used only when exporting to a directory, or value set to 'same_file' when exporting to a file.");
+
+        cliResult = dist.run("export", "--file=some-file", "--users=same_file");
+        cliResult.assertNoError("Property '--users' can be used only when exporting to a directory, or value set to 'same_file' when exporting to a file.");
+        cliResult.assertMessage("Exporting model into file");
+
+        cliResult = dist.run("export", "--dir=some-dir", "--users=skip");
+        cliResult.assertMessage("Realm 'master' - data exported");
+
     }
 }

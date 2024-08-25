@@ -23,7 +23,6 @@ data:
       cacheContainer:
         metrics:
           namesAsTags: true
-          gauges: true
           histograms: false
       server:
         endpoints:
@@ -120,7 +119,7 @@ data:
     clearcache offlineSessions
     clearcache sessions
     clearcache work
-
+    
 # end::infinispan-crossdc-clear-caches[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
@@ -144,7 +143,7 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
@@ -153,7 +152,7 @@ spec:
           backup:
             strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-actionTokens[]
@@ -179,16 +178,17 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-a: # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
+        site-a: # <2>
           backup:
-            strategy: "SYNC" # <2>
+            strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-authenticationSessions[]
@@ -214,16 +214,17 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-a: # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
+        site-a: # <2>
           backup:
-            strategy: "SYNC" # <2>
+            strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-clientSessions[]
@@ -249,7 +250,7 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
@@ -258,7 +259,7 @@ spec:
           backup:
             strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-loginFailures[]
@@ -284,16 +285,17 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-a: # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
+        site-a: # <2>
           backup:
-            strategy: "SYNC" # <2>
+            strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-offlineClientSessions[]
@@ -319,16 +321,17 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-a: # <1>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
+        site-a: # <2>
           backup:
-            strategy: "SYNC" # <2>
+            strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-offlineSessions[]
@@ -346,7 +349,7 @@ spec:
   template: |-
     distributedCache:
       mode: "SYNC"
-      owners: "1" # <1>
+      owners: "2"
       statistics: "true"
       remoteTimeout: "5000"
       encoding:
@@ -354,16 +357,17 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-a: # <3>
+        mergePolicy: "ALWAYS_REMOVE" # <1>
+        site-a: # <2>
           backup:
-            strategy: "SYNC" # <4>
+            strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-sessions[]
@@ -389,7 +393,7 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA"
+        mode: "NONE"
         locking: "PESSIMISTIC"
       stateTransfer:
         chunkSize: "16"
@@ -398,7 +402,7 @@ spec:
           backup:
             strategy: "SYNC" # <3>
             timeout: "4500"
-            failurePolicy: "FAIL"
+            failurePolicy: "WARN"
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-work[]
@@ -415,6 +419,8 @@ metadata:
     infinispan.org/monitoring: 'true' # <2>
 spec:
   replicas: 3
+  jmx:
+    enabled: true
 # end::infinispan-single[]
 # end::infinispan-crossdc[]
   # This exposes the http endpoint to interact with its caches - more info - https://infinispan.org/docs/stable/titles/rest/rest.html
@@ -422,7 +428,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.7.Final
+  image: quay.io/infinispan-test/server:15.0.x
+  version: 15.0.4
   configListener:
     enabled: false
   container:
@@ -469,5 +476,5 @@ spec:
           namespace: keycloak # <12>
           url: openshift://api.site-a # <13>
           secretName: xsite-token-secret # <14>
-
+          
     # end::infinispan-crossdc[]

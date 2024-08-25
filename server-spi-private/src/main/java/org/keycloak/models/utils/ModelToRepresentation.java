@@ -68,6 +68,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
+import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -220,8 +221,6 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
-        String providerId = StorageId.resolveProviderId(user);
-        rep.setOrigin(providerId);
         rep.setUsername(user.getUsername());
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
         rep.setLastName(user.getLastName());
@@ -265,8 +264,19 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
+        addAttributeToBriefRep(user, rep, IS_TEMP_ADMIN_ATTR_NAME);
 
         return rep;
+    }
+
+    private static void addAttributeToBriefRep(UserModel user, UserRepresentation userRep, String attributeName) {
+        String userAttributeValue = user.getFirstAttribute(attributeName);
+        if (userAttributeValue != null) {
+            if (userRep.getAttributes() == null) {
+                userRep.setAttributes(new HashMap<>());
+            }
+            userRep.getAttributes().put(attributeName, Collections.singletonList(userAttributeValue));
+        }
     }
 
     public static EventRepresentation toRepresentation(Event event) {
@@ -504,10 +514,10 @@ public class ModelToRepresentation {
         }
 
         if (export) {
-            List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
+            List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream()
                     .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
             rep.setIdentityProviders(identityProviders);
-            List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
+            List<IdentityProviderMapperRepresentation> identityProviderMappers = session.identityProviders().getMappersStream()
                     .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
             rep.setIdentityProviderMappers(identityProviderMappers);
         }
@@ -819,6 +829,7 @@ public class ModelToRepresentation {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
+        providerRep.setHideOnLogin(identityProviderModel.isHideOnLogin());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
@@ -849,8 +860,8 @@ public class ModelToRepresentation {
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
         }
 
-        if (export) {
-            providerRep.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (!export) {
+            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
         }
 
         return providerRep;

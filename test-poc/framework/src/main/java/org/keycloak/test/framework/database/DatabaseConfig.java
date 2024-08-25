@@ -11,6 +11,10 @@ public class DatabaseConfig {
     private String username;
     private String password;
 
+    private String postStartCommand;
+
+    private Map<String, String> env = new HashMap<>();
+
     public String getVendor() {
         return vendor;
     }
@@ -53,6 +57,24 @@ public class DatabaseConfig {
 
     public DatabaseConfig password(String password) {
         this.password = password;
+        return this;
+    }
+
+    public String getPostStartCommand() {
+        return postStartCommand;
+    }
+
+    public DatabaseConfig postStartCommand(String postStartCommand) {
+        this.postStartCommand = postStartCommand;
+        return this;
+    }
+
+    public Map<String, String> getEnv() {
+        return env;
+    }
+
+    public DatabaseConfig env(Map<String, String> env) {
+        this.env = env;
         return this;
     }
 

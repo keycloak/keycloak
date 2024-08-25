@@ -13,7 +13,8 @@ The most significant advantage might be seen in Kubernetes environments as the s
 
 == Management interface configuration
 
-The management interface is turned on by default, so management endpoints such as `/metrics`, and `/health` are exposed on the default management port `9000`.
+The management interface is turned on when something is exposed on it.
+Management endpoints such as `/metrics` and `/health` are exposed on the default management port `9000` when metrics and health are enabled.
 The management interface provides a set of options and is fully configurable.
 In order to change the port for the management interface, you can use the {project_name} option `http-management-port`.
 

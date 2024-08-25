@@ -24,11 +24,15 @@ public class InstanceContext<T, A extends Annotation> {
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
-        this.ref = supplier.getRef(annotation);
+        this.ref = StringUtil.convertEmptyToNull(supplier.getRef(annotation));
     }
 
     public <D> D getDependency(Class<D> typeClazz) {
-        return registry.getDependency(typeClazz, this);
+        return getDependency(typeClazz, null);
+    }
+
+    public <D> D getDependency(Class<D> typeClazz, String ref) {
+        return registry.getDependency(typeClazz, ref, this);
     }
 
     public Registry getRegistry() {

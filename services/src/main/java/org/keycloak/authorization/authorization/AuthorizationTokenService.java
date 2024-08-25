@@ -161,7 +161,7 @@ public class AuthorizationTokenService {
             }
 
             KeycloakIdentity identity;
-            
+
             try {
                 identity = new KeycloakIdentity(keycloakSession, idToken);
             } catch (Exception cause) {
@@ -214,7 +214,7 @@ public class AuthorizationTokenService {
             if (identity != null) {
                 event.user(identity.getId());
             }
-            
+
             ResourceServer resourceServer = getResourceServer(ticket, request);
 
             Collection<Permission> permissions;
@@ -346,7 +346,7 @@ public class AuthorizationTokenService {
             authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
 
-            AuthenticationManager.setClientScopesInSession(authSession);
+            AuthenticationManager.setClientScopesInSession(keycloakSession, authSession);
             clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
         } else {
             clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, keycloakSession);
@@ -726,7 +726,7 @@ public class AuthorizationTokenService {
                 limit.decrementAndGet();
             }
         }
-        
+
         return permission;
     }
 
@@ -869,7 +869,7 @@ public class AuthorizationTokenService {
                 } else {
                     // resource uri and scopes are specified, or only scopes are specified
                     String[] scopes = parts[1].split(",");
-                    
+
                     if (uri.isEmpty()) {
                         // only scopes are specified
                         addPermission("", scopes);

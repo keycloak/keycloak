@@ -67,6 +67,13 @@ public class BuildAndStartDistTest {
         cliResult.assertBuild();
         cliResult.assertStarted();
     }
+    
+    @Test
+    @WithEnvVars({"KEYCLOAK_ADMIN", "oldadmin123", "KEYCLOAK_ADMIN_PASSWORD", "oldadmin123"})
+    @Launch({"start-dev"})
+    void testCreateLegacyAdmin(KeycloakDistribution dist, LaunchResult result) {
+        assertAdminCreation(dist, result, "oldadmin123", "oldadmin123", "oldadmin123");
+    }
 
     @Test
     @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})

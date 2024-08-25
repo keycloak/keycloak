@@ -25,7 +25,7 @@ public class MockChildSupplier implements Supplier<MockChildValue, MockChildAnno
 
     @Override
     public MockChildValue getValue(InstanceContext<MockChildValue, MockChildAnnotation> instanceContext) {
-        MockParentValue mockParentValue = instanceContext.getDependency(MockParentValue.class);
+        MockParentValue mockParentValue = instanceContext.getDependency(MockParentValue.class, instanceContext.getAnnotation().parentRef());
         return new MockChildValue(mockParentValue);
     }
 

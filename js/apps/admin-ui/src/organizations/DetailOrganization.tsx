@@ -1,4 +1,8 @@
-import { FormSubmitButton } from "@keycloak/keycloak-ui-shared";
+import {
+  FormSubmitButton,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -9,7 +13,6 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { AttributesForm } from "../components/key-value-form/AttributeForm";
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
@@ -18,9 +21,9 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { DetailOrganizationHeader } from "./DetailOraganzationHeader";
+import { IdentityProviders } from "./IdentityProviders";
 import { Members } from "./Members";
 import {
   OrganizationForm,
@@ -32,7 +35,6 @@ import {
   OrganizationTab,
   toEditOrganization,
 } from "./routes/EditOrganization";
-import { IdentityProviders } from "./IdentityProviders";
 
 export default function DetailOrganization() {
   const { adminClient } = useAdminClient();

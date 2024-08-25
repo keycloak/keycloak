@@ -14,4 +14,6 @@ public interface KeycloakTestServerConfig {
         return Collections.emptySet();
     }
 
+    default boolean enableSysLog() { return false; }
+
 }

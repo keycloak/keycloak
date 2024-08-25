@@ -71,6 +71,8 @@
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
+:tracingguide_name: Enabling Tracing
+:tracingguide_link: https://www.keycloak.org/server/tracing
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/

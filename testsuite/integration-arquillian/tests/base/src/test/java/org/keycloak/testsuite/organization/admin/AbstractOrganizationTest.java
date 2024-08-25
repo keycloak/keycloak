@@ -54,6 +54,7 @@ import org.keycloak.testsuite.organization.broker.BrokerConfigurationWrapper;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.TestCleanup;
 
@@ -70,6 +71,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected SelectOrganizationPage selectOrganizationPage;
 
     @Page
     protected IdpConfirmLinkPage idpConfirmLinkPage;
@@ -115,6 +119,12 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected OrganizationRepresentation createOrganization(RealmResource realm, String name, String... orgDomains) {
         return createOrganization(realm, getCleanup(), name, brokerConfigFunction.apply(name).setUpIdentityProvider(), orgDomains);
+    }
+
+    protected OrganizationRepresentation createOrganization(String name, Map<String, String> brokerConfig) {
+        IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
+        broker.getConfig().putAll(brokerConfig);
+        return createOrganization(testRealm(), getCleanup(), name, broker, name + ".org");
     }
 
     protected OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
@@ -266,26 +276,26 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         };
     }
 
-    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, IdentityProviderRepresentation idp, boolean isVisible, boolean clickIdp) {
+    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         Assert.assertTrue(loginPage.isRegisterLinkPresent());
-        if (idp != null) {
+        if (idpAlias != null) {
             if (isVisible) {
-                Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertTrue(loginPage.isSocialButtonPresent(idpAlias));
             } else {
-                Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertFalse(loginPage.isSocialButtonPresent(idpAlias));
             }
         }
         loginPage.loginUsername(username);
 
         if (clickIdp) {
             assertTrue(loginPage.isPasswordInputPresent());
-            assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
-            loginPage.clickSocial(idp.getAlias());
+            assertTrue(loginPage.isSocialButtonPresent(idpAlias));
+            loginPage.clickSocial(idpAlias);
         }
 
         waitForPage(driver, "sign in to", true);

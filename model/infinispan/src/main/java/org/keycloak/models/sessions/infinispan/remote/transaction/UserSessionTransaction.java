@@ -29,12 +29,12 @@ import org.keycloak.models.KeycloakTransaction;
  */
 public class UserSessionTransaction extends AbstractKeycloakTransaction {
 
-    private final UseSessionChangeLogTransaction userSessions;
+    private final UserSessionChangeLogTransaction userSessions;
     private final ClientSessionChangeLogTransaction clientSessions;
-    private final UseSessionChangeLogTransaction offlineUserSessions;
+    private final UserSessionChangeLogTransaction offlineUserSessions;
     private final ClientSessionChangeLogTransaction offlineClientSessions;
 
-    public UserSessionTransaction(UseSessionChangeLogTransaction userSessions, UseSessionChangeLogTransaction offlineUserSessions, ClientSessionChangeLogTransaction clientSessions, ClientSessionChangeLogTransaction offlineClientSessions) {
+    public UserSessionTransaction(UserSessionChangeLogTransaction userSessions, UserSessionChangeLogTransaction offlineUserSessions, ClientSessionChangeLogTransaction clientSessions, ClientSessionChangeLogTransaction offlineClientSessions) {
         this.userSessions = userSessions;
         this.offlineUserSessions = offlineUserSessions;
         this.clientSessions = clientSessions;
@@ -69,20 +69,12 @@ public class UserSessionTransaction extends AbstractKeycloakTransaction {
         offlineClientSessions.rollback();
     }
 
-    public ClientSessionChangeLogTransaction getClientSessions() {
-        return clientSessions;
+    public ClientSessionChangeLogTransaction getClientSessions(boolean offline) {
+        return offline ? offlineClientSessions : clientSessions;
     }
 
-    public UseSessionChangeLogTransaction getUserSessions() {
-        return userSessions;
-    }
-
-    public ClientSessionChangeLogTransaction getOfflineClientSessions() {
-        return offlineClientSessions;
-    }
-
-    public UseSessionChangeLogTransaction getOfflineUserSessions() {
-        return offlineUserSessions;
+    public UserSessionChangeLogTransaction getUserSessions(boolean offline) {
+        return offline ? offlineUserSessions : userSessions;
     }
 
     public void removeAllSessionsByRealmId(String realmId) {
@@ -95,5 +87,15 @@ public class UserSessionTransaction extends AbstractKeycloakTransaction {
     public void removeOnlineSessionsByRealmId(String realmId) {
         clientSessions.getConditionalRemover().removeByRealmId(realmId);
         userSessions.getConditionalRemover().removeByRealmId(realmId);
+    }
+
+    public void removeAllSessionByUserId(String realmId, String userId) {
+        userSessions.getConditionalRemover().removeByUserId(realmId, userId);
+        clientSessions.getConditionalRemover().removeByUserId(realmId, userId);
+    }
+
+    public void removeUserSessionById(String userSessionId, boolean offline) {
+        getUserSessions(offline).remove(userSessionId);
+        getClientSessions(offline).removeByUserSessionId(userSessionId);
     }
 }

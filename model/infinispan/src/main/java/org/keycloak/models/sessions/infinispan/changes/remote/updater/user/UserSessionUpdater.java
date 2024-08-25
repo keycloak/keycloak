@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.infinispan.client.hotrod.MetadataValue;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -18,27 +17,26 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.helper.MapUpdater;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 /**
  * The {@link Updater} implementation to keep track of modifications for {@link UserSessionModel}.
  */
-public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> implements UserSessionModel {
+public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEntity> implements UserSessionModel {
 
     private static final Factory ONLINE = new Factory(false);
     private static final Factory OFFLINE = new Factory(true);
 
     private final MapUpdater<String, String> notesUpdater;
-    private final List<Consumer<UserSessionEntity>> changes;
+    private final List<Consumer<RemoteUserSessionEntity>> changes;
     private final boolean offline;
     private RealmModel realm;
     private UserModel user;
-    private ClientSessionMappingAdapter clientSessionMappingAdapter;
+    private Map<String, AuthenticatedClientSessionModel> clientSessions;
     private SessionPersistenceState persistenceState = SessionPersistenceState.PERSISTENT;
 
-    private UserSessionUpdater(String cacheKey, UserSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
+    private UserSessionUpdater(String cacheKey, RemoteUserSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
         super(cacheKey, cacheValue, version, initialState);
         this.offline = offline;
         if (cacheValue == null) {
@@ -54,40 +52,39 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
     }
 
     /**
-     * @param offline If {@code true}, it creates offline {@link UserSessionModel}.
-     * @return The {@link UpdaterFactory} implementation to create instances of {@link UserSessionModel}.
+     * @return The {@link UpdaterFactory} implementation to create online sessions instances of
+     * {@link UserSessionModel}.
      */
-    public static UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> factory(boolean offline) {
-        return offline ? OFFLINE : ONLINE;
+    public static UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> onlineFactory() {
+        return ONLINE;
+    }
+
+    /**
+     * @return The {@link UpdaterFactory} implementation to create offline sessions instances of
+     * {@link UserSessionModel}.
+     */
+    public static UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> offlineFactory() {
+        return OFFLINE;
     }
 
     @Override
-    public UserSessionEntity apply(String ignored, UserSessionEntity userSessionEntity) {
+    public RemoteUserSessionEntity apply(String ignored, RemoteUserSessionEntity userSessionEntity) {
         initNotes(userSessionEntity);
-        initStore(userSessionEntity);
         changes.forEach(change -> change.accept(userSessionEntity));
         notesUpdater.applyChanges(userSessionEntity.getNotes());
-        clientSessionMappingAdapter.applyChanges(userSessionEntity.getAuthenticatedClientSessions());
         return userSessionEntity;
     }
 
     @Override
     public Expiration computeExpiration() {
-        long maxIdle;
-        long lifespan;
-        if (offline) {
-            maxIdle = SessionTimeouts.getOfflineSessionMaxIdleMs(realm, null, getValue());
-            lifespan = SessionTimeouts.getOfflineSessionLifespanMs(realm, null, getValue());
-        } else {
-            maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, null, getValue());
-            lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, null, getValue());
-        }
+        long maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, isOffline(), getValue().isRememberMe(), getValue().getLastSessionRefresh());
+        long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, isOffline(), getValue().isRememberMe(), getValue().getStarted());
         return new Expiration(maxIdle, lifespan);
     }
 
     @Override
     public String getId() {
-        return getValue().getId();
+        return getKey();
     }
 
     @Override
@@ -152,17 +149,20 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
 
     @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-        return clientSessionMappingAdapter;
+        return clientSessions;
     }
 
     @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-        clientSessionMappingAdapter.removeAll(removedClientUUIDS);
+        if (removedClientUUIDS == null || removedClientUUIDS.isEmpty()) {
+            return;
+        }
+        removedClientUUIDS.forEach(clientSessions::remove);
     }
 
     @Override
     public AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
-        return clientSessionMappingAdapter.get(clientUUID);
+        return clientSessions.get(clientUUID);
     }
 
     @Override
@@ -205,8 +205,8 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
         this.user = user;
         changes.clear();
         notesUpdater.clear();
-        clientSessionMappingAdapter.clear();
-        addAndApplyChange(userSessionEntity -> UserSessionEntity.updateSessionEntity(userSessionEntity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId));
+        clientSessions.clear();
+        addAndApplyChange(userSessionEntity -> userSessionEntity.restart(realm.getId(), user.getId(), loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId));
     }
 
     @Override
@@ -221,7 +221,7 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
 
     @Override
     protected boolean isUnchanged() {
-        return changes.isEmpty() && notesUpdater.isUnchanged() && clientSessionMappingAdapter.isUnchanged();
+        return changes.isEmpty() && notesUpdater.isUnchanged();
     }
 
     /**
@@ -230,15 +230,13 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
      * @param persistenceState The {@link SessionPersistenceState}.
      * @param realm            The {@link RealmModel} to where this user session belongs.
      * @param user             The {@link UserModel} associated to this user session.
-     * @param factory          The {@link ClientSessionAdapterFactory} to create the {@link ClientSessionMappingAdapter}
-     *                         to track modifications into the client sessions.
+     * @param clientSessions   The {@link Map} associated to this use session.
      */
-    public synchronized void initialize(SessionPersistenceState persistenceState, RealmModel realm, UserModel user, ClientSessionAdapterFactory factory) {
-        initStore(getValue());
+    public synchronized void initialize(SessionPersistenceState persistenceState, RealmModel realm, UserModel user, Map<String, AuthenticatedClientSessionModel> clientSessions) {
         this.realm = Objects.requireNonNull(realm);
         this.user = Objects.requireNonNull(user);
         this.persistenceState = Objects.requireNonNull(persistenceState);
-        clientSessionMappingAdapter = factory.create(getValue().getAuthenticatedClientSessions());
+        this.clientSessions = Objects.requireNonNull(clientSessions);
     }
 
     /**
@@ -248,44 +246,29 @@ public class UserSessionUpdater extends BaseUpdater<String, UserSessionEntity> i
         return realm != null;
     }
 
-    private void addAndApplyChange(Consumer<UserSessionEntity> change) {
+    private void addAndApplyChange(Consumer<RemoteUserSessionEntity> change) {
         change.accept(getValue());
         changes.add(change);
     }
 
-    private static void initNotes(UserSessionEntity entity) {
+    private static void initNotes(RemoteUserSessionEntity entity) {
         var notes = entity.getNotes();
         if (notes == null) {
             entity.setNotes(new HashMap<>());
         }
     }
 
-    private static void initStore(UserSessionEntity entity) {
-        var store = entity.getAuthenticatedClientSessions();
-        if (store == null) {
-            entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
-        }
-    }
-
-    /**
-     * Factory SPI to create {@link ClientSessionMappingAdapter} for the {@link AuthenticatedClientSessionStore} used by
-     * this instance.
-     */
-    public interface ClientSessionAdapterFactory {
-        ClientSessionMappingAdapter create(AuthenticatedClientSessionStore clientSessionStore);
-    }
-
-    private record Factory(boolean offline) implements UpdaterFactory<String, UserSessionEntity, UserSessionUpdater> {
+    private record Factory(
+            boolean offline) implements UpdaterFactory<String, RemoteUserSessionEntity, UserSessionUpdater> {
 
         @Override
-        public UserSessionUpdater create(String key, UserSessionEntity entity) {
+        public UserSessionUpdater create(String key, RemoteUserSessionEntity entity) {
             return new UserSessionUpdater(key, Objects.requireNonNull(entity), -1, offline, UpdaterState.CREATED);
         }
 
         @Override
-        public UserSessionUpdater wrapFromCache(String key, MetadataValue<UserSessionEntity> entity) {
-            assert entity != null;
-            return new UserSessionUpdater(key, Objects.requireNonNull(entity.getValue()), entity.getVersion(), offline, UpdaterState.READ);
+        public UserSessionUpdater wrapFromCache(String key, RemoteUserSessionEntity value, long version) {
+            return new UserSessionUpdater(key, value, version, offline, UpdaterState.READ);
         }
 
         @Override

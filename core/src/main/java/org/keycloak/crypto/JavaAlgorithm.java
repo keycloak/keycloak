@@ -37,7 +37,7 @@ public class JavaAlgorithm {
     public static final String SHA256 = "SHA-256";
     public static final String SHA384 = "SHA-384";
     public static final String SHA512 = "SHA-512";
-    public static final String SHAKE256 = "SHAKE-256";
+    public static final String SHAKE256 = "SHAKE256";
 
     public static String getJavaAlgorithm(String algorithm) {
         return getJavaAlgorithm(algorithm, null);

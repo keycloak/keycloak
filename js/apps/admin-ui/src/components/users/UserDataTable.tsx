@@ -2,6 +2,12 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   ButtonVariant,
@@ -32,13 +38,9 @@ import { SearchType } from "../../user/details/SearchFilter";
 import { toAddUser } from "../../user/routes/AddUser";
 import { toUser } from "../../user/routes/User";
 import { emptyFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { BruteUser, findUsers } from "../role-mapping/resource";
-import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
 
 export type UserAttribute = {
@@ -48,11 +50,23 @@ export type UserAttribute = {
 };
 
 const UserDetailLink = (user: BruteUser) => {
+  const { t } = useTranslation();
   const { realm } = useRealm();
   return (
-    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username} <StatusRow user={user} />
-    </Link>
+    <>
+      <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+        {user.username}
+        <StatusRow user={user} />
+      </Link>
+      {user.attributes?.["is_temporary_admin"][0] === "true" && (
+        <Tooltip content={t("temporaryAdmin")}>
+          <WarningTriangleIcon
+            className="pf-v5-u-ml-sm"
+            id="temporary-admin-label"
+          />
+        </Tooltip>
+      )}
+    </>
   );
 };
 

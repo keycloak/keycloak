@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
-import { type FallbackProps } from "../../context/ErrorBoundary";
+import { type FallbackProps } from "@keycloak/keycloak-ui-shared";
 
 export const ErrorRenderer = ({ error }: FallbackProps) => {
   const { t } = useTranslation();

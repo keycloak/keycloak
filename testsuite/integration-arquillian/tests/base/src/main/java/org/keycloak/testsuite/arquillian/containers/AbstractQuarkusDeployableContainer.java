@@ -168,7 +168,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
             commands.add("--hostname-strict-https=false");
-        } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak ~22
+        } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
         }
 
@@ -232,12 +232,14 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     private static void prepareCommandsForRebuilding(List<String> commands) {
         commands.removeIf("--optimized"::equals);
         commands.add("--http-relative-path=/auth");
+        commands.add("--health-enabled=true"); // expose something to management interface to turn it on
     }
 
     protected void addFeaturesOption(List<String> commands) {
-        String defaultFeatures = configuration.getDefaultFeatures();
+        String enabledFeatures = configuration.getEnabledFeatures();
+        String disabledFeatures = configuration.getDisabledFeatures();
 
-        if (StringUtil.isBlank(defaultFeatures)) {
+        if (StringUtil.isBlank(enabledFeatures) && StringUtil.isBlank(disabledFeatures)) {
             return;
         }
 
@@ -245,24 +247,32 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             return;
         }
 
-        StringBuilder featuresOption = new StringBuilder("--features=").append(defaultFeatures);
-        Iterator<String> iterator = commands.iterator();
+        if (!StringUtil.isBlank(enabledFeatures)) {
+            appendOrAddCommand(commands, "--features=", enabledFeatures);
+        }
 
-        while (iterator.hasNext()) {
-            String command = iterator.next();
-
-            if (command.startsWith("--features")) {
-                featuresOption = new StringBuilder(command);
-                featuresOption.append(",").append(defaultFeatures);
-                iterator.remove();
-                break;
-            }
+        if (!StringUtil.isBlank(disabledFeatures)) {
+            appendOrAddCommand(commands, "--features-disabled=", disabledFeatures);
         }
 
         // enabling or disabling features requires rebuilding the image
         prepareCommandsForRebuilding(commands);
+    }
 
-        commands.add(featuresOption.toString());
+    private void appendOrAddCommand(List<String> commands, String command, String addition) {
+        Iterator<String> iterator = commands.iterator();
+
+        while (iterator.hasNext()) {
+            String existingCommand = iterator.next();
+
+            if (existingCommand.startsWith(command)) {
+                iterator.remove();
+                commands.add(existingCommand + "," + addition);
+                return;
+            }
+        }
+
+        commands.add(command + addition);
     }
 
     protected List<String> configureArgs(List<String> commands) {
@@ -424,7 +434,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private Collection<String> getDefaultFeatures() {
-        var features = configuration.getDefaultFeatures();
+        var features = configuration.getEnabledFeatures();
         if (features == null || features.isBlank()) {
             return List.of();
         }

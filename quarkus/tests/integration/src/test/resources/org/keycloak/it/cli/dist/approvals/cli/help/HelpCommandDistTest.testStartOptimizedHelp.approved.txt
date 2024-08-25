@@ -49,7 +49,8 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Built-in values include: tcp, udp, kubernetes, ec2, azure, google
+                       Possible values are: tcp, udp, kubernetes, ec2, azure, google, or a custom
+                       one.
 
 Config:
 
@@ -144,8 +145,8 @@ HTTP(S):
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
+                       no value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
@@ -158,32 +159,34 @@ HTTP(S):
                        instead, see the docs for details.
 --https-trust-store-type <type>
                      DEPRECATED. The type of the trust store file. If not given, the type is
-                       automatically detected based on the file name. If 'fips-mode' is set to
+                       automatically detected based on the file extension. If 'fips-mode' is set to
                        'strict' and no value is set, it defaults to 'BCFKS'. Use the System
                        Truststore instead, see the docs for details.
 
 Management:
 
 --http-management-port <port>
-                     Port of the management interface. Default: 9000. Available only when
-                       Management interface is enabled.
+                     Port of the management interface. Relevant only when something is exposed on
+                       the management interface - see the guide for details. Default: 9000.
 --https-management-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. If not given, the value is inherited from HTTP
-                       options. Available only when Management interface is enabled.
+                       options. Relevant only when something is exposed on the management interface
+                       - see the guide for details.
 --https-management-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server. If not
-                       given, the value is inherited from HTTP options. Available only when
-                       Management interface is enabled.
+                       given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for details.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
-                       inherited from HTTP options. Available only when Management interface is
-                       enabled.
+                       inherited from HTTP options. Relevant only when something is exposed on the
+                       management interface - see the guide for details.
 --https-management-key-store-password <password>
                      The password of the key store file for the management server. If not given,
-                       the value is inherited from HTTP options. Default: password. Available only
-                       when Management interface is enabled.
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Default:
+                       password.
 
 Proxy:
 
@@ -233,6 +236,24 @@ Truststore:
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
                        containing those files that will be used as a system truststore.
+
+Bootstrap Admin:
+
+--bootstrap-admin-client-id <client id>
+                     Client id for the temporary bootstrap admin service account. Used only when
+                       the master realm is created. Available only when bootstrap admin client
+                       secret is set. Default: temp-admin.
+--bootstrap-admin-client-secret <client secret>
+                     Client secret for the temporary bootstrap admin service account. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible.
+--bootstrap-admin-password <password>
+                     Temporary bootstrap admin password. Used only when the master realm is
+                       created. Use a non-CLI configuration option for this option if possible.
+--bootstrap-admin-username <username>
+                     Temporary bootstrap admin username. Used only when the master realm is
+                       created. Available only when bootstrap admin password is set. Default:
+                       temp-admin.
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the

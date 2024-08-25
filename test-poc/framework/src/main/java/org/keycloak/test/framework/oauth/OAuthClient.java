@@ -11,9 +11,11 @@ import com.nimbusds.oauth2.sdk.TokenIntrospectionRequest;
 import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.TokenRevocationRequest;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
@@ -21,7 +23,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.test.framework.realm.ApiUtil;
+import org.keycloak.test.framework.util.ApiUtil;
 import org.keycloak.test.framework.realm.ClientConfig;
 import org.keycloak.test.framework.realm.ManagedClient;
 import org.keycloak.test.framework.realm.ManagedRealm;
@@ -77,6 +79,12 @@ public class OAuthClient {
 
         TokenIntrospectionRequest introspectionRequest = new TokenIntrospectionRequest(introspectionEndpoint, clientAuthentication, accessToken);
         return TokenIntrospectionResponse.parse(introspectionRequest.toHTTPRequest().send());
+    }
+
+    public HTTPResponse revokeAccessToken(AccessToken token) throws GeneralException, IOException {
+        URI revocationEndpoint = getOIDCProviderMetadata().getRevocationEndpointURI();
+        TokenRevocationRequest revocationRequest = new TokenRevocationRequest(revocationEndpoint, getClientAuthentication(), token);
+        return revocationRequest.toHTTPRequest().send();
     }
 
     public URL authorizationRequest() throws IOException, GeneralException {

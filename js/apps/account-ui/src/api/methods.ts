@@ -3,6 +3,7 @@ import {
   type KeycloakContext,
 } from "@keycloak/keycloak-ui-shared";
 
+import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
 import {
@@ -155,4 +156,9 @@ export async function getGroups({ signal, context }: CallOptions) {
     signal,
   });
   return parseResponse<Group[]>(response);
+}
+
+export async function getUserOrganizations({ signal, context }: CallOptions) {
+  const response = await request("/organizations", context, { signal });
+  return parseResponse<OrganizationRepresentation[]>(response);
 }

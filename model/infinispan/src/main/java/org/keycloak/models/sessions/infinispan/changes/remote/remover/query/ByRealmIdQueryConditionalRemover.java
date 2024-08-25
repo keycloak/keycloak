@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -44,8 +43,7 @@ public class ByRealmIdQueryConditionalRemover<K, V extends SessionEntity> extend
     private final String entity;
     private final List<String> realms;
 
-    public ByRealmIdQueryConditionalRemover(String entity, Executor executor) {
-        super(executor);
+    public ByRealmIdQueryConditionalRemover(String entity) {
         this.entity = entity;
         this.realms = new ArrayList<>();
     }

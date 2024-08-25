@@ -33,7 +33,7 @@ import {
 } from "@patternfly/react-core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,

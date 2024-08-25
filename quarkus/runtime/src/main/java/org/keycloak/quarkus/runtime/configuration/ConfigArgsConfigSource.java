@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -46,6 +47,8 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace.
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
+
+    public static final String SPI_OPTION_PREFIX = "--spi";
 
     public static final Set<String> SHORT_OPTIONS_ACCEPTING_VALUE = Set.of(Main.PROFILE_SHORT_NAME, Main.CONFIG_FILE_SHORT_NAME);
 
@@ -89,15 +92,14 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     @Override
-    public String getValue(String propertyName) {
-        Map<String, String> properties = getProperties();
-        String value = properties.get(propertyName);
+    public ConfigValue getConfigValue(String propertyName) {
+        ConfigValue value = super.getConfigValue(propertyName);
 
         if (value != null) {
             return value;
         }
 
-        return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
+        return super.getConfigValue(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArguments() {
@@ -156,7 +158,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
                 // - does not know all of the picocli parsing rules. picocli will accept -cffile, and short option grouping - that's not accounted for
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith("--spi")) {
+                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {

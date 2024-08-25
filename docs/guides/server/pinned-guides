@@ -16,6 +16,7 @@ fips
 management-interface
 health
 configuration-metrics
+tracing
 importExport
 vault
 all-config

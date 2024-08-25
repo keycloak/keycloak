@@ -1,11 +1,8 @@
 import { Button, ToolbarItem } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { translationFormatter } from "../../clients/ClientsSection";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import { translationFormatter } from "../../utils/translationFormatter";
 
 export type EventType = {
   id: string;

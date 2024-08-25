@@ -17,8 +17,12 @@
 
 package org.keycloak.infinispan.util;
 
+import java.util.Map;
+
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import static org.keycloak.common.Profile.Feature.REMOTE_CACHE;
 
@@ -44,5 +48,49 @@ public final class InfinispanUtils {
     // true if running with embedded caches.
     public static boolean isEmbeddedInfinispan() {
         return !isRemoteInfinispan();
+    }
+
+    // ---- Retries on Error - Exponential Back Off ----
+
+    // max number of retries on error.
+    public static final int DEFAULT_MAX_RETRIES = 10;
+    private static final String CONFIG_MAX_RETRIES = "maxRetries";
+
+    // the base back-off time in milliseconds
+    public static final int DEFAULT_RETRIES_BASE_TIME_MILLIS = 10;
+    private static final String CONFIG_RETRIES_BASE_TIME_MILLIS = "retryBaseTime";
+
+    public static void configureMaxRetries(ProviderConfigurationBuilder builder) {
+        builder.property()
+                .name(CONFIG_MAX_RETRIES)
+                .type("int")
+                .helpText("The maximum number of retries if an error occurs. A value of zero or less disable any retries.")
+                .defaultValue(DEFAULT_MAX_RETRIES)
+                .add();
+    }
+
+    public static void configureRetryBaseTime(ProviderConfigurationBuilder builder) {
+        builder.property()
+                .name(CONFIG_RETRIES_BASE_TIME_MILLIS)
+                .type("int")
+                .helpText("The base back-off time in milliseconds.")
+                .defaultValue(DEFAULT_RETRIES_BASE_TIME_MILLIS)
+                .add();
+    }
+
+    public static int getMaxRetries(Config.Scope config) {
+        return Math.max(0, config.getInt(CONFIG_MAX_RETRIES, DEFAULT_MAX_RETRIES));
+    }
+
+    public static int getRetryBaseTimeMillis(Config.Scope config) {
+        return Math.max(1, config.getInt(CONFIG_RETRIES_BASE_TIME_MILLIS, DEFAULT_RETRIES_BASE_TIME_MILLIS));
+    }
+
+    public static void maxRetriesToOperationalInfo(Map<String, String> map, int value) {
+        map.put(CONFIG_MAX_RETRIES, Integer.toString(value));
+    }
+
+    public static void retryBaseTimeMillisToOperationalInfo(Map<String, String> map, int value) {
+        map.put(CONFIG_RETRIES_BASE_TIME_MILLIS, Integer.toString(value));
     }
 }

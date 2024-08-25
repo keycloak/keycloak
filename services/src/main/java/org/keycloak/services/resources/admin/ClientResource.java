@@ -299,7 +299,7 @@ public class ClientResource {
 
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
             session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED);
-
+            rep.setValue(secret);
             return rep;
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(),

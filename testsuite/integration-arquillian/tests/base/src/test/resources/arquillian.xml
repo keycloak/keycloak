@@ -636,7 +636,8 @@
             <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
                 -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
             </property>
-            <property name="defaultFeatures">${auth.server.feature}</property>
+            <property name="enabledFeatures">${auth.server.feature}</property>
+            <property name="disabledFeatures">${auth.server.feature.disable}</property>
         </configuration>
     </container>
 
@@ -647,7 +648,8 @@
                 org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusEmbeddedDeployableContainer
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="defaultFeatures">${auth.server.feature}</property>
+            <property name="enabledFeatures">${auth.server.feature}</property>
+            <property name="disabledFeatures">${auth.server.feature.disable}</property>
         </configuration>
     </container>
 

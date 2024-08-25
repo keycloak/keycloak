@@ -75,6 +75,10 @@ public class SessionsResource {
 
         Stream<SessionRepresentation> result = sessionIdStream.flatMap((clientIdSessionType) -> {
             ClientModel clientModel = realm.getClientById(clientIdSessionType.getClientId());
+            if (clientModel == null) {
+                // client has been removed in the meantime
+                return Stream.empty();
+            }
             switch (clientIdSessionType.getType()) {
                 case REGULAR:
                     return session.sessions().getUserSessionsStream(realm, clientModel)

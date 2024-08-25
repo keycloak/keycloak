@@ -188,7 +188,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         if (!TokenManager
                 .verifyConsentStillAvailable(session,
-                        user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+                        user, client, TokenManager.getRequestedClientScopes(session, scopeParam, client, user))) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
@@ -248,7 +248,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        AuthenticationManager.setClientScopesInSession(authSession);
+        AuthenticationManager.setClientScopesInSession(session, authSession);
 
         ClientSessionContext context = AuthenticationProcessor
                 .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event);

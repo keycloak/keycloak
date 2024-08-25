@@ -25,6 +25,7 @@ export type Feature = {
   updateEmailFeatureEnabled: boolean;
   updateEmailActionEnabled: boolean;
   isViewGroupsEnabled: boolean;
+  isViewOrganizationsEnabled: boolean;
   isOid4VciEnabled: boolean;
 };
 

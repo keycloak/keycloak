@@ -7,11 +7,6 @@ inputs:
     required: false
     default: "20"
 
-  working-directory:
-    description: The working directory where the `pnpm-lock.yaml` file is located.
-    required: false
-    default: ""
-
 runs:
   using: composite
   steps:
@@ -38,11 +33,13 @@ runs:
         path: |
           ~/.cache/Cypress
           ${{ steps.pnpm-cache.outputs.store-path }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('${{ inputs.working-directory }}/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pnpm install --prefer-offline --frozen-lockfile
+      # Run the store prune after the installation to avoid having caches which grow over time
+      run: |
+        pnpm install --prefer-offline --frozen-lockfile
+        pnpm store prune

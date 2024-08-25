@@ -3,6 +3,8 @@ package org.keycloak.test.framework.injection;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.keycloak.test.framework.config.Config;
+import org.keycloak.test.framework.realm.DefaultRealmConfig;
+import org.keycloak.test.framework.realm.ManagedRealm;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -10,14 +12,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class Registry {
+public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private static final Logger LOGGER = Logger.getLogger(Registry.class);
 
@@ -38,8 +40,29 @@ public class Registry {
         this.currentContext = currentContext;
     }
 
-    public <T> T getDependency(Class<T> typeClass, InstanceContext dependent) {
-        InstanceContext dependency = getDeployedInstance(typeClass);
+    public <T> T getDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        ref = StringUtil.convertEmptyToNull(ref);
+        T dependency;
+        dependency = getDeployedDependency(typeClass, ref, dependent);
+        if (dependency != null) {
+            return dependency;
+        } else {
+            dependency = getRequestedDependency(typeClass, ref, dependent);
+            if(dependency != null) {
+                return dependency;
+            } else {
+                dependency = getUnConfiguredDependency(typeClass, ref, dependent);
+                if(dependency != null) {
+                    return dependency;
+                }
+            }
+        }
+
+        throw new RuntimeException("Dependency not found: " + typeClass);
+    }
+
+    private <T> T getDeployedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        InstanceContext dependency = getDeployedInstance(typeClass, ref);
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
@@ -51,10 +74,13 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
+        return null;
+    }
 
-        RequestedInstance requestedDependency = getRequestedInstance(typeClass);
+    private <T> T getRequestedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        RequestedInstance requestedDependency = getRequestedInstance(typeClass, ref);
         if (requestedDependency != null) {
-            dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
+            InstanceContext dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
@@ -69,11 +95,17 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
+        return null;
+    }
 
+    private <T> T getUnConfiguredDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
+        InstanceContext dependency;
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            dependency = new InstanceContext(this, supplier, null, typeClass);
+            Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+            dependency = new InstanceContext(this, supplier, defaultAnnotation, typeClass);
+
             dependency.registerDependency(dependent);
             dependency.setValue(supplier.getValue(dependency));
 
@@ -87,8 +119,7 @@ public class Registry {
 
             return (T) dependency.getValue();
         }
-
-        throw new RuntimeException("Dependency not found: " + typeClass);
+        return null;
     }
 
     public void beforeEach(Object testInstance) {
@@ -96,6 +127,7 @@ public class Registry {
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
         injectFields(testInstance);
+        invokeBeforeEachOnSuppliers();
     }
 
     private void findRequestedInstances(Object testInstance) {
@@ -163,6 +195,9 @@ public class Registry {
     private void injectFields(Object testInstance) {
         for (Field f : testInstance.getClass().getDeclaredFields()) {
             InstanceContext<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
+            if(instance == null) { // a test class might have fields not meant for injection
+                continue;
+            }
             try {
                 f.setAccessible(true);
                 f.set(testInstance, instance.getValue());
@@ -211,7 +246,7 @@ public class Registry {
                 Supplier supplier = i.getSupplier();
                 if (supplier.getAnnotationClass().equals(a.annotationType())
                         && valueType.isAssignableFrom(i.getValue().getClass())
-                        && supplier.getRef(a).equals(i.getRef()) ) {
+                        && Objects.equals(supplier.getRef(a), i.getRef()) ) {
                     return i;
                 }
             }
@@ -237,7 +272,7 @@ public class Registry {
         String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
-            if(!i.getRef().equals(requestedRef)) {
+            if(!Objects.equals(i.getRef(), requestedRef)) {
                 continue;
             }
 
@@ -298,12 +333,22 @@ public class Registry {
         }
     }
 
-    private InstanceContext getDeployedInstance(Class typeClass) {
-        return deployedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
+    private InstanceContext getDeployedInstance(Class typeClass, String ref) {
+        return deployedInstances.stream()
+                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .findFirst().orElse(null);
     }
 
-    private RequestedInstance getRequestedInstance(Class typeClass) {
-        return requestedInstances.stream().filter(i -> i.getSupplier().getValueType().equals(typeClass)).findFirst().orElse(null);
+    private RequestedInstance getRequestedInstance(Class typeClass, String ref) {
+        return requestedInstances.stream()
+                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .findFirst().orElse(null);
+    }
+
+    private void invokeBeforeEachOnSuppliers() {
+        for (InstanceContext i : deployedInstances) {
+            i.getSupplier().onBeforeEach(i);
+        }
     }
 
 }

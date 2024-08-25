@@ -38,7 +38,6 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -114,9 +113,7 @@ public abstract class AuthorizationEndpointBase {
             // We cancel login if any authentication action or required action is required
             try {
                 Response challenge = processor.authenticateOnly();
-                if (challenge == null) {
-                    // nothing to do - user is already authenticated;
-                } else {
+                if (challenge != null) {
                     // KEYCLOAK-8043: forward the request with prompt=none to the default provider.
                     if ("true".equals(authSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN))) {
                         RestartLoginCookie.setRestartCookie(session, authSession);
@@ -127,16 +124,14 @@ public abstract class AuthorizationEndpointBase {
                         return challenge;
                     }
                     else {
-                        Response response = protocol.sendError(authSession, Error.PASSIVE_LOGIN_REQUIRED);
-                        return response;
+                        return protocol.sendError(authSession, Error.PASSIVE_LOGIN_REQUIRED);
                     }
                 }
 
-                AuthenticationManager.setClientScopesInSession(authSession);
+                AuthenticationManager.setClientScopesInSession(session, authSession);
 
                 if (processor.nextRequiredAction() != null) {
-                    Response response = protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
-                    return response;
+                    return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
                 }
 
             } catch (Exception e) {
@@ -186,8 +181,7 @@ public abstract class AuthorizationEndpointBase {
             logger.debugf("Sent request to authz endpoint. Root authentication session with ID '%s' exists. Client is '%s' . Created new authentication session with tab ID: %s",
                     rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
         } else {
-            UserSessionCrossDCManager userSessionCrossDCManager = new UserSessionCrossDCManager(session);
-            UserSessionModel userSession = userSessionCrossDCManager.getUserSessionIfExistsRemotely(manager, realm);
+            UserSessionModel userSession = manager.getUserSessionFromAuthenticationCookie(realm);
 
             if (userSession != null) {
                 UserModel user = userSession.getUser();

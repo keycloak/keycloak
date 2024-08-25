@@ -1819,9 +1819,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Cookie identityCookie = driver.manage().getCookieNamed(CookieType.IDENTITY.getName());
         Assert.assertNotNull(identityCookie);
         driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName());
         driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getName(), "invalid-value", identityCookie.getPath()));
-        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName(), "invalid-value", identityCookie.getPath()));
 
         // go back to the app page, re-login should work with the invalid cookie
         testRealmSAMLPostLoginPage.navigateTo();
@@ -1985,6 +1983,34 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         salesPostSigServletPage.logout();
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void testChangeSessionID() throws Exception {
+        // login in the employeeDom application
+        assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+        assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
+        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
+
+        // retrieve the saml document
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        String xml = getRawPageSource();
+        Assert.assertNotEquals("", xml);
+
+        // change the session id
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
+        waitForPageToLoad();
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+
+        // retrieve again the saml document and should be the same as login should be maintained
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        Assert.assertEquals(xml, getRawPageSource());
+
+        // logout
+        employeeDomServletPage.logout();
+        checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
     }
 
     public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {

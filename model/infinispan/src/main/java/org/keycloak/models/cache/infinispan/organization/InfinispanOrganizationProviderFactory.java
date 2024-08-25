@@ -49,7 +49,7 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
             if (e instanceof RealmModel.IdentityProviderRemovedEvent event) {
                 registerOrganizationInvalidation(event.getKeycloakSession(), event.getRemovedIdentityProvider());
             }
-            if (e instanceof UserModel.UserRemovedEvent event) {
+            if (e instanceof UserModel.UserPreRemovedEvent event) {
                 KeycloakSession session = event.getKeycloakSession();
                 InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
                 orgProvider.getByMember(event.getUser()).forEach(organization -> orgProvider.registerMemberInvalidation(organization, event.getUser()));
@@ -58,10 +58,10 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
     }
 
     private void registerOrganizationInvalidation(KeycloakSession session, IdentityProviderModel idp) {
-        if (idp.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE) != null) {
+        if (idp.getOrganizationId() != null) {
             InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
             if (orgProvider != null) {
-                OrganizationModel organization = orgProvider.getById(idp.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+                OrganizationModel organization = orgProvider.getById(idp.getOrganizationId());
                 orgProvider.registerOrganizationInvalidation(organization);
             }
         }

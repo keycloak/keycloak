@@ -8,6 +8,7 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
+import org.keycloak.test.framework.util.ApiUtil;
 
 public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
 
@@ -23,13 +24,13 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
 
     @Override
     public ManagedClient getValue(InstanceContext<ManagedClient, InjectClient> instanceContext) {
-        ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class);
+        ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
         ClientConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         ClientRepresentation clientRepresentation = config.getRepresentation();
 
         if (clientRepresentation.getClientId() == null) {
-            String clientId = instanceContext.getRef();
+            String clientId = SupplierHelpers.createName(instanceContext);
             clientRepresentation.setClientId(clientId);
         }
 

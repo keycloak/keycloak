@@ -51,12 +51,7 @@ public final class ConfigSyncEventListener implements ProviderEventListener {
                 LOG.debugf("Synchronizer %s matches event: %s", configSynchronizer, event);
 
                 if (realmMappers == null) {
-                    /*
-                     * an event always refers to just one realm, so we can use an arbitrary synchronizer to extract the
-                     * realm
-                     */
-                    RealmModel realm = configSynchronizer.extractRealm(event);
-                    realmMappers = realm.getIdentityProviderMappersStream()
+                    realmMappers = configSynchronizer.getKeycloakSession(event).identityProviders().getMappersStream()
                             .collect(Collectors.toList());
                 }
 

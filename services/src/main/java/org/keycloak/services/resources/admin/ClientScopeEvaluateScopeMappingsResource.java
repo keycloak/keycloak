@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -47,13 +48,15 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientScopeEvaluateScopeMappingsResource {
 
+    private final KeycloakSession session;
     private final RoleContainerModel roleContainer;
     private final AdminPermissionEvaluator auth;
     private final ClientModel client;
     private final String scopeParam;
 
-    public ClientScopeEvaluateScopeMappingsResource(RoleContainerModel roleContainer, AdminPermissionEvaluator auth, ClientModel client,
+    public ClientScopeEvaluateScopeMappingsResource(KeycloakSession session, RoleContainerModel roleContainer, AdminPermissionEvaluator auth, ClientModel client,
                                                     String scopeParam) {
+        this.session = session;
         this.roleContainer = roleContainer;
         this.auth = auth;
         this.client = client;
@@ -77,7 +80,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @Operation( summary = "Get effective scope mapping of all roles of particular role container, which this client is defacto allowed to have in the accessToken issued for him.",
             description = "This contains scope mappings, which this client has directly, as well as scope mappings, which are granted to all client scopes, which are linked with this client.")
     public Stream<RoleRepresentation> getGrantedScopeMappings() {
-        return getGrantedRoles().map(ModelToRepresentation::toBriefRepresentation);
+        return getGrantedRoles(session).map(ModelToRepresentation::toBriefRepresentation);
     }
 
 
@@ -94,7 +97,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get roles, which this client doesn't have scope for and can't have them in the accessToken issued for him.", description = "Defacto all the other roles of particular role container, which are not in {@link #getGrantedScopeMappings()}")
     public Stream<RoleRepresentation> getNotGrantedScopeMappings() {
-        Set<RoleModel> grantedRoles = getGrantedRoles().collect(Collectors.toSet());
+        Set<RoleModel> grantedRoles = getGrantedRoles(session).collect(Collectors.toSet());
 
         return roleContainer.getRolesStream()
                 .filter(((Predicate<RoleModel>) grantedRoles::contains).negate())
@@ -104,12 +107,12 @@ public class ClientScopeEvaluateScopeMappingsResource {
 
 
 
-    private Stream<RoleModel> getGrantedRoles() {
+    private Stream<RoleModel> getGrantedRoles(KeycloakSession session) {
         if (client.isFullScopeAllowed()) {
             return roleContainer.getRolesStream();
         }
 
-        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client, null)
                 .collect(Collectors.toSet());
 
         Predicate<RoleModel> hasClientScope = role ->

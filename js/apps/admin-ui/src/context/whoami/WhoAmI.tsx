@@ -1,14 +1,14 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { PropsWithChildren, useState } from "react";
 import {
   createNamedContext,
   useEnvironment,
+  useFetch,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useState } from "react";
 import { useAdminClient } from "../../admin-client";
 import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
-import { useFetch } from "../../utils/useFetch";
 import { useRealm } from "../realm-context/RealmContext";
 
 // can be replaced with https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
@@ -74,6 +74,10 @@ export class WhoAmI {
     if (this.#me === undefined) return {};
 
     return this.#me.realm_access;
+  }
+
+  public isTemporary(): boolean {
+    return this.#me?.temporary ?? false;
   }
 }
 

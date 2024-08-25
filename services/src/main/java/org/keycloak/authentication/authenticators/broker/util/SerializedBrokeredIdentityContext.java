@@ -72,7 +72,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
     public UserProfileContext getUserProfileContext() {
         return UserProfileContext.IDP_REVIEW;
     }
-    
+
     public String getId() {
         return id;
     }
@@ -265,7 +265,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
 
     public BrokeredIdentityContext deserialize(KeycloakSession session, AuthenticationSessionModel authSession) {
         RealmModel realm = authSession.getRealm();
-        IdentityProviderModel idpConfig = realm.getIdentityProviderByAlias(getIdentityProviderId());
+        IdentityProviderModel idpConfig = session.identityProviders().getByAlias(getIdentityProviderId());
 
         if (idpConfig == null) {
             throw new ModelException("Can't find identity provider with ID " + getIdentityProviderId() + " in realm " + realm.getName());
@@ -282,7 +282,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setBrokerUserId(getBrokerUserId());
         ctx.setToken(getToken());
 
-        IdentityProvider idp = IdentityBrokerService.getIdentityProvider(session, realm, idpConfig.getAlias());
+        IdentityProvider idp = IdentityBrokerService.getIdentityProvider(session, idpConfig.getAlias());
         ctx.setIdp(idp);
 
         IdentityProviderDataMarshaller serializer = idp.getMarshaller();

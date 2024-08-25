@@ -1,5 +1,10 @@
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  TextControl,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Alert,
@@ -23,13 +28,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
+import { i18n } from "../../i18n/i18n";
 import useLocale from "../../utils/useLocale";
 import useToggle from "../../utils/useToggle";
 import "../realm-settings-section.css";
@@ -40,7 +44,6 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./attribute/AddTranslationsDialog";
-import { i18n } from "../../i18n/i18n";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {

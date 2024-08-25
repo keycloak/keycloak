@@ -176,7 +176,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     @Override
     public void close() {
     }
-    
+
     private void setKeycloakContext(StringBuilder sb) {
         KeycloakContext context = session.getContext();
         UriInfo uriInfo = context.getUri();
@@ -199,7 +199,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             }
             sb.append("]");
         }
-        
+
     }
 
 }

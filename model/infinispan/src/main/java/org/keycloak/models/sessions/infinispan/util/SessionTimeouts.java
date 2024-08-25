@@ -19,6 +19,7 @@
 package org.keycloak.models.sessions.infinispan.util;
 
 import java.util.concurrent.TimeUnit;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -49,8 +50,15 @@ public class SessionTimeouts {
      * @return
      */
     public static long getUserSessionLifespanMs(RealmModel realm, ClientModel client, UserSessionEntity userSessionEntity) {
-        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(false, userSessionEntity.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(userSessionEntity.getStarted()), realm);
+        return getUserSessionLifespanMs(realm, false, userSessionEntity.isRememberMe(), userSessionEntity.getStarted());
+    }
+
+    public static long getUserSessionLifespanMs(RealmModel realm, boolean offline, boolean rememberMe, int started) {
+        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(offline, rememberMe,
+                TimeUnit.SECONDS.toMillis(started), realm);
+        if (offline && lifespan == IMMORTAL_FLAG) {
+            return IMMORTAL_FLAG;
+        }
         lifespan = lifespan - Time.currentTimeMillis();
         if (lifespan <= 0) {
             return ENTRY_EXPIRED_FLAG;
@@ -68,8 +76,11 @@ public class SessionTimeouts {
      * @return
      */
     public static long getUserSessionMaxIdleMs(RealmModel realm, ClientModel client, UserSessionEntity userSessionEntity) {
-        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(false, userSessionEntity.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(userSessionEntity.getLastSessionRefresh()), realm);
+        return getUserSessionMaxIdleMs(realm, false, userSessionEntity.isRememberMe(), userSessionEntity.getLastSessionRefresh());
+    }
+
+    public static long getUserSessionMaxIdleMs(RealmModel realm, boolean offline, boolean rememberMe, int lastSessionRefresh) {
+        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, rememberMe, TimeUnit.SECONDS.toMillis(lastSessionRefresh), realm);
         idle = idle - Time.currentTimeMillis();
         if (idle <= 0) {
             return ENTRY_EXPIRED_FLAG;
@@ -88,9 +99,15 @@ public class SessionTimeouts {
      * @return
      */
     public static long getClientSessionLifespanMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
-        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(false, clientSessionEntity.isUserSessionRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSessionEntity.getStarted()), TimeUnit.SECONDS.toMillis(clientSessionEntity.getUserSessionStarted()),
-                realm, client);
+        return getClientSessionLifespanMs(realm, client, false, clientSessionEntity.isUserSessionRememberMe(), clientSessionEntity.getStarted(), clientSessionEntity.getUserSessionStarted());
+    }
+
+    public static long getClientSessionLifespanMs(RealmModel realm, ClientModel client, boolean offline, boolean isUserSessionRememberMe, int started, int userSessionStarted) {
+        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(offline, isUserSessionRememberMe,
+                TimeUnit.SECONDS.toMillis(started), TimeUnit.SECONDS.toMillis(userSessionStarted), realm, client);
+        if (offline && lifespan == IMMORTAL_FLAG) {
+            return IMMORTAL_FLAG;
+        }
         lifespan = lifespan - Time.currentTimeMillis();
         if (lifespan <= 0) {
             return ENTRY_EXPIRED_FLAG;
@@ -109,8 +126,12 @@ public class SessionTimeouts {
      * @return
      */
     public static long getClientSessionMaxIdleMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
-        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(false, clientSessionEntity.isUserSessionRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSessionEntity.getTimestamp()), realm, client);
+        return getClientSessionMaxIdleMs(realm, client, false, clientSessionEntity.isUserSessionRememberMe(), clientSessionEntity.getTimestamp());
+    }
+
+    public static long getClientSessionMaxIdleMs(RealmModel realm, ClientModel client, boolean offline, boolean isUserSessionRememberMe, int timestamp) {
+        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(offline, isUserSessionRememberMe,
+                TimeUnit.SECONDS.toMillis(timestamp), realm, client);
         idle = idle - Time.currentTimeMillis();
         if (idle <= 0) {
             return ENTRY_EXPIRED_FLAG;
@@ -129,16 +150,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineSessionLifespanMs(RealmModel realm, ClientModel client, UserSessionEntity userSessionEntity) {
-        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(true, userSessionEntity.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(userSessionEntity.getStarted()), realm);
-        if (lifespan == -1L) {
-            return lifespan;
-        }
-        lifespan = lifespan - Time.currentTimeMillis();
-        if (lifespan <= 0) {
-            return ENTRY_EXPIRED_FLAG;
-        }
-        return lifespan;
+        return getUserSessionLifespanMs(realm, true, userSessionEntity.isRememberMe(), userSessionEntity.getStarted());
     }
 
 
@@ -152,13 +164,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineSessionMaxIdleMs(RealmModel realm, ClientModel client, UserSessionEntity userSessionEntity) {
-        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(true, userSessionEntity.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(userSessionEntity.getLastSessionRefresh()), realm);
-        idle = idle - Time.currentTimeMillis();
-        if (idle <= 0) {
-            return ENTRY_EXPIRED_FLAG;
-        }
-        return idle;
+        return getUserSessionMaxIdleMs(realm, true, userSessionEntity.isRememberMe(), userSessionEntity.getLastSessionRefresh());
     }
 
     /**
@@ -171,17 +177,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineClientSessionLifespanMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
-        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(true, authenticatedClientSessionEntity.isUserSessionRememberMe(),
-                TimeUnit.SECONDS.toMillis(authenticatedClientSessionEntity.getStarted()), TimeUnit.SECONDS.toMillis(authenticatedClientSessionEntity.getUserSessionStarted()),
-                realm, client);
-        if (lifespan == -1L) {
-            return lifespan;
-        }
-        lifespan = lifespan - Time.currentTimeMillis();
-        if (lifespan <= 0) {
-            return ENTRY_EXPIRED_FLAG;
-        }
-        return lifespan;
+        return getClientSessionLifespanMs(realm, client, true, authenticatedClientSessionEntity.isUserSessionRememberMe(), authenticatedClientSessionEntity.getStarted(), authenticatedClientSessionEntity.getUserSessionStarted());
     }
 
     /**
@@ -194,13 +190,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineClientSessionMaxIdleMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
-        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(true, authenticatedClientSessionEntity.isUserSessionRememberMe(),
-                TimeUnit.SECONDS.toMillis(authenticatedClientSessionEntity.getTimestamp()), realm, client);
-        idle = idle - Time.currentTimeMillis();
-        if (idle <= 0) {
-            return ENTRY_EXPIRED_FLAG;
-        }
-        return idle;
+        return getClientSessionMaxIdleMs(realm, client, true, authenticatedClientSessionEntity.isUserSessionRememberMe(), authenticatedClientSessionEntity.getTimestamp());
     }
 
 

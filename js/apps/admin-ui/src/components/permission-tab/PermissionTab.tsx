@@ -1,4 +1,5 @@
 import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
+import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Card,
   CardBody,
@@ -20,12 +21,10 @@ import {
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 

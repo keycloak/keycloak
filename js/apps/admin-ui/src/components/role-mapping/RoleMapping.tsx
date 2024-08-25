@@ -1,6 +1,7 @@
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -14,10 +15,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { translationFormatter } from "../../utils/translationFormatter";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "./AddRoleMappingModal";
 import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
 import { getEffectiveClientRoles } from "./resource";
@@ -106,6 +107,7 @@ export const RoleMapping = ({
   const loader = async () => {
     let effectiveRoles: Row[] = [];
     let effectiveClientRoles: Row[] = [];
+
     if (!hide) {
       effectiveRoles = await getEffectiveRoles(adminClient, type, id);
 
@@ -118,6 +120,13 @@ export const RoleMapping = ({
         client: { clientId: e.client, id: e.clientId },
         role: { id: e.id, name: e.role, description: e.description },
       }));
+
+      effectiveRoles = effectiveRoles.filter(
+        (role) =>
+          !effectiveClientRoles.some(
+            (clientRole) => clientRole.role.id === role.role.id,
+          ),
+      );
     }
 
     const roles = await getMapping(adminClient, type, id);
@@ -134,7 +143,7 @@ export const RoleMapping = ({
 
     return [
       ...mapRoles(
-        [...realmRolesMapping, ...clientMapping],
+        [...clientMapping, ...realmRolesMapping],
         [...effectiveClientRoles, ...effectiveRoles],
         hide,
       ),
@@ -240,19 +249,19 @@ export const RoleMapping = ({
         columns={[
           {
             name: "role.name",
-            displayKey: t("name"),
+            displayKey: "name",
             transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
           },
           {
             name: "role.isInherited",
-            displayKey: t("inherent"),
+            displayKey: "inherent",
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "role.description",
-            displayKey: t("description"),
-            cellFormatters: [emptyFormatter()],
+            displayKey: "description",
+            cellFormatters: [translationFormatter(t)],
           },
         ]}
         emptyState={
