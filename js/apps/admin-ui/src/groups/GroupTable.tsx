@@ -70,7 +70,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     return groupsData;
   };
 
-  const fetchFullGroupData = async (groupId: string) => {
+  const fetchGroupData = async (groupId: string) => {
     const group = await adminClient.groups.findOne({ id: groupId });
     const subGroups = await adminClient.groups.listSubGroups({
       parentId: groupId,
@@ -200,14 +200,18 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                     return false;
                   },
                 },
-                {
-                  title: t("duplicateGroup"),
-                  onRowClick: async (group) => {
-                    const fullGroupData = await fetchFullGroupData(group.id!);
-                    setDuplicate(fullGroupData.group);
-                    return false;
-                  },
-                },
+                ...(!id
+                  ? [
+                      {
+                        title: t("duplicateGroup"),
+                        onRowClick: async (group: GroupRepresentation) => {
+                          const groupData = await fetchGroupData(group.id!);
+                          setDuplicate(groupData.group);
+                          return false;
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   isSeparator: true,
                 },

@@ -49,7 +49,7 @@ export const GroupsModal = ({
     try {
       const clientRoleMappings: Array<{
         clientId: string;
-        roles: Array<{ id: string; name: string; description?: string }>;
+        roles: Array<{ id: string; name: string }>;
       }> = [];
       const clients = await adminClient.clients.find();
 
@@ -59,16 +59,15 @@ export const GroupsModal = ({
           clientUniqueId: client.id!,
         });
 
-        const validRoles = roles
+        const clientRoles = roles
           .filter((role) => role.id && role.name)
           .map((role) => ({
             id: role.id!,
             name: role.name!,
-            description: role.description,
           }));
 
-        if (validRoles.length > 0) {
-          clientRoleMappings.push({ clientId: client.id!, roles: validRoles });
+        if (clientRoles.length > 0) {
+          clientRoleMappings.push({ clientId: client.id!, roles: clientRoles });
         }
       }
 
@@ -79,7 +78,7 @@ export const GroupsModal = ({
     }
   };
 
-  const duplicateGroupWithChildren = async (
+  const duplicateGroup = async (
     sourceGroup: GroupRepresentation,
     parentId?: string,
   ) => {
@@ -122,7 +121,6 @@ export const GroupsModal = ({
         (role) => ({
           id: role.id!,
           name: role.name!,
-          description: role.description,
         }),
       );
 
@@ -131,7 +129,6 @@ export const GroupsModal = ({
           clientRoleMapping.roles.map((role) => ({
             id: role.id!,
             name: role.name!,
-            description: role.description,
             clientUniqueId: clientRoleMapping.clientId,
           })),
         );
@@ -148,7 +145,7 @@ export const GroupsModal = ({
       });
       if (subGroups.length > 0) {
         for (const childGroup of subGroups) {
-          await duplicateGroupWithChildren(childGroup, createdGroup.id);
+          await duplicateGroup(childGroup, createdGroup.id);
         }
       }
 
@@ -189,8 +186,6 @@ export const GroupsModal = ({
           }),
         ),
       );
-
-      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
       addError("roleMappingUpdatedError", error);
     }
@@ -201,7 +196,7 @@ export const GroupsModal = ({
 
     try {
       if (duplicate) {
-        await duplicateGroupWithChildren(duplicate);
+        await duplicateGroup(duplicate);
       } else if (!id) {
         await adminClient.groups.create(group);
       } else if (rename) {
