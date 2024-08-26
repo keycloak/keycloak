@@ -62,6 +62,7 @@ To write tests, refer to the [writing tests](docs/tests-development.md) guide.
 
 Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md). Participation in the Keycloak project is governed by the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md).
 
+Our [website](https://www.keycloak.org/community) lists the community meetings, you may find things to work on by joining them.
 
 ## Other Keycloak Projects
 
