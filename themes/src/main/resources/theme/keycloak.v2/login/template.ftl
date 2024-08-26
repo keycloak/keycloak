@@ -48,6 +48,22 @@
         checkCookiesAndSetTimer(
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
+
+        const DARK_MODE_CLASS = "pf-v5-theme-dark";
+        const mediaQuery =
+          window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+        updateDarkMode(mediaQuery?.matches);
+        mediaQuery?.addEventListener("change", (event) =>
+          updateDarkMode(event.matches),
+        );
+        function updateDarkMode(isEnabled = false) {
+          const { classList } = document.documentElement;
+          if (isEnabled) {
+            classList.add(DARK_MODE_CLASS);
+          } else {
+            classList.remove(DARK_MODE_CLASS);
+          }
+        }
     </script>
 </head>
 
