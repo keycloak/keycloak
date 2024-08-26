@@ -183,11 +183,9 @@ public class IdentityProviderResource {
     }
 
     private void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
-        String newProviderAlias = providerRep.getAlias();
-        String oldProviderAlias = getAliasByInternalId(providerRep.getInternalId());
-
-        if (oldProviderAlias == null) {
-            providerRep.setInternalId(getInternalIdByAlias(providerRep.getAlias()));
+        
+        if (!identityProviderModel.getInternalId().equals(providerRep.getInternalId())) {
+            providerRep.setInternalId(identityProviderModel.getInternalId());
         }
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
@@ -200,7 +198,9 @@ public class IdentityProviderResource {
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
 
-        if (oldProviderAlias != null && !oldProviderAlias.equals(newProviderAlias)) {
+        String newProviderAlias = providerRep.getAlias();
+        String oldProviderAlias = identityProviderModel.getAlias();
+        if (!oldProviderAlias.equals(newProviderAlias)) {
 
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
             logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderAlias + ", newProviderId=" + newProviderAlias);
@@ -208,34 +208,6 @@ public class IdentityProviderResource {
             updateUsersAfterProviderAliasChange(session.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())),
                     oldProviderAlias, newProviderAlias, realm, session);
         }
-    }
-
-    /**
-     * Returns the alias of the IDP whose internal ID matches the specified ID.
-     *
-     * @param providerInternalId the IDP's internal ID.
-     * @return the provider's alias, if an IDP is located with the given ID; {@code null} otherwise.
-     */
-    private String getAliasByInternalId(String providerInternalId) {
-        IdentityProviderModel identityProviderModel = session.identityProviders().getById(providerInternalId);
-        return identityProviderModel != null ? identityProviderModel.getAlias() : null;
-    }
-
-    /**
-     * Returns the internal ID of the IDP whose alias matches the specified alias.
-     *
-     * @param alias the IDP's alias.
-     * @return the provider's internal ID.
-     * @throws NotFoundException if an IDP with a matching alias is not found.
-     */
-    private String getInternalIdByAlias(String alias) {
-        if (alias != null) {
-            IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(alias);
-            if (identityProviderModel != null) {
-                return identityProviderModel.getInternalId();
-            }
-        }
-        throw new NotFoundException("Identity provider not found with alias: " + alias);
     }
 
     private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
