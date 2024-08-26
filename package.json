@@ -26,7 +26,7 @@
     "tslib": "^2.6.3",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.2.0",
-    "wireit": "^0.14.7"
+    "wireit": "^0.14.8"
   },
   "pnpm": {
     "ignoredOptionalDependencies": [

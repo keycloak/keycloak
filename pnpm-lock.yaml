@@ -66,8 +66,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0(eslint@9.9.0)(typescript@5.5.4)
       wireit:
-        specifier: ^0.14.7
-        version: 0.14.7
+        specifier: ^0.14.8
+        version: 0.14.8
 
   js/apps/account-ui:
     dependencies:
@@ -5027,8 +5027,8 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  wireit@0.14.7:
-    resolution: {integrity: sha512-bMyyaKtH8fTYD3cmI8ZULIwifDcgNRHyHfYF54QFISvKiDtDJ4yHJZRlW/q2j0DaRjuFbMkIhpE++/GtI5iipQ==}
+  wireit@0.14.8:
+    resolution: {integrity: sha512-pxRAjRGft/38fOE6CNm6np0spVaXFZIIlF0MF+J6P0zLqWb7CDcNITDxHM7zRe12pIMM0opq4upaOa10IKQ91Q==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -9983,7 +9983,7 @@ snapshots:
       siginfo: 2.0.0
       stackback: 0.0.2
 
-  wireit@0.14.7:
+  wireit@0.14.8:
     dependencies:
       brace-expansion: 4.0.0
       chokidar: 3.6.0
