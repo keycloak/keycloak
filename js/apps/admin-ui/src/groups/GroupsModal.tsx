@@ -248,13 +248,13 @@ export const GroupsModal = ({
       actions={[
         <FormSubmitButton
           formState={formState}
-          data-testid={`${rename ? "rename" : duplicate ? "duplicate" : "create"}Group`}
+          data-testid={`${rename ? "rename" : duplicate ? "duplicateAGroup" : "create"}Group`}
           key="confirm"
           form="group-form"
           allowInvalid
           allowNonDirty
         >
-          {t(rename ? "rename" : duplicate ? "duplicate" : "create")}
+          {t(rename ? "rename" : duplicate ? "duplicateAGroup" : "create")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"

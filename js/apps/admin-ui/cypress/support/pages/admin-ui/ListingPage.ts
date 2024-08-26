@@ -201,7 +201,7 @@ export default class ListingPage extends CommonElements {
   clickMenuDuplicate() {
     cy.get(this.#menuContent)
       .find(this.#menuItemText)
-      .contains("Duplicate group")
+      .contains("Duplicate")
       .click({ force: true });
     return this;
   }
