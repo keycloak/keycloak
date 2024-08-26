@@ -93,7 +93,7 @@
     "i18next-http-backend": "^2.6.0",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
-    "monaco-editor": "^0.50.0",
+    "monaco-editor": "^0.51.0",
     "p-debounce": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
