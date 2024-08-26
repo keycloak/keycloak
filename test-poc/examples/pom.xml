@@ -26,15 +26,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-junit5-framework-examples</artifactId>
-    <name>Keycloak JUnit5 Framework Examples</name>
+    <artifactId>keycloak-test-framework-examples</artifactId>
+    <name>Keycloak Test Framework Examples</name>
     <packaging>jar</packaging>
-    <description>Example tests to demonstrate new testing framework</description>
+    <description>Example tests to demonstrate the new testing framework</description>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
-            <artifactId>keycloak-test-junit5-framework</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-test-framework</artifactId>
             <version>999.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
