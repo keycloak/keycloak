@@ -21,6 +21,12 @@ type GroupsModalProps = {
   refresh: (group?: GroupRepresentation) => void;
 };
 
+type RoleMappingPayload = {
+  id: string;
+  name?: string;
+  clientUniqueId?: string;
+};
+
 export const GroupsModal = ({
   id,
   rename,
@@ -39,21 +45,170 @@ export const GroupsModal = ({
   });
   const { handleSubmit, formState } = form;
 
+  const fetchClientRoleMappings = async (groupId: string) => {
+    try {
+      const clientRoleMappings: Array<{
+        clientId: string;
+        roles: Array<{ id: string; name: string; description?: string }>;
+      }> = [];
+      const clients = await adminClient.clients.find();
+
+      for (const client of clients) {
+        const roles = await adminClient.groups.listClientRoleMappings({
+          id: groupId,
+          clientUniqueId: client.id!,
+        });
+
+        const validRoles = roles
+          .filter((role) => role.id && role.name)
+          .map((role) => ({
+            id: role.id!,
+            name: role.name!,
+            description: role.description,
+          }));
+
+        if (validRoles.length > 0) {
+          clientRoleMappings.push({ clientId: client.id!, roles: validRoles });
+        }
+      }
+
+      return clientRoleMappings;
+    } catch (error) {
+      addError("couldNotFetchClientRoleMappings", error);
+      throw error;
+    }
+  };
+
+  const duplicateGroupWithChildren = async (
+    sourceGroup: GroupRepresentation,
+    parentId?: string,
+  ) => {
+    try {
+      const newGroup = {
+        ...sourceGroup,
+        name: `Copy of ${sourceGroup.name}`,
+      };
+      delete newGroup.id;
+      const createdGroup = parentId
+        ? await adminClient.groups.createChildGroup({ id: parentId }, newGroup)
+        : await adminClient.groups.create(newGroup);
+
+      const members = await adminClient.groups.listMembers({
+        id: sourceGroup.id!,
+      });
+      for (const member of members) {
+        await adminClient.users.addToGroup({
+          id: member.id!,
+          groupId: createdGroup.id,
+        });
+      }
+
+      const permissions = await adminClient.groups.listPermissions({
+        id: sourceGroup.id!,
+      });
+      if (permissions) {
+        await adminClient.groups.updatePermission(
+          { id: createdGroup.id },
+          permissions,
+        );
+      }
+
+      const realmRoles = await adminClient.groups.listRealmRoleMappings({
+        id: sourceGroup.id!,
+      });
+      const clientRoleMappings = await fetchClientRoleMappings(sourceGroup.id!);
+
+      const realmRolesPayload: RoleMappingPayload[] = realmRoles.map(
+        (role) => ({
+          id: role.id!,
+          name: role.name!,
+          description: role.description,
+        }),
+      );
+
+      const clientRolesPayload: RoleMappingPayload[] =
+        clientRoleMappings.flatMap((clientRoleMapping) =>
+          clientRoleMapping.roles.map((role) => ({
+            id: role.id!,
+            name: role.name!,
+            description: role.description,
+            clientUniqueId: clientRoleMapping.clientId,
+          })),
+        );
+
+      const rolesToAssign: RoleMappingPayload[] = [
+        ...realmRolesPayload,
+        ...clientRolesPayload,
+      ];
+
+      await assignRoles(rolesToAssign, createdGroup.id);
+
+      const subGroups = await adminClient.groups.listSubGroups({
+        parentId: sourceGroup.id!,
+      });
+      if (subGroups.length > 0) {
+        for (const childGroup of subGroups) {
+          await duplicateGroupWithChildren(childGroup, createdGroup.id);
+        }
+      }
+
+      return createdGroup;
+    } catch (error) {
+      addError("couldNotDuplicateGroup", error);
+      throw error;
+    }
+  };
+
+  const assignRoles = async (roles: RoleMappingPayload[], groupId: string) => {
+    try {
+      const realmRoles = roles
+        .filter((role) => !role.clientUniqueId && role.name !== undefined)
+        .map((role) => ({
+          id: role.id,
+          name: role.name!,
+        }));
+
+      const clientRoles = roles
+        .filter((role) => role.clientUniqueId && role.name !== undefined)
+        .map((role) => ({
+          clientUniqueId: role.clientUniqueId!,
+          roles: [{ id: role.id, name: role.name! }],
+        }));
+
+      await adminClient.groups.addRealmRoleMappings({
+        id: groupId,
+        roles: realmRoles,
+      });
+
+      await Promise.all(
+        clientRoles.map((clientRole) =>
+          adminClient.groups.addClientRoleMappings({
+            id: groupId,
+            clientUniqueId: clientRole.clientUniqueId!,
+            roles: clientRole.roles,
+          }),
+        ),
+      );
+
+      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("roleMappingUpdatedError", error);
+    }
+  };
+
   const submitForm = async (group: GroupRepresentation) => {
     group.name = group.name?.trim();
 
     try {
-      if (!id) {
+      if (duplicate) {
+        await duplicateGroupWithChildren(duplicate);
+      } else if (!id) {
         await adminClient.groups.create(group);
       } else if (rename) {
         await adminClient.groups.update(
           { id },
           { ...rename, name: group.name },
         );
-      } else if (duplicate) {
-        const newGroup = { ...duplicate, name: group.name };
-        delete newGroup.id;
-        await adminClient.groups.create(newGroup);
       } else {
         await (group.id
           ? adminClient.groups.updateChildGroup({ id }, group)

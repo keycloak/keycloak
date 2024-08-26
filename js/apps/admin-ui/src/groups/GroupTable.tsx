@@ -70,6 +70,22 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     return groupsData;
   };
 
+  const fetchFullGroupData = async (groupId: string) => {
+    const group = await adminClient.groups.findOne({ id: groupId });
+    const subGroups = await adminClient.groups.listSubGroups({
+      parentId: groupId,
+    });
+    const roleMappings = await adminClient.groups.listRoleMappings({
+      id: groupId,
+    });
+
+    return {
+      group,
+      subGroups,
+      roleMappings,
+    };
+  };
+
   return (
     <>
       <DeleteGroup
@@ -187,7 +203,8 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                 {
                   title: t("duplicateGroup"),
                   onRowClick: async (group) => {
-                    setDuplicate(group);
+                    const fullGroupData = await fetchFullGroupData(group.id!);
+                    setDuplicate(fullGroupData.group);
                     return false;
                   },
                 },
