@@ -23,7 +23,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
@@ -100,6 +99,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD1) -> {
             KeycloakSession currentSession = sessionCRUD1;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             ClientModel client1 = realm.getClientByClientId("test-app");
 
@@ -116,6 +116,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD2) -> {
             KeycloakSession currentSession = sessionCRUD2;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             ClientModel client1 = realm.getClientByClientId("test-app");
 
@@ -135,6 +136,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD3) -> {
             KeycloakSession currentSession = sessionCRUD3;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             // Ensure currentSession was updated
@@ -153,6 +155,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD4) -> {
             KeycloakSession currentSession = sessionCRUD4;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             // Ensure currentSession was removed
             assertThat(currentSession.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionID.get()), nullValue());
@@ -169,6 +172,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRestart1) -> {
             KeycloakSession currentSession = sessionRestart1;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             ClientModel client1 = realm.getClientByClientId("test-app");
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
@@ -191,6 +195,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRestart2) -> {
             KeycloakSession currentSession = sessionRestart2;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             // Test restart root authentication session
             ClientModel client1 = realm.getClientByClientId("test-app");
@@ -202,6 +207,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRestart3) -> {
             KeycloakSession currentSession = sessionRestart3;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             ClientModel client1 = realm.getClientByClientId("test-app");
 

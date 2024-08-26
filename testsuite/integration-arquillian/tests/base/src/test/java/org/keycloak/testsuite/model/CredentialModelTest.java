@@ -36,6 +36,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
 
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
             List<CredentialModel> list = user.credentialManager().getStoredCredentialsStream()
@@ -55,6 +56,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: password, otp1, otp2
@@ -74,6 +76,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: password, otp2, otp1
@@ -87,6 +90,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, password, otp1
@@ -100,6 +104,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, otp1, password
@@ -113,6 +118,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, otp1, password
@@ -126,6 +132,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
+            currentSession.getContext().setRealm(realm);
             UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, password
@@ -139,7 +146,7 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
     private void assertOrder(List<CredentialModel> creds, String... expectedIds) {
         Assert.assertEquals(expectedIds.length, creds.size());
 
-        if (creds.size() == 0) return;
+        if (creds.isEmpty()) return;
 
         for (int i=0 ; i<expectedIds.length ; i++) {
             Assert.assertEquals(creds.get(i).getId(), expectedIds[i]);

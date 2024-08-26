@@ -18,14 +18,11 @@
 package org.keycloak.testsuite.organization.broker;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcSamlBrokerConfiguration;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationSAMLBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
 
     @Override
