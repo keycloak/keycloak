@@ -211,7 +211,7 @@
         <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
-        <login.theme.default>keycloak.v2</login.theme.default>
+        <login.theme.default/>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
@@ -413,7 +413,11 @@
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
+                        <excludes>
+                            <exclude>**/v1/**</exclude>
+                        </excludes>
                         <systemPropertyVariables>
+                            <login.theme.default>keycloak.v2</login.theme.default>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
                             <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
@@ -477,7 +481,6 @@
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
                             <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
                             <app.server.truststore>${app.server.truststore}</app.server.truststore>
-                            <app.server.truststore.password>${app.server.truststore.password}</app.server.truststore.password>
                             <app.server.keystore>${app.server.keystore}</app.server.keystore>
                             <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
                             <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
@@ -517,7 +520,6 @@
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
                             <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
-                            <login.theme.default>${login.theme.default}</login.theme.default>
 
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
@@ -726,6 +728,266 @@
                             <systemPropertyVariables>
                                 <pageload.timeout>20000</pageload.timeout>
                             </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>login-v1-integrations-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage</exclude>
+                                <exclude>org.keycloak.testsuite.auth.page.login.FeedbackMessage</exclude>
+                                <exclude>org.keycloak.testsuite.auth.page.login.OneTimeCode</exclude>
+                                <exclude>org.keycloak.testsuite.page.LoginPasswordUpdatePage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.IdpConfirmLinkPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.InstalledAppRedirectPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LanguageComboboxAwarePage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginConfigTotpPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginPasswordResetPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginPasswordUpdatePage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginTotpPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.LoginUpdateProfilePage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.PasswordPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.RegisterPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.UpdateAccountInformationPage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.VerifyProfilePage</exclude>
+                                <exclude>org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage</exclude>
+                                <exclude>org.keycloak.testsuite.util.OAuthClient</exclude>
+                                <exclude>org.keycloak.testsuite.util.UIUtils</exclude>
+                                <exclude>org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage</exclude>
+                                <exclude>org.keycloak.testsuite.AbstractKeycloakTest</exclude>
+                                <exclude>org.keycloak.testsuite.actions.AppInitiatedActionUpdateEmailWithVerificationTest</exclude>
+                                <exclude>org.keycloak.testsuite.actions.RequiredActionUpdateProfileTest</exclude>
+                                <exclude>org.keycloak.testsuite.actions.RequiredActionUpdateProfileWithUserProfileTest</exclude>
+                                <exclude>org.keycloak.testsuite.adapter.servlet.SAMLServletAdapterTest</exclude>
+                                <exclude>org.keycloak.testsuite.admin.AdminConsoleWhoAmILocaleTest</exclude>
+                                <exclude>org.keycloak.testsuite.broker.AbstractDefaultIdpTest</exclude>
+                                <exclude>org.keycloak.testsuite.broker.KcOidcFirstBrokerLoginTest</exclude>
+                                <exclude>org.keycloak.testsuite.broker.KcOidcMultipleTabsBrokerTest</exclude>
+                                <exclude>org.keycloak.testsuite.broker.KcSamlMultipleTabsBrokerTest</exclude>
+                                <exclude>org.keycloak.testsuite.forms.RegisterWithUserProfileTest</exclude>
+                                <exclude>org.keycloak.testsuite.forms.VerifyProfileTest</exclude>
+                                <exclude>org.keycloak.testsuite.i18n.LoginPageTest</exclude>
+                                <exclude>org.keycloak.testsuite.oauth.RefreshTokenTest</exclude>
+                                <exclude>org.keycloak.testsuite.saml.IdpInitiatedLoginTest</exclude>
+                            </excludes>
+                            <systemPropertyVariables>
+                                <login.theme.default>keycloak</login.theme.default>
+                                <project.build.directory>${project.build.directory}</project.build.directory>
+                                <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
+                                <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+
+                                <auth.server>${auth.server}</auth.server>
+                                <auth.server.container>${auth.server.container}</auth.server.container>
+
+                                <auth.server.undertow>${auth.server.undertow}</auth.server.undertow>
+                                <auth.server.jboss>${auth.server.jboss}</auth.server.jboss>
+                                <auth.server.memory.settings>${auth.server.memory.settings}</auth.server.memory.settings>
+
+                                <auth.server.home>${auth.server.home}</auth.server.home>
+                                <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
+
+                                <auth.server.host>${auth.server.host}</auth.server.host>
+                                <auth.server.management.host>${auth.server.management.host}</auth.server.management.host>
+                                <auth.server.browserHost>${auth.server.browserHost}</auth.server.browserHost>
+                                <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
+                                <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
+                                <auth.server.events.http.port>${auth.server.events.http.port}</auth.server.events.http.port>
+                                <auth.server.https.port>${auth.server.https.port}</auth.server.https.port>
+                                <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
+                                <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
+                                <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
+                                <auth.server.jboss.startup.timeout>${auth.server.jboss.startup.timeout}</auth.server.jboss.startup.timeout>
+                                <auth.server.config.dir>${auth.server.config.dir}</auth.server.config.dir>
+                                <auth.server.config.property.name>${auth.server.config.property.name}</auth.server.config.property.name>
+                                <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
+                                <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
+                                <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
+                                <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
+                                <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+                                <auth.server.truststore.type>${auth.server.truststore.type}</auth.server.truststore.type>
+                                <auth.server.keystore>${auth.server.keystore}</auth.server.keystore>
+                                <auth.server.keystore.password>${auth.server.keystore.password}</auth.server.keystore.password>
+                                <auth.server.keystore.type>${auth.server.keystore.type}</auth.server.keystore.type>
+                                <auth.server.java.security.file>${auth.server.java.security.file}</auth.server.java.security.file>
+                                <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
+
+                                <auth.server.profile>${auth.server.profile}</auth.server.profile>
+                                <auth.server.feature>${auth.server.feature}</auth.server.feature>
+                                <auth.server.feature.disable>${auth.server.feature.disable}</auth.server.feature.disable>
+
+                                <auth.server.host2>${auth.server.host2}</auth.server.host2> <!-- for broker tests -->
+
+                                <app.server>${app.server}</app.server>
+                                <app.server.home>${app.server.home}</app.server.home>
+                                <app.server.keystore.dir>${app.server.keystore.dir}</app.server.keystore.dir>
+                                <app.server.java.home>${app.server.java.home}</app.server.java.home>
+                                <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
+                                <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
+                                <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                                <app.server.https.port>${app.server.https.port}</app.server.https.port>
+                                <app.server.management.protocol>${app.server.management.protocol}</app.server.management.protocol>
+                                <app.server.management.port>${app.server.management.port}</app.server.management.port>
+                                <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
+                                <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
+                                <app.server.1.port.offset>${app.server.1.port.offset}</app.server.1.port.offset>
+                                <app.server.1.management.port>${app.server.1.management.port}</app.server.1.management.port>
+                                <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
+                                <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
+                                <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                                <app.server.truststore>${app.server.truststore}</app.server.truststore>
+                                <app.server.truststore.password>${app.server.truststore.password}</app.server.truststore.password>
+                                <app.server.keystore>${app.server.keystore}</app.server.keystore>
+                                <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
+                                <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
+                                <app.server.2.jboss.jvm.debug.args>${app.server.2.jboss.jvm.debug.args}</app.server.2.jboss.jvm.debug.args>
+                                <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
+
+                                <frontend.console.output>${frontend.console.output}</frontend.console.output>
+                                <backends.console.output>${backend.console.output}</backends.console.output>
+
+                                <auth.server.remote>${auth.server.remote}</auth.server.remote>
+                                <auth.server.quarkus>${auth.server.quarkus}</auth.server.quarkus>
+                                <auth.server.quarkus.embedded>${auth.server.quarkus.embedded}</auth.server.quarkus.embedded>
+                                <jboss.server.config.dir>${auth.server.config.dir}</jboss.server.config.dir>
+
+                                <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                                <examples.home>${examples.home}</examples.home>
+                                <examples.version.suffix>${examples.version.suffix}</examples.version.suffix>
+
+                                <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
+
+                                <testsuite.constants>${testsuite.constants}</testsuite.constants>
+                                <cli.log.output>${cli.log.output}</cli.log.output>
+                                <test.intermittent>${test.intermittent}</test.intermittent>
+
+                                <default.modular.jvm.options>${default.modular.jvm.options}</default.modular.jvm.options>
+
+                                <dependency.keystore.root>${dependency.keystore.root}</dependency.keystore.root>
+                                <dependency.truststore>${dependency.truststore}</dependency.truststore>
+                                <dependency.truststore.password>${dependency.truststore.password}</dependency.truststore.password>
+                                <dependency.keystore>${dependency.keystore}</dependency.keystore>
+                                <dependency.keystore.password>${dependency.keystore.password}</dependency.keystore.password>
+
+                                <browser>${browser}</browser>
+                                <browser.strict.cookies>${browser.strict.cookies}</browser.strict.cookies>
+                                <js.browser>${js.browser}</js.browser>
+                                <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
+                                <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
+                                <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+                                <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
+
+                                <github.username>${github.username}</github.username>
+                                <github.secretToken>${github.secretToken}</github.secretToken>
+                                <ieDriverArch>${ieDriverArch}</ieDriverArch>
+                                <ieDriverVersion>${ieDriverVersion}</ieDriverVersion>
+
+                                <firefox_binary>${firefox_binary}</firefox_binary>
+                                <chromeBinary>${chromeBinary}</chromeBinary>
+                                <chromeArguments>${chromeArguments}</chromeArguments>
+                                <chromeDriverVersion>${chromeDriverVersion}</chromeDriverVersion>
+
+                                <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
+                                <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
+                                <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
+                                <firefoxArguments>${firefoxArguments}</firefoxArguments>
+
+                                <project.version>${project.version}</project.version>
+
+                                <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
+                                <client.certificate.file>${client.certificate.file}</client.certificate.file>
+                                <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
+                                <client.certificate.keystore.passphrase>${client.certificate.keystore.passphrase}</client.certificate.keystore.passphrase>
+                                <client.key.file>${client.key.file}</client.key.file>
+                                <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+                                <client.truststore>${client.truststore}</client.truststore>
+                                <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
+
+                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                                <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
+                                <hok.client.certificate.keystore.passphrase>${hok.client.certificate.keystore.passphrase}</hok.client.certificate.keystore.passphrase>
+
+                                <!-- Client certificate with the format suitable for OpenBanking Brasil -->
+                                <obb.client.certificate.keystore>${obb.client.certificate.keystore}</obb.client.certificate.keystore>
+                                <obb.client.certificate.keystore.passphrase>${obb.client.certificate.keystore.passphrase}</obb.client.certificate.keystore.passphrase>
+
+                                <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
+
+                                <!-- cluster properties -->
+                                <auth.server.cluster>${auth.server.cluster}</auth.server.cluster>
+                                <auth.server.undertow.cluster>${auth.server.undertow.cluster}</auth.server.undertow.cluster>
+                                <auth.server.jboss.cluster>${auth.server.jboss.cluster}</auth.server.jboss.cluster>
+                                <auth.server.jboss.legacy>${auth.server.jboss.legacy}</auth.server.jboss.legacy>
+                                <auth.server.quarkus.cluster>${auth.server.quarkus.cluster}</auth.server.quarkus.cluster>
+                                <auth.server.quarkus.cluster.config>${auth.server.quarkus.cluster.config}</auth.server.quarkus.cluster.config>
+
+                                <!--cache server properties-->
+                                <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
+                                <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                                <auth.server.jboss.crossdc>${auth.server.jboss.crossdc}</auth.server.jboss.crossdc>
+                                <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
+
+                                <cache.server>${cache.server}</cache.server>
+                                <cache.server.legacy>${cache.server.legacy}</cache.server.legacy>
+                                <cache.server.1.port.offset>${cache.server.1.port.offset}</cache.server.1.port.offset>
+                                <cache.server.home>${cache.server.home}</cache.server.home>
+                                <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
+                                <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
+                                <cache.server.2.port.offset>${cache.server.2.port.offset}</cache.server.2.port.offset>
+                                <cache.server.2.management.port>${cache.server.2.management.port}</cache.server.2.management.port>
+                                <cache.server.java.home>${cache.server.java.home}</cache.server.java.home>
+                                <cache.server.auth>${cache.server.auth}</cache.server.auth>
+
+                                <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
+                                <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
+                                <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                                <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
+                                <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
+
+                                <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
+
+                                <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
+                                <keycloak.password.blacklists.path>${project.build.directory}/dependency/password-blacklists</keycloak.password.blacklists.path>
+
+                                <keycloak.storage.connections.vendor>${keycloak.storage.connections.vendor}</keycloak.storage.connections.vendor>
+                                <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
+                                <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
+                                <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
+                                <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
+                                <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
+
+                                <!-- FIPS 140-2 -->
+                                <auth.server.fips.mode>${auth.server.fips.mode}</auth.server.fips.mode>
+                                <auth.server.fips.keystore.type>${auth.server.fips.keystore.type}</auth.server.fips.keystore.type>
+                                <auth.server.supported.keystore.types>${auth.server.supported.keystore.types}</auth.server.supported.keystore.types>
+                                <auth.server.supported.rsa.key.sizes>${auth.server.supported.rsa.key.sizes}</auth.server.supported.rsa.key.sizes>
+                                <auth.server.kerberos.supported>${auth.server.kerberos.supported}</auth.server.kerberos.supported>
+
+                                <!--
+                                  ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
+                                  ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
+                                  -->
+                                <wildfly-client.config.path>${project.build.directory}${file.separator}dependency${file.separator}wildfly-config.xml</wildfly-client.config.path>
+
+                                <!-- needed when running the embedded Quarkus auth server -->
+                                <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
+                            </systemPropertyVariables>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
+                                </property>
+                            </properties>
                         </configuration>
                     </plugin>
                 </plugins>

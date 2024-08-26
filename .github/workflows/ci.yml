@@ -136,6 +136,27 @@ jobs:
         with:
           job-id: base-integration-tests-${{ matrix.group }}
 
+  login-v1-integration-tests:
+    name: Login V1 IT
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    if: ${{ github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run login v1 tests
+        run: |
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Plogin-v1-integrations-test -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+
   adapter-integration-tests:
     name: Adapter IT
     needs: build
