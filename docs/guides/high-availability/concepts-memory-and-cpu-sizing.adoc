@@ -51,18 +51,14 @@ Performance of {project_name} dropped significantly when its Pods were throttled
 {project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
 
 For every 100 login/logout/refresh requests per second:
+
+- Budget for 1400 Write IOPS.
+
 - Allocate between 0.35 and 0.7 vCPU.
-- Ensure 1400 Write IOPS are available.
 
-Instance type recommendations:
-- db.t4g.large (2 vCPU) is suitable for typical loads.
-- db.t4g.xlarge (4 vCPU) is recommended for peak usage to avoid slowdowns.
+The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreased while the response times increase. A lower CPU quota on the database can lead to slower response times during peak loads. Choose a larger CPU quota if fast response times during peak loads are critical. See below for an example.
 
-Key takeaway:  Higher CPU usage on the database can lead to slower response times, particularly during peak loads. Choose a larger instance type if faster response times are critical.
-+
-The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreased while the response times increased. The median response time for a login and a token refresh increased by 120 ms when CPU saturation reached 90%. For faster response times during peak usage, consider a 4 vCPU `db.t4g.xlarge` instance.
-
-=== Calculation example
+=== Calculation example (single site)
 
 Target size:
 
@@ -89,9 +85,15 @@ Limits calculated:
 +
 (1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
 
-* Aurora Database instance: `db.t4g.xlarge`
+* Aurora Database instance: either `db.t4g.large` or `db.t4g.xlarge` depending on the required response times during peak loads.
 +
-(45 logins per second, 5 logouts per second, 360 refresh tokens per seconds. This sums up to 410 requests per second. This expected DB usage is 1.4 to 2.8 vCPU, with a DB idle load of 0.3 vCPU. This indicates a 4vCPU `db.t4g.xlarge` instance should be used for faster response times. A 2vCPU `db.t4g.large` would be more cost-effective if the response times can be higher during peak usage.)
+(45 logins per second, 5 logouts per second, 360 refresh tokens per seconds.
+This sums up to 410 requests per second.
+This expected DB usage is 1.4 to 2.8 vCPU, with a DB idle load of 0.3 vCPU.
+This indicates either a 2 vCPU `db.t4g.large` instance or a 4 vCPU `db.t4g.xlarge` instance.
+A 2 vCPU `db.t4g.large` would be more cost-effective if the response times are allowed be higher during peak usage.
+In our tests, the median response time for a login and a token refresh increased by up to 120 ms once the CPU saturation reached 90% on a 2 vCPU `db.t4g.large` instance given this scenario.
+For faster response times during peak usage, consider a 4 vCPU `db.t4g.xlarge` instance for this scenario.)
 
 ////
 <#noparse>
@@ -100,6 +102,26 @@ Limits calculated:
 
 </#noparse>
 ////
+
+=== Sizing a multi-site setup
+
+To create the sizing an active-active Keycloak setup with two AZs in one AWS region, following these steps:
+
+* Create the same number of Pods with the same memory sizing as above on the second site.
+
+* The database sizing remains unchanged. Both sites will connect to the same database writer instance.
+
+In regard to the sizing of CPU requests and limits, there are different approaches depending on the expected failover behavior:
+
+Fast failover and more expensive::
+Keep the CPU requests and limits as above for the second site. This way any remaining site can take over the traffic from the primary site immediately without the need to scale.
+
+Slower failover and more cost-effective::
+Reduce the CPU requests and limits as above by 50% for the second site. When one of the sites fails, scale the remaining site from 3 Pod to 6 Pods either manually, automated, or using a Horizontal Pod Autoscaler. This requires enough spare capacity on the cluster or cluster auto-scaling capabilities.
+
+Alternative setup for some environments::
+Reduce the CPU requests by 50% for the second site, but keep the CPU limits as above. This way the remaining site can take the traffic but only at the downside the Nodes will experience a CPU pressure and therefore slower response times during peak traffic.
+The benefit of this setup is that the number of Pod do not need to scale during failovers which is simpler to set up.
 
 == Reference architecture
 
