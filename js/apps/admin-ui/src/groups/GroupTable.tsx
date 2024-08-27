@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState, useFetch } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import useToggle from "../utils/useToggle";
@@ -32,6 +32,8 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
 
   const [rename, setRename] = useState<GroupRepresentation>();
   const [isCreateModalOpen, toggleCreateOpen] = useToggle();
+  const [selectedDuplicateGroupId, setSelectedDuplicateGroupId] =
+    useState<string>();
   const [duplicate, setDuplicate] = useState<GroupRepresentation>();
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
@@ -70,21 +72,36 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     return groupsData;
   };
 
-  const fetchGroupData = async (groupId: string) => {
-    const group = await adminClient.groups.findOne({ id: groupId });
-    const subGroups = await adminClient.groups.listSubGroups({
-      parentId: groupId,
-    });
-    const roleMappings = await adminClient.groups.listRoleMappings({
-      id: groupId,
-    });
+  useFetch(
+    async () => {
+      if (!selectedDuplicateGroupId) {
+        return;
+      }
 
-    return {
-      group,
-      subGroups,
-      roleMappings,
-    };
-  };
+      return adminClient.groups
+        .findOne({ id: selectedDuplicateGroupId })
+        .then(async (group) => {
+          const subGroups = await adminClient.groups.listSubGroups({
+            parentId: selectedDuplicateGroupId,
+          });
+          const roleMappings = await adminClient.groups.listRoleMappings({
+            id: selectedDuplicateGroupId,
+          });
+
+          return {
+            group,
+            subGroups,
+            roleMappings,
+          };
+        });
+    },
+    (groupData) => {
+      if (groupData) {
+        setDuplicate(groupData.group);
+      }
+    },
+    [selectedDuplicateGroupId],
+  );
 
   return (
     <>
@@ -205,8 +222,9 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                       {
                         title: t("duplicateGroup"),
                         onRowClick: async (group: GroupRepresentation) => {
-                          const groupData = await fetchGroupData(group.id!);
-                          setDuplicate(groupData.group);
+                          setSelectedDuplicateGroupId(group.id!);
+                          // const groupData = await fetchGroupData(group.id!);
+                          // setDuplicate(groupData.group);
                           return false;
                         },
                       },

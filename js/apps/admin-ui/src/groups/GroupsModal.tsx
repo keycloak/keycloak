@@ -28,6 +28,11 @@ type RoleMappingPayload = {
   clientUniqueId?: string;
 };
 
+type ClientRoleMapping = {
+  clientId: string;
+  roles: RoleMappingPayload[];
+};
+
 export const GroupsModal = ({
   id,
   rename,
@@ -48,10 +53,7 @@ export const GroupsModal = ({
 
   const fetchClientRoleMappings = async (groupId: string) => {
     try {
-      const clientRoleMappings: Array<{
-        clientId: string;
-        roles: Array<{ id: string; name: string }>;
-      }> = [];
+      const clientRoleMappings: ClientRoleMapping[] = [];
       const clients = await adminClient.clients.find();
 
       for (const client of clients) {
@@ -96,6 +98,7 @@ export const GroupsModal = ({
       const members = await adminClient.groups.listMembers({
         id: sourceGroup.id!,
       });
+
       for (const member of members) {
         await adminClient.users.addToGroup({
           id: member.id!,
@@ -106,6 +109,7 @@ export const GroupsModal = ({
       const permissions = await adminClient.groups.listPermissions({
         id: sourceGroup.id!,
       });
+
       if (permissions) {
         await adminClient.groups.updatePermission(
           { id: createdGroup.id },
@@ -116,6 +120,7 @@ export const GroupsModal = ({
       const realmRoles = await adminClient.groups.listRealmRoleMappings({
         id: sourceGroup.id!,
       });
+
       const clientRoleMappings = await fetchClientRoleMappings(sourceGroup.id!);
 
       const realmRolesPayload: RoleMappingPayload[] = realmRoles.map(
