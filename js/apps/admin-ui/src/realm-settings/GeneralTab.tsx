@@ -6,8 +6,10 @@ import {
 import {
   FormErrorText,
   HelpItem,
+  KeycloakSpinner,
   SelectControl,
   TextControl,
+  useEnvironment,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -26,16 +28,14 @@ import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
   convertAttributeNameToForm,
   convertToFormValues,
 } from "../util";
-import { UIRealmRepresentation } from "./RealmSettingsTabs";
-
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
@@ -95,7 +95,9 @@ function RealmSettingsGeneralTabForm({
   save,
   userProfileConfig,
 }: RealmSettingsGeneralTabFormProps) {
-  const { adminClient } = useAdminClient();
+  const {
+    environment: { serverBaseUrl },
+  } = useEnvironment();
 
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
@@ -250,7 +252,7 @@ function RealmSettingsGeneralTabForm({
               <StackItem>
                 <FormattedLink
                   href={`${addTrailingSlash(
-                    adminClient.baseUrl,
+                    serverBaseUrl,
                   )}realms/${realmName}/.well-known/openid-configuration`}
                   title={t("openIDEndpointConfiguration")}
                 />
@@ -258,7 +260,7 @@ function RealmSettingsGeneralTabForm({
               <StackItem>
                 <FormattedLink
                   href={`${addTrailingSlash(
-                    adminClient.baseUrl,
+                    serverBaseUrl,
                   )}realms/${realmName}/protocol/saml/descriptor`}
                   title={t("samlIdentityProviderMetadata")}
                 />
