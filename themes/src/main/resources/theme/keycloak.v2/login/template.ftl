@@ -52,13 +52,13 @@
 </head>
 
 <body id="keycloak-bg" class="${properties.kcBodyClass!}">
-<div id="kc-header" class="${properties.kcHeaderClass!}">
-    <div id="kc-header-wrapper"
-             class="${properties.kcHeaderWrapperClass!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
-    </div>
-</div>
+
 <div class="pf-v5-c-login">
   <div class="pf-v5-c-login__container">
+    <header id="kc-header" class="pf-v5-c-login__header">
+      <div id="kc-header-wrapper"
+              class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+    </header>
     <main class="pf-v5-c-login__main">
       <header class="pf-v5-c-login__main-header">
         <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><#nested "header"></h1>
