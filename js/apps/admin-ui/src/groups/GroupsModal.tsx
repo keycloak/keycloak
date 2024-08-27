@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  Alert,
   AlertVariant,
   Button,
   ButtonVariant,
@@ -265,6 +266,14 @@ export const GroupsModal = ({
     >
       <FormProvider {...form}>
         <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
+          {duplicate && (
+            <Alert
+              variant="warning"
+              component="h2"
+              isInline
+              title={t("duplicateGroupWarning")}
+            />
+          )}
           <TextControl
             name="name"
             label={t("name")}
