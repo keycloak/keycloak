@@ -21,11 +21,13 @@ import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.util.concurrent.BlockingManager;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 
@@ -177,4 +179,15 @@ public interface InfinispanConnectionProvider extends Provider {
      */
     BlockingManager getBlockingManager();
 
+    static Stream<String> skipSessionsCacheIfRequired(Stream<String> caches) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            return caches;
+        }
+        // persistent-user-sessions enabled, we do not need the sessions caches from external Infinispan.
+        return caches
+                .filter(Predicate.isEqual(USER_SESSION_CACHE_NAME).negate())
+                .filter(Predicate.isEqual(OFFLINE_USER_SESSION_CACHE_NAME).negate())
+                .filter(Predicate.isEqual(CLIENT_SESSION_CACHE_NAME).negate())
+                .filter(Predicate.isEqual(OFFLINE_CLIENT_SESSION_CACHE_NAME).negate());
+    }
 }

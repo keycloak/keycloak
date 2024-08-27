@@ -17,6 +17,16 @@
 
 package org.keycloak.connections.infinispan.remote;
 
+import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
 import org.infinispan.client.hotrod.impl.InternalRemoteCache;
 import org.infinispan.client.hotrod.impl.operations.PingResponse;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
@@ -36,18 +46,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import java.lang.invoke.MethodHandles;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 
 public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheckProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -87,7 +88,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
             }
             this.connectionProvider = provider;
 
-            var remoteCacheChecks = Arrays.stream(CLUSTERED_CACHE_NAMES)
+            var remoteCacheChecks = skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES))
                     .map(s -> new RemoteCacheCheck(s, provider))
                     .collect(Collectors.toList());
             var sequencer = new ActionSequencer(connectionProvider.getExecutor("load-balancer-check"), false, null);
@@ -205,8 +206,9 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
 
         @Override
         public Void apply(PingResponse response, Throwable throwable) {
-            logger.debugf("Received Ping response for cache '%s'. Success=%s, Throwable=%s", name, response.isSuccess(), throwable);
-            isDown = throwable != null || !response.isSuccess();
+            var successPing = response != null && response.isSuccess();
+            logger.debugf("Received Ping response for cache '%s'. Success=%s, Throwable=%s", name, successPing, throwable);
+            isDown = throwable != null || !successPing;
             return null;
         }
     }

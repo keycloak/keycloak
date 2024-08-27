@@ -65,6 +65,12 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_BIND_ADDR;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JMX_DOMAIN;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
@@ -76,6 +82,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
@@ -244,7 +251,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
 
         // establish connection to all caches
-        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
+        skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES)).forEach(remoteCacheManager::getCache);
         return remoteCacheManager;
 
     }
@@ -256,7 +263,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         defineRevisionCache(cacheManager, USER_CACHE_NAME, USER_REVISIONS_CACHE_NAME, USER_REVISIONS_CACHE_DEFAULT_MAX);
         defineRevisionCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
 
-        cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+        cacheManager.getCache(KEYS_CACHE_NAME, true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
 
@@ -275,14 +282,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         this.topologyInfo = new TopologyInfo(cacheManager, config, true, getId());
 
         if (clustered) {
-            String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
-            String jgroupsBindAddr = config.get("jgroupsBindAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_BIND_ADDR));
+            String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(JGROUPS_UDP_MCAST_ADDR));
+            String jgroupsBindAddr = config.get("jgroupsBindAddr", System.getProperty(JGROUPS_BIND_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr, jgroupsBindAddr,
                     "default-configs/default-keycloak-jgroups-udp.xml");
             gcb.jmx()
-              .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
+              .domain(JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
         } else {
-            gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
+            gcb.jmx().domain(JMX_DOMAIN).enable();
         }
 
         Marshalling.configure(gcb);
@@ -308,8 +315,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         defineLocalCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, localConfiguration, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
         defineLocalCache(cacheManager, USER_CACHE_NAME, USER_REVISIONS_CACHE_NAME, localConfiguration, USER_REVISIONS_CACHE_DEFAULT_MAX);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, getKeysCacheConfig());
-        cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+        cacheManager.defineConfiguration(KEYS_CACHE_NAME, getKeysCacheConfig());
+        cacheManager.getCache(KEYS_CACHE_NAME, true);
 
         var builder = createCacheConfigurationBuilder();
         if (clustered) {
@@ -459,9 +466,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cb.memory()
                 .whenFull(EvictionStrategy.REMOVE)
-                .maxCount(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+                .maxCount(KEYS_CACHE_DEFAULT_MAX);
 
-        cb.expiration().maxIdle(InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
+        cb.expiration().maxIdle(KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
 
         return cb.build();
     }
