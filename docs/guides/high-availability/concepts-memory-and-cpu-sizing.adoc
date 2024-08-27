@@ -48,7 +48,17 @@ Most CPU time goes into creating new TLS connections, as each client runs only a
 This ensures a fast startup of the node, and sufficient capacity to handle failover tasks like, for example, re-balancing Infinispan caches, when one node fails.
 Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
 
-* By default {project_name} will store user sessions in the database. For the database, allocate per 100 requests/second that update the database (login, logout, refresh token) 0.35-0.7 vCPU and 1400 WriteIOPS on an Aurora PostgreSQL multi-AZ database base on a 2 vCPU `db.t4g.large` instance type (tested up to 400 requests per second).
+{project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
+
+For every 100 login/logout/refresh requests per second:
+- Allocate between 0.35 and 0.7 vCPU.
+- Ensure 1400 Write IOPS are available.
+
+Instance type recommendations:
+- db.t4g.large (2 vCPU) is suitable for typical loads.
+- db.t4g.xlarge (4 vCPU) is recommended for peak usage to avoid slowdowns.
+
+Key takeaway:  Higher CPU usage on the database can lead to slower response times, particularly during peak loads. Choose a larger instance type if faster response times are critical.
 +
 The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreased while the response times increased. The median response time for a login and a token refresh increased by 120 ms when CPU saturation reached 90%. For faster response times during peak usage, consider a 4 vCPU `db.t4g.xlarge` instance.
 
