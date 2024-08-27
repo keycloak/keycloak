@@ -294,7 +294,7 @@ public class CacheManagerFactory {
                      .findFirst();
 
                if (remoteStore.isPresent())
-                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE);
+                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE.getKey());
                builders.remove(cacheName);
             }
             // Disable JGroups, not required when the data is stored in the Remote Cache.
