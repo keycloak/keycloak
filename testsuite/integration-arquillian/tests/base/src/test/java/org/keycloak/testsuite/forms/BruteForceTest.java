@@ -567,6 +567,49 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
+            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(), events.poll());
+            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
+            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+
+            // assert
+            expectPermanentlyDisabled();
+
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            assertFalse(user.isEnabled());
+            assertUserDisabledReason(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT);
+
+            user.setEnabled(true);
+            updateUser(user);
+            assertUserDisabledReason(null);
+        } finally {
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    // https://github.com/keycloak/keycloak/issues/30969
+    @Test
+    public void testPermanentLockoutWithTempLockoutParamsSet()
+    {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            // arrange
+            realm.setWaitIncrementSeconds(0);
+            realm.setPermanentLockout(true);
+            realm.setMaxTemporaryLockouts(0);
+            realm.setQuickLoginCheckMilliSeconds(0L);
+            testRealm().update(realm);
+
+            // act
+            loginInvalidPassword("test-user@localhost");
+            loginInvalidPassword("test-user@localhost", false);
+
+            // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
+            // guarantee though since the brute force detector is running separately "in its own thread" named
+            // "Brute Force Protector".
             List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll());
             assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);

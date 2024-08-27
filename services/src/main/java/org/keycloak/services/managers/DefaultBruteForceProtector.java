@@ -79,7 +79,10 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         userLoginFailure.incrementFailures();
         logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-        int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        int waitSeconds = 0;
+        if(!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0)) {
+            waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        }
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
@@ -110,7 +113,8 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             return;
         }
 
-        if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()) {
+        if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts() ||
+                (realm.getMaxTemporaryLockouts() == 0 && userLoginFailure.getNumFailures() >= realm.getFailureFactor())) {
             UserModel user = session.users().getUserById(realm, userId);
             if (user == null) {
                 return;
