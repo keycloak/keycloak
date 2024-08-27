@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -84,6 +85,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
@@ -177,7 +179,7 @@ public class CacheManagerFactory {
 
         // establish connection to all caches
         if (isStartEagerly()) {
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
+            skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES)).forEach(remoteCacheManager::getCache);
         }
         return remoteCacheManager;
     }
@@ -187,7 +189,7 @@ public class CacheManagerFactory {
         logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
         var baseConfig = defaultRemoteCacheBuilder().build();
 
-        Arrays.stream(CLUSTERED_CACHE_NAMES)
+        skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES))
                 .forEach(name -> builder.remoteCache(name).configuration(baseConfig.toStringConfiguration(name)));
     }
 
@@ -267,36 +269,6 @@ public class CacheManagerFactory {
         logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
-        if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
-            configureTransportStack(builder);
-            configureRemoteStores(builder);
-        }
-
-        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
-            if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
-                ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
-                if (MultiSiteUtils.isPersistentSessionsEnabled()) {
-                    if (configurationBuilder.memory().maxCount() == -1) {
-                        logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries.", cacheName);
-                        configurationBuilder.memory().maxCount(10000);
-                    }
-                    /* The number of owners for these caches then need to be set to `1` to avoid backup owners with inconsistent data.
-                     As primary owner evicts a key based on its locally evaluated maxCount setting, it wouldn't tell the backup owner about this, and then the backup owner would be left with a soon-to-be-outdated key.
-                     While a `remove` is forwarded to the backup owner regardless if the key exists on the primary owner, a `computeIfPresent` is not, and it would leave a backup owner with an outdated key.
-                     With the number of owners set to `1`, there will be no backup owners, so this is the setting to choose with persistent sessions enabled to ensure consistent data in the caches. */
-                    configurationBuilder.clustering().hash().numOwners(1);
-                } else {
-                    if (configurationBuilder.memory().maxCount() != -1) {
-                        logger.warnf("Persistent user sessions NOT enabled and memory limit found in configuration for cache %s. This might be a misconfiguration!", cacheName);
-                    }
-                    if (configurationBuilder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1
-                        && configurationBuilder.persistence().stores().isEmpty()) {
-                        logger.warnf("Number of owners is one for cache %s, and no persistence is configured. This might be a misconfiguration as you will lose data when a single node is restarted!", cacheName);
-                    }
-                }
-            }
-        });
-
         if (Configuration.isTrue(MetricsOptions.METRICS_ENABLED)) {
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
             builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
@@ -322,12 +294,19 @@ public class CacheManagerFactory {
                      .findFirst();
 
                if (remoteStore.isPresent())
-                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' Feature", cacheName, Profile.Feature.REMOTE_CACHE.getKey());
+                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE.getKey());
                builders.remove(cacheName);
             }
             // Disable JGroups, not required when the data is stored in the Remote Cache.
             // The existing caches are local and do not require JGroups to work properly.
             builder.getGlobalConfigurationBuilder().nonClusteredDefault();
+        } else {
+            // embedded mode!
+            if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
+                configureTransportStack(builder);
+                configureRemoteStores(builder);
+            }
+            configureSessionsCaches(builder);
         }
 
         var start = isStartEagerly();
@@ -367,7 +346,7 @@ public class CacheManagerFactory {
         return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
     }
 
-    private void configureTransportStack(ConfigurationBuilderHolder builder) {
+    private static void configureTransportStack(ConfigurationBuilderHolder builder) {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
 
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
@@ -392,7 +371,7 @@ public class CacheManagerFactory {
         }
     }
 
-    private void validateTlsAvailable(GlobalConfiguration config) {
+    private static void validateTlsAvailable(GlobalConfiguration config) {
         var stackName = config.transport().stack();
         if (stackName == null) {
             // unable to validate
@@ -410,7 +389,7 @@ public class CacheManagerFactory {
 
     }
 
-    private void configureRemoteStores(ConfigurationBuilderHolder builder) {
+    private static void configureRemoteStores(ConfigurationBuilderHolder builder) {
         //if one of remote store command line parameters is defined, some other are required, otherwise assume it'd configured via xml only
         if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent()) {
 
@@ -461,6 +440,32 @@ public class CacheManagerFactory {
                 }
             });
         }
+    }
+
+    private static void configureSessionsCaches(ConfigurationBuilderHolder builder) {
+        Stream.of(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)
+                .forEach(cacheName -> {
+                    var configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
+                    if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+                        if (configurationBuilder.memory().maxCount() == -1) {
+                            logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries.", cacheName);
+                            configurationBuilder.memory().maxCount(10000);
+                        }
+                        /* The number of owners for these caches then need to be set to `1` to avoid backup owners with inconsistent data.
+                         As primary owner evicts a key based on its locally evaluated maxCount setting, it wouldn't tell the backup owner about this, and then the backup owner would be left with a soon-to-be-outdated key.
+                         While a `remove` is forwarded to the backup owner regardless if the key exists on the primary owner, a `computeIfPresent` is not, and it would leave a backup owner with an outdated key.
+                         With the number of owners set to `1`, there will be no backup owners, so this is the setting to choose with persistent sessions enabled to ensure consistent data in the caches. */
+                        configurationBuilder.clustering().hash().numOwners(1);
+                    } else {
+                        if (configurationBuilder.memory().maxCount() != -1) {
+                            logger.warnf("Persistent user sessions NOT enabled and memory limit found in configuration for cache %s. This might be a misconfiguration!", cacheName);
+                        }
+                        if (configurationBuilder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1
+                                && configurationBuilder.persistence().stores().isEmpty()) {
+                            logger.warnf("Number of owners is one for cache %s, and no persistence is configured. This might be a misconfiguration as you will lose data when a single node is restarted!", cacheName);
+                        }
+                    }
+                });
     }
 
     private static String requiredStringProperty(String propertyName) {

@@ -33,6 +33,8 @@ import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
+
 public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCacheManager,
                                                  RemoteCacheManager remoteCacheManager,
                                                  TopologyInfo topologyInfo) implements InfinispanConnectionProvider {
@@ -63,7 +65,7 @@ public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCa
         // Only the CacheStore (persistence) stores data in binary format and needs to be deleted.
         // We assume rolling-upgrade between KC 25 and KC 26 is not available, in other words, KC 25 and KC 26 servers are not present in the same cluster.
         var stage = CompletionStages.aggregateCompletionStage();
-        Arrays.stream(CLUSTERED_CACHE_NAMES)
+        skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES))
                 .map(this::getRemoteCache)
                 .map(RemoteCache::clearAsync)
                 .forEach(stage::dependsOn);
