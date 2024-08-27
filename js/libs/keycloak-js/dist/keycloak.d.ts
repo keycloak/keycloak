@@ -532,7 +532,7 @@ declare class Keycloak {
 	/**
 	* Called when a AIA has been requested by the application.
 	* @param status the outcome of the required action
-	* @param action the name of the required action
+	* @param action the alias name of the required action, e.g. UPDATE_PASSWORD, CONFIGURE_TOTP etc.
 	*/
 	onActionUpdate?(status: 'success'|'cancelled'|'error', action?: string): void;
 
