@@ -18,6 +18,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigValue;
+import org.keycloak.common.Profile;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
@@ -38,7 +40,8 @@ import static org.keycloak.config.TracingOptions.TRACING_SERVICE_NAME;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TracingPropertyMappers {
-    private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
+    private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
+    private static final String TRACING_ENABLED_MSG = "'opentelemetry' feature and Tracing is enabled";
 
     private TracingPropertyMappers() {
     }
@@ -46,6 +49,7 @@ public class TracingPropertyMappers {
     public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
+                        .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
                         .to("quarkus.otel.traces.enabled")
                         .build(),
                 fromOption(TRACING_ENDPOINT)
@@ -116,6 +120,11 @@ public class TracingPropertyMappers {
         } catch (NumberFormatException e) {
             throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must be a double value in interval <0,1).");
         }
+    }
+
+    private static boolean isFeatureEnabled() {
+        Environment.getCurrentOrCreateFeatureProfile();
+        return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
     }
 
     public static boolean isTracingEnabled() {

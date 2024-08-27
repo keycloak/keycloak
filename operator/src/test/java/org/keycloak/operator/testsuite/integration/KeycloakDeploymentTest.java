@@ -47,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
@@ -390,6 +391,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testPodNamePropagation() {
         var kc = getTestKeycloakDeployment(true);
+        var featureSpec = new FeatureSpec();
+        featureSpec.setEnabledFeatures(List.of("opentelemetry"));
+        kc.getSpec().setFeatureSpec(featureSpec);
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("tracing-enabled", "true"));
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("log-level", "io.opentelemetry:fine"));
         deployKeycloak(k8sclient, kc, true);
