@@ -104,6 +104,8 @@ export const FileUpload = ({
     : undefined,
   filename = "",
   children = null,
+  // TODO: This should be removed as part of https://github.com/keycloak/keycloak/issues/32420
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   onChange,
   onFileInputChange,
   onReadStarted,

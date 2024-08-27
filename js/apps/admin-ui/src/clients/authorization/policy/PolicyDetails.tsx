@@ -8,7 +8,7 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";

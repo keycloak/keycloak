@@ -245,7 +245,6 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           {
             title: t("delete"),
             isActionable: ({ name }) => !RESTRICTED_ATTRIBUTES.includes(name!),
-            isDisabled: RESTRICTED_ATTRIBUTES.includes(name!),
             onClick: (_key, _idx, component) => {
               setAttributeToDelete(component.name);
               toggleDeleteDialog();
