@@ -225,9 +225,9 @@ For example in the current directory, you can create sub-directory `files` and a
 * Custom keystore file - named for example `keycloak-fips.keystore.bcfks`
 * Security file `kc.java.security` with added provider for SAML
 
-Then create `Dockerfile` in the current directory similar to this:
+Then create `Containerfile` in the current directory similar to this:
 
-.Dockerfile:
+.Containerfile:
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel} as builder

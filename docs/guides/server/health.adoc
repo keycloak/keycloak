@@ -79,7 +79,7 @@ Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-live
 
 === HEALTHCHECK
 
-The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The {project_name} container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the <@links.server id="containers" /> {section}. Note that your container may be less secure because of this.
+The Containerfile `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The {project_name} container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the <@links.server id="containers" /> {section}. Note that your container may be less secure because of this.
 
 == Available Checks
 
