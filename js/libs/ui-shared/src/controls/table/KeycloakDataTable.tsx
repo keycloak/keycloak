@@ -29,6 +29,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type JSX,
 } from "react";
 import { useTranslation } from "react-i18next";
 

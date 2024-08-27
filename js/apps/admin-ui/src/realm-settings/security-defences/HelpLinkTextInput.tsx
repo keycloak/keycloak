@@ -12,7 +12,7 @@ export const HelpLinkTextInput = ({
   url,
 }: HelpLinkTextInputProps) => {
   const { t } = useTranslation();
-  const name = fieldName.substr(fieldName.indexOf(".") + 1);
+  const name = fieldName.substring(fieldName.indexOf(".") + 1);
   return (
     <TextControl
       name={fieldName}

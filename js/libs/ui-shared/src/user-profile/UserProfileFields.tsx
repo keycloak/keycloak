@@ -5,7 +5,7 @@ import {
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, type JSX } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 
 import { ScrollForm } from "../main";
