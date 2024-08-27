@@ -46,7 +46,7 @@ Typical cluster deployment consists of the load balancer (reverse proxy) and 2 o
 For performance purposes, it may be useful if load balancer forwards all requests related to particular browser session to the same {project_name} backend node.
 
 The reason is, that {project_name} is using Infinispan distributed cache under the covers for save data related to current authentication session and user session.
-The Infinispan distributed caches are configured with two owners by default. That means that particular session is primarily stored on two cluster nodes and the other nodes need to lookup the session remotely if they want to access it.
+The Infinispan distributed caches are configured with limited number of owners. That means that session related data are stored only in some cluster nodes and the other nodes need to lookup the data remotely if they want to access it.
 
 For example if authentication session with ID 123 is saved in the Infinispan cache on node1, and then node2 needs to lookup this session, it needs to send the request to node1 over the network to return the particular session entity.
 

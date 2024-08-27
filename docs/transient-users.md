@@ -54,7 +54,7 @@ When using transient users, you should be aware of the following:
   needed since persistent users can manage offline tokens more easily
   by the Account Console. Also, the transient users feature contributes
   the purpose of not storing any personally identifiable information into the database.
-  Since offline sessions are persisted in database, the transient user data would be stored
+  Since sessions are persisted in database, the transient user data would be stored
   there as well. It is up to the administrator to determine whether this is acceptable or not.
 
 - Technically, transient user data is stored as part
