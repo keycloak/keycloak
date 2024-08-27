@@ -3,7 +3,7 @@ import { FormGroup, InputGroup } from "@patternfly/react-core";
 import { TFunction } from "i18next";
 import { get } from "lodash-es";
 import { PropsWithChildren, ReactNode } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, type FieldError } from "react-hook-form";
 
 import { FormErrorText } from "../controls/FormErrorText";
 import { HelpItem } from "../controls/HelpItem";
@@ -38,7 +38,8 @@ export const UserProfileGroup = ({
   } = form;
 
   const component = renderer?.(attribute);
-  const error = get(errors, fieldName(attribute.name));
+  const error = get(errors, fieldName(attribute.name)) as FieldError;
+
   return (
     <FormGroup
       key={attribute.name}
