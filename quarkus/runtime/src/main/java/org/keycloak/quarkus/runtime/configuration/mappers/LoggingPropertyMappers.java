@@ -225,7 +225,7 @@ public final class LoggingPropertyMappers {
      * Add tracing info to the log if the format is not explicitly set, and tracing and {@code includeTraceOption} options are enabled
      */
     private static Optional<String> addTracingInfo(Optional<String> value, Option<Boolean> includeTraceOption) {
-        var isTracingEnabled = Configuration.isTrue(TracingOptions.TRACING_ENABLED);
+        var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
         var includeTrace = Configuration.isTrue(includeTraceOption);
         var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value.get());
 

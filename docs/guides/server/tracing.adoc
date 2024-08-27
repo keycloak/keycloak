@@ -17,9 +17,9 @@ It also provides valuable insights into performance bottlenecks and can help opt
 
 == Enable tracing
 
-It is possible to enable exposing traces using the build time option `tracing-enabled` as follows:
+It is possible to enable exposing traces using the build time option `tracing-enabled`, and enabling `opentelemetry` feature as follows:
 
-<@kc.start parameters="--tracing-enabled=true"/>
+<@kc.start parameters="--tracing-enabled=true --features=opentelemetry"/>
 
 By default, the trace exporters send out data in batches, using the `gRPC` protocol and endpoint `+http://localhost:4317+`.
 
@@ -77,7 +77,7 @@ The format of the log records may start as follows:
 You can hide tracing information in specific log handlers by specifying their associated {project_name} option `log-<handler-name>-include-trace`, where `<handler-name>` is the name of the log handler.
 For instance, to disable trace info in the `console` log, you can turn it off as follows:
 
-<@kc.start parameters="--tracing-enabled=true --log=console --log-console-include-trace=false"/>
+<@kc.start parameters="--tracing-enabled=true --features=opentelemetry --log=console --log-console-include-trace=false"/>
 
 NOTE: When you explicitly override the log format for the particular log handlers, the `*-include-trace` options do not have any effect, and no tracing is included.
 
