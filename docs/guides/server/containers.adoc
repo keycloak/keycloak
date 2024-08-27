@@ -13,7 +13,7 @@ This {section} describes how to optimize and run the {project_name} container im
 
 <@profile.ifProduct>
 
-WARNING: This chapter applies only for building an image that you run in a OpenShift environment. Only an OpenShift environment is supported for this image. It is not supported if you run it in other Kubernetes distributions. 
+WARNING: This chapter applies only for building an image that you run in a OpenShift environment. Only an OpenShift environment is supported for this image. It is not supported if you run it in other Kubernetes distributions.
 
 </@profile.ifProduct>
 
@@ -23,10 +23,10 @@ The default {project_name} container image ships ready to be configured and opti
 For the best start up of your {project_name} container, build an image by running the `build` step during the container build.
 This step will save time in every subsequent start phase of the container image.
 
-=== Writing your optimized {project_name} Dockerfile
-The following `Dockerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
+=== Writing your optimized {project_name} Containerfile
+The following `Containerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
-.Dockerfile:
+.Containerfile:
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel} as builder
@@ -62,7 +62,7 @@ The build process includes multiple stages:
 * In the entrypoint, the `kc.sh` enables access to all the distribution sub-commands.
 
 To install custom providers, you just need to define a step to include the JAR file(s) into the `/opt/keycloak/providers` directory.
-This step must be placed before the line that `RUNs` the `build` command, as below: 
+This step must be placed before the line that `RUNs` the `build` command, as below:
 
 [source,dockerfile,subs="attributes+"]
 ----
@@ -86,7 +86,7 @@ If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`
 
 First, consider if your use case can be implemented in a different way, and so avoid installing new RPMs into the final container:
 
-* A `+RUN curl+` instruction in your Dockerfile can be replaced with `+ADD+`, since that instruction natively supports remote URLs.
+* A `+RUN curl+` instruction in your Containerfile can be replaced with `+ADD+`, since that instruction natively supports remote URLs.
 * Some common CLI tools can be replaced by creative use of the Linux filesystem. For example, `+ip addr show tap0+` becomes `+cat /sys/class/net/tap0/address+`
 * Tasks that need RPMs can be moved to a former stage of an image build, and the results copied across instead.
 
@@ -121,7 +121,7 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
 === Building the container image
-To build the actual container image, run the following command from the directory containing your Dockerfile:
+To build the actual container image, run the following command from the directory containing your Containerfile:
 
 [source,bash]
 ----
