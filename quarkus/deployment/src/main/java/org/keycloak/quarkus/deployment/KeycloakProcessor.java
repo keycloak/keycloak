@@ -280,14 +280,15 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(CheckMultipleDatasourcesBuildStep.class)
     void checkMultipleDatasourcesUseXA(DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
-        if (dataSourcesConfig.dataSources().size() >= 2 &&
-                dataSourcesConfig.dataSources().keySet().stream()
-                        .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
-                        .filter(jdbc -> jdbc.enabled())
-                        .anyMatch(jdbc -> jdbc.transactions() != TransactionIntegration.XA)) {
-            throwConfigError("Multiple datasources are configured but not all of them are using XA transactions. " +
-                    "Please configure all datasources to use XA transactions by setting --transaction-xa-enabled=true and " +
-                    "quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa.");
+        long nonXADatasourcesCount = dataSourcesConfig.dataSources().keySet().stream()
+                .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
+                .filter(jdbc -> jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA)
+                .count();
+        if (nonXADatasourcesCount > 1) {
+            throwConfigError("Multiple datasources are configured but more than 1 is using non-XA transactions. " +
+                    "All the datasources except one must must be XA to be able to use Last Resource Commit Optimization (LRCO). " +
+                    "Please update your configuration by setting --transaction-xa-enabled=true " +
+                    "and/or quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa.");
         }
     }
 

@@ -190,6 +190,7 @@ If you previously used any of the removed resources in your theme, make sure to 
 Starting with this release, you need to use XA datasources if you are adding additional datasources to {project_name}.
 If the default datasource supports XA, you can do this by setting the `--transaction-xa-enabled=true` option. For additional datasources, you need to use
 the `quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa` option in your `quarkus.properties` file.
+At most one datasource can be non-XA.
 
 = Hostname v1 feature removed
 

@@ -34,7 +34,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(defaultOptions = {"--http-enabled=true", "--hostname-strict=false", "--transaction-xa-enabled=true"})
+@DistributionTest(defaultOptions = {"--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
@@ -119,7 +119,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @Order(9)
     void nonXADatasourceFailsToStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Multiple datasources are configured but not all of them are using XA transactions.");
+        cliResult.assertError("Multiple datasources are configured but more than 1 is using non-XA transactions.");
     }
 
     public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
