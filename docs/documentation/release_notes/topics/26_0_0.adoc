@@ -153,3 +153,12 @@ Instead, prefer using the `federationLink` property to obtain the provider to wh
 GELF support has been deprecated for a while now, and with this release it has been finally removed from {project_name}.
 Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
 see the https://www.keycloak.org/server/logging[Logging guide].
+
+= All user sessions are persisted by default
+
+{project_name} 25 introduced the feature `persistent-user-sessions`. With this feature enabled all user sessions are persisted in the database as opposed to the previous behavior where only offline sessions were persisted.
+In {project_name} 26, this feature is enabled by default. This means that all user sessions are persisted in the database by default.
+
+It is possible to revert this behavior to the previous state by disabling the feature. Follow the `Volatile user sessions` section in https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more details.
+
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].

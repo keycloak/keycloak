@@ -107,7 +107,7 @@ CPU, memory, and network utilization.
 
 These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
 The internal caches will run with only a single owner for each cache entry.
-To set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
 .Volatile user sessions
 
@@ -141,7 +141,8 @@ The following caches are used to store offline sessions:
 * offlineSessions
 * offlineClientSessions
 
-Similarly to regular user and client sessions caches, also the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed. To set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
+Similarly to regular user and client sessions caches, also the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
