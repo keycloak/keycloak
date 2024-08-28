@@ -108,7 +108,6 @@ public class Profile {
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
 
-        HOSTNAME_V1("Hostname Options V1", Type.DEPRECATED, 1),
         HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
         PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT),

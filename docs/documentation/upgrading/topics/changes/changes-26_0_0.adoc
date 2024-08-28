@@ -183,3 +183,11 @@ Additionally, the following resources have been removed from the `common` theme:
 - `node_modules/jquery`
 
 If you previously used any of the removed resources in your theme, make sure to add them to your own theme resources instead.
+
+= Hostname v1 feature removed
+
+The deprecated hostname v1 feature was removed. This feature was deprecated in {project_name} 25 and replaced by hostname v2. If you are still using this feature, you must migrate to hostname v2. For more details, see the https://www.keycloak.org/server/hostname[Configuring the hostname (v2)] and https://www.keycloak.org/docs/latest/upgrading/#new-hostname-options[the initial migration guide].
+
+= Proxy option removed
+
+The deprecated `proxy` option was removed. This option was deprecated in {project_name} 24 and replaced by the `proxy-headers` option in combination with hostname options as needed. For more details, see https://www.keycloak.org/server/reverseproxy[using a reverse proxy] and https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[the initial upgrading guide].

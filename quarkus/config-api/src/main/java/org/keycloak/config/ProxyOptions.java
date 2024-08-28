@@ -1,8 +1,5 @@
 package org.keycloak.config;
 
-import java.util.List;
-import java.util.TreeSet;
-
 public class ProxyOptions {
 
     public enum Headers {
@@ -10,37 +7,9 @@ public class ProxyOptions {
         xforwarded
     }
 
-    public enum Mode {
-        none(false),
-        edge,
-        reencrypt,
-        passthrough(false);
-
-        private final boolean proxyHeadersEnabled;
-
-        Mode(boolean proxyHeadersEnabled) {
-            this.proxyHeadersEnabled = proxyHeadersEnabled;
-        }
-
-        Mode() {
-            this(true);
-        }
-
-        public boolean isProxyHeadersEnabled() {
-            return proxyHeadersEnabled;
-        }
-    }
-
     public static final Option<Headers> PROXY_HEADERS = new OptionBuilder<>("proxy-headers", Headers.class)
             .category(OptionCategory.PROXY)
             .description("The proxy headers that should be accepted by the server. Misconfiguration might leave the server exposed to security vulnerabilities. Takes precedence over the deprecated proxy option.")
-            .build();
-
-    public static final Option<Mode> PROXY = new OptionBuilder<>("proxy", Mode.class)
-            .category(OptionCategory.PROXY)
-            .description("The proxy address forwarding mode if the server is behind a reverse proxy.")
-            .defaultValue(Mode.none)
-            .deprecated(new TreeSet<>(List.of(PROXY_HEADERS.getKey(), HttpOptions.HTTP_ENABLED.getKey())))
             .build();
 
     public static final Option<Boolean> PROXY_FORWARDED_HOST = new OptionBuilder<>("proxy-forwarded-host", Boolean.class)

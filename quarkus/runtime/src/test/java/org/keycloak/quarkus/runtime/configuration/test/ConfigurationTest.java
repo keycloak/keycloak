@@ -145,15 +145,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testResolveTransformedValue() {
         ConfigArgsConfigSource.setCliArgs("");
-        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
-        ConfigArgsConfigSource.setCliArgs("--proxy=none");
-        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
-        ConfigArgsConfigSource.setCliArgs("");
-        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
-        ConfigArgsConfigSource.setCliArgs("--proxy=none", "--http-enabled=false");
-        assertEquals("false", createConfig().getConfigValue("kc.http-enabled").getValue());
-        ConfigArgsConfigSource.setCliArgs("--proxy=none", "--http-enabled=true");
-        assertEquals("true", createConfig().getConfigValue("kc.http-enabled").getValue());
+        assertEquals("false", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
+        ConfigArgsConfigSource.setCliArgs("--proxy-headers=xforwarded");
+        assertEquals("false", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
+        ConfigArgsConfigSource.setCliArgs("--proxy-headers=forwarded");
+        assertEquals("true", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
     }
 
     @Test
