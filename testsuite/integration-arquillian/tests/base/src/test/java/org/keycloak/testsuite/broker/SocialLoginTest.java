@@ -617,7 +617,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Client httpClient = AdminClientUtil.createResteasyClient();
         Response response = null;
         try {
-            testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
+            testingClient.server(REALM).run(SocialLoginTest::setupClientExchangePermissions);
 
             WebTarget exchangeUrl = getExchangeUrl(httpClient);
             response = exchangeUrl.request()
