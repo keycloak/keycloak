@@ -223,8 +223,6 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                         title: t("duplicateGroup"),
                         onRowClick: async (group: GroupRepresentation) => {
                           setSelectedDuplicateGroupId(group.id!);
-                          // const groupData = await fetchGroupData(group.id!);
-                          // setDuplicate(groupData.group);
                           return false;
                         },
                       },

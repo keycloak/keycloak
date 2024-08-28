@@ -113,6 +113,14 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
+  duplicateGroupItem(groupName: string, confirmModal = true) {
+    listingPage.duplicateItem(groupName);
+    if (confirmModal) {
+      groupModal.confirmDuplicateModal();
+    }
+    return this;
+  }
+
   moveGroupItemAction(groupName: string, destinationGroupName: string[]) {
     listingPage.clickRowDetails(groupName);
     listingPage.clickDetailMenu("Move to");
@@ -199,6 +207,11 @@ export default class GroupPage extends PageObject {
         groupName +
         "' already exists.",
     );
+    return this;
+  }
+
+  assertNotificationGroupDuplicated() {
+    masthead.checkNotificationMessage("Group duplicated");
     return this;
   }
 
