@@ -1,7 +1,10 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.smallrye.common.net.Inet;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.config.ProxyOptions;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
 
@@ -32,8 +35,24 @@ final class ProxyPropertyMappers {
                         .to("quarkus.http.proxy.allow-x-forwarded")
                         .mapFrom("proxy-headers")
                         .transformer((v, c) -> proxyEnabled(ProxyOptions.Headers.xforwarded, v, c))
+                        .build(),
+                fromOption(ProxyOptions.PROXY_TRUSTED_ADDRESSES)
+                        .to("quarkus.http.proxy.trusted-proxies")
+                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
+                                (c, v) -> validateAddress(v)))
+                        .appendValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
+                        .paramLabel("trusted proxies")
                         .build()
         };
+    }
+    
+    private static void validateAddress(String address) {
+        if (Inet.parseCidrAddress(address) != null) {
+            return;
+        }
+        if (Inet.parseInetAddress(address) == null) {
+            throw new PropertyException(address + " is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
+        }
     }
 
     private static Optional<String> proxyEnabled(ProxyOptions.Headers testHeader, Optional<String> value, ConfigSourceInterceptorContext context) {

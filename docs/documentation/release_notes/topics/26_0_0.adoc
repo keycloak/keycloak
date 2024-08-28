@@ -138,6 +138,10 @@ The deprecated hostname v1 feature was removed. This feature was deprecated in {
 
 The deprecated `proxy` option was removed. This option was deprecated in {project_name} 24 and replaced by the `proxy-headers` option in combination with hostname options as needed. For more details, see https://www.keycloak.org/server/reverseproxy[using a reverse proxy] and https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[the initial migration guide].
 
+= Option `proxy-trusted-addresses` added
+
+The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set to specify a allowlist of trusted proxy addresses. If the proxy address for a given request is not trusted, then the respective proxy header values will not be used.
+
 = Property `origin` in the `UserRepresentation` is deprecated
 
 The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.

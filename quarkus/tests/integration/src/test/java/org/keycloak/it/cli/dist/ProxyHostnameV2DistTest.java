@@ -25,9 +25,11 @@ import org.apache.http.HttpHeaders;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import static io.restassured.RestAssured.given;
@@ -54,6 +56,25 @@ public class ProxyHostnameV2DistTest {
         assertFrontEndUrl("https://localhost:8443", "https://localhost:8443/");
         assertForwardedHeaderIsIgnored();
         assertXForwardedHeadersAreIgnored();
+    }
+    
+    @Test
+    void testTrustedProxiesWithoutProxyHeaders(KeycloakDistribution distribution) {
+        CLIResult result = distribution.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
+        result.assertError("proxy-trusted-addresses available only when proxy-headers is set");
+    }
+    
+    @Test
+    void testTrustedProxiesWithInvalidAddress(KeycloakDistribution distribution) {
+        CLIResult result = distribution.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
+        result.assertError("1.0.0.0:8080 is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
+    }
+    
+    @Test
+    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0" })
+    public void testProxyNotTrusted() {
+        assertForwardedHeaderIsIgnored();
+        assertForwardedHeaderIsIgnored();
     }
 
     @Test
