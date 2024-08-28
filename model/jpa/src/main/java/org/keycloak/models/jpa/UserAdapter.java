@@ -399,10 +399,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public long getGroupsCount() {
         Long result = createCountGroupsQuery().getSingleResult();
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            if (result > 0 && provider.getByMember(this) != null) {
+            if (result > 0) {
                 // remove from the count the organization group membership
-                result--;
+                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                result -= provider.getByMember(this).count();
             }
         }
         return result;
