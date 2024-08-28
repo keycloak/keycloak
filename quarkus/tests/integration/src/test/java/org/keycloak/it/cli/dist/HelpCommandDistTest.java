@@ -18,7 +18,6 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.it.cli.dist.GelfRemovedTest.INCLUDE_GELF_PROPERTY;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.io.IOException;
@@ -31,8 +30,6 @@ import org.apache.commons.io.FileUtils;
 import org.approvaltests.Approvals;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -53,11 +50,6 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class HelpCommandDistTest {
 
     public static final String REPLACE_EXPECTED = "KEYCLOAK_REPLACE_EXPECTED";
-
-    @BeforeAll
-    public static void assumeGelfEnabled() {
-        Assumptions.assumeTrue(Boolean.getBoolean(INCLUDE_GELF_PROPERTY), "Assume GELF support is given in order to simplify these test cases");
-    }
 
     @Test
     @Launch({})

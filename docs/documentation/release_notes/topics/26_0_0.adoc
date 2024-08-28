@@ -143,3 +143,9 @@ The deprecated `proxy` option was removed. This option was deprecated in {projec
 The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.
 
 Instead, prefer using the `federationLink` property to obtain the provider to which a user is linked with.
+
+= Removal of GELF logging handler
+
+GELF support has been deprecated for a while now, and with this release it has been finally removed from {project_name}.
+Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
+see the https://www.keycloak.org/server/logging[Logging guide].

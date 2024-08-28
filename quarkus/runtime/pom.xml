@@ -706,19 +706,5 @@
                 </dependency>
             </dependencies>
         </profile>
-        <profile>
-            <id>includeGelf</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-logging-gelf</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
 </project>

@@ -51,14 +51,14 @@ public class StartCommandDistTest {
         assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
-    
+
     @Test
     @Launch({ "build", "--spi-events-listener-jboss-logging-success-level=debug" })
     void warnSpiRuntimeAtBuildtime(LaunchResult result) {
         assertTrue(result.getOutput().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
-    
+
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false" })
     void warnSpiBuildtimeAtRuntime(LaunchResult result) {
@@ -135,7 +135,7 @@ public class StartCommandDistTest {
     @Launch({ "start", "--optimized" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog, gelf");
+        cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog");
     }
 
     @Test

@@ -2,7 +2,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.of;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
-import static org.keycloak.config.LoggingOptions.GELF_ACTIVATED;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -13,7 +12,6 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -29,7 +27,6 @@ public final class LoggingPropertyMappers {
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
     private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
-    private static final String GELF_ENABLED_MSG = "GELF is activated";
 
     private LoggingPropertyMappers() {
     }
@@ -140,68 +137,7 @@ public final class LoggingPropertyMappers {
                         .build(),
         };
 
-        return GELF_ACTIVATED ? ArrayUtils.addAll(defaultMappers, getGelfMappers()) : defaultMappers;
-    }
-
-    public static PropertyMapper<?>[] getGelfMappers() {
-        return new PropertyMapper[]{
-                fromOption(LoggingOptions.LOG_GELF_ENABLED)
-                        .mapFrom("log")
-                        .to("quarkus.log.handler.gelf.enabled")
-                        .transformer(LoggingPropertyMappers.resolveLogHandler("gelf"))
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_LEVEL)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.level")
-                        .paramLabel("level")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_HOST)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.host")
-                        .paramLabel("hostname")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_PORT)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.port")
-                        .paramLabel("port")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_VERSION)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.version")
-                        .paramLabel("version")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_INCLUDE_STACK_TRACE)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.extract-stack-trace")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_TIMESTAMP_FORMAT)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.timestamp-pattern")
-                        .paramLabel("pattern")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_FACILITY)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.facility")
-                        .paramLabel("name")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_MAX_MSG_SIZE)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.maximum-message-size")
-                        .paramLabel("size")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOG_MSG_PARAMS)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.include-log-message-parameters")
-                        .build(),
-                fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOCATION)
-                        .isEnabled(LoggingPropertyMappers::isGelfEnabled, GELF_ENABLED_MSG)
-                        .to("quarkus.log.handler.gelf.include-location")
-                        .build()
-        };
-    }
-
-    public static boolean isGelfEnabled() {
-        return isTrue(LoggingOptions.LOG_GELF_ENABLED);
+        return defaultMappers;
     }
 
     public static boolean isConsoleEnabled() {

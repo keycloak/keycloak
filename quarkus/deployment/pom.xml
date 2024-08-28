@@ -208,21 +208,4 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>includeGelf</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-logging-gelf-deployment</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
 </project>
