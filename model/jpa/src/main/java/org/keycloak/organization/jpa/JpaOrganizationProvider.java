@@ -59,6 +59,7 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
@@ -82,6 +83,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         if (StringUtil.isBlank(alias)) {
+            try {
+                ReservedCharValidator.validateNoSpace(name);
+            } catch (ReservedCharValidator.ReservedCharException e) {
+                throw new ModelValidationException("Name contains a reserved character and cannot be used as alias");
+            }
             alias = name;
         }
 
