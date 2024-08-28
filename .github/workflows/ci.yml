@@ -938,23 +938,6 @@ jobs:
       - name: Run tests
         run: ./mvnw test -f test-framework/pom.xml
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: Keycloak Test Framework
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: test-framework
-
   test-poc:
     name: Test PoC
     runs-on: ubuntu-latest
