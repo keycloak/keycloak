@@ -220,7 +220,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                 ...(!id
                   ? [
                       {
-                        title: t("duplicateGroup"),
+                        title: t("duplicate"),
                         onRowClick: async (group: GroupRepresentation) => {
                           setSelectedDuplicateGroupId(group.id!);
                           return false;

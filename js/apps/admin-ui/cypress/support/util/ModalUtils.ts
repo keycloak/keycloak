@@ -13,7 +13,7 @@ export default class ModalUtils extends PageObject {
   #addModalDropdownItem = ".pf-v5-c-modal-box__footer .pf-v5-c-menu__content";
   #addBtn = "add";
   #tablePage = new TablePage(TablePage.tableSelector);
-  #confirmDuplicateModalBtn = "duplicateGroup";
+  #confirmDuplicateModalBtn = "duplicateAGroupGroup";
 
   table() {
     return this.#tablePage;

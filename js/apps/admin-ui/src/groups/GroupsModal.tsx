@@ -254,7 +254,7 @@ export const GroupsModal = ({
           allowInvalid
           allowNonDirty
         >
-          {t(rename ? "rename" : duplicate ? "duplicateAGroup" : "create")}
+          {t(rename ? "rename" : duplicate ? "duplicate" : "create")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
