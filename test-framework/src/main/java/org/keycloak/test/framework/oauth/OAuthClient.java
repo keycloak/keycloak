@@ -23,10 +23,10 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.test.framework.util.ApiUtil;
 import org.keycloak.test.framework.realm.ClientConfig;
 import org.keycloak.test.framework.realm.ManagedClient;
 import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.test.framework.util.ApiUtil;
 
 import java.io.IOException;
 import java.net.URI;

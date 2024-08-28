@@ -19,17 +19,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-test-parent</artifactId>
-        <groupId>org.keycloak.test</groupId>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
         <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-junit5-framework</artifactId>
-    <name>Keycloak JUnit 5 testing framework</name>
+    <artifactId>keycloak-test-framework</artifactId>
+    <name>Keycloak Test Framework</name>
     <packaging>jar</packaging>
-    <description>PoC JUnit 5 testing framework for Keycloak</description>
+    <description>Preview Keycloak testing framework based on JUnit 5</description>
 
     <properties>
         <selenium.version>4.23.1</selenium.version>
