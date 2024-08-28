@@ -113,9 +113,7 @@ public class KeycloakDistConfiguratorTest {
     public void hostname() {
         final Map<String, String> expectedValues = Map.of(
                 "hostname", "my-hostname",
-                "hostname-admin-url", "https://www.my-admin-hostname.org:8448/something",
                 "hostname-strict", "true",
-                "hostname-strict-backchannel", "true",
                 "hostname-backchannel-dynamic", "true",
                 "hostname-admin", "my-admin-hostname"
         );
