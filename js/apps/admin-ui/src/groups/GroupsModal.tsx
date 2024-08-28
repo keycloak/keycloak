@@ -248,7 +248,7 @@ export const GroupsModal = ({
       actions={[
         <FormSubmitButton
           formState={formState}
-          data-testid={`${rename ? "rename" : duplicate ? "duplicateAGroup" : "create"}Group`}
+          data-testid={`${rename ? "rename" : duplicate ? "duplicate" : "create"}Group`}
           key="confirm"
           form="group-form"
           allowInvalid
