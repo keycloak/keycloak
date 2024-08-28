@@ -346,24 +346,34 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        /**
+         * Set the validator, overwriting the current one.
+         */
         public Builder<T> validator(BiConsumer<PropertyMapper<T>, ConfigValue> validator) {
             this.validator = validator;
             return this;
         }
         
+        public Builder<T> appendValidator(BiConsumer<PropertyMapper<T>, ConfigValue> validator) {
+            var current = this.validator;
+            this.validator = (mapper, value) -> {
+                validator.accept(mapper, value);
+                current.accept(mapper, value);
+            };
+            return this;
+        }
+        
         /**
-         * Similar to {@link #enabledWhen}, but uses the condition as a validator. This allows the option
+         * Similar to {@link #enabledWhen}, but uses the condition as a validator that is appended to the current one. This allows the option
          * to appear in help. 
-         * @param isEnabled
-         * @param enabledWhen
          * @return
          */
-        public Builder<T> validateEnabled(BooleanSupplier isEnabled, String enabledWhen) {
-            this.validator = (mapper, value) -> {
+        public Builder<T> appendValidateEnabled(BooleanSupplier isEnabled, String enabledWhen) {
+            this.appendValidator((mapper, value) -> {
                 if (!isEnabled.getAsBoolean()) {
                     throw new PropertyException(mapper.getOption().getKey() + " available only when " + enabledWhen);
                 }
-            };
+            });
             this.description = String.format("%s Available only when %s.", this.description, enabledWhen);
             return this;
         }

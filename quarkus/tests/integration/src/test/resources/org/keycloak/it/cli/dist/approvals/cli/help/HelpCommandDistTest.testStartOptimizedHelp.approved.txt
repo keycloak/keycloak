@@ -194,6 +194,12 @@ Proxy:
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence
                        over the deprecated proxy option. Possible values are: forwarded, xforwarded.
+--proxy-trusted-addresses <trusted proxies>
+                     A comma separated list of trusted proxy addresses. If set, then proxy headers
+                       from other addresses will be ignored. By default all addresses are trusted.
+                       A trusted proxy address is specified as an IP address (IPv4 or IPv6) or
+                       Classless Inter-Domain Routing (CIDR) notation. Available only when
+                       proxy-headers is set.
 
 Vault:
 

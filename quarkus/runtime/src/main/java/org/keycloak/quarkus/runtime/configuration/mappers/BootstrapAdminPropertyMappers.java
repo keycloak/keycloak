@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.config.BootstrapAdminOptions;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -36,7 +35,7 @@ public final class BootstrapAdminPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
-                        .validateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
+                        .appendValidateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.PASSWORD)
                         .paramLabel("password")
@@ -48,7 +47,7 @@ public final class BootstrapAdminPropertyMappers {
                         .build(),*/
                 fromOption(BootstrapAdminOptions.CLIENT_ID)
                         .paramLabel("client id")
-                        .validateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
+                        .appendValidateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.CLIENT_SECRET)
                         .paramLabel("client secret")

@@ -56,7 +56,7 @@ public final class Configuration {
         return getOptionalBooleanValue(propertyName).orElse(false);
     }
 
-    public static boolean isBlank(Option<String> option) {
+    public static boolean isBlank(Option<?> option) {
         return getOptionalKcValue(option.getKey())
                 .map(StringUtil::isBlank)
                 .orElse(true);

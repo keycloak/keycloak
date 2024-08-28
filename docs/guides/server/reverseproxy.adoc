@@ -132,6 +132,14 @@ As it's true that the `js` path is needed for internal clients like the account 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
+== Trusted Proxies
+
+To ensure that proxy headers are used only from proxies you trust, set the `proxy-trusted-addresses` option to a comma separated list of IP addresses (IPv4 or IPv6) or Classless Inter-Domain Routing (CIDR) notations.
+
+For example:
+
+<@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/> 
+
 == Enabling client certificate lookup
 
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
