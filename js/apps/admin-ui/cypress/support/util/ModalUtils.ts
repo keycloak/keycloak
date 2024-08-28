@@ -31,7 +31,7 @@ export default class ModalUtils extends PageObject {
   }
 
   confirmDuplicateModal() {
-    cy.get(this.#confirmDuplicateModalBtn).click({ force: true });
+    cy.findByTestId(this.#confirmDuplicateModalBtn).click({ force: true });
 
     return this;
   }
