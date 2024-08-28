@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -513,6 +514,44 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
             assertEquals("A organization with the same alias already exists", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void testSpecialCharsAlias() {
+        OrganizationRepresentation org = createRepresentation("acme");
+        OrganizationDomainRepresentation orgDomain = new OrganizationDomainRepresentation();
+        orgDomain.setName("acme.com");
+        org.addDomain(orgDomain);
+
+        org.setAlias("acme&@#!");
+        try (Response response = testRealm().organizations().create(org)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // blank alias will be replaced with org name, which is valid
+        org.setAlias("");
+        try (Response response = testRealm().organizations().create(org)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String id = ApiUtil.getCreatedId(response);
+            getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
+        }
+
+        org.setAlias(" ");
+        try (Response response = testRealm().organizations().create(org)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        org.setAlias("\n");
+        try (Response response = testRealm().organizations().create(org)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // when alias is empty, name is used as alias
+        org.setName("acme@");
+        org.setAlias("");
+        try (Response response = testRealm().organizations().create(org)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
 }
