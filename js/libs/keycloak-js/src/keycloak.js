@@ -37,6 +37,8 @@ function Keycloak (config) {
         interval: 5
     };
 
+    kc.didInitialize = false;
+
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
         if ((scripts[i].src.indexOf('keycloak.js') !== -1 || scripts[i].src.indexOf('keycloak.min.js') !== -1) && scripts[i].src.indexOf('version=') !== -1) {
