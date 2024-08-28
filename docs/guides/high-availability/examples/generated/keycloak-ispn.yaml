@@ -54,7 +54,7 @@ metadata:
   name: keycloak-providers
   namespace: keycloak
 binaryData:
-  keycloak-benchmark-dataset-0.13-SNAPSHOT.jar: ...
+  keycloak-benchmark-dataset-0.14-SNAPSHOT.jar: ...
 ---
 # Source: keycloak/templates/postgres/postgres-exporter-configmap.yaml
 apiVersion: v1
@@ -457,6 +457,7 @@ spec:
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
+
     # end::keycloak[]
     - name: http-metrics-histograms-enabled
       value: 'true'
@@ -499,7 +500,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: d0810a69cecfbd99a7527cb6d30decb179d7a7ee548119fc19d34f3ce2a777a7-9bfd430c6539df907f0421bb34c92fb32194d461565bd342f7f96ff5a5408273-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
+          checksum/config: 90d2c8ddd9b32fd443c5823cee0ef790ce58657d13e9d668e48e1ad696b2403a-9bfd430c6539df907f0421bb34c92fb32194d461565bd342f7f96ff5a5408273-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       spec:
         containers:
           - env:
@@ -516,7 +517,6 @@ spec:
                     name: keycloak-preconfigured-admin
                     key: password
                     optional: false
-              # JMX is disabled as it breaks Quarkus configuration. Issue is tracked in https://github.com/keycloak/keycloak-benchmark/issues/840
               - name: JAVA_OPTS_APPEND # <5>
                 value: ""
             ports:
@@ -531,8 +531,8 @@ spec:
             #       - 'true'
             volumeMounts:
               - name: keycloak-providers
-                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.13-SNAPSHOT.jar
-                subPath: keycloak-benchmark-dataset-0.13-SNAPSHOT.jar
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.14-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-0.14-SNAPSHOT.jar
                 readOnly: true
         volumes:
           - name: keycloak-providers

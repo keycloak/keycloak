@@ -125,11 +125,7 @@ data:
   batch: |+
     clearcache actionTokens
     clearcache authenticationSessions
-    clearcache clientSessions
     clearcache loginFailures
-    clearcache offlineClientSessions
-    clearcache offlineSessions
-    clearcache sessions
     clearcache work
     
 # end::infinispan-crossdc-clear-caches[]
@@ -188,16 +184,16 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
+        mode: "NON_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-b: # <2>
+        site-b: # <3>
           backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-actionTokens[]
@@ -223,56 +219,19 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
+        mode: "NON_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
       backups:
-        mergePolicy: "ALWAYS_REMOVE" # <1>
-        site-b: # <2>
+        site-b: # <3>
           backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-authenticationSessions[]
----
-# Source: ispn-helm/templates/infinispan.yaml
-# tag::infinispan-cache-clientSessions[]
-apiVersion: infinispan.org/v2alpha1
-kind: Cache
-metadata:
-  name: clientsessions
-  namespace: keycloak
-spec:
-  clusterName: infinispan
-  name: clientSessions
-  template: |-
-    distributedCache:
-      mode: "SYNC"
-      owners: "2"
-      statistics: "true"
-      remoteTimeout: "5000"
-      encoding:
-        media-type: "application/x-protostream"
-      locking:
-        acquireTimeout: "4000"
-      transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
-      stateTransfer:
-        chunkSize: "16"
-      backups:
-        mergePolicy: "ALWAYS_REMOVE" # <1>
-        site-b: # <2>
-          backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
-            stateTransfer:
-              chunkSize: "16"
-# end::infinispan-cache-clientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-loginFailures[]
@@ -295,127 +254,19 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
+        mode: "NON_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-b: # <2>
+        site-b: # <3>
           backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-loginFailures[]
----
-# Source: ispn-helm/templates/infinispan.yaml
-# tag::infinispan-cache-offlineClientSessions[]
-apiVersion: infinispan.org/v2alpha1
-kind: Cache
-metadata:
-  name: offlineclientsessions
-  namespace: keycloak
-spec:
-  clusterName: infinispan
-  name: offlineClientSessions
-  template: |-
-    distributedCache:
-      mode: "SYNC"
-      owners: "2"
-      statistics: "true"
-      remoteTimeout: "5000"
-      encoding:
-        media-type: "application/x-protostream"
-      locking:
-        acquireTimeout: "4000"
-      transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
-      stateTransfer:
-        chunkSize: "16"
-      backups:
-        mergePolicy: "ALWAYS_REMOVE" # <1>
-        site-b: # <2>
-          backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
-            stateTransfer:
-              chunkSize: "16"
-# end::infinispan-cache-offlineClientSessions[]
----
-# Source: ispn-helm/templates/infinispan.yaml
-# tag::infinispan-cache-offlineSessions[]
-apiVersion: infinispan.org/v2alpha1
-kind: Cache
-metadata:
-  name: offlinesessions
-  namespace: keycloak
-spec:
-  clusterName: infinispan
-  name: offlineSessions
-  template: |-
-    distributedCache:
-      mode: "SYNC"
-      owners: "2"
-      statistics: "true"
-      remoteTimeout: "5000"
-      encoding:
-        media-type: "application/x-protostream"
-      locking:
-        acquireTimeout: "4000"
-      transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
-      stateTransfer:
-        chunkSize: "16"
-      backups:
-        mergePolicy: "ALWAYS_REMOVE" # <1>
-        site-b: # <2>
-          backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
-            stateTransfer:
-              chunkSize: "16"
-# end::infinispan-cache-offlineSessions[]
----
-# Source: ispn-helm/templates/infinispan.yaml
-# tag::infinispan-cache-sessions[]
-apiVersion: infinispan.org/v2alpha1
-kind: Cache
-metadata:
-  name: sessions
-  namespace: keycloak
-spec:
-  clusterName: infinispan
-  name: sessions
-  template: |-
-    distributedCache:
-      mode: "SYNC"
-      owners: "2"
-      statistics: "true"
-      remoteTimeout: "5000"
-      encoding:
-        media-type: "application/x-protostream"
-      locking:
-        acquireTimeout: "4000"
-      transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
-      stateTransfer:
-        chunkSize: "16"
-      backups:
-        mergePolicy: "ALWAYS_REMOVE" # <1>
-        site-b: # <2>
-          backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
-            stateTransfer:
-              chunkSize: "16"
-# end::infinispan-cache-sessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-work[]
@@ -438,16 +289,16 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NONE"
-        locking: "PESSIMISTIC"
+        mode: "NON_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
       backups:
-        site-b: # <2>
+        site-b: # <3>
           backup:
-            strategy: "SYNC" # <3>
-            timeout: "4500"
-            failurePolicy: "WARN"
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
             stateTransfer:
               chunkSize: "16"
 # end::infinispan-cache-work[]
@@ -478,7 +329,7 @@ spec:
   configListener:
     enabled: false
   container:
-    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=15000'
+    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000'
   logging:
     categories:
       org.infinispan: info

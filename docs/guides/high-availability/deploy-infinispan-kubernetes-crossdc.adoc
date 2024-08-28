@@ -189,7 +189,7 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 
 . Creating the caches for {project_name}.
 +
-{project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
+{project_name} requires the following caches to be present: `actionTokens`, `authenticationSessions`, `loginFailures`, and `work`.
 +
 The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
 Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
@@ -198,22 +198,45 @@ The following example shows the `Cache` CR for `{site-a}`.
 +
 --
 . In `{site-a}` create a `Cache` CR for each of the caches mentioned above with the following content.
+This is an example for the `authenticationSessions` cache:
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authenticationSessions]
 ----
-<1> The cross-site merge policy, invoked when there is a write-write conflict.
-Set this for the caches `sessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
-<2> The remote site name.
-<3> The cross-site communication, in this case, `SYNC`.
+
+<1> The transaction mode.
+<2> The locking mode used by the transaction.
+<3> The remote site name.
+<4> The cross-site communication strategy, in this case, `SYNC`.
+<5> The cross-site replication timeout.
+<6> The cross-site replication failure policy.
 --
 +
-For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 2 of the above diagram.
+The example above is the recommended configuration to achieve the best data consistency.
 +
-.sessions `Cache` CR in `{site-b}`
+Deadlocks may occur in an active-active setup and the `transaction.mode: NON_XA` ensures that the transaction is rolled back keeping the data consistent.
+The `backup.failurePolicy: FAIL` is required in this case.
+It will throw an error that allows the transaction to be safely rolled back.
+The `transaction.locking` possibles values are `PESSIMISTIC` and `OPTIMISTIC`; `OPTIMISTIC` is not recommended due to its network costs.
++
+NOTE: The `locking.acquireTimeout` can be reduced to fail fast in a deadlock scenario.
+The `backup.timeout` must always be higher than the `locking.acquireTimeout`.
++
+It is possible to achieve higher availability at the cost of data consistency.
+Set `transaction.mode: NONE` to disable transaction and `backup.failurePolicy` to `IGNORE` or `WARN`, it does not make the request fail when the cross-site replication fails.
+The `backup.failurePolicy: IGNORE` will fail silently while `backup.failurePolicy: WARN` also fails silently, but a warning is logged.
++
+WARNING: The `backup.strategy: ASYNC` also achieves high availability with a weaker data consistency.
+It is deadlock free but conflicts are resolved by dropping updates (one site update wins, the other is dropped).
+Although it achieves a better response time, it is not recommended in active-active deployment.
+It active-passive deployment, it may cause data lost if a full cluster crashes, since the data is replicated in the background.
++
+For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
++
+.authenticationSessions `Cache` CR in `{site-b}`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-sessions]
+include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-authenticationSessions]
 ----
 
 == Verifying the deployment
