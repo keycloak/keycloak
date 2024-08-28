@@ -83,7 +83,7 @@
     "@patternfly/react-core": "^5.4.0",
     "@patternfly/react-icons": "^5.4.0",
     "@patternfly/react-styles": "^5.4.0",
-    "@patternfly/react-table": "^5.3.4",
+    "@patternfly/react-table": "^5.4.0",
     "admin-ui": "file:",
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
