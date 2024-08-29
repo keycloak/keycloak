@@ -93,3 +93,4 @@ export {
 } from "./utils/ErrorBoundary";
 export type { FallbackProps } from "./utils/ErrorBoundary";
 export { OrganizationTable } from "./controls/OrganizationTable";
+export { initializeDarkMode } from "./utils/darkMode";

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Icon } from "@patternfly/react-core";
 import { CaretDownIcon } from "@patternfly/react-icons";
-import { mediaQuery } from "../../util";
 import "./dropdown-panel.css";
 
 type DropdownPanelProps = {
@@ -64,15 +63,7 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
         </Icon>
       </button>
       {searchDropdownOpen && (
-        <div
-          className={
-            mediaQuery?.matches
-              ? "kc-dropdown-panel-content dark-mode"
-              : "kc-dropdown-panel-content light-mode"
-          }
-        >
-          {children}
-        </div>
+        <div className="kc-dropdown-panel-content">{children}</div>
       )}
     </span>
   );

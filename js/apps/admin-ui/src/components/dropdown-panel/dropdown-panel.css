@@ -36,10 +36,8 @@
   z-index: 1;
 }
 
-.light-mode {
-  background-color: var(--pf-v5-global--Color--light-100);
-}
-
-.dark-mode {
-  background-color: var(--pf-v5-global--BackgroundColor--300);
+@media (prefers-color-scheme: dark) {
+  .kc-dropdown-panel-content {
+    background-color: var(--pf-v5-global--BackgroundColor--300);
+  }
 }
