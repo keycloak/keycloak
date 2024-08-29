@@ -558,6 +558,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         try {
             // arrange
             realm.setPermanentLockout(true);
+            realm.setQuickLoginCheckMilliSeconds(0L);
             testRealm().update(realm);
 
             // act
@@ -567,7 +568,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(), events.poll());
+            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll());
             assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
 
