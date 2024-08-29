@@ -28,6 +28,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
+    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
 
     <#if properties.meta?has_content>
         <#list properties.meta?split(' ') as meta>
@@ -53,6 +54,25 @@
             }
         }
     </script>
+    <#if properties.darkMode?boolean>
+      <script type="module" async blocking="render">
+          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+          updateDarkMode(mediaQuery.matches);
+          mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
+
+          function updateDarkMode(isEnabled) {
+            const { classList } = document.documentElement;
+
+            if (isEnabled) {
+              classList.add(DARK_MODE_CLASS);
+            } else {
+              classList.remove(DARK_MODE_CLASS);
+            }
+          }
+      </script>
+    </#if>
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
@@ -70,21 +90,6 @@
         checkCookiesAndSetTimer(
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
-
-        const DARK_MODE_CLASS = "pf-v5-theme-dark";
-        const mediaQuery =window.matchMedia("(prefers-color-scheme: dark)");
-        updateDarkMode(mediaQuery.matches);
-        mediaQuery.addEventListener("change", (event) =>
-          updateDarkMode(event.matches),
-        );
-        function updateDarkMode(isEnabled) {
-          const { classList } = document.documentElement;
-          if (isEnabled) {
-            classList.add(DARK_MODE_CLASS);
-          } else {
-            classList.remove(DARK_MODE_CLASS);
-          }
-        }
     </script>
 </head>
 
