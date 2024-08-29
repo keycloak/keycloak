@@ -214,22 +214,30 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authentication
 +
 The example above is the recommended configuration to achieve the best data consistency.
 +
-Deadlocks may occur in an active-active setup and the `transaction.mode: NON_XA` ensures that the transaction is rolled back keeping the data consistent.
-The `backup.failurePolicy: FAIL` is required in this case.
+====
+*Background information and alternative configurations*
+
+Deadlocks may occur in an active-active setup as entries are modified concurrently in both sites.
+The `transaction.mode: NON_XA` ensures that the transaction is rolled back keeping the data consistent if this occurs.
+The setting `backup.failurePolicy: FAIL` is required in this case.
 It will throw an error that allows the transaction to be safely rolled back.
+When this occurs, {project_name} will attempt a retry.
 The `transaction.locking` possibles values are `PESSIMISTIC` and `OPTIMISTIC`; `OPTIMISTIC` is not recommended due to its network costs.
-+
+The same settings also prevent that one site it updated while the other site is unreachable.
+
 NOTE: The `locking.acquireTimeout` can be reduced to fail fast in a deadlock scenario.
 The `backup.timeout` must always be higher than the `locking.acquireTimeout`.
-+
+
 It is possible to achieve higher availability at the cost of data consistency.
 Set `transaction.mode: NONE` to disable transaction and `backup.failurePolicy` to `IGNORE` or `WARN`, it does not make the request fail when the cross-site replication fails.
+This allows one site to be updated while the other site is unreachable.
 The `backup.failurePolicy: IGNORE` will fail silently while `backup.failurePolicy: WARN` also fails silently, but a warning is logged.
-+
+
 WARNING: The `backup.strategy: ASYNC` also achieves high availability with a weaker data consistency.
 It is deadlock free but conflicts are resolved by dropping updates (one site update wins, the other is dropped).
-Although it achieves a better response time, it is not recommended in active-active deployment.
-It active-passive deployment, it may cause data lost if a full cluster crashes, since the data is replicated in the background.
+Although it achieves a better response time, it is not recommended in active-active deployments as conflicts are likely to occur.
+It active-passive deployment, it may cause losing the latest data changes if a full cluster crashes, since the data is replicated asynchronously in the background.
+====
 +
 For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
 +
