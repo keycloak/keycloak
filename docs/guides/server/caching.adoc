@@ -120,7 +120,19 @@ Since all the sessions in this setup are stored in-memory, there are two side ef
 
 Follow these steps to enable this setup:
 
-1. Configure caches to not limit number of entries, as the cache will be the only source of truth for user and client sessions. To do so, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to remove the `+<memory max-count="..."/>+` for the `sessions` and `clientSessions` caches.
+1. Since the cache is the only source of truth for user and client sessions, configure caches to not limit the number of entries and to replicate each entry to at least two nodes. To do so, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) for caches `sessions` and `clientSessions` with the following update:
+  * Remove the `+<memory max-count="..."/>+`
+  * Change `owners` attribute of the `distributed-cache` tag to 2 or more
+
++
+An example of the resulting configuration for the `sessions` cache would look as follows.
++
+[source,xml]
+----
+<distributed-cache name="sessions" owners="2">
+    <expiration lifespan="-1"/>
+</distributed-cache>
+----
 2. Disable `persistent-user-sessions` feature using the following command:
 +
 ----
