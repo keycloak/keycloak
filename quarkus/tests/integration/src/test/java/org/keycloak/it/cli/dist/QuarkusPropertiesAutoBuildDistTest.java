@@ -17,7 +17,6 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,6 +113,15 @@ public class QuarkusPropertiesAutoBuildDistTest {
         cliResult.assertStarted();
     }
 
+    @Test
+    @BeforeStartDistribution(AddNonXADatasource.class)
+    @Launch({ "start" })
+    @Order(9)
+    void nonXADatasourceFailsToStart(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Multiple datasources are configured but more than 1 is using non-XA transactions.");
+    }
+
     public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
@@ -135,6 +143,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
             distribution.setQuarkusProperty("quarkus.datasource.user-store.db-kind", "h2");
             distribution.setQuarkusProperty("quarkus.datasource.user-store.username","sa");
             distribution.setQuarkusProperty("quarkus.datasource.user-store.jdbc.url","jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.jdbc.transactions", "xa");
         }
     }
 
@@ -145,6 +154,17 @@ public class QuarkusPropertiesAutoBuildDistTest {
             distribution.setQuarkusProperty("quarkus.datasource.user-store2.db-transactions", "enabled");
             distribution.setQuarkusProperty("quarkus.datasource.user-store2.username","sa");
             distribution.setQuarkusProperty("quarkus.datasource.user-store2.jdbc.url","jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store2.jdbc.transactions", "xa");
+        }
+    }
+
+    public static class AddNonXADatasource implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.datasource.user-store3.db-kind", "h2");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store3.db-transactions", "enabled");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store3.username","sa");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store3.jdbc.url","jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
         }
     }
 

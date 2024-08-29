@@ -190,6 +190,15 @@ Additionally, the following resources have been removed from the `common` theme:
 
 If you previously used any of the removed resources in your theme, make sure to add them to your own theme resources instead.
 
+= Additional datasources now require using XA
+
+{project_name} by default does not use XA datasources. However, this is considered unsafe if more than one datasource is used.
+Starting with this release, you need to use XA datasources if you are adding additional datasources to {project_name}.
+If the default datasource supports XA, you can do this by setting the `--transaction-xa-enabled=true` option. For additional datasources, you need to use
+the `quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa` option in your `quarkus.properties` file.
+At most one datasource can be non-XA.
+Recovery isn't supported when you don't have persistent storage for the transaction store.
+
 = Hostname v1 feature removed
 
 The deprecated hostname v1 feature was removed. This feature was deprecated in {project_name} 25 and replaced by hostname v2. If you are still using this feature, you must migrate to hostname v2. For more details, see the https://www.keycloak.org/server/hostname[Configuring the hostname (v2)] and https://www.keycloak.org/docs/latest/upgrading/#new-hostname-options[the initial migration guide].
