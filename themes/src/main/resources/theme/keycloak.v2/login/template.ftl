@@ -182,9 +182,9 @@
           </div>
         </#if>
       </div>
-      <footer class="pf-v5-c-login__main-footer">
+      <div class="pf-v5-c-login__main-footer">
         <#nested "socialProviders">
-      </footer>
+      </div>
     </main>
   </div>
 </div>

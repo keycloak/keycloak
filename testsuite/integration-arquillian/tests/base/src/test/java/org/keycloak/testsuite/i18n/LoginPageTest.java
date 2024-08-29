@@ -167,7 +167,7 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void testIdentityProviderCapitalization(){
         loginPage.open();
-        assertEquals("", loginPage.findSocialButton("github").getText());   // github is only displayed as an icon in keycloak.v2 theme
+        assertEquals("GitHub", loginPage.findSocialButton("github").getText());
         assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
         assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
     }
@@ -351,7 +351,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
         final String realmLocalizationMessageKey = "loginAccountTitle";
         final String realmLocalizationMessageValue = "Localization Test";
-        
+
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
         loginPage.open();
         assertThat(driver.getPageSource(), containsString(realmLocalizationMessageValue));
