@@ -217,7 +217,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logInAsUserInIDP() {
-        oauth.clientId("broker-app");
+        logInAsUserInIDP("broker-app");
+    }
+
+    protected void logInAsUserInIDP(String clientId) {
+        oauth.clientId(clientId);
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
     }
