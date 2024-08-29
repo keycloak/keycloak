@@ -25,12 +25,20 @@
       .keycloak__loading-container {
         height: 100vh;
         width: 100%;
-        background-color: #f0f0f0;
+        color: #151515;
+        background-color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         margin: 0;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .keycloak__loading-container {
+          color: #e0e0e0;
+          background-color: #1b1d21;
+        }
       }
 
       #loading-text {
