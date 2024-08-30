@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,6 +41,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -117,7 +117,7 @@ public class OrganizationIdentityProvidersResource {
             throw ErrorResponse.error("Identity provider not associated with the organization", Status.NOT_FOUND);
         }
 
-        return ModelToRepresentation.toRepresentation(realm, broker);
+        return toRepresentation(broker);
     }
 
     @Path("{alias}")
@@ -142,7 +142,7 @@ public class OrganizationIdentityProvidersResource {
     }
 
     private IdentityProviderRepresentation toRepresentation(IdentityProviderModel idp) {
-        return ModelToRepresentation.toRepresentation(realm, idp);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, idp));
     }
 
     private boolean isOrganizationBroker(IdentityProviderModel broker) {
