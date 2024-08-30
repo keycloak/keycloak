@@ -51,8 +51,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.13.3</quarkus.version>
-        <quarkus.build.version>3.13.3</quarkus.build.version>
+        <quarkus.version>3.14.2</quarkus.version>
+        <quarkus.build.version>3.14.2</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -92,7 +92,7 @@
         <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
 
         <dom4j.version>2.1.3</dom4j.version>
-        <h2.version>2.2.224</h2.version>
+        <h2.version>2.3.232</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.8.Final</infinispan.version>
@@ -124,7 +124,7 @@
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.5.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.5.2.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -148,7 +148,7 @@
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
 
-        <liquibase.version>4.27.0</liquibase.version>
+        <liquibase.version>4.29.1</liquibase.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -159,15 +159,15 @@
         <postgresql.version>16</postgresql.version>
         <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.3</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.4</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.4.0</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>12.6.3.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>12.8.1.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
+        <oracle-jdbc.version>23.5.0.24.07</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>

@@ -447,8 +447,19 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             // Throw model exception to ensure transaction rollback and revert previous operations (removing default roles) as well
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
-        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity.getId()).executeUpdate();
+
+        // Can't use a native query to delete the composite roles mappings because it causes TransientObjectException.
+        // At the same time, can't use the persist cascade type on the compositeRoles field because in that case
+        // we could not still use a native query as a different problem would arise - it may happen that a parent role that
+        // has this role as a composite is present in the persistence context. In that case it, the role would be re-created
+        // again after deletion through persist cascade type.
+        // So in any case, native query is not an option. This is not optimal as it executes additional queries but
+        // the alternative of clearing the persistence context is not either as we don't know if something currently present
+        // in the context is not needed later.
+        Stream<RoleEntity> parentRoles = em.createNamedQuery("getParentRolesOfACompositeRole", RoleEntity.class).setParameter("compositeRole", roleEntity).getResultStream();
+        parentRoles.forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
+        parentRoles.close();
+
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.flush();

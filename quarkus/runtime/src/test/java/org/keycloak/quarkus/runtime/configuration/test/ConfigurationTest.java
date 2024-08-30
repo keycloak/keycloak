@@ -417,10 +417,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testResolveHealthOption() {
         ConfigArgsConfigSource.setCliArgs("--health-enabled=true");
         SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
-        assertEquals("false", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
     }
 
     @Test

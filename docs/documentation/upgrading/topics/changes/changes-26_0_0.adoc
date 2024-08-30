@@ -258,6 +258,11 @@ As part of this change the following related configuration options for the SPI h
 
 If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.
 
+= Additional validations on the `--optimized` startup option
+The `--optimized` startup option now requires the optimized server image to be built first. This can be achieved
+either by running `kc.sh|bat build` first or by any other server commands (like `start`, `export`, `import`)
+without the `--optimized` flag.
+
 = New generalized event types for credentials
 
 There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events.
