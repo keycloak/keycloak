@@ -54,6 +54,7 @@ import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
+import org.keycloak.storage.ldap.mappers.KerberosPrincipalAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
@@ -449,6 +450,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             String defaultKerberosUserPrincipalAttr = LDAPUtils.getDefaultKerberosUserPrincipalAttribute(ldapConfig.getVendor());
             model.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, defaultKerberosUserPrincipalAttr);
             realm.updateComponent(model);
+        }
+
+        if (kerberosConfig.getKerberosPrincipalAttribute() != null) {
+            mapperModel = KeycloakModelUtils.createComponentModel("Kerberos principal attribute mapper", model.getId(), KerberosPrincipalAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName());
+            realm.addComponentModel(mapperModel);
         }
 
         // In case that "Sync Registration" is ON and the LDAP v3 Password-modify extension is ON, we will create hardcoded mapper to create
