@@ -234,4 +234,4 @@ As part of this change the following related configuration options for the SPI h
 - `--spi-login-protocol-openid-connect-legacy-logout-redirect-uri`
 - `--spi-login-protocol-openid-connect-suppress-logout-confirmation-screen`
 
-If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:|https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.
+If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.
