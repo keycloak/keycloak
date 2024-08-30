@@ -206,3 +206,21 @@ The deprecated hostname v1 feature was removed. This feature was deprecated in {
 = Proxy option removed
 
 The deprecated `proxy` option was removed. This option was deprecated in {project_name} 24 and replaced by the `proxy-headers` option in combination with hostname options as needed. For more details, see https://www.keycloak.org/server/reverseproxy[using a reverse proxy] and https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[the initial upgrading guide].
+
+= All user sessions are persisted by default
+
+Since the database is now the source of truth for user sessions, it is possible to restrict the size of the session caches to reduce memory usage.
+If you use the default `conf/cache-ispn.xml` file the caches for storing user and client sessions are by default configured to store only 10000 sessions and one owner for each entry.
+
+Update your custom embedded Infinispan cache configuration file with configuration similar to one shown below for caches `sessions`, `clientSessions`, `offlineSessions`, and `offlineClientSessions`:
+
+[,xml]
+----
+<distributed-cache name="sessions" owners="1">
+    <!-- other configuration -->
+    <memory max-count="10000"/>
+</distributed-cache>
+----
+
+For more details proceed to the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
+

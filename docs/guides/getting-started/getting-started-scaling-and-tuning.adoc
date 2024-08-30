@@ -33,7 +33,7 @@ Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale. 
 
 == Horizontal Scaling
 
-A single {project_name} instance is susceptible to availability issues. If the instance goes down, you experience a full outage until another instance comes up. Also, unless the '`persistent-user-sessions`' feature is enabled, all ongoing sessions are lost. By running two or more cluster members on different machines, you greatly increase the availability of {project_name}.
+A single {project_name} instance is susceptible to availability issues. If the instance goes down, you experience a full outage until another instance comes up. By running two or more cluster members on different machines, you greatly increase the availability of {project_name}.
 
 A single JVM has a limit on how many concurrent requests it can handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching, limit that scaling.
 
@@ -43,7 +43,7 @@ If you are not using the Operator, please review the following:
 
 * Higher availability is possible of your instances are on separate machines. On Kubernetes, use Pod anti-affinitity to enforce this.
 
-* Use distributed caching; for multi-site clusters, use external caching for cluster members to share the same session state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
+* Use distributed caching; for multi-site clusters, use external caching for cluster members to share the same state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
 
 - Your instances need a way to discover each other. For more information, see discovery in <@links.server id="caching" />.
 - This cache is not optimal for clusters that span multiple availability zones, which are also called stretch clusters. For embedded Infinispan cache, work to have all instances in one availability zone. The goal is to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes, use Pod affinity to enforce this grouping of Pods.
@@ -55,7 +55,8 @@ To avoid losing service availability when a whole site is unavailable, see the h
 
 Horizontal autoscaling allows for adding or removing {project_name} instances on demand. Keep in mind that startup times will not be instantaneous and that optimized images should be used to minimize the start time.
 
-When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the session caches,m which can get expensive if many entries exist in those caches.
+When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the Infinispan caches, which can get expensive if many entries exist in those caches.
+To minimize this time we limit number of entries in session related caches to 10000 by default. Note, this optimization is possible only if `persistent-user-sessions` feature is not explicitly disabled in your configuration.
 
 On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler].
 

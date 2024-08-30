@@ -41,10 +41,10 @@ You configure these caches in `conf/cache-ispn.xml`:
 |keys|Local|Cache external public keys
 |work|Replicated|Propagate invalidation messages across nodes
 |authenticationSessions|Distributed|Caches authentication sessions, created/destroyed/expired during the authentication process
-|sessions|Distributed|Caches user sessions, created upon successful authentication and destroyed during logout, token revocation, or due to expiration
-|clientSessions|Distributed|Caches client sessions, created upon successful authentication to a specific client and destroyed during logout, token revocation, or due to expiration
-|offlineSessions|Distributed|Caches offline user sessions, created upon successful authentication and destroyed during logout, token revocation, or due to expiration
-|offlineClientSessions|Distributed|Caches client sessions, created upon successful authentication to a specific client and destroyed during logout, token revocation, or due to expiration
+|sessions|Distributed|Cache persisted user session data
+|clientSessions|Distributed|Cache persisted client session data
+|offlineSessions|Distributed|Cache persisted offline user session data
+|offlineClientSessions|Distributed|Cache persisted offline client session data
 |loginFailures|Distributed|keep track of failed logins, fraud detection
 |actionTokens|Distributed|Caches action Tokens
 |===
@@ -91,66 +91,72 @@ CPU, memory, and network utilization.
 
 .User sessions
 Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
-authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session
-is created too, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
+authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
 
 User and client sessions are automatically destroyed whenever the user performs a logout, the client performs a token revocation, or due to reaching their expiration time.
 
-The following caches are used to store both user and client sessions:
+The session data are stored in the database by default and loaded on-demand to the following caches:
 
 * sessions
 * clientSessions
 
-By relying on a distributable cache, user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without losing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
+By relying on a distributable cache, cached user and client sessions are available to any node in the cluster so that users can be redirected
+to any node without the need to load session data from the database. However, production-ready deployments should always consider session affinity and favor redirecting users
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
-ifeval::[{project_community}==true]
-
-.Persistent user sessions
-The feature `persistent-user-sessions` stores online user and client sessions also in the database.
-This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
-
-The feature is disabled by default. To use it, enable the feature:
-
-----
-bin/kc.sh start --features=persistent-user-sessions ...
-----
-
-With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to, by default, 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
+These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
 The internal caches will run with only a single owner for each cache entry.
-Items which are evicted from memory will be loaded on-demand from the database when needed.
-To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
-[WARNING]
-====
-Enabling this feature via a rolling configuration upgrade can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist.
-To prevent that, remove all online user and client sessions before the first node is started with this feature enabled.
-This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
-====
+.Volatile user sessions
 
-endif::[]
+By default, user sessions are stored in the database and loaded on-demand to the cache.
+It is possible to configure {project_name} to store user sessions in the cache only and minimize the database utilization.
+
+Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
+* Losing sessions on all Keycloak nodes restart
+* Increased memory consumption
+
+Follow these steps to enable this setup:
+
+1. Since the cache is the only source of truth for user and client sessions, configure caches to not limit the number of entries and to replicate each entry to at least two nodes. To do so, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) for caches `sessions` and `clientSessions` with the following update:
++
+--
+* Remove the `+<memory max-count="..."/>+`
+* Change `owners` attribute of the `distributed-cache` tag to 2 or more
+--
++
+An example of the resulting configuration for the `sessions` cache would look as follows.
++
+[source,xml]
+----
+<distributed-cache name="sessions" owners="2">
+    <expiration lifespan="-1"/>
+</distributed-cache>
+----
+2. Disable `persistent-user-sessions` feature using the following command:
++
+----
+bin/kc.sh start --features-disabled=persistent-user-sessions ...
+----
+
+[NOTE]
+====
+Disabling `persistent-user-sessions` is not possible when `multi-site` feature is enabled.
+====
 
 .Offline user sessions
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
-when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
-of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
+when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session.
 
 The following caches are used to store offline sessions:
 
 * offlineSessions
 * offlineClientSessions
 
-Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
-
-ifeval::[{project_community}==true]
-
-With feature `persistent-user-sessions` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
-Items which are evicted from memory will be loaded on-demand from the database when needed.
-To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
-
-endif::[]
+Similarly to regular user and client sessions caches, also the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
@@ -164,10 +170,9 @@ The `actionTokens` distributed cache is used to track metadata about action toke
 
 Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.
 
-Each distributed cache has two owners per default, which means that two nodes have a copy of the specific cache entries.
+Each distributed cache, that is a primary source of truth of the data (`authenticationSessions`, `loginFailures` and `actionTokens`) has two owners per default, which means that two nodes have a copy of the specific cache entries.
 Non-owner nodes query the owners of a specific cache to obtain data.
 When both owner nodes are offline, all data is lost.
-This situation usually leads to users being logged out at the next request and having to log in again.
 
 The default number of owners is enough to survive 1 node (owner) failure in a cluster setup with at least three nodes. You are free
 to change the number of owners accordingly to better fit into your availability requirements. To change the number of owners, open `conf/cache-ispn.xml` and change the value for `owners=<value>` for the distributed caches to your desired value.
@@ -190,11 +195,11 @@ Once any of declared CLI parameters are present, it is expected there is no conf
 WARNING: Disabling security is not recommended in production!
 
 In a development or test environment, it is easier to start an unsecured Infinispan server.
-For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and Infinispan.
-{project_name} will fail to start if the Infinispan server is configured to accept only encrypted connections.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and {jdgserver_name}.
+{project_name} will fail to start if the {jdgserver_name} server is configured to accept only encrypted connections.
 
-The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the Infinispan server without presenting any credentials.
-If the Infinispan server has authentication enabled, {project_name} will fail to start.
+The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the {jdgserver_name} server without presenting any credentials.
+If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
 
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
