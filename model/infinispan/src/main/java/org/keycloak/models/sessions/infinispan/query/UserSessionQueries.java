@@ -32,7 +32,7 @@ public final class UserSessionQueries {
 
     public static final String USER_SESSION = Marshalling.protoEntity(RemoteUserSessionEntity.class);
 
-    private static final String BASE_QUERY = "SELECT e, version(e) FROM %s as e ".formatted(USER_SESSION);
+    private static final String BASE_QUERY = "FROM %s as e ".formatted(USER_SESSION);
     private static final String BY_BROKER_SESSION_ID = BASE_QUERY + "WHERE e.realmId = :realmId && e.brokerSessionId = :brokerSessionId ORDER BY e.userSessionId";
     private static final String BY_USER_ID = BASE_QUERY + "WHERE e.realmId = :realmId && e.userId = :userId ORDER BY e.userSessionId";
     private static final String BY_BROKER_USER_ID = BASE_QUERY + "WHERE e.realmId = :realmId && e.brokerUserId = :brokerUserId ORDER BY e.userSessionId";
@@ -41,8 +41,8 @@ public final class UserSessionQueries {
      * Returns a projection with the user session, and the version of all user sessions belonging to the broker session
      * ID.
      */
-    public static Query<Object[]> searchByBrokerSessionId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String brokerSessionId) {
-        return cache.<Object[]>query(BY_BROKER_SESSION_ID)
+    public static Query<RemoteUserSessionEntity> searchByBrokerSessionId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String brokerSessionId) {
+        return cache.<RemoteUserSessionEntity>query(BY_BROKER_SESSION_ID)
                 .setParameter("realmId", realmId)
                 .setParameter("brokerSessionId", brokerSessionId);
     }
@@ -50,8 +50,8 @@ public final class UserSessionQueries {
     /**
      * Returns a projection with the user session, and the version of all user sessions belonging to the user ID.
      */
-    public static Query<Object[]> searchByUserId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String userId) {
-        return cache.<Object[]>query(BY_USER_ID)
+    public static Query<RemoteUserSessionEntity> searchByUserId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String userId) {
+        return cache.<RemoteUserSessionEntity>query(BY_USER_ID)
                 .setParameter("realmId", realmId)
                 .setParameter("userId", userId);
     }
@@ -60,8 +60,8 @@ public final class UserSessionQueries {
      * Returns a projection with the user session, and the version of all user sessions belonging to the broker user
      * ID.
      */
-    public static Query<Object[]> searchByBrokerUserId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String brokerUserId) {
-        return cache.<Object[]>query(BY_BROKER_USER_ID)
+    public static Query<RemoteUserSessionEntity> searchByBrokerUserId(RemoteCache<String, RemoteUserSessionEntity> cache, String realmId, String brokerUserId) {
+        return cache.<RemoteUserSessionEntity>query(BY_BROKER_USER_ID)
                 .setParameter("realmId", realmId)
                 .setParameter("brokerUserId", brokerUserId);
     }

@@ -471,7 +471,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         return updater;
     }
 
-    private class ClientSessionMapping extends AbstractMap<String, AuthenticatedClientSessionModel> implements Consumer<Object[]> {
+    private class ClientSessionMapping extends AbstractMap<String, AuthenticatedClientSessionModel> implements Consumer<RemoteAuthenticatedClientSessionEntity> {
 
         private final UserSessionUpdater userSession;
         private boolean coldCache = true;
@@ -532,8 +532,8 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         }
 
         @Override
-        public void accept(Object[] projections) {
-            getTransaction().wrapFromProjection(projections);
+        public void accept(RemoteAuthenticatedClientSessionEntity entity) {
+            getTransaction().wrapFromProjection(entity);
         }
 
         private ClientSessionChangeLogTransaction getTransaction() {

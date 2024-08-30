@@ -31,6 +31,8 @@ import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLo
  */
 public interface Updater<K, V> extends BiFunction<K, V, V> {
 
+    int NO_VERSION = -1;
+
     /**
      * @return The Infinispan cache key.
      */
@@ -81,4 +83,8 @@ public interface Updater<K, V> extends BiFunction<K, V, V> {
      * @return The {@link Expiration} data.
      */
     Expiration computeExpiration();
+
+    default boolean hasVersion() {
+        return getVersionRead() != NO_VERSION;
+    }
 }
