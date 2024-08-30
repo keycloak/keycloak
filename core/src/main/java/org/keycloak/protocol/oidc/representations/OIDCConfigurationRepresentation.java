@@ -635,8 +635,16 @@ public class OIDCConfigurationRepresentation {
         return frontChannelLogoutSessionSupported;
     }
 
+    public void setFrontChannelLogoutSessionSupported(Boolean frontChannelLogoutSessionSupported) {
+        this.frontChannelLogoutSessionSupported = frontChannelLogoutSessionSupported;
+    }
+
     public Boolean getFrontChannelLogoutSupported() {
         return frontChannelLogoutSupported;
+    }
+
+    public void setFrontChannelLogoutSupported(Boolean frontChannelLogoutSupported) {
+        this.frontChannelLogoutSupported = frontChannelLogoutSupported;
     }
 
     public Boolean getAuthorizationResponseIssParameterSupported() {
