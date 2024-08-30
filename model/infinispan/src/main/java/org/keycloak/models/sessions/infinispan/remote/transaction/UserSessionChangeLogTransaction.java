@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import io.reactivex.rxjava3.core.Maybe;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.UserSessionQueryConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
@@ -34,10 +35,8 @@ public class UserSessionChangeLogTransaction extends RemoteChangeLogTransaction<
         super(factory, sharedState, new UserSessionQueryConditionalRemover());
     }
 
-    public UserSessionUpdater wrapFromProjection(Object[] projection) {
-        assert projection.length == 2;
-        RemoteUserSessionEntity entity = (RemoteUserSessionEntity) projection[0];
-        return wrap(entity.getUserSessionId(), entity, (long) projection[1]);
+    public UserSessionUpdater wrapFromProjection(RemoteUserSessionEntity entity) {
+        return wrap(entity.getUserSessionId(), entity, Updater.NO_VERSION);
     }
 
     public Maybe<UserSessionUpdater> maybeGet(String userSessionId) {

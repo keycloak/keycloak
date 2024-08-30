@@ -49,7 +49,7 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     public static LoginFailuresUpdater create(LoginFailureKey key, LoginFailureEntity entity) {
-        return new LoginFailuresUpdater(key, Objects.requireNonNull(entity), -1, UpdaterState.CREATED);
+        return new LoginFailuresUpdater(key, Objects.requireNonNull(entity), NO_VERSION, UpdaterState.CREATED);
     }
 
     public static LoginFailuresUpdater wrap(LoginFailureKey key, LoginFailureEntity value, long version) {
@@ -57,7 +57,7 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     public static LoginFailuresUpdater delete(LoginFailureKey key) {
-        return new LoginFailuresUpdater(key, null, -1, UpdaterState.DELETED);
+        return new LoginFailuresUpdater(key, null, NO_VERSION, UpdaterState.DELETED);
     }
 
     @Override

@@ -270,7 +270,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
 
         @Override
         public AuthenticatedClientSessionUpdater create(ClientSessionKey key, RemoteAuthenticatedClientSessionEntity entity) {
-            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity), -1, offline, UpdaterState.CREATED);
+            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity), NO_VERSION, offline, UpdaterState.CREATED);
         }
 
         @Override
@@ -280,7 +280,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
 
         @Override
         public AuthenticatedClientSessionUpdater deleted(ClientSessionKey key) {
-            return new AuthenticatedClientSessionUpdater(key, null, -1, offline, UpdaterState.DELETED);
+            return new AuthenticatedClientSessionUpdater(key, null, NO_VERSION, offline, UpdaterState.DELETED);
         }
     }
 

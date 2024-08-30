@@ -263,7 +263,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
 
         @Override
         public UserSessionUpdater create(String key, RemoteUserSessionEntity entity) {
-            return new UserSessionUpdater(key, Objects.requireNonNull(entity), -1, offline, UpdaterState.CREATED);
+            return new UserSessionUpdater(key, Objects.requireNonNull(entity), NO_VERSION, offline, UpdaterState.CREATED);
         }
 
         @Override
@@ -273,7 +273,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
 
         @Override
         public UserSessionUpdater deleted(String key) {
-            return new UserSessionUpdater(key, null, -1, offline, UpdaterState.DELETED);
+            return new UserSessionUpdater(key, null, NO_VERSION, offline, UpdaterState.DELETED);
         }
     }
 }

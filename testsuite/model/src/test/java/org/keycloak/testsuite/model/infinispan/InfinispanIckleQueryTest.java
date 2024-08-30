@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ import java.util.stream.Stream;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.query.Query;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
@@ -68,7 +66,6 @@ import org.keycloak.testsuite.model.RequireProvider;
 @RequireProvider(RealmProvider.class)
 public class InfinispanIckleQueryTest extends KeycloakModelTest {
 
-    private static final Executor EXECUTOR = new WithinThreadExecutor();
     private static final List<String> REALMS = IntStream.range(0, 2).mapToObj(value -> "realm" + value).toList();
     private static final List<String> USERS = IntStream.range(0, 2).mapToObj(value -> "user" + value).toList();
     private static final List<String> BROKER_SESSIONS = IntStream.range(0, 2).mapToObj(value -> "brokerSession" + value).toList();
@@ -418,21 +415,20 @@ public class InfinispanIckleQueryTest extends KeycloakModelTest {
 
         var query = UserSessionQueries.searchByBrokerSessionId(cache, realm, brokerSession);
         var expectedResults = expectUserSessionId(realm, USERS, List.of(brokerSession), BROKER_USERS);
-        assertQuery(query, objects -> ((RemoteUserSessionEntity) objects[0]).getUserSessionId(), expectedResults);
+        assertQuery(query, RemoteUserSessionEntity::getUserSessionId, expectedResults);
 
         query = UserSessionQueries.searchByUserId(cache, realm, user);
         expectedResults = expectUserSessionId(realm, List.of(user), BROKER_SESSIONS, BROKER_USERS);
-        assertQuery(query, objects -> ((RemoteUserSessionEntity) objects[0]).getUserSessionId(), expectedResults);
+        assertQuery(query, RemoteUserSessionEntity::getUserSessionId, expectedResults);
 
         query = UserSessionQueries.searchByBrokerUserId(cache, realm, brokerUser);
         expectedResults = expectUserSessionId(realm, USERS, BROKER_SESSIONS, List.of(brokerUser));
-        assertQuery(query, objects -> ((RemoteUserSessionEntity) objects[0]).getUserSessionId(), expectedResults);
+        assertQuery(query, RemoteUserSessionEntity::getUserSessionId, expectedResults);
     }
 
     @Test
     public void testClientSessionQueries() {
         RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache = assumeAndReturnCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-
 
         for (var realmId : REALMS) {
             for (var clientId : CLIENTS) {
@@ -458,11 +454,11 @@ public class InfinispanIckleQueryTest extends KeycloakModelTest {
         expectedResults = USER_SESSIONS.stream().map(s -> s + "-" + realm).collect(Collectors.toSet());
         assertQuery(query, objects -> String.valueOf(objects[0]), expectedResults);
 
-        query = ClientSessionQueries.fetchClientSessions(cache, userSession);
+        var query2 = ClientSessionQueries.fetchClientSessions(cache, userSession);
         expectedResults = CLIENTS.stream().map(s -> new ClientSessionKey(userSession, s)).map(Objects::toString).collect(Collectors.toSet());
-        assertQuery(query, objects -> ((RemoteAuthenticatedClientSessionEntity) objects[0]).createCacheKey().toString(), expectedResults);
+        assertQuery(query2, objects -> objects.createCacheKey().toString(), expectedResults);
 
-        // each client has user-session * realms number of active client sessions
+        // each client has user-session * realms active client sessions
         query = ClientSessionQueries.activeClientCount(cache);
         expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size() * REALMS.size())).collect(Collectors.toSet());
         assertQuery(query, objects -> String.format("%s-%s", objects[0], objects[1]), expectedResults);
