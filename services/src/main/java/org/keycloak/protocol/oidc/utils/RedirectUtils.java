@@ -24,7 +24,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
@@ -33,7 +32,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -41,17 +39,6 @@ import java.util.stream.Collectors;
 public class RedirectUtils {
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
-
-    /**
-     * This method is deprecated for performance and security reasons and it is available just for the
-     * backwards compatibility. It is recommended to use some other methods of this class where the client is given as an argument
-     * to the method, so we know the client, which redirect-uri we are trying to resolve.
-     */
-    @Deprecated
-    public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
-        Set<String> validRedirects = getValidateRedirectUris(session);
-        return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
-    }
 
     public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client) {
         return verifyRedirectUri(session, redirectUri, client, true);
@@ -75,16 +62,6 @@ public class RedirectUtils {
             resolveValidRedirects.add(validRedirect);
         }
         return resolveValidRedirects;
-    }
-
-    @Deprecated
-    private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        return session.clients().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
-          .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
-          .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
-          .flatMap(Collection::stream)
-          .collect(Collectors.toSet());
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {

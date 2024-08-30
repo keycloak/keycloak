@@ -403,29 +403,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    // Parameter "redirect_uri" is not valid in logoutRequest (See LegacyLogoutTest for the scenario with "redirect_uri" allowed by backwards compatibility switch)
-    @Test
-    public void logoutWithRedirectUriParameterShouldFail() throws Exception {
-        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
-        String idTokenString = tokenResponse.getIdToken();
-
-        // Logout with "redirect_uri" parameter alone should fail
-        String logoutUrl = oauth.getLogoutUrl().redirectUri(APP_REDIRECT_URI).build();
-        driver.navigate().to(logoutUrl);
-        errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REQUEST).assertEvent();
-
-        // Logout with "redirect_uri" parameter and with "id_token_hint" should fail
-        oauth.getLogoutUrl().idTokenHint(idTokenString).redirectUri(APP_REDIRECT_URI).build();
-        driver.navigate().to(logoutUrl);
-        errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REQUEST).assertEvent();
-
-        // Assert user still authenticated
-        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
-    }
-
-
     // Test with "post_logout_redirect_uri" without "id_token_hint" should fail
     @Test
     public void logoutWithPostLogoutUriWithoutIdTokenHintShouldFail() throws Exception {

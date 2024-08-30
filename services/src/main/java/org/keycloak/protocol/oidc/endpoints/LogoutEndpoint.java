@@ -48,8 +48,6 @@ import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
@@ -112,17 +110,15 @@ public class LogoutEndpoint {
     private final TokenManager tokenManager;
     private final RealmModel realm;
     private final EventBuilder event;
-    private final OIDCProviderConfig providerConfig;
 
     private Cors cors;
 
-    public LogoutEndpoint(KeycloakSession session, TokenManager tokenManager, EventBuilder event, OIDCProviderConfig providerConfig) {
+    public LogoutEndpoint(KeycloakSession session, TokenManager tokenManager, EventBuilder event) {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.tokenManager = tokenManager;
         this.realm = session.getContext().getRealm();
         this.event = event;
-        this.providerConfig = providerConfig;
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
@@ -143,7 +139,6 @@ public class LogoutEndpoint {
      *
      * All parameters are optional. Some combinations of parameters are invalid as described in the specification
      *
-     * @param deprecatedRedirectUri Parameter "redirect_uri" is not supported by the specification. It is here just for the backwards compatibility
      * @param encodedIdToken Parameter "id_token_hint" as described in the specification.
      * @param clientId Parameter "client_id" as described in the specification.
      * @param postLogoutRedirectUri Parameter "post_logout_redirect_uri" as described in the specification with the URL to redirect after logout.
@@ -154,38 +149,22 @@ public class LogoutEndpoint {
      */
     @GET
     @NoCache
-    public Response logout(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String deprecatedRedirectUri, // deprecated
-                           @QueryParam(OIDCLoginProtocol.ID_TOKEN_HINT) String encodedIdToken,
+    public Response logout(@QueryParam(OIDCLoginProtocol.ID_TOKEN_HINT) String encodedIdToken,
                            @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
                            @QueryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM) String postLogoutRedirectUri,
                            @QueryParam(OIDCLoginProtocol.STATE_PARAM) String state,
                            @QueryParam(OIDCLoginProtocol.UI_LOCALES_PARAM) String uiLocales,
                            @QueryParam(AuthenticationManager.INITIATING_IDP_PARAM) String initiatingIdp) {
 
-        if (!providerConfig.isLegacyLogoutRedirectUri()) {
-            if (deprecatedRedirectUri != null) {
-                event.event(EventType.LOGOUT);
-                String errorMessage = "Parameter 'redirect_uri' no longer supported.";
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                logger.warnf("%s Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
-                        errorMessage, OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
-            }
-
-            if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
-                event.event(EventType.LOGOUT);
-                String errorMessage = "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.";
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                logger.warnf(errorMessage);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
-                        OIDCLoginProtocol.ID_TOKEN_HINT);
-            }
+        if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
+            event.event(EventType.LOGOUT);
+            String errorMessage = "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            logger.warnf(errorMessage);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
+                    OIDCLoginProtocol.ID_TOKEN_HINT);
         }
-
-        deprecatedRedirectUri = providerConfig.isLegacyLogoutRedirectUri() ? deprecatedRedirectUri : null;
-        final String redirectUri = postLogoutRedirectUri != null ? postLogoutRedirectUri : deprecatedRedirectUri;
 
         boolean confirmationNeeded = true;
         boolean forcedConfirmation = false;
@@ -236,21 +215,16 @@ public class LogoutEndpoint {
         }
 
         String validatedRedirectUri = null;
-        if (redirectUri != null) {
+        if (postLogoutRedirectUri != null) {
             if (client != null) {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
-                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), redirectUri, postLogoutRedirectUris, true);
-            } else if (clientId == null && providerConfig.isLegacyLogoutRedirectUri()) {
-                /*
-                 * Only call verifyRealmRedirectUri against all in the realm, in case when "Legacy" switch is enabled and when we don't have a client - usually due both clientId and client are null
-                 */
-                validatedRedirectUri = RedirectUtils.verifyRealmRedirectUri(session, redirectUri);
+                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
             }
 
             if (validatedRedirectUri == null) {
                 event.event(EventType.LOGOUT);
-                event.detail(Details.REDIRECT_URI, redirectUri);
+                event.detail(Details.REDIRECT_URI, postLogoutRedirectUri);
                 event.error(Errors.INVALID_REDIRECT_URI);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
             }
@@ -307,7 +281,7 @@ public class LogoutEndpoint {
         }
 
         // Logout confirmation screen will be displayed to the user in this case
-        if ((confirmationNeeded || forcedConfirmation) && !providerConfig.suppressLogoutConfirmationScreen()) {
+        if (confirmationNeeded || forcedConfirmation) {
             return displayLogoutConfirmationScreen(loginForm, logoutSession);
         } else {
             return doBrowserLogout(logoutSession);
@@ -338,13 +312,14 @@ public class LogoutEndpoint {
         if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
             return logoutToken();
         } else {
-            return logout(form.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM),
+            return logout(
                     form.getFirst(OIDCLoginProtocol.ID_TOKEN_HINT),
                     form.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM),
                     form.getFirst(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM),
                     form.getFirst(OIDCLoginProtocol.STATE_PARAM),
                     form.getFirst(OIDCLoginProtocol.UI_LOCALES_PARAM),
-                    form.getFirst(AuthenticationManager.INITIATING_IDP_PARAM));
+                    form.getFirst(AuthenticationManager.INITIATING_IDP_PARAM)
+            );
         }
     }
 
@@ -701,7 +676,7 @@ public class LogoutEndpoint {
 
         return backchannelLogoutResponse;
     }
-    
+
     private boolean oneOrMoreDownstreamLogoutsFailed(BackchannelLogoutResponse backchannelLogoutResponse) {
         BackchannelLogoutResponse filteredBackchannelLogoutResponse = new BackchannelLogoutResponse();
         for (BackchannelLogoutResponse.DownStreamBackchannelLogoutResponse response : backchannelLogoutResponse
