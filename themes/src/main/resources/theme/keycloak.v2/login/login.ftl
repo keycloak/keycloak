@@ -15,10 +15,9 @@
                         <@field.input name="username" label=label value="${(login.username!'')}" />
                     </#if>
                     <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed/>
-                        <#if realm.rememberMe && !usernameHidden??>
-                            <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
-                        </#if>
-                    </div>
+                    <#if realm.rememberMe && !usernameHidden??>
+                        <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
+                    </#if>
 
                     <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
                         <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>

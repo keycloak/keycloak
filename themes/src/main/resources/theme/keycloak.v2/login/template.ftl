@@ -43,6 +43,10 @@
     </#if>
     <script type="module">
         import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+
+        checkCookiesAndSetTimer(
+            "${url.ssoLoginInOtherTabsUrl?no_esc}"
+        );
     </script>
 </head>
 
@@ -93,16 +97,10 @@
               </span>
             </span>
           </div>
-        </#if>
-        <#if displayInfo>
-          <p id="kc-info" class="${properties.kcSignUpClass!}">
-              <span id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                  <#nested "info">
-              </span>
-          </p>
-        </#if>
         </div>
-        <div class="${properties.kcLoginMainBody!}">
+        </#if>
+      </div>
+      <div class="${properties.kcLoginMainBody!}">
         <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
             <#if displayRequiredFields>
                 <div class="${properties.kcContentWrapperClass!}">
@@ -173,6 +171,13 @@
           </form>
         </#if>
 
+        <#if displayInfo>
+          <div id="kc-info" class="${properties.kcSignUpClass!}">
+              <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                  <#nested "info">
+              </div>
+          </div>
+        </#if>
       </div>
       <footer class="pf-v5-c-login__main-footer">
         <#nested "socialProviders">
