@@ -17,10 +17,31 @@
 
 package org.keycloak.testsuite.organization.broker;
 
+import org.junit.Test;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationOIDCBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
 
+    @Test
+    public void testMaskedSecretInIDPRepresentation() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        List<IdentityProviderRepresentation> identityProviders = organization.identityProviders().getIdentityProviders();
+
+        String maskedSecret = "**********";
+
+        identityProviders.forEach(idp -> assertEquals(maskedSecret, idp.getConfig().get("clientSecret")));
+
+        identityProviders.stream().map(IdentityProviderRepresentation::getAlias).forEach(alias -> {
+            IdentityProviderRepresentation rep = organization.identityProviders().get(alias).toRepresentation();
+            assertEquals(maskedSecret, rep.getConfig().get("clientSecret"));
+        });
+    }
 }
