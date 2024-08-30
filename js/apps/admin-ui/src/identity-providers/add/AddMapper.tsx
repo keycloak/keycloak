@@ -85,7 +85,7 @@ export default function AddMapper() {
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
-        addError(t("mapperSaveError"), error);
+        addError("mapperSaveError", error);
       }
     } else {
       try {
@@ -104,7 +104,7 @@ export default function AddMapper() {
           }),
         );
       } catch (error) {
-        addError(t("mapperCreateError"), error);
+        addError("mapperCreateError", error);
       }
     }
   };

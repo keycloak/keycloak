@@ -84,6 +84,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.utils.StreamsUtil.closing;
+
 /**
  * Set of helper methods, which are useful in various model implementations.
  *
@@ -922,7 +924,7 @@ public final class KeycloakModelUtils {
 
         Stream<ClientModel> browserFlowOverridingClients = realm.searchClientByAuthenticationFlowBindingOverrides(Collections.singletonMap("browser", model.getId()), 0, 1);
         Stream<ClientModel> directGrantFlowOverridingClients = realm.searchClientByAuthenticationFlowBindingOverrides(Collections.singletonMap("direct_grant", model.getId()), 0, 1);
-        boolean usedByClient = Stream.concat(browserFlowOverridingClients, directGrantFlowOverridingClients)
+        boolean usedByClient = closing(Stream.concat(browserFlowOverridingClients, directGrantFlowOverridingClients))
                 .limit(1)
                 .findAny()
                 .isPresent();

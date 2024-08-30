@@ -112,7 +112,7 @@ export default function ProfilesTab() {
         addAlert(t("deleteClientSuccess"), AlertVariant.success);
         setKey(key + 1);
       } catch (error) {
-        addError(t("deleteClientError"), error);
+        addError("deleteClientError", error);
       }
     },
   });

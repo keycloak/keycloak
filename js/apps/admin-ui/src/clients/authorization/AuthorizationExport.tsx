@@ -93,7 +93,7 @@ export const AuthorizationExport = () => {
                 await navigator.clipboard.writeText(code!);
                 addAlert(t("copied"), AlertVariant.success);
               } catch (error) {
-                addError(t("copyError"), error);
+                addError("copyError", error);
               }
             }}
           >

@@ -237,7 +237,7 @@ export default function NewClientPolicy() {
           }),
         );
       } catch (error) {
-        addError(t("deleteClientPolicyError"), error);
+        addError("deleteClientPolicyError", error);
       }
     },
   });
@@ -262,7 +262,7 @@ export default function NewClientPolicy() {
               toEditClientPolicy({ realm, policyName: formValues.name! }),
             );
           } catch (error) {
-            addError(t("deleteConditionError"), error);
+            addError("deleteConditionError", error);
           }
         } else {
           const updatedPolicies = policies?.filter(
@@ -281,7 +281,7 @@ export default function NewClientPolicy() {
               }),
             );
           } catch (error) {
-            addError(t("deleteClientError"), error);
+            addError("deleteClientError", error);
           }
         }
       },
@@ -306,7 +306,7 @@ export default function NewClientPolicy() {
           form.setValue("profiles", currentPolicy?.profiles || []);
           navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
         } catch (error) {
-          addError(t("deleteClientPolicyProfileError"), error);
+          addError("deleteClientPolicyProfileError", error);
         }
       } else {
         const updatedPolicies = policies?.filter(
@@ -325,7 +325,7 @@ export default function NewClientPolicy() {
             }),
           );
         } catch (error) {
-          addError(t("deleteClientError"), error);
+          addError("deleteClientError", error);
         }
       }
     },

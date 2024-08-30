@@ -63,7 +63,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
-        send(config, retrieveEmailAddress(user), subject, textBody, htmlBody);
+        String address = retrieveEmailAddress(user);
+        if (address == null) {
+            throw new EmailException("No email address configured for the user");
+        }
+        send(config, address, subject, textBody, htmlBody);
     }
 
     @Override
@@ -107,6 +111,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.setProperty("mail.smtp.connectiontimeout", "10000");
 
             String from = config.get("from");
+            if (from == null) {
+                throw new EmailException("No sender address configured in the realm settings for emails");
+            }
+
             String fromDisplayName = config.get("fromDisplayName");
             String replyTo = config.get("replyTo");
             String replyToDisplayName = config.get("replyToDisplayName");
@@ -156,9 +164,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 transport.connect();
             }
             transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
+        } catch (EmailException e) {
+            throw e;
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToSendEmail(e);
-            throw new EmailException(e);
+            throw new EmailException("Error when attempting to send the email to the server. More information is available in the server log.", e);
         } finally {
             if (transport != null) {
                 try {

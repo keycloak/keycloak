@@ -42,7 +42,7 @@ export const RealmSettingsLoginTab = ({
       addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();
     } catch (error) {
-      addError(t("enableSwitchError"), error);
+      addError("enableSwitchError", error);
     }
   };
 

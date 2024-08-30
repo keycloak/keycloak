@@ -22,14 +22,21 @@ package org.keycloak.email;
  */
 public class EmailException extends Exception {
 
-    public EmailException(Throwable cause) {
-        super(cause);
-    }
-
+    /**
+     * Record an exception around email generation and sending
+     *
+     * @param message Shown to users in the admin console
+     */
     public EmailException(String message) {
     	super(message);
     }
-    
+
+    /**
+     * Record an exception around email generation and sending
+     *
+     * @param message Shown to users in the admin console
+     * @param cause Additional information to be logged
+     */
     public EmailException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -175,7 +175,7 @@ export const PoliciesTab = () => {
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError(t("deleteClientPolicyError"), error);
+        addError("deleteClientPolicyError", error);
       }
     },
   });
