@@ -28,6 +28,7 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.models.BrowserSecurityHeaders.CONTENT_SECURITY_POLICY;
@@ -104,7 +105,6 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
             addHeader(header, headers);
         }
 
-        // TODO This will be refactored as part of introducing a more strict CSP header
         if (options != null) {
             if (options.isAllowAnyFrameAncestor()) {
                 headers.remove(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName());
@@ -113,6 +113,14 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
             Object cspVal = headers.getFirst(CONTENT_SECURITY_POLICY.getHeaderName());
             if (cspVal != null) {
                 ContentSecurityPolicyBuilder csp = ContentSecurityPolicyBuilder.create(cspVal.toString());
+
+                List<String> allowedFormAction = options.getAllowedFormAction();
+                if (allowedFormAction != null) {
+                    for (String stmt : allowedFormAction) {
+                        csp.addFormAction(stmt);
+                    }
+                }
+
                 if (options.isAllowAnyFrameAncestor() && csp.isDefaultFrameAncestors()) {
                     // only remove frame ancestors if defined to default 'self'
                     csp.frameAncestors(null);
@@ -121,6 +129,20 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
                 String allowedFrameSrc = options.getAllowedFrameSrc();
                 if (allowedFrameSrc != null) {
                     csp.addFrameSrc(allowedFrameSrc);
+                }
+
+                List<String> allowedScriptSrc = options.getAllowedScriptSrc();
+                if (allowedScriptSrc != null) {
+                    for (String stmt : allowedScriptSrc) {
+                        csp.addScriptSrc(stmt);
+                    }
+                }
+
+                List<String> allowedStyleSrc = options.getAllowedStyleSrc();
+                if (allowedStyleSrc != null) {
+                    for (String stmt : allowedStyleSrc) {
+                        csp.addStyleSrc(stmt);
+                    }
                 }
 
                 headers.putSingle(CONTENT_SECURITY_POLICY.getHeaderName(), csp.build());

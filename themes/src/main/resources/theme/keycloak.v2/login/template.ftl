@@ -24,7 +24,7 @@
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
         </#list>
     </#if>
-    <script type="importmap">
+    <script type="importmap" nonce="${nonce.script}">
         {
             "imports": {
                 "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
@@ -41,7 +41,7 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
-    <script type="module">
+    <script type="module" nonce="${nonce.script}">
         import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
 
         checkCookiesAndSetTimer(

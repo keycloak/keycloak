@@ -71,7 +71,7 @@
         </#if>
     </form>
 
-    <script>
+    <script nonce="${nonce.script}">
         /* copy recovery codes  */
         function copyRecoveryCodes() {
             var tmpTextarea = document.createElement("textarea");

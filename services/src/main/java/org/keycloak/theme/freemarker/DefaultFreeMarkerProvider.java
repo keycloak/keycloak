@@ -4,9 +4,11 @@ import freemarker.cache.URLTemplateLoader;
 import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.KeycloakSanitizerMethod;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.NonceBean;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -18,16 +20,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
     private final ConcurrentHashMap<String, Template> cache;
     private final KeycloakSanitizerMethod kcSanitizeMethod;
+    private final KeycloakSession session;
 
-    public DefaultFreeMarkerProvider(ConcurrentHashMap<String, Template> cache, KeycloakSanitizerMethod kcSanitizeMethod) {
+    public DefaultFreeMarkerProvider(ConcurrentHashMap<String, Template> cache, KeycloakSanitizerMethod kcSanitizeMethod, KeycloakSession session) {
         this.cache = cache;
         this.kcSanitizeMethod = kcSanitizeMethod;
+        this.session = session;
     }
 
     @Override
-    public String processTemplate(Object data, String templateName, Theme theme) throws FreeMarkerException {
-        if (data instanceof Map) {
-            ((Map)data).put("kcSanitize", kcSanitizeMethod);
+    public String processTemplate(Map<String, Object> attributes, String templateName, Theme theme) throws FreeMarkerException {
+        attributes.put("kcSanitize", kcSanitizeMethod);
+
+        if (!attributes.containsKey("nonce")) {
+            attributes.put("nonce", new NonceBean(session));
         }
 
         try {
@@ -46,7 +52,7 @@ public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
             }
 
             Writer out = new StringWriter();
-            template.process(data, out);
+            template.process(attributes, out);
             return out.toString();
         } catch (Exception e) {
             throw new FreeMarkerException("Failed to process template " + templateName, e);

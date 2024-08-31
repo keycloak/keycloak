@@ -23,7 +23,7 @@ public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFacto
                         cache = new ConcurrentHashMap<>();
                     }
                     kcSanitizeMethod = new KeycloakSanitizerMethod();
-                    provider = new DefaultFreeMarkerProvider(cache, kcSanitizeMethod);
+                    provider = new DefaultFreeMarkerProvider(cache, kcSanitizeMethod, session);
                 }
             }
         }

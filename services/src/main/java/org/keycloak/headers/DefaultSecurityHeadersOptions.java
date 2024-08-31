@@ -16,12 +16,18 @@
  */
 package org.keycloak.headers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DefaultSecurityHeadersOptions implements SecurityHeadersOptions {
 
     private boolean skipHeaders;
     private boolean allowAnyFrameAncestor;
     private boolean allowEmptyContentType;
     private String allowedFrameSrc;
+    private final List<String> allowedFormAction = new ArrayList<String>();
+    private final List<String> allowedScriptSrc = new ArrayList<String>();
+    private final List<String> allowedStyleSrc = new ArrayList<String>();
 
     public SecurityHeadersOptions allowFrameSrc(String source) {
         allowedFrameSrc = source;
@@ -29,8 +35,26 @@ public class DefaultSecurityHeadersOptions implements SecurityHeadersOptions {
     }
 
     @Override
+    public SecurityHeadersOptions addFormAction(String action) {
+        allowedFormAction.add(action);
+        return this;
+    }
+
+    @Override
     public SecurityHeadersOptions allowAnyFrameAncestor() {
         allowAnyFrameAncestor = true;
+        return this;
+    }
+
+    @Override
+    public SecurityHeadersOptions addScriptSrc(String source) {
+        allowedScriptSrc.add(source);
+        return this;
+    }
+
+    @Override
+    public SecurityHeadersOptions addStyleSrc(String source) {
+        allowedStyleSrc.add(source);
         return this;
     }
 
@@ -45,8 +69,20 @@ public class DefaultSecurityHeadersOptions implements SecurityHeadersOptions {
         return this;
     }
 
+    List<String> getAllowedFormAction() {
+        return allowedFormAction;
+    }
+
     String getAllowedFrameSrc() {
         return allowedFrameSrc;
+    }
+
+    List<String> getAllowedScriptSrc() {
+        return allowedScriptSrc;
+    }
+
+    List<String> getAllowedStyleSrc() {
+        return allowedStyleSrc;
     }
 
     boolean isAllowAnyFrameAncestor() {

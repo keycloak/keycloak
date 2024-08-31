@@ -1,7 +1,7 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "header">
-        <script>
+        <script nonce="${nonce.script}">
             document.title =  "${msg("frontchannel-logout.title")}";
         </script>
         ${msg("frontchannel-logout.title")}
@@ -16,7 +16,7 @@
         </#list>
         </ul>
         <#if logout.logoutRedirectUri?has_content>
-            <script>
+            <script nonce="${nonce.script}">
                 function readystatechange(event) {
                     if (document.readyState=='complete') {
                         window.location.replace('${logout.logoutRedirectUri}');

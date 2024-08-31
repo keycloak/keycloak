@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="${properties.description!'The Account Console is a web-based interface for managing your account.'}">
     <title>${properties.title!'Account Management'}</title>
-    <style>
+    <style nonce="${nonce.style!}">
       body {
         margin: 0;
       }
@@ -48,7 +48,7 @@
         padding-top: 32px;
       }
     </style>
-    <script type="importmap">
+    <script type="importmap" nonce="${nonce.script}">
       {
         "imports": {
           "react": "${resourceCommonUrl}/vendor/react/react.production.min.js",
@@ -58,14 +58,14 @@
       }
     </script>
     <#if devServerUrl?has_content>
-      <script type="module">
+      <script type="module" nonce="${nonce.script}">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";
 
         injectIntoGlobalHook(window);
         window.$RefreshReg$ = () => {};
         window.$RefreshSig$ = () => (type) => type;
       </script>
-      <script type="module">
+      <script type="module" nonce="${nonce.script}">
         import { inject } from "${devServerUrl}/@vite-plugin-checker-runtime";
 
         inject({
@@ -116,7 +116,7 @@
       </main>
     </div>
     <noscript>JavaScript is required to use the Account Console.</noscript>
-    <script id="environment" type="application/json">
+    <script id="environment" type="application/json" nonce="${nonce.script}">
       {
         "serverBaseUrl": "${serverBaseUrl}",
         "authUrl": "${authUrl}",

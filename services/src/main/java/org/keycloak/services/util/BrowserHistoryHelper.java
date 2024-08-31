@@ -18,12 +18,17 @@
 package org.keycloak.services.util;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -93,7 +98,19 @@ public abstract class BrowserHistoryHelper {
                 URI lastExecutionURL = new AuthenticationFlowURLHelper(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
 
                 // Inject javascript for history "replaceState"
-                String responseWithJavascript = responseWithJavascript(responseString, lastExecutionURL.toString());
+                String javascript = "if (typeof history.replaceState === 'function') { history.replaceState({}, \"some title\", \"" + lastExecutionURL.toString() + "\"); }";
+                String responseWithJavascript = responseWithJavascript(responseString, javascript);
+
+                try {
+                    MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+                    byte[] hashed = sha256.digest(javascript.getBytes(StandardCharsets.UTF_8));
+                    String scriptHash = Base64.encodeBytes(hashed);
+                    String scriptSrc = "'sha256-" + scriptHash + "'";
+
+                    session.getProvider(SecurityHeadersProvider.class).options().addScriptSrc(scriptSrc);
+                } catch (NoSuchAlgorithmException _e) {
+                    // JAS: Do nothing.
+                }
 
                 return Response.fromResponse(response).entity(responseWithJavascript).build();
             }
@@ -108,30 +125,19 @@ public abstract class BrowserHistoryHelper {
         }
 
 
-        private String responseWithJavascript(String origHtml, String lastExecutionUrl) {
+        private String responseWithJavascript(String origHtml, String javascript) {
             Matcher m = HEAD_END_PATTERN.matcher(origHtml);
 
             if (m.find()) {
                 int start = m.start();
 
-                String javascript = getJavascriptText(lastExecutionUrl);
-
                 return new StringBuilder(origHtml.substring(0, start))
-                        .append(javascript )
+                        .append("<script>" + javascript + "</script>")
                         .append(origHtml.substring(start))
                         .toString();
             } else {
                 return origHtml;
             }
-        }
-
-        private String getJavascriptText(String lastExecutionUrl) {
-            return new StringBuilder("<SCRIPT>")
-                    .append(" if (typeof history.replaceState === 'function') {")
-                    .append("  history.replaceState({}, \"some title\", \"" + lastExecutionUrl + "\");")
-                    .append(" }")
-                    .append("</SCRIPT>")
-                    .toString();
         }
 
     }

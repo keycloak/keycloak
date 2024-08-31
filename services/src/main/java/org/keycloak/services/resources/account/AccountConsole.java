@@ -30,6 +30,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.beans.NonceBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
@@ -186,6 +187,9 @@ public class AccountConsole implements AccountResourceProvider {
             map.put("entryScript", entryScript);
             map.put("entryImports", entryImports);
         }
+
+        // JAS: Insert nonces into CSP header and attributes.
+        map.put("nonce", new NonceBean(session));
 
         FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
         String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

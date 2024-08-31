@@ -89,7 +89,7 @@
                 </div>
 
                 <#if recaptchaRequired?? && !(recaptchaVisible!false)>
-                    <script>
+                    <script nonce="${nonce.script}">
                         function onSubmitRecaptcha(token) {
                             document.getElementById("kc-register-form").submit();
                         }

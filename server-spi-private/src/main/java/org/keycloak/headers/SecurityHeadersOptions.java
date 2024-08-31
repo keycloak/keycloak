@@ -18,9 +18,15 @@ package org.keycloak.headers;
 
 public interface SecurityHeadersOptions {
 
+    SecurityHeadersOptions addFormAction(String action);
+
     SecurityHeadersOptions allowFrameSrc(String source);
 
     SecurityHeadersOptions allowAnyFrameAncestor();
+
+    SecurityHeadersOptions addScriptSrc(String source);
+
+    SecurityHeadersOptions addStyleSrc(String source);
 
     SecurityHeadersOptions skipHeaders();
 

@@ -18,10 +18,12 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
@@ -34,8 +36,12 @@ import org.keycloak.services.Urls;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,7 +65,7 @@ public abstract class OIDCRedirectUriBuilder {
         switch (responseMode) {
             case QUERY: return new QueryRedirectUriBuilder(uriBuilder);
             case FRAGMENT: return new FragmentRedirectUriBuilder(uriBuilder);
-            case FORM_POST: return new FormPostRedirectUriBuilder(uriBuilder);
+            case FORM_POST: return new FormPostRedirectUriBuilder(uriBuilder, session);
             case QUERY_JWT:
             case FRAGMENT_JWT:
             case FORM_POST_JWT:
@@ -137,10 +143,12 @@ public abstract class OIDCRedirectUriBuilder {
     // http://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html
     private static class FormPostRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
+        private final KeycloakSession session;
         private Map<String, String> params = new HashMap<>();
 
-        protected FormPostRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
+        protected FormPostRedirectUriBuilder(KeycloakUriBuilder uriBuilder, KeycloakSession session) {
             super(uriBuilder);
+            this.session = session;
         }
 
         @Override
@@ -154,11 +162,14 @@ public abstract class OIDCRedirectUriBuilder {
             StringBuilder builder = new StringBuilder();
             URI redirectUri = uriBuilder.build();
 
-            builder.append("<HTML>");
+            builder.append("<!DOCTYPE html>");
+            builder.append("<html lang=\"en\">");
             builder.append("  <HEAD>");
+            builder.append("    <meta charset=\"utf-8\" />");
             builder.append("    <TITLE>OIDC Form_Post Response</TITLE>");
+            builder.append(this.getRedirectScriptTag());
             builder.append("  </HEAD>");
-            builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
+            builder.append("  <BODY>");
 
             builder.append("    <FORM METHOD=\"POST\" ACTION=\"")
                     .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
@@ -173,10 +184,11 @@ public abstract class OIDCRedirectUriBuilder {
             }
 
             builder.append("      <NOSCRIPT>");
-            builder.append("        <P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue .</P>");
+            builder.append("        <P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue.</P>");
             builder.append("        <INPUT name=\"continue\" TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
             builder.append("      </NOSCRIPT>");
             builder.append("    </FORM>");
+
             builder.append("  </BODY>");
             builder.append("</HTML>");
 
@@ -185,6 +197,22 @@ public abstract class OIDCRedirectUriBuilder {
                     .entity(builder.toString()).build();
         }
 
+        private String getRedirectScriptTag() {
+            String javascript = "window.onload = function() { document.forms[0].submit(); };";
+
+            try {
+                MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+                byte[] hashed = sha256.digest(javascript.getBytes(StandardCharsets.UTF_8));
+                String scriptHash = Base64.encodeBytes(hashed);
+                String scriptSrc = "'sha256-" + scriptHash + "'";
+
+                session.getProvider(SecurityHeadersProvider.class).options().addScriptSrc(scriptSrc);
+            } catch (NoSuchAlgorithmException _e) {
+                // JAS: Do nothing.
+            }
+
+            return "<script>" + javascript + "</script>";
+        }
     }
 
     // https://openid.net/specs/openid-financial-api-jarm-ID1.html

@@ -7,7 +7,7 @@
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>
-                <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
+                <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
                         <#assign label>
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -28,6 +28,7 @@
                         <input tabindex="4" class="pf-v5-c-button pf-m-primary pf-m-block" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
                     </div>
                 </form>
+                <script nonce="${nonce.script}">document.getElementById("kc-form-login").onsubmit = function () { document.querySelector("#kc-form-login input[name='login']").disabled = true; return true; };</script>
             </#if>
             </div>
         </div>

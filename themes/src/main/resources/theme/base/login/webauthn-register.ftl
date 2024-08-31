@@ -21,10 +21,10 @@
             </div>
         </form>
 
-        <script type="module">
+        <script type="module" nonce="${nonce.script}">
             import { registerByWebAuthn } from "${url.resourcesPath}/js/webauthnRegister.js";
             const registerButton = document.getElementById('registerWebAuthn');
-            registerButton.addEventListener("click", function() {
+            registerButton.addEventListener("click", () => {
                 const input = {
                     challenge : '${challenge}',
                     userid : '${userid}',

@@ -27,10 +27,10 @@
     </#if>
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
-            <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
+            <script src="${url.resourcesPath}/${script}"></script>
         </#list>
     </#if>
-    <script type="importmap">
+    <script type="importmap" nonce="${nonce.script}">
         {
             "imports": {
                 "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
@@ -40,10 +40,10 @@
     <script src="${url.resourcesPath}/js/menu-button-links.js" type="module"></script>
     <#if scripts??>
         <#list scripts as script>
-            <script src="${script}" type="text/javascript"></script>
+            <script src="${script}"></script>
         </#list>
     </#if>
-    <script type="module">
+    <script type="module" nonce="${nonce.script}">
         import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
 
         checkCookiesAndSetTimer(
@@ -147,8 +147,13 @@
               <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
                   <div class="${properties.kcFormGroupClass!}">
                       <input type="hidden" name="tryAnotherWay" value="on"/>
-                      <a href="#" id="try-another-way"
-                         onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                      <a href="#" id="try-another-way">${msg("doTryAnotherWay")}</a>
+                      <script nonce="${nonce.script}">
+                          document.getElementById("try-another-way").onclick = () => {
+                              document.forms['kc-select-try-another-way-form'].submit();
+                              return false;
+                          };
+                      </script>
                   </div>
               </form>
           </#if>

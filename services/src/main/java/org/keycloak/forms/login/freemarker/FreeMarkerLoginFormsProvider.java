@@ -60,6 +60,7 @@ import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -82,6 +83,7 @@ import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.theme.beans.NonceBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
@@ -308,7 +310,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("x509", new X509ConfirmBean(formData));
                 break;
             case SAML_POST_FORM:
-                attributes.put("samlPost", new SAMLPostFormBean(formData));
+                SAMLPostFormBean samlPost = new SAMLPostFormBean(formData);
+                session.getProvider(SecurityHeadersProvider.class).options().addFormAction(samlPost.getUrl());
+                attributes.put("samlPost", samlPost);
                 break;
             case IDP_REVIEW_USER_PROFILE:
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -556,6 +560,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null
                 && !Boolean.TRUE.toString().equals(authenticationSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             attributes.put("isAppInitiatedAction", true);
+        }
+
+        // JAS: Insert nonces into CSP header and attributes.
+        if (session != null) {
+            attributes.put("nonce", new NonceBean(session));
         }
     }
 

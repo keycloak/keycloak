@@ -70,7 +70,7 @@
             <div id="kc-form">
                 <div id="kc-form-wrapper">
                     <#if realm.password>
-                        <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" style="display:none">
+                        <form id="kc-form-login" action="${url.loginAction}" method="post" style="display:none">
                             <#if !usernameHidden??>
                                 <div class="${properties.kcFormGroupClass!}">
                                     <label for="username" class="${properties.kcLabelClass!}">${msg("passkey-autofill-select")}</label>
@@ -91,7 +91,7 @@
                         </form>
                     </#if>
                     <div id="kc-form-passkey-button" class="${properties.kcFormButtonsClass!}" style="display:none">
-                        <input id="authenticateWebAuthnButton" type="button" onclick="doAuthenticate([], "${rpId}", "${challenge}", ${isUserIdentified}, ${createTimeout}, "${userVerification}", "${msg("passkey-unsupported-browser-text")?no_esc}")" autofocus="autofocus"
+                        <input id="authenticateWebAuthnButton" type="button" autofocus="autofocus"
                             value="${kcSanitize(msg("passkey-doAuthenticate"))}"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"/>
                     </div>
@@ -104,7 +104,7 @@
             </div>
         </div>
 
-        <script type="module">
+        <script type="module" nonce="${nonce.script}">
             import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
             import { initAuthenticate } from "${url.resourcesPath}/js/passkeysConditionalAuth.js";
 
@@ -131,6 +131,10 @@
             };
 
             document.addEventListener("DOMContentLoaded", (event) => initAuthenticate(args));
+        </script>
+
+        <script nonce="${nonce.script}">
+            document.querySelectorAll("#authenticateWebAuthnButton")[0].onclick = () => doAuthenticate([], "${rpId}", "${challenge}", ${isUserIdentified}, ${createTimeout}, "${userVerification}", "${msg("passkey-unsupported-browser-text")?no_esc}");
         </script>
 
     <#elseif section = "info">

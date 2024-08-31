@@ -54,6 +54,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.NonceBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -383,6 +384,9 @@ public class AdminConsole {
                 map.put("entryScript", entryScript);
                 map.put("entryImports", entryImports);
             }
+
+            // JAS: Insert nonces into CSP header and attributes.
+            map.put("nonce", new NonceBean(session));
 
             final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             final var result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

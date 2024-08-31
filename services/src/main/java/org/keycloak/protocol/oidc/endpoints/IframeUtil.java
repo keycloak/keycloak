@@ -21,12 +21,17 @@ import org.keycloak.common.Version;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.utils.ReplacingInputStream;
 
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
+import java.lang.Exception;
+import java.util.UUID;
 
 public class IframeUtil {
+    private static final String NONCE_IDENTIFIER = "$NONCE_SCRIPT";
+
     public static Response returnIframeFromResources(String fileName, String version, KeycloakSession session) {
         CacheControl cacheControl;
         if (version != null) {
@@ -41,6 +46,16 @@ public class IframeUtil {
         InputStream resource = IframeUtil.class.getResourceAsStream(fileName);
         if (resource != null) {
             session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
+
+            try {
+                String scriptNonce = UUID.randomUUID().toString();
+                session.getProvider(SecurityHeadersProvider.class).options().addScriptSrc("'nonce-" + scriptNonce + "'");
+
+                resource = new ReplacingInputStream(resource, NONCE_IDENTIFIER, scriptNonce);
+            }
+            catch (Exception _e) {
+            }
+
             return Response.ok(resource).cacheControl(cacheControl).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();

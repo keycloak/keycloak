@@ -76,10 +76,10 @@
             </div>
         </div>
 
-    <script type="module">
+    <script type="module" nonce="${nonce.script}">
         import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
         const authButton = document.getElementById('authenticateWebAuthnButton');
-        authButton.addEventListener("click", function() {
+        authButton.addEventListener("click", () => {
             const input = {
                 isUserIdentified : ${isUserIdentified},
                 challenge : '${challenge}',

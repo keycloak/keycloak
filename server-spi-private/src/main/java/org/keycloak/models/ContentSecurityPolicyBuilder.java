@@ -22,25 +22,38 @@ import java.util.Map;
 public class ContentSecurityPolicyBuilder {
 
     // constants for directive names used in the class
+    public static final String DIRECTIVE_NAME_FORM_ACTION = "form-action";
     public static final String DIRECTIVE_NAME_FRAME_SRC = "frame-src";
     public static final String DIRECTIVE_NAME_FRAME_ANCESTORS = "frame-ancestors";
     public static final String DIRECTIVE_NAME_OBJECT_SRC = "object-src";
+    public static final String DIRECTIVE_NAME_SCRIPT_SRC = "script-src";
+    public static final String DIRECTIVE_NAME_STYLE_SRC = "style-src";
 
     // constants for specific directive value keywords
     public static final String DIRECTIVE_VALUE_SELF = "'self'";
     public static final String DIRECTIVE_VALUE_NONE = "'none'";
+    public static final String DIRECTIVE_VALUE_UNSAFE_INLINE = "'unsafe-inline'";
 
     private final Map<String, String> directives = new LinkedHashMap<>();
 
     public static ContentSecurityPolicyBuilder create() {
         return new ContentSecurityPolicyBuilder()
+                .add(DIRECTIVE_NAME_FORM_ACTION, DIRECTIVE_VALUE_SELF)
                 .add(DIRECTIVE_NAME_FRAME_SRC, DIRECTIVE_VALUE_SELF)
                 .add(DIRECTIVE_NAME_FRAME_ANCESTORS, DIRECTIVE_VALUE_SELF)
-                .add(DIRECTIVE_NAME_OBJECT_SRC, DIRECTIVE_VALUE_NONE);
+                .add(DIRECTIVE_NAME_OBJECT_SRC, DIRECTIVE_VALUE_NONE)
+                .add(DIRECTIVE_NAME_SCRIPT_SRC, DIRECTIVE_VALUE_SELF)
+                .add(DIRECTIVE_NAME_SCRIPT_SRC, DIRECTIVE_VALUE_UNSAFE_INLINE)
+                .add(DIRECTIVE_NAME_STYLE_SRC, DIRECTIVE_VALUE_SELF)
+                .add(DIRECTIVE_NAME_STYLE_SRC, DIRECTIVE_VALUE_UNSAFE_INLINE);
     }
 
     public static ContentSecurityPolicyBuilder create(String directives) {
         return new ContentSecurityPolicyBuilder().parse(directives);
+    }
+
+    public ContentSecurityPolicyBuilder addFormAction(String formAction) {
+        return add(DIRECTIVE_NAME_FORM_ACTION, formAction);
     }
 
     public ContentSecurityPolicyBuilder frameSrc(String frameSrc) {
@@ -71,6 +84,48 @@ public class ContentSecurityPolicyBuilder {
 
     public ContentSecurityPolicyBuilder addFrameAncestors(String frameancestors) {
         return add(DIRECTIVE_NAME_FRAME_ANCESTORS, frameancestors);
+    }
+
+    public ContentSecurityPolicyBuilder scriptSrc(String scriptSrc) {
+        if (scriptSrc == null) {
+            directives.remove(DIRECTIVE_NAME_SCRIPT_SRC);
+        } else {
+            put(DIRECTIVE_NAME_SCRIPT_SRC, scriptSrc);
+        }
+        return this;
+    }
+
+    public ContentSecurityPolicyBuilder addScriptSrc(String scriptSrc) {
+        boolean nonceOrHash = scriptSrc.trim().startsWith("'nonce-") || scriptSrc.trim().startsWith("'hash-");
+        boolean isDefault = "'self' 'unsafe-inline'".equals(directives.get(DIRECTIVE_NAME_SCRIPT_SRC));
+
+        // JAS: Do not add a nonce or hash if 'unsafe-inline' is defined.
+        if (isDefault && nonceOrHash) {
+            return this;
+        }
+
+        return add(DIRECTIVE_NAME_SCRIPT_SRC, scriptSrc);
+    }
+
+    public ContentSecurityPolicyBuilder styleSrc(String styleSrc) {
+        if (styleSrc == null) {
+            directives.remove(DIRECTIVE_NAME_STYLE_SRC);
+        } else {
+            put(DIRECTIVE_NAME_STYLE_SRC, styleSrc);
+        }
+        return this;
+    }
+
+    public ContentSecurityPolicyBuilder addStyleSrc(String styleSrc) {
+        boolean nonceOrHash = styleSrc.trim().startsWith("'nonce-") || styleSrc.trim().startsWith("'hash-");
+        boolean isDefault = "'self' 'unsafe-inline'".equals(directives.get(DIRECTIVE_NAME_STYLE_SRC));
+
+        // JAS: Do not add a nonce or hash if 'unsafe-inline' is defined.
+        if (isDefault && nonceOrHash) {
+            return this;
+        }
+
+        return add(DIRECTIVE_NAME_STYLE_SRC, styleSrc);
     }
 
     public String build() {
