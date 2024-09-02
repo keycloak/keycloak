@@ -286,14 +286,7 @@ public class CacheManagerFactory {
             // remove all distributed caches
             logger.debug("Removing all distributed caches.");
             for (String cacheName : CLUSTERED_CACHE_NAMES) {
-               var remoteStore = builders.get(cacheName)
-                     .persistence()
-                     .stores()
-                     .stream()
-                     .filter(RemoteStoreConfigurationBuilder.class::isInstance)
-                     .findFirst();
-
-               if (remoteStore.isPresent())
+               if (hasRemoteStore(builders.get(cacheName)))
                   logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE.getKey());
                builders.remove(cacheName);
             }
@@ -307,6 +300,10 @@ public class CacheManagerFactory {
                 configureRemoteStores(builder);
             }
             configureSessionsCaches(builder);
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC)) {
+            checkNoRemoteStores(builder);
         }
 
         var start = isStartEagerly();
@@ -442,6 +439,14 @@ public class CacheManagerFactory {
         }
     }
 
+    private static void checkNoRemoteStores(ConfigurationBuilderHolder builder) {
+        if (builder.getNamedConfigurationBuilders().values().stream().anyMatch(CacheManagerFactory::hasRemoteStore)) {
+            logger.fatalf("Remote stores are not supported for embedded caches and user sessions are persisted in the database by default.%nFor multi-site (cross-dc) support, enable %s",
+                    Profile.Feature.MULTI_SITE.getKey());
+            throw new RuntimeException("Remote store is not supported.");
+        }
+    }
+
     private static void configureSessionsCaches(ConfigurationBuilderHolder builder) {
         Stream.of(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)
                 .forEach(cacheName -> {
@@ -474,5 +479,9 @@ public class CacheManagerFactory {
 
     private static String requiredStringProperty(String propertyName) {
         return Configuration.getOptionalKcValue(propertyName).orElseThrow(() -> new RuntimeException("Property " + propertyName + " required but not specified"));
+    }
+
+    private static boolean hasRemoteStore(ConfigurationBuilder builder) {
+        return builder.persistence().stores().stream().anyMatch(RemoteStoreConfigurationBuilder.class::isInstance);
     }
 }
