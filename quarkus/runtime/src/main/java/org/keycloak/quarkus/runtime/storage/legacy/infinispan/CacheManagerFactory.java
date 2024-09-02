@@ -64,8 +64,10 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
 import org.keycloak.marshalling.Marshalling;
-import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.query.ClientSessionQueries;
+import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
+import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import javax.net.ssl.SSLContext;
@@ -245,12 +247,22 @@ public class CacheManagerFactory {
         var newPS = KeycloakModelSchema.parseProtoSchema(newSchema);
         var admin = remoteCacheManager.administration();
 
-        if (isEntityChanged(oldPS, newPS, Marshalling.protoEntity(LoginFailureEntity.class))) {
+        if (isEntityChanged(oldPS, newPS, RemoteUserLoginFailureProviderFactory.PROTO_ENTITY)) {
             updateSchemaAndReIndexCache(admin, LOGIN_FAILURE_CACHE_NAME);
         }
 
-        if (isEntityChanged(oldPS, newPS, Marshalling.protoEntity(RootAuthenticationSessionAdapter.class))) {
+        if (isEntityChanged(oldPS, newPS, RemoteInfinispanAuthenticationSessionProviderFactory.PROTO_ENTITY)) {
             updateSchemaAndReIndexCache(admin, AUTHENTICATION_SESSIONS_CACHE_NAME);
+        }
+
+        if (isEntityChanged(oldPS, newPS, ClientSessionQueries.CLIENT_SESSION)) {
+            updateSchemaAndReIndexCache(admin, CLIENT_SESSION_CACHE_NAME);
+            updateSchemaAndReIndexCache(admin, OFFLINE_CLIENT_SESSION_CACHE_NAME);
+        }
+
+        if (isEntityChanged(oldPS, newPS, UserSessionQueries.USER_SESSION)) {
+            updateSchemaAndReIndexCache(admin, USER_SESSION_CACHE_NAME);
+            updateSchemaAndReIndexCache(admin, OFFLINE_USER_SESSION_CACHE_NAME);
         }
     }
 
