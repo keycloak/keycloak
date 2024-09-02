@@ -27,7 +27,8 @@
     <script type="importmap">
         {
             "imports": {
-                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js"
+                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js",
+                "rfc4648": "${url.resourcesCommonPath}/node_modules/rfc4648/lib/rfc4648.js"
             }
         }
     </script>
