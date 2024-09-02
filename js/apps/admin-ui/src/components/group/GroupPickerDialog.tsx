@@ -224,7 +224,10 @@ export const GroupPickerDialog = ({
         <DataList aria-label={t("groups")} isCompact>
           {groups.slice(0, max).map((group: SelectableGroup) => (
             <Fragment key={group.id}>
-              {(!isSearching || group.name?.includes(filter)) && (
+              {(!isSearching ||
+                group.name
+                  ?.toLocaleUpperCase()
+                  .includes(filter.toLocaleUpperCase())) && (
                 <GroupRow
                   key={group.id}
                   group={group}
