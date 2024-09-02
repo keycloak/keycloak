@@ -17,14 +17,26 @@
 
 package org.keycloak.jose.jwk;
 
-import org.keycloak.crypto.KeyUse;
-
+import java.math.BigInteger;
 import java.security.Key;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.EdECPoint;
+import java.util.Arrays;
+import java.util.Optional;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JWKBuilder extends AbstractJWKBuilder {
+
+    private JWKBuilder() {
+    }
 
     public static JWKBuilder create() {
         return new JWKBuilder();
@@ -42,13 +54,55 @@ public class JWKBuilder extends AbstractJWKBuilder {
 
     @Override
     public JWK okp(Key key) {
-        // not supported if jdk vesion < 17
-        throw new UnsupportedOperationException("EdDSA algorithms not supported in this JDK version");
+        return okp(key, DEFAULT_PUBLIC_KEY_USE);
     }
 
     @Override
     public JWK okp(Key key, KeyUse keyUse) {
-        // not supported if jdk version < 17
-        throw new UnsupportedOperationException("EdDSA algorithms not supported in this JDK version");
+        EdECPublicKey eddsaPublicKey = (EdECPublicKey) key;
+
+        OKPPublicJWK k = new OKPPublicJWK();
+
+        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+
+        k.setKeyId(kid);
+        k.setKeyType(KeyType.OKP);
+        k.setAlgorithm(algorithm);
+        k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
+        k.setCrv(eddsaPublicKey.getParams().getName());
+
+        Optional<String> x = edPublicKeyInJwkRepresentation(eddsaPublicKey);
+        k.setX(x.orElse(""));
+
+        return k;
     }
+
+    private Optional<String> edPublicKeyInJwkRepresentation(EdECPublicKey eddsaPublicKey) {
+        EdECPoint edEcPoint = eddsaPublicKey.getPoint();
+        BigInteger yCoordinate = edEcPoint.getY();
+
+        // JWK representation "x" of a public key
+        int bytesLength = 0;
+        if (Algorithm.Ed25519.equals(eddsaPublicKey.getParams().getName())) {
+            bytesLength = 32;
+        } else if (Algorithm.Ed448.equals(eddsaPublicKey.getParams().getName())) {
+            bytesLength = 57;
+        } else {
+            return Optional.ofNullable(null);
+        }
+
+        // consider the case where yCoordinate.toByteArray() is less than bytesLength due to relatively small value of y-coordinate.
+        byte[] yCoordinateLittleEndianBytes = new byte[bytesLength];
+
+        // convert big endian representation of BigInteger to little endian representation of JWK representation (RFC 8032,8027)
+        yCoordinateLittleEndianBytes = Arrays.copyOf(reverseBytes(yCoordinate.toByteArray()), bytesLength);
+
+        // set a parity of x-coordinate to the most significant bit of the last octet (RFC 8032, 8037)
+        if (edEcPoint.isXOdd()) {
+            yCoordinateLittleEndianBytes[yCoordinateLittleEndianBytes.length - 1] |= -128; // 0b10000000
+        }
+
+        return Optional.ofNullable(Base64Url.encode(yCoordinateLittleEndianBytes));
+    }
+
 }
