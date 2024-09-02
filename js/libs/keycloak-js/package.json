@@ -78,7 +78,7 @@
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "@noble/hashes": "^1.4.0",
+    "@noble/hashes": "^1.5.0",
     "jwt-decode": "^4.0.0"
   }
 }
