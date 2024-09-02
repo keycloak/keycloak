@@ -43,7 +43,7 @@ import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSe
 public class RemoteInfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<RemoteInfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    private static final String PROTO_ENTITY = Marshalling.protoEntity(RootAuthenticationSessionEntity.class);
+    public static final String PROTO_ENTITY = Marshalling.protoEntity(RootAuthenticationSessionEntity.class);
 
     private int authSessionsLimit;
     private volatile RemoteCache<String, RootAuthenticationSessionEntity> cache;
