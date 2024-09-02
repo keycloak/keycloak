@@ -381,8 +381,8 @@ importers:
   js/libs/keycloak-js:
     dependencies:
       '@noble/hashes':
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^1.5.0
+        version: 1.5.0
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1088,9 +1088,9 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  '@noble/hashes@1.4.0':
-    resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
-    engines: {node: '>= 16'}
+  '@noble/hashes@1.5.0':
+    resolution: {integrity: sha512-1j6kQFb7QRru7eKN3ZDvRcP13rugwdxZqCjbiAVZfIJwgj2A65UmT4TgARXGlXgnRkORLTDTrO19ZErt7+QXgA==}
+    engines: {node: ^14.21.3 || >=16}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -5649,7 +5649,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@noble/hashes@1.4.0': {}
+  '@noble/hashes@1.5.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
