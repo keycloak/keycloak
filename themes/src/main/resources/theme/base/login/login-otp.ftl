@@ -29,7 +29,7 @@
                 </div>
 
             <div class="${properties.kcInputWrapperClass!}">
-                <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
+                <input id="otp" name="otp" autocomplete="one-time-code" type="text" class="${properties.kcInputClass!}"
                        autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
                        dir="ltr" />
 
