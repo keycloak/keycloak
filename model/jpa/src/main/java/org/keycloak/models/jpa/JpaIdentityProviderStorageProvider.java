@@ -17,6 +17,7 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.IdentityProviderModel.ALIAS;
+import static org.keycloak.models.IdentityProviderModel.ALIAS_NOT_IN;
 import static org.keycloak.models.IdentityProviderModel.AUTHENTICATE_BY_DEFAULT;
 import static org.keycloak.models.IdentityProviderModel.ENABLED;
 import static org.keycloak.models.IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID;
@@ -254,7 +256,15 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                             predicates.add(this.getAliasSearchPredicate(value, builder, idp));
                         }
                         break;
-                    } default: {
+                    }
+                    case ALIAS_NOT_IN: {
+                        if (StringUtil.isNotBlank(value)) {
+                            List<String> aliases = Arrays.asList(value.split(","));
+                            predicates.add(builder.not(idp.get(ALIAS).in(aliases)));
+                        }
+                        break;
+                    }
+                    default: {
                         String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
                         MapJoin<IdentityProviderEntity, String, String> configJoin = idp.joinMap("config");
                         Predicate configNamePredicate = builder.equal(configJoin.key(), key);
