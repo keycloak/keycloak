@@ -196,6 +196,13 @@ To enable logging using Syslog, add it to the list of activated log handlers as 
 
 <@kc.start parameters="--log=\"console,syslog\""/>
 
+=== Configuring the Syslog Application Name
+To set a different application name, add the `--log-syslog-app-name` option as follows:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-app-name=kc-p-itadmins"/>
+
+If not set, the application name defaults to `keycloak`.
+
 === Configuring the Syslog endpoint
 
 To configure the endpoint(_host:port_) of your centralized logging system, enter the following command and substitute the values with your specific values:

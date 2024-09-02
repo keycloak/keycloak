@@ -145,7 +145,6 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("The app name used when formatting the message in RFC5424 format.")
             .defaultValue("keycloak")
-            .hidden()
             .build();
 
     public static final Option<String> LOG_SYSLOG_PROTOCOL = new OptionBuilder<>("log-syslog-protocol", String.class)
