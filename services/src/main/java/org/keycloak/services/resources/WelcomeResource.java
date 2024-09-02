@@ -185,6 +185,7 @@ public class WelcomeResource {
             boolean adminConsoleEnabled = isAdminConsoleEnabled();
             Properties themeProperties = theme.getProperties();
             boolean redirectToAdmin = Boolean.parseBoolean(themeProperties.getProperty("redirectToAdmin", "false"));
+            boolean shouldBootstrap = Boolean.parseBoolean(themeProperties.getProperty("shouldBootstrap", "true"));
             URI adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build();
 
             // Redirect to the Administration Console if the administrative user already exists.
@@ -196,6 +197,7 @@ public class WelcomeResource {
             String commonPath = themeProperties.getProperty("common", "common/keycloak");
 
             map.put("bootstrap", bootstrap);
+            map.put("shouldBootstrap", shouldBootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
             map.put("properties", themeProperties);
             map.put("adminUrl", adminUrl);
