@@ -453,7 +453,7 @@ declare class Keycloak {
 	/**
 	* Whether the instance has been initialized by calling `.init()`.
 	*/
-	didInitialize: true
+	didInitialize: boolean;
 	
 	/**
 	* @private Undocumented.
