@@ -220,6 +220,18 @@ export default function EditUser() {
     }
   };
 
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "disableConfirmUserTitle",
+    messageKey: "disableConfirmUser",
+    continueButtonLabel: "disable",
+    onConfirm: () => {
+      save({
+        ...toUserFormFields(user!),
+        enabled: false,
+      });
+    },
+  });
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deleteConfirm",
     messageKey: "deleteConfirmCurrentUser",
@@ -269,6 +281,7 @@ export default function EditUser() {
     <>
       <ImpersonateConfirm />
       <DeleteConfirm />
+      <DisableConfirm />
       <ViewHeader
         titleKey={user.username!}
         className="kc-username-view-header"
@@ -307,12 +320,16 @@ export default function EditUser() {
             {t("delete")}
           </DropdownItem>,
         ]}
-        onToggle={(value) =>
-          save({
-            ...toUserFormFields(user),
-            enabled: value,
-          })
-        }
+        onToggle={(value) => {
+          if (!value) {
+            toggleDisableDialog();
+          } else {
+            save({
+              ...toUserFormFields(user),
+              enabled: value,
+            });
+          }
+        }}
         isEnabled={user.enabled}
       />
 
