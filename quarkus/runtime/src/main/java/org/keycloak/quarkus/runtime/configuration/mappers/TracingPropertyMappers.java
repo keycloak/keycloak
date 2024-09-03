@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigValue;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -97,23 +96,23 @@ public class TracingPropertyMappers {
         };
     }
 
-    private static void validateEndpoint(PropertyMapper<String> mapper, ConfigValue value) {
-        if (value == null || StringUtil.isBlank(value.getValue())) {
+    private static void validateEndpoint(String value) {
+        if (StringUtil.isBlank(value)) {
             throw new PropertyException("URL specified in 'tracing-endpoint' option must not be empty.");
         }
 
-        if (!isValidUrl(value.getValue())) {
+        if (!isValidUrl(value)) {
             throw new PropertyException("URL specified in 'tracing-endpoint' option is invalid.");
         }
     }
 
-    private static void validateRatio(PropertyMapper<Double> mapper, ConfigValue value) {
-        if (value == null || StringUtil.isBlank(value.getValue())) {
+    private static void validateRatio(String value) {
+        if (StringUtil.isBlank(value)) {
             throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must not be empty.");
         }
 
         try {
-            var ratio = Double.parseDouble(value.getValue());
+            var ratio = Double.parseDouble(value);
             if (ratio <= 0.0 || ratio > 1.0) {
                 throw new NumberFormatException();
             }

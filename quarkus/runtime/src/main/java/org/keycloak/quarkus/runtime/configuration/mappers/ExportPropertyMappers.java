@@ -69,7 +69,7 @@ public final class ExportPropertyMappers {
                         .build(),
                 fromOption(ExportOptions.USERS)
                         .to("kc.spi-export-dir-users-export-strategy")
-                        .validator(ExportPropertyMappers::validateUsersUsage)
+                        .addValidator(ExportPropertyMappers::validateUsersUsage)
                         .paramLabel("strategy")
                         .build(),
                 fromOption(ExportOptions.USERS_PER_FILE)
@@ -81,8 +81,6 @@ public final class ExportPropertyMappers {
     }
 
     private static void validateUsersUsage(PropertyMapper<?> mapper, ConfigValue value) {
-        mapper.validateExpectedValues(value, mapper::validateSingleValue);
-
         if (!isBlank(ExportOptions.FILE) && isBlank(ExportOptions.DIR)) {
             var sameFileIsSpecified = UsersExportStrategy.SAME_FILE.toString().toLowerCase().equals(value.getValue());
 

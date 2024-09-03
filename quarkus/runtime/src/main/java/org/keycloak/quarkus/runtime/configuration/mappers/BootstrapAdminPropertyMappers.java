@@ -35,7 +35,7 @@ public final class BootstrapAdminPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
-                        .appendValidateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
+                        .addValidateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.PASSWORD)
                         .paramLabel("password")
@@ -47,7 +47,7 @@ public final class BootstrapAdminPropertyMappers {
                         .build(),*/
                 fromOption(BootstrapAdminOptions.CLIENT_ID)
                         .paramLabel("client id")
-                        .appendValidateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
+                        .addValidateEnabled(BootstrapAdminPropertyMappers::isClientSecretSet, CLIENT_SECRET_SET)
                         .build(),
                 fromOption(BootstrapAdminOptions.CLIENT_SECRET)
                         .paramLabel("client secret")
