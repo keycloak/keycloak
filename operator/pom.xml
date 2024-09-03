@@ -36,12 +36,10 @@
 
 
     <dependencies>
-        <!-- sundrio -->
+        <!-- Sundrio -->
         <dependency>
             <groupId>io.sundr</groupId>
             <artifactId>builder-annotations</artifactId>
-            <!-- TODO: add version to parent pom? -->
-            <version>0.200.0</version>
             <scope>provided</scope>
         </dependency>
 
