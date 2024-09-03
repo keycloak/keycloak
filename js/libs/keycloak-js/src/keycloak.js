@@ -751,7 +751,7 @@ function Keycloak (config) {
         var timeLocal = new Date().getTime();
 
         if (oauth['kc_action_status']) {
-            kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status']);
+            kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status'], oauth['kc_action']);
         }
 
         if (error) {
@@ -1080,13 +1080,13 @@ function Keycloak (config) {
         var supportedParams;
         switch (kc.flow) {
             case 'standard':
-                supportedParams = ['code', 'state', 'session_state', 'kc_action_status', 'iss'];
+                supportedParams = ['code', 'state', 'session_state', 'kc_action_status', 'kc_action', 'iss'];
                 break;
             case 'implicit':
-                supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status', 'iss'];
+                supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status', 'kc_action', 'iss'];
                 break;
             case 'hybrid':
-                supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status', 'iss'];
+                supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status', 'kc_action', 'iss'];
                 break;
         }
 
@@ -1441,7 +1441,7 @@ function Keycloak (config) {
             var getCordovaRedirectUri = function() {
                 return kc.redirectUri || 'http://localhost';
             }
-            
+
             return {
                 login: function(options) {
                     var promise = createPromise();

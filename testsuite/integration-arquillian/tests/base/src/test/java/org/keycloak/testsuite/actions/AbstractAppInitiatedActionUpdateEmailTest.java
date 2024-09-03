@@ -79,6 +79,7 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 		emailUpdatePage.assertCurrent();
 		emailUpdatePage.cancel();
 
+		assertKcAction(UserModel.RequiredAction.UPDATE_EMAIL.name());
 		assertKcActionStatus("cancelled");
 
 		// assert nothing was updated in persistent store
