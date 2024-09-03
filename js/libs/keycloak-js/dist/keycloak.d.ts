@@ -451,6 +451,11 @@ declare class Keycloak {
 	timeSkew?: number;
 
 	/**
+	* Whether the instance has been initialized by calling `.init()`.
+	*/
+	didInitialize: boolean;
+	
+	/**
 	* @private Undocumented.
 	*/
 	loginRequired?: boolean;
@@ -531,8 +536,10 @@ declare class Keycloak {
 
 	/**
 	* Called when a AIA has been requested by the application.
+	* @param status the outcome of the required action
+	* @param action the alias name of the required action, e.g. UPDATE_PASSWORD, CONFIGURE_TOTP etc.
 	*/
-	onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
+	onActionUpdate?(status: 'success'|'cancelled'|'error', action?: string): void;
 
 	/**
 	* Called to initialize the adapter.

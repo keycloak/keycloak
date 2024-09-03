@@ -42,7 +42,7 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public abstract class ServerJWKTest {
+public class ServerJWKTest {
 
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();

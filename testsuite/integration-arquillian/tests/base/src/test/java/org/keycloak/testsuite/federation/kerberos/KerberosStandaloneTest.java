@@ -43,6 +43,7 @@ import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
@@ -271,7 +272,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         driver.navigate().to(changePasswordUrl.trim());
         loginPasswordUpdatePage.assertCurrent();
         loginPasswordUpdatePage.changePassword("resetPassword", "resetPassword");
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
+        events.poll();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
         infoPage.assertCurrent();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }

@@ -112,7 +112,12 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
                 continue;
             }
 
-            stage.dependsOn(commitReplace(updater, expiration));
+            if (updater.hasVersion()) {
+                stage.dependsOn(commitReplace(updater, expiration));
+                continue;
+            }
+
+            stage.dependsOn(commitCompute(updater, expiration));
         }
     }
 
@@ -219,10 +224,14 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     }
 
     @SuppressWarnings("unchecked")
+    private CompletionStage<Void> commitCompute(Updater<K, V> updater, Expiration expiration) {
+        return executeWithRetries(this::invokeCacheCompute, (RetryOperationSuccess<V, K, V>) TO_NULL, updater, expiration, 0);
+    }
+
     private CompletionStage<Void> handleBooleanResult(boolean success, Updater<K, V> updater, Expiration expiration) {
         return success ?
                 CompletableFutures.completedNull() :
-                executeWithRetries(this::invokeCacheCompute, (RetryOperationSuccess<V, K, V>) TO_NULL, updater, expiration, 0);
+                commitCompute(updater, expiration);
     }
 
     private CompletionStage<V> invokeCacheRemove(Updater<K, V> updater, Expiration ignored) {

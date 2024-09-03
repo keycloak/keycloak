@@ -106,7 +106,7 @@
                 <div class="${properties.kcContentWrapperClass!}">
                     <div class="${properties.kcLabelWrapperClass!} subtitle">
                         <span class="${properties.kcInputHelperTextItemTextClass!}">
-                          <span class="${properties.kcInputErrorMessageClass!}">*</span> ${msg("requiredFields")}
+                          <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
                         </span>
                     </div>
                 </div>
@@ -115,7 +115,9 @@
             <#if displayRequiredFields>
                 <div class="${properties.kcContentWrapperClass!}">
                     <div class="${properties.kcLabelWrapperClass!} subtitle">
-                        <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
+                        <span class="${properties.kcInputHelperTextItemTextClass!}">
+                          <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
+                        </span>
                     </div>
                     <div class="col-md-10">
                         <#nested "show-username">

@@ -1,8 +1,11 @@
 package org.keycloak.cookie;
 
 import java.net.URI;
+import java.util.regex.Pattern;
 
 class SecureContextResolver {
+
+    private static final Pattern LOCALHOST_IPV4 = Pattern.compile("127.\\d{1,3}.\\d{1,3}.\\d{1,3}");
 
     /**
      * Determines if a URI is potentially trustworthy, meaning a user agent can generally trust it to deliver data securely.
@@ -28,7 +31,7 @@ class SecureContextResolver {
         }
 
         // The host matches a CIDR notation of 127.0.0.0/8
-        if (host.matches("127.\\d{1,3}.\\d{1,3}.\\d{1,3}")) {
+        if (LOCALHOST_IPV4.matcher(host).matches()) {
             return true;
         }
 

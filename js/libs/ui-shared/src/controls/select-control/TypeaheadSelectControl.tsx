@@ -21,6 +21,7 @@ import {
   FieldValues,
   useFormContext,
 } from "react-hook-form";
+import { getRuleValue } from "../../utils/getRuleValue";
 import { FormLabel } from "../FormLabel";
 import {
   SelectControlOption,
@@ -57,6 +58,7 @@ export const TypeaheadSelectControl = <
   const [filterValue, setFilterValue] = useState("");
   const [focusedItemIndex, setFocusedItemIndex] = useState<number>(0);
   const textInputRef = useRef<HTMLInputElement>();
+  const required = getRuleValue(controller.rules?.required) === true;
 
   const filteredOptions = options.filter((option) =>
     getValue(option).toLowerCase().startsWith(filterValue.toLowerCase()),
@@ -147,7 +149,7 @@ export const TypeaheadSelectControl = <
     <FormLabel
       name={name}
       label={label}
-      isRequired={!!controller.rules?.required}
+      isRequired={required}
       error={get(errors, name)}
       labelIcon={labelIcon}
     >
@@ -236,12 +238,12 @@ export const TypeaheadSelectControl = <
                       )}
                   </TextInputGroupMain>
                   <TextInputGroupUtilities>
-                    {!!filterValue && (
+                    {(!!filterValue || field.value) && (
                       <Button
                         variant="plain"
                         onClick={() => {
-                          field.onChange(undefined);
                           setFilterValue("");
+                          field.onChange("");
                           textInputRef?.current?.focus();
                         }}
                         aria-label="Clear input value"

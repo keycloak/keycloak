@@ -125,6 +125,13 @@ It used to be difficult to regain access to a {project_name} instance when all a
 
 Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
 
+= Application Initiated Required Action redirect now contains kc_action Parameter
+
+The required action provider name is now returned via the `kc_action` parameter when redirecting back from an application initiated required action execution.
+This eases the detection of which required action was executed for a client. The outcome of the execution can be determined via the `kc_action_status` parameter.
+
+Note: This feature required changes to the Keycloak JS adapter, therefore it is recommended to upgrade to the latest version of the adapter if you want to make use of this feature.
+
 = Deprecations in `keycloak-services` module
 
 The class `UserSessionCrossDCManager` is deprecated and planned to be removed in a future version of {project_name}.
@@ -235,3 +242,10 @@ As part of this change the following related configuration options for the SPI h
 - `--spi-login-protocol-openid-connect-suppress-logout-confirmation-screen`
 
 If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.
+
+= New generalized event types for credentials
+
+There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events.
+The new event types are supported by the Email Event Listener.
+
+The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`

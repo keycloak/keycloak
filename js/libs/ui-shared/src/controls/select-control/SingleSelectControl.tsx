@@ -13,6 +13,7 @@ import {
   FieldValues,
   useFormContext,
 } from "react-hook-form";
+import { getRuleValue } from "../../utils/getRuleValue";
 import { FormLabel } from "../FormLabel";
 import {
   SelectControlProps,
@@ -38,12 +39,13 @@ export const SingleSelectControl = <
     formState: { errors },
   } = useFormContext();
   const [open, setOpen] = useState(false);
+  const required = getRuleValue(controller.rules?.required) === true;
 
   return (
     <FormLabel
       name={name}
       label={label}
-      isRequired={!!controller.rules?.required}
+      isRequired={required}
       error={get(errors, name)}
       labelIcon={labelIcon}
     >

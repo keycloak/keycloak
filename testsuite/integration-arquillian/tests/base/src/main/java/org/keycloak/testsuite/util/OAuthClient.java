@@ -81,6 +81,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
@@ -337,21 +338,12 @@ public class OAuthClient {
 
     public void linkUsers(String username, String password) {
         WaitUtils.waitForPageToLoad();
-        WebElement linkAccountButton = driver.findElement(By.name("linkAccount"));
+        WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
         waitUntilElement(linkAccountButton).is().clickable();
         linkAccountButton.click();
 
         WaitUtils.waitForPageToLoad();
-        WebElement usernameInput = driver.findElement(By.name("username"));
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-        WebElement passwordInput = driver.findElement(By.name("password"));
-        passwordInput.clear();
-        passwordInput.sendKeys(password);
-
-        WebElement loginButton = driver.findElement(By.name("kc-login"));
-        waitUntilElement(loginButton).is().clickable();
-        loginButton.click();
+        fillLoginForm(username, password, false);
     }
 
     public AuthorizationEndpointResponse doLogin(UserRepresentation user) {
@@ -373,17 +365,31 @@ public class OAuthClient {
     public void fillLoginForm(String username, String password, boolean rememberMe) {
         WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
+        WebElement usernameField = driver.findElement(By.name("username"));
+
         try {
-            driver.findElement(By.name("username")).sendKeys(username);
-            driver.findElement(By.name("password")).sendKeys(password);
-            if (rememberMe) {
-                driver.findElement(By.id("rememberMe")).click();
-            }
-            driver.findElement(By.name("login")).click();
+            usernameField.clear();
+            usernameField.sendKeys(username);
+        } catch (NoSuchElementException nse) {
+            // we might have clicked on a social login icon and might need to wait for the login to appear.
+            // avoid waiting by default to avoid the delay.
+            WaitUtils.waitUntilElement(usernameField).is().present();
+            usernameField.clear();
         } catch (Throwable t) {
             logger.error("Unexpected page was loaded\n{}", src);
             throw t;
         }
+
+        WebElement passwordField = driver.findElement(By.name("password"));
+        passwordField.clear();
+        passwordField.sendKeys(password);
+
+        if (rememberMe) {
+            driver.findElement(By.id("rememberMe")).click();
+        }
+
+        driver.findElement(By.name("login")).click();
+
     }
 
     private void updateAccountInformation(String username, String email, String firstName, String lastName) {

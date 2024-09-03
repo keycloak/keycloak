@@ -22,19 +22,21 @@
     <div class="pf-v5-c-login">
       <div class="pf-v5-c-login__container">
         <header class="pf-v5-c-login__header">
-          <img class="pf-v5-c-brand" src="${resourcesPath}/logo.svg" alt="${productName} Logo">
+          <div class="pf-v5-c-brand">
+            <img src="${resourcesPath}/logo.svg" alt="${productName} Logo" class="kc-brand">
+          </div>
         </header>
         <#if adminConsoleEnabled && (bootstrap || successMessage?has_content)>
           <main class="pf-v5-c-login__main">
             <header class="pf-v5-c-login__main-header">
               <#if localUser>
-                <h1 class="pf-v5-c-title pf-m-3xl">Create an administrative user</h1>
+                <h1 class="pf-v5-c-title pf-m-2xl">Create a temporary administrative user</h1>
                 <#if !successMessage?has_content>
-                  <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create an administrative user.</p>
+                  <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create a temporary administrative user.  Later, to harden security, create a new permanent administrative user and delete the temporary user that was created during this setup.</p>
                 </#if>
               <#else>
                 <h1 class="pf-v5-c-title pf-m-3xl">Local access required</h1>
-                <p class="pf-v5-c-login__main-header-desc">You will need local access to create the administrative user.</p>
+                <p class="pf-v5-c-login__main-header-desc">You will need local access to create the temporary administrative user.</p>
               </#if>
             </header>
             <div class="pf-v5-c-login__main-body">
@@ -110,7 +112,7 @@
                     </div>
                   </form>
                 <#else>
-                  <p>To create the administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KC_BOOTSTRAP_ADMIN_USERNAME</code> and <code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> when starting the server.</p>
+                  <p>To create the temporary administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KC_BOOTSTRAP_ADMIN_USERNAME</code> and <code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> when starting the server.</p>
                 </#if>
               </#if>
             </div>

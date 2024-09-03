@@ -8,3 +8,10 @@
   grid-template-areas: "header" "main";
   --pf-v5-c-login__container--xl--GridTemplateColumns: minmax(auto, 34rem);
 }
+
+.kc-brand {
+    height: 63px;
+    width: 300px;
+    display: block;
+    margin: 0 auto;
+}

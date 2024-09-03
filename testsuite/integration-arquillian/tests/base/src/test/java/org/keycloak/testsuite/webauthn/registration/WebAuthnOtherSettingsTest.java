@@ -86,6 +86,14 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
                 .assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userId)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
+                        ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
+                        : WebAuthnRegisterFactory.PROVIDER_ID)
+                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
+                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
+                .assertEvent();
 
         final String credentialType = getCredentialType();
         // Soft token in Firefox does not increment counter

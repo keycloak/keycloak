@@ -44,7 +44,7 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
     public static final String ID = "email";
 
     static {
-        Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP);
+        Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP, EventType.UPDATE_CREDENTIAL, EventType.REMOVE_CREDENTIAL);
     }
 
     private Set<EventType> includedEvents = new HashSet<>();

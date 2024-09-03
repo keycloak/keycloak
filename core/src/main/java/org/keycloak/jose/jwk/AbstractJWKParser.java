@@ -41,10 +41,13 @@ public abstract class AbstractJWKParser {
     }
 
     public PublicKey toPublicKey() {
+        if (jwk == null) {
+            throw new IllegalStateException("Not possible to convert to the publicKey. The jwk is not set");
+        }
         String keyType = jwk.getKeyType();
-        if (keyType.equals(KeyType.RSA)) {
+        if (KeyType.RSA.equals(keyType)) {
             return createRSAPublicKey();
-        } else if (keyType.equals(KeyType.EC)) {
+        } else if (KeyType.EC.equals(keyType)) {
             return createECPublicKey();
 
         } else {
@@ -87,7 +90,7 @@ public abstract class AbstractJWKParser {
         }
 
         try {
-            
+
             ECPoint point = new ECPoint(x, y);
             ECParameterSpec params = CryptoIntegration.getProvider().createECParams(name);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);

@@ -139,7 +139,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     public Predicate<? super UserSessionModel> toModelPredicate() {
 
         return (Predicate<UserSessionModel>) entity ->
-                realm.equals(entity.getRealm().getId()) &&
+                entity != null && realm.equals(entity.getRealm().getId()) &&
                         (user == null || entity.getUser().getId().equals(user)) &&
                         (client == null || (entity.getAuthenticatedClientSessions() != null && entity.getAuthenticatedClientSessions().containsKey(client))) &&
                         (brokerSessionId == null || brokerSessionId.equals(entity.getBrokerSessionId())) &&

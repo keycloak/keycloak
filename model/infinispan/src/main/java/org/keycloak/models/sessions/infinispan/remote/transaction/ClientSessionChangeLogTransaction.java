@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ClientSessionQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
@@ -40,10 +41,8 @@ public class ClientSessionChangeLogTransaction extends RemoteChangeLogTransactio
     /**
      * Wraps a Query project results, where the first argument is the entity, and the second the version.
      */
-    public void wrapFromProjection(Object[] projection) {
-        assert projection.length == 2;
-        RemoteAuthenticatedClientSessionEntity entity = (RemoteAuthenticatedClientSessionEntity) projection[0];
-        wrap(entity.createCacheKey(), entity, (long) projection[1]);
+    public void wrapFromProjection(RemoteAuthenticatedClientSessionEntity entity) {
+        wrap(entity.createCacheKey(), entity, Updater.NO_VERSION);
     }
 
     /**

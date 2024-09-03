@@ -61,6 +61,7 @@ public class UPConfigUtils {
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
     private static final Set<String> PSEUDOROLES = new HashSet<>();
+    public static final Pattern ATTRIBUTE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9\\._\\-]+");
 
     static {
         PSEUDOROLES.add(ROLE_ADMIN);
@@ -239,7 +240,7 @@ public class UPConfigUtils {
      * @return
      */
     public static boolean isValidAttributeName(String attributeName) {
-        return Pattern.matches("[a-zA-Z0-9\\._\\-]+", attributeName);
+        return ATTRIBUTE_NAME_PATTERN.matcher(attributeName).matches();
     }
 
     /**

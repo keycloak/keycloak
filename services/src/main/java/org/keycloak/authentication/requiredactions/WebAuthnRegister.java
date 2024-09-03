@@ -33,6 +33,8 @@ import jakarta.ws.rs.core.Response;
 import com.webauthn4j.WebAuthnRegistrationManager;
 import com.webauthn4j.data.AuthenticatorTransport;
 import org.jboss.logging.Logger;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticatorUtil;
@@ -184,6 +186,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         return WebAuthnCredentialProviderFactory.PROVIDER_ID;
     }
 
+    /**
+     * Method to provide removal and deprecation hint
+     * @deprecated For compatibility sake as long as we use @link {@link EventType#UPDATE_PASSWORD} , {@link EventType#UPDATE_TOTP} a.s.o.
+     */
+    @Deprecated
+    protected EventType getOriginalEventTypeForBackwardsCompatibility(RequiredActionContext context) {
+        return context.getEvent().getEvent().getType();
+    }
+
     @Override
     public void processAction(RequiredActionContext context) {
 
@@ -195,12 +206,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             return;
         }
 
-        context.getEvent().detail(Details.CREDENTIAL_TYPE, getCredentialType());
+        EventType originalEventType = getOriginalEventTypeForBackwardsCompatibility(context);
+        context.getEvent()
+                .event(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, getCredentialType());
 
         // receive error from navigator.credentials.create()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
         if (errorMsgFromWebAuthnApi != null && !errorMsgFromWebAuthnApi.isEmpty()) {
-            setErrorResponse(context, WEBAUTHN_ERROR_REGISTER_VERIFICATION, errorMsgFromWebAuthnApi);
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTER_VERIFICATION, errorMsgFromWebAuthnApi, originalEventType);
             return;
         }
 
@@ -269,14 +283,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, publicKeyCredentialId)
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, label)
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid);
+            context.getEvent().clone().event(originalEventType).success();
             context.success();
         } catch (WebAuthnException wae) {
             if (logger.isDebugEnabled()) logger.debug(wae.getMessage(), wae);
-            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage());
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage(), originalEventType);
             return;
         } catch (Exception e) {
             if (logger.isDebugEnabled()) logger.debug(e.getMessage(), e);
-            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, e.getMessage());
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, e.getMessage(), originalEventType);
             return;
         }
     }
@@ -387,15 +402,17 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // NOP
     }
 
-    private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage) {
+    private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage, @Deprecated final EventType originalEventType) {
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTER_VERIFICATION:
             logger.warnv("WebAuthn API .create() response validation failure. {0}", errorMessage);
-            context.getEvent()
+            EventBuilder registerVerificationEvent = context.getEvent()
                 .detail(REG_ERR_LABEL, errorCase)
-                .detail(REG_ERR_DETAIL_LABEL, errorMessage)
-                .error(Errors.INVALID_USER_CREDENTIALS);
+                .detail(REG_ERR_DETAIL_LABEL, errorMessage);
+            EventBuilder deprecatedRegisterVerificationEvent = registerVerificationEvent.clone().event(originalEventType);
+            registerVerificationEvent.error(Errors.INVALID_USER_CREDENTIALS);
+            deprecatedRegisterVerificationEvent.error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = context.form()
                 .setError(errorCase, errorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
@@ -404,10 +421,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             break;
         case WEBAUTHN_ERROR_REGISTRATION:
             logger.warn(errorCase);
-            context.getEvent()
-                .detail(REG_ERR_LABEL, errorCase)
-                .detail(REG_ERR_DETAIL_LABEL, errorMessage)
-                .error(Errors.INVALID_REGISTRATION);
+            EventBuilder registrationEvent = context.getEvent()
+                    .detail(REG_ERR_LABEL, errorCase)
+                    .detail(REG_ERR_DETAIL_LABEL, errorMessage);
+            EventBuilder deprecatedRegistrationEvent = registrationEvent.clone().event(originalEventType);
+            deprecatedRegistrationEvent.error(Errors.INVALID_REGISTRATION);
+            registrationEvent.error(Errors.INVALID_REGISTRATION);
             errorResponse = context.form()
                 .setError(errorCase, errorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
