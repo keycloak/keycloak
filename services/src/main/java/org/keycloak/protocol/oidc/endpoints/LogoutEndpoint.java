@@ -554,7 +554,7 @@ public class LogoutEndpoint {
                     Response.Status.BAD_REQUEST);
         }
 
-        LogoutTokenValidationCode validationCode = tokenManager.verifyLogoutToken(session, realm, encodedLogoutToken);
+        LogoutTokenValidationCode validationCode = tokenManager.verifyLogoutToken(session, encodedLogoutToken);
         if (!validationCode.equals(LogoutTokenValidationCode.VALIDATION_SUCCESS)) {
             String errorMessage = validationCode.getErrorMessage();
             event.detail(Details.REASON, errorMessage);
@@ -565,8 +565,7 @@ public class LogoutEndpoint {
 
         LogoutToken logoutToken = tokenManager.toLogoutToken(encodedLogoutToken).get();
 
-        Stream<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(realm,
-                session, encodedLogoutToken, logoutToken)
+        Stream<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(session, encodedLogoutToken, logoutToken)
                 .map(idp -> idp.getConfig().getAlias());
 
         boolean logoutOfflineSessions = Boolean.parseBoolean(logoutToken.getEvents()
