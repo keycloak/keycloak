@@ -451,6 +451,11 @@ declare class Keycloak {
 	timeSkew?: number;
 
 	/**
+	* Whether the instance has been initialized by calling `.init()`.
+	*/
+	didInitialize: boolean;
+	
+	/**
 	* @private Undocumented.
 	*/
 	loginRequired?: boolean;
