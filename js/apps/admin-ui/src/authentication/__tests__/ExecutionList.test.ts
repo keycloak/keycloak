@@ -225,4 +225,28 @@ describe("ExecutionList", () => {
       },
     ]);
   });
+
+  it("find item by index", () => {
+    //given
+    const list = [
+      { id: "0", level: 0, index: 0 },
+      { id: "1", level: 0, index: 1 },
+      { id: "2", level: 0, index: 2 },
+      { id: "3", level: 0, index: 3 },
+      { id: "4", level: 1, index: 0 },
+      { id: "5", level: 1, index: 1 },
+      { id: "6", level: 2, index: 0 },
+      { id: "7", level: 2, index: 1 },
+      { id: "8", level: 0, index: 4 },
+      { id: "9", level: 0, index: 5 },
+      { id: "10", level: 0, index: 6 },
+    ];
+
+    //when
+    const result = new ExecutionList(list);
+    const item = result.findExecution(10);
+
+    //then
+    expect(item).toEqual({ id: "10", level: 0, index: 6 });
+  });
 });
