@@ -23,7 +23,7 @@
       <div class="pf-v5-c-login__container">
         <header class="pf-v5-c-login__header">
           <div class="pf-v5-c-brand">
-            <img src="${resourcesPath}/logo.svg" alt="${productName} Logo" style="height: 63px;width: 300px;display: block;margin: 0 auto;">
+            <img src="${resourcesPath}/logo.svg" alt="${productName} Logo" class="kc-brand">
           </div>
         </header>
         <#if adminConsoleEnabled && (bootstrap || successMessage?has_content)>
