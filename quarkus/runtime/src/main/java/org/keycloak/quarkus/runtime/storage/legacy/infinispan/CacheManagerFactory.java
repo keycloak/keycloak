@@ -286,8 +286,9 @@ public class CacheManagerFactory {
             // remove all distributed caches
             logger.debug("Removing all distributed caches.");
             for (String cacheName : CLUSTERED_CACHE_NAMES) {
-               if (hasRemoteStore(builders.get(cacheName)))
-                  logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE.getKey());
+               if (hasRemoteStore(builders.get(cacheName))) {
+                   logger.warnf("remote-store configuration detected for cache '%s'. Explicit cache configuration ignored when using '%s' or '%s' Features.", cacheName, Profile.Feature.REMOTE_CACHE.getKey(), Profile.Feature.MULTI_SITE.getKey());
+               }
                builders.remove(cacheName);
             }
             // Disable JGroups, not required when the data is stored in the Remote Cache.
@@ -302,9 +303,7 @@ public class CacheManagerFactory {
             configureSessionsCaches(builder);
         }
 
-        if (!Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC)) {
-            checkNoRemoteStores(builder);
-        }
+        checkForRemoteStores(builder);
 
         var start = isStartEagerly();
         return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
@@ -439,11 +438,23 @@ public class CacheManagerFactory {
         }
     }
 
-    private static void checkNoRemoteStores(ConfigurationBuilderHolder builder) {
-        if (builder.getNamedConfigurationBuilders().values().stream().anyMatch(CacheManagerFactory::hasRemoteStore)) {
-            logger.fatalf("Remote stores are not supported for embedded caches and user sessions are persisted in the database by default.%nFor multi-site (cross-dc) support, enable %s",
-                    Profile.Feature.MULTI_SITE.getKey());
-            throw new RuntimeException("Remote store is not supported.");
+    private static void checkForRemoteStores(ConfigurationBuilderHolder builder) {
+        if (Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC) && Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+            logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
+                    Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.MULTI_SITE.getKey());
+            throw new RuntimeException("The features " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " and " + Profile.Feature.MULTI_SITE.getKey() + " must not be enabled at the same time.");
+        }
+        if (Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+            logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
+                    Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.REMOTE_CACHE.getKey());
+            throw new RuntimeException("The features " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " and " + Profile.Feature.REMOTE_CACHE.getKey() + " must not be enabled at the same time.");
+        }
+        if (!Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC)) {
+            if (builder.getNamedConfigurationBuilders().values().stream().anyMatch(CacheManagerFactory::hasRemoteStore)) {
+                logger.fatalf("Remote stores are not supported for embedded caches as feature %s is not enabled. This feature is disabled by default as it is now deprecated.%nFor keeping user sessions across restarts, use feature %s which is enabled by default.%nFor multi-site (cross-dc) support, enable %s.",
+                        Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), Profile.Feature.MULTI_SITE.getKey());
+                throw new RuntimeException("Remote store is not supported as feature " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " is not enabled.");
+            }
         }
     }
 
