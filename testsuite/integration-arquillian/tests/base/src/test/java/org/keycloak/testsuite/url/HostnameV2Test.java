@@ -180,7 +180,7 @@ public class HostnameV2Test extends AbstractKeycloakTest {
 
     @Test
     public void testInvalidHostnameUrl() {
-        testStartupFailure("Provided hostname is neither a plain hostname or a valid URL",
+        testStartupFailure("Provided hostname is neither a plain hostname nor a valid URL",
                 "htt://127.0.0.1.nip.io", null, null, true);
     }
 
