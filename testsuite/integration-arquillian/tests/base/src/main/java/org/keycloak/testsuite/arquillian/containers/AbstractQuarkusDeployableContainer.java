@@ -187,6 +187,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--log-level=" + System.getProperty("auth.server.quarkus.log-level"));
         }
 
+        if (System.getProperty("auth.server.host") != null) {
+            commands.add("-Dauth.server.host=" + System.getProperty("auth.server.host"));
+        }
+
         commands.addAll(getAdditionalBuildArgs());
 
         commands = configureArgs(commands);
