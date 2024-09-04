@@ -26,6 +26,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.services.ErrorResponseException;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;

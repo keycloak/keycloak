@@ -20,6 +20,7 @@ package org.keycloak.partialimport;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * Main interface for PartialImport handlers.
