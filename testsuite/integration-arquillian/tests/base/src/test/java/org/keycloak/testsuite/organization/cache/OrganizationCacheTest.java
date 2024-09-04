@@ -20,6 +20,7 @@ package org.keycloak.testsuite.organization.cache;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgMemberCount;
 
 import java.util.List;
@@ -30,6 +31,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -37,7 +39,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.CachedCount;
+import org.keycloak.models.cache.infinispan.idp.IdentityProviderListQuery;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
@@ -277,6 +283,84 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             cached = realmCache.getCache().get(cachedKey, CachedCount.class);
             assertNotNull(cached);
             assertEquals(0, cached.getCount());
+        });
+    }
+
+    @Test
+    public void testCacheIDPByOrg() {
+        IdentityProviderRepresentation idpRep = testRealm().identityProviders().get("orga-identity-provider").toRepresentation();
+        idpRep.setInternalId(null);
+        idpRep.setOrganizationId(null);
+        idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+
+        for (int i = 0; i < 10; i++) {
+            final String alias = "org-idp-" + i;
+            idpRep.setAlias(alias);
+            testRealm().identityProviders().create(idpRep).close();
+            getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
+        }
+
+        String orgaId = testRealm().organizations().getAll().get(0).getId();
+        String orgbId = testRealm().organizations().getAll().get(1).getId();
+
+        for (int i = 0; i < 5; i++) {
+            final String aliasA = "org-idp-" + i;
+            final String aliasB = "org-idp-" + (i + 5);
+            testRealm().organizations().get(orgaId).identityProviders().addIdentityProvider(aliasA);
+            testRealm().organizations().get(orgbId).identityProviders().addIdentityProvider(aliasB);
+        }
+
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            IdentityProviderStorageProvider idpProvider = session.getProvider(IdentityProviderStorageProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+
+            String cachedKeyA = cacheKeyOrgId(realm, orgaId);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            IdentityProviderListQuery identityProviderListQuery = realmCache.getCache().get(cachedKeyA, IdentityProviderListQuery.class);
+            assertNull(identityProviderListQuery);
+            String cachedKeyB = cacheKeyOrgId(realm, orgbId);
+            identityProviderListQuery = realmCache.getCache().get(cachedKeyB, IdentityProviderListQuery.class);
+            assertNull(identityProviderListQuery);
+
+
+            idpProvider.getByOrganization(orgaId, null, null);
+            identityProviderListQuery = realmCache.getCache().get(cachedKeyA, IdentityProviderListQuery.class);
+            assertNotNull(identityProviderListQuery);
+            assertEquals(6, identityProviderListQuery.getIDPs("-1.-1").size());
+
+            idpProvider.getByOrganization(orgbId, 0, 2);
+            idpProvider.getByOrganization(orgbId, 2, 6);
+            identityProviderListQuery = realmCache.getCache().get(cachedKeyB, IdentityProviderListQuery.class);
+            assertNotNull(identityProviderListQuery);
+            assertEquals(2, identityProviderListQuery.getIDPs("0.2").size());
+            assertEquals(4, identityProviderListQuery.getIDPs("2.6").size());
+        });
+
+        // update orga which should invalidate getByOrganization IDP cache
+        OrganizationRepresentation rep = testRealm().organizations().get(orgaId).toRepresentation();
+        OrganizationDomainRepresentation orgDomainRep = new OrganizationDomainRepresentation();
+        orgDomainRep.setName("orgaa.org");
+        rep.addDomain(orgDomainRep);
+        testRealm().organizations().get(orgaId).update(rep).close();
+
+        // update an IDP that is associated with orgb, that should invalidate getByOrganization IDP cache
+        idpRep = testRealm().identityProviders().get("org-idp-5").toRepresentation();
+        idpRep.setDisplayName("something");
+        testRealm().identityProviders().get("org-idp-5").update(idpRep);
+
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            IdentityProviderStorageProvider idpProvider = session.getProvider(IdentityProviderStorageProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+
+            String cachedKeyA = cacheKeyOrgId(realm, orgaId);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            IdentityProviderListQuery identityProviderListQuery = realmCache.getCache().get(cachedKeyA, IdentityProviderListQuery.class);
+            assertNull(identityProviderListQuery);
+
+            String cachedKeyB = cacheKeyOrgId(realm, orgbId);
+            identityProviderListQuery = realmCache.getCache().get(cachedKeyB, IdentityProviderListQuery.class);
+            assertNull(identityProviderListQuery);
         });
     }
 }
