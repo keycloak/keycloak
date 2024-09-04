@@ -111,13 +111,28 @@ As a consequence of the above changes, the following changes are required to you
 
 . `distributed-cache` definitions provided by a cache configuration file are ignored when the `multi-site` feature is enabled,
 so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
-or Keycloak CR as outlined in the blueprints. If a `remote-store` configuration is detected in the cache configuration file,
-then a warning will be raised in the {project_name} logs.
+or Keycloak CR as outlined in the blueprints. All `remote-store` configurations must be removed from the cache configuration file.
 
 . Review your current cache configurations in the external {jdgserver_name} and update them with those outlined in the latest version of the {project_name}'s documentation.
 
 . While previous LoadBalancer configurations will continue to work with {project_name}, consider upgrading
 an existing Route53 configurations to avoid prolonged failover times due to client side DNS caching.
+
+= Deprecating remote-store in embedded Infinispan caches
+
+In {project_name} versions 24 to 25 to achieve a multi-site setup, a remote store in embedded Infinispan caches was configured.
+Manual configurations for the cache XML for multi-site were discouraged as CLI options to configure the caches are available.
+With the upgraded multi-site feature in 26, the same CLI options exist, but don't use embedded Infinispan caches anymore.
+
+In the community, remote stores for embedded Infinispan caches were used in some setups to keep user sessions when the {project_name} cluster was shut down or upgraded.
+This was never supported, documented or tested.
+As a fully supported alternative, the persistent user sessions feature should be used instead.
+
+Due to this, using remote caches in embedded Infinispan caches is now marked as deprecated with the plan to remove it.
+As it was never used outside multi-site setups that now achieve this by different means, it might be removed even in a future minor release.
+To be able to use the deprecated feature, you need to enable the feature `remote-store-cross-dc` or {project_name} will not start.
+
+There is an experimental feature `remote-cache` which allows leveraging the new multi-site mechanisms to store session related data in an external {jdgserver_name} server also for single site setups.
 
 = Admin Bootstrapping and Recovery
 
