@@ -38,9 +38,8 @@ final class ProxyPropertyMappers {
                         .build(),
                 fromOption(ProxyOptions.PROXY_TRUSTED_ADDRESSES)
                         .to("quarkus.http.proxy.trusted-proxies")
-                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
-                                (c, v) -> validateAddress(v)))
-                        .appendValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
+                        .validator(ProxyPropertyMappers::validateAddress)
+                        .addValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
                         .paramLabel("trusted proxies")
                         .build()
         };

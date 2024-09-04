@@ -94,8 +94,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_LEVEL)
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
-                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
-                                (c, v) -> validateLogLevel(v)))
+                        .validator(LoggingPropertyMappers::validateLogLevel)
                         .paramLabel("category:level")
                         .build(),
                 // Syslog
