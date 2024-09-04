@@ -14,7 +14,7 @@
     <artifactId>keycloak-account-ui</artifactId>
 
     <name>Keycloak Account UI</name>
-    <description>The user inferface to manage an account on the Keycloak server.</description>
+    <description>The user interface to manage an account on the Keycloak server.</description>
 
     <profiles>
         <profile>

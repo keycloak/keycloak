@@ -14,7 +14,7 @@
     <artifactId>keycloak-admin-ui</artifactId>
 
     <name>Keycloak Admin UI</name>
-    <description>The user inferface to administrate the Keycloak server.</description>
+    <description>The user interface to administrate the Keycloak server.</description>
 
     <profiles>
         <profile>
