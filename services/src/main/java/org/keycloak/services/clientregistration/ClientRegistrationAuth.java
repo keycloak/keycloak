@@ -305,20 +305,22 @@ public class ClientRegistrationAuth {
                         userSession = sessions.getOfflineUserSession(realm, sid);
                     }
 
-                    //get client session
-                    ClientModel client = realm.getClientByClientId(issuedFor);
-                    AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                    if (userSession != null) {
+                        //get client session
+                        ClientModel client = realm.getClientByClientId(issuedFor);
+                        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
-                    //set realm roles
-                    ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, (String) jwt.getOtherClaims().get("scope"), session);
-                    Map<String, AccessToken.Access> resourceAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
+                        //set realm roles
+                        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, (String) jwt.getOtherClaims().get("scope"), session);
+                        Map<String, AccessToken.Access> resourceAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
 
-                    Map<String, Map<String, List<String>>> resourceAccessMap = new HashMap<>();
-                    resourceAccess.forEach((key, access) ->
-                            resourceAccessMap.put(key, Map.of("roles", new ArrayList<>(access.getRoles())))
-                    );
-                    jwt.setSubject(userSession.getUser().getId());
-                    jwt.getOtherClaims().put("resource_access", resourceAccessMap);
+                        Map<String, Map<String, List<String>>> resourceAccessMap = new HashMap<>();
+                        resourceAccess.forEach((key, access) ->
+                                resourceAccessMap.put(key, Map.of("roles", new ArrayList<>(access.getRoles())))
+                        );
+                        jwt.setSubject(userSession.getUser().getId());
+                        jwt.getOtherClaims().put("resource_access", resourceAccessMap);
+                    }
                 }
             }
             return hasRoleInToken(roles);
@@ -326,24 +328,6 @@ public class ClientRegistrationAuth {
         } catch (Throwable t) {
             return false;
         }
-    }
-
-    private boolean hasRoleInModel(String[] roles) {
-        ClientModel roleNamespace;
-        UserModel user = session.users().getUserById(realm, jwt.getSubject());
-        if (user == null) {
-            return false;
-        }
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            roleNamespace = realm.getMasterAdminClient();
-        } else {
-            roleNamespace = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-        }
-        for (String role : roles) {
-            RoleModel roleModel = roleNamespace.getRole(role);
-            if (user.hasRole(roleModel)) return true;
-        }
-        return false;
     }
 
     private boolean hasRoleInToken(String[] role) {

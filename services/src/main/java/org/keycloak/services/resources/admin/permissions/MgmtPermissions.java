@@ -40,17 +40,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.utils.RoleUtils;
-import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
-import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
-import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -122,16 +116,18 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
                 userSession = sessions.getOfflineUserSession(adminsRealm, auth.getToken().getSessionId());
             }
 
-            //get client session
-            ClientModel client = adminsRealm.getClientByClientId(issuedFor);
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+            if (userSession != null) {
+                //get client session
+                ClientModel client = adminsRealm.getClientByClientId(issuedFor);
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
-            //set realm roles
-            ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, auth.getToken().getScope(), session);
-            AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
-            Map<String, AccessToken.Access> clientAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
-            accessToken.setRealmAccess(realmAccess);
-            accessToken.setResourceAccess(clientAccess);
+                //set realm roles
+                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, auth.getToken().getScope(), session);
+                AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
+                Map<String, AccessToken.Access> clientAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
+                accessToken.setRealmAccess(realmAccess);
+                accessToken.setResourceAccess(clientAccess);
+            }
         }
         this.identity = new KeycloakIdentity(accessToken, session, adminsRealm);
     }
