@@ -180,7 +180,7 @@ export default function ClientScopesSection() {
           addError("deleteErrorClientScope", error);
         }
       } else {
-        addError(t("notAllowedToDeleteAllClientScopes"), "error");
+        addAlert(t("notAllowedToDeleteAllClientScopes"), AlertVariant.danger);
       }
     },
   });

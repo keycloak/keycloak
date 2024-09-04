@@ -75,6 +75,5 @@
                 </div>
             </div>
         </form>
-        <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     </#if>
 </@layout.registrationLayout>

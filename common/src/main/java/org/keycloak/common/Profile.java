@@ -120,7 +120,9 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.PREVIEW),
 
-        PASSKEYS("Passkeys", Type.PREVIEW)
+        PASSKEYS("Passkeys", Type.PREVIEW),
+
+        REMOTE_STORE_CROSS_DC("Support for remote-store in embedded Infinispan caches", Type.DEPRECATED)
         ;
 
         private final Type type;

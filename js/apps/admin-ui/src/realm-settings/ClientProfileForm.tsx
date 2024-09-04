@@ -172,7 +172,7 @@ export default function ClientProfileForm() {
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
           navigate(toClientProfile({ realm, profileName }));
         } catch (error) {
-          addError(t("deleteExecutorError"), error);
+          addError("deleteExecutorError", error);
         }
       } else {
         try {
@@ -180,7 +180,7 @@ export default function ClientProfileForm() {
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
           navigate(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
-          addError(t("deleteClientError"), error);
+          addError("deleteClientError", error);
         }
       }
     },

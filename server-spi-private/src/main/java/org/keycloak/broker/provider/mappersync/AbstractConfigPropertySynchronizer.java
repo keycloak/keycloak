@@ -32,40 +32,14 @@ import java.util.function.Consumer;
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public abstract class AbstractConfigPropertySynchronizer<T extends ProviderEvent> implements ConfigSynchronizer<T> {
+
     private static final Logger LOG = Logger.getLogger(AbstractConfigPropertySynchronizer.class);
 
-    protected abstract String getConfigPropertyName();
+    protected void logEventProcessed(String configPropertyName, String previousValue, String newValue, String realmName,
+                                     String mapperName, String idpAlias) {
+        LOG.infof(
+                "Reference of type '%s' changed from '%s' to '%s' in realm '%s'. Adjusting the reference from mapper '%s' of IDP '%s'.",
+                configPropertyName, previousValue, newValue, realmName, mapperName, idpAlias);
 
-    protected abstract void updateConfigPropertyIfNecessary(T event, String currentPropertyValue,
-            Consumer<String> propertyUpdater);
-
-    @Override
-    public final void handleEvent(T event, IdentityProviderMapperModel idpMapper) {
-        Map<String, String> config = idpMapper.getConfig();
-        if (config == null) {
-            return;
-        }
-
-        String configPropertyName = getConfigPropertyName();
-        String configuredValue = config.get(configPropertyName);
-        if (StringUtil.isBlank(configuredValue)) {
-            return;
-        }
-
-        Consumer<String> propertyUpdater = value -> config.put(configPropertyName, value);
-
-        updateConfigPropertyIfNecessary(event, configuredValue, propertyUpdater);
-
-        final String newConfiguredValue = config.get(configPropertyName);
-        if (!configuredValue.equals(newConfiguredValue)) {
-            RealmModel realm = extractRealm(event);
-
-            LOG.infof(
-                    "Reference of type '%s' changed from '%s' to '%s' in realm '%s'. Adjusting the reference from mapper '%s' of IDP '%s'.",
-                    configPropertyName, configuredValue, newConfiguredValue, realm.getName(), idpMapper.getName(),
-                    idpMapper.getIdentityProviderAlias());
-            getKeycloakSession(event).identityProviders().updateMapper(idpMapper);
-        }
     }
-
 }

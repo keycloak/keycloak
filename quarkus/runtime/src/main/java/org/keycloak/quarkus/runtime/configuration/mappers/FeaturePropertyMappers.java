@@ -23,8 +23,7 @@ public final class FeaturePropertyMappers {
         return new PropertyMapper[] {
                 fromOption(FeatureOptions.FEATURES)
                         .paramLabel("feature")
-                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
-                                (c, v) -> validateEnabledFeature(v)))
+                        .validator(FeaturePropertyMappers::validateEnabledFeature)
                         .build(),
                 fromOption(FeatureOptions.FEATURES_DISABLED)
                         .paramLabel("feature")

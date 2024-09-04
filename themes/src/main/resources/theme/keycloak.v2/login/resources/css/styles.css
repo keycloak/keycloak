@@ -80,3 +80,8 @@ div.kc-logo-text span {
     color: var(--pf-v5-global--Color--light-100) !important;
     text-align: center;
 }
+
+hr {
+    margin-top: var(--pf-v5-global--spacer--sm);
+    margin-bottom: var(--pf-v5-global--spacer--md);
+}

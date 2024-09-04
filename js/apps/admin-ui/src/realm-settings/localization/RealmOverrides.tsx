@@ -225,7 +225,7 @@ export const RealmOverrides = ({
 
       addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
-      addError(t("addTranslationError"), error);
+      addError("addTranslationError", error);
     }
   };
 
@@ -325,8 +325,8 @@ export const RealmOverrides = ({
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
-    } catch {
-      addAlert(t("updateTranslationError"), AlertVariant.danger);
+    } catch (error) {
+      addError("updateTranslationError", error);
     }
 
     setEditStates((prevEditStates) => ({

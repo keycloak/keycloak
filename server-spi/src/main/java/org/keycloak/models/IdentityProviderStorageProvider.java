@@ -102,14 +102,23 @@ public interface IdentityProviderStorageProvider extends Provider {
     }
 
     /**
-     * Returns all identity providers in the realm filtered according to the specified parameters.
+     * Returns all identity providers in the realm filtered according to the specified search options. The options include:
+     * <ul>
+     *     <li>Regular fields found in {@link IdentityProviderModel}, such as {@code ALIAS}, {@code ENABLED}, {@code HIDE_ON_LOGIN}, etc;</li>
+     *     <li>Special search keys also present in {@link IdentityProviderModel}. Those include {@code SEARCH}, used to perform
+     *     exact, prefix, and infix searches by alias, and {@code ALIAS_NOT_IN}, used to perform searches for identity providers
+     *     whose alias doesn't match any of the specified aliases (separated by comma);</li>
+     *     <li>Any attribute found in the identity provider's config. If the option key doesn't match any of the previous
+     *     cases, the implementations must search the providers whose config contains a pair that matches the specified search
+     *     option</li>
+     * </ul>
      *
-     * @param attrs a {@code Map} containig identity provider config attributes that must be matched.
+     * @param options a {@link Map} containing identity provider search options that must be matched.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
-    Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max);
+    Stream<IdentityProviderModel> getAllStream(Map<String, String> options, Integer first, Integer max);
 
     /**
      * Returns all identity providers associated with the organization with the provided id.
@@ -295,7 +304,19 @@ public interface IdentityProviderStorageProvider extends Provider {
      * Returns all identity provider mappers as a stream.
      * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
      */
-    Stream<IdentityProviderMapperModel> getMappersStream();
+    default Stream<IdentityProviderMapperModel> getMappersStream() {
+        return this.getMappersStream(Map.of(), null, null);
+    }
+
+    /**
+     * Returns all identity provider mappers in the realm filtered according to the specified search options.
+     *
+     * @param options a {@link Map} containing identity provider search options that must be matched.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
+     */
+    Stream<IdentityProviderMapperModel> getMappersStream(Map<String, String> options, Integer first, Integer max);
 
     /**
      * Returns identity provider mappers by the provided alias as a stream.

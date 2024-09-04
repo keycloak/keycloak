@@ -239,8 +239,8 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     }
 
     @Override
-    public Stream<IdentityProviderMapperModel> getMappersStream() {
-        return idpDelegate.getMappersStream();
+    public Stream<IdentityProviderMapperModel> getMappersStream(Map<String, String> options, Integer first, Integer max) {
+        return idpDelegate.getMappersStream(options, first, max);
     }
 
     @Override

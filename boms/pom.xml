@@ -53,9 +53,7 @@
     </properties>
 
     <modules>
-        <module>adapter</module>
         <module>spi</module>
-        <module>misc</module>
     </modules>
     
     <build>

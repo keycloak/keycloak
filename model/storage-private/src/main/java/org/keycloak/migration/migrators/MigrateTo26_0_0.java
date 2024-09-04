@@ -21,7 +21,10 @@ package org.keycloak.migration.migrators;
 import java.lang.invoke.MethodHandles;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
@@ -55,6 +58,12 @@ public class MigrateTo26_0_0 implements Migration {
     }
 
     private void migrateRealm(KeycloakSession session, RealmModel realm) {
+        ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        adminConsoleClient.setFullScopeAllowed(true);
+        adminConsoleClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        ClientModel adminCliClient = realm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
+        adminCliClient.setFullScopeAllowed(true);
+        adminCliClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
     }
 }
 

@@ -131,7 +131,7 @@ public class KeycloakIdentity implements Identity {
             if (userSession == null) {
                 userSession = sessions.getOfflineUserSession(realm, token.getSessionState());
             }
-            
+
             if (userSession == null) {
                 throw new RuntimeException("No active session associated with the token");
             }
@@ -176,15 +176,22 @@ public class KeycloakIdentity implements Identity {
     }
 
     public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession) {
+        this(accessToken, keycloakSession, keycloakSession.getContext().getRealm());
+    }
+
+    public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, RealmModel realm) {
         if (accessToken == null) {
             throw new ErrorResponseException("invalid_bearer_token", "Could not obtain bearer access_token from request.", Status.FORBIDDEN);
         }
         if (keycloakSession == null) {
             throw new ErrorResponseException("no_keycloak_session", "No keycloak session", Status.FORBIDDEN);
         }
+        if (realm == null) {
+            throw new ErrorResponseException("no_keycloak_session", "No realm set", Status.FORBIDDEN);
+        }
         this.accessToken = accessToken;
         this.keycloakSession = keycloakSession;
-        this.realm = keycloakSession.getContext().getRealm();
+        this.realm = realm;
 
         Map<String, Collection<String>> attributes = new HashMap<>();
 

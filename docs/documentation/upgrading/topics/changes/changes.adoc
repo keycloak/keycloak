@@ -696,7 +696,6 @@ Changes to {project_name} Authorization JavaScript adapter::
   the same behavior as before. The main change is on how you invoke both `authorization` and `entitlement` methods which now
   expect a specific object type representing an authorization request. This new object type provides more flexibility on how
   permissions can be obtained from the server by supporting the different parameters supported by the UMA grant type.
-  See link:{authorizationguide_link}#_enforcer_js_adapter[{authorizationguide_name}] for details.
 
   One of the main changes introduced by this release is that you are no longer required to exchange access tokens with RPTs in
   order to access resources protected by a resource server (when not using UMA). Depending on how the policy enforcer is configured on the resource server side, you can just send regular

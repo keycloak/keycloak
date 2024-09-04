@@ -6,7 +6,7 @@ Sometimes you might want to introspect a requesting party token (RPT) to check i
 There are two main use cases where token introspection can help you:
 
 * When client applications need to query the token validity to obtain a new one with the same or additional permissions
-* When enforcing authorization decisions at the resource server side, especially when none of the built-in <<_enforcer_overview, policy enforcers>> fits your application
+* When enforcing authorization decisions at the resource server side, especially when none of the built-in policy enforcers fits your application
 
 = Obtaining Information about an RPT
 
@@ -83,4 +83,3 @@ This is essentially what the policy enforcers do. Be sure to:
 [role="_additional-resources"]
 .Additional resources
 * https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)]
-* <<_enforcer_overview, policy enforcers>>

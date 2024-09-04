@@ -1,5 +1,7 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=(realm.registrationAllowed && !registrationDisabled??); section>
+<!-- template: webauthn-autthenticate.ftl -->
+
     <#if section = "title">
      title
     <#elseif section = "header">

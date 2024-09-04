@@ -278,10 +278,10 @@ public class FlowTest extends AbstractAuthenticationTest {
         Runnable assertRemoveFail = () -> {
             try {
                 authMgmtResource.deleteFlow(flowId);
-                Assert.fail("Not expected to delete flow that in used.");
+                Assert.fail("Not expected to delete flow that is in use.");
             } catch (WebApplicationException e) {
                 OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-                Assert.assertEquals("For more on this error consult the server log at the debug level.", error.getErrorDescription());
+                Assert.assertEquals("For more on this error consult the server log.", error.getErrorDescription());
             }
         };
 

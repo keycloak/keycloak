@@ -1,5 +1,5 @@
 [[_enforcer_js_adapter]]
-= JavaScript integration
+= JavaScript integration for Policy Enforcer
 
 The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
 This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.

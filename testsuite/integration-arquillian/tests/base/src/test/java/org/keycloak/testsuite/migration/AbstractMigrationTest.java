@@ -434,6 +434,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         if (testIdentityProviderConfigMigration) {
             testIdentityProviderConfigMigration(migrationRealm2);
         }
+        testLightweightClientAndFullScopeAllowed(masterRealm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(masterRealm, Constants.ADMIN_CLI_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private void testClientContainsExpectedClientScopes() {
@@ -1350,5 +1354,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         // gitlab identity provider should have it's hideOnLoginPage attribute migrated from the config to the provider itself.
         assertThat(rep.isHideOnLogin(), is(true));
         assertThat(rep.getConfig().containsKey(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR), is(false));
+    }
+
+    private void testLightweightClientAndFullScopeAllowed(RealmResource realm, String clientId) {
+        ClientRepresentation clientRepresentation = realm.clients().findByClientId(clientId).get(0);
+        assertTrue(clientRepresentation.isFullScopeAllowed());
+        assertTrue(Boolean.parseBoolean(clientRepresentation.getAttributes().get(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED)));
     }
 }

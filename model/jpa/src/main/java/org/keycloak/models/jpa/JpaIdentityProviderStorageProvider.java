@@ -17,6 +17,7 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.IdentityProviderModel.ALIAS;
+import static org.keycloak.models.IdentityProviderModel.ALIAS_NOT_IN;
 import static org.keycloak.models.IdentityProviderModel.AUTHENTICATE_BY_DEFAULT;
 import static org.keycloak.models.IdentityProviderModel.ENABLED;
 import static org.keycloak.models.IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID;
@@ -238,7 +240,9 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                         }
                         break;
                     }
+                    case ALIAS:
                     case FIRST_BROKER_LOGIN_FLOW_ID:
+                    case POST_BROKER_LOGIN_FLOW_ID:
                     case ORGANIZATION_ID: {
                         if (StringUtil.isBlank(value)) {
                             predicates.add(builder.isNull(idp.get(key)));
@@ -252,7 +256,15 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                             predicates.add(this.getAliasSearchPredicate(value, builder, idp));
                         }
                         break;
-                    } default: {
+                    }
+                    case ALIAS_NOT_IN: {
+                        if (StringUtil.isNotBlank(value)) {
+                            List<String> aliases = Arrays.asList(value.split(","));
+                            predicates.add(builder.not(idp.get(ALIAS).in(aliases)));
+                        }
+                        break;
+                    }
+                    default: {
                         String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
                         MapJoin<IdentityProviderEntity, String, String> configJoin = idp.joinMap("config");
                         Predicate configNamePredicate = builder.equal(configJoin.key(), key);
@@ -388,16 +400,52 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
     }
 
     @Override
-    public Stream<IdentityProviderMapperModel> getMappersStream() {
+    public Stream<IdentityProviderMapperModel> getMappersStream(Map<String, String> options, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<IdentityProviderMapperEntity> query = builder.createQuery(IdentityProviderMapperEntity.class);
-        Root<IdentityProviderMapperEntity> mapper = query.from(IdentityProviderMapperEntity.class);
+        Root<IdentityProviderMapperEntity> idp = query.from(IdentityProviderMapperEntity.class);
 
-        Predicate predicate = builder.equal(mapper.get("realmId"), getRealm().getId());
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
-        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(mapper).where(predicate));
+        if (options != null) {
+            for (Map.Entry<String, String> entry : options.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (StringUtil.isBlank(key)) {
+                    continue;
+                }
+                String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+                MapJoin<IdentityProviderMapperEntity, String, String> configJoin = idp.joinMap("config");
+                Predicate configNamePredicate = builder.equal(configJoin.key(), key);
 
-        return closing(typedQuery.getResultStream().map(this::toModel));
+                if (dbProductName.equals("Oracle")) {
+                    // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                    // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                    // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                    // This leaves DBMS_LOB.COMPARE and DBMS_LOB.INSTR as the options to compare the CLOB with the value.
+                    if (value.endsWith("*")) {
+                        // prefix search - use DBMS_LOB.INSTR
+                        value = value.substring(0, value.length() - 1);
+                        Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.INSTR", Integer.class, configJoin.value(), builder.literal(value)), 1);
+                        predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                    } else {
+                        Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
+                        predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                    }
+                } else {
+                    if (value.endsWith("*")) {
+                        value = value.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                        predicates.add(builder.and(configNamePredicate, builder.like(configJoin.value(), value)));
+                    } else {
+                        predicates.add(builder.and(configNamePredicate, builder.equal(configJoin.value(), value)));
+                    }
+                }
+            }
+        }
+
+        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
+        return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
     }
 
     @Override
