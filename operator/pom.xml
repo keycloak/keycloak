@@ -50,6 +50,13 @@
             <artifactId>kubernetes-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        
+        <!-- workaround for RHBQ marking slf4j-api as optional -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <optional>false</optional>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>
