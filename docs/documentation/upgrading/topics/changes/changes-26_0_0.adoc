@@ -246,6 +246,14 @@ Update your custom embedded Infinispan cache configuration file with configurati
 
 For more details proceed to the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
 
+= Grace period for idle sessions removed when persistent sessions are enabled
+
+Previous versions of {project_name} added a grace period of two minutes to idle times of user and client sessions.
+This was added due to a previous architecture where session refresh times were replicated asynchronously in a cluster.
+With persistent user sessions, this is no longer necessary, and therefore the grace period is now removed.
+
+To keep the old behavior, update your realm configuration and extend the session and client idle times by two minutes.
+
 = Support for legacy `redirect_uri` parameter and SPI options has been removed
 
 Previous versions of {project_name} had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as
