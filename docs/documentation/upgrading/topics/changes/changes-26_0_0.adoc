@@ -128,7 +128,7 @@ In the community, remote stores for embedded Infinispan caches were used in some
 Due to this, using remote caches in embedded Infinispan caches is now marked as deprecated with the plan to remove it.
 As it was never used outside multi-site setups that now achieve this by different means, it might be removed even in a future minor release.
 
-There is an experimental feature remote-cache which allows leveraging the new multi-site mechanisms to store session related data in an external {jdgserver_name} server also for non-multi-site setups.
+There is an experimental feature remote-cache which allows leveraging the new multi-site mechanisms to store session related data in an external {jdgserver_name} server also for single site setups.
 
 = Admin Bootstrapping and Recovery
 
