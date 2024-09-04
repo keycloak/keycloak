@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.jpa;
 
-import static org.keycloak.models.OrganizationModel.BROKER_PUBLIC;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -367,7 +366,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         // clear the organization id and any domain assigned to the IDP.
         identityProvider.setOrganizationId(null);
         identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-        identityProvider.getConfig().remove(BROKER_PUBLIC);
         session.identityProviders().update(identityProvider);
 
         return true;
