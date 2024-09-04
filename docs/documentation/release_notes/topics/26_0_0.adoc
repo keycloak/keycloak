@@ -168,3 +168,7 @@ For information on how to upgrade, see the link:{upgradingguide_link}[{upgrading
 There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events. The new event types are supported by the Email Event Listener.
 
 The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
+
+= Lightweight access tokens for Admin REST API
+
+Lightweight access tokens can now be used on the admin REST API. The `security-admin-console` and `admin-cli` clients are now using lightweight access tokens by default, so “Always Use Lightweight Access Token” and “Full Scope Allowed” are now enabled on these two clients. However, the behavior in the admin console should effectively remain the same. Be cautious if you have made changes to these two clients and if you are using them for other purposes.

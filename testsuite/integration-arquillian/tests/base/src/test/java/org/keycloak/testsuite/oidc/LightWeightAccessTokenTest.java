@@ -19,10 +19,15 @@ package org.keycloak.testsuite.oidc;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -483,6 +488,36 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         } finally {
             addDefaultBasicClientScope();
             alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testAdminConsoleClientWithLightweightAccessToken() {
+
+        oauth.realm("master");
+        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
+        PkceGenerator pkce = new PkceGenerator();
+        oauth.codeChallenge(pkce.getCodeChallenge());
+        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        oauth.codeVerifier(pkce.getCodeVerifier());
+
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        String accessToken = tokenResponse.getAccessToken();
+        logger.debug("access token:" + accessToken);
+        assertBasicClaims(oauth.verifyToken(accessToken), true, true);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
+            get.setHeader("Authorization", "Bearer " + accessToken);
+            try (CloseableHttpResponse response = client.execute(get)) {
+                Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+                RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
+                Assert.assertEquals("master", realmRepresentation.getRealm());
+            }
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
         }
     }
 

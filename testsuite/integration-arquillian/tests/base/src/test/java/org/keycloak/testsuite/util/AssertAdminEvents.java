@@ -204,7 +204,9 @@ public class AssertAdminEvents implements TestRule {
 
             AuthDetailsRepresentation actualAuth = actual.getAuthDetails();
             Assert.assertEquals(expectedAuth.getRealmId(), actualAuth.getRealmId());
-            Assert.assertEquals(expectedAuth.getUserId(), actualAuth.getUserId());
+            if(expectedAuth.getUserId() != null) {
+                Assert.assertEquals(expectedAuth.getUserId(), actualAuth.getUserId());
+            }
             if (expectedAuth.getClientId() != null) {
                 Assert.assertEquals(expectedAuth.getClientId(), actualAuth.getClientId());
             }
