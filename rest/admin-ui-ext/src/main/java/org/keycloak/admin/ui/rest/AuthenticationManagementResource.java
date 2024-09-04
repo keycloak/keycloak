@@ -141,7 +141,9 @@ public class AuthenticationManagementResource extends RoleMappingResource {
         rep.setConfig(model.getConfig());
 
         RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
-        rep.setConfigurable(factory.isConfigurable());
+        if (factory != null) {
+            rep.setConfigurable(factory.isConfigurable());
+        }
 
         return rep;
     }
