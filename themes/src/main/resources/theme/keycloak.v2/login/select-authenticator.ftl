@@ -1,5 +1,7 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=false; section>
+<!-- template: select-authenticator.ftl -->
+
     <#if section = "header" || section = "show-username">
         <#if section = "header">
             ${msg("loginChooseAuthenticator")}

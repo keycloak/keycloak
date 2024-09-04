@@ -1,7 +1,7 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout; section>
-
+<!-- template: login-recovery-authn-code-config.ftl -->
 <#if section = "header">
     ${msg("recovery-code-config-header")}
 <#elseif section = "form">
@@ -81,7 +81,8 @@
         /* copy recovery codes  */
         function copyRecoveryCodes() {
             const tmpTextarea = document.createElement("textarea");
-            document.body.appendChild(parseRecoveryCodeList());
+            tmpTextarea.innerHTML = parseRecoveryCodeList();
+            document.body.appendChild(tmpTextarea);
             tmpTextarea.select();
             document.execCommand("copy");
             document.body.removeChild(tmpTextarea);
@@ -104,7 +105,7 @@
 
         function parseRecoveryCodeList() {
             const recoveryCodes = document.getElementById("kc-recovery-codes-list").getElementsByTagName("li");
-            const recoveryCodeList = "";
+            let recoveryCodeList = "";
 
             for (let i = 0; i < recoveryCodes.length; i++) {
                 const recoveryCodeLiElement = recoveryCodes[i].innerText;

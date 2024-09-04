@@ -41,6 +41,7 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
         import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
 
@@ -142,6 +143,7 @@
                             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
                         </div>
                     </a>
+                    <hr />
                 </div>
             </#if>
         </#if>

@@ -2,6 +2,7 @@
 <#import "field.ftl" as field>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
+<!-- template: login-config-totp.ftl -->
 
     <#if section = "header">
         ${msg("loginTotpTitle")}
