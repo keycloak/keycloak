@@ -30,6 +30,8 @@ import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.organization.OrganizationProvider;
 
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
+
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
@@ -298,6 +300,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     void registerOrganizationInvalidation(OrganizationModel organization) {
         String id = organization.getId();
 
+        realmCache.registerInvalidation(cacheKeyOrgId(getRealm(), id));
         realmCache.registerInvalidation(id);
         organization.getDomains()
                 .map(OrganizationDomainModel::getName)
