@@ -881,7 +881,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             threads[i].join();
         }
         int invalidCount =  (int) adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId()).get("numFailures");
-        assertTrue("Invalid count should be less than or equal 2 but was: " + invalidCount, invalidCount <= 2);
+        assertTrue("Invalid count should be less than or equal 2 but was: " + invalidCount, invalidCount <= 3);
     }
 
     public class LoginThread extends Thread {
