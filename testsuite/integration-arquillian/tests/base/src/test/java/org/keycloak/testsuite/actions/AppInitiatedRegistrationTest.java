@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.actions;
 
-import jakarta.mail.MessagingException;
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -11,8 +12,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-
-import java.io.IOException;
 
 public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest {
 
@@ -32,13 +31,11 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
     }
 
     @Test
-    public void ensureLocaleParameterIsPropagatedDuringAppInitiatedRegistration() throws IOException, MessagingException {
+    public void ensureLocaleParameterIsPropagatedDuringAppInitiatedRegistration() {
 
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
-
-        // add the kc_locale parameter
-        appInitiatedRegisterUrl += "&kc_locale=en";
+        var appInitiatedRegisterUrlBuilder = UriBuilder.fromUri(oauth.getRegisterationsUrl());
+        appInitiatedRegisterUrlBuilder.queryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "en");
+        var appInitiatedRegisterUrl = appInitiatedRegisterUrlBuilder.build().toString();
 
         driver.navigate().to(appInitiatedRegisterUrl);
 

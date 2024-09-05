@@ -1512,6 +1512,10 @@ public class OAuthClient {
         return this.getLoginFormUrl(this.baseUrl);
     }
 
+    public String getRegisterationsUrl() {
+        return this.getLoginFormUrl(this.baseUrl).replace("openid-connect/auth", "openid-connect/registrations");
+    }
+
     public String getLoginFormUrl(String baseUrl) {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
