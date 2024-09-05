@@ -96,17 +96,12 @@ public class ClientData {
         return String.format("ClientData [ redirectUri=%s, responseType=%s, responseMode=%s, state=%s ]", redirectUri, responseType, responseMode, state);
     }
 
-    public static ClientData decodeClientDataFromParameter(String clientDataParam) {
-        try {
-            if (ObjectUtil.isBlank(clientDataParam)) {
-                return null;
-            } else {
-                byte[] cdataJson = Base64Url.decode(clientDataParam);
-                return JsonSerialization.readValue(cdataJson, ClientData.class);
-            }
-        } catch (IOException ioe) {
-            logger.warnf("ClientData parameter in invalid format. ClientData parameter was %s", clientDataParam);
+    public static ClientData decodeClientDataFromParameter(String clientDataParam) throws IOException {
+        if (ObjectUtil.isBlank(clientDataParam)) {
             return null;
+        } else {
+            byte[] cdataJson = Base64Url.decode(clientDataParam);
+            return JsonSerialization.readValue(cdataJson, ClientData.class);
         }
     }
 

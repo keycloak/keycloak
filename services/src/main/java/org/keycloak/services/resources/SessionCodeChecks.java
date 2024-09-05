@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
+import java.io.IOException;
 import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
@@ -175,8 +176,9 @@ public class SessionCodeChecks {
         ClientData clientData;
         try {
             clientData = ClientData.decodeClientDataFromParameter(clientDataString);
-        } catch (RuntimeException e) {
-            event.detail(Details.REASON, "Invalid client data");
+        } catch (RuntimeException | IOException e) {
+            logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
+            event.detail(Details.REASON, "Invalid client data: " + e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             return null;
