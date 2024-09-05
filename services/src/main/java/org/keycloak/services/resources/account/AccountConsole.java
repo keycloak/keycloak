@@ -2,8 +2,9 @@ package org.keycloak.services.resources.account;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
@@ -17,12 +18,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
+import org.keycloak.services.resources.AbstractSecuredLocalService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.util.ViteManifest;
@@ -34,6 +37,7 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,8 +98,13 @@ public class AccountConsole implements AccountResourceProvider {
 
     @GET
     @NoCache
-    @Path("{any:.*}")
-    public Response getMainPage() throws IOException, FreeMarkerException {
+    @Path("{path:.*}")
+    public Response getMainPage(@PathParam("path") String path) throws IOException, FreeMarkerException {
+
+        if (auth == null) {
+            return redirectToLogin(path);
+        }
+
         final var serverUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var serverBaseUri = serverUriInfo.getBaseUri();
         // Strip any trailing slashes from the URL.
@@ -191,6 +200,20 @@ public class AccountConsole implements AccountResourceProvider {
         String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
         Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
         return builder.build();
+    }
+
+    private Response redirectToLogin(String path) {
+        UriBuilder consoleUriBuilder = Urls.accountBase(session.getContext().getUri().getBaseUri());
+        if (!StringUtil.isNullOrEmpty(path)) {
+            consoleUriBuilder.path(path);
+        }
+        URI targetUri = consoleUriBuilder.build(realm.getName());
+
+        var oauthRedirect = new AbstractSecuredLocalService.OAuthRedirect();
+        oauthRedirect.setAuthUrl(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString());
+        oauthRedirect.setClientId(client.getClientId());
+        oauthRedirect.setSecure(realm.getSslRequired().isRequired(session.getContext().getConnection()));
+        return oauthRedirect.redirect(session.getContext().getUri(), targetUri.toString());
     }
 
     private Map<String, String> supportedLocales(Properties messages) {
