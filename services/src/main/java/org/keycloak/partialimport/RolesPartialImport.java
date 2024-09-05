@@ -59,12 +59,12 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     private RoleRepresentation newDefaultRole;
 
     @Override
-    public void prepare(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public void prepare(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) {
         prepareRealmRoles(rep, realm, session);
         prepareClientRoles(rep, realm, session);
     }
 
-    private void prepareRealmRoles(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    private void prepareRealmRoles(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) {
         if (!rep.hasRealmRoles()) return;
 
         realmRolesPI.prepare(rep, realm, session);
@@ -82,7 +82,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         this.realmRolesToSkip = realmRolesPI.getToSkip();
     }
 
-    private void prepareClientRoles(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    private void prepareClientRoles(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) {
         if (!rep.hasClientRoles()) return;
 
         clientRolesPI.prepare(rep, realm, session);
@@ -97,7 +97,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     }
 
     @Override
-    public PartialImportResults doImport(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public PartialImportResults doImport(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) {
         PartialImportResults results = new PartialImportResults();
         if (!rep.hasRealmRoles() && !rep.hasClientRoles()) return results;
 

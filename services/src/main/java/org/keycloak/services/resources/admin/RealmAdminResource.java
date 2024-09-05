@@ -92,7 +92,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -1120,10 +1119,6 @@ public class RealmAdminResource {
             ).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists(e.getLocalizedMessage());
-        } catch (ErrorResponseException error) {
-            return error.getResponse();
-        } catch (Exception e) {
-            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
