@@ -1454,45 +1454,45 @@ public class TokenManager {
         }
     }
 
-    public LogoutTokenValidationCode verifyLogoutToken(KeycloakSession session, String encodedLogoutToken) {
+    public LogoutTokenValidationContext verifyLogoutToken(KeycloakSession session, String encodedLogoutToken) {
         Optional<LogoutToken> logoutTokenOptional = toLogoutToken(encodedLogoutToken);
         if (logoutTokenOptional.isEmpty()) {
-            return LogoutTokenValidationCode.DECODE_TOKEN_FAILED;
+            return LogoutTokenValidationCode.DECODE_TOKEN_FAILED.toCtx();
         }
 
         LogoutToken logoutToken = logoutTokenOptional.get();
         List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(logoutToken, session).toList();
         if (identityProviders.isEmpty()) {
-            return LogoutTokenValidationCode.COULD_NOT_FIND_IDP;
+            return LogoutTokenValidationCode.COULD_NOT_FIND_IDP.toCtx();
         }
 
-        Stream<OIDCIdentityProvider> validOidcIdentityProviders =
-                validateLogoutTokenAgainstIdpProvider(identityProviders.stream(), encodedLogoutToken);
-        if (validOidcIdentityProviders.findAny().isEmpty()) {
-            return LogoutTokenValidationCode.TOKEN_VERIFICATION_WITH_IDP_FAILED;
+        List<OIDCIdentityProvider> validOidcIdentityProviders =
+                validateLogoutTokenAgainstIdpProvider(identityProviders.stream(), encodedLogoutToken).toList();
+        if (validOidcIdentityProviders.isEmpty()) {
+            return LogoutTokenValidationCode.TOKEN_VERIFICATION_WITH_IDP_FAILED.toCtx();
         }
 
         if (logoutToken.getSubject() == null && logoutToken.getSid() == null) {
-            return LogoutTokenValidationCode.MISSING_SID_OR_SUBJECT;
+            return LogoutTokenValidationCode.MISSING_SID_OR_SUBJECT.toCtx();
         }
 
         if (!checkLogoutTokenForEvents(logoutToken)) {
-            return LogoutTokenValidationCode.BACKCHANNEL_LOGOUT_EVENT_MISSING;
+            return LogoutTokenValidationCode.BACKCHANNEL_LOGOUT_EVENT_MISSING.toCtx();
         }
 
         if (logoutToken.getOtherClaims().get(NONCE) != null) {
-            return LogoutTokenValidationCode.NONCE_CLAIM_IN_TOKEN;
+            return LogoutTokenValidationCode.NONCE_CLAIM_IN_TOKEN.toCtx();
         }
 
         if (logoutToken.getId() == null) {
-            return LogoutTokenValidationCode.LOGOUT_TOKEN_ID_MISSING;
+            return LogoutTokenValidationCode.LOGOUT_TOKEN_ID_MISSING.toCtx();
         }
 
         if (logoutToken.getIat() == null) {
-            return LogoutTokenValidationCode.MISSING_IAT_CLAIM;
+            return LogoutTokenValidationCode.MISSING_IAT_CLAIM.toCtx();
         }
 
-        return LogoutTokenValidationCode.VALIDATION_SUCCESS;
+        return new LogoutTokenValidationContext(LogoutTokenValidationCode.VALIDATION_SUCCESS, logoutToken, validOidcIdentityProviders);
     }
 
     public Optional<LogoutToken> toLogoutToken(String encodedLogoutToken) {
@@ -1502,11 +1502,6 @@ public class TokenManager {
         } catch (JWSInputException e) {
             return Optional.empty();
         }
-    }
-
-
-    public Stream<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(KeycloakSession session, String encodedLogoutToken, LogoutToken logoutToken) {
-        return validateLogoutTokenAgainstIdpProvider(getOIDCIdentityProviders(logoutToken, session), encodedLogoutToken);
     }
 
 
