@@ -94,6 +94,7 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.GET;
@@ -1060,22 +1061,32 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer("email", federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email), federatedUser);
-        setDiffAttrToConsumer("firstName", federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName, federatedUser);
-        setDiffAttrToConsumer("lastName", federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName, federatedUser);
+        EventBuilder event = this.event.clone()
+                .event(EventType.UPDATE_PROFILE)
+                .user(federatedUser);
+        if (event.getEvent().getDetails().get(Details.CONTEXT) == null) {
+            event.detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name());
+        }
+        boolean attributeUpdated = false;
+        attributeUpdated |= setDiffAttrToConsumer(event, Details.EMAIL, federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email), federatedUser);
+        attributeUpdated |= setDiffAttrToConsumer(event, Details.FIRST_NAME, federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName, federatedUser);
+        attributeUpdated |= setDiffAttrToConsumer(event, Details.LAST_NAME, federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName, federatedUser);
+        if (attributeUpdated) {
+            event.success();
+        }
     }
 
-    private void setDiffAttrToConsumer(String attributeName, String actualValue, String newValue, Consumer<String> consumer, UserModel user) {
+    private boolean setDiffAttrToConsumer(EventBuilder event, String attributeName, String actualValue, String newValue, Consumer<String> consumer, UserModel user) {
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
         if (newValue != null && !newValue.equals(actualValueNotNull)) {
             consumer.accept(newValue);
-            this.event.event(EventType.UPDATE_PROFILE)
-                    .detail("attribute", attributeName)
-                    .detail("new_value", newValue)
-                    .detail("old_value", actualValueNotNull)
-                    .user(user)
-                    .success();
+            event.detail(Details.PREF_PREVIOUS + attributeName, newValue)
+                    .detail(Details.PREF_PREVIOUS + attributeName, actualValueNotNull);
+            return true;
+        } else {
+            return false;
         }
+
     }
 
     private void setEmail(BrokeredIdentityContext context, UserModel federatedUser, String newEmail) {
