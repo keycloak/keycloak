@@ -155,7 +155,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 } catch (JWSInputException e) {
                     event.detail(Details.REASON, "unable to parse jwt subject_token");
                     event.error(Errors.INVALID_TOKEN);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
 
                 }
             }
@@ -169,7 +169,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
                 event.detail(Details.REASON, "subject_token supports access tokens only");
                 event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
 
             }
 
@@ -177,7 +177,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             if (authResult == null) {
                 event.detail(Details.REASON, "subject_token validation failure");
                 event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token", Response.Status.BAD_REQUEST);
             }
 
             tokenUser = authResult.getUser();
