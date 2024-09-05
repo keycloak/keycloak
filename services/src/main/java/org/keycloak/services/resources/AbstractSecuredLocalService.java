@@ -161,7 +161,7 @@ public abstract class AbstractSecuredLocalService {
         return oauth.redirect(session.getContext().getUri(), accountUri.toString());
     }
 
-    static class OAuthRedirect extends AbstractOAuthClient {
+    public static class OAuthRedirect extends AbstractOAuthClient {
 
         /**
          * closes client
