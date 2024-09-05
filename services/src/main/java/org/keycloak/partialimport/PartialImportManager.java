@@ -20,7 +20,6 @@ package org.keycloak.partialimport;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.services.ErrorResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ public class PartialImportManager {
         partialImports.add(new UsersPartialImport());
     }
 
-    public PartialImportResults saveResources() throws ErrorResponseException {
+    public PartialImportResults saveResources() {
         PartialImportResults results = new PartialImportResults();
 
         for (PartialImport partialImport : partialImports) {

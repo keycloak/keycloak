@@ -110,7 +110,7 @@ public class ClientRolesPartialImport {
         client.removeRole(role);
     }
 
-    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) {
         Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
         if (repList == null || repList.isEmpty()) return;
 
