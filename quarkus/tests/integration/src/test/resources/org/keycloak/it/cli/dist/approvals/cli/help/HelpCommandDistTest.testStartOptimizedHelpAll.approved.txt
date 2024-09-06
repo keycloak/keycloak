@@ -259,6 +259,12 @@ Logging:
                      Include tracing information in the console log. If the 'log-console-format'
                        option is specified, this option has no effect. Default: true. Available
                        only when Console log handler and Tracing is activated.
+--log-console-level <category:level>
+                     The log level of the console log handler or a comma-separated list of
+                       individual categories and their levels. It overrides the root log level and
+                       inherits category levels specified in the 'log-level' property. If there is
+                       a collision of category levels, settings in this property have a precedence.
+                       Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -273,6 +279,12 @@ Logging:
                      Include tracing information in the file log. If the 'log-file-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        File log handler and Tracing is activated.
+--log-file-level <category:level>
+                     The log level of the file log handler or a comma-separated list of individual
+                       categories and their levels. It overrides the root log level and inherits
+                       category levels specified in the 'log-level' property. If there is a
+                       collision of category levels, settings in this property have a precedence.
+                       Available only when File log handler is activated.
 --log-file-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
@@ -294,6 +306,12 @@ Logging:
                      Include tracing information in the Syslog. If the 'log-syslog-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        Syslog handler and Tracing is activated.
+--log-syslog-level <category:level>
+                     The log level of the Syslog log handler or a comma-separated list of
+                       individual categories and their levels. It overrides the root log level and
+                       inherits category levels specified in the 'log-level' property. If there is
+                       a collision of category levels, settings in this property have a precedence.
+                       Available only when Syslog is activated.
 --log-syslog-max-length <max-length>
                      Set the maximum length, in bytes, of the message allowed to be sent. The
                        length includes the header and the message. If not set, the default value is

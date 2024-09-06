@@ -169,4 +169,36 @@ public class LoggingDistTest {
         cliResult.assertNoMessage("Listening on:");
         cliResult.assertError("Error writing to TCP stream");
     }
+
+    @Test
+    @Launch({"start-dev", "--log-level=info", "--log-console-level=debug"})
+    void consolePrecedenceLevel(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-level=info", "--log-console-level=org.keycloak:debug"})
+    void consoleCategory(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
+        assertFalse(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=console,syslog,file", "--log-console-level=info", "--log-file-level=debug", "--log-syslog-level=debug"})
+    void noOtherLogsIncluded(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("DEBUG [org.keycloak"));
+        assertFalse(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=console,syslog,file", "--log-console-level=info", "--log-file-level=debug,org.keycloak:debug", "--log-syslog-level=debug,org.keycloak:debug"})
+    void noOtherLogsIncludedCategories(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("DEBUG [org.keycloak"));
+        assertFalse(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+    }
 }
