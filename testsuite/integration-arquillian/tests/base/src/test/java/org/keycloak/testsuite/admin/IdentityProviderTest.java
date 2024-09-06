@@ -140,7 +140,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testFind() {
-        create(createRep("twitter", "twitter", true, Collections.singletonMap("key1", "value1")));
+        create(createRep("twitter", "twitter idp","twitter", true, Collections.singletonMap("key1", "value1")));
         create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
         create(createRep("google", "google"));
         create(createRep("github", "github"));
@@ -159,6 +159,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNames(realm.identityProviders().find("g*", true, 1, 1), "google");
 
         Assert.assertNames(realm.identityProviders().find("*oo*", true, 0, 5), "google", "facebook");
+
+        //based on display name search
+        Assert.assertNames(realm.identityProviders().find("*ter i*", true, 0, 5), "twitter");
 
         List<IdentityProviderRepresentation> results = realm.identityProviders().find("\"twitter\"", true, 0, 5);
         Assert.assertNames(results, "twitter");
@@ -603,10 +606,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId,boolean enabled, Map<String, String> config) {
+        return createRep(id, id, providerId, enabled, config);
+    }
+
+    private IdentityProviderRepresentation createRep(String id, String displayName, String providerId, boolean enabled, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
-        idp.setDisplayName(id);
+        idp.setDisplayName(displayName);
         idp.setProviderId(providerId);
         idp.setEnabled(enabled);
         if (config != null) {

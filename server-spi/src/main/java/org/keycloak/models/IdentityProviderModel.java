@@ -38,6 +38,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
+    public static final String DISPLAY_NAME = "displayName";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
     public static final String ENABLED = "enabled";
     public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
