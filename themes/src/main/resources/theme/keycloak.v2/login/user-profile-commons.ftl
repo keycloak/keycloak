@@ -127,28 +127,48 @@
 </#macro>
 
 <#macro selectTag attribute>
-	<select id="${attribute.name}" name="${attribute.name}" class="${properties.kcInputClass!}"
-		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-		<#if attribute.readOnly>disabled</#if>
-		<#if attribute.annotations.inputType=='multiselect'>multiple</#if>
-		<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
-	>
-	<#if attribute.annotations.inputType=='select'>
-		<option value=""></option>
-	</#if>
+	<div class="${properties.kcInputClass!}">
+		<select id="${attribute.name}" name="${attribute.name}"
+			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+			<#if attribute.readOnly>disabled</#if>
+			<#if attribute.annotations.inputType=='multiselect'>multiple</#if>
+			<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
+		>
+			<#if attribute.annotations.inputType=='select'>
+				<option value=""></option>
+			</#if>
 
-	<#if attribute.annotations.inputOptionsFromValidation?? && attribute.validators[attribute.annotations.inputOptionsFromValidation]?? && attribute.validators[attribute.annotations.inputOptionsFromValidation].options??>
-		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
-	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
-		<#assign options=attribute.validators.options.options>
-	<#else>
-		<#assign options=[]>
-	</#if>
+			<#if attribute.annotations.inputOptionsFromValidation?? && attribute.validators[attribute.annotations.inputOptionsFromValidation]?? && attribute.validators[attribute.annotations.inputOptionsFromValidation].options??>
+				<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
+			<#elseif attribute.validators.options?? && attribute.validators.options.options??>
+				<#assign options=attribute.validators.options.options>
+			<#else>
+				<#assign options=[]>
+			</#if>
 
-	<#list options as option>
-		<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
-	</#list>
-	</select>
+			<#list options as option>
+				<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
+			</#list>
+		</select>
+		<span class="${properties.kcFormControlUtilClass}">
+			<span class="${properties.kcFormControlToggleIcon!}">
+				<svg
+					class="pf-v5-svg"
+					viewBox="0 0 320 512"
+					fill="currentColor"
+					aria-hidden="true"
+					role="img"
+					width="1em"
+					height="1em"
+				>
+					<path
+						d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+					>
+					</path>
+				</svg>
+			</span>
+		</span>
+	</div>
 </#macro>
 
 <#macro inputTagSelects attribute>

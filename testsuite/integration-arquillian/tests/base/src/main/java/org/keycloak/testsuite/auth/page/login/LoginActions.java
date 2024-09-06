@@ -36,7 +36,7 @@ public class LoginActions extends LoginBase {
                 .path("login-actions");
     }
 
-    @FindBy(css = "input[type='submit']")
+    @FindBy(css = "button[type='submit']")
     private WebElement submitButton;
 
     @FindBy(css = "button[type='submit']")

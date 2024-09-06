@@ -32,7 +32,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
@@ -40,7 +40,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
 
     @FindBy(className = "kc-feedback-text")
     private WebElement feedbackMessage;
-    
+
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
@@ -50,7 +50,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
 
         submitButton.click();
     }
-    
+
     public void cancel() {
         cancelAIAButton.click();
     }

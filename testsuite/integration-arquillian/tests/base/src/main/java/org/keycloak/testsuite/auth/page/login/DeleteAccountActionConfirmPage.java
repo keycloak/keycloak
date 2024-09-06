@@ -12,7 +12,7 @@ public class DeleteAccountActionConfirmPage extends RequiredActions {
   @FindBy(css = "button[name='cancel-aia']")
   WebElement cancelActionButton;
 
-  @FindBy(css = "input[type='submit']")
+  @FindBy(css = "button[type='submit']")
   WebElement confirmActionButton;
 
   @Override

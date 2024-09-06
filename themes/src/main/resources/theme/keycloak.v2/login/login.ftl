@@ -15,7 +15,7 @@
                         <#assign label>
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                         </#assign>
-                        <@field.input name="username" label=label value="${(login.username!'')}" />
+                        <@field.input name="username" label=label value=login.username!'' />
                     </#if>
 
                     <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed/>
@@ -42,7 +42,7 @@
             </div>
         </#if>
     <#elseif section = "socialProviders" >
-        <#if realm.password && social?? && social.providers?has_content>
+        <#if realm.password && social.providers?? && social.providers?has_content>
             <div class="pf-v5-c-login__main-footer-band">
                 <p class="pf-v5-c-login__main-footer-band-item">
                     ${msg("identity-provider-login-label")}
