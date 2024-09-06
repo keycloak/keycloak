@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
 title="Configuring logging"
@@ -234,6 +235,33 @@ Note that you need to escape characters when invoking commands containing specia
 <@kc.start parameters="--log-syslog-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
 
 This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+=== Configuring the Syslog type
+
+Syslog uses different message formats based on particular RFC specifications.
+To change the Syslog type with a different message format, use the `--log-syslog-type` option as follows:
+
+<@kc.start parameters="--log-syslog-type=rfc3164"/>
+
+Possible values for the `--log-syslog-type` option are:
+
+<@opts.expectedValues option="log-syslog-type"/>
+
+The preferred Syslog type is https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424], which obsoletes https://datatracker.ietf.org/doc/html/rfc3164[RFC 3164], known as BSD Syslog protocol.
+
+=== Configuring the Syslog maximum message length
+
+To set the maximum length of the message allowed to be sent (in bytes), use the `--log-syslog-max-length` option as follows:
+
+<@kc.start parameters="--log-syslog-max-length=1536"/>
+
+The length can be specified in memory size format with the appropriate suffix, like `1k` or `1K`.
+The length includes the header and the message.
+
+If the length is not explicitly set, the default values are set based on the `--log-syslog-type` option as follows:
+
+* `2048B` - for RFC 5424
+* `1024B` - for RFC 3164
 
 === Configuring the Syslog structured output
 By default, the Syslog log handler sends plain unstructured data to the Syslog server.
