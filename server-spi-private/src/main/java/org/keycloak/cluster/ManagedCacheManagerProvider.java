@@ -29,7 +29,7 @@ public interface ManagedCacheManagerProvider {
     <C> C getEmbeddedCacheManager(Config.Scope config);
 
     /**
-     * @return A RemoteCacheManager if the features {@link org.keycloak.common.Profile.Feature#REMOTE_CACHE} or {@link org.keycloak.common.Profile.Feature#MULTI_SITE}  is enabled, {@code null} otherwise.
+     * @return A RemoteCacheManager if the features {@link org.keycloak.common.Profile.Feature#CLUSTERLESS} or {@link org.keycloak.common.Profile.Feature#MULTI_SITE}  is enabled, {@code null} otherwise.
      */
     <C> C getRemoteCacheManager(Config.Scope config);
 }
