@@ -51,12 +51,11 @@ public class RemoteCacheInvoker {
 
     public static final Logger logger = Logger.getLogger(RemoteCacheInvoker.class);
 
-    private final Map<String, RemoteCacheContext> remoteCaches =  new HashMap<>();
+    private final Map<String, RemoteCache> remoteCaches =  new HashMap<>();
 
 
-    public void addRemoteCache(String cacheName, RemoteCache remoteCache, MaxIdleTimeLoader maxIdleLoader) {
-        RemoteCacheContext ctx = new RemoteCacheContext(remoteCache, maxIdleLoader);
-        remoteCaches.put(cacheName, ctx);
+    public void addRemoteCache(String cacheName, RemoteCache remoteCache) {
+        remoteCaches.put(cacheName, remoteCache);
     }
 
     public Set<String> getRemoteCacheNames() {
@@ -65,8 +64,8 @@ public class RemoteCacheInvoker {
 
 
     public <K, V extends SessionEntity> void runTask(KeycloakSession kcSession, RealmModel realm, String cacheName, K key, MergedUpdate<V> task, SessionEntityWrapper<V> sessionWrapper) {
-        RemoteCacheContext context = remoteCaches.get(cacheName);
-        if (context == null) {
+        RemoteCache remoteCache = remoteCaches.get(cacheName);
+        if (remoteCache == null) {
             return;
         }
 
@@ -80,10 +79,7 @@ public class RemoteCacheInvoker {
             return;
         }
 
-        long loadedMaxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
-
-        // Increase the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
-        final long maxIdleTimeMs = loadedMaxIdleTimeMs + 1800000;
+        long maxIdleTimeMs = getMaxIdleTimeMs(task);
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
@@ -94,7 +90,7 @@ public class RemoteCacheInvoker {
         Retry.executeWithBackoff((int iteration) -> {
 
             try {
-                runOnRemoteCache(topology, context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+                runOnRemoteCache(topology, remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
             } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s', iteration '%s'. Will try to retry the task",
@@ -108,6 +104,14 @@ public class RemoteCacheInvoker {
         }, 10, 10);
     }
 
+    private static <V extends SessionEntity> long getMaxIdleTimeMs(MergedUpdate<V> task) {
+        long maxIdleTimeMs = task.getMaxIdleTimeMs();
+        if (maxIdleTimeMs > 0) {
+            // Increase the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
+            maxIdleTimeMs += 1800000;
+        }
+        return maxIdleTimeMs;
+    }
 
     private <K, V extends SessionEntity> void runOnRemoteCache(TopologyInfo topology, RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long maxIdleMs, K key, MergedUpdate<V> task, SessionEntityWrapper<V> sessionWrapper) {
         SessionUpdateTask.CacheOperation operation = task.getOperation();
@@ -195,27 +199,4 @@ public class RemoteCacheInvoker {
     private String logTopologyData(TopologyInfo topology, int iteration) {
         return topology.toString() + ", replaceIteration: " + iteration;
     }
-
-
-    private static class RemoteCacheContext {
-
-        private final RemoteCache remoteCache;
-        private final MaxIdleTimeLoader maxIdleTimeLoader;
-
-        public RemoteCacheContext(RemoteCache remoteCache, MaxIdleTimeLoader maxIdleLoader) {
-            this.remoteCache = remoteCache;
-            this.maxIdleTimeLoader = maxIdleLoader;
-        }
-
-    }
-
-
-    @FunctionalInterface
-    public interface MaxIdleTimeLoader {
-
-        long getMaxIdleTimeMs(RealmModel realm);
-
-    }
-
-
 }
