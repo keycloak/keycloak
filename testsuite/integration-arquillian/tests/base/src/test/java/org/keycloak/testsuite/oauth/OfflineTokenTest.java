@@ -29,6 +29,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -56,6 +57,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -488,7 +490,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         testUser.roles().realmLevel().remove(Collections.singletonList(appRealm.roles().get("composite").toRepresentation()));
         appRealm.roles().get("composite").remove();
         testUser.roles().realmLevel().add(Collections.singletonList(offlineAccess));
-        
+
     }
 
     /**
@@ -648,7 +650,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         offlineRefresh = oauth.doRefreshTokenRequest(offlineResponse.getRefreshToken(), "secret1");
         assertEquals(200, offlineRefresh.getStatusCode());
     }
-    
+
     @Test
     public void browserOfflineTokenLogoutFollowedByLoginSameSession() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -760,7 +762,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         final int MAX_LIFESPAN = 3000;
         final int IDLE_LIFESPAN = 600;
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, 0, IDLE_LIFESPAN + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS + 60);
+        testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, 0, IDLE_LIFESPAN + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS) + 60);
     }
 
     // Issue 13706
@@ -927,7 +929,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             }
 
             setTimeOffset(0);
-            
+
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
             changeOfflineSessionSettings(false, prev[0], prev[1], prev[2], prev[3]);
