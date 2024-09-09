@@ -40,7 +40,7 @@ public class LoginPasswordUpdatePage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
