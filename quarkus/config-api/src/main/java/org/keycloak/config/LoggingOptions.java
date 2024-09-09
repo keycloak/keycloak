@@ -1,12 +1,13 @@
 package org.keycloak.config;
 
+import io.quarkus.runtime.configuration.MemorySize;
+import org.jboss.logmanager.handlers.SyslogHandler;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static java.lang.String.format;
 
@@ -137,39 +138,53 @@ public class LoggingOptions {
 
     public static final Option<String> LOG_SYSLOG_ENDPOINT = new OptionBuilder<>("log-syslog-endpoint", String.class)
             .category(OptionCategory.LOGGING)
-            .description("The IP address and port of the syslog server.")
+            .description("Set the IP address and port of the Syslog server.")
             .defaultValue("localhost:514")
+            .build();
+
+    public static final Option<String> LOG_SYSLOG_TYPE = new OptionBuilder<>("log-syslog-type", String.class)
+            .category(OptionCategory.LOGGING)
+            .expectedValues(Arrays.stream(SyslogHandler.SyslogType.values()).map(f -> f.toString().toLowerCase()).toList())
+            .description("Set the Syslog type used to format the sent message.")
+            .defaultValue(SyslogHandler.SyslogType.RFC5424.toString().toLowerCase())
+            .build();
+
+    public static final Option<MemorySize> LOG_SYSLOG_MAX_LENGTH = new OptionBuilder<>("log-syslog-max-length", MemorySize.class)
+            .category(OptionCategory.LOGGING)
+            // based on the 'quarkus.log.syslog.max-length' property
+            .description("Set the maximum length, in bytes, of the message allowed to be sent. The length includes the header and the message. " +
+                    "If not set, the default value is 2048 when 'log-syslog-type' is rfc5424 (default) and 1024 when 'log-syslog-type' is rfc3164.")
             .build();
 
     public static final Option<String> LOG_SYSLOG_APP_NAME = new OptionBuilder<>("log-syslog-app-name", String.class)
             .category(OptionCategory.LOGGING)
-            .description("The app name used when formatting the message in RFC5424 format.")
+            .description("Set the app name used when formatting the message in RFC5424 format.")
             .defaultValue("keycloak")
             .build();
 
     public static final Option<String> LOG_SYSLOG_PROTOCOL = new OptionBuilder<>("log-syslog-protocol", String.class)
             .category(OptionCategory.LOGGING)
-            .description("Sets the protocol used to connect to the syslog server.")
+            .description("Set the protocol used to connect to the Syslog server.")
             .defaultValue("tcp")
             .expectedValues("tcp", "udp", "ssl-tcp")
             .build();
 
     public static final Option<String> LOG_SYSLOG_FORMAT = new OptionBuilder<>("log-syslog-format", String.class)
             .category(OptionCategory.LOGGING)
-            .description("Set a format specific to syslog entries.")
+            .description("Set a format specific to Syslog entries.")
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
     public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description(format("Include tracing information in the syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .description(format("Include tracing information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
     public static final Option<Output> LOG_SYSLOG_OUTPUT = new OptionBuilder<>("log-syslog-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_SYSLOG_OUTPUT)
-            .description("Set the syslog output to JSON or default (plain) unstructured logging.")
+            .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
             .build();
 
 }

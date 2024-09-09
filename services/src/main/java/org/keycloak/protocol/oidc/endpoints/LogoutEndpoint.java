@@ -46,6 +46,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
+import org.keycloak.protocol.oidc.LogoutTokenValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -554,18 +555,18 @@ public class LogoutEndpoint {
                     Response.Status.BAD_REQUEST);
         }
 
-        LogoutTokenValidationCode validationCode = tokenManager.verifyLogoutToken(session, encodedLogoutToken);
-        if (!validationCode.equals(LogoutTokenValidationCode.VALIDATION_SUCCESS)) {
-            String errorMessage = validationCode.getErrorMessage();
+        LogoutTokenValidationContext validationCtx = tokenManager.verifyLogoutToken(session, encodedLogoutToken);
+        if (!validationCtx.getStatus().equals(LogoutTokenValidationCode.VALIDATION_SUCCESS)) {
+            String errorMessage = validationCtx.getStatus().getErrorMessage();
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
 
-        LogoutToken logoutToken = tokenManager.toLogoutToken(encodedLogoutToken).get();
+        LogoutToken logoutToken = validationCtx.getLogoutToken();
 
-        Stream<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(session, encodedLogoutToken, logoutToken)
+        Stream<String> identityProviderAliases = validationCtx.getValidIdentityProviders().stream()
                 .map(idp -> idp.getConfig().getAlias());
 
         boolean logoutOfflineSessions = Boolean.parseBoolean(logoutToken.getEvents()

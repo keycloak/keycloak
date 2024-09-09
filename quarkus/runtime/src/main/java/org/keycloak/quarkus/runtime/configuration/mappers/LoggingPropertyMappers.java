@@ -15,7 +15,6 @@ import java.util.stream.Stream;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
@@ -112,6 +111,16 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.app-name")
                         .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_TYPE)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.syslog-type")
+                        .paramLabel("type")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_MAX_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.max-length")
+                        .paramLabel("max-length")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_PROTOCOL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)

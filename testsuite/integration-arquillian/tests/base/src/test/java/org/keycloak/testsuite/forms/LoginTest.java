@@ -937,7 +937,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             appPage.assertCurrent();
 
             // expire idle timeout using the timeout window.
-            setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            setTimeOffset(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             loginPage.open();

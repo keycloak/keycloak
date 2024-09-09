@@ -18,6 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.admin.ui.rest.model.Authentication;
 import org.keycloak.admin.ui.rest.model.AuthenticationMapper;
@@ -37,6 +38,9 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 
 public class AuthenticationManagementResource extends RoleMappingResource {
+
+    private static final Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
+
     public AuthenticationManagementResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         super(session, realm, auth);
     }
@@ -141,7 +145,12 @@ public class AuthenticationManagementResource extends RoleMappingResource {
         rep.setConfig(model.getConfig());
 
         RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
-        rep.setConfigurable(factory.isConfigurable());
+        if (factory != null) {
+            rep.setConfigurable(factory.isConfigurable());
+        } else {
+            logger.warnv("Detected RequiredAction with missing provider. realm={0}, alias={1}, providerId={2}",
+                    realm.getName(), model.getAlias(), model.getProviderId());
+        }
 
         return rep;
     }

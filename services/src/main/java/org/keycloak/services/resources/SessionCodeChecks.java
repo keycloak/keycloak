@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
+import java.io.IOException;
 import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
@@ -42,8 +43,6 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
-import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -76,7 +75,7 @@ public class SessionCodeChecks {
     private final String code;
     private final String execution;
     private final String clientId;
-    private final ClientData clientData;
+    private final String clientDataString;
     private final String tabId;
     private final String flowPath;
     private final String authSessionId;
@@ -97,7 +96,7 @@ public class SessionCodeChecks {
         this.tabId = tabId;
         this.flowPath = flowPath;
         this.authSessionId = authSessionId;
-        this.clientData = ClientData.decodeClientDataFromParameter(clientData);
+        this.clientDataString = clientData;
     }
 
 
@@ -172,6 +171,17 @@ public class SessionCodeChecks {
             response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
             return null;
 
+        }
+
+        ClientData clientData;
+        try {
+            clientData = ClientData.decodeClientDataFromParameter(clientDataString);
+        } catch (RuntimeException | IOException e) {
+            logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
+            event.detail(Details.REASON, "Invalid client data: " + e.getMessage());
+            event.error(Errors.INVALID_REQUEST);
+            response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            return null;
         }
 
         if (authSession != null) {
