@@ -92,4 +92,8 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_IdentityProviderAttributesMigration"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
+        <dropIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
+    </changeSet>
+
 </databaseChangeLog>

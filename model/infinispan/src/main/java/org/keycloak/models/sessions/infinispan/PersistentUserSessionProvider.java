@@ -326,11 +326,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         if (predicate.getBrokerUserId() != null) {
-            String[] idpAliasSessionId = predicate.getBrokerUserId().split("\\.");
+            int split = predicate.getBrokerUserId().indexOf('.');
 
             Map<String, String> attributes = new HashMap<>();
-            attributes.put(UserModel.IDP_ALIAS, idpAliasSessionId[0]);
-            attributes.put(UserModel.IDP_USER_ID, idpAliasSessionId[1]);
+            attributes.put(UserModel.IDP_ALIAS, predicate.getBrokerUserId().substring(0, split));
+            attributes.put(UserModel.IDP_USER_ID, predicate.getBrokerUserId().substring(split + 1));
 
             UserProvider userProvider = session.getProvider(UserProvider.class);
             UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);

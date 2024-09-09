@@ -3,10 +3,12 @@ package org.keycloak.testsuite.forms;
 import static org.wildfly.common.Assert.assertTrue;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
@@ -37,6 +39,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
     private static String resetOtpExecutionId;
     private static String resetOtpConfigId;
     private static String flowId;
+    private static String origResetCredentialsFlowId;
 
     private static final String FLOW_ALIAS = "otpResetTestFlow";
     private static final String RESET_OTP_TEST_USER_REMOVE_NONE = "reset-otp-test-user-remove-none";
@@ -104,6 +107,17 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         RealmBuilder.edit(testRealm).user(userRemoveNone.build()).user(userRemoveOne.build()).user(userRemoveAll.build());
 
         realmResource = adminClient.realm(testRealm.getRealm());
+    }
+
+    @After
+    public void afterTest() {
+        var realmRep = realmResource.toRepresentation();
+        realmRep.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
+        realmResource.update(realmRep);
+
+        flowId = null;
+        resetOtpExecutionId = null;
+        resetOtpConfigId = null;
     }
 
     @Test
@@ -273,5 +287,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         else {
             realmResource.flows().updateAuthenticatorConfig(resetOtpConfigId, resetOtpAuthConfigRep);
         }
+
+        getCleanup().addAuthenticationFlowId(flowId);
     }
 }

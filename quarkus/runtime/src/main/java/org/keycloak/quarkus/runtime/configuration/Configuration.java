@@ -142,6 +142,10 @@ public final class Configuration {
         return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
     }
 
+    public static Optional<String> getOptionalKcValue(Option<?> option) {
+        return getOptionalKcValue(option.getKey());
+    }
+
     public static Optional<Boolean> getOptionalBooleanKcValue(String propertyName) {
         return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName)).map(Boolean::parseBoolean);
     }
