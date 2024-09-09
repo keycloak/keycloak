@@ -161,7 +161,7 @@ public class OrganizationsResource {
             throw ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND);
         }
 
-        session.setAttribute(OrganizationModel.class.getName(), organizationModel);
+        session.getContext().setOrganization(organizationModel);
 
         return new OrganizationResource(session, organizationModel, adminEvent);
     }

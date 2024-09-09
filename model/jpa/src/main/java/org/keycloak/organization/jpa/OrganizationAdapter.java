@@ -142,9 +142,9 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
 
         // add organization to the session as the following code updates the underlying group
-        OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+        OrganizationModel current = session.getContext().getOrganization();
         if (current == null) {
-            session.setAttribute(OrganizationModel.class.getName(), this);
+            session.getContext().setOrganization(this);
         }
 
         try {
@@ -154,7 +154,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             attributes.forEach(group::setAttribute);
         } finally {
             if (current == null) {
-                session.removeAttribute(OrganizationModel.class.getName());
+                session.getContext().setOrganization(null);
             }
         }
     }
