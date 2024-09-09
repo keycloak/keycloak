@@ -78,10 +78,6 @@ public class OrganizationInvitationResource {
             return sendInvitation(user);
         }
 
-        if (!realm.isRegistrationAllowed()) {
-            throw ErrorResponse.error("Realm does not allow self-registration", Status.BAD_REQUEST);
-        }
-
         user = new InMemoryUserAdapter(session, realm, null);
         user.setEmail(email);
 

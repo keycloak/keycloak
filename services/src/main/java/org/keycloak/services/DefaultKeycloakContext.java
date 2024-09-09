@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -44,6 +45,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private RealmModel realm;
 
     private ClientModel client;
+
+    private OrganizationModel organization;
 
     protected KeycloakSession session;
 
@@ -115,6 +118,16 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setClient(ClientModel client) {
         this.client = client;
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        return organization;
+    }
+
+    @Override
+    public void setOrganization(OrganizationModel organization) {
+        this.organization = organization;
     }
 
     @Override

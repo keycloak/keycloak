@@ -103,7 +103,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         // make sure the organization is set to the session to make it available to templates
-        session.setAttribute(OrganizationModel.class.getName(), organization);
+        session.getContext().setOrganization(organization);
 
         if (tryRedirectBroker(context, organization, user, username, domain)) {
             return;

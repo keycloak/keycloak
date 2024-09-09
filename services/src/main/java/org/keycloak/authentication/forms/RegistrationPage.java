@@ -72,6 +72,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
 
                     form.setAttribute("messageHeader", Messages.REGISTER_ORGANIZATION_MEMBER);
                     form.setAttribute(OrganizationModel.ORGANIZATION_NAME_ATTRIBUTE, organization.getName());
+                    form.setAttribute(FIELD_EMAIL, token.getEmail());
                 }
             } catch (VerificationException e) {
                 return form.setError(Messages.EXPIRED_ACTION).createErrorPage(Status.BAD_REQUEST);
