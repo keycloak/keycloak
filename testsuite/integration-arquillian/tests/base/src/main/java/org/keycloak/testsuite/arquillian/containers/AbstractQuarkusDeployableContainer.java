@@ -212,7 +212,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         addFeaturesOption(commands);
 
         var features = getDefaultFeatures();
-        if (features.contains("remote-cache") || features.contains("multi-site")) {
+        if (features.contains("clusterless") || features.contains("multi-site")) {
             commands.add("--cache-remote-host=127.0.0.1");
             commands.add("--cache-remote-username=keycloak");
             commands.add("--cache-remote-password=Password1!");
