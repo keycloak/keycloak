@@ -158,6 +158,13 @@ GELF support has been deprecated for a while now, and with this release it has b
 Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
 see the https://www.keycloak.org/server/logging[Logging guide].
 
+= Specify different log levels for log handlers
+
+It is possible to specify log levels for all available log handlers, such as `console`, `file`, or `syslog`.
+The more fine-grained approach provides the ability to control logging over the whole application and be tailored to your needs.
+
+For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
 = All user sessions are persisted by default
 
 {project_name} 25 introduced the feature `persistent-user-sessions`. With this feature enabled all user sessions are persisted in the database as opposed to the previous behavior where only offline sessions were persisted.

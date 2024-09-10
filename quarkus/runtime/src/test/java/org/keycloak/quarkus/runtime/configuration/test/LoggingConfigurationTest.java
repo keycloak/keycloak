@@ -158,4 +158,30 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertConfig("log-syslog-max-length", "512");
         assertExternalConfig("quarkus.log.syslog.max-length", "512");
     }
+
+    @Test
+    public void logLevelsHandlers() {
+        putEnvVars(Map.of(
+                "KC_LOG_LEVEL", "debug",
+                "KC_LOG_CONSOLE_LEVEL", "info",
+                "KC_LOG_SYSLOG_LEVEL", "trace",
+                "KC_LOG_FILE_LEVEL", "debug"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-level", "debug",
+                "log-console-level", "info",
+                "log-syslog-level", "trace",
+                "log-file-level", "debug"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.log.level", "DEBUG",
+                "quarkus.log.console.level", "info",
+                "quarkus.log.syslog.level", "trace",
+                "quarkus.log.file.level", "debug"
+        ));
+    }
 }

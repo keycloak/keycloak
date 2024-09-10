@@ -42,6 +42,11 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
+                        .to("quarkus.log.console.level")
+                        .paramLabel("level")
+                        .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.format")
@@ -72,6 +77,11 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.file.path")
                         .paramLabel("file")
                         .transformer(LoggingPropertyMappers::resolveFileLogLocation)
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.level")
+                        .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -106,6 +116,11 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.endpoint")
                         .paramLabel("host:port")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.level")
+                        .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
