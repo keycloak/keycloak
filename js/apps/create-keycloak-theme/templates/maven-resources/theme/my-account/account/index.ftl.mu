@@ -8,10 +8,25 @@
     <meta name="description" content="${properties.description!'The {{type}} ui is a web-based management interface.'}">
     <title>${properties.title!'{{type}} Management'}</title>
     <style>
+      body {
+        margin: 0;
+      }
+
+      body, #app {
+        height: 100%;
+      }
+
+      .container {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+      }
+
       .keycloak__loading-container {
         height: 100vh;
         width: 100%;
-        background-color: #f0f0f0;
+        color: #151515;
+        background-color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -19,30 +34,18 @@
         margin: 0;
       }
 
+      @media (prefers-color-scheme: dark) {
+        .keycloak__loading-container {
+          color: #e0e0e0;
+          background-color: #1b1d21;
+        }
+      }
+
       #loading-text {
+        z-index: 1000;
         font-size: 20px;
         font-weight: 600;
-      }
-
-      .loader {
-        width: 48px;
-        height: 48px;
-        border: 5px solid #FFF;
-        border-bottom-color: #06c;
-        border-radius: 50%;
-        display: inline-block;
-        box-sizing: border-box;
-        animation: rotation 1s linear infinite;
-      }
-
-      @keyframes rotation {
-        0% {
-          transform: rotate(0deg);
-        }
-
-        100% {
-          transform: rotate(360deg);
-        }
+        padding-top: 32px;
       }
     </style>
     <script type="importmap">
@@ -99,17 +102,23 @@
   </head>
   <body>
     <div id="app">
-    <div class="keycloak__loading-container">
-      <span class="loader" role="progressbar" aria-valuetext="Loading...">
-      </span>
-      <div>
-        <p id="loading-text">Loading the {{type}} ui</p>
-      </div>
+      <main class="container">
+        <div class="keycloak__loading-container">
+          <span class="pf-c-spinner pf-m-xl" role="progressbar" aria-valuetext="Loading&hellip;">
+            <span class="pf-c-spinner__clipper"></span>
+            <span class="pf-c-spinner__lead-ball"></span>
+            <span class="pf-c-spinner__tail-ball"></span>
+          </span>
+          <div>
+            <p id="loading-text">Loading the Account Console</p>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>
-    <noscript>JavaScript is required to use the {{type}} ui.</noscript>
+    <noscript>JavaScript is required to use the Account Console.</noscript>
     <script id="environment" type="application/json">
       {
+        "serverBaseUrl": "${serverBaseUrl}",
         "authUrl": "${authUrl}",
         "authServerUrl": "${authServerUrl}",
         "realm": "${realm.name}",
@@ -127,6 +136,7 @@
           "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
           "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
           "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+          "isViewOrganizationsEnabled": ${isViewOrganizationsEnabled?c},
           "deleteAccountAllowed": ${deleteAccountAllowed?c},
           "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
           "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
