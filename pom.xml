@@ -299,7 +299,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
-        <module>misc</module>
         <module>js</module>
         <module>test-framework</module>
         <module>quarkus</module>
