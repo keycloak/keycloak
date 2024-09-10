@@ -3,7 +3,11 @@ import { ExclamationTriangleIcon } from "@patternfly/react-icons";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { useTranslation } from "react-i18next";
 
-const WarnBanner = (msg: string) => {
+type WarnBannerProps = {
+  msg: string;
+};
+
+const WarnBanner = ({ msg }: WarnBannerProps) => {
   const { t } = useTranslation();
 
   return (
@@ -21,6 +25,5 @@ const WarnBanner = (msg: string) => {
 export const Banners = () => {
   const { whoAmI } = useWhoAmI();
 
-  if (whoAmI.isTemporary()) return WarnBanner("loggedInAsTempAdminUser");
-  // more banners in the future?
+  if (whoAmI.isTemporary()) return <WarnBanner msg="loggedInAsTempAdminUser" />;
 };
