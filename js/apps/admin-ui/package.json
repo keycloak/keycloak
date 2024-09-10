@@ -100,7 +100,7 @@
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.53.0",
     "react-i18next": "^15.0.1",
-    "react-router-dom": "^6.26.1",
+    "react-router-dom": "^6.26.2",
     "reactflow": "^11.11.4",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
