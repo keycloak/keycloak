@@ -40,6 +40,7 @@ a given time.
 * ROSA HCP based multi-site Keycloak deployment
 * AWS CLI Installed
 * AWS Global Accelerator loadbalancer
+* `jq` tool installed
 
 == Procedure
 . Enable Openshift user alert routing
@@ -176,9 +177,6 @@ EOF
 zip -FS --junk-paths ${LAMBDA_ZIP} /tmp/lambda.py
 </#noparse>
 ----
-<1> The username required to authenticate Lambda requests
-<2> The AWS secret containing the password <<aws-secret,defined earlier>>
-<3> The AWS region which stores the password secret
 +
 . Create the Lambda function.
 +
@@ -228,7 +226,63 @@ aws lambda add-permission \
 ----
 <1> The AWS Region hosting your Kubernetes clusters
 +
-. Retieve the Lambda Function URL
+. Configure the Lambda's Environment variables:
++
+.. In each Kubernetes cluster, retrieve the exposed {jdgserver_name} URL endpoint:
++
+[source,bash]
+----
+<#noparse>
+kubectl -n ${NAMESPACE} get route infinispan-external -o jsonpath='{.status.ingress[].host}' # <1>
+</#noparse>
+----
+<1> Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
++
+.. Upload the desired Environment variables
++
+[source,bash]
+----
+<#noparse>
+ACCELERATOR_NAME= # <1>
+LAMBDA_REGION= # <2>
+CLUSTER_1_NAME= # <3>
+CLUSTER_1_ISPN_ENDPOINT= # <4>
+CLUSTER_2_NAME= # <5>
+CLUSTER_2_ISPN_ENDPOINT= # <6>
+INFINISPAN_USER= # <7>
+INFINISPAN_USER_SECRET= # <8>
+WEBHOOK_USER= # <9>
+WEBHOOK_USER_SECRET= # <10>
+
+INFINISPAN_SITE_ENDPOINTS=$(echo "{\"${CLUSTER_NAME_1}\":\"${CLUSTER_1_ISPN_ENDPOINT}\",\"${CLUSTER_2_NAME}\":\"${CLUSTER_2_ISPN_ENDPOINT\"}" | jq tostring)
+aws lambda update-function-configuration \
+    --function-name ${ACCELERATOR_NAME} \
+    --region ${LAMBDA_REGION} \
+    --environment "{
+      \"Variables\": {
+        \"INFINISPAN_USER\" : \"${INFINISPAN_USER}\",
+        \"INFINISPAN_USER_SECRET\" : \"${INFINISPAN_USER_SECRET}\",
+        \"INFINISPAN_SITE_ENDPOINTS\" : ${INFINISPAN_SITE_ENDPOINTS},
+        \"WEBHOOK_USER\" : \"${WEBHOOK_USER}\",
+        \"WEBHOOK_USER_SECRET\" : \"${WEBHOOK_USER_SECERT}\",
+        \"SECRETS_REGION\" : \"eu-central-1\"
+      }
+    }"
+</#noparse>
+----
++
+<1> The name of the AWS Global Accelerator used by your deployment
+<2> The AWS Region hosting your Kubernetes cluster and Lambda function
+<3> The name of one of your {jdgserver_name} sites as defined in <@links.ha id="deploy-infinispan-kubernetes-crossdc" />
+<4> The {jdgserver_name} endpoint URL associated with the CLUSER_1_NAME site
+<5> The name of the second {jdgserver_name} site
+<6> The {jdgserver_name} endpoint URL associated with the CLUSER_2_NAME site
+<7> The username of a {jdgserver_name} user which has sufficient privileges to perform REST requests on the server
+<8> The name of the AWS secret containing the password associated with the {jdgserver_name} user
+<9> The username used to authenticate requests to the Lambda Function
+<10> The name of the AWS secret containing the password used to authenticate requests to the Lambda function
++
+. Retrieve the Lambda Function URL
 +
 .Command:
 [source,bash]
@@ -255,11 +309,7 @@ https://tjqr2vgc664b6noj6vugprakoq0oausj.lambda-url.eu-west-1.on.aws
 [source,bash]
 ----
 <#noparse>
-ACCELERATOR_NAME= # <1>
-NAMESPACE= # <2>
-LOCAL_SITE= # <3>
-REMOTE_SITE= # <4>
-
+NAMESPACE= # The namespace containing your deployments
 kubectl apply -n ${NAMESPACE} -f - << EOF
 include::examples/generated/ispn-site-a.yaml[tag=fencing-secret]
 </#noparse>
