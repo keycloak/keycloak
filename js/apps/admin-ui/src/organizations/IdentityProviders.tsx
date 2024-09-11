@@ -44,9 +44,6 @@ const ShownOnLoginPageCheck = ({
         {
           ...row,
           hideOnLogin: value,
-          config: {
-            ...row.config,
-          },
         },
       );
       addAlert(t("linkUpdatedSuccessful"));
