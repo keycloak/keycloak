@@ -147,13 +147,15 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
                 continue;
             }
 
-            Map<String, Object> attributes = Map.of();
+            Map<String, Object> claims = new HashMap<>();
+
+            claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
 
             if (isAddOrganizationAttributes(model)) {
-                attributes = new HashMap<>(o.getAttributes());
+                claims.putAll(o.getAttributes());
             }
 
-            value.put(o.getAlias(), attributes);
+            value.put(o.getAlias(), claims);
         }
 
         if (value.isEmpty()) {
