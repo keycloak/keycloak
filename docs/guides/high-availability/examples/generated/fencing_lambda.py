@@ -1,4 +1,3 @@
-# tag::fencing[]
 from urllib.error import HTTPError
 
 import boto3
@@ -170,4 +169,3 @@ INFINISPAN_SITE_ENDPOINTS = env('INFINISPAN_SITE_ENDPOINTS')
 SECRETS_REGION = env('SECRETS_REGION')
 WEBHOOK_USER = env('WEBHOOK_USER')
 WEBHOOK_USER_SECRET = env('WEBHOOK_USER_SECRET')
-# end::fencing[]
