@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
@@ -474,5 +475,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("secret", secret.getValue());
+    }
+    
+    @Test
+    public void testReloadPeriod() {
+        ConfigArgsConfigSource.setCliArgs("");
+        assertEquals("1h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
+        assertNull(createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
+        assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
     }
 }

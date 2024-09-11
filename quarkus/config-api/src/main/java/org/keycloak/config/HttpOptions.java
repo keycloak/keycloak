@@ -63,6 +63,12 @@ public class HttpOptions {
             .defaultValue(Arrays.asList("TLSv1.3,TLSv1.2"))
             .build();
 
+    public static final Option<String> HTTPS_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-certificates-reload-period", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Interval on which to reload key store, trust store, and certificate files referenced by https-* options. May be a java.time.Duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1 to disable.")
+            .defaultValue("1h")
+            .build();
+    
     public static final Option<File> HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a server certificate or certificate chain in PEM format.")

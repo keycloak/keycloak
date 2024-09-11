@@ -68,6 +68,12 @@ public final class HttpPropertyMappers {
                         .to("quarkus.http.ssl.protocols")
                         .paramLabel("protocols")
                         .build(),
+                fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
+                        .to("quarkus.http.ssl.certificate.reload-period")
+                        // -1 means no reload
+                        .transformer((value, context) -> "-1".equals(value.get()) ? null : value)
+                        .paramLabel("reload period")
+                        .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
                         .to(QUARKUS_HTTPS_CERT_FILES)
                         .transformer(HttpPropertyMappers.validatePath(QUARKUS_HTTPS_CERT_FILES))
