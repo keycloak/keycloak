@@ -364,6 +364,14 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
 
+        // import attributes
+
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+                newRealm.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
         Map<String, ClientModel> createdClients = new HashMap<>();
         if (rep.getClients() != null) {
             createdClients = createClients(session, rep, newRealm, mappedFlows);
@@ -454,14 +462,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         if (rep.getDefaultLocale() != null) {
             newRealm.setDefaultLocale(rep.getDefaultLocale());
-        }
-
-        // import attributes
-
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
-                newRealm.setAttribute(attr.getKey(), attr.getValue());
-            }
         }
 
         if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
