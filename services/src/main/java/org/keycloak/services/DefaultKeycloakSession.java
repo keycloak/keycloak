@@ -41,6 +41,7 @@ import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.resource.KeycloakResourceServices;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
@@ -85,6 +86,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
     private ModelMapper modelMapper;
+    private KeycloakResourceServices resourceServices;
     private boolean closed = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -370,6 +372,14 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
             modelMapper = getProvider(ModelMapper.class);
         }
         return modelMapper;
+    }
+
+    @Override
+    public KeycloakResourceServices getServices() {
+        if (resourceServices == null) {
+            resourceServices = getProvider(KeycloakResourceServices.class);
+        }
+        return resourceServices;
     }
 
     private static final Logger LOG = Logger.getLogger(DefaultKeycloakSession.class);

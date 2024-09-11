@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.resource.KeycloakResourceServices;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
@@ -37,6 +38,8 @@ public interface KeycloakSession extends AutoCloseable {
     KeycloakContext getContext();
 
     KeycloakTransactionManager getTransactionManager();
+
+    KeycloakResourceServices getServices();
 
     /**
      * Get dedicated provider instance of provider type clazz that was created for this session.  If one hasn't been created yet,
