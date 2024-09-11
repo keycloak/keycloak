@@ -41,6 +41,14 @@ If you want to run with a local Quarkus distribution of Keycloak for development
 pnpm start --local
 ```
 
+If you want to run Keycloak standalone (without the script) against the Vite development server, you can set the following environment variables to achieve the same result:
+
+```sh
+KC_ACCOUNT_VITE_URL=http://localhost:5173
+KC_ADMIN_VITE_URL=http://localhost:5174
+KC_FEATURES=login2,account3,admin-fine-grained-authz,transient-users,oid4vc-vci
+```
+
 **All other arguments will be passed through to the underlying Keycloak server.**
 
 In order for the development version of the Admin UI to work you will have to import a custom client to the Keycloak server. This is only required during development as the development server for the Admin UI runs on a different port. This client will be imported automatically under the name `security-admin-console-v2` when the Keycloak server starts.
