@@ -17,6 +17,10 @@
 
 package org.keycloak.url;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Optional;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
@@ -24,23 +28,15 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 
-import java.net.URI;
-import java.util.Optional;
-import java.util.regex.Pattern;
-
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class HostnameV2ProviderFactory implements HostnameProviderFactory, EnvironmentDependentProviderFactory {
+    private static final String INVALID_HOSTNAME = "Provided hostname is neither a plain hostname nor a valid URL";
     private String hostname;
     private URI hostnameUrl;
     private URI adminUrl;
     private Boolean backchannelDynamic;
-
-    // Simplified regexes for hostname validations; further validations are performed when instantiating URI object
-    private static final String hostnameStringPattern = "[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*";
-    private static final Pattern hostnamePattern = Pattern.compile("^" + hostnameStringPattern + "$");
-    private static final Pattern hostnameUrlPattern = Pattern.compile("^(http|https)://" + hostnameStringPattern + "(:\\d+)?(/[\\w-]+)*/?$");
 
     @Override
     public void init(Config.Scope config) {
@@ -57,11 +53,10 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
 
         // Set hostname, can be either a full URL, or just hostname
         if (hostnameRaw != null) {
-            if (hostnamePattern.matcher(hostnameRaw).matches()) {
-                hostname = hostnameRaw;
-            }
-            else {
-                hostnameUrl = validateAndCreateUri(hostnameRaw, "Provided hostname is neither a plain hostname or a valid URL");
+            if (!(hostnameRaw.startsWith("http://") || hostnameRaw.startsWith("https://"))) {
+                validateAndSetHostname(hostnameRaw);
+            } else {
+                hostnameUrl = validateAndCreateUri(hostnameRaw, INVALID_HOSTNAME);
             }
         }
 
@@ -78,17 +73,36 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
             throw new IllegalArgumentException("hostname-backchannel-dynamic must be set to false if hostname is not provided as full URL");
         }
     }
+    
+    private void validateAndSetHostname(String hostname) {
+        URI result;
+        try {
+            result = URI.create("http://"+hostname);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(INVALID_HOSTNAME, e);
+        }
+        if (result.getHost() == null || !result.getHost().equals(hostname)) {
+            throw new IllegalArgumentException(INVALID_HOSTNAME);
+        }
+        this.hostname = hostname;
+    }
 
     private URI validateAndCreateUri(String uri, String validationFailedMessage) {
-        if (!hostnameUrlPattern.matcher(uri).matches()) {
-            throw new IllegalArgumentException(validationFailedMessage);
-        }
+        URI result;
         try {
-            return URI.create(uri);
+            result = URI.create(uri);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(validationFailedMessage, e);
         }
+        if (!Arrays.asList("http", "https").contains(result.getScheme())) {
+            throw new IllegalArgumentException(validationFailedMessage);
+        }
+        if (result.getRawUserInfo() != null || result.getRawQuery() != null || result.getRawFragment() != null) {
+            throw new IllegalArgumentException(validationFailedMessage);
+        }
+        return result;
     }
 
     @Override
