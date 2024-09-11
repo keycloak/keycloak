@@ -9,7 +9,7 @@
             <#assign label>
                 <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
             </#assign>
-            <@field.input name="username" label=label value=auth.attemptedUsername!''/>
+            <@field.input name="username" label=label value=auth.attemptedUsername!'' autofocus=true />
 
             <@buttons.actionGroup>
               <@buttons.button id="kc-form-buttons" label="doSubmit" class=["kcButtonPrimaryClass", "kcButtonBlockClass"]/>

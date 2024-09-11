@@ -8,8 +8,8 @@
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post" novalidate="novalidate">
-            <@field.password name="password-new" label=msg("passwordNew") fieldName="password" />
-            <@field.password name="password-confirm" label=msg("passwordConfirm") />
+            <@field.password name="password-new" label=msg("passwordNew") fieldName="password" autocomplete="new-password" autofocus=true />
+            <@field.password name="password-confirm" label=msg("passwordConfirm") autocomplete="new-password" />
 
             <div class="${properties.kcFormGroupClass!}">
                 <@passwordCommons.logoutOtherSessions/>
