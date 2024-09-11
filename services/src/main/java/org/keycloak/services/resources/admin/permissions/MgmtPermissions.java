@@ -29,6 +29,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.common.Profile;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -52,6 +54,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.ForbiddenException;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.utils.RoleResolveUtil;
 
 /**
@@ -107,20 +110,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
         final String issuedFor = auth.getToken().getIssuedFor();
         AccessToken accessToken = auth.getToken();
-        //support for lightweight access token
-        if (auth.getToken().getSubject() == null) {
+        ClientModel client = adminsRealm.getClientByClientId(issuedFor);
+        //support for lightweight access token and transient session
+        if (accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
             //get user session
-            UserSessionProvider sessions = session.sessions();
-            UserSessionModel userSession = sessions.getUserSession(adminsRealm, auth.getToken().getSessionId());
-            if (userSession == null) {
-                userSession = sessions.getOfflineUserSession(adminsRealm, auth.getToken().getSessionId());
-            }
+            EventBuilder event = new EventBuilder(adminsRealm, session);
+            event.event(EventType.INTROSPECT_TOKEN);
+            UserSessionModel userSession = UserSessionUtil.findValidSession(session, adminsRealm, accessToken, event, client);
 
             if (userSession != null) {
                 //get client session
-                ClientModel client = adminsRealm.getClientByClientId(issuedFor);
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-
                 //set realm roles
                 ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, auth.getToken().getScope(), session);
                 AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
