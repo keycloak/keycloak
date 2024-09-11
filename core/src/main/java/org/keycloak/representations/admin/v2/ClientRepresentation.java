@@ -50,7 +50,7 @@ public record ClientRepresentation(
     Auth auth,
 
     @JsonPropertyDescription("Web origins that are allowed to make requests to this client")
-    String webOrigins,
+    Set<String> webOrigins,
 
     @JsonPropertyDescription("Roles associated with this client")
     Set<String> roles,
