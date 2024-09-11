@@ -10,14 +10,12 @@ summary="Client-side JavaScript library that can be used to secure web applicati
 
 == Installation
 
-The adapter is distributed in several ways, but we recommend that you install the https://www.npmjs.com/package/keycloak-js[`keycloak-js`] package from NPM:
+We recommend that you install the https://www.npmjs.com/package/keycloak-js[`keycloak-js`] package from NPM:
 
 [source,bash]
 ----
 npm install keycloak-js
 ----
-
-Alternatively, the library can be retrieved directly from the {project_name} server at `{kc_js_path}/keycloak.js` and is also distributed as a ZIP archive. We are however considering the inclusion of the adapter directly from the Keycloak server as deprecated, and this functionality might be removed in the future.
 
 == {project_name} server configuration
 
