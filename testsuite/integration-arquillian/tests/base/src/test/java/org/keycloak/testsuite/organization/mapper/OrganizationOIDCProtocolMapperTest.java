@@ -20,6 +20,7 @@ package org.keycloak.testsuite.organization.mapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -448,6 +449,47 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet().isEmpty(), is(true));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testIncludeOrganizationId() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        addMember(organization);
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
+
+        oauth.clientId("direct-grant");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        Map<String, Map<String, String>> organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet(), hasItem("id"));
+        assertThat(organizations.get(organizationName).get("id"), equalTo(orgRep.getId()));
+
+        // when id is added to tokens, the claim type is a json regardless of the value set in the config
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        assertThat(organizations.get(organizationName).keySet(), hasItem("id"));
+        assertThat(organizations.get(organizationName).get("id"), equalTo(orgRep.getId()));
+
+        // disabling the attribute should result in no ids in the claims.
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.keySet(), hasItem(organizationName));
         assertThat(organizations.get(organizationName).keySet().isEmpty(), is(true));
     }
