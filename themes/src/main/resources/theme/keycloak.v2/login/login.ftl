@@ -15,10 +15,10 @@
                         <#assign label>
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                         </#assign>
-                        <@field.input name="username" label=label value=login.username!'' />
+                        <@field.input name="username" label=label autofocus=true autocomplete="username" value=login.username!'' />
                     </#if>
 
-                    <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed/>
+                    <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed autofocus=usernameHidden?? autocomplete="current-password" />
 
                     <div class="${properties.kcFormGroupClass!}">
                         <#if realm.rememberMe && !usernameHidden??>
