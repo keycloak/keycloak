@@ -21,12 +21,14 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.utils.StringUtil;
 
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -145,35 +147,49 @@ public class OTPPolicy implements Serializable {
      */
     public String getKeyURI(RealmModel realm, UserModel user, String secret) {
 
-        try {
+        String issuerName = !StringUtil.isNullOrEmpty(realm.getDisplayName()) ? realm.getDisplayName() : realm.getName();
+        String accountName = user.getUsername();
 
-            String displayName = realm.getDisplayName() != null && !realm.getDisplayName().isEmpty() ? realm.getDisplayName() : realm.getName();
+        return getKeyURI(issuerName, accountName, secret);
+    }
 
-            String accountName = URLEncoder.encode(user.getUsername(), "UTF-8");
-            String issuerName = URLEncoder.encode(displayName, "UTF-8") .replaceAll("\\+", "%20");
+    /**
+     * Constructs the <code>otpauth://</code> URI based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">Key-Uri-Format</a>.
+     *
+     * @param rawIssuerName
+     * @param rawAccountName
+     * @param secret
+     * @return the <code>otpauth://</code> URI
+     */
+    public String getKeyURI(String rawIssuerName, String rawAccountName, String secret) {
 
-            /*
-             * The issuerName component in the label is usually shown in a authenticator app, such as
-             * Google Authenticator or FreeOTP, as a hint for the user to which system an username
-             * belongs to.
-             */
-            String label = issuerName + ":" + accountName;
+        String accountName = URLEncoder.encode(rawAccountName, UTF_8);
+        /*
+         * Replacing ':' in issuerName with a space because the ':' is not allowed in the issuer part of the label.
+         * See: https://github.com/google/google-authenticator/wiki/Key-Uri-Format#label
+         */
+        String issuerName = rawIssuerName.replaceAll("[:]", " ");
+        issuerName = URLEncoder.encode(issuerName, UTF_8).replaceAll("\\+", "%20");
 
-            String parameters = "secret=" + Base32.encode(secret.getBytes()) //
-                                + "&digits=" + digits //
-                                + "&algorithm=" + algToKeyUriAlg.get(algorithm) //
-                                + "&issuer=" + issuerName;
+        /*
+         * The issuerName component in the label is usually shown in a authenticator app, such as
+         * Google Authenticator or FreeOTP, as a hint for the user to which system an username
+         * belongs to.
+         */
+        String label = issuerName + ":" + accountName;
 
-            if (type.equals(OTPCredentialModel.HOTP)) {
-                parameters += "&counter=" + initialCounter;
-            } else if (type.equals(OTPCredentialModel.TOTP)) {
-                parameters += "&period=" + period;
-            }
+        String parameters = "secret=" + Base32.encode(secret.getBytes()) //
+                            + "&digits=" + digits //
+                            + "&algorithm=" + algToKeyUriAlg.get(algorithm) //
+                            + "&issuer=" + issuerName;
 
-            return "otpauth://" + type + "/" + label+ "?" + parameters;
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        if (type.equals(OTPCredentialModel.HOTP)) {
+            parameters += "&counter=" + initialCounter;
+        } else if (type.equals(OTPCredentialModel.TOTP)) {
+            parameters += "&period=" + period;
         }
+
+        return "otpauth://" + type + "/" + label + "?" + parameters;
     }
 
 }
