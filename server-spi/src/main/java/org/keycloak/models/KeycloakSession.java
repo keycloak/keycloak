@@ -252,6 +252,11 @@ public interface KeycloakSession extends AutoCloseable {
      */
     ClientPolicyManager clientPolicy();
 
+    /**
+     * Mapper for Model <-> Representation conversion
+     */
+    ModelMapper modelMapper();
+
     boolean isClosed();
 
 }

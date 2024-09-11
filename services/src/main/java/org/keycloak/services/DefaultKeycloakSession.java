@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.ModelMapper;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
@@ -41,10 +42,10 @@ import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
@@ -83,6 +84,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
+    private ModelMapper modelMapper;
     private boolean closed = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -360,6 +362,14 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
             clientPolicyManager = getProvider(ClientPolicyManager.class);
         }
         return clientPolicyManager;
+    }
+
+    @Override
+    public ModelMapper modelMapper() {
+        if (modelMapper == null) {
+            modelMapper = getProvider(ModelMapper.class);
+        }
+        return modelMapper;
     }
 
     private static final Logger LOG = Logger.getLogger(DefaultKeycloakSession.class);
