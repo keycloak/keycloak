@@ -122,7 +122,7 @@ public class Profile {
 
         PASSKEYS("Passkeys", Type.PREVIEW),
 
-        CACHE_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
+        CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
         ;
 
         private final Type type;
