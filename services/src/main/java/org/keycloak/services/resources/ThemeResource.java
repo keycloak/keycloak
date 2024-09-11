@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -67,26 +68,28 @@ public class ThemeResource {
     /**
      * Get theme content
      *
-     * @param themType
+     * @param version
+     * @param themeType
      * @param themeName
      * @param path
      * @return
      */
     @GET
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
-    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
-        if (!version.equals(Version.RESOURCES_VERSION)) {
+    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
+        final Optional<Theme.Type> type = getThemeType(themeType);
+        if (!version.equals(Version.RESOURCES_VERSION) || type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
             String contentType = MimeTypeUtil.getContentType(path);
-            Theme theme = session.theme().getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
+            Theme theme = session.theme().getTheme(themeName, type.get());
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
             InputStream resource;
             if (encodingProvider != null) {
-                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themType, themeName, path.replace('/', File.separatorChar));
+                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themeType, themeName, path.replace('/', File.separatorChar));
             } else {
                 resource = theme.getResourceAsStream(path);
             }
@@ -119,18 +122,18 @@ public class ThemeResource {
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
                                          @QueryParam("source") boolean showSource) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
-        if (realm == null) {
+        final Optional<Theme.Type> type = getThemeType(themeType);
+        if (realm == null || type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         session.getContext().setRealm(realm);
         List<KeySource> result;
 
         Theme theTheme;
-        final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
         if (theme == null) {
-            theTheme = session.theme().getTheme(type);
+            theTheme = session.theme().getTheme(type.get());
         } else {
-            theTheme = session.theme().getTheme(theme, type);
+            theTheme = session.theme().getTheme(theme, type.get());
         }
 
         final Locale locale = Locale.forLanguageTag(localeString);
@@ -152,6 +155,14 @@ public class ThemeResource {
         }
 
         return Cors.builder().allowedOrigins("*").auth().add(Response.ok(result));
+    }
+
+    private static Optional<Theme.Type> getThemeType(String themeType) {
+        try {
+            return Optional.of(Theme.Type.valueOf(themeType.toUpperCase()));
+        } catch (IllegalArgumentException iae) {
+            return Optional.empty();
+        }
     }
 }
 
