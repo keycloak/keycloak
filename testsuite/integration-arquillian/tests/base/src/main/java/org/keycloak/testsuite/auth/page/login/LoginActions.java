@@ -39,7 +39,7 @@ public class LoginActions extends LoginBase {
     @FindBy(css = "button[type='submit']")
     private WebElement submitButton;
 
-    @FindBy(css = "button[type='submit']")
+    @FindBy(css = "button[name='cancel-aia']")
     private WebElement cancelButton;
 
     public void submit() {

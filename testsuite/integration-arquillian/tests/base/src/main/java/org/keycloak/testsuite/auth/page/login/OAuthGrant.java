@@ -34,10 +34,10 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class OAuthGrant extends RequiredActions {
-    @FindBy(css = "input[name=\"accept\"]")
+    @FindBy(css = "button[name=\"accept\"]")
     private WebElement acceptButton;
 
-    @FindBy(css = "input[name=\"cancel\"]")
+    @FindBy(css = "button[name=\"cancel\"]")
     private WebElement cancelButton;
 
     @FindBy(xpath = "//div[@id='kc-oauth']/ul/li/span")
