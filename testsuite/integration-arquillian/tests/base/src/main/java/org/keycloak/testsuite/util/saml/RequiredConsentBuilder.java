@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,11 +18,13 @@ package org.keycloak.testsuite.util.saml;
 
 import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.http.NameValuePair;
@@ -37,12 +39,12 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
- *
  * @author hmlnarik
  */
 public class RequiredConsentBuilder implements Step {
@@ -88,18 +90,18 @@ public class RequiredConsentBuilder implements Step {
         for (Element form : theLoginPage.getElementsByTag("form")) {
             String method = form.attr("method");
             String action = form.attr("action");
-            boolean isPost = method != null && "post".equalsIgnoreCase(method);
+            boolean isPost = "post".equalsIgnoreCase(method);
+
+            Element submitButton;
+            if (approveConsent) {
+                submitButton = form.getElementById("kc-login");
+            } else {
+                submitButton = form.getElementById("kc-cancel");
+            }
+            parameters.add(new BasicNameValuePair(submitButton.attr("name"), submitButton.attr("value")));
 
             for (Element input : form.getElementsByTag("input")) {
-                if (Objects.equals(input.id(), "kc-login")) {
-                    if (approveConsent)
-                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
-                } else if (Objects.equals(input.id(), "kc-cancel")) {
-                    if (!approveConsent)
-                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
-                } else {
-                    parameters.add(new BasicNameValuePair(input.attr("name"), input.val()));
-                }
+                parameters.add(new BasicNameValuePair(input.attr("name"), input.val()));
             }
 
             if (isPost) {

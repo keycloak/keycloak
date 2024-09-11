@@ -41,19 +41,19 @@
   </#if>
 </#macro>
 
-<#macro input name label value="" required=false>
-  <#assign error=kcSanitize(messagesPerField.get(name))?no_esc>
+<#macro input name label value="" required=false autocomplete="off" fieldName=name>
+  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
   <@field.group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
-        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="off"
+        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}"
                 aria-invalid="<#if error?has_content>true</#if>"/>
         <@errorIcon error=error/>
     </span>
   </@field.group>
 </#macro>
 
-<#macro password name label value="" required=false forgotPassword=false>
-  <#assign error=kcSanitize(messagesPerField.get(name))?no_esc>
+<#macro password name label value="" required=false forgotPassword=false fieldName=name>
+  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
   <@field.group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">

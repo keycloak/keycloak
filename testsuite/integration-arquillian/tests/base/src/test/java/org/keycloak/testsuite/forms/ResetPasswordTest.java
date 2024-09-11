@@ -1370,7 +1370,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         newPassword.sendKeys("resetPassword");
         final WebElement confirmPassword = driver.findElement(By.id("password-confirm"));
         confirmPassword.sendKeys("resetPassword");
-        final WebElement submit = driver.findElement(By.cssSelector("input[type=\"submit\"]"));
+        final WebElement submit = driver.findElement(By.cssSelector("button[type=\"submit\"]"));
 
         submit.click();
     }
