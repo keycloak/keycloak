@@ -451,21 +451,21 @@ public class CacheManagerFactory {
     }
 
     private static void checkForRemoteStores(ConfigurationBuilderHolder builder) {
-        if (Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC) && Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE) && Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
             logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
-                    Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.MULTI_SITE.getKey());
-            throw new RuntimeException("The features " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " and " + Profile.Feature.MULTI_SITE.getKey() + " must not be enabled at the same time.");
+                    Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.MULTI_SITE.getKey());
+            throw new RuntimeException("The features " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " and " + Profile.Feature.MULTI_SITE.getKey() + " must not be enabled at the same time.");
         }
-        if (Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
             logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
-                    Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.REMOTE_CACHE.getKey());
-            throw new RuntimeException("The features " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " and " + Profile.Feature.REMOTE_CACHE.getKey() + " must not be enabled at the same time.");
+                    Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.REMOTE_CACHE.getKey());
+            throw new RuntimeException("The features " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " and " + Profile.Feature.REMOTE_CACHE.getKey() + " must not be enabled at the same time.");
         }
-        if (!Profile.isFeatureEnabled(Profile.Feature.REMOTE_STORE_CROSS_DC)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE)) {
             if (builder.getNamedConfigurationBuilders().values().stream().anyMatch(CacheManagerFactory::hasRemoteStore)) {
                 logger.fatalf("Remote stores are not supported for embedded caches as feature %s is not enabled. This feature is disabled by default as it is now deprecated.%nFor keeping user sessions across restarts, use feature %s which is enabled by default.%nFor multi-site (cross-dc) support, enable %s.",
-                        Profile.Feature.REMOTE_STORE_CROSS_DC.getKey(), Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), Profile.Feature.MULTI_SITE.getKey());
-                throw new RuntimeException("Remote store is not supported as feature " + Profile.Feature.REMOTE_STORE_CROSS_DC.getKey() + " is not enabled.");
+                        Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), Profile.Feature.MULTI_SITE.getKey());
+                throw new RuntimeException("Remote store is not supported as feature " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " is not enabled.");
             }
         }
     }
