@@ -23,8 +23,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 
 /**
@@ -33,7 +31,6 @@ import org.keycloak.representations.idm.ClientTypesRepresentation;
 public interface ClientTypesResource {
 
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     ClientTypesRepresentation getClientTypes();
 
