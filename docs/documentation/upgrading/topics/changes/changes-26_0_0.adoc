@@ -127,11 +127,11 @@ Instead, enable the `multi-site` feature and use the `cache-remove-*` options.
 = External {jdgserver_name} in a single-site setup
 
 If you are using an external {jdgserver_name} in a single-site setup, this was not supported in earlier versions of {project_name} and it is not supported in {project_name} 26.
-To protect users from using it accidentally via a manual configuration in Keycloak's cache XML or via the CLI options, this is now guarded with a feature flag `remote-store-cross-dc`. It is marked as experimental and is therefore not supported. {project_name} 26 will not start with such a configuration and show an error instead unless this experimental feature is enabled.
+To protect users from using it accidentally via a manual configuration in Keycloak's cache XML or via the CLI options, this is now guarded with a feature flag `cache-remote-store`. It is marked as experimental and is therefore not supported. {project_name} 26 will not start with such a configuration and show an error instead unless this experimental feature is enabled.
 
 If you have been using an external {jdgserver_name} to keep users logged in between restarts and upgrades, use the `persistent-user-sessions` feature instead which is enabled by default. The external {jdgserver_name} is then no longer necessary.
 
-The experimental feature `remote-store-cross-dc` *will be removed in a future minor release*.
+The experimental feature `cache-remote-store` *will be removed in a future minor release*.
 
 = Admin Bootstrapping and Recovery
 
