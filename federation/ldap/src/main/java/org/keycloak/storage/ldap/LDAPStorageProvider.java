@@ -93,7 +93,6 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
@@ -296,7 +295,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
-        return ldapObjects.stream().map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
+        return ldapObjects.stream().map(ldapUser -> {
+            String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
+            if (localUser == null) {
+                return importUserFromLDAP(session, realm, ldapUser);
+            } else {
+                return proxy(realm, localUser, ldapUser, false);
+            }
+        });
     }
 
     public boolean synchronizeRegistrations() {
@@ -565,16 +572,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     /**
-     * Searches LDAP using logical disjunction of params. It supports 
+     * Searches LDAP using logical disjunction of params. It supports
      * <ul>
      *     <li>{@link UserModel#FIRST_NAME}</li>
      *     <li>{@link UserModel#LAST_NAME}</li>
      *     <li>{@link UserModel#EMAIL}</li>
      *     <li>{@link UserModel#USERNAME}</li>
      * </ul>
-     * 
+     *
      * It uses multiple LDAP calls and results are combined together with respect to firstResult and maxResults
-     * 
+     *
      * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
      */
     private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
@@ -1044,11 +1051,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
     /**
      * This method leverages existing pagination support in {@link LDAPQuery#getResultList()}. It sets the limit for the query
      * based on {@code firstResult}, {@code maxResults} and {@link LDAPConfig#getBatchSizeForSync()}.
-     * 
+     *
      * <p/>
-     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)} 
-     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be 
-     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled 
+     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)}
+     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be
+     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled
      * "on demand".
      */
     private Stream<LDAPObject> paginatedSearchLDAP(LDAPQuery ldapQuery, Integer firstResult, Integer maxResults) {
@@ -1071,7 +1078,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 }
             }
 
-            return Stream.iterate(ldapQuery, 
+            return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
                         if (query.getPaginationContext() == null) try {
@@ -1082,7 +1089,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                             throw new ModelException("Querying of LDAP failed " + query, e);
                         }
                         return query.getPaginationContext().hasNextPage();
-                    }, 
+                    },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);
