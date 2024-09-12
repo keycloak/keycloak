@@ -42,6 +42,11 @@ Alternatively, you can use the Docker image by running:
     
 For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
+## Self-Hosting Options
+
+### Elestio
+
+[![Deploy on Elestio](https://elest.io/images/logos/deploy-to-elestio-btn.png)](https://elest.io/open-source/keycloak)
 
 ## Building from Source
 
