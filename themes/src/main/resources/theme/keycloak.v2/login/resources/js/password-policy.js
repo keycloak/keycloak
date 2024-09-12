@@ -43,11 +43,8 @@ const templateError = (policy) => policy.error.replace("{0}", policy.value);
 
 export function validatePassword(password, activePolicies) {
   const errors = [];
-  const policiesNames = activePolicies.map((policy) => Object.keys(policy)[0]);
-  for (let i = 0; i < policiesNames.length; i++) {
-    const policyName = policiesNames[i];
-    let policy = policies[policyName];
-    let validationError = policy(activePolicies[i][policyName], password);
+  for (const p of activePolicies) {
+    const validationError = policies[p.name](p.policy, password);
     if (validationError) {
       errors.push(validationError);
     }
