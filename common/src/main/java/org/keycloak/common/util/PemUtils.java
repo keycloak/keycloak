@@ -23,6 +23,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
@@ -53,6 +56,24 @@ public class PemUtils {
         return CryptoIntegration.getProvider().getPemUtils().decodeCertificate(cert);
     }
 
+
+    /**
+     * Decode one or more X509 Certificates from a PEM string (certificate bundle)
+     *
+     * @param certs
+     * @return
+     * @throws Exception
+     */
+    public static X509Certificate[] decodeCertificates(String certs) {
+        String[] pemBlocks = certs.split(END_CERT);
+
+        List<X509Certificate> x509Certificates = Arrays.stream(pemBlocks)
+                .filter(pemBlock -> pemBlock != null && !pemBlock.trim().isEmpty())
+                .map(pemBlock -> PemUtils.decodeCertificate(pemBlock + END_CERT))
+                .collect(Collectors.toList());
+
+        return x509Certificates.toArray(new X509Certificate[x509Certificates.size()]);
+    }
 
     /**
      * Decode a Public Key from a PEM string
