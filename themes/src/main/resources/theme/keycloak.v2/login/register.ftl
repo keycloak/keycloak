@@ -45,19 +45,25 @@
             </div>
 
         </form>
-        <script type="module">
-            import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
 
-            const template = `
-            <div class="pf-v5-c-form__helper-text" aria-live="polite">
-                <div class="pf-v5-c-helper-text">
-                    <div class="pf-v5-c-helper-text__item pf-m-error">
-                        <ul class="pf-v5-c-helper-text__item-text">
-                            {errors}
+        <template id="errorTemplate">
+            <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+                <div class="${properties.kcInputHelperTextClass}">
+                    <div class="${properties.kcInputHelperTextItemClass} ${properties.kcError}">
+                        <ul class="${properties.kcInputErrorMessageClass}">
                         </ul>
                     </div>
                 </div>
-            </div>`
+            </div>
+        </template>
+        <template id="errorItemTemplate">
+            <li></li>
+        </template>
+
+        <script type="module">
+            import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
+
+            const template = document.querySelector("#errorTemplate").content.cloneNode(true);
 
             const activePolicies = [
                 { length: { value: ${passwordPolicies.length!-1}, error: "${msg('invalidPasswordMinLengthMessage')}"} },
@@ -68,15 +74,20 @@
                 { specialChars: { value: ${passwordPolicies.specialChars!-1}, error: "${msg('invalidPasswordMinSpecialCharsMessage')}"} }
             ].filter(n => Object.values(n)[0].value !== -1);
 
-            document.getElementById("password").addEventListener("change", function() {
+            document.getElementById("password").addEventListener("change", (event) => {
                 const serverErrors = document.getElementById("input-error-password");
                 if (serverErrors) {
                     serverErrors.remove();
                 }
-                const errors = validatePassword(this.value, activePolicies);
-                const htmlErrors = errors.map(e => "<li>" + e + "</li>").join("");
-                const htmlTemplate = template.replaceAll("{errors}", htmlErrors);
-                document.getElementById("input-error-client-password").innerHTML = htmlTemplate;
+                const errors = validatePassword(event.target.value, activePolicies);
+                const errorList = template.querySelector("ul");
+                const htmlErrors = errors.forEach((e) => {
+                    const row = document.querySelector("#errorItemTemplate").content.cloneNode(true);
+                    const li = row.querySelector("li");
+                    li.textContent = e;
+                    errorList.appendChild(li);
+                });
+                document.getElementById("input-error-client-password").appendChild(template);
             });
         </script>
     </#if>
