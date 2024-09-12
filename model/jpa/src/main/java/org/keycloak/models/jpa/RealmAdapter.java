@@ -1246,6 +1246,26 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
     }
 
+     @Override
+    public Long getAutoUpdatedIdPsInterval() {
+        return getAttribute(RealmAttributes.AUTO_UPDATED_IDPS_INTERVAL) == null ? null : Long.valueOf(getAttribute(RealmAttributes.AUTO_UPDATED_IDPS_INTERVAL));
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        setAttribute(RealmAttributes.AUTO_UPDATED_IDPS_INTERVAL, autoUpdatedIdPsInterval);
+    }
+
+    @Override
+    public Long getAutoUpdatedIdPsLastRefreshTime() {
+        return getAttribute(RealmAttributes.AUTO_UPDATED_IDPS_REFRESH_TIME) == null ? null : Long.valueOf(getAttribute(RealmAttributes.AUTO_UPDATED_IDPS_REFRESH_TIME));
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) {
+        setAttribute(RealmAttributes.AUTO_UPDATED_IDPS_REFRESH_TIME, autoUpdatedIdPsLastRefreshTime);
+    }
+
     @Override
     public ClientModel getMasterAdminClient() {
         String masterAdminClientId = realm.getMasterAdminClient();

@@ -125,6 +125,14 @@ public interface RealmModel extends RoleContainerModel {
 
     void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
 
+    Long getAutoUpdatedIdPsInterval() ;
+
+    void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) ;
+
+    Long getAutoUpdatedIdPsLastRefreshTime() ;
+
+    void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) ;
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());

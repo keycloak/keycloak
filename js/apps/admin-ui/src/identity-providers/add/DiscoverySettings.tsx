@@ -34,9 +34,32 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
     control,
     name: "config.pkceEnabled",
   });
+  const autoUpdated = useWatch({
+    control,
+    name: "config.autoUpdate",
+  });
 
   return (
     <div className="pf-v5-c-form pf-m-horizontal">
+      <DefaultSwitchControl
+        name="config.autoUpdate"
+        label={t("autoUpdate")}
+        labelIcon={t("autoUpdateHelp")}
+        stringify
+      />
+      <TextControl
+        name="config.metadataDescriptorUrl"
+        label={t("metadataOfDiscoveryEndpoint")}
+        labelIcon={t("discoveryEndpointHelp")}
+        type="url"
+        readOnly={readOnly}
+        rules={{
+          required: {
+            value: autoUpdated === "true",
+            message: t("required"),
+          },
+        }}
+      />
       <TextControl
         name="config.authorizationUrl"
         label={t("authorizationUrl")}

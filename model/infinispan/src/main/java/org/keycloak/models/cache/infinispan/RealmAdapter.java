@@ -1865,4 +1865,28 @@ public class RealmAdapter implements CachedRealmModel {
         if (!Profile.isFeatureEnabled(feature)) return false;
         return isEnabled;
     }
+
+    @Override
+    public Long getAutoUpdatedIdPsInterval() {
+        if (isUpdated()) return updated.getAutoUpdatedIdPsInterval();
+        return cached.getAutoUpdatedIdPsInterval();
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        getDelegateForUpdate();
+        updated.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
+    }
+
+    @Override
+    public Long getAutoUpdatedIdPsLastRefreshTime() {
+        if (isUpdated()) return updated.getAutoUpdatedIdPsLastRefreshTime();
+        return cached.getAutoUpdatedIdPsLastRefreshTime();
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) {
+        getDelegateForUpdate();
+        updated.setAutoUpdatedIdPsLastRefreshTime(autoUpdatedIdPsLastRefreshTime);
+    }
 }

@@ -125,7 +125,7 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.getFirst("providerId").asString();
         String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
-        final Map<String, String> parsedConfig = providerFactory.parseConfig(session, config);
+        final Map<String, String> parsedConfig = providerFactory.parseConfig(session, config, new IdentityProviderModel()).getConfig();
         String syncMode = parsedConfig.get(IdentityProviderModel.SYNC_MODE);
         if (syncMode == null) {
             parsedConfig.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
@@ -158,7 +158,7 @@ public class IdentityProvidersResource {
         String from = data.get("fromUrl").toString();
         String file = session.getProvider(HttpClientProvider.class).getString(from);
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, file);
+        Map<String, String> config = providerFactory.parseConfig(session, file, new IdentityProviderModel()).getConfig();
         // add the URL just if needed by the identity provider
         config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
         return config;

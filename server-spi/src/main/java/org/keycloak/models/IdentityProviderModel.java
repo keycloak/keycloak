@@ -57,6 +57,8 @@ public class IdentityProviderModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
+    //for SAML and OIDC providers
+    public static final String AUTO_UPDATE = "autoUpdate";
 
     private String internalId;
 

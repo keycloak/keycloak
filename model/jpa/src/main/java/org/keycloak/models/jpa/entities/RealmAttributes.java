@@ -61,4 +61,6 @@ public interface RealmAttributes {
     String ORGANIZATIONS_ENABLED = "organizationsEnabled";
     String ADMIN_PERMISSIONS_ENABLED = "adminPermissionsEnabled";
     String ADMIN_PERMISSIONS_CLIENT_ID = "adminPermissionsClientId";
+    String AUTO_UPDATED_IDPS_INTERVAL = "autoUpdatedIdPsInterval";
+    String AUTO_UPDATED_IDPS_REFRESH_TIME = "autoUpdatedIdPsLastRefreshTime";
 }

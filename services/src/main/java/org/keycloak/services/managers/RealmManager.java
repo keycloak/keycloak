@@ -58,6 +58,8 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.services.scheduled.UpdateAutoUpdatedIdPsTask;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
 import org.keycloak.storage.StoreSyncEvent;
@@ -67,6 +69,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -606,6 +610,10 @@ public class RealmManager {
             }
 
             RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+            if (realm.getAutoUpdatedIdPsInterval() != null) {
+                TimerProvider timer = session.getProvider(TimerProvider.class);
+                timer.schedule(new ClusterAwareScheduledTaskRunner(session.getKeycloakSessionFactory(), new UpdateAutoUpdatedIdPsTask(realm.getId()), realm.getAutoUpdatedIdPsInterval() * 1000), 60 * 1000, realm.getAutoUpdatedIdPsInterval() * 1000, "UpdateAutoUpdatedIdPsTask_" + realm.getId());
+            }
 
             setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
 

@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -114,10 +115,13 @@ import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.services.scheduled.UpdateAutoUpdatedIdPsTask;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.utils.GroupUtils;
+import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -447,7 +451,21 @@ public class RealmAdminResource {
                 }
             }
 
+            Long oldAutoUpdatedIdPsInterval = realm.getAutoUpdatedIdPsInterval();
             RepresentationToModel.updateRealm(rep, realm, session);
+            if (realm.getAutoUpdatedIdPsInterval() == null && oldAutoUpdatedIdPsInterval != null){
+                TimerProvider timer = session.getProvider(TimerProvider.class);
+                timer.cancelTask("UpdateAutoUpdatedIdPsTask_" + realm.getId());
+            } else if (realm.getAutoUpdatedIdPsInterval() != null && oldAutoUpdatedIdPsInterval == null) {
+                TimerProvider timer = session.getProvider(TimerProvider.class);
+                timer.schedule(new ClusterAwareScheduledTaskRunner(session.getKeycloakSessionFactory(), new UpdateAutoUpdatedIdPsTask(realm.getId()), realm.getAutoUpdatedIdPsInterval() * 1000), 60 * 1000, realm.getAutoUpdatedIdPsInterval() * 1000, "UpdateAutoUpdatedIdPsTask_" + realm.getId());
+            } else if (realm.getAutoUpdatedIdPsInterval() != null && !oldAutoUpdatedIdPsInterval.equals(realm.getAutoUpdatedIdPsInterval())) {
+                TimerProvider timer = session.getProvider(TimerProvider.class);
+                timer.cancelTask("UpdateAutoUpdatedIdPsTask_" + realm.getId());
+                long delay = realm.getAutoUpdatedIdPsLastRefreshTime() == null ? 60 * 1000 :
+                        realm.getAutoUpdatedIdPsLastRefreshTime() + realm.getAutoUpdatedIdPsInterval() - Instant.now().toEpochMilli();
+                timer.schedule(new ClusterAwareScheduledTaskRunner(session.getKeycloakSessionFactory(), new UpdateAutoUpdatedIdPsTask(realm.getId()), realm.getAutoUpdatedIdPsInterval() * 1000), delay >0 ? delay : 60 * 1000, realm.getAutoUpdatedIdPsInterval() * 1000, "UpdateAutoUpdatedIdPsTask_" + realm.getId());
+            }
 
             // Refresh periodic sync tasks for configured federationProviders
             StoreSyncEvent.fire(session, realm, false);

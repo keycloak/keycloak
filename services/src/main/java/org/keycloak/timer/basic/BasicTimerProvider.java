@@ -47,6 +47,11 @@ public class BasicTimerProvider implements TimerProvider {
 
     @Override
     public void schedule(final Runnable runnable, final long intervalMillis, String taskName) {
+        schedule(runnable, intervalMillis, intervalMillis, taskName);
+    }
+
+    @Override
+    public void schedule(Runnable runnable,long delay, long intervalMillis, String taskName) {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
