@@ -1,3 +1,32 @@
+<#macro username>
+  <div id="kc-username" class="${properties.kcFormGroupClass}">
+    <#assign label>
+        <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+    </#assign>
+    <div class="${properties.kcFormGroupLabelClass}">
+      <label for="username" class="pf-v5-c-form__label">
+          <span class="pf-v5-c-form__label-text">
+            ${label}
+          </span>
+      </label>
+    </div>
+    <div class="${properties.kcInputGroup}">
+      <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
+        <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">
+          <input id="username" value="${auth.attemptedUsername}" readonly>
+        </span>
+      </div>
+      <div class="${properties.kcInputGroupItemClass}">
+        <button tabindex="-1" class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" aria-label="${msg('restartLoginTooltip')}"
+              onclick="location.href='${url.loginRestartFlowUrl}'">
+            <i class="fa-sync-alt fas" aria-hidden="true"></i>
+            <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</#macro>
+
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
@@ -135,30 +164,15 @@
                           <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
                         </span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
                         <#nested "show-username">
-                        <div id="kc-username" class="${properties.kcFormGroupClass!}">
-                            <label id="kc-attempted-username">${auth.attemptedUsername}</label>
-                            <a id="reset-login" href="${url.loginRestartFlowUrl}" aria-label="${msg('restartLoginTooltip')}">
-                                <div class="kc-login-tooltip">
-                                    <i class="${properties.kcResetFlowIcon!}"></i>
-                                    <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
-                                </div>
-                            </a>
-                        </div>
+                        <@username />
                     </div>
                 </div>
             <#else>
-                <#nested "show-username">
-                <div id="kc-username" class="${properties.kcFormGroupClass!}">
-                    <label id="kc-attempted-username">${auth.attemptedUsername}</label>
-                    <a id="reset-login" href="${url.loginRestartFlowUrl}" aria-label="${msg('restartLoginTooltip')}">
-                        <div class="kc-login-tooltip">
-                            <i class="${properties.kcResetFlowIcon!}"></i>
-                            <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
-                        </div>
-                    </a>
-                    <hr />
+                <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
+                  <#nested "show-username">
+                  <@username />
                 </div>
             </#if>
         </#if>

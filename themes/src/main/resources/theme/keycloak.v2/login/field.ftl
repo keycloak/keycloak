@@ -65,7 +65,7 @@
         </span>
       </div>
       <div class="${properties.kcInputGroupItemClass}">
-        <button class="pf-v5-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+        <button class="${properties.kcFormPasswordVisibilityButtonClass}" type="button" aria-label="${msg('showPassword')}"
                 aria-controls="${name}" data-password-toggle
                 data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
