@@ -78,7 +78,7 @@
             <div class="${properties.kcInputHelperTextClass}">
                 <div class="${properties.kcInputHelperTextItemClass}">
                     <span class="${properties.kcInputHelperTextItemTextClass}">
-                        <a tabindex="3" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+                        <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
                     </span>
                 </div>
             </div>
