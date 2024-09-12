@@ -13,7 +13,6 @@
         </#if>
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post" novalidate="novalidate">
-
             <@userProfileCommons.userProfileFormFields; callback, attribute>
                 <#if callback = "afterField">
                 <#-- render password fields just under the username or email (if used as username) -->
@@ -46,5 +45,39 @@
             </div>
 
         </form>
+        <script type="module">
+            import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
+
+            const template = `
+            <div class="pf-v5-c-form__helper-text" aria-live="polite">
+                <div class="pf-v5-c-helper-text">
+                    <div class="pf-v5-c-helper-text__item pf-m-error">
+                        <ul class="pf-v5-c-helper-text__item-text">
+                            {errors}
+                        </ul>
+                    </div>
+                </div>
+            </div>`
+
+            const activePolicies = [
+                { length: { value: ${passwordPolicies.length!-1}, error: "${msg('invalidPasswordMinLengthMessage')}"} },
+                { maxLength: { value: ${passwordPolicies.maxLength!-1}, error: "${msg('invalidPasswordMaxLengthMessage')}"} },
+                { lowerCase: { value: ${passwordPolicies.lowerCase!-1}, error: "${msg('invalidPasswordMinLowerCaseCharsMessage')}"} },
+                { upperCase: { value: ${passwordPolicies.upperCase!-1}, error: "${msg('invalidPasswordMinUpperCaseCharsMessage')}"} },
+                { digits: { value: ${passwordPolicies.digits!-1}, error: "${msg('invalidPasswordMinDigitsMessage')}"} },
+                { specialChars: { value: ${passwordPolicies.specialChars!-1}, error: "${msg('invalidPasswordMinSpecialCharsMessage')}"} }
+            ].filter(n => Object.values(n)[0].value !== -1);
+
+            document.getElementById("password").addEventListener("change", function() {
+                const serverErrors = document.getElementById("input-error-password");
+                if (serverErrors) {
+                    serverErrors.remove();
+                }
+                const errors = validatePassword(this.value, activePolicies);
+                const htmlErrors = errors.map(e => "<li>" + e + "</li>").join("");
+                const htmlTemplate = template.replaceAll("{errors}", htmlErrors);
+                document.getElementById("input-error-client-password").innerHTML = htmlTemplate;
+            });
+        </script>
     </#if>
 </@layout.registrationLayout>
