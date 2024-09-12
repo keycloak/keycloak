@@ -120,6 +120,15 @@ The support is in preview mode, and we would be happy to obtain any feedback.
 
 For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
 
+= Automatic redirect from root to relative path
+
+User is automatically redirected to the path where {project_name} is hosted when the `http-relative-path` property is specified.
+It means when the relative path is set to `/auth`, and the user access `localhost:8080/`, the page is redirected to `localhost:8080/auth`.
+
+The same applies to the management interface when the `http-management-relative-path` or `http-relative-path` property is specified.
+
+It improves user experience as users no longer need to set the relative path to the URL explicitly.
+
 = Removal of legacy cookies
 
 Keycloak no longer sends `_LEGACY` cookies, which where introduced as a work-around to older browsers not supporting
