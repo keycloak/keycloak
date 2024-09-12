@@ -95,5 +95,16 @@
     <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
         <dropIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
     </changeSet>
+    
+    <changeSet id="26.0.0.32582-remove-tables-user-session-user-session-note-and-client-session" author="keycloak">
+        <dropTable tableName="CLIENT_SESSION_ROLE"/>
+        <dropTable tableName="CLIENT_SESSION_NOTE"/>
+        <dropTable tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <dropTable tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <dropTable tableName="CLIENT_USER_SESSION_NOTE"/>
+        <dropTable tableName="CLIENT_SESSION"/>
+        <dropTable tableName="USER_SESSION_NOTE"/>
+        <dropTable tableName="USER_SESSION"/>
+    </changeSet>
 
 </databaseChangeLog>
