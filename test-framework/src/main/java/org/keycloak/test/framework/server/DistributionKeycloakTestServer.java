@@ -1,8 +1,10 @@
 package org.keycloak.test.framework.server;
 
 import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.it.TestProvider;
 
 import java.util.List;
+import java.util.Set;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
 
@@ -16,8 +18,11 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(List<String> rawOptions) {
+    public void start(List<String> rawOptions, Set<TestProvider> customTestProviders) {
         keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT);
+        for( var testProvider : customTestProviders ) {
+            keycloak.copyProvider(testProvider);
+        }
         keycloak.run(rawOptions).assertStartedDevMode();
     }
 

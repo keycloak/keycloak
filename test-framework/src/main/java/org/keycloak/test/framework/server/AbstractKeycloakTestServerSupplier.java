@@ -57,7 +57,7 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
         }
 
         KeycloakTestServer server = getServer();
-        server.start(rawOptions);
+        server.start(rawOptions, serverConfig.customProviders());
         return server;
     }
 

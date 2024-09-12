@@ -35,6 +35,7 @@
     <modules>
         <module>examples</module>
         <module>showcase</module>
+        <module>providers</module>
     </modules>
 
 </project>
