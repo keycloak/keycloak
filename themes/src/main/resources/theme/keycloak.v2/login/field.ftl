@@ -14,6 +14,7 @@
 
   <#nested>
 
+  <div id="input-error-client-${name}"></div>
   <#if error?has_content>
     <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
       <div class="${properties.kcInputHelperTextClass}">
