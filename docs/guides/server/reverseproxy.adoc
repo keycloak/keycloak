@@ -203,6 +203,9 @@ The server supports some of the most commons TLS termination proxies such as:
 
 |rfc9440
 |Proxies that are compliant to link:https://datatracker.ietf.org/doc/rfc9440/[RFC 9440]
+
+|Envoy
+|envoy
 |===
 
 To configure how client certificates are retrieved from the requests you need to:
@@ -289,6 +292,11 @@ Traefik sends the client certificate and any intermediate CA certificates as PEM
 The `traefik` provider parses all certificates from this header.
 
 Other than possibly changing the `certificate-chain-length`, you do not need to configure additional options for the `traefik` provider.
+
+=== Configuring the Envoy provider
+
+The Envoy provider will automatically retrieve the client certificate and optional certificate chain from the `x-forwarded-client-cert` header.
+You do not need to configure additional options for the `envoy` provider.
 
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
