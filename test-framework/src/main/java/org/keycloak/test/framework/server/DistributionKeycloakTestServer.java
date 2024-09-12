@@ -1,8 +1,12 @@
 package org.keycloak.test.framework.server;
 
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.keycloak.it.TestProvider;
 import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.test.framework.injection.SupplierHelpers;
 
 import java.util.List;
+import java.util.Set;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
 
@@ -16,8 +20,13 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(List<String> rawOptions) {
+    public void start(List<String> rawOptions, Set<Class<? extends TestProvider>> testProviders) {
         keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT);
+        for(var it : testProviders) {
+            var testProvider = SupplierHelpers.getInstance(it);
+            JavaArchive providerJar = createProviderJar(testProvider);
+            keycloak.deployProviderJar(providerJar);
+        }
         keycloak.run(rawOptions).assertStartedDevMode();
     }
 
@@ -29,6 +38,10 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     @Override
     public String getBaseUrl() {
         return "http://localhost:8080";
+    }
+
+    public JavaArchive createProviderJar(TestProvider provider) {
+        return createProviderJar(provider, JavaArchive.class);
     }
 
 }
