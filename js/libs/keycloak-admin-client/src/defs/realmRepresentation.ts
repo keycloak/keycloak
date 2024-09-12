@@ -28,6 +28,8 @@ export default interface RealmRepresentation {
   adminPermissionsEnabled?: boolean;
   adminTheme?: string;
   attributes?: Record<string, any>;
+  autoUpdatedIdPsInterval?: number;
+  autoUpdatedIdPsLastRefreshTime?: number;
   // AuthenticationFlowRepresentation
   authenticationFlows?: any[];
   // AuthenticatorConfigRepresentation

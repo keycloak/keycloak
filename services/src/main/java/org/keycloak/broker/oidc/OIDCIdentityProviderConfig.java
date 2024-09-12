@@ -21,6 +21,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -163,12 +164,25 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         getConfig().put(ALLOW_CLIENT_ID_AS_AUDIENCE, String.valueOf(allowClientIdAsAudience));
     }
 
+    public boolean isAutoUpdate() {
+        return Boolean.valueOf(getConfig().get(AUTO_UPDATE));
+    }
+
+    public void setAutoUpdate(boolean autoUpdate) {
+        getConfig().put(AUTO_UPDATE, String.valueOf(autoUpdate));
+    }
+
+
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
+
+        if (StringUtil.isNotBlank(getMetadataDescriptorUrl())) {
+            checkUrl(sslRequired, getMetadataDescriptorUrl(), METADATA_DESCRIPTOR_URL);
+        }
 
         if (isValidateSignature() || isJWTAuthorizationGrantEnabled() || isSupportsClientAssertions()) {
             String optionText = isValidateSignature() ? "Validate signatures" :

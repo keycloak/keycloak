@@ -331,4 +331,9 @@ public class RealmBuilder {
         rep.setOrganizationsEnabled(enabled);
         return this;
     }
+
+    public RealmBuilder setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        rep.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
+        return this;
+    }
 }

@@ -1,6 +1,5 @@
 package org.keycloak.broker.spiffe;
 
-import java.util.Map;
 
 import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
@@ -25,7 +24,7 @@ public class SpiffeIdentityProviderFactory extends AbstractIdentityProviderFacto
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, String configString) {
+    public IdentityProviderModel parseConfig(KeycloakSession session, String rawConfig, IdentityProviderModel model) {
         throw new UnsupportedOperationException();
     }
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.datastore;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import org.keycloak.Config.Scope;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -36,6 +38,7 @@ import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.services.scheduled.UpdateAutoUpdatedIdPsTask;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
@@ -142,6 +145,16 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         for (ScheduledTask task : getScheduledTasks()) {
             scheduleTask(timer, sessionFactory, task, interval);
         }
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+            session.realms().getRealmsStream().forEach(realm -> {
+                Long autoUpdatedIdPsInterval = realm.getAutoUpdatedIdPsInterval();
+                if (autoUpdatedIdPsInterval != null) {
+                    long delay = realm.getAutoUpdatedIdPsLastRefreshTime() == null ? 60 * 1000 :
+                            realm.getAutoUpdatedIdPsLastRefreshTime() + autoUpdatedIdPsInterval - Instant.now().toEpochMilli();
+                    timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new UpdateAutoUpdatedIdPsTask(realm.getId()), autoUpdatedIdPsInterval * 1000), delay >0 ? delay : 60 * 1000, autoUpdatedIdPsInterval * 1000, "UpdateAutoUpdatedIdPsTask_" + realm.getId());
+                }
+            });
+        });
     }
 
     protected static List<ScheduledTask> getScheduledTasks() {

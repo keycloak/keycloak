@@ -18,7 +18,6 @@ package org.keycloak.broker.provider;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -56,14 +55,14 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * @param config The configuration for the provider
      * @return
      */
-    Map<String, String> parseConfig(KeycloakSession session, String config);
+    IdentityProviderModel parseConfig(KeycloakSession session, String config, IdentityProviderModel model);
 
     /**
      * <p>Creates a provider specific {@link IdentityProviderModel} instance.
-     * 
+     *
      * <p>Providers may want to implement their own {@link IdentityProviderModel} type so that validations
      * can be performed when managing the provider configuration
-     * 
+     *
      * @return the provider specific instance
      */
     IdentityProviderModel createConfig();

@@ -18,6 +18,12 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |===
 |Configuration|Description
 
+|Auto Update
+|When Auto Update is enabling, metadata descriptor URL is required and IdP attributes will be updated based on metadata descriptor URL.
+
+|Metadata descriptor URL
+|External URL where Identity Provider publishes the discovery descriptor metadata.
+
 |Authorization URL
 |The authorization URL endpoint the OIDC protocol requires.
 

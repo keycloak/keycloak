@@ -1537,6 +1537,26 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public Long getAutoUpdatedIdPsInterval() {
+            return null;
+        }
+
+        @Override
+        public void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+
+        }
+
+        @Override
+        public Long getAutoUpdatedIdPsLastRefreshTime() {
+            return null;
+        }
+
+        @Override
+        public void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) {
+
+        }
+
+        @Override
         public RequiredActionConfigModel getRequiredActionConfigById(String id) {
             return null;
         }
