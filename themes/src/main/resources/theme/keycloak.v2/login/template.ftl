@@ -1,15 +1,9 @@
+<#import "field.ftl" as field>
 <#macro username>
-  <div id="kc-username" class="${properties.kcFormGroupClass}">
-    <#assign label>
-        <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
-    </#assign>
-    <div class="${properties.kcFormGroupLabelClass}">
-      <label for="username" class="pf-v5-c-form__label">
-          <span class="pf-v5-c-form__label-text">
-            ${label}
-          </span>
-      </label>
-    </div>
+  <#assign label>
+    <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+  </#assign>
+  <@field.group name="username" label=label>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">
@@ -23,8 +17,7 @@
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
       </div>
-    </div>
-  </div>
+    </@field.group>
 </#macro>
 
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
