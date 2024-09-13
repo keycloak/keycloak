@@ -87,12 +87,20 @@ export const DeviceActivity = () => {
     }
   };
 
+  const removeSpecialChars = (clientName: string): string => {
+    if (clientName.startsWith("${") && clientName.endsWith("}")) {
+      return clientName.substring(2, clientName.length - 1);
+    }
+
+    return clientName;
+  };
+
   const makeClientsString = (clients: ClientRepresentation[]): string => {
     let clientsString = "";
     clients.forEach((client, index) => {
       let clientName: string;
       if (client.clientName !== "") {
-        clientName = t(client.clientName as TFuncKey);
+        clientName = t(removeSpecialChars(client.clientName) as TFuncKey);
       } else {
         clientName = client.clientId;
       }
