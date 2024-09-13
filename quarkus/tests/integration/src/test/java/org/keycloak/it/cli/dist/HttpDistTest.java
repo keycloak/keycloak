@@ -31,12 +31,16 @@ import java.util.concurrent.CompletableFuture;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@DistributionTest(keepAlive = true)
+@DistributionTest(keepAlive = true, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class HttpDistTest {
     @Test
@@ -54,5 +58,11 @@ public class HttpDistTest {
 
         assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
         assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
+    }
+    
+    @Test
+    @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
+    public void testHttpCertificateReloadPeriod(LaunchResult result) {
+        assertThat(result.getErrorOutput(), containsString("Text cannot be parsed to a Duration"));
     }
 }

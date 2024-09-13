@@ -85,4 +85,9 @@ NOTE: Management interface properties are inherited from the main HTTP server, i
 It means when mTLS is set, it is also enabled for the management interface.
 To override the behavior, use the `https-management-client-auth` property.
 
+== Certificate and Key Reloading
+
+By default {project_name} will reload the certificates, keys, and keystores specified in `https-*` options every hour. For environments where your server keys may need frequent rotation, this allows that to happen without a server restart. You may override the default via the `https-certificates-reload-period` option. Interval on which to reload key store, trust store, and certificate files referenced by https-* options. 
+The value may be a java.time.Duration value, an integer number of seconds, or an integer followed by one of the time units [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1 to disable. 
+
 </@tmpl.guide>
