@@ -80,8 +80,8 @@ public class LoggingOptions {
     public static final Option<Level> LOG_CONSOLE_LEVEL = new OptionBuilder<>("log-console-level", Level.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(Level.ALL)
-            .description("Set the log level for the console handler. It specifies the minimal allowed level for logs shown in the output. "
-                    + "It respects levels specified in the 'log-level' option, which creates a minimal log level bar for log records. "
+            .description("Set the log level for the console handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
                     + "For more information, check the Logging guide.")
             .build();
 
@@ -123,8 +123,8 @@ public class LoggingOptions {
     public static final Option<Level> LOG_FILE_LEVEL = new OptionBuilder<>("log-file-level", Level.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(Level.ALL)
-            .description("Set the log level for the file handler. It specifies the minimal allowed level for logs shown in the output. "
-                    + "It respects levels specified in the 'log-level' option, which creates a minimal log level bar for log records. "
+            .description("Set the log level for the file handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
                     + "For more information, check the Logging guide.")
             .build();
 
@@ -161,8 +161,8 @@ public class LoggingOptions {
     public static final Option<Level> LOG_SYSLOG_LEVEL = new OptionBuilder<>("log-syslog-level", Level.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(Level.ALL)
-            .description("Set the log level for the Syslog handler. It specifies the minimal allowed level for logs shown in the output. "
-                    + "It respects levels specified in the 'log-level' option, which creates a minimal log level bar for log records. "
+            .description("Set the log level for the Syslog handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
                     + "For more information, check the Logging guide.")
             .build();
 
