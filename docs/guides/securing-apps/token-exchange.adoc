@@ -48,7 +48,7 @@ a simple grant type invocation on a realm's OpenID Connect token endpoint.
 
 [source,subs="attributes+"]
 ----
-{kc_realms_path}/{realm}/protocol/openid-connect/token
+{kc_realms_path}/{realm-name}/protocol/openid-connect/token
 ----
 
 It accepts form parameters (`application/x-www-form-urlencoded`) as input and the output depends on the type of token you requested an exchange for.
