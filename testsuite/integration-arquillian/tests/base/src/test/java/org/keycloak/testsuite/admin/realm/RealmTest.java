@@ -38,6 +38,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
@@ -105,6 +106,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -332,6 +334,13 @@ public class RealmTest extends AbstractAdminTest {
     public void testFieldNotErased() {
         Long dummyLong = Long.valueOf(999);
         Integer dummyInt = Integer.valueOf(999);
+        Map<String, String> browserSecurityHeaders = new HashMap<>(Arrays.stream(
+                BrowserSecurityHeaders.values()).collect(Collectors.toMap(
+                BrowserSecurityHeaders::getKey,
+                headerValue -> headerValue.getDefaultValue().isBlank()
+                        ? "non-null-to-test"
+                        : headerValue.getDefaultValue()
+        )));
 
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("attributes");
@@ -350,6 +359,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setActionTokenGeneratedByUserLifespan(dummyInt);
         rep.setOfflineSessionMaxLifespanEnabled(true);
         rep.setOfflineSessionMaxLifespan(dummyInt);
+        rep.setBrowserSecurityHeaders(browserSecurityHeaders);
 
         rep.setWebAuthnPolicyRpEntityName("RP_ENTITY_NAME");
         rep.setWebAuthnPolicySignatureAlgorithms(Collections.singletonList("RS256"));
@@ -418,6 +428,8 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(dummyInt, rep.getWebAuthnPolicyPasswordlessCreateTimeout());
         assertTrue(rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister());
         assertEquals(Collections.singletonList("00000000-0000-0000-0000-000000000000"), rep.getWebAuthnPolicyPasswordlessAcceptableAaguids());
+
+        assertEquals(browserSecurityHeaders, rep.getBrowserSecurityHeaders());
     }
 
     @Test
