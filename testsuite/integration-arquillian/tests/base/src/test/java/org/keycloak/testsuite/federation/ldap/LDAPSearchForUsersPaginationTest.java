@@ -38,7 +38,11 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -203,6 +207,48 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
         Assert.assertEquals("Incorrect users found", 1, search.size());
         Assert.assertEquals("Incorrect User", "jdoe", search.get(0).getUsername());
         Assert.assertTrue("Duplicated user created", adminClient.realm(TEST_REALM_NAME).users().search("john", true).isEmpty());
+    }
+
+    @Test
+    public void testSearchByUserAttributeDoesNotTriggerUserReimport() {
+
+        testingClient.server().run(session -> {
+            // add a new user for testing that searching by attributes should not cause the user to be re-imported.
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "bwayne", "Bruce", "Wayne", "bwayne@waynecorp.com", "Gotham Avenue", "666");
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            // check the user doesn't yet exist in Keycloak
+            UserProvider localProvider = ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+            UserModel user = localProvider.getUserByUsername(session.getContext().getRealm(), "bwayne");
+            Assert.assertNull(user);
+
+            // import the user by searching for its username, and check it has the timestamp set by one of the LDAP mappers.
+            user = session.users().getUserByUsername(session.getContext().getRealm(), "bwayne");
+            Assert.assertNotNull(user);
+            Assert.assertNotNull(user.getAttributes().get("createTimestamp"));
+
+            // remove the create timestamp from the user.
+            user.removeAttribute("createTimestamp");
+            user = localProvider.getUserByUsername(session.getContext().getRealm(), "bwayne");
+            Assert.assertNull(user.getAttributes().get("createTimestamp"));
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            // search users by user attribute - the existing user SHOULD NOT be re-imported (GHI #32870)
+            List<UserModel> users = session.users().searchForUserByUserAttributeStream(session.getContext().getRealm(), "street", "Gotham Avenue").toList();
+            Assert.assertEquals(1, users.size());
+            UserModel user = users.get(0);
+            // create timestamp won't be null because it is provided directly from the LDAP mapper, so it should still be visible.
+            Assert.assertNotNull(user.getAttributes().get("createTimestamp"));
+
+            // however, the local stored attribute should not have been updated (i.e. user should not have been fully re-imported).
+            UserProvider localProvider = ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+            user = localProvider.getUserByUsername(session.getContext().getRealm(), "bwayne");
+            Assert.assertNull(user.getAttributes().get("createTimestamp"));
+        });
     }
 
     private void setLDAPEnabled(final boolean enabled) {
