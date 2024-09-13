@@ -180,7 +180,7 @@ public class UserAdapter implements CachedUserModel {
         }
         if (updated == null) {
             Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = Set.of(value);
+            Set<String> newEntries = value != null ? Set.of(value) : Collections.emptySet();
             if (Objects.equals(oldEntries, newEntries)) {
                 return;
             }
