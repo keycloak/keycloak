@@ -67,7 +67,8 @@ export const PageHandler = ({
       if (id) {
         await adminClient.components.update({ id }, updatedComponent);
       } else {
-        await adminClient.components.create(updatedComponent);
+        const { id } = await adminClient.components.create(updatedComponent);
+        setId(id);
       }
       addAlert(t("itemSaveSuccessful"));
     } catch (error) {
