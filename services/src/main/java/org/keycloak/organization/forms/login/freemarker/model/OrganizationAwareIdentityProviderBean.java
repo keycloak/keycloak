@@ -72,12 +72,12 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             }
             // we don't have a specific organization - fetch public enabled IDPs linked to any org.
             return session.identityProviders().getForLogin(ORG_ONLY, null)
-                    .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                    .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
         return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
-                .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }
