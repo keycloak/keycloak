@@ -7,12 +7,12 @@
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">
-          <input id="username" value="${auth.attemptedUsername}" readonly>
+          <input id="kc-attempted-username" value="${auth.attemptedUsername}" readonly>
         </span>
       </div>
       <div class="${properties.kcInputGroupItemClass}">
-        <button class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" aria-label="${msg('restartLoginTooltip')}"
-              onclick="location.href='${url.loginRestartFlowUrl}'">
+        <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" 
+              aria-label="${msg('restartLoginTooltip')}" onclick="location.href='${url.loginRestartFlowUrl}'">
             <i class="fa-sync-alt fas" aria-hidden="true"></i>
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
