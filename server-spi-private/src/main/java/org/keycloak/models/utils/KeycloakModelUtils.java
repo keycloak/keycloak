@@ -262,7 +262,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, null, session -> {
             task.run(session);
             return null;
-        });
+        }, task.useExistingSession());
     }
 
     /**
@@ -275,7 +275,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        });
+        }, task.useExistingSession());
     }
 
     /**
@@ -365,7 +365,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable);
+        return runJobInTransactionWithResult(factory, null, callable, false);
     }
 
     /**
@@ -374,13 +374,19 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
+     * @param useExistingSession if the existing session should be used
      * @return The return value from the callable
      */
-    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable, boolean useExistingSession) {
         V result;
+        KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
+        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
+            return callable.run(existing);
+        }
+        
         try (KeycloakSession session = factory.create()) {
             session.getTransactionManager().begin();
-            KeycloakSession old = KeycloakSessionUtil.setKeycloakSession(session);
+            KeycloakSessionUtil.setKeycloakSession(session);
             try {
                 cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
@@ -388,7 +394,7 @@ public final class KeycloakModelUtils {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
             } finally {
-                KeycloakSessionUtil.setKeycloakSession(old);
+                KeycloakSessionUtil.setKeycloakSession(existing);
             }
         }
         return result;
