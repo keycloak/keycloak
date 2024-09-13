@@ -159,6 +159,10 @@ The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set
 
 The `https-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by https-* options. Use -1 to disable reloading. Defaults to 1h (one hour).
 
+= Options to configure cache max-count added
+
+The `--cache-embedded-$\{CACHE_NAME}-max-count=` can be set to define an upper bound on the number of cache entries in the specified cache.
+
 = Property `origin` in the `UserRepresentation` is deprecated
 
 The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.

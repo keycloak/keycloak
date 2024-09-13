@@ -25,6 +25,15 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-embedded-authorization-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       authorization cache.
+--cache-embedded-client-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       clientSessions cache. Available only when embedded Infinispan clusters
+                       configured.
+--cache-embedded-keys-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
                      Encrypts the network communication between Keycloak servers. Default: false.
 --cache-embedded-mtls-key-store-file <file>
@@ -39,6 +48,21 @@ Cache:
                        'cache-mtls-truststore.p12' under conf/ directory.
 --cache-embedded-mtls-trust-store-password <password>
                      The password to access the Truststore.
+--cache-embedded-offline-client-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       offlineClientSessions cache. Available only when embedded Infinispan
+                       clusters configured.
+--cache-embedded-offline-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       offlineSessions cache. Available only when embedded Infinispan clusters
+                       configured.
+--cache-embedded-realms-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the realms cache.
+--cache-embedded-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the sessions
+                       cache. Available only when embedded Infinispan clusters configured.
+--cache-embedded-users-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the users cache.
 --cache-remote-host <hostname>
                      The hostname of the remote server for the remote store configuration. It
                        replaces the 'host' attribute of 'remote-server' tag of the configuration

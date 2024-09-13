@@ -312,9 +312,10 @@ public class CacheManagerFactory {
                 configureTransportStack(builder);
                 configureRemoteStores(builder);
             }
+            configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
             configureSessionsCaches(builder);
         }
-
+        configureCacheMaxCount(builder, CachingOptions.LOCAL_MAX_COUNT_CACHES);
         checkForRemoteStores(builder);
 
         var start = isStartEagerly();
@@ -498,6 +499,19 @@ public class CacheManagerFactory {
                         }
                     }
                 });
+    }
+
+    private static void configureCacheMaxCount(ConfigurationBuilderHolder holder, String[] caches) {
+        for (String cache : caches) {
+            String propKey = CachingOptions.cacheMaxCountProperty(cache);
+            Configuration.getOptionalKcValue(propKey)
+                  .map(Integer::parseInt)
+                  .ifPresent(maxCount -> holder.getNamedConfigurationBuilders()
+                        .get(cache)
+                        .memory()
+                        .maxCount(maxCount)
+                  );
+        }
     }
 
     private static String requiredStringProperty(String propertyName) {

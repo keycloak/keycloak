@@ -24,8 +24,12 @@ import static org.keycloak.quarkus.runtime.Environment.isWindows;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.dialect.H2Dialect;
@@ -38,6 +42,7 @@ import org.hibernate.dialect.MariaDBDialect;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -485,5 +490,26 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertNull(createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+    }
+
+    @Test
+    public void testCacheMaxCount() {
+        int maxCount = 500;
+        Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
+              .flatMap(Arrays::stream)
+              .collect(Collectors.toSet());
+
+        StringBuilder sb = new StringBuilder();
+        for (String cache : maxCountCaches)
+            sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
+
+        String args = sb.toString();
+        ConfigArgsConfigSource.setCliArgs(args.split(" "));
+        SmallRyeConfig config = createConfig();
+
+        for (String cache : maxCountCaches) {
+            String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
+            assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
+        }
     }
 }
