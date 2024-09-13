@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -174,20 +175,39 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             value = KeycloakModelUtils.toLowerCaseSafe(value);
         }
+        if (updated == null) {
+            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+            Set<String> newEntries = Set.of(value);
+            if (Objects.equals(oldEntries, newEntries)) {
+                return;
+            }
+        }
+        getDelegateForUpdate();
         updated.setSingleAttribute(name, value);
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
             if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
+        if (updated == null) {
+            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+            Set<String> newEntries;
+            if (values == null) {
+                newEntries = new HashSet<>();
+            } else {
+                newEntries = new HashSet<>(values);
+            }
+            if (Objects.equals(oldEntries, newEntries)) {
+                return;
+            }
+        }
+        getDelegateForUpdate();
         updated.setAttribute(name, values);
     }
 

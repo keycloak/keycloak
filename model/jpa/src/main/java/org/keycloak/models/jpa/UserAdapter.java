@@ -51,10 +51,13 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.organization.OrganizationProvider;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.representations.idm.MembershipType;
 
@@ -138,6 +141,11 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (value == null) {
             user.getAttributes().removeIf(a -> a.getName().equals(name));
         } else {
+            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+            Set<String> newEntries = Set.of(value);
+            if (Objects.equals(oldEntries, newEntries)) {
+                return;
+            }
             String firstExistingAttrId = null;
             List<UserAttributeEntity> toRemove = new ArrayList<>();
             for (UserAttributeEntity attr : user.getAttributes()) {
@@ -183,6 +191,18 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             setUsername(valueToSet);
             return;
         }
+
+        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+        Set<String> newEntries;
+        if (values == null) {
+            newEntries = new HashSet<>();
+        } else {
+            newEntries = new HashSet<>(values);
+        }
+        if (Objects.equals(oldEntries, newEntries)) {
+            return;
+        }
+
         // Remove all existing
         removeAttribute(name);
         if (values != null) {
