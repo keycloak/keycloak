@@ -35,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
@@ -783,6 +784,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public void testOnUserRemoved() {
         testingClient.server().run(UserSessionProviderTest::testOnUserRemoved);
     }
+
     public static void testOnUserRemoved(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserModel user1 = session.users().getUserByUsername(realm, "user1");
@@ -804,6 +806,37 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             assertEquals(0, kcSession.sessions().getUserSessionsStream(realm, user1).count());
             assertEquals(1, kcSession.sessions().getUserSessionsStream(realm, user2).count());
         });
+    }
+
+    @Test
+    public void testOnUserRemovedLazyUserAttributesAreLoaded() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            user1.setSingleAttribute("customAttribute", "value1");
+        });
+        testingClient.server().run(UserSessionProviderTest::testOnUserRemovedLazyUserAttributesAreLoaded);
+    }
+
+    public static void testOnUserRemovedLazyUserAttributesAreLoaded(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        UserModel user1 = session.users().getUserByUsername(realm, "user1");
+
+        Map<String, List<String>> attributes = new HashMap<>();
+        ProviderEventListener providerEventListener = event -> {
+            if (event instanceof UserModel.UserRemovedEvent) {
+                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+                attributes.putAll(userRemovedEvent.getUser().getAttributes());
+            }
+        };
+        session.getKeycloakSessionFactory().register(providerEventListener);
+        try {
+            new UserManager(session).removeUser(realm, user1);
+            // UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, customAttribute;
+            assertEquals(5, attributes.size());
+        } finally {
+            session.getKeycloakSessionFactory().unregister(providerEventListener);
+        }
     }
 
     private static AuthenticatedClientSessionModel createClientSession(KeycloakSession session, ClientModel client, UserSessionModel userSession, String redirect, String state) {
