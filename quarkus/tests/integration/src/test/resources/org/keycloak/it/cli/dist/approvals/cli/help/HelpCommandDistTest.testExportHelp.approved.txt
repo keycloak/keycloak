@@ -127,6 +127,13 @@ Logging:
                      The format of unstructured console log entries. If the format has spaces in
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-level <level>
+                     Set the log level for the console handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
+                       Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log

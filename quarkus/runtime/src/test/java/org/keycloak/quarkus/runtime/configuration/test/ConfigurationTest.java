@@ -64,7 +64,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testKeycloakConfPlaceholder() {
-        assertEquals("warn", createConfig().getRawValue("kc.log-level"));
+        assertEquals("info", createConfig().getRawValue("kc.log-level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
     }
@@ -476,7 +476,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("secret", secret.getValue());
     }
-    
+
     @Test
     public void testReloadPeriod() {
         ConfigArgsConfigSource.setCliArgs("");

@@ -9,15 +9,18 @@ title="Configuring logging"
 summary="Learn how to configure Logging"
 includedOptions="log log-*">
 
-{project_name} uses the JBoss Logging framework. The following is a high-level overview for the available log handlers:
+{project_name} uses the JBoss Logging framework.
+The following is a high-level overview for the available log handlers with the common parent log handler `root`:
 
-* root
-** console (_default_)
-** file
-** Syslog
+<@opts.expectedValues option="log"/>
 
 == Logging configuration
-Logging is done on a per-category basis in {project_name}. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This {section} describes how to configure logging.
+
+Logging is done on a per-category basis in {project_name}.
+You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`.
+It is also possible to tailor log levels for each particular log handler.
+
+This {section} describes how to configure logging.
 
 === Log levels
 
@@ -71,14 +74,58 @@ To enable log handlers, enter the following command:
 
 <@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
 
-The available handlers are
-<@profile.ifCommunity>
-`console`, `file`, `syslog`.
-</@profile.ifCommunity>
-<@profile.ifProduct>
-`console`, `file` and `syslog`.
-</@profile.ifProduct>
+The available handlers are:
+
+<@opts.expectedValues option="log"/>
+
 The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
+
+== Specify log level for each handler
+
+The `log-level` property specifies the global root log level and levels for selected categories.
+However, a more fine-grained approach for log levels is necessary to comply with the modern application requirements.
+
+To set log levels for particular handlers, properties in format `log-<handler>-level` (where `<handler>` is available log handler) were introduced.
+
+It means properties for log level settings look like this:
+
+* `log-console-level` - Console log handler
+* `log-file-level` - File log handler
+* `log-syslog-level` - Syslog log handler
+
+NOTE: The `log-<handler>-level` properties are available only when the particular log handlers are enabled.
+More information in log handlers settings below.
+
+Only log levels specified in <<Log levels>> section are accepted, and *must be in lowercase*.
+There is no support for specifying particular categories for log handlers yet.
+
+=== General principle
+
+It is necessary to understand that setting the log levels for each particular handler *does not override the root level* specified in the `log-level` property.
+Log handlers respect the root log level, which represents the maximal verbosity for the whole logging system.
+It means individual log handlers can be configured to be less verbose than the root logger, but not more.
+
+Specifically, when an arbitrary log level is defined for the handler, it does not mean the log records with the log level will be present in the output.
+In that case, the root `log-level` must also be assessed.
+Log handler levels provide the *restriction for the root log level*, and the default log level for log handlers is `all` - without any restriction.
+
+=== Examples
+
+.Example: `debug` for file handler, but `info` for console handler:
+<@kc.start parameters="--log=console,file --log-level=debug --log-console-level=info"/>
+
+The root log level is set to `debug`, so every log handler inherits the value - so does the file log handler.
+To hide `debug` records in the console, we need to set the minimal (least severe) level to `info` for the console handler.
+
+.Example: `warn` for all handlers, but `debug` for file handler:
+<@kc.start parameters="--log=console,file,syslog --log-level=debug --log-console-level=warn --log-syslog-level=warn"/>
+
+The root level must be set to the most verbose required level (`debug` in this case), and other log handlers must be amended accordingly.
+
+.Example: `info` for all handlers, but `debug`+`org.keycloak.events:trace` for Syslog handler:
+<@kc.start parameters="--log=console,file,syslog --log-level=debug,org.keycloak.events:trace, --log-syslog-level=trace --log-console-level=info --log-file-level=info"/>
+
+In order to see the `org.keycloak.events:trace`, the `trace` level must be set for the Syslog handler.
 
 == Console log handler
 The console log handler is enabled by default, providing unstructured log messages for the console.
@@ -158,6 +205,13 @@ Colored console log output for unstructured logs is disabled by default. Colors 
 
 <@kc.start parameters="--log-console-color=<false|true>"/>
 
+=== Configuring the console log level
+Log level for console log handler can be specified by `--log-console-level` property as follows:
+
+<@kc.start parameters="--log-console-level=warn"/>
+
+For more information, see the section <<Specify log level for each handler>> above.
+
 == File logging
 As an alternative to logging to the console, you can use unstructured logging to a file.
 
@@ -187,6 +241,13 @@ To configure a different logging format for the file log handler, enter the foll
 
 See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
 
+=== Configuring the file log level
+Log level for file log handler can be specified by `--log-file-level` property as follows:
+
+<@kc.start parameters="--log-file-level=warn"/>
+
+For more information, see the section <<Specify log level for each handler>> above.
+
 == Centralized logging using Syslog
 
 {project_name} provides the ability to send logs to a remote Syslog server.
@@ -212,6 +273,13 @@ To configure the endpoint(_host:port_) of your centralized logging system, enter
 
 When the Syslog handler is enabled, the host is using `localhost` as host value.
 The Default port is `514`.
+
+=== Configuring the Syslog log level
+Log level for Syslog log handler can be specified by `--log-syslog-level` property as follows:
+
+<@kc.start parameters="--log-syslog-level=warn"/>
+
+For more information, see the section <<Specify log level for each handler>> above.
 
 === Configuring the Syslog protocol
 Syslog uses TCP as the default protocol for communication.
