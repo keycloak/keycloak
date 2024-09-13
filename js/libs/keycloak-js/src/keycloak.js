@@ -450,7 +450,7 @@ function Keycloak (config) {
             url += '&prompt=' + encodeURIComponent(options.prompt);
         }
 
-        if (options && typeof options.maxAge === 'number') {
+        if (options && typeof options.maxAge === 'number' && !isNaN(options.maxAge)) {
             url += '&max_age=' + encodeURIComponent(options.maxAge);
         }
 
