@@ -10,6 +10,7 @@ import {
 import {
   ExpandableRowContent,
   Table,
+  TableText,
   Tbody,
   Td,
   Th,
@@ -44,9 +45,9 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
 };
 
 const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
-  <>
+  <TableText wrapModifier="truncate">
     {row.uris?.[0]} <MoreLabel array={row.uris} />
-  </>
+  </TableText>
 );
 
 export const AuthorizationResources = ({
@@ -226,19 +227,33 @@ export const AuthorizationResources = ({
                       }}
                     />
                     <Td data-testid={`name-column-${resource.name}`}>
-                      <Link
-                        to={toResourceDetails({
-                          realm,
-                          id: clientId,
-                          resourceId: resource._id!,
-                        })}
-                      >
-                        {resource.name}
-                      </Link>
+                      <TableText wrapModifier="truncate">
+                        <Link
+                          to={toResourceDetails({
+                            realm,
+                            id: clientId,
+                            resourceId: resource._id!,
+                          })}
+                        >
+                          {resource.name}
+                        </Link>
+                      </TableText>
                     </Td>
-                    <Td>{resource.displayName}</Td>
-                    <Td>{resource.type}</Td>
-                    <Td>{resource.owner?.name}</Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.displayName}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.type}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.owner?.name}
+                      </TableText>
+                    </Td>
                     <Td>
                       <UriRenderer row={resource} />
                     </Td>
