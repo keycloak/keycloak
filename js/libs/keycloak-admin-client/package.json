@@ -48,7 +48,7 @@
     "@faker-js/faker": "^9.0.0",
     "@types/chai": "^4.3.19",
     "@types/lodash-es": "^4.17.12",
-    "@types/mocha": "^10.0.7",
+    "@types/mocha": "^10.0.8",
     "@types/node": "^22.5.4",
     "chai": "^5.1.1",
     "lodash-es": "^4.17.21",
