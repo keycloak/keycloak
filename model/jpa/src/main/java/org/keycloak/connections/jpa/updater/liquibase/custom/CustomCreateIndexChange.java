@@ -189,4 +189,10 @@ public class CustomCreateIndexChange extends CreateIndexChange {
         return changeValidationErrors;
     }
 
+    // The default impls seems to be just fine, so this is just to remove the
+    // "class does not implement the 'supports(Database)' method" warnings
+    @Override
+    public boolean supports(Database database) {
+        return super.supports(database);
+    }
 }

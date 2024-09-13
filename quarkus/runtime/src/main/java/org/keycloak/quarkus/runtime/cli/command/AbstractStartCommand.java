@@ -20,7 +20,9 @@ package org.keycloak.quarkus.runtime.cli.command;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 
 import java.util.EnumSet;
@@ -28,6 +30,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import picocli.CommandLine;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperties;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
@@ -39,11 +43,20 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
         CommandLine cmd = spec.commandLine();
         HttpPropertyMappers.validateConfig();
         validateConfig();
+
+        if (ConfigArgsConfigSource.getAllCliArgs().contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
+            executionError(spec.commandLine(), Messages.optimizedUsedForFirstStartup());
+        }
+
         KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
     }
 
     protected void doBeforeRun() {
 
+    }
+
+    public static boolean wasBuildEverRun() {
+        return !getRawPersistedProperties().isEmpty();
     }
 
     @Override
