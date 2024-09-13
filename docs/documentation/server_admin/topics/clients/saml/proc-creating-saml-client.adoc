@@ -49,7 +49,7 @@ the name, set up a replacement string value. For example, a string value such as
 Wildcards values are allowed only at the end of a URL. For example, http://host.com/*$$.
 This field is used when the exact SAML endpoints are not registered and {project_name} pulls the Assertion Consumer URL from a request.
 
-*IDP-Initiated SSO URL name*:: URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: _server-root_/realms/{realm}/protocol/saml/clients/{client-url-name}
+*IDP-Initiated SSO URL name*:: URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: _server-root_/realms/{realm-name}/protocol/saml/clients/{client-url-name}
 
 *IDP Initiated SSO Relay State*:: Relay state you want to send with SAML request when you want to do IDP Initiated SSO.
 

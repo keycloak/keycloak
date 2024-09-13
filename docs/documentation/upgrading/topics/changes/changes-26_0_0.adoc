@@ -167,7 +167,7 @@ As part of the improvements around the scalability of realms and organizations w
 no longer holds the list of identity providers. However, they are still available from the realm representation
 when exporting a realm.
 
-To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm-name}/identity-provider/instances` endpoint.
 This endpoint supports filters and pagination.
 
 = CLI import placeholder replacement
