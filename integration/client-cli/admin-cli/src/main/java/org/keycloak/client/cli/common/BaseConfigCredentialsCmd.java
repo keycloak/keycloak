@@ -138,7 +138,7 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
             if (keyPass == null) {
             	keyPass = System.getenv("KC_CLI_KEY_PASSWORD");
             }
-            
+
             if (storePass == null) {
                 storePass = readPasswordFromConsole("keystore password");
                 if (keyPass == null) {
@@ -192,6 +192,7 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println("       " + getCommand() + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]");
         out.println("       " + getCommand() + " config credentials --server SERVER_URL --realm REALM --client CLIENT_ID [--secret SECRET] [ARGUMENTS]");
         out.println("       " + getCommand() + " config credentials --server SERVER_URL --realm REALM --client CLIENT_ID [--keystore KEYSTORE] [ARGUMENTS]");
+        out.println("       " + getCommand() + " config credentials --status");
         out.println();
         out.println("Command to establish an authenticated client session with the server. There are many authentication");
         out.println("options available, and it depends on server side client authentication configuration how client can or should authenticate.");
@@ -202,6 +203,7 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println("user credentials. Client credentials are either a client secret, or a keystore information to use Signed JWT mechanism.");
         out.println("If only client credentials are provided, and no user credentials, then the service account is used for login.");
         out.println();
+        out.println("If validity of the authentication needs to be checked use the --status option.");
         out.println("Arguments:");
         out.println();
         out.println("  Global options:");
@@ -222,6 +224,7 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println("    --keypass PASSWORD      Key password (prompted for if not specified, --keystore is used without --storepass, and KC_CLI_KEY_PASSWORD");
         out.println("                            otherwise defaults to keystore password)");
         out.println("    --alias ALIAS           Alias of the key inside a keystore (defaults to the value of ClientId)");
+        out.println("    --status                Check the validity of the connection");
         out.println();
         out.println();
         out.println("Examples:");
