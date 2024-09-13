@@ -77,6 +77,13 @@ public class LoggingOptions {
             .description("Set the log output to JSON or default (plain) unstructured logging.")
             .build();
 
+    public static final Option<String> LOG_CONSOLE_LEVEL = new OptionBuilder<>("log-console-level", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("The log level of the console log handler or a comma-separated list of individual categories and their levels. "
+                    + "It overrides the root log level and inherits category levels specified in the 'log-level' property. "
+                    + "If there is a collision of category levels, settings in this property have a precedence.")
+            .build();
+
     public static final Option<String> LOG_CONSOLE_FORMAT = new OptionBuilder<>("log-console-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("The format of unstructured console log entries. If the format has spaces in it, escape the value using \"<format>\".")
@@ -110,6 +117,13 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("Set the log file path and filename.")
             .defaultValue(new File(DEFAULT_LOG_PATH))
+            .build();
+
+    public static final Option<String> LOG_FILE_LEVEL = new OptionBuilder<>("log-file-level", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("The log level of the file log handler or a comma-separated list of individual categories and their levels. "
+                    + "It overrides the root log level and inherits category levels specified in the 'log-level' property. "
+                    + "If there is a collision of category levels, settings in this property have a precedence.")
             .build();
 
     public static final Option<String> LOG_FILE_FORMAT = new OptionBuilder<>("log-file-format", String.class)
@@ -154,6 +168,13 @@ public class LoggingOptions {
             // based on the 'quarkus.log.syslog.max-length' property
             .description("Set the maximum length, in bytes, of the message allowed to be sent. The length includes the header and the message. " +
                     "If not set, the default value is 2048 when 'log-syslog-type' is rfc5424 (default) and 1024 when 'log-syslog-type' is rfc3164.")
+            .build();
+
+    public static final Option<String> LOG_SYSLOG_LEVEL = new OptionBuilder<>("log-syslog-level", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("The log level of the Syslog log handler or a comma-separated list of individual categories and their levels. "
+                    + "It overrides the root log level and inherits category levels specified in the 'log-level' property. "
+                    + "If there is a collision of category levels, settings in this property have a precedence.")
             .build();
 
     public static final Option<String> LOG_SYSLOG_APP_NAME = new OptionBuilder<>("log-syslog-app-name", String.class)

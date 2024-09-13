@@ -2,24 +2,29 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.of;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.LOG_LEVEL;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.LogLevelFormat;
 
 public final class LoggingPropertyMappers {
 
@@ -41,6 +46,13 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.console.json")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
+                        .transformer(LoggingPropertyMappers::resolveRootLoggerDefault)
+                        .validator(LogLevelFormat::validateLogLevel)
+                        .mapFrom(LOG_LEVEL)
+                        .paramLabel("category:level")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
@@ -73,6 +85,13 @@ public final class LoggingPropertyMappers {
                         .paramLabel("file")
                         .transformer(LoggingPropertyMappers::resolveFileLogLocation)
                         .build(),
+                fromOption(LoggingOptions.LOG_FILE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .validator(LogLevelFormat::validateLogLevel)
+                        .transformer(LoggingPropertyMappers::resolveRootLoggerDefault)
+                        .mapFrom(LOG_LEVEL)
+                        .paramLabel("category:level")
+                        .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.format")
@@ -90,10 +109,10 @@ public final class LoggingPropertyMappers {
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
                 // Log level
-                fromOption(LoggingOptions.LOG_LEVEL)
+                fromOption(LOG_LEVEL)
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
-                        .validator(LoggingPropertyMappers::validateLogLevel)
+                        .validator(LogLevelFormat::validateLogLevel)
                         .paramLabel("category:level")
                         .build(),
                 // Syslog
@@ -106,6 +125,13 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.endpoint")
                         .paramLabel("host:port")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .validator(LogLevelFormat::validateLogLevel)
+                        .transformer(LoggingPropertyMappers::resolveRootLoggerDefault)
+                        .mapFrom(LOG_LEVEL)
+                        .paramLabel("category:level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
@@ -174,51 +200,62 @@ public final class LoggingPropertyMappers {
         return value.map(location -> location.endsWith(File.separator) ? location + LoggingOptions.DEFAULT_LOG_FILENAME : location);
     }
 
-    private static Level toLevel(String categoryLevel) throws IllegalArgumentException {
-        return LogContext.getLogContext().getLevelForName(categoryLevel.toUpperCase(Locale.ROOT));
-    }
-
-    private static void setCategoryLevel(String category, String level) {
-        LogContext.getLogContext().getLogger(category).setLevel(toLevel(level));
-    }
-
-    record CategoryLevel(String category, String levelName) {}
-
-    private static CategoryLevel validateLogLevel(String level) {
-        String[] parts = level.split(":");
-        String category = null;
-        String categoryLevel;
-
-        if (parts.length == 1) {
-            categoryLevel = parts[0];
-        } else if (parts.length == 2) {
-            category = parts[0];
-            categoryLevel = parts[1];
-        } else {
-            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
+    private static Optional<String> resolveRootLoggerDefault(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        if (value.isPresent()) {
+            return value;
         }
 
-        try {
-            Level levelType = toLevel(categoryLevel);
-            return new CategoryLevel(category, levelType.getName());
-        } catch (IllegalArgumentException iae) {
-            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
-        }
+        var rootLevel = LogLevelFormat.parseFromProperty(LOG_LEVEL);
+        return rootLevel.getRootLevel().map(Level::toString).or(() -> of(LoggingOptions.DEFAULT_LOG_LEVEL.toString()));
     }
 
+    private static void setCategoryLevel(String category, Level level) {
+        LogContext.getLogContext().getLogger(category).setLevel(level);
+    }
+
+    /**
+     * The 'quarkus.log.level' needs to be set the most fine-grained based on the log handlers configuration to properly see the log records
+     *
+     * @param value parent LogLevelContext
+     * @return the finest log level in log levels configuration
+     */
     private static Optional<String> resolveLogLevel(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        Optional<String> rootLevel = of(LoggingOptions.DEFAULT_LOG_LEVEL.name());
+        final List<LogLevelFormat> levelContexts = new ArrayList<>(LoggingOptions.Handler.values().length + 3);
 
-        for (String level : value.get().split(",")) {
-            var categoryLevel = validateLogLevel(level);
-            if (categoryLevel.category == null) {
-                rootLevel = of(categoryLevel.levelName);
-            } else {
-                setCategoryLevel(categoryLevel.category, categoryLevel.levelName);
+        // find parent log levels
+        var parentLevelContext = LogLevelFormat.parseValue(value.get());
+        levelContexts.add(parentLevelContext);
+
+        // find all log handlers levels
+        for (var key : Configuration.getConfig().getPropertyNames()) {
+            if (key.startsWith(NS_KEYCLOAK_PREFIX + "log-") && key.endsWith("-level") && !key.equals(NS_KEYCLOAK_PREFIX + "log-level")) {
+                var keyWithoutPrefix = key.substring(NS_KEYCLOAK_PREFIX.length());
+                levelContexts.add(LogLevelFormat.parseFromProperty(keyWithoutPrefix));
             }
         }
 
-        return rootLevel;
+        // set the finest level for categories
+        var categoryLevels = new MultivaluedHashMap<String, Level>();
+        levelContexts.stream()
+                .map(LogLevelFormat::getCategories)
+                .flatMap(f -> f.entrySet().stream())
+                .forEach(f -> categoryLevels.putSingle(f.getKey(), f.getValue()));
+
+        categoryLevels.forEach((k, v) -> {
+            var finestLevel = v.stream().min(Comparator.comparingInt(Level::intValue));
+            finestLevel.ifPresent(level -> setCategoryLevel(k, level)); // set finest category levels
+        });
+
+        // obtain the finest level of root levels of all log handlers
+        var finestLevel = levelContexts.stream()
+                .map(LogLevelFormat::getRootLevel)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .min(Comparator.comparingInt(Level::intValue));
+
+        return finestLevel.map(Level::toString)
+                .or(() -> Optional.of(LoggingOptions.DEFAULT_LOG_LEVEL.toString()))
+                .map(String::toLowerCase);
     }
 
     private static Optional<String> resolveLogOutput(Optional<String> value, ConfigSourceInterceptorContext context) {
