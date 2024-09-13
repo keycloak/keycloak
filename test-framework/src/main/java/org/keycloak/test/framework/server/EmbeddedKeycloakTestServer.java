@@ -2,10 +2,8 @@ package org.keycloak.test.framework.server;
 
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
-import org.keycloak.it.TestProvider;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
@@ -13,11 +11,10 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
     private Keycloak keycloak;
 
     @Override
-    public void start(List<String> rawOptions, Set<TestProvider> customProviders) {
+    public void start(List<String> rawOptions) {
         keycloak = Keycloak.builder()
                 .setVersion(Version.VERSION)
-                // todo custom providers
-//                .addDependency()
+                .addDependency("org.keycloak.test", "providers", Version.VERSION)
                 .start(rawOptions);
     }
 

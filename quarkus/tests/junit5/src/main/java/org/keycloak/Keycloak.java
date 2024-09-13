@@ -203,6 +203,7 @@ public class Keycloak {
             StartupAction startupAction = action.createInitialRuntimeApplication();
 
             application = startupAction.runMainClass(args.toArray(new String[0]));
+
             return this;
         } catch (Exception cause) {
             throw new RuntimeException("Fail to start the server", cause);
