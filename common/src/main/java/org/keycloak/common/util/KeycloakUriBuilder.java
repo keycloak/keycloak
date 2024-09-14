@@ -458,13 +458,15 @@ public class KeycloakUriBuilder {
             buffer.append(ssp);
         } else if (userInfo != null || host != null || port != -1) {
             buffer.append("//");
-            if (userInfo != null)
+            if (userInfo != null) {
+                if (host == null || host.isEmpty()) throw new RuntimeException("empty host name, but userInfo supplied");
                 replaceUserInfoParameter(paramMap, fromEncodedMap, isTemplate, userInfo, buffer).append("@");
+            }
             if (host != null) {
-                if ("".equals(host)) throw new RuntimeException("empty host name");
                 replaceParameter(paramMap, fromEncodedMap, isTemplate, host, buffer, encodeSlash);
             }
             if (port != -1 && (preserveDefaultPort || !(("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443)))) {
+                if (host == null || host.isEmpty()) throw new RuntimeException("empty host name, but port supplied");
                 buffer.append(":").append(Integer.toString(port));
             }
         } else if (authority != null) {

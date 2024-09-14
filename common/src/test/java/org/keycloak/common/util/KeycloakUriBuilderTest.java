@@ -92,4 +92,10 @@ public class KeycloakUriBuilderTest {
         Assert.assertEquals("https://user-info%E2%82%AC@localhost:8443", KeycloakUriBuilder.fromUri(
                 "https://user-info€@localhost:8443", false).buildAsString());
     }
+
+    @Test
+    public void testEmptyHostname() {
+        Assert.assertEquals("app.immich:///oauth-callback", KeycloakUriBuilder.fromUri(
+                "app.immich:///oauth-callback").buildAsString());
+    }
 }
