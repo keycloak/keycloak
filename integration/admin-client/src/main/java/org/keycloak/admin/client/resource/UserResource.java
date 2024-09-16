@@ -71,7 +71,7 @@ public interface UserResource {
     List<GroupRepresentation> groups(@QueryParam("search") String search,
                                      @QueryParam("first") Integer firstResult,
                                      @QueryParam("max") Integer maxResults);
-    
+
     @Path("groups")
     @GET
     List<GroupRepresentation> groups(@QueryParam("first") Integer firstResult,
@@ -330,6 +330,10 @@ public interface UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, Object> impersonate();
 
+    /**
+     * @since Keycloak server 24.0.6
+     * @return unmanaged attributes of the user
+     */
     @GET
     @Path("unmanagedAttributes")
     @Produces(MediaType.APPLICATION_JSON)
