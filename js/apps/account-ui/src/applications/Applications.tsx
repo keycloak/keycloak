@@ -1,5 +1,6 @@
 import {
   ContinueCancelModal,
+  label,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -142,14 +143,20 @@ export const Applications = () => {
                         variant="link"
                         onClick={() => window.open(application.effectiveUrl)}
                       >
-                        {application.clientName || application.clientId}{" "}
+                        {label(
+                          t,
+                          application.clientName || application.clientId,
+                        )}{" "}
                         <ExternalLinkAltIcon />
                       </Button>
                     )}
                     {!application.effectiveUrl && (
-                      <span>
-                        {application.clientName || application.clientId}
-                      </span>
+                      <>
+                        {label(
+                          t,
+                          application.clientName || application.clientId,
+                        )}
+                      </>
                     )}
                   </DataListCell>,
                   <DataListCell
