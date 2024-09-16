@@ -1,0 +1,21 @@
+= Upgrading the {project_name} Client Libraries
+
+[[_upgrade_client_libraries]]
+
+The client libraries are those artifacts:
+
+* Java admin client - Maven artifact `org.keycloak:keycloak-admin-client`
+* Java authorization client - Maven artifact `org.keycloak:keycloak-authz-client`
+* Java policy enforcer - Maven artifact `org.keycloak:keycloak-policy-enforcer`
+
+ifeval::[{project_community}==true]
+The client libraries are supported with the last supported {project_name} server version.
+endif::[]
+ifeval::[{project_product}==true]
+The client libraries are supported with all the supported {project_name} server versions. The fact that client libraries are supported with more server versions makes the update easier,
+so you may not need to update the server at the same time when you update client libraries of your application.
+endif::[]
+
+It is possible that client libraries may work even with the older releases of the {project_name} server, but it is not guaranteed and officially supported.
+
+It may be needed to consult the javadoc of the client libraries like Java admin-client to see what endpoints and parameters are supported with which {project_name} server version.

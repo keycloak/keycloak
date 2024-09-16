@@ -14,4 +14,4 @@ include::migrate_themes.adoc[leveloffset=1]
 
 include::upgrade_adapters.adoc[leveloffset=1]
 
-include::upgrade_admin_client.adoc[leveloffset=1]
+include::upgrade_client_libs.adoc[leveloffset=1]
