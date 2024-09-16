@@ -110,6 +110,7 @@ function RealmSettingsGeneralTabForm({
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
+  const isOpenid4vciEnabled = isFeatureEnabled(Feature.OpenId4VCI);
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -265,6 +266,16 @@ function RealmSettingsGeneralTabForm({
                   title={t("samlIdentityProviderMetadata")}
                 />
               </StackItem>
+              {isOpenid4vciEnabled && (
+                <StackItem>
+                  <FormattedLink
+                    href={`${addTrailingSlash(
+                      serverBaseUrl,
+                    )}realms/${realmName}/.well-known/openid-credential-issuer`}
+                    title={t("oid4vcIssuerMetadata")}
+                  />
+                </StackItem>
+              )}
             </Stack>
           </FormGroup>
           <FixedButtonsGroup
