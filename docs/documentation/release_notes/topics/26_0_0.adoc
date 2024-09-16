@@ -178,6 +178,27 @@ It is possible to revert this behavior to the previous state by disabling the fe
 
 For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Client libraries updates
+
+== Dedicated release cycle for the client libraries
+
+From this release, some of the {project_name} client libraries will have release cycle independent of the {project_name} server release cycle. The 26.0.0 release may be the last one
+when the client libraries are released together with the {project_name} server. But from now on, the client libraries may be released at a different time than the {project_name} server.
+
+The client libraries are these artifacts:
+
+* Java admin client - Maven artifact `org.keycloak:keycloak-admin-client`
+* Java authorization client - Maven artifact `org.keycloak:keycloak-authz-client`
+* Java policy enforcer - Maven artifact `org.keycloak:keycloak-policy-enforcer`
+
+It is possible that in the future, some more libraries will be included.
+
+== Compatibility of the client libraries with the server
+
+Beginning with this release, we are testing and supporting client libraries with the same server version and a few previous major server versions.
+
+For details about supported versions of client libraries with server versions, see the link:{upgradingguide_link}#_upgrade_client_libraries[{upgradingguide_name}].
+
 = New generalized event types for credentials
 
 There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events. The new event types are supported by the Email Event Listener.
