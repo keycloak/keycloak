@@ -44,8 +44,8 @@ Most CPU time goes into creating new TLS connections, as each client runs only a
 
 * For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).
 
-* Leave 200% extra head-room for CPU usage to handle spikes in the load.
-This ensures a fast startup of the node, and sufficient capacity to handle failover tasks like, for example, re-balancing Infinispan caches, when one node fails.
+* Leave 125% extra head-room for CPU usage to handle spikes in the load.
+This ensures a fast startup of the node, and sufficient capacity to handle failover tasks.
 Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
 
 {project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:

@@ -31,19 +31,6 @@ If you increase the number of database connections and the number of threads too
 The number of database connections is configured via the link:{links_server_all-config_url}?q=db-pool[`Database` settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size`] respectively.
 Low numbers ensure fast response times for all clients, even if there is an occasionally failing request when there is a load spike.
 
-=== JGroups connection pool
-
-The combined number of executor threads in all {project_name} nodes in the cluster should not exceed the number of threads available in JGroups thread pool to avoid the error `org.jgroups.util.ThreadPool: thread pool is full`.
-To see the error the first time it happens, the system property `jgroups.thread_dumps_threshold` needs to be set to `1`, as otherwise the message appears only after 10000 requests have been rejected.
-
---
-include::partials/threads/executor-jgroups-thread-calculation.adoc[]
---
-
-Use metrics to monitor the total JGroup threads in the pool and for the threads active in the pool.
-When using TCP as the JGroups transport protocol, the metrics `vendor_jgroups_tcp_get_thread_pool_size` and `vendor_jgroups_tcp_get_thread_pool_size_active` are available for monitoring. When using UDP, the metrics `vendor_jgroups_udp_get_thread_pool_size` and `vendor_jgroups_udp_get_thread_pool_size_active` are available.
-This is useful to monitor that limiting the Quarkus thread pool size keeps the number of active JGroup threads below the maximum JGroup thread pool size.
-
 [#load-shedding]
 === Load Shedding
 
