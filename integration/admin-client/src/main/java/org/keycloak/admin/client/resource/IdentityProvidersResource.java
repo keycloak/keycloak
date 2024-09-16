@@ -50,6 +50,18 @@ public interface IdentityProvidersResource {
     List<IdentityProviderRepresentation> find(@QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                               @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
+    /**
+     * Get the paginated list of identity providers, filtered according to the specified parameters.
+     *
+     * @param search Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.
+     * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false).
+     *                            If true, only basic data like ID, alias, providerId and enabled status will be returned in the result
+     * @param firstResult Pagination offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param realmOnly Boolean which defines if only realm-level IDPs (not associated with orgs) should be returned (default: false).
+     *                  Parameter available since Keycloak server 26. Will be ignored on older Keycloak versions with the default value false
+     * @return The list of providers.
+     */
     @GET
     @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)
