@@ -15,4 +15,8 @@ public interface KeycloakTestServerConfig {
     }
 
     default boolean enableSysLog() { return false; }
+
+    default Set<Class<? extends ProviderModule>> providerModules() {
+        return Collections.emptySet();
+    }
 }

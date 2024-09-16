@@ -3,14 +3,14 @@ package org.keycloak.test.framework.server;
 import org.jboss.logging.Logger;
 
 import java.util.List;
+import java.util.Set;
 
 public class RemoteKeycloakTestServer implements KeycloakTestServer {
 
     private static final Logger LOGGER = Logger.getLogger(RemoteKeycloakTestServer.class);
 
     @Override
-    public void start(List<String> rawOptions) {
-        // todo custom providers
+    public void start(List<String> rawOptions, Set<Class<? extends ProviderModule>> providerModules) {
         LOGGER.infov("Requested server config: {0}", String.join(" ", rawOptions));
     }
 
