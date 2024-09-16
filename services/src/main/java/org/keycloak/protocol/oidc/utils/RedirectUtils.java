@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -28,7 +29,9 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -37,6 +40,8 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RedirectUtils {
+
+    public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
@@ -95,20 +100,9 @@ public class RedirectUtils {
 
             String valid = matchesRedirects(resolveValidRedirects, r, allowWildcards);
 
-            if (valid == null && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
-                int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
-
-                StringBuilder sb = new StringBuilder();
-                sb.append(r.substring(0, i));
-
-                i = r.indexOf('/', i);
-                if (i >= 0) {
-                    sb.append(r.substring(i));
-                }
-
-                r = sb.toString();
-
-                valid = matchesRedirects(resolveValidRedirects, r, allowWildcards);
+            if (valid == null && "http".equals(originalRedirect.getScheme()) && LOOPBACK_INTERFACES.contains(originalRedirect.getHost())) {
+                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect).port(80).buildAsString();
+                valid = matchesRedirects(resolveValidRedirects, redirectWithDefaultPort, allowWildcards);
             }
 
             if (valid != null && !originalRedirect.isAbsolute()) {
