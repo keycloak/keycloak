@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class FolderThemeProvider implements ThemeProvider {
 
-    private File themesDir;
+    private final File themesDir;
 
     public FolderThemeProvider(File themesDir) {
         this.themesDir = themesDir;
@@ -42,12 +42,8 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
-        if (themesDir == null) {
-            return null;
-        }
-
         File themeDir = getThemeDir(name, type);
-        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
+        return themeDir != null ? new FolderTheme(themeDir, name, type) : null;
     }
 
     @Override
@@ -56,15 +52,9 @@ public class FolderThemeProvider implements ThemeProvider {
             return Collections.emptySet();
         }
 
-        final String typeName = type.name().toLowerCase();
-        File[] themeDirs = themesDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
-            }
-        });
+        File[] themeDirs = themesDir.listFiles(new ThemeFilter(type));
         if (themeDirs != null) {
-            Set<String> names = new HashSet<String>();
+            Set<String> names = new HashSet<>();
             for (File themeDir : themeDirs) {
                 names.add(themeDir.getName());
             }
@@ -76,7 +66,7 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        return themesDir != null ? getThemeDir(name, type).isDirectory() : false;
+        return getThemeDir(name, type) != null;
     }
 
     @Override
@@ -84,15 +74,37 @@ public class FolderThemeProvider implements ThemeProvider {
     }
 
     private File getThemeDir(String name, Theme.Type type) {
-        File f = new File(themesDir, name + File.separator + type.name().toLowerCase());
-        try {
-            if (!f.getCanonicalPath().startsWith(themesDir.getCanonicalPath() + File.separator)) {
-                return null;
-            }
-        } catch (IOException e) {
-            return null;
+        File[] themes = themesDir.listFiles(new ThemeFilter(name, type));
+        return themes != null && themes.length == 1 ? themes[0] : null;
+    }
+
+    private class ThemeFilter implements FileFilter {
+
+        private final String name;
+        private final String type;
+
+        public ThemeFilter(Theme.Type type) {
+            this.name = null;
+            this.type = type.name().toLowerCase();
         }
-        return f;
+
+        public ThemeFilter(String name, Theme.Type type) {
+            this.name = name;
+            this.type = type.name().toLowerCase();
+        }
+
+        @Override
+        public boolean accept(File f) {
+            if (!f.isDirectory()) {
+                return false;
+            }
+
+            if (name != null && !name.equals(f.getName())) {
+                return false;
+            }
+
+            return new File(f, type).isDirectory();
+        }
     }
 
 }
