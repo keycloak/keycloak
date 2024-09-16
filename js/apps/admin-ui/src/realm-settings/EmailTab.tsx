@@ -22,7 +22,6 @@ import {
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
@@ -44,7 +43,6 @@ export const RealmSettingsEmailTab = ({
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
 
@@ -254,7 +252,7 @@ export const RealmSettingsEmailTab = ({
                           <Link
                             {...props}
                             to={toUser({
-                              realm: realmName,
+                              realm: currentUser.realm!,
                               id: currentUser.id!,
                               tab: "settings",
                             })}
