@@ -104,8 +104,16 @@ public class SdJwtVP {
         int disclosureStart = sdJwtString.indexOf(SdJwt.DELIMITER);
         int disclosureEnd = sdJwtString.lastIndexOf(SdJwt.DELIMITER);
 
+        if (disclosureStart == -1) {
+            throw new IllegalArgumentException("SD-JWT is malformed, expected to end with " + SdJwt.DELIMITER);
+        }
+
         String issuerSignedJWTString = sdJwtString.substring(0, disclosureStart);
-        String disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
+        String disclosuresString ="";
+
+        if (disclosureEnd > disclosureStart) {
+            disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
+        }
 
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
 
