@@ -94,22 +94,6 @@ export class Groups extends Resource<{ realm?: string }> {
   });
 
   /**
-   * Set or create child.
-   * This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.
-   * @deprecated Use `createChildGroup` or `updateChildGroup` instead.
-   */
-  public setOrCreateChild = this.makeUpdateRequest<
-    { id: string },
-    GroupRepresentation,
-    { id: string }
-  >({
-    method: "POST",
-    path: "/{id}/children",
-    urlParamKeys: ["id"],
-    returnResourceIdInLocationHeader: { field: "id" },
-  });
-
-  /**
    * Creates a child group on the specified parent group. If the group already exists, then an error is returned.
    */
   public createChildGroup = this.makeUpdateRequest<
