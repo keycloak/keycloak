@@ -1,5 +1,6 @@
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { DataList, Stack, StackItem, Title } from "@patternfly/react-core";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getLinkedAccounts } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
@@ -7,28 +8,41 @@ import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
-import { useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { LinkedAccountsToolbar } from "./LinkedAccountsToolbar";
 
 export const LinkedAccounts = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const [accounts, setAccounts] = useState<LinkedAccountRepresentation[]>([]);
+  const [linkedAccounts, setLinkedAccounts] = useState<
+    LinkedAccountRepresentation[]
+  >([]);
+  const [unlinkedAccounts, setUninkedAccounts] = useState<
+    LinkedAccountRepresentation[]
+  >([]);
 
+  const [paramsUnlinked, setParamsUnlinked] = useState<Record<string, string>>({
+    first: "0",
+    max: "6",
+    linked: "false",
+  });
+  const [paramsLinked, setParamsLinked] = useState<Record<string, string>>({
+    first: "0",
+    max: "6",
+    linked: "true",
+  });
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getLinkedAccounts({ signal, context }), setAccounts, [
-    key,
-  ]);
-
-  const linkedAccounts = useMemo(
-    () => accounts.filter((account) => account.connected),
-    [accounts],
+  usePromise(
+    (signal) => getLinkedAccounts({ signal, context }, paramsUnlinked),
+    setUninkedAccounts,
+    [paramsUnlinked, key],
   );
 
-  const unLinkedAccounts = useMemo(
-    () => accounts.filter((account) => !account.connected),
-    [accounts],
+  usePromise(
+    (signal) => getLinkedAccounts({ signal, context }, paramsLinked),
+    setLinkedAccounts,
+    [paramsLinked, key],
   );
 
   return (
@@ -41,16 +55,47 @@ export const LinkedAccounts = () => {
           <Title headingLevel="h2" className="pf-v5-u-mb-lg" size="xl">
             {t("linkedLoginProviders")}
           </Title>
+          <LinkedAccountsToolbar
+            onFilter={(search) =>
+              setParamsLinked({ ...paramsLinked, first: "0", search })
+            }
+            count={linkedAccounts.length}
+            first={parseInt(paramsLinked["first"])}
+            max={parseInt(paramsLinked["max"])}
+            onNextClick={() => {
+              setParamsLinked({
+                ...paramsLinked,
+                first: `${parseInt(paramsLinked.first) + parseInt(paramsLinked.max) - 1}`,
+              });
+            }}
+            onPreviousClick={() =>
+              setParamsLinked({
+                ...paramsLinked,
+                first: `${parseInt(paramsLinked.first) - parseInt(paramsLinked.max) + 1}`,
+              })
+            }
+            onPerPageSelect={(first, max) =>
+              setParamsLinked({
+                ...paramsLinked,
+                first: `${first}`,
+                max: `${max}`,
+              })
+            }
+            hasNext={linkedAccounts.length > parseInt(paramsLinked.max) - 1}
+          />
           <DataList id="linked-idps" aria-label={t("linkedLoginProviders")}>
             {linkedAccounts.length > 0 ? (
-              linkedAccounts.map((account) => (
-                <AccountRow
-                  key={account.providerName}
-                  account={account}
-                  isLinked
-                  refresh={refresh}
-                />
-              ))
+              linkedAccounts.map(
+                (account, index) =>
+                  index !== parseInt(paramsLinked.max) - 1 && (
+                    <AccountRow
+                      key={account.providerName}
+                      account={account}
+                      isLinked
+                      refresh={refresh}
+                    />
+                  ),
+              )
             ) : (
               <EmptyRow message={t("linkedEmpty")} />
             )}
@@ -64,15 +109,54 @@ export const LinkedAccounts = () => {
           >
             {t("unlinkedLoginProviders")}
           </Title>
+          <LinkedAccountsToolbar
+            onFilter={(search) =>
+              setParamsUnlinked({ ...paramsUnlinked, first: "0", search })
+            }
+            count={unlinkedAccounts.length}
+            first={parseInt(paramsUnlinked["first"])}
+            max={parseInt(paramsUnlinked["max"])}
+            onNextClick={() => {
+              setParamsUnlinked({
+                ...paramsUnlinked,
+                first: `${
+                  parseInt(paramsUnlinked.first) +
+                  parseInt(paramsUnlinked.max) -
+                  1
+                }`,
+              });
+            }}
+            onPreviousClick={() =>
+              setParamsUnlinked({
+                ...paramsUnlinked,
+                first: `${
+                  parseInt(paramsUnlinked.first) -
+                  parseInt(paramsUnlinked.max) +
+                  1
+                }`,
+              })
+            }
+            onPerPageSelect={(first, max) =>
+              setParamsUnlinked({
+                ...paramsUnlinked,
+                first: `${first}`,
+                max: `${max}`,
+              })
+            }
+            hasNext={unlinkedAccounts.length > parseInt(paramsUnlinked.max) - 1}
+          />
           <DataList id="unlinked-idps" aria-label={t("unlinkedLoginProviders")}>
-            {unLinkedAccounts.length > 0 ? (
-              unLinkedAccounts.map((account) => (
-                <AccountRow
-                  key={account.providerName}
-                  account={account}
-                  refresh={refresh}
-                />
-              ))
+            {unlinkedAccounts.length > 0 ? (
+              unlinkedAccounts.map(
+                (account, index) =>
+                  index !== parseInt(paramsUnlinked.max) - 1 && (
+                    <AccountRow
+                      key={account.providerName}
+                      account={account}
+                      refresh={refresh}
+                    />
+                  ),
+              )
             ) : (
               <EmptyRow message={t("unlinkedEmpty")} />
             )}
