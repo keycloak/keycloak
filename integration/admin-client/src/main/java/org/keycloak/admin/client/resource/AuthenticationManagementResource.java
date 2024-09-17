@@ -179,20 +179,54 @@ public interface AuthenticationManagementResource {
     @POST
     void lowerRequiredActionPriority(@PathParam("alias") String alias);
 
+    /**
+     * Returns configuration description of the specified required action
+     *
+     * @since Keycloak server 25
+     * @param alias Alias of the required action, which configuration description will be returned
+     * @return Configuration description of the required action
+     * @throws jakarta.ws.rs.NotFoundException if the required action of specified alias is not found
+     */
     @Path("required-actions/{alias}/config-description")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     RequiredActionConfigInfoRepresentation getRequiredActionConfigDescription(@PathParam("alias") String alias);
 
+    /**
+     * Returns configuration of the specified required action
+     *
+     * @since Keycloak server 25
+     * @param alias Alias of the required action, which configuration will be returned
+     * @return Configuration of the required action
+     * @throws jakarta.ws.rs.BadRequestException if required action not configurable
+     * @throws jakarta.ws.rs.NotFoundException if the required action configuration of specified alias is not found
+     */
     @Path("required-actions/{alias}/config")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     RequiredActionConfigRepresentation getRequiredActionConfig(@PathParam("alias") String alias);
 
+    /**
+     * Delete configuration of the specified required action
+     *
+     * @since Keycloak server 25
+     * @param alias Alias of the required action, which will be removed
+     * @throws jakarta.ws.rs.BadRequestException if required action not configurable
+     * @throws jakarta.ws.rs.NotFoundException if the required action configuration of specified alias is not found
+     */
     @Path("required-actions/{alias}/config")
     @DELETE
     void removeRequiredActionConfig(@PathParam("alias") String alias);
 
+    /**
+     * Update configuration of the required action
+     *
+     * @since Keycloak server 25
+     * @param alias Alias of the required action, which will be updated
+     * @param rep JSON representation of the required action
+     * @throws jakarta.ws.rs.BadRequestException if required action not configurable or given configuration is incorrect
+     * @throws jakarta.ws.rs.NotFoundException if the required action configuration of specified alias is not found
+     */
     @Path("required-actions/{alias}/config")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

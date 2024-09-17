@@ -15,5 +15,5 @@ export function useCurrentUser() {
     userId,
   ]);
 
-  return currentUser;
+  return { ...currentUser, realm: whoAmI.getRealm() };
 }
