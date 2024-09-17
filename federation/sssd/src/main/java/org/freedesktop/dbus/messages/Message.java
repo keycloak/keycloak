@@ -1202,20 +1202,20 @@ public class Message {
      *
      * @throws DBusException when parsing fails
      */
-    private Object optimizePrimitives(byte[] _signatureBuf, byte[] _dataBuf, int[] _offsets, long _size, byte _algn,
+    private Object optimizePrimitives(byte[] _signatureBuf, byte[] _dataBuf, long[] _offsets, long _size, byte _algn,
             int _length, ExtractMethod _extractMethod)
             throws DBusException {
         Object rv;
-        switch (_signatureBuf[_offsets[OFFSET_SIG]]) {
+        switch (_signatureBuf[(int) _offsets[OFFSET_SIG]]) {
             case ArgumentType.BYTE:
                 rv = new byte[_length];
-                System.arraycopy(_dataBuf, _offsets[OFFSET_DATA], rv, 0, _length);
+                System.arraycopy(_dataBuf, (int) _offsets[OFFSET_DATA], rv, 0, _length);
                 _offsets[OFFSET_DATA] += _size;
                 break;
             case ArgumentType.INT16:
                 rv = new short[_length];
                 for (int j = 0; j < _length; j++, _offsets[OFFSET_DATA] += _algn) {
-                    ((short[]) rv)[j] = (short) demarshallint(_dataBuf, _offsets[OFFSET_DATA], _algn);
+                    ((short[]) rv)[j] = (short) demarshallint(_dataBuf, (int) _offsets[OFFSET_DATA], _algn);
                 }
                 break;
             case ArgumentType.INT32:
