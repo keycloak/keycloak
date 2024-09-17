@@ -27,6 +27,7 @@ import {
   ContinueCancelModal,
   useAlerts,
   useEnvironment,
+  label,
 } from "@keycloak/keycloak-ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
@@ -35,7 +36,6 @@ import {
   SessionRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { TFuncKey } from "../i18n";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
@@ -91,7 +91,7 @@ export const DeviceActivity = () => {
     clients.forEach((client, index) => {
       let clientName: string;
       if (client.clientName !== "") {
-        clientName = t(client.clientName as TFuncKey);
+        clientName = label(t, client.clientName);
       } else {
         clientName = client.clientId;
       }
