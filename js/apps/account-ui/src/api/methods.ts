@@ -109,12 +109,20 @@ export async function getCredentials({ signal, context }: CallOptions) {
   return parseResponse<CredentialContainer[]>(response);
 }
 
+export type LinkedAccountQueryParams = PaginationParams & {
+  search?: string;
+  linked?: boolean;
+};
+
 export async function getLinkedAccounts(
   { signal, context }: CallOptions,
-  requestParams: Record<string, string>,
+  query: LinkedAccountQueryParams,
 ) {
   const response = await request("/linked-accounts", context, {
-    searchParams: requestParams,
+    searchParams: Object.entries(query).reduce(
+      (acc, [key, value]) => ({ ...acc, [key]: value.toString() }),
+      {},
+    ),
     signal,
   });
   return parseResponse<LinkedAccountRepresentation[]>(response);

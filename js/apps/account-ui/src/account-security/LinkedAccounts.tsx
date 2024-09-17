@@ -2,7 +2,7 @@ import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { DataList, Stack, StackItem, Title } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getLinkedAccounts } from "../api/methods";
+import { getLinkedAccounts, LinkedAccountQueryParams } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
@@ -20,15 +20,16 @@ export const LinkedAccounts = () => {
     LinkedAccountRepresentation[]
   >([]);
 
-  const [paramsUnlinked, setParamsUnlinked] = useState<Record<string, string>>({
-    first: "0",
-    max: "6",
-    linked: "false",
-  });
-  const [paramsLinked, setParamsLinked] = useState<Record<string, string>>({
-    first: "0",
-    max: "6",
-    linked: "true",
+  const [paramsUnlinked, setParamsUnlinked] =
+    useState<LinkedAccountQueryParams>({
+      first: 0,
+      max: 6,
+      linked: false,
+    });
+  const [paramsLinked, setParamsLinked] = useState<LinkedAccountQueryParams>({
+    first: 0,
+    max: 6,
+    linked: true,
   });
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
@@ -57,37 +58,37 @@ export const LinkedAccounts = () => {
           </Title>
           <LinkedAccountsToolbar
             onFilter={(search) =>
-              setParamsLinked({ ...paramsLinked, first: "0", search })
+              setParamsLinked({ ...paramsLinked, first: 0, search })
             }
             count={linkedAccounts.length}
-            first={parseInt(paramsLinked["first"])}
-            max={parseInt(paramsLinked["max"])}
+            first={paramsLinked["first"]}
+            max={paramsLinked["max"]}
             onNextClick={() => {
               setParamsLinked({
                 ...paramsLinked,
-                first: `${parseInt(paramsLinked.first) + parseInt(paramsLinked.max) - 1}`,
+                first: paramsLinked.first + paramsLinked.max - 1,
               });
             }}
             onPreviousClick={() =>
               setParamsLinked({
                 ...paramsLinked,
-                first: `${parseInt(paramsLinked.first) - parseInt(paramsLinked.max) + 1}`,
+                first: paramsLinked.first - paramsLinked.max + 1,
               })
             }
             onPerPageSelect={(first, max) =>
               setParamsLinked({
                 ...paramsLinked,
-                first: `${first}`,
-                max: `${max}`,
+                first,
+                max,
               })
             }
-            hasNext={linkedAccounts.length > parseInt(paramsLinked.max) - 1}
+            hasNext={linkedAccounts.length > paramsLinked.max - 1}
           />
           <DataList id="linked-idps" aria-label={t("linkedLoginProviders")}>
             {linkedAccounts.length > 0 ? (
               linkedAccounts.map(
                 (account, index) =>
-                  index !== parseInt(paramsLinked.max) - 1 && (
+                  index !== paramsLinked.max - 1 && (
                     <AccountRow
                       key={account.providerName}
                       account={account}
@@ -111,45 +112,37 @@ export const LinkedAccounts = () => {
           </Title>
           <LinkedAccountsToolbar
             onFilter={(search) =>
-              setParamsUnlinked({ ...paramsUnlinked, first: "0", search })
+              setParamsUnlinked({ ...paramsUnlinked, first: 0, search })
             }
             count={unlinkedAccounts.length}
-            first={parseInt(paramsUnlinked["first"])}
-            max={parseInt(paramsUnlinked["max"])}
+            first={paramsUnlinked["first"]}
+            max={paramsUnlinked["max"]}
             onNextClick={() => {
               setParamsUnlinked({
                 ...paramsUnlinked,
-                first: `${
-                  parseInt(paramsUnlinked.first) +
-                  parseInt(paramsUnlinked.max) -
-                  1
-                }`,
+                first: paramsUnlinked.first + paramsUnlinked.max - 1,
               });
             }}
             onPreviousClick={() =>
               setParamsUnlinked({
                 ...paramsUnlinked,
-                first: `${
-                  parseInt(paramsUnlinked.first) -
-                  parseInt(paramsUnlinked.max) +
-                  1
-                }`,
+                first: paramsUnlinked.first - paramsUnlinked.max + 1,
               })
             }
             onPerPageSelect={(first, max) =>
               setParamsUnlinked({
                 ...paramsUnlinked,
-                first: `${first}`,
-                max: `${max}`,
+                first,
+                max,
               })
             }
-            hasNext={unlinkedAccounts.length > parseInt(paramsUnlinked.max) - 1}
+            hasNext={unlinkedAccounts.length > paramsUnlinked.max - 1}
           />
           <DataList id="unlinked-idps" aria-label={t("unlinkedLoginProviders")}>
             {unlinkedAccounts.length > 0 ? (
               unlinkedAccounts.map(
                 (account, index) =>
-                  index !== parseInt(paramsUnlinked.max) - 1 && (
+                  index !== paramsUnlinked.max - 1 && (
                     <AccountRow
                       key={account.providerName}
                       account={account}
