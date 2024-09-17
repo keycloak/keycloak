@@ -142,6 +142,10 @@ The deprecated `proxy` option was removed. This option was deprecated in {projec
 
 The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set to specify a allowlist of trusted proxy addresses. If the proxy address for a given request is not trusted, then the respective proxy header values will not be used.
 
+= Option to reload trust and key material added
+
+The `https-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by https-* options. Use -1 to disable reloading. Defaults to 1h (one hour).
+
 = Property `origin` in the `UserRepresentation` is deprecated
 
 The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.
@@ -153,6 +157,13 @@ Instead, prefer using the `federationLink` property to obtain the provider to wh
 GELF support has been deprecated for a while now, and with this release it has been finally removed from {project_name}.
 Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
 see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Specify different log levels for log handlers
+
+It is possible to specify log levels for all available log handlers, such as `console`, `file`, or `syslog`.
+The more fine-grained approach provides the ability to control logging over the whole application and be tailored to your needs.
+
+For more information, see the https://www.keycloak.org/server/logging[Logging guide].
 
 = All user sessions are persisted by default
 

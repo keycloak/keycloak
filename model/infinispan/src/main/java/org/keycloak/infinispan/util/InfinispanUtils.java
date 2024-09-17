@@ -24,7 +24,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import static org.keycloak.common.Profile.Feature.REMOTE_CACHE;
+import static org.keycloak.common.Profile.Feature.CLUSTERLESS;
 
 public final class InfinispanUtils {
 
@@ -42,7 +42,7 @@ public final class InfinispanUtils {
 
     // true if running with external infinispan mode only
     public static boolean isRemoteInfinispan() {
-        return MultiSiteUtils.isMultiSiteEnabled() || Profile.isFeatureEnabled(REMOTE_CACHE);
+        return MultiSiteUtils.isMultiSiteEnabled() || Profile.isFeatureEnabled(CLUSTERLESS);
     }
 
     // true if running with embedded caches.

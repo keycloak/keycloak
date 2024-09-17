@@ -17,8 +17,9 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -48,23 +49,24 @@ public class QuarkusPropertiesAutoBuildDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
+    @BeforeStartDistribution(EnableAdditionalConsoleHandler.class)
     @Launch({ "start" })
     @Order(2)
     void testQuarkusRuntimePropDoesNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
-        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
+
+        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
     }
 
     @Test
-    @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
+    @BeforeStartDistribution(DisableAdditionalConsoleHandler.class)
     @Launch({ "start" })
     @Order(3)
     void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
-        assertTrue(cliResult.getOutput().contains("INFO  [io.quarkus]"));
+        assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
     }
 
     @Test
@@ -122,18 +124,20 @@ public class QuarkusPropertiesAutoBuildDistTest {
         cliResult.assertError("Multiple datasources are configured but more than 1 is using non-XA transactions.");
     }
 
-    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
+    public static class EnableAdditionalConsoleHandler implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.level", "WARN");
+            distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".enable", "true");
+            distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".format", "Keycloak is the best");
+            distribution.setQuarkusProperty("quarkus.log.handlers", "console-2");
         }
     }
 
-    public static class UpdateConsoleLogLevelToInfo implements Consumer<KeycloakDistribution> {
+    public static class DisableAdditionalConsoleHandler implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.level", "INFO");
+            distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".enable", "false");
         }
     }
 

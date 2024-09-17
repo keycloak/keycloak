@@ -391,7 +391,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenCodeExpired() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
 
         getTestingClient().testing().setTestingInfinispanTimeService();

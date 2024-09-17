@@ -136,6 +136,21 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
+    @Test
+    public void notFoundOnInvalidThemeType() throws IOException {
+        final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/invalid-theme-type/keycloak/css/welcome.css");
+    }
+
+    private void assertNotFound(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(url);
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(404, response.getStatusLine().getStatusCode());
+            }
+        }
+    }
+
     private void assertEncoded(String url, String expectedContent) throws IOException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableContentCompression().build()) {
             HttpGet get = new HttpGet(url);

@@ -160,7 +160,12 @@ public class PropertyMapper<T> {
 
         // we always fallback to the current value from the property we are mapping
         if (transformedValue == null) {
-            return context.proceed(name);
+            return ConfigValue.builder()
+                    .withName(name)
+                    .withValue(null)
+                    .withRawValue(config.getValue())
+                    .withConfigSourceName(config.getConfigSourceName())
+                    .build();
         }
 
         return transformedValue;

@@ -1,6 +1,7 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   KeycloakDataTable,
+  ListEmptyState,
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
@@ -17,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { ManageOrderDialog } from "../identity-providers/ManageOrderDialog";
 import useToggle from "../utils/useToggle";
 import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
@@ -74,6 +75,7 @@ export const IdentityProviders = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
+  const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<IdentityProviderRepresentation>();
@@ -111,88 +113,110 @@ export const IdentityProviders = () => {
   });
 
   return (
-    <PageSection variant="light">
-      <UnlinkConfirm />
-      {open && (
-        <LinkIdentityProviderModal
+    <>
+      {manageDisplayDialog && (
+        <ManageOrderDialog
           orgId={orgId!}
-          identityProvider={selectedRow}
           onClose={() => {
-            toggleOpen();
+            setManageDisplayDialog(false);
             refresh();
           }}
         />
       )}
-      {!hasProviders ? (
-        <ListEmptyState
-          icon={BellIcon}
-          message={t("noIdentityProvider")}
-          instructions={t("noIdentityProviderInstructions")}
-        />
-      ) : (
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          ariaLabelKey="identityProviders"
-          searchPlaceholderKey="searchProvider"
-          toolbarItem={
-            <ToolbarItem>
-              <Button
-                onClick={() => {
-                  setSelectedRow(undefined);
+      <PageSection variant="light">
+        <UnlinkConfirm />
+        {open && (
+          <LinkIdentityProviderModal
+            orgId={orgId!}
+            identityProvider={selectedRow}
+            onClose={() => {
+              toggleOpen();
+              refresh();
+            }}
+          />
+        )}
+        {!hasProviders ? (
+          <ListEmptyState
+            icon={BellIcon}
+            message={t("noIdentityProvider")}
+            instructions={t("noIdentityProviderInstructions")}
+          />
+        ) : (
+          <KeycloakDataTable
+            key={key}
+            loader={loader}
+            ariaLabelKey="identityProviders"
+            searchPlaceholderKey="searchProvider"
+            toolbarItem={
+              <>
+                <ToolbarItem>
+                  <Button
+                    onClick={() => {
+                      setSelectedRow(undefined);
+                      toggleOpen();
+                    }}
+                  >
+                    {t("linkIdentityProvider")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    data-testid="manageDisplayOrder"
+                    variant="link"
+                    onClick={() => setManageDisplayDialog(true)}
+                  >
+                    {t("manageDisplayOrder")}
+                  </Button>
+                </ToolbarItem>
+              </>
+            }
+            actions={[
+              {
+                title: t("edit"),
+                onRowClick: (row) => {
+                  setSelectedRow(row);
                   toggleOpen();
-                }}
-              >
-                {t("linkIdentityProvider")}
-              </Button>
-            </ToolbarItem>
-          }
-          actions={[
-            {
-              title: t("edit"),
-              onRowClick: (row) => {
-                setSelectedRow(row);
-                toggleOpen();
+                },
               },
-            },
-            {
-              title: t("unLinkIdentityProvider"),
-              onRowClick: (row) => {
-                setSelectedRow(row);
-                toggleUnlinkDialog();
+              {
+                title: t("unLinkIdentityProvider"),
+                onRowClick: (row) => {
+                  setSelectedRow(row);
+                  toggleUnlinkDialog();
+                },
               },
-            },
-          ]}
-          columns={[
-            {
-              name: "alias",
-            },
-            {
-              name: "config['kc.org.domain']",
-              displayKey: "domain",
-            },
-            {
-              name: "providerId",
-              displayKey: "providerDetails",
-            },
-            {
-              name: "config['kc.org.broker.public']",
-              displayKey: "shownOnLoginPage",
-              cellRenderer: (row) => (
-                <ShownOnLoginPageCheck row={row} refresh={refresh} />
-              ),
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              message={t("emptyIdentityProviderLink")}
-              instructions={t("emptyIdentityProviderLinkInstructions")}
-              primaryActionText={t("linkIdentityProvider")}
-              onPrimaryAction={toggleOpen}
-            />
-          }
-        />
-      )}
-    </PageSection>
+            ]}
+            columns={[
+              {
+                name: "alias",
+              },
+              {
+                name: "config['kc.org.domain']",
+                displayKey: "domain",
+              },
+              {
+                name: "providerId",
+                displayKey: "providerDetails",
+              },
+              {
+                name: "config['kc.org.broker.public']",
+                displayKey: "shownOnLoginPage",
+                cellRenderer: (row) => (
+                  <ShownOnLoginPageCheck row={row} refresh={refresh} />
+                ),
+              },
+            ]}
+            emptyState={
+              <ListEmptyState
+                message={t("emptyIdentityProviderLink")}
+                instructions={t("emptyIdentityProviderLinkInstructions")}
+                primaryActionText={t("linkIdentityProvider")}
+                onPrimaryAction={toggleOpen}
+              />
+            }
+          />
+        )}
+      </PageSection>
+    </>
   );
 };

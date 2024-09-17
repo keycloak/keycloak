@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.model.infinispan;
 
 import java.util.Arrays;
-import java.util.function.Predicate;
 
 import org.infinispan.commons.CacheConfigurationException;
 import org.junit.Test;
@@ -36,12 +35,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 /**
  * Checks if the correct embedded or remote cache is started based on {@link org.keycloak.common.Profile.Feature}.
@@ -61,7 +56,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
 
     @Test
     public void testRemoteCachesOnly() {
-        assumeTrue("Remote-Cache Feature disabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE) || MultiSiteUtils.isMultiSiteEnabled());
+        assumeTrue("Clusterless Feature disabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS) || MultiSiteUtils.isMultiSiteEnabled());
         assertTrue(InfinispanUtils.isRemoteInfinispan());
         assertFalse(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
@@ -75,7 +70,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
     @Test
     public void testEmbeddedCachesOnly() {
         assumeFalse("Multi-Site Feature enabled", MultiSiteUtils.isMultiSiteEnabled());
-        assumeFalse("Remote-Cache Feature enabled", Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
+        assumeFalse("Clusterless Feature enabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
         assertFalse(InfinispanUtils.isRemoteInfinispan());
         assertTrue(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {

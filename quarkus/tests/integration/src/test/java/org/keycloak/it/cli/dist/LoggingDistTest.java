@@ -17,6 +17,10 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
@@ -118,11 +122,8 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
-    void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
-        File logFile = new File(logFilePath.toString());
-
-        String data = FileUtils.readFileToString(logFile, Charset.defaultCharset());
+    void testFileLoggingHasDifferentFormat(RawDistRootPath path) {
+        String data = readDefaultFileLog(path);
         assertTrue(data.contains("INFO  [i.quarkus] (main)"), "Format not applied");
     }
 
@@ -168,5 +169,80 @@ public class LoggingDistTest {
         cliResult.assertNoMessage("org.keycloak");
         cliResult.assertNoMessage("Listening on:");
         cliResult.assertError("Error writing to TCP stream");
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-console-level=wrong"})
+    void wrongLevelForHandlers(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are: off, fatal, error, warn, info, debug, trace, all");
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=console,file", "--log-console-level=debug", "--log-file-level=debug"})
+    void levelRootDefault(LaunchResult result, RawDistRootPath path) {
+        CLIResult cliResult = (CLIResult) result;
+        var output = cliResult.getOutput();
+
+        assertThat(output, not(containsString("DEBUG [org.hibernate")));
+        assertThat(output, not(containsString("DEBUG [org.keycloak")));
+
+        var fileLog = readDefaultFileLog(path);
+        assertThat(fileLog, notNullValue());
+        assertFalse(fileLog.isBlank());
+
+        assertThat(fileLog, not(containsString("DEBUG [org.hibernate")));
+        assertThat(fileLog, not(containsString("DEBUG [org.keycloak")));
+
+        assertThat(fileLog, containsString("INFO  [io.quarkus]"));
+        assertThat(fileLog, containsString("INFO  [org.keycloak"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=console,file", "--log-level=org.keycloak:debug", "--log-console-level=debug", "--log-file-level=debug"})
+    void levelRootCategoryDebug(LaunchResult result, RawDistRootPath path) {
+        CLIResult cliResult = (CLIResult) result;
+        var output = cliResult.getOutput();
+
+        assertThat(output, not(containsString("DEBUG [org.hibernate")));
+        assertThat(output, containsString("DEBUG [org.keycloak"));
+
+        var fileLog = readDefaultFileLog(path);
+        assertThat(fileLog, notNullValue());
+        assertFalse(fileLog.isBlank());
+
+        assertThat(fileLog, not(containsString("DEBUG [org.hibernate")));
+        assertThat(fileLog, containsString("DEBUG [org.keycloak"));
+
+        assertThat(fileLog, containsString("INFO  [io.quarkus]"));
+        assertThat(fileLog, containsString("INFO  [org.keycloak"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=console,file", "--log-level=info,org.keycloak:warn", "--log-console-level=off", "--log-file-level=off"})
+    void levelOffHandlers(LaunchResult result, RawDistRootPath path) {
+        CLIResult cliResult = (CLIResult) result;
+        var output = cliResult.getOutput();
+
+        // log contains DB migration status + build time logs
+        assertThat(output, not(containsString("DEBUG [org.hibernate")));
+        assertThat(output, not(containsString("INFO [org.keycloak")));
+        assertThat(output, not(containsString("INFO [io.quarkus")));
+
+        var fileLog = readDefaultFileLog(path);
+        assertThat(fileLog, notNullValue());
+        assertTrue(fileLog.isBlank());
+    }
+
+    protected static String readDefaultFileLog(RawDistRootPath path) {
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
+        File logFile = new File(logFilePath.toString());
+        assertTrue(logFile.isFile(), "Log file does not exist!");
+
+        try {
+            return FileUtils.readFileToString(logFile, Charset.defaultCharset());
+        } catch (IOException e) {
+            throw new AssertionError("Cannot read default file log", e);
+        }
     }
 }

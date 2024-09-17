@@ -37,7 +37,8 @@ class KeycloakMetricsConfigurationTest {
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
                 .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
-            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics");
+            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics")
+            .overrideConfigKey("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
 
     @Test
     void testMetrics() {

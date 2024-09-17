@@ -153,6 +153,11 @@ HTTP(S):
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
                      The file path to a private key in PEM format.
+--https-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
+                       be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
                      The cipher suites to use. If none is given, a reasonable default is selected.
 --https-client-auth <auth>
@@ -268,6 +273,13 @@ Logging:
                      The format of unstructured console log entries. If the format has spaces in
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-level <level>
+                     Set the log level for the console handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
+                       Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log

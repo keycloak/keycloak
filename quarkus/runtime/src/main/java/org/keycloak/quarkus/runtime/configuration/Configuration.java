@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -108,6 +109,10 @@ public final class Configuration {
 
     public static Optional<String> getRawPersistedProperty(String name) {
         return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
+    }
+
+    public static Map<String, String> getRawPersistedProperties() {
+        return PersistedConfigSource.getInstance().getProperties();
     }
 
     public static String getRawValue(String propertyName) {

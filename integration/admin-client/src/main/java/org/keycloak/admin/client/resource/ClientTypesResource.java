@@ -26,6 +26,10 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 
 /**
+ *  @since Keycloak 25. All the child endpoints are also available since that version<p>
+ *
+ *  This endpoint including all the child endpoints requires feature {@link org.keycloak.common.Profile.Feature#CLIENT_TYPES} to be enabled<p>
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface ClientTypesResource {
