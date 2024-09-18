@@ -459,7 +459,7 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                 builder.equal(mapper.get("realmId"), getRealm().getId()),
                 builder.equal(mapper.get("identityProviderAlias"), identityProviderAlias));
 
-        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(mapper).where(predicate));
+        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(mapper).where(predicate).orderBy(builder.asc(mapper.get("id"))));
 
         return closing(typedQuery.getResultStream().map(this::toModel));
     }
