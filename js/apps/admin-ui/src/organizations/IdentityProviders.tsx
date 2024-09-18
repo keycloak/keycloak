@@ -6,6 +6,7 @@ import {
   Switch,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { sortBy } from "lodash-es";
 import { BellIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -85,8 +86,12 @@ export const IdentityProviders = () => {
     [],
   );
 
-  const loader = () =>
-    adminClient.organizations.listIdentityProviders({ orgId: orgId! });
+  const loader = async () => {
+    const providers = await adminClient.organizations.listIdentityProviders({
+      orgId: orgId!,
+    });
+    return sortBy(providers, "alias");
+  };
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
     titleKey: "identityProviderUnlink",
