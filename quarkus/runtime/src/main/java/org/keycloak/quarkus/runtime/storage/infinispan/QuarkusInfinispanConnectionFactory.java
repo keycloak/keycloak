@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
+package org.keycloak.quarkus.runtime.storage.infinispan;
 
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
