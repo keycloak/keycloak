@@ -258,7 +258,7 @@
         </profile>
 
         <profile>
-            <id>jpa+remote-infinispan</id>
+            <id>jpa+clusterless</id>
             <properties>
                 <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
             </properties>
@@ -269,8 +269,8 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <keycloak.profile.feature.remote_cache>enabled</keycloak.profile.feature.remote_cache>
-                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                                <keycloak.profile.feature.clusterless>enabled</keycloak.profile.feature.clusterless>
+                                <keycloak.profile.feature.persistent_user_sessions>disabled</keycloak.profile.feature.persistent_user_sessions>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
