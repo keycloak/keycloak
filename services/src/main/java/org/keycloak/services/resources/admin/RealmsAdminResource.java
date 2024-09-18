@@ -34,7 +34,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -190,9 +189,7 @@ public class RealmsAdminResource {
     /**
      * Base path for the admin REST API for one particular realm.
      *
-     * @param headers
      * @param name realm name (not id!)
-     * @return
      */
     @Path("{realm}")
     public RealmAdminResource getRealmAdmin(@PathParam("realm") @Parameter(description = "realm name (not id!)") final String name) {
@@ -206,8 +203,8 @@ public class RealmsAdminResource {
         }
         AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
 
-        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
         session.getContext().setRealm(realm);
+        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
 
         return new RealmAdminResource(session, realmAuth, adminEvent);
     }

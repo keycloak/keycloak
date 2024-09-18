@@ -390,6 +390,18 @@ Tracing (Preview):
                        defined in the 'tracing-resource-attributes' property. Default: keycloak.
                        Available only when 'opentelemetry' feature and Tracing is enabled.
 
+Events (Preview):
+
+--event-metrics-user-events <events>
+                     Preview: Comma-separated list of events to be collected for user event
+                       metrics. Reduce the number of metrics. If empty or not set, all events
+                       create a metric. Available only when user event metrics are enabled.
+--event-metrics-user-tags <tags>
+                     Preview: Comma-separated list of tags to be collected for user event metrics.
+                       By default only 'realm' is enabled to avoid a high metrics cardinality.
+                       Possible values are: realm, idp, clientId. Default: realm. Available only
+                       when user event metrics are enabled.
+
 Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
