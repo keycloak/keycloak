@@ -2,12 +2,12 @@
 
 <div class="${properties.kcFormGroupClass}">
   <div class="${properties.kcFormGroupLabelClass}">
-    <label for="${name}" class="pf-v5-c-form__label">
-        <span class="pf-v5-c-form__label-text">
+    <label for="${name}" class="${properties.kcFormGroupLabelClass}">
+        <span class="${properties.kcFormGroupLabelTextClass}">
           ${label}
         </span>
         <#if required>
-          <span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
+          <span class="${properties.kcInputRequiredClass}" aria-hidden="true">&#42;</span>
         </#if>
     </label>
   </div>
@@ -44,18 +44,18 @@
 
 <#macro input name label value="" required=false autocomplete="off" fieldName=name autofocus=false>
   <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
-  <@field.group name=name label=label error=error required=required>
+  <@group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
                 aria-invalid="<#if error?has_content>true</#if>"/>
         <@errorIcon error=error/>
     </span>
-  </@field.group>
+  </@group>
 </#macro>
 
 <#macro password name label value="" required=false forgotPassword=false fieldName=name autocomplete="off" autofocus=false>
   <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
-  <@field.group name=name label=label error=error required=required>
+  <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
@@ -65,7 +65,7 @@
         </span>
       </div>
       <div class="${properties.kcInputGroupItemClass}">
-        <button class="pf-v5-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+        <button class="${properties.kcFormPasswordVisibilityButtonClass}" type="button" aria-label="${msg('showPassword')}"
                 aria-controls="${name}" data-password-toggle
                 data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
@@ -84,7 +84,7 @@
             </div>
         </div>
       </#if>
-  </@field.group>
+  </@group>
 </#macro>
 
 <#macro checkbox name label value=false required=false>
