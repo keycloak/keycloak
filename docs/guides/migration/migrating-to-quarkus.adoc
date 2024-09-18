@@ -62,6 +62,9 @@ By default, the new Quarkus distribution removes `/auth` from the context-path. 
 bin/kc.[sh|bat] start-dev --http-relative-path /auth
 ----
 
+When the relative path is specified, it is still possible to be redirected from the root to the relative path.
+Specifically, when the user access `localhost:8080/`, the page is redirected to the `localhost:8080/auth`.
+
 == Migrating custom providers
 
 Similarly to the WildFly distribution custom providers are deployed to Keycloak by copying them to a deployment directory. In the new distribution you should copy your providers to the `providers` directory instead of `standalone/deployments`, which no longer exists. Additional dependencies are also copied to the `providers` directory.
