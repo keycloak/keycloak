@@ -29,7 +29,6 @@ import java.util.Set;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
@@ -41,10 +40,8 @@ import org.keycloak.organization.jpa.OrganizationAdapter;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationGroupTest extends AbstractOrganizationTest {
 
     @Test

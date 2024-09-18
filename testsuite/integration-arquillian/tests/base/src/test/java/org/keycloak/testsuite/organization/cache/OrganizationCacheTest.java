@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.OrganizationDomainModel;
@@ -47,11 +46,9 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationCacheTest extends AbstractOrganizationTest {
 
     @Before

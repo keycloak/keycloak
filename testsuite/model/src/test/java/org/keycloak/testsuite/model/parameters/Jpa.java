@@ -45,6 +45,8 @@ import org.keycloak.models.jpa.session.JpaRevokedTokensPersisterProviderFactory;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.session.RevokedTokenPersisterSpi;
 import org.keycloak.models.session.UserSessionPersisterSpi;
+import org.keycloak.organization.OrganizationSpi;
+import org.keycloak.organization.jpa.JpaOrganizationProviderFactory;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocolSpi;
 import org.keycloak.provider.ProviderFactory;
@@ -80,6 +82,8 @@ public class Jpa extends KeycloakModelParameters {
       .add(IdentityProviderStorageSpi.class)
       .add(IdentityProviderSpi.class)
 
+      .add(OrganizationSpi.class)
+
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -108,6 +112,8 @@ public class Jpa extends KeycloakModelParameters {
 
       //required for FederatedIdentityModel
       .add(IdentityProviderFactory.class)
+
+      .add(JpaOrganizationProviderFactory.class)
 
       .build();
 
