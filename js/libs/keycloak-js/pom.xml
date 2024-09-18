@@ -47,6 +47,11 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- Skip execution of build with an empty phase. -->
+                        <id>pnpm-build</id>
+                        <phase/>
+                    </execution>
+                    <execution>
                         <id>pack</id>
                         <phase>package</phase>
                         <goals>

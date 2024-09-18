@@ -31,7 +31,7 @@
     <name>Auth Server Services - Testsuite Providers</name>
 
     <properties>
-        <js-adapter.dist.path>${project.basedir}/../../../../../../js/libs/keycloak-js/dist</js-adapter.dist.path>
+        <js-adapter.dist.path>${project.basedir}/../../../../../../js/libs/keycloak-js/lib</js-adapter.dist.path>
         <js-adapter.target.path>${project.basedir}/target/classes/javascript</js-adapter.target.path>
     </properties>
 

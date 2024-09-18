@@ -56,7 +56,6 @@
       "command": "vite --host",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -64,7 +63,6 @@
       "command": "vite preview",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -72,7 +70,6 @@
       "command": "vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -80,7 +77,6 @@
       "command": "eslint .",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },

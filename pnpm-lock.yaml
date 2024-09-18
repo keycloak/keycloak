@@ -378,20 +378,7 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.7.22)(@types/node@22.7.2)(typescript@5.6.2)
 
-  js/libs/keycloak-js:
-    devDependencies:
-      '@rollup/plugin-terser':
-        specifier: ^0.4.4
-        version: 0.4.4(rollup@4.22.4)
-      '@rollup/plugin-typescript':
-        specifier: ^12.1.0
-        version: 12.1.0(rollup@4.22.4)(tslib@2.7.0)(typescript@5.6.2)
-      rollup:
-        specifier: ^4.22.4
-        version: 4.22.4
-      shx:
-        specifier: ^0.3.4
-        version: 0.3.4
+  js/libs/keycloak-js: {}
 
   js/libs/ui-shared:
     dependencies:
@@ -1264,19 +1251,6 @@ packages:
       rollup: ^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
-        optional: true
-
-  '@rollup/plugin-typescript@12.1.0':
-    resolution: {integrity: sha512-Kzs8KGJofe7cfTRODsnG1jNGxSvU8gVoNNd7Z/QaY25AYwe2LSSUpx/kPxqF38NYkpR8de3m51r9uwJpDlz6dg==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0||^3.0.0||^4.0.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-      tslib:
         optional: true
 
   '@rollup/pluginutils@5.1.0':
@@ -5795,15 +5769,6 @@ snapshots:
       terser: 5.31.6
     optionalDependencies:
       rollup: 4.22.4
-
-  '@rollup/plugin-typescript@12.1.0(rollup@4.22.4)(tslib@2.7.0)(typescript@5.6.2)':
-    dependencies:
-      '@rollup/pluginutils': 5.1.0(rollup@4.22.4)
-      resolve: 1.22.8
-      typescript: 5.6.2
-    optionalDependencies:
-      rollup: 4.22.4
-      tslib: 2.7.0
 
   '@rollup/pluginutils@5.1.0(rollup@4.22.4)':
     dependencies:

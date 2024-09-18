@@ -298,25 +298,8 @@ function Keycloak (config) {
             }
         }
 
-        function domReady() {
-            var promise = createPromise();
-
-            var checkReadyState = function () {
-                if (document.readyState === 'interactive' || document.readyState === 'complete') {
-                    document.removeEventListener('readystatechange', checkReadyState);
-                    promise.setSuccess();
-                }
-            }
-            document.addEventListener('readystatechange', checkReadyState);
-
-            checkReadyState(); // just in case the event was already fired and we missed it (in case the init is done later than at the load time, i.e. it's done from code)
-
-            return promise.promise;
-        }
-
         configPromise.then(function () {
-            domReady()
-                .then(check3pCookiesSupported)
+            check3pCookiesSupported()
                 .then(processInit)
                 .catch(function (error) {
                     promise.setError(error);
