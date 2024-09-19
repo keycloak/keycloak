@@ -35,6 +35,8 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPer
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
+    
+    private boolean skipStart;
 
     @Override
     public void run() {
@@ -48,7 +50,9 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
             executionError(spec.commandLine(), Messages.optimizedUsedForFirstStartup());
         }
 
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
+        if (!skipStart) {
+            KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
+        }
     }
 
     protected void doBeforeRun() {
@@ -67,6 +71,10 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
 
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+    
+    public void setSkipStart(boolean skipStart) {
+        this.skipStart = skipStart;
     }
 
 }
