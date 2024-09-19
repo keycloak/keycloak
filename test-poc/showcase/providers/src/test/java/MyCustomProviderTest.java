@@ -5,10 +5,10 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.TestProvider;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.server.ProviderModule;
 import org.keycloak.test.framework.server.KeycloakTestServerConfig;
 
 import java.io.IOException;
@@ -42,11 +42,11 @@ public class MyCustomProviderTest {
 
     // In a separate configuration class we can change some Keycloak server configs and apply it by referencing it in
     // the KeycloakIntegrationTest annotation.
-    // The definition of our supplier module is in the MyProviderModule class.
+    // The definition of our supplier is in the CustomTestProvider class.
     public static class ServerConfig implements KeycloakTestServerConfig {
         @Override
-        public Set<Class<? extends ProviderModule>> providerModules() {
-            return Set.of(MyProviderModule.class);
+        public Set<Class<? extends TestProvider>> providerModules() {
+            return Set.of(CustomTestProvider.class);
         }
     }
 }

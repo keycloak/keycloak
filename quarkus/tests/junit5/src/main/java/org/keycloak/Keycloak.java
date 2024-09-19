@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import io.quarkus.bootstrap.app.AdditionalDependency;
 import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
@@ -74,6 +75,7 @@ public class Keycloak {
         private String version;
         private Path homeDir;
         private List<Dependency> dependencies = new ArrayList<>();
+        private List<Path> additionalDeploymentArchives = new ArrayList<>();
 
         private Builder() {
 
@@ -104,6 +106,11 @@ public class Keycloak {
             return this;
         }
 
+        public Builder addAdditionalDeploymentArchive(Path path) {
+            this.additionalDeploymentArchives.add(path);
+            return this;
+        }
+
         public Keycloak start(String... args) {
             return start(List.of(args));
         }
@@ -129,7 +136,7 @@ public class Keycloak {
                 }
             }
 
-            return new Keycloak(homeDir, version, dependencies, isFipsEnabled).start(args);
+            return new Keycloak(homeDir, version, dependencies, additionalDeploymentArchives, isFipsEnabled).start(args);
         }
 
         private <T> void addOptionIfNotSet(List<String> args, Option<T> option) {
@@ -169,15 +176,17 @@ public class Keycloak {
     private ApplicationModel applicationModel;
     private Path homeDir;
     private List<Dependency> dependencies;
+    private List<Path> additionalApplicationArchives;
     private boolean fipsEnabled;
 
     public Keycloak() {
-        this(null, Version.VERSION, List.of(), false);
+        this(null, Version.VERSION, List.of(), List.of(), false);
     }
 
-    public Keycloak(Path homeDir, String version, List<Dependency> dependencies, boolean fipsEnabled) {
+    public Keycloak(Path homeDir, String version, List<Dependency> dependencies, List<Path> additionalApplicationArchives, boolean fipsEnabled) {
         this.homeDir = homeDir;
         this.dependencies = dependencies;
+        this.additionalApplicationArchives = additionalApplicationArchives;
         this.fipsEnabled = fipsEnabled;
         try {
             applicationModel = createApplicationModel(version);
@@ -195,6 +204,10 @@ public class Keycloak {
                 .setFlatClassPath(true)
                 .setMode(QuarkusBootstrap.Mode.TEST);
 
+        for(Path path : additionalApplicationArchives) {
+            AdditionalDependency dependency = new AdditionalDependency(path, false, true);
+            builder.addAdditionalApplicationArchive(dependency);
+        }
         try {
             curated = builder.build().bootstrap();
             AugmentAction action = curated.createAugmentor();

@@ -109,7 +109,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
     }
-    
+
     public CLIResult kcadm(String... arguments) throws IOException {
     	return kcadm(Arrays.asList(arguments));
     }
@@ -693,6 +693,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
+        deployProviderJar(providerJar);
+    }
+
+    public void deployProviderJar(JavaArchive providerJar) {
         providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
     }
 
