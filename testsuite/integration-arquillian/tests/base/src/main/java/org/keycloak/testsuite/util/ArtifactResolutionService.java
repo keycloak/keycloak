@@ -43,7 +43,7 @@ public class ArtifactResolutionService implements Provider<Source>, Runnable {
     private ArtifactResponseType artifactResponseType;
     private final String endpointAddress;
     private ArtifactResolveType lastArtifactResolve;
-    private boolean running = true;
+    private volatile boolean running = true;
 
     /**
      * Standard constructor
