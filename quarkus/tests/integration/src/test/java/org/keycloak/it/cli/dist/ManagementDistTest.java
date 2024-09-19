@@ -29,7 +29,9 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import java.io.IOException;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -120,10 +122,30 @@ public class ManagementDistTest {
         assertRelativePath(result, "/management");
     }
 
+    @Test
+    @Launch({"start-dev", "--http-relative-path=/auth", "--http-management-relative-path=/management"})
+    void testManagementRootRedirects(LaunchResult result, KeycloakDistribution distribution) {
+        assertRelativePath(result, "/management");
+
+        distribution.setRequestPort(8080);
+
+        given().redirects().follow(false).when().get("/").then().statusCode(302).header("Location", is("/auth"));
+        when().get("/").then().statusCode(200).body(containsString("Welcome to Keycloak"));
+        when().get("/auth").then().statusCode(200).body(containsString("Welcome to Keycloak"));
+    }
+
     private void assertRelativePath(LaunchResult result, String relativePath) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
 
+        given().redirects().follow(false).when().get("/").then()
+                .statusCode(302)
+                .and()
+                .header("Location", is(relativePath));
+        when().get("/").then()
+                .statusCode(200)
+                .and()
+                .body(is("Keycloak Management Interface"));
         when().get(relativePath).then()
                 .statusCode(200)
                 .and()

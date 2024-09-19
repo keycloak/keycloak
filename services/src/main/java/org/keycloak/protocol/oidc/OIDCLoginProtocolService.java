@@ -24,6 +24,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -153,9 +154,9 @@ public class OIDCLoginProtocolService {
      * Registration endpoint
      */
     @Path("registrations")
-    public Object registrations() {
+    public Object registrations(@QueryParam(Constants.TOKEN) String tokenString) {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
-        return endpoint.register();
+        return endpoint.register(tokenString);
     }
 
     /**

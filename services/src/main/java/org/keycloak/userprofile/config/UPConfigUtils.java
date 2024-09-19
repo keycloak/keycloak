@@ -248,7 +248,7 @@ public class UPConfigUtils {
      *
      * @param roles to validate
      * @param fieldName we are validating for use in error messages
-     * @param errors to ass error message into
+     * @param errors to pass error message into
      * @param attributeName we are validating for use in error messages
      */
     private static void validateRoles(Set<String> roles, String fieldName, List<String> errors, String attributeName) {

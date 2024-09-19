@@ -49,7 +49,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [addEventType, setAddEventType] = useState(false);
 
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, refresh: refreshRealm } = useRealm();
 
   const setupForm = (eventConfig?: EventsConfigForm) => {
     setEvents(eventConfig);
@@ -111,6 +111,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         },
       );
     }
+    refreshRealm();
 
     try {
       await adminClient.realms.updateConfigEvents(

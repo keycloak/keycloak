@@ -80,6 +80,11 @@ public class KeycloakRecorder {
         Profile.init(profileName, features);
     }
 
+    // default handler for redirecting to specific path
+    public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
+        return routingContext -> routingContext.redirect(redirectPath);
+    }
+
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
         return routingContext -> routingContext.response().end("Keycloak Management Interface");

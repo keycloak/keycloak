@@ -85,11 +85,9 @@ public class ProfileTest {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
 
-        try {
-            Profile.configure(new PropertiesProfileConfigResolver(properties));
-        } catch (ProfileException e) {
-            Assert.assertEquals("Feature account3 depends on disabled feature account-api", e.getMessage());
-        }
+        Assert.assertEquals("Feature account3 depends on disabled feature account-api",
+                assertThrows(ProfileException.class,
+                        () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
     }
 
     @Test
@@ -107,11 +105,19 @@ public class ProfileTest {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account_api", "invalid");
 
-        try {
-            Profile.configure(new PropertiesProfileConfigResolver(properties));
-        } catch (ProfileException e) {
-            Assert.assertEquals("Invalid config value 'invalid' for feature key keycloak.profile.feature.account_api", e.getMessage());
-        }
+        Assert.assertEquals("Invalid config value 'invalid' for feature key keycloak.profile.feature.account_api",
+                assertThrows(ProfileException.class,
+                        () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
+    }
+
+    @Test
+    public void wrongProfileInProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile", "experimental");
+
+        Assert.assertEquals("Invalid profile 'experimental' specified via 'keycloak.profile' property",
+                assertThrows(ProfileException.class,
+                        () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
     }
 
     @Test

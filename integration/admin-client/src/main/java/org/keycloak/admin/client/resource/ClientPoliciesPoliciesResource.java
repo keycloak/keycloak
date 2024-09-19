@@ -18,6 +18,12 @@ public interface ClientPoliciesPoliciesResource {
     @Produces(MediaType.APPLICATION_JSON)
     ClientPoliciesRepresentation getPolicies();
 
+    /**
+     * Get client policies for the realm.
+     *
+     * @param includeGlobalPolicies Indicates if global server clioent policies should be included or not. Parameter available since Keycloak server 25. Will be ignored on older Keycloak versions with the default value false
+     * @return client policies
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     ClientPoliciesRepresentation getPolicies(@QueryParam("include-global-policies") Boolean includeGlobalPolicies);

@@ -294,6 +294,7 @@ public class UserResource {
                     .getProviderFactoriesStream(RequiredActionProvider.class)
                     .map(ProviderFactory::getId)
                     .distinct()
+                    .sorted()
                     .forEach(action -> {
                         if (reqActions.contains(action)) {
                             user.addRequiredAction(action);

@@ -202,4 +202,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setOrganizationsEnabled(organizationsEnabled);
         return this;
     }
+
+    public RealmAttributeUpdater setRegistrationAllowed(Boolean registrationAllowed) {
+        rep.setRegistrationAllowed(registrationAllowed);
+        return this;
+    }
 }

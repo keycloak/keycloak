@@ -50,6 +50,7 @@ import org.keycloak.timer.TimerProviderFactory;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProviderFactory;
 
 /**
  *
@@ -87,6 +88,7 @@ public class Infinispan extends KeycloakModelParameters {
       .add(TimerProviderFactory.class)
       .add(InfinispanPublicKeyStorageProviderFactory.class)
       .add(InfinispanCachePublicKeyProviderFactory.class)
+      .add(InfinispanOrganizationProviderFactory.class)
       .build();
 
     @Override

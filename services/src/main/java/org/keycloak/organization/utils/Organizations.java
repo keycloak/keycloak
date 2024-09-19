@@ -122,15 +122,11 @@ public class Organizations {
             try {
                 OrganizationProvider provider = getProvider(session);
 
-                session.setAttribute(OrganizationModel.class.getName(), provider.getById(group.getName()));
+                session.getContext().setOrganization(provider.getById(group.getName()));
 
                 realm.removeGroup(group);
             } finally {
-                if (current == null) {
-                    session.removeAttribute(OrganizationModel.class.getName());
-                } else {
-                    session.setAttribute(OrganizationModel.class.getName(), current);
-                }
+                session.getContext().setOrganization(current);
             }
         };
     }
@@ -249,7 +245,7 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
-        Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
+        Optional<OrganizationModel> organization = Optional.ofNullable(session.getContext().getOrganization());
 
         if (organization.isPresent()) {
             // resolved from current keycloak session
@@ -296,5 +292,10 @@ public class Organizations {
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
         return session.getProvider(OrganizationProvider.class);
+    }
+
+    public static boolean isRegistrationAllowed(KeycloakSession session, RealmModel realm) {
+        if (session.getContext().getOrganization() != null) return true;
+        return realm.isRegistrationAllowed();
     }
 }

@@ -35,6 +35,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.JsonSerialization;
 
@@ -134,6 +135,10 @@ public class KeycloakIdentity implements Identity {
 
             if (userSession == null) {
                 throw new RuntimeException("No active session associated with the token");
+            }
+
+            if (AuthenticationManager.isSessionValid(realm, userSession) && token.isIssuedBeforeSessionStart(userSession.getStarted())) {
+                throw new RuntimeException("Invalid token");
             }
 
             ClientModel client = realm.getClientByClientId(token.getIssuedFor());
@@ -307,7 +312,9 @@ public class KeycloakIdentity implements Identity {
         if (userSession == null) {
             userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
         }
-
+        if (AuthenticationManager.isSessionValid(realm, userSession) && accessToken.isIssuedBeforeSessionStart(userSession.getStarted())) {
+            return null;
+        }
         return userSession.getUser();
     }
 }

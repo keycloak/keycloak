@@ -28,7 +28,6 @@ import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.*;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
@@ -66,8 +65,6 @@ import static org.keycloak.provider.ProviderConfigProperty.TEXT_TYPE;
  */
 
 public abstract class AbstractX509ClientCertificateAuthenticatorFactory implements AuthenticatorFactory {
-
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
     private static final String[] mappingSources = {
             MAPPING_SOURCE_CERT_SUBJECTDN,
@@ -118,7 +115,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
-        
+
         ProviderConfigProperty regExp = new ProviderConfigProperty();
         regExp.setType(STRING_TYPE);
         regExp.setName(REGULAR_EXPRESSION);

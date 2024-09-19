@@ -905,7 +905,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
         if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 List<String> value = entry.getValue();
                 if (value != null) {
                     user.setAttribute(entry.getKey(), new ArrayList<>(value));

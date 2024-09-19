@@ -115,7 +115,7 @@ public final class DefaultUserProfile implements UserProfile {
         try {
             Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
 
-            for (Map.Entry<String, List<String>> attribute : writable.entrySet()) {
+            for (Map.Entry<String, List<String>> attribute : writable.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 String name = attribute.getKey();
                 List<String> currentValue = user.getAttributeStream(name)
                         .filter(Objects::nonNull).collect(Collectors.toList());

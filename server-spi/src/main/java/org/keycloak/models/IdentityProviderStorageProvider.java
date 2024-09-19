@@ -251,6 +251,7 @@ public interface IdentityProviderStorageProvider extends Provider {
 
         public static Predicate<IdentityProviderModel> getLoginPredicate() {
             return ((Predicate<IdentityProviderModel>) Objects::nonNull)
+                    .and(idp -> idp.getOrganizationId() == null || Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.BROKER_PUBLIC)))
                     .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(Predicate::and).get());
         }
     }

@@ -24,7 +24,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -36,7 +35,6 @@ import jakarta.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
-    protected static ServicesLogger log = ServicesLogger.LOGGER;
 
     @Override
     public void action(AuthenticationFlowContext context) {

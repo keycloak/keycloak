@@ -20,7 +20,7 @@ package org.keycloak.testsuite.organization.admin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,17 +32,14 @@ import java.util.function.Predicate;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
+import java.time.Duration;
 import org.hamcrest.Matchers;
-import static org.hamcrest.Matchers.equalTo;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,15 +47,14 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Rule
@@ -127,19 +123,25 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testFailRegistrationNotEnabledWhenInvitingNewUser() {
+    public void testRegistrationEnabledWhenInvitingNewUser() throws Exception {
         String email = "inviteduser@email";
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        RealmRepresentation realm = testRealm().toRepresentation();
-        realm.setRegistrationAllowed(false);
-        testRealm().update(realm);
-        try (Response response = organization.members().inviteUser(email, null, null)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            assertEquals("Realm does not allow self-registration", response.readEntity(ErrorRepresentation.class).getErrorMessage());
-        } finally {
-            realm.setRegistrationAllowed(true);
-            testRealm().update(realm);
+        try (
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update(); 
+                Response response = organization.members().inviteUser(email, null, null)
+            ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            registerUser(organization, email);
+
+            // authenticated to the account console
+            Assert.assertTrue(driver.getPageSource().contains("Account Management"));
+            Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+
+            List<MemberRepresentation> memberByEmail = organization.members().search(email, Boolean.TRUE, null, null);
+            assertThat(memberByEmail, Matchers.hasSize(1));
+            assertThat(memberByEmail.get(0).getMembershipType(), equalTo(MembershipType.MANAGED));
         }
     }
 
@@ -150,7 +152,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, null, null).close();
 
-        registerUser(organization, "invalid@email.com");
+        registerUser(organization, email, "invalid@email.com");
 
         assertThat(driver.getPageSource(), Matchers.containsString("Email does not match the invitation"));
         assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
@@ -203,9 +205,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         try {
             setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
 
-            registerUser(organization, email);
+            String link = getInvitationLinkFromEmail();
+            driver.navigate().to(link);
 
-            assertThat(driver.getPageSource(), Matchers.containsString("The provided token is not valid or has expired."));
+            assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
         } finally {
             resetTimeOffset();
@@ -213,11 +216,16 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void registerUser(OrganizationResource organization, String email) throws MessagingException, IOException {
+        registerUser(organization, email, email);
+    }
+
+    private void registerUser(OrganizationResource organization, String expectedEmail, String email) throws MessagingException, IOException {
         String link = getInvitationLinkFromEmail();
         driver.navigate().to(link);
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> email.equals(actual.getEmail())));
         registerPage.assertCurrent(organizationName);
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+        assertThat(registerPage.getEmail(), equalTo(expectedEmail));
         registerPage.register("firstName", "lastName", email,
                 "invitedUser", "password", "password", null, false, null);
     }

@@ -81,22 +81,6 @@ describe("Groups", () => {
     });
   });
 
-  it("set or create child", async () => {
-    const groupName = "child-group";
-    const groupId = currentGroup.id;
-    const childGroup = await kcAdminClient.groups.setOrCreateChild(
-      { id: groupId! },
-      { name: groupName },
-    );
-
-    expect(childGroup.id).to.be.ok;
-
-    const group = (await kcAdminClient.groups.findOne({
-      id: groupId!,
-    }))!;
-    expect(group).to.be.ok;
-  });
-
   it("list subgroups", async () => {
     if (currentGroup.id) {
       const args: SubGroupQuery = {

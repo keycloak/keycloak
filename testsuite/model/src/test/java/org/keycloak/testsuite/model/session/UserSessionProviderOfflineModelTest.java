@@ -146,6 +146,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 sessionManager = new UserSessionManager(session);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
@@ -275,6 +276,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 sessionManager = new UserSessionManager(session);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 

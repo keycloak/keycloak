@@ -73,6 +73,26 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     }
 
     @Override
+    public Response preHandleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
+        KeycloakSession session = tokenContext.getSession();
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        OrganizationModel organization = orgProvider.getById(token.getOrgId());
+
+        if (organization == null) {
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
+                    .createInfoPage();
+        }
+
+        session.getContext().setOrganization(organization);
+
+        return super.preHandleToken(token, tokenContext);
+    }
+
+    @Override
     public Response handleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         KeycloakSession session = tokenContext.getSession();
