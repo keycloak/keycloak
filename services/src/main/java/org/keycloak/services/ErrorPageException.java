@@ -28,44 +28,15 @@ import jakarta.ws.rs.core.Response;
  */
 public class ErrorPageException extends WebApplicationException {
 
-    private final KeycloakSession session;
-    private final Response.Status status;
-    private final String errorMessage;
-    private final Object[] parameters;
-    private final AuthenticationSessionModel authSession;
-    private final Response response;
-
-    
     public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
-        super(errorMessage, status);
-        this.session = session;
-        this.status = status;
-        this.errorMessage = errorMessage;
-        this.parameters = parameters;
-        this.authSession = null;
-        this.response = null;
+        super(errorMessage, ErrorPage.error(session, null, status, errorMessage, parameters));
     }
-    
+
     public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, Response.Status status, String errorMessage, Object... parameters) {
-        this.session = session;
-        this.status = status;
-        this.errorMessage = errorMessage;
-        this.parameters = parameters;
-        this.authSession = authSession;
-        this.response = null;
+        super(errorMessage, ErrorPage.error(session, authSession, status, errorMessage, parameters));
     }
 
     public ErrorPageException(Response response) {
-        this.session = null;
-        this.status = null;
-        this.errorMessage = null;
-        this.parameters = null;
-        this.authSession = null;
-        this.response = response;
-    }
-
-    @Override
-    public Response getResponse() {
-        return response != null ? response : ErrorPage.error(session, authSession, status, errorMessage, parameters);
+        super((Throwable) null, response);
     }
 }
