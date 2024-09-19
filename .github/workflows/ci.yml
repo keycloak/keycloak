@@ -85,7 +85,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw install -pl "$PROJECTS" -am
 
       - name: Upload JVM Heapdumps
         if: always()
