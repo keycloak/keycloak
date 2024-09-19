@@ -83,7 +83,7 @@ public class SdJwtUtils {
         JsonNode jsonNode;
 
         // Decode Base64URL-encoded disclosure
-        var decoded = new String(decodeNoPad(disclosure));
+        String decoded = new String(decodeNoPad(disclosure));
 
         // Parse the disclosure string into a JSON array
         try {

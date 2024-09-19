@@ -32,6 +32,12 @@
         For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client` module.
     </description>
 
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.release>8</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

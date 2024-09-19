@@ -38,6 +38,7 @@ import org.keycloak.util.TokenUtil;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -96,7 +97,7 @@ public abstract class RSAVerifierTest {
 
         String encoded = new JWSBuilder()
                 .jwk(jwk)
-                .x5c(List.of(idpCertificate, caCertificate))
+                .x5c(Arrays.asList(new X509Certificate[]{idpCertificate, caCertificate}))
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
         TokenVerifier tokenVerifier = TokenVerifier.create(encoded, JsonWebToken.class);

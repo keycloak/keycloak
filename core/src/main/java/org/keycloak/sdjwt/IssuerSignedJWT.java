@@ -16,7 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -140,7 +142,7 @@ public class IssuerSignedJWT extends SdJws {
      * Returns `cnf` claim (establishing key binding)
      */
     public Optional<JsonNode> getCnfClaim() {
-        var cnf = getPayload().get("cnf");
+        JsonNode cnf = getPayload().get("cnf");
         return Optional.ofNullable(cnf);
     }
 
@@ -148,7 +150,7 @@ public class IssuerSignedJWT extends SdJws {
      * Returns declared hash algorithm from SD hash claim.
      */
     public String getSdHashAlg() {
-        var hashAlgNode = getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM);
+        JsonNode hashAlgNode = getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM);
         return hashAlgNode == null ? "sha-256" : hashAlgNode.asText();
     }
 
@@ -159,10 +161,10 @@ public class IssuerSignedJWT extends SdJws {
      */
     public void verifySdHashAlgorithm() throws VerificationException {
         // Known secure algorithms
-        final Set<String> secureAlgorithms = Set.of(
+        final Set<String> secureAlgorithms = new HashSet<>(Arrays.asList(
                 "sha-256", "sha-384", "sha-512",
                 "sha3-256", "sha3-384", "sha3-512"
-        );
+        ));
 
         // Read SD hash claim
         String hashAlg = getSdHashAlg();
