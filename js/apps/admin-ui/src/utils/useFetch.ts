@@ -33,6 +33,7 @@ export function useFetch<T>(
         }
       })
       .catch((error) => {
+        console.error(error);
         if (!signal.aborted) {
           showBoundary(error);
         }
