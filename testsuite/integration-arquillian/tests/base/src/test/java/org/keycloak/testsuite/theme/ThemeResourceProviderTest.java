@@ -110,29 +110,21 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
                 deleted = file1.delete();
             }
 
-            File file2 = Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile();
-            if (file2.isFile()) {
-                deleted = deleted && file2.delete();
-            }
-
             return deleted;
         }, Boolean.class);
 
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", ".pf-v5-c-background-image");
-        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function Keycloak (config)");
 
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
         if (filesNotExistsInTmp) {
             testingClient.server().run(session -> {
                 assertFalse(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
-                assertFalse(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
             });
         }
 
         testingClient.server().run(session -> {
             String serverTmpDir = Platform.getPlatform().getTmpDirectory().toString();
             assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
-            assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
         });
     }
 
