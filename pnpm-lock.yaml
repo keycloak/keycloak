@@ -157,8 +157,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0
       '@patternfly/react-code-editor':
-        specifier: ^5.4.0
-        version: 5.4.0(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.1
+        version: 5.4.1(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core':
         specifier: ^5.4.0
         version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1166,8 +1166,8 @@ packages:
   '@patternfly/patternfly@5.4.0':
     resolution: {integrity: sha512-9B33M4N0/KDyss6NpCwAhz18za7R+sXYiFrUObhGoJ1Cmg06SeScVrEAjT4yJwAClWUlKh604Af9wE4D7IF8Lg==}
 
-  '@patternfly/react-code-editor@5.4.0':
-    resolution: {integrity: sha512-SDWuw3H9+SNlPGI6ZgtWnWvbgBQRUGZFUQr8bbJFShVOa49RvdVACIjFO+Fn2iNM0baPhcK1bkVsroRQdH0zBw==}
+  '@patternfly/react-code-editor@5.4.1':
+    resolution: {integrity: sha512-i1OqW+NPFPxn/BZYp1T9GUGM1du4REqFq6nURLvD2s0/rjb4Guu9pILWHMxOZASdBrlRXBRFcJUUhXdYrpf7pg==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -5587,7 +5587,7 @@ snapshots:
       '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
       '@patternfly/patternfly': 5.4.0
-      '@patternfly/react-code-editor': 5.4.0(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-code-editor': 5.4.1(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.0
@@ -5750,7 +5750,7 @@ snapshots:
 
   '@patternfly/patternfly@5.4.0': {}
 
-  '@patternfly/react-code-editor@5.4.0(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-code-editor@5.4.1(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@monaco-editor/react': 4.6.0(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
