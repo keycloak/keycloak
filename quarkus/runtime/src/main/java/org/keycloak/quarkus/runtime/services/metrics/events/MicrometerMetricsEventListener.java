@@ -48,7 +48,7 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private static final String PROVIDER_TAG = "provider";
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
-    private static final String KEYLOAK_METER_NAME_PREFIX = "vendor.kc.";
+    private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String TOTAL_LOGINS =
             KEYLOAK_METER_NAME_PREFIX + "logins";
     private static final String TOTAL_LOGINS_ATTEMPTS =
