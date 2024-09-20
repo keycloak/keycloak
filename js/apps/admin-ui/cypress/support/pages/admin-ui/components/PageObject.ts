@@ -8,12 +8,13 @@ export default class PageObject {
   #selectMenuToggleBtn = ".pf-v5-c-menu-toggle";
   #switchInput = ".pf-v5-c-switch__input";
   #formLabel = ".pf-v5-c-form__label";
-  #chipGroup = ".pf-v5-c-chip-group";
   #chipGroupCloseBtn = ".pf-v5-c-chip-group__close";
   #chipItem = ".pf-v5-c-chip-group__list-item";
   #emptyStateDiv = ".pf-v5-c-empty-state:visible";
   #toolbarActionsButton = ".pf-v5-c-toolbar button[aria-label='Actions']";
   #breadcrumbItem = ".pf-v5-c-breadcrumb .pf-v5-c-breadcrumb__item";
+
+  genericChipGroupSelector = ".pf-v5-c-chip-group";
 
   protected assertExist(element: Cypress.Chainable<JQuery>, exist: boolean) {
     element.should((!exist ? "not." : "") + "exist");
@@ -281,41 +282,55 @@ export default class PageObject {
     return this;
   }
 
-  #getChipGroup(groupName: string) {
-    return cy.get(this.#chipGroup).contains(groupName).parent().parent();
+  #getChipGroup(groupSelector: string, groupName: string) {
+    return cy.get(groupSelector).contains(groupName).parent().parent();
   }
 
-  #getChipItem(itemName: string) {
-    return cy.get(this.#chipItem).contains(itemName).parent();
+  #getChipGroupWithLabel(groupSelector: string, label: string) {
+    cy.get(groupSelector)
+      .parent()
+      .find(".pf-v5-c-chip-group__label")
+      .contains(label);
+
+    return cy.get(groupSelector);
   }
 
-  #getChipGroupItem(groupName: string, itemName: string) {
-    return this.#getChipGroup(groupName)
+  #getChipGroupItem(
+    groupSelector: string,
+    groupName: string,
+    itemName: string,
+  ) {
+    return this.#getChipGroup(groupSelector, groupName)
       .find(this.#chipItem)
       .contains(itemName)
       .parent();
   }
 
-  protected removeChipGroup(groupName: string) {
-    this.#getChipGroup(groupName)
+  protected removeChipGroup(groupSelector: string, groupName: string) {
+    this.#getChipGroup(groupSelector, groupName)
       .find(this.#chipGroupCloseBtn)
       .find("button")
       .click();
     return this;
   }
 
-  protected removeChipItem(itemName: string) {
-    this.#getChipItem(itemName).find("button").click();
+  protected removeChipGroupItem(
+    groupSelector: string,
+    groupName: string,
+    itemName: string,
+  ) {
+    this.#getChipGroupItem(groupSelector, groupName, itemName)
+      .find("button")
+      .click();
     return this;
   }
 
-  protected removeChipGroupItem(groupName: string, itemName: string) {
-    this.#getChipGroupItem(groupName, itemName).find("button").click();
-    return this;
-  }
-
-  protected assertChipGroupExist(groupName: string, exist: boolean) {
-    this.assertExist(cy.contains(this.#chipGroup, groupName), exist);
+  protected assertChipGroupExist(
+    groupSelector: string,
+    groupName: string,
+    exist: boolean,
+  ) {
+    this.assertExist(cy.contains(groupSelector, groupName), exist);
     return this;
   }
 
@@ -325,20 +340,33 @@ export default class PageObject {
     return this;
   }
 
-  protected assertChipItemExist(itemName: string, exist: boolean) {
-    cy.get(this.#chipItem).within(() => {
-      cy.contains(itemName).should((exist ? "" : "not.") + "exist");
-    });
-    return this;
-  }
-
   protected assertChipGroupItemExist(
+    groupSelector: string,
     groupName: string,
     itemName: string,
     exist: boolean,
   ) {
     this.assertExist(
-      this.#getChipGroup(groupName).contains(this.#chipItem, itemName),
+      this.#getChipGroup(groupSelector, groupName).contains(
+        this.#chipItem,
+        itemName,
+      ),
+      exist,
+    );
+    return this;
+  }
+
+  protected assertLabeledChipGroupItemExist(
+    groupSelector: string,
+    labelName: string,
+    itemName: string,
+    exist: boolean,
+  ) {
+    this.assertExist(
+      this.#getChipGroupWithLabel(groupSelector, labelName).contains(
+        this.#chipItem,
+        itemName,
+      ),
       exist,
     );
     return this;
