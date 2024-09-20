@@ -76,4 +76,7 @@ Although each type of identity provider has its configuration options, all share
 
 |Sync Mode
 |Strategy to update user information from the identity provider through mappers. When choosing *legacy*, {project_name} used the current behavior. *Import* does not update user data and *force* updates user data when possible. See <<_mappers, Identity Provider Mappers>> for more information.
+
+|Case-sensitive username
+|If enabled, the original username from the identity provider is kept as is when federating users. Otherwise, the username from the identity provider is lower-cased and might not match the original value if it is case-sensitive. This setting only affects the username associated with the federated identity as usernames in the server are always in lower-case.
 |===

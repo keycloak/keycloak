@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdateCallback {
 
     public static final String LDAP_PASSWORD_POLICY_HINTS_ENABLED = "ldap.password.policy.hints.enabled";
+    public static final String ALWAYS_READ_ENABLED_VALUE_FROM_LDAP = "always.read.enabled.value.from.ldap";
 
     private static final Logger logger = Logger.getLogger(MSADUserAccountControlStorageMapper.class);
 
@@ -112,7 +113,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
     @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-        return new MSADUserModelDelegate(delegate, ldapUser);
+        return new MSADUserModelDelegate(delegate, ldapUser, parseBooleanParameter(mapperModel, ALWAYS_READ_ENABLED_VALUE_FROM_LDAP));
     }
 
     @Override
@@ -122,7 +123,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-
+        // check if user is enabled in MSAD or not.
+        user.setEnabled(!getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE));
     }
 
     @Override
@@ -228,30 +230,24 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     public class MSADUserModelDelegate extends TxAwareLDAPUserModelDelegate {
 
         private final LDAPObject ldapUser;
+        private final boolean isAlwaysReadEnabledFromLdap;
 
-        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser) {
+        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser, boolean isAlwaysReadEnabledFromLdap) {
             super(delegate, ldapProvider, ldapUser);
             this.ldapUser = ldapUser;
+            this.isAlwaysReadEnabledFromLdap = isAlwaysReadEnabledFromLdap;
         }
 
         @Override
         public boolean isEnabled() {
-            boolean kcEnabled = super.isEnabled();
-
-            if (getPwdLastSet() > 0) {
-                // Merge KC and MSAD
-                return kcEnabled && !getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE);
-            } else {
-                // If new MSAD user is created and pwdLastSet is still 0, MSAD account is in disabled state. So read just from Keycloak DB. User is not able to login via MSAD anyway
-                return kcEnabled;
+            if (isAlwaysReadEnabledFromLdap) {
+                return !getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE);
             }
+            return super.isEnabled();
         }
 
         @Override
         public void setEnabled(boolean enabled) {
-            // Always update DB
-            super.setEnabled(enabled);
-
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
                 MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
@@ -266,6 +262,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
                 updateUserAccountControl(false, ldapUser, control);
             }
+            // Always update DB
+            super.setEnabled(enabled);
         }
 
         @Override

@@ -17,13 +17,12 @@
 
 package org.keycloak.broker.provider.util;
 
-import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.common.util.Base64Url;
 
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -38,9 +37,10 @@ public class IdentityBrokerState {
     private static final Pattern DOT = Pattern.compile("\\.");
 
 
-    public static IdentityBrokerState decoded(String state, String clientId, String clientClientId, String tabId) {
+    public static IdentityBrokerState decoded(String state, String clientId, String clientClientId, String tabId, String clientData) {
 
         String clientIdEncoded = clientClientId; // Default use the client.clientId
+        boolean isUuid = false;
         if (clientId != null) {
             // According to (http://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf) there is a limit on the relaystate of 80 bytes.
             // in order to try to adher to the SAML specification we use an encoded value of the client.id (probably UUID) instead of the with
@@ -52,22 +52,31 @@ public class IdentityBrokerState {
                 bb.putLong(clientDbUuid.getLeastSignificantBits());
                 byte[] clientUuidBytes = bb.array();
                 clientIdEncoded = Base64Url.encode(clientUuidBytes);
+                isUuid = true;
             } catch (RuntimeException e) {
                 // Ignore...the clientid in the database was not in UUID format. Just use as is.
             }
         }
+        if (!isUuid && clientIdEncoded != null) {
+            clientIdEncoded = Base64Url.encode(clientIdEncoded.getBytes(StandardCharsets.UTF_8));
+        }
         String encodedState = state + "." + tabId + "." + clientIdEncoded;
+        if (clientData != null) {
+            encodedState = encodedState + "." + clientData;
+        }
 
-        return new IdentityBrokerState(state, clientClientId, tabId, encodedState);
+        return new IdentityBrokerState(state, clientClientId, tabId, clientData, encodedState);
     }
 
 
     public static IdentityBrokerState encoded(String encodedState, RealmModel realmModel) {
-        String[] decoded = DOT.split(encodedState, 3);
+        String[] decoded = DOT.split(encodedState, 4);
 
         String state =(decoded.length > 0) ? decoded[0] : null;
         String tabId = (decoded.length > 1) ? decoded[1] : null;
         String clientId = (decoded.length > 2) ? decoded[2] : null;
+        String clientData = (decoded.length > 3) ? decoded[3] : null;
+        boolean isUuid = false;
 
         if (clientId != null) {
             try {
@@ -82,13 +91,17 @@ public class IdentityBrokerState {
                 ClientModel clientModel = realmModel.getClientById(clientIdInDb);
                 if (clientModel != null) {
                     clientId = clientModel.getClientId();
+                    isUuid = true;
                 }
             } catch (RuntimeException e) {
                 // Ignore...the clientid was not in encoded uuid format. Just use as it is.
             }
+            if (!isUuid) {
+                clientId = new String(Base64Url.decode(clientId), StandardCharsets.UTF_8);
+            }
         }
 
-        return new IdentityBrokerState(state, clientId, tabId, encodedState);
+        return new IdentityBrokerState(state, clientId, tabId, clientData, encodedState);
     }
 
 
@@ -96,14 +109,16 @@ public class IdentityBrokerState {
     private final String decodedState;
     private final String clientId;
     private final String tabId;
+    private final String clientData;
 
     // Encoded form of whole state
     private final String encoded;
 
-    private IdentityBrokerState(String decodedStateParam, String clientId, String tabId, String encoded) {
+    private IdentityBrokerState(String decodedStateParam, String clientId, String tabId, String clientData, String encoded) {
         this.decodedState = decodedStateParam;
         this.clientId = clientId;
         this.tabId = tabId;
+        this.clientData = clientData;
         this.encoded = encoded;
     }
 
@@ -118,6 +133,10 @@ public class IdentityBrokerState {
 
     public String getTabId() {
         return tabId;
+    }
+
+    public String getClientData() {
+        return clientData;
     }
 
     public String getEncoded() {

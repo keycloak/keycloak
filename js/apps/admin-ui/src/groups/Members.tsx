@@ -2,33 +2,34 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
-  AlertVariant,
+  Action,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Checkbox,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  Label,
+  MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { EllipsisVIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { GroupPath } from "../components/group/GroupPath";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emptyFormatter } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
@@ -52,14 +53,22 @@ const MemberOfRenderer = (member: MembersOf) => {
 
 const UserDetailLink = (user: MembersOf) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username}
+      {user.username}{" "}
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
     </Link>
   );
 };
 
 export const Members = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
@@ -152,7 +161,21 @@ export const Members = () => {
     <>
       {addMembers && (
         <MemberModal
-          groupId={id!}
+          membersQuery={(first, max) =>
+            adminClient.groups.listMembers({ id: id!, first, max })
+          }
+          onAdd={async (selectedRows) => {
+            try {
+              await Promise.all(
+                selectedRows.map((user) =>
+                  adminClient.users.addToGroup({ id: user.id!, groupId: id! }),
+                ),
+              );
+              addAlert(t("usersAdded", { count: selectedRows.length }));
+            } catch (error) {
+              addError("usersAddedError", error);
+            }
+          }}
           onClose={() => {
             setAddMembers(false);
             refresh();
@@ -190,15 +213,23 @@ export const Members = () => {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                  onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      variant="plain"
+                      onClick={() => setIsKebabOpen(!isKebabOpen)}
+                      isExpanded={isKebabOpen}
                       isDisabled={selectedRows.length === 0}
-                    />
-                  }
+                      aria-label="Actions"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
+                  shouldFocusToggleOnSelect
                   isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       key="action"
                       component="button"
@@ -215,7 +246,6 @@ export const Members = () => {
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("usersLeftError", error);
@@ -225,9 +255,9 @@ export const Members = () => {
                       }}
                     >
                       {t("leave")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           )
@@ -243,10 +273,7 @@ export const Members = () => {
                         id: user.id!,
                         groupId: id!,
                       });
-                      addAlert(
-                        t("usersLeft", { count: 1 }),
-                        AlertVariant.success,
-                      );
+                      addAlert(t("usersLeft", { count: 1 }));
                     } catch (error) {
                       addError("usersLeftError", error);
                     }

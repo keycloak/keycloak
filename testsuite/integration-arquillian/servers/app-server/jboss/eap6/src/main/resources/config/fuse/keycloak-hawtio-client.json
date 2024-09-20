@@ -1,9 +1,0 @@
-{
-  "realm" : "demo",
-  "resource" : "hawtio-client",
-  "auth-server-url" : "https://localhost:8543/auth",
-  "ssl-required" : "external",
-  "public-client" : true,
-  "truststore" : "${jboss.home.dir}/standalone/configuration/keycloak.truststore",
-  "truststore-password" : "secret"
-}

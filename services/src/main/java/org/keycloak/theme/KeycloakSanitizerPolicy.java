@@ -18,15 +18,13 @@
 package org.keycloak.theme;
 
 import java.util.regex.Pattern;
+import java.util.function.Predicate;
 
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import com.google.common.base.Predicate;
-
 /**
  * Based on the EbayPolicyExample in owasp java-html-sanitizer.
- *
  */
 public class KeycloakSanitizerPolicy {
 
@@ -166,12 +164,7 @@ public class KeycloakSanitizerPolicy {
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
 
-  private static Predicate<String> matchesEither(
-      final Pattern a, final Pattern b) {
-    return new Predicate<String>() {
-      public boolean apply(String s) {
-        return a.matcher(s).matches()|| b.matcher(s).matches();
-      }
-    };
+  private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
+    return s -> a.matcher(s).matches() || b.matcher(s).matches();
   }
 }

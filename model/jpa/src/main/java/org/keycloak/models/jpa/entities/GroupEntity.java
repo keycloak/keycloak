@@ -28,17 +28,18 @@ import java.util.LinkedList;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByParentAndName", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and u.name = :search order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByParentAndNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm = :realm  order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByNameContainingFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.realm = :realm and u.name = :search order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and u.id in :ids order by u.name ASC"),
-        @NamedQuery(name="getGroupCountByNameContainingFromIdList", query="select count(u) from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids"),
-        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
-        @NamedQuery(name="getGroupCountByParent", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent")
+        @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.parentId = :parent order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByParentAndName", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.parentId = :parent and u.name = :search order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByParentAndNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.parentId = :parent and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm = :realm  and u.type = 0 order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByNameContainingFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.name = :search order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and u.type = 0 and u.id in :ids order by u.name ASC"),
+        @NamedQuery(name="getGroupCountByNameContainingFromIdList", query="select count(u) from GroupEntity u where u.realm = :realm and u.type = 0 and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids"),
+        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm and u.type = 0"),
+        @NamedQuery(name="getGroupCountByParent", query="select count(u) from GroupEntity u where u.realm = :realm and u.type = 0 and u.parentId = :parent"),
+        @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity g where g.realm = :realm")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP",
@@ -65,6 +66,9 @@ public class GroupEntity {
 
     @Column(name = "REALM_ID")
     private String realm;
+
+    @Column(name = "TYPE")
+    private int type;
 
     @OneToMany(
             cascade = CascadeType.REMOVE,
@@ -112,6 +116,14 @@ public class GroupEntity {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 
     @Override

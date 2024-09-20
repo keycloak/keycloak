@@ -1,13 +1,13 @@
 /*
  * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,22 +16,6 @@
  */
 package org.keycloak.testsuite.model.session;
 
-import org.infinispan.commons.CacheException;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -49,11 +33,31 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import org.hamcrest.Matchers;
+import org.infinispan.commons.CacheException;
 import org.junit.Test;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assume.assumeTrue;
 
 /**
  *
@@ -66,13 +70,14 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;
     private static final int OFFLINE_SESSION_COUNT_PER_USER = 10;
-    
+
     private String realmId;
     private List<String> userIds;
 
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = prepareRealm(s, "realm");
+        s.getContext().setRealm(realm);
         this.realmId = realm.getId();
 
         userIds = IntStream.range(0, USER_COUNT)
@@ -93,7 +98,9 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
-        new RealmManager(s).removeRealm(s.realms().getRealm(realmId));  // See https://issues.redhat.com/browse/KEYCLOAK-17876
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
+        new RealmManager(s).removeRealm(realm);  // See https://issues.redhat.com/browse/KEYCLOAK-17876
     }
 
     @Test
@@ -219,7 +226,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                     // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
                     // on-going transaction, so it does not accept new invocations."
                     // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
-                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) || 
+                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) ||
                             (ex.getMessage() != null && ex.getMessage().contains("ISPN000217")) ||
                             (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers"))) {
                         log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
@@ -246,6 +253,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     public void testOfflineSessionLoadingAfterCacheRemoval() {
+        assumeTrue("Run only if Embedded Infinispan is used for storing/caching sessions.", InfinispanUtils.isEmbeddedInfinispan());
+
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
         assertOfflineSessionsExist(realmId, offlineSessionIds);
 
@@ -258,7 +267,13 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
             // Delete local user cache (persisted sessions are still kept)
             UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
             // Remove in-memory representation of the offline sessions
-            ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            if (provider instanceof InfinispanUserSessionProvider) {
+                ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else if (provider instanceof PersistentUserSessionProvider) {
+                ((PersistentUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else {
+                throw new IllegalStateException("Unknown UserSessionProvider: " + provider);
+            }
 
             return null;
         });
@@ -328,6 +343,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     private String createOfflineClientSession(String offlineUserSessionId, String clientId) {
         return withRealm(realmId, (session, realm) -> {
             UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, offlineUserSessionId);
+            assertThat("Can't retrieve offline session for " + offlineUserSessionId, offlineUserSession, Matchers.notNullValue());
             ClientModel client = session.clients().getClientById(realm, clientId);
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, offlineUserSession);
             return session.sessions().createOfflineClientSession(clientSession, offlineUserSession).getId();
@@ -343,7 +359,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         // Shutdown factory -> enforce session persistence
         closeKeycloakSessionFactory();
 
-        inIndependentFactories(4, 30, () -> assertOfflineSessionsExist(realmId, offlineSessionIds));
+        inIndependentFactories(4, 60, () -> assertOfflineSessionsExist(realmId, offlineSessionIds));
     }
 
     /**

@@ -18,9 +18,9 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -32,8 +32,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +100,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
-            userProviderCache.registerUserInvalidation(realm, cached);
+            userProviderCache.registerUserInvalidation(cached);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -193,8 +193,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeAttribute(String name) {
-        getDelegateForUpdate();
-        updated.removeAttribute(name);
+        if (getFirstAttribute(name) != null) {
+            getDelegateForUpdate();
+            updated.removeAttribute(name);
+        }
     }
 
     @Override
@@ -230,8 +232,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -242,8 +246,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(String action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -390,19 +396,33 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        if (updated != null) return updated.getGroupsStream();
-        Set<GroupModel> groups = new LinkedHashSet<>();
-        for (String id : cached.getGroups(modelSupplier)) {
-            GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
-            if (groupModel == null) {
-                // chance that role was removed, so just delete to persistence and get user invalidated
-                getDelegateForUpdate();
-                return updated.getGroupsStream();
-            }
-            groups.add(groupModel);
+        Stream<GroupModel> result = Stream.empty();
 
+        if (updated != null) {
+            result = updated.getGroupsStream();
+        } else {
+            Set<GroupModel> groups = null;
+            for (String id : cached.getGroups(modelSupplier)) {
+                GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
+                if (groupModel == null) {
+                    // chance that role was removed, so just delegate to persistence and get user invalidated
+                    getDelegateForUpdate();
+                    result = updated.getGroupsStream();
+                    break;
+                } else {
+                    if (groups == null) {
+                        groups = new HashSet<>();
+                    }
+                    groups.add(groupModel);
+                }
+            }
+
+            if (groups != null) {
+                result = groups.stream();
+            }
         }
-        return groups.stream();
+
+        return result.filter(g -> Type.REALM.equals(g.getType())).sorted(Comparator.comparing(GroupModel::getName));
     }
 
     @Override

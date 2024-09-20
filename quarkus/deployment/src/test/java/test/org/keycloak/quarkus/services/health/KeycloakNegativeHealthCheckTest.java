@@ -18,6 +18,7 @@ package test.org.keycloak.quarkus.services.health;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.QuarkusUnitTest;
+import io.restassured.RestAssured;
 import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -36,11 +37,14 @@ public class KeycloakNegativeHealthCheckTest {
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addAsResource("keycloak.conf", "META-INF/keycloak.conf"));
+                    .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
+            .overrideConfigKey("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
 
     @Test
     public void testReadinessDown() {
         agroalDataSource.close();
+
+        RestAssured.port = 9001;
         given()
                 .when().get("/health/ready")
                 .then()

@@ -2,6 +2,7 @@ import ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { useAlerts, useFetch, useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   AlertVariant,
@@ -14,10 +15,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import {
   AllClientScopes,
   ClientScope,
@@ -25,7 +23,7 @@ import {
   changeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 import {
   RoutableTabs,
@@ -34,7 +32,6 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { MapperList } from "./details/MapperList";
 import { ScopeForm } from "./details/ScopeForm";
@@ -43,10 +40,12 @@ import {
   ClientScopeTab,
   toClientScope,
 } from "./routes/ClientScope";
-import { toMapper } from "./routes/Mapper";
 import { toClientScopes } from "./routes/ClientScopes";
+import { toMapper } from "./routes/Mapper";
 
 export default function EditClientScope() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -118,7 +117,7 @@ export default function EditClientScope() {
 
     try {
       await adminClient.clientScopes.update({ id }, clientScope);
-      await changeScope({ ...clientScope, id }, clientScope.type);
+      await changeScope(adminClient, { ...clientScope, id }, clientScope.type);
 
       addAlert(t("updateSuccessClientScope"), AlertVariant.success);
     } catch (error) {
@@ -234,7 +233,7 @@ export default function EditClientScope() {
         divider={false}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs isBox>
           <Tab
             id="settings"

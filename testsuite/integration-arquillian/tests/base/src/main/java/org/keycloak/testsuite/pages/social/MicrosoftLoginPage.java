@@ -35,6 +35,9 @@ public class MicrosoftLoginPage extends AbstractSocialLoginPage {
     @FindBy(id = "idSIButton9")
     private WebElement submitButton;
 
+    @FindBy(id = "acceptButton")
+    private WebElement acceptButton;
+
     @FindBy(xpath = "//input[contains(@class,'btn-primary')]")
     private WebElement appAccessButton;
 
@@ -57,7 +60,7 @@ public class MicrosoftLoginPage extends AbstractSocialLoginPage {
         // While logging into the app for the first time user is asked if he wants to stay signed in
         try {
             WaitUtils.pause(3000);
-            submitButton.click();
+            acceptButton.click();
         }
         catch (NoSuchElementException e) {
             log.info("User already allowed in the app");

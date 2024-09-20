@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -139,7 +140,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWorks) {
         try {
-            List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken())
+            List<SessionRepresentation> sessions = SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken())
                     .asJson(new TypeReference<List<SessionRepresentation>>() {
                     });
             assertEquals(1, sessions.size());

@@ -5,8 +5,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -27,7 +27,7 @@ public class PlainTextVaultProviderFactoryTest {
     public void shouldInitializeVaultCorrectly() {
         //given
         VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString());
-        KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+        KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
         FilesPlainTextVaultProviderFactory factory = new FilesPlainTextVaultProviderFactory() {
             @Override
             protected String getRealmName(KeycloakSession session) {

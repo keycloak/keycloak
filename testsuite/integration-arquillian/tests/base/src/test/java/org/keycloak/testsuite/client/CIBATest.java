@@ -1482,6 +1482,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestEd25519Param() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(false, Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestEd448UriParam() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(true, Algorithm.EdDSA, Algorithm.Ed448);
+    }
+
+    @Test
     public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestUriParam() throws Exception {
         testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, "none", 400, "None signed algorithm is not allowed");
     }
@@ -2455,7 +2465,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
             sharedAuthenticationRequest.setLoginHint(username);
             sharedAuthenticationRequest.setBindingMessage(bindingMessage);
-            registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret, null);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, null, null, null);
@@ -2498,6 +2508,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private void testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(boolean useRequestUri, String sigAlg) throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(useRequestUri, sigAlg, null);
+    }
+
+    private void testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(boolean useRequestUri, String sigAlg, String curve) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -2512,7 +2526,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
             sharedAuthenticationRequest.setLoginHint(username);
             sharedAuthenticationRequest.setBindingMessage(bindingMessage);
-            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, sigAlg, useRequestUri, null, curve);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, null, null);
@@ -2567,7 +2581,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
-        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, sigAlg, isUseRequestUri, clientSecret);
+        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, sigAlg, isUseRequestUri, clientSecret, null);
     }
 
     private boolean isSymmetricSigAlg(String sigAlg) {
@@ -2577,7 +2591,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         return false;
     }
 
-    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
+    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId,
+            String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret, String curve) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
@@ -2603,7 +2618,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oidcClientEndpointsResource.registerOIDCRequestSymmetricSig(encodedRequestObject, sigAlg, clientSecret);
         } else {
             // generate and register client keypair
-            if (!"none".equals(sigAlg)) oidcClientEndpointsResource.generateKeys(sigAlg);
+            if (!"none".equals(sigAlg)) oidcClientEndpointsResource.generateKeys(sigAlg, curve);
 
             oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
         }
@@ -2768,6 +2783,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private String doIntrospectAccessTokenWithClientCredential(OAuthClient.AccessTokenResponse tokenRes, String username) throws IOException {
+        AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
@@ -2778,7 +2794,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getRefreshToken());
         jsonNode = objectMapper.readTree(tokenResponse);
@@ -2789,7 +2805,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuer())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getIdToken());
         jsonNode = objectMapper.readTree(tokenResponse);
@@ -2802,7 +2818,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getPreferredUsername(), is(equalTo(username)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuedFor())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         return tokenResponse;
     }

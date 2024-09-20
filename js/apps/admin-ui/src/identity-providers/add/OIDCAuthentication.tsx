@@ -1,17 +1,16 @@
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { ClientIdSecret } from "../component/ClientIdSecret";
-import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { sortProviders } from "../../util";
+import { ClientIdSecret } from "../component/ClientIdSecret";
+import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
 
 const clientAuthentications = [
@@ -51,11 +50,10 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           defaultValue={clientAuthentications[0]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="clientAuthentication"
-              required
               onToggle={() => setOpenClientAuth(!openClientAuth)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value as string);
                 setOpenClientAuth(false);
               }}
@@ -73,7 +71,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
                   {t(`clientAuthentications.${option}`)}
                 </SelectOption>
               ))}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>
@@ -96,16 +94,17 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           defaultValue=""
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               maxHeight={200}
               toggleId="clientAssertionSigningAlg"
               onToggle={() => setOpenClientAuthSigAlg(!openClientAuthSigAlg)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value.toString());
                 setOpenClientAuthSigAlg(false);
               }}
               selections={field.value || t("algorithmNotSpecified")}
               variant={SelectVariant.single}
+              aria-label={t("selectClientAssertionSigningAlg")}
               isOpen={openClientAuthSigAlg}
             >
               {[
@@ -117,10 +116,12 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
                     selected={option === field.value}
                     key={option}
                     value={option}
-                  />
+                  >
+                    {option}
+                  </SelectOption>
                 )),
               ]}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>
@@ -129,6 +130,12 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         <TextField
           field="config.clientAssertionAudience"
           label="clientAssertionAudience"
+        />
+      )}
+      {clientAuthMethod === "private_key_jwt" && (
+        <SwitchField
+          field="config.jwtX509HeadersEnabled"
+          label="jwtX509HeadersEnabled"
         />
       )}
     </>

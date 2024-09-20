@@ -513,7 +513,13 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             nonExistentLdapUser.setDn(nonExistentDn);
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser);
 
-            // 4 - Check group members. Just existing user rob should be present
+            // 4 - Add an empty member to the same LDAP group
+            LDAPDn emptyDn = LDAPDn.fromString("");
+            LDAPObject emptyUser = new LDAPObject();
+            emptyUser.setDn(emptyDn);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, emptyUser);
+
+            // 5 - Check group members. Just existing user rob should be present
             groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
             GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group2");
             List<UserModel> groupUsers = session.users().getGroupMembersStream(appRealm, kcGroup2, 0, 5)

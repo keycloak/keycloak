@@ -50,7 +50,13 @@ describe("Group test", () => {
     );
   });
 
-  after(() => adminClient.deleteGroups());
+  after(
+    async () =>
+      await Promise.all([
+        adminClient.deleteGroups(),
+        ...range(5).map((index) => adminClient.deleteUser(username + index)),
+      ]),
+  );
 
   beforeEach(() => {
     loginPage.logIn();
@@ -154,7 +160,6 @@ describe("Group test", () => {
             createdGroups[index % 3].id,
           );
         }),
-        adminClient.createUser({ username: "new", enabled: true }),
       ]);
     });
 
@@ -197,13 +202,6 @@ describe("Group test", () => {
           .searchGroup(predefinedGroups[0])
           .goToGroupChildGroupsTab(predefinedGroups[0])
           .assertGroupItemExist(predefinedGroups[1], true);
-      });
-
-      it("Navigate to sub-group details", () => {
-        searchGroupPage
-          .searchGlobal(predefinedGroups[1])
-          .goToGroupChildGroupsFromTree(predefinedGroups[1])
-          .assertGroupItemExist(predefinedGroups[2], true);
       });
     });
 
@@ -321,8 +319,11 @@ describe("Group test", () => {
           );
         }),
         adminClient.createGroup(emptyGroup),
+        adminClient.createUser({ username: "new", enabled: true }),
       ]);
     });
+
+    after(() => adminClient.deleteUser("new"));
 
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
@@ -454,6 +455,7 @@ describe("Group test", () => {
 
   describe("Role mappings", () => {
     const roleMappingTab = new RoleMappingTab("group");
+
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToRoleMappingTab();
@@ -465,8 +467,10 @@ describe("Group test", () => {
 
     it("Assign roles from empty state", () => {
       roleMappingTab.assignRole();
-      groupDetailPage.createRoleMapping();
-      roleMappingTab.assign();
+      roleMappingTab
+        .changeRoleTypeFilter("roles")
+        .selectRow("default-roles-")
+        .assign();
     });
 
     it("Show and search roles", () => {

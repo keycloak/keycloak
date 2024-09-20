@@ -47,7 +47,7 @@ import static org.jvnet.libpam.impl.PAMLibrary.libpam;
  * PAM authenticator.
  * <p>
  * <p>
- * Instances are thread unsafe and non reentrant. An instace cannot be reused
+ * Instances are thread unsafe and non reentrant. An instance cannot be reused
  * to authenticate multiple users.
  * <p>
  * <p>

@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -72,6 +72,7 @@ public class UserModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -82,6 +83,8 @@ public class UserModelTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -92,6 +95,7 @@ public class UserModelTest extends KeycloakModelTest {
 
     private Void addRemoveUser(KeycloakSession session, int i) {
         RealmModel realm = session.realms().getRealmByName("realm");
+        session.getContext().setRealm(realm);
 
         UserModel user = session.users().addUser(realm, "user-" + i);
 
@@ -133,6 +137,7 @@ public class UserModelTest extends KeycloakModelTest {
         // Create users and let them join first group
         IntStream.range(0, 100).parallel().forEach(index -> inComittedTransaction(index, (session, i) -> {
             final RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             final UserModel user = session.users().addUser(realm, "user-" + i);
             user.joinGroup(session.groups().getGroupById(realm, groupId));
             userIds.add(user.getId());
@@ -141,6 +146,7 @@ public class UserModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             final RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).count(), is(100L));
         });
@@ -150,6 +156,7 @@ public class UserModelTest extends KeycloakModelTest {
         do {
             userIds.stream().parallel().forEach(index -> inComittedTransaction(index, (session, userId) -> {
                 final RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 final UserModel user = session.users().getUserById(realm, userId);
                 log.debugf("Remove user %s: %s", userId, session.users().removeUser(realm, user));
                 return null;
@@ -162,6 +169,7 @@ public class UserModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             final RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).collect(Collectors.toList()), Matchers.empty());
         });
@@ -204,6 +212,7 @@ public class UserModelTest extends KeycloakModelTest {
         // Create users and let them join first group
         IntStream.range(0, 100).parallel().forEach(index -> inComittedTransaction(index, (session, i) -> {
             final RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             final UserModel user = session.users().addUser(realm, "user-" + i);
             user.joinGroup(session.groups().getGroupById(realm, groupId));
             log.infof("Created user with id: %s", user.getId());
@@ -230,7 +239,7 @@ public class UserModelTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // If we are using cache, we need to invalidate all users because after removing users from external
-            // provider cache may not be cleared and it may be the case, that cache is the only place that is having 
+            // provider cache may not be cleared and it may be the case, that cache is the only place that is having
             // a reference to removed users. Our importValidation method won't be called at all for removed users
             // because they are not present in any storage. However, when we get users by id cache may still be hit
             // since it is not alerted in any way when users are removed from external provider. Hence we need to clear
@@ -249,6 +258,7 @@ public class UserModelTest extends KeycloakModelTest {
         do {
             userIds.stream().parallel().forEach(index -> inComittedTransaction(index, (session, userId) -> {
                 final RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 final UserModel user = session.users().getUserById(realm, userId);
                 if (user != null) {
                     log.debugf("Deleting user: %s", userId);

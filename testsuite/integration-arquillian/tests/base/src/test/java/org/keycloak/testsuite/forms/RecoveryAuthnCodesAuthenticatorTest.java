@@ -149,6 +149,13 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
         Assert.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name())
+                    .assertEvent();
+        }
+
         EventRepresentation event2 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
                 .user(event1.getUserId()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
         event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID))

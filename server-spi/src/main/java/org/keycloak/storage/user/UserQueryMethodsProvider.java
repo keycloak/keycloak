@@ -21,8 +21,10 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.utils.StringUtil;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -94,6 +96,8 @@ public interface UserQueryMethodsProvider {
      *     the given userId (case sensitive string)</li>
      * </ul>
      * <p>
+     * Any other parameters will be treated as custom user attributes.
+     * <p>
      * This method is used by the REST API when querying users.
      *
      * @param realm  a reference to the realm.
@@ -157,6 +161,45 @@ public interface UserQueryMethodsProvider {
      * @return a non-null {@link Stream} of users that belong to the group.
      */
     Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults);
+
+    /**
+     * Obtains users that belong to a specific group, filtered according to the search parameters.
+     *
+     * @param realm     a reference to the realm.
+     * @param group     a reference to the group.
+     * @param search    the search string. It can represent either the user's username, e-mail, first name, or last name.
+     * @param exact     a boolean indicating if the search should be exact or not. If {@code true}, it selects only users
+     *                  whose main attributes (username, e-mail, first name, or last name) exactly match the search string.
+     *                  If {@code false}, it selects the users whose main attributes partially match the search string.
+     * @param first     the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max       the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a non-null {@link Stream} of filtered users that belong to the group.
+     */
+    default Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact,
+                                                    Integer first, Integer max) {
+
+        Stream<UserModel> groupMembers = getGroupMembersStream(realm, group).filter(user -> {
+            if (StringUtil.isBlank(search)) return true;
+            if (Boolean.TRUE.equals(exact)) {
+                return search.equals(user.getUsername()) || search.equals(user.getEmail())
+                        || search.equals(user.getFirstName()) || search.equals(user.getLastName());
+            } else {
+                return Optional.ofNullable(user.getUsername()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                        Optional.ofNullable(user.getEmail()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                        Optional.ofNullable(user.getFirstName()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                        Optional.ofNullable(user.getLastName()).orElse("").toLowerCase().contains(search.toLowerCase());
+            }
+        });
+
+        // Copied over from StreamsUtil from server-spi-private which is not available here
+        if (first != null && first > 0) {
+            groupMembers = groupMembers.skip(first);
+        }
+        if (max != null && max >= 0) {
+            groupMembers = groupMembers.limit(max);
+        }
+        return groupMembers;
+    }
 
     /**
      * Obtains users that have the specified role.

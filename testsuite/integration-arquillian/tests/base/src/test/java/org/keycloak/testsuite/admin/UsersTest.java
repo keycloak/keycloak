@@ -17,18 +17,15 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -36,9 +33,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -47,9 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -67,6 +60,12 @@ public class UsersTest extends AbstractAdminTest {
         for (UserRepresentation user : userRepresentations) {
             realm.users().delete(user.getId());
         }
+    }
+
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        // always import realm due to changes in setupTestEnvironmentWithPermissions
+        return true;
     }
 
     @Test

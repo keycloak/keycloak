@@ -77,44 +77,18 @@ public class JsonWebToken implements Serializable, Token {
         return exp;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getExp()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getExpiration() {
-        return exp != null ? exp.intValue() : 0;
-    }
-
     public JsonWebToken exp(Long exp) {
         this.exp = exp;
         return this;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #exp(Long)} instead.
-     */
-    public JsonWebToken expiration(int expiration) {
-        this.exp = Long.valueOf(expiration);
-        return this;
-    }
-
     @JsonIgnore
     public boolean isExpired() {
-        return exp != null && exp != 0 ? Time.currentTime() > exp : false;
+        return exp != null && exp != 0 && Time.currentTime() > exp;
     }
 
     public Long getNbf() {
         return nbf;
-    }
-
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getNbf()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getNotBefore() {
-        return nbf != null ? nbf.intValue() : 0;
     }
 
     public JsonWebToken nbf(Long nbf) {
@@ -122,19 +96,9 @@ public class JsonWebToken implements Serializable, Token {
         return this;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #nbf(Long)} instead.
-     */
-    @Deprecated
     @JsonIgnore
-    public JsonWebToken notBefore(int notBefore) {
-        this.nbf = Long.valueOf(notBefore);
-        return this;
-    }
-
-    @JsonIgnore
-    public boolean isNotBefore(int allowedTimeSkew) {
-        return nbf != null ? Time.currentTime() + allowedTimeSkew >= nbf : true;
+    public boolean isNotBefore(long allowedTimeSkew) {
+        return nbf == null || Time.currentTime() + allowedTimeSkew >= nbf;
     }
 
     /**
@@ -166,20 +130,11 @@ public class JsonWebToken implements Serializable, Token {
     }
 
     /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getIat()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getIssuedAt() {
-        return iat != null ? iat.intValue() : 0;
-    }
-
-    /**
      * Set issuedAt to the current time
      */
     @JsonIgnore
     public JsonWebToken issuedNow() {
-        iat = Long.valueOf(Time.currentTime());
+        iat = (long) Time.currentTime();
         return this;
     }
 
@@ -187,17 +142,6 @@ public class JsonWebToken implements Serializable, Token {
         this.iat = iat;
         return this;
     }
-
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #iat(Long)} ()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public JsonWebToken issuedAt(int issuedAt) {
-        this.iat = Long.valueOf(issuedAt);
-        return this;
-    }
-
 
     public String getIssuer() {
         return issuer;

@@ -18,67 +18,38 @@
 
 package org.keycloak.cluster.infinispan;
 
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(LockEntryPredicate.ExternalizerImpl.class)
-public class LockEntryPredicate implements Predicate<Map.Entry<String, Serializable>> {
+@ProtoTypeId(Marshalling.LOCK_ENTRY_PREDICATE)
+public class LockEntryPredicate implements Predicate<Map.Entry<String, Object>> {
 
     private final Set<String> removedNodesAddresses;
 
+    @ProtoFactory
     public LockEntryPredicate(Set<String> removedNodesAddresses) {
         this.removedNodesAddresses = removedNodesAddresses;
     }
 
+    @ProtoField(value = 1, collectionImplementation = HashSet.class)
+    Set<String> getRemovedNodesAddresses() {
+        return removedNodesAddresses;
+    }
+
     @Override
-    public boolean test(Map.Entry<String, Serializable> entry) {
-        if (!(entry.getValue() instanceof LockEntry)) {
-            return false;
-        }
+    public boolean test(Map.Entry<String, Object> entry) {
+        return entry.getValue() instanceof LockEntry lock &&
+                removedNodesAddresses.contains(lock.node());
 
-        LockEntry lock = (LockEntry) entry.getValue();
-
-        return removedNodesAddresses.contains(lock.getNode());
     }
-
-    public static class ExternalizerImpl implements Externalizer<LockEntryPredicate> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, LockEntryPredicate obj) throws IOException {
-            output.writeByte(VERSION_1);
-            KeycloakMarshallUtil.writeCollection(obj.removedNodesAddresses, KeycloakMarshallUtil.STRING_EXT, output);
-        }
-
-        @Override
-        public LockEntryPredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public LockEntryPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            return new LockEntryPredicate(
-                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet)
-            );
-        }
-    }
-
 }

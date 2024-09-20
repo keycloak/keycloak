@@ -54,7 +54,7 @@ public final class StringPropertyReplacer
     private static final Properties systemEnvProperties = new SystemEnvProperties();
 
     /**
-     * Go through the input string and replace any occurance of ${p} with
+     * Go through the input string and replace any occurrence of ${p} with
      * the System.getProperty(p) value. If there is no such property p defined,
      * then the ${p} reference will remain unchanged.
      *
@@ -78,7 +78,7 @@ public final class StringPropertyReplacer
     }
 
     /**
-     * Go through the input string and replace any occurance of ${p} with
+     * Go through the input string and replace any occurrence of ${p} with
      * the props.getProperty(p) value. If there is no such property p defined,
      * then the ${p} reference will remain unchanged.
      *
@@ -101,12 +101,7 @@ public final class StringPropertyReplacer
         if (props == null) {
             return replaceProperties(string, (PropertyResolver) null);
         }
-        return replaceProperties(string, new PropertyResolver() {
-            @Override
-            public String resolve(String property) {
-                return props.getProperty(property);
-            }
-        });
+        return replaceProperties(string, props::getProperty);
     }
 
     public static String replaceProperties(final String string, PropertyResolver resolver)
@@ -238,34 +233,15 @@ public final class StringPropertyReplacer
             buffer.append(string.substring(start, chars.length));
 
         if (buffer.indexOf("${") != -1) {
-            return replaceProperties(buffer.toString(), resolver);
+            try {
+                return replaceProperties(buffer.toString(), resolver);
+            } catch (StackOverflowError ex) {
+                throw new IllegalStateException("Infinite recursion happening when replacing properties on '" + buffer + "'");
+            }
         }
         
         // Done
         return buffer.toString();
-    }
-
-    /**
-     * Try to resolve a "key" from the provided properties by
-     * checking if it is actually a "key1,key2", in which case
-     * try first "key1", then "key2". If all fails, return null.
-     *
-     * It also accepts "key1," and ",key2".
-     *
-     * @param key the key to resolve
-     * @param props the properties to use
-     * @return the resolved key or null
-     */
-    private static String resolveCompositeKey(String key, final Properties props) {
-        if (props == null) {
-            return resolveCompositeKey(key, (PropertyResolver) null);
-        }
-        return resolveCompositeKey(key, new PropertyResolver() {
-            @Override
-            public String resolve(String property) {
-                return props.getProperty(property);
-            }
-        });        
     }
 
     private static String resolveCompositeKey(String key, PropertyResolver resolver)

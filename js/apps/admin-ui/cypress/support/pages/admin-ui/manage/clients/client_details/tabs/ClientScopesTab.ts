@@ -24,7 +24,7 @@ export default class ClientScopesTab extends CommonPage {
   }
 
   clickDedicatedScope(clientId: string) {
-    cy.intercept("/admin/realms/master/clients/*").as("get");
+    cy.intercept("/admin/realms/*/clients/*").as("get");
     cy.findByText(`${clientId}-dedicated`).click();
     cy.wait("@get");
     return this.#dedicatedScopesPage;

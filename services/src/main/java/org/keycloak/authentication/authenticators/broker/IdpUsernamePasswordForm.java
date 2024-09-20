@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -25,6 +27,7 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
@@ -43,11 +46,27 @@ import jakarta.ws.rs.core.Response;
  */
 public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
+    private final static Logger log = Logger.getLogger(IdpUsernamePasswordForm.class);
+
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return setupForm(context, formData, getExistingUser(context))
                 .setStatus(Response.Status.OK)
                 .createLoginUsernamePassword();
+    }
+
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
+        LoginFormsProvider form = setupForm(context, new MultivaluedHashMap<>(), getExistingUser(context))
+                .setExecution(context.getExecution().getId());
+        if (error != null) {
+            if (field != null) {
+                form.addError(new FormMessage(field, error));
+            } else {
+                form.setError(error);
+            }
+        }
+        return createLoginForm(form);
     }
 
     @Override

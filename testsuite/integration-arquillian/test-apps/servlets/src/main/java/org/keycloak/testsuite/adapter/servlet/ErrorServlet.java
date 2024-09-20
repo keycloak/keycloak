@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import org.keycloak.adapters.spi.AuthenticationError;
@@ -35,7 +35,7 @@ public class ErrorServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         authError = (AuthenticationError)req.getAttribute(AuthenticationError.class.getName());
 
-        Integer statusCode = (Integer) req.getAttribute("javax.servlet.error.status_code");
+        Integer statusCode = (Integer) req.getAttribute("jakarta.servlet.error.status_code");
         
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();

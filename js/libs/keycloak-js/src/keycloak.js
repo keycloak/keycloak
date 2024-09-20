@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import base64 from 'base64-js';
-import sha256 from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import { jwtDecode } from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
@@ -37,6 +36,8 @@ function Keycloak (config) {
         callbackList: [],
         interval: 5
     };
+
+    kc.didInitialize = false;
 
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
@@ -133,11 +134,14 @@ function Keycloak (config) {
                 kc.silentCheckSsoFallback = true;
             }
 
-            if (initOptions.pkceMethod) {
-                if (initOptions.pkceMethod !== "S256") {
-                    throw 'Invalid value for pkceMethod';
+            if (typeof initOptions.pkceMethod !== "undefined") {
+                if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
+                    throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
                 }
+
                 kc.pkceMethod = initOptions.pkceMethod;
+            } else {
+                kc.pkceMethod = "S256";
             }
 
             if (typeof initOptions.enableLogging === 'boolean') {
@@ -375,19 +379,18 @@ function Keycloak (config) {
     }
 
     function generatePkceChallenge(pkceMethod, codeVerifier) {
-        switch (pkceMethod) {
-            // The use of the "plain" method is considered insecure and therefore not supported.
-            case "S256":
-                // hash codeVerifier, then encode as url-safe base64 without padding
-                var hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
-                var encodedHash = base64.fromByteArray(hashBytes)
-                    .replace(/\+/g, '-')
-                    .replace(/\//g, '_')
-                    .replace(/\=/g, '');
-                return encodedHash;
-            default:
-                throw 'Invalid value for pkceMethod';
+        if (pkceMethod !== "S256") {
+            throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${pkceMethod}'.`);
         }
+
+        // hash codeVerifier, then encode as url-safe base64 without padding
+        const hashBytes = sha256(codeVerifier);
+        const encodedHash = bytesToBase64(hashBytes)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/\=/g, '');
+
+        return encodedHash;
     }
 
     function buildClaimsParameter(requestedAcr){
@@ -408,7 +411,8 @@ function Keycloak (config) {
         var callbackState = {
             state: state,
             nonce: nonce,
-            redirectUri: encodeURIComponent(redirectUri)
+            redirectUri: encodeURIComponent(redirectUri),
+            loginOptions: options
         };
 
         if (options && options.prompt) {
@@ -446,7 +450,7 @@ function Keycloak (config) {
             url += '&prompt=' + encodeURIComponent(options.prompt);
         }
 
-        if (options && options.maxAge) {
+        if (options && typeof options.maxAge === 'number') {
             url += '&max_age=' + encodeURIComponent(options.maxAge);
         }
 
@@ -747,14 +751,18 @@ function Keycloak (config) {
         var timeLocal = new Date().getTime();
 
         if (oauth['kc_action_status']) {
-            kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status']);
+            kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status'], oauth['kc_action']);
         }
 
         if (error) {
             if (prompt != 'none') {
-                var errorData = { error: error, error_description: oauth.error_description };
-                kc.onAuthError && kc.onAuthError(errorData);
-                promise && promise.setError(errorData);
+                if (oauth.error_description && oauth.error_description === "authentication_expired") {
+                    kc.login(oauth.loginOptions);
+                } else {
+                    var errorData = { error: error, error_description: oauth.error_description };
+                    kc.onAuthError && kc.onAuthError(errorData);
+                    promise && promise.setError(errorData);
+                }
             } else {
                 promise && promise.setSuccess();
             }
@@ -802,10 +810,7 @@ function Keycloak (config) {
 
             setToken(accessToken, refreshToken, idToken, timeLocal);
 
-            if (useNonce && ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
-                (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
-                (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce))) {
-
+            if (useNonce && (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
                 logInfo('[KEYCLOAK] Invalid nonce, clearing token');
                 kc.clearToken();
                 promise && promise.setError();
@@ -1007,7 +1012,7 @@ function Keycloak (config) {
         if (token) {
             kc.token = token;
             kc.tokenParsed = jwtDecode(token);
-            kc.sessionId = kc.tokenParsed.session_state;
+            kc.sessionId = kc.tokenParsed.sid;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
@@ -1065,6 +1070,7 @@ function Keycloak (config) {
             oauth.storedNonce = oauthState.nonce;
             oauth.prompt = oauthState.prompt;
             oauth.pkceCodeVerifier = oauthState.pkceCodeVerifier;
+            oauth.loginOptions = oauthState.loginOptions;
         }
 
         return oauth;
@@ -1074,13 +1080,13 @@ function Keycloak (config) {
         var supportedParams;
         switch (kc.flow) {
             case 'standard':
-                supportedParams = ['code', 'state', 'session_state', 'kc_action_status', 'iss'];
+                supportedParams = ['code', 'state', 'session_state', 'kc_action_status', 'kc_action', 'iss'];
                 break;
             case 'implicit':
-                supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status', 'iss'];
+                supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status', 'kc_action', 'iss'];
                 break;
             case 'hybrid':
-                supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status', 'iss'];
+                supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status', 'kc_action', 'iss'];
                 break;
         }
 
@@ -1435,7 +1441,7 @@ function Keycloak (config) {
             var getCordovaRedirectUri = function() {
                 return kc.redirectUri || 'http://localhost';
             }
-            
+
             return {
                 login: function(options) {
                     var promise = createPromise();
@@ -1756,3 +1762,9 @@ function Keycloak (config) {
 }
 
 export default Keycloak;
+
+// See: https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+function bytesToBase64(bytes) {
+    const binString = String.fromCodePoint(...bytes);
+    return btoa(binString);
+}

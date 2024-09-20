@@ -1,11 +1,8 @@
-import { useTranslation } from "react-i18next";
 import { Button, ToolbarItem } from "@patternfly/react-core";
-
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { useTranslation } from "react-i18next";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import { translationFormatter } from "../../utils/translationFormatter";
 
 export type EventType = {
   id: string;
@@ -66,7 +63,7 @@ export function EventsTypeTable({
         },
         {
           name: "description",
-          displayKey: "description",
+          cellFormatters: [translationFormatter(t)],
         },
       ]}
       emptyState={

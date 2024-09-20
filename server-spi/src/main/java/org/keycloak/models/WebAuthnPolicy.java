@@ -50,7 +50,7 @@ public class WebAuthnPolicy implements Serializable {
     }
 
     // TODO : must be thread safe list
-    public static WebAuthnPolicy DEFAULT_POLICY = new WebAuthnPolicy(new ArrayList<>(Arrays.asList(Algorithm.ES256)));
+    public static WebAuthnPolicy DEFAULT_POLICY = new WebAuthnPolicy(new ArrayList<>(Arrays.asList(Algorithm.ES256,Algorithm.RS256)));
 
     public String getRpEntityName() {
         return rpEntityName;

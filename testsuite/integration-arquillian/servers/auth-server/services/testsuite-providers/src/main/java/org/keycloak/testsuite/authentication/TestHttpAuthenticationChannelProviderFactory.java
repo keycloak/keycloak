@@ -19,6 +19,7 @@
 
 package org.keycloak.testsuite.authentication;
 
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
@@ -50,7 +51,7 @@ public class TestHttpAuthenticationChannelProviderFactory extends HttpAuthentica
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return true;
     }
 }

@@ -22,7 +22,9 @@ import org.keycloak.utils.MediaType;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.ext.Provider;
 
+@Provider
 @Path("/robots.txt")
 public class RobotsResource {
 

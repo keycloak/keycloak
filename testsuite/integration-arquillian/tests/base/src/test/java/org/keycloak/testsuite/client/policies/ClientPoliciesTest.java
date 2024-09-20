@@ -827,6 +827,40 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testConsentRequiredExecutorWithClientRolesCondition() throws Exception {
+        // register profiles with consent-required executor
+        updateProfiles(new ClientProfilesBuilder().addProfile(
+                new ClientProfileBuilder().createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, createConsentRequiredExecutorConfig(true))
+                        .toRepresentation()).toString());
+
+        // register policies with the client-roles condition to sample-client-role
+        updatePolicies(new ClientPoliciesBuilder().addPolicy(
+                new ClientPolicyBuilder().createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString());
+
+        // Client is allowed to be created without consent because no roles at creation time
+        String clientId = generateSuffixedName("consent-app");
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            clientRep.setConsentRequired(Boolean.FALSE);
+        });
+        Assert.assertFalse(getClientByAdmin(cid).isConsentRequired());
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // update with consent to false should be updated to true by autoconfigure
+        updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+            cRep.setConsentRequired(Boolean.FALSE);
+        });
+        Assert.assertTrue(getClientByAdmin(cid).isConsentRequired());
+    }
+
+    @Test
     public void testFullScopeDisabledExecutor() throws Exception {
         // register profiles - client autoConfigured to disable fullScopeAllowed
         String json = (new ClientProfilesBuilder()).addProfile(

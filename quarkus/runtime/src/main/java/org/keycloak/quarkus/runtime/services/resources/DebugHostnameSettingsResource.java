@@ -17,19 +17,8 @@
 package org.keycloak.quarkus.runtime.services.resources;
 
 import io.quarkus.resteasy.reactive.server.EndpointDisabled;
-import jakarta.ws.rs.NotFoundException;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.services.Urls;
-import org.keycloak.services.resources.Cors;
-import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.freemarker.FreeMarkerProvider;
-import org.keycloak.urls.UrlType;
-
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -37,6 +26,19 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.urls.UrlType;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+@Provider
 @Path("/realms")
 @EndpointDisabled(name = "kc.hostname-debug", stringValue = "false", disableIfMissing = true)
 public class DebugHostnameSettingsResource {
@@ -59,7 +62,8 @@ public class DebugHostnameSettingsResource {
     public DebugHostnameSettingsResource() {
 
         this.allConfigPropertiesMap = new LinkedHashMap<>();
-        for (String key : ConstantsDebugHostname.RELEVANT_OPTIONS) {
+        String[] relevantOptions = Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2) ? ConstantsDebugHostname.RELEVANT_OPTIONS_V2 : ConstantsDebugHostname.RELEVANT_OPTIONS;
+        for (String key : relevantOptions) {
             addOption(key);
         }
 
@@ -92,6 +96,7 @@ public class DebugHostnameSettingsResource {
 
         attributes.put("realm", realmModel.getName());
         attributes.put("realmUrl", realmModel.getAttribute("frontendUrl"));
+        attributes.put("implVersion", Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2) ? "V2" : "V1");
 
         attributes.put("frontendTestUrl", frontendTestUrl);
         attributes.put("backendTestUrl", backendTestUrl);

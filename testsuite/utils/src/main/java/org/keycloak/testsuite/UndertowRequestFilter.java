@@ -26,11 +26,13 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.services.filters.AbstractRequestFilter;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class UndertowRequestFilter extends AbstractRequestFilter implements Filter {
+public class UndertowRequestFilter implements Filter {
 
     private final KeycloakSessionFactory factory;
 
@@ -44,8 +46,11 @@ public class UndertowRequestFilter extends AbstractRequestFilter implements Filt
         servletRequest.setCharacterEncoding("UTF-8");
         final HttpServletRequest request = (HttpServletRequest) servletRequest;
 
-        filter(createClientConnection(request), (session) -> {
+        ClientConnection connection = createClientConnection(request);
+        KeycloakModelUtils.runJobInTransaction(factory, session -> {
             try {
+                ResteasyContext.pushContext(KeycloakSession.class, session);
+                session.getContext().setConnection(connection);
                 filterChain.doFilter(servletRequest, servletResponse);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -86,11 +91,6 @@ public class UndertowRequestFilter extends AbstractRequestFilter implements Filt
                 return request.getLocalPort();
             }
         };
-    }
-
-    @Override
-    protected KeycloakSessionFactory getSessionFactory() {
-        return this.factory;
     }
 
     @Override

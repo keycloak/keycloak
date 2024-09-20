@@ -24,6 +24,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.services.util.DPoPUtil;
 
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
@@ -67,6 +68,9 @@ public class ProtocolMapperUtils {
     public static final String AGGREGATE_ATTRS_LABEL = "aggregate.attrs.label";
     public static final String MULTIVALUED_HELP_TEXT = "multivalued.tooltip";
     public static final String AGGREGATE_ATTRS_HELP_TEXT = "aggregate.attrs.tooltip";
+
+    // Priority of SubMapper. It should be first to allow other mappers override the `sub` claim
+    public static final int SUB_MAPPER = -10;
 
     // Role name mapper can move some roles to different positions
     public static final int PRIORITY_ROLE_NAMES_MAPPER = 10;
@@ -122,31 +126,25 @@ public class ProtocolMapperUtils {
 
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx) {
-        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return ctx.getProtocolMappersStream()
-                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
-                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-                    if (mapper == null) {
-                        return null;
-                    }
-                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
+        return getSortedProtocolMappers(session, ctx, entry -> true);
     }
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return ctx.getProtocolMappersStream()
-                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
-                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-                    if (mapper == null) {
-                        return null;
-                    }
-                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
-                })
-                .filter(Objects::nonNull)
-                .filter(filter)
+
+        Stream<Entry<ProtocolMapperModel, ProtocolMapper>> protocolMapperStream = //
+                ctx.getProtocolMappersStream()
+                        .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
+                            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                            if (mapper == null) {
+                                return null;
+                            }
+                            return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
+                        })
+                        .filter(Objects::nonNull)
+                        .filter(filter);
+
+        return Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper())
                 .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 

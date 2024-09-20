@@ -18,6 +18,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Client Policy's external representation class
@@ -72,4 +73,16 @@ public class ClientPolicyRepresentation {
         this.profiles = profiles;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientPolicyRepresentation that = (ClientPolicyRepresentation) o;
+        return Objects.equals(name, that.name) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(conditions, that.conditions) && Objects.equals(profiles, that.profiles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, enabled, conditions, profiles);
+    }
 }

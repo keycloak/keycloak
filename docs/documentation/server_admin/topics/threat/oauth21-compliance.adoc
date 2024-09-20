@@ -1,0 +1,5 @@
+
+=== OAuth 2.1 compliance
+
+To make sure that {project_name} server will validate your client to be more secure and OAuth 2.1 compliant, you can configure client policies
+for the OAuth 2.1 support. *OAuth 2.1* details are described in the link:{securing_apps_link}[securing apps] section.

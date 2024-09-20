@@ -1,0 +1,64 @@
+[[_saml-general-config]]
+
+== Configuration
+
+The SAML client adapter is configured by a XML file `/WEB-INF/keycloak-saml.xml` placed inside the WAR deployment. The configuration might look like the following:
+
+[source,xml,subs="attributes+"]
+----
+<keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="urn:keycloak:saml:adapter {saml_adapter_xsd_urn}">
+    <SP entityID="http://localhost:8081/sales-post-sig/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false"
+        isPassive="false"
+        turnOffChangeSessionIdOnLogin="false"
+        autodetectBearerOnly="false">
+        <Keys>
+            <Key signing="true" >
+                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <PrivateKey alias="http://localhost:8080/sales-post-sig/" password="test123"/>
+                    <Certificate alias="http://localhost:8080/sales-post-sig/"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleIdentifiers>
+            <Attribute name="Role"/>
+        </RoleIdentifiers>
+        <RoleMappingsProvider id="properties-based-role-mapper">
+            <Property name="properties.resource.location" value="/WEB-INF/role-mappings.properties"/>
+        </RoleMappingsProvider>
+        <IDP entityID="idp"
+             signaturesRequired="true">
+        <SingleSignOnService requestBinding="POST"
+                             bindingUrl="http://localhost:8081{kc_realms_path}/demo/protocol/saml"
+                    />
+
+            <SingleLogoutService
+                    requestBinding="POST"
+                    responseBinding="POST"
+                    postBindingUrl="http://localhost:8081{kc_realms_path}/demo/protocol/saml"
+                    redirectBindingUrl="http://localhost:8081{kc_realms_path}/demo/protocol/saml"
+                    />
+            <Keys>
+                <Key signing="true">
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                        <Certificate alias="demo"/>
+                    </KeyStore>
+                </Key>
+            </Keys>
+        </IDP>
+     </SP>
+</keycloak-saml-adapter>
+----    
+
+You can use `${r"${...}"}` enclosure as System property replacement. For example `${r"${jboss.server.config.dir}"}`.
+To get detailed information of the different elements in the XML configuration file see <@links.securingapps id="saml-galleon-layers-detailed-config"/>.
+
+include::partials/saml/required_per_war_configuration.adoc[]
+include::partials/saml/securing_wars.adoc[]
+include::partials/saml/jboss-adapter-samesite-setting.adoc[]

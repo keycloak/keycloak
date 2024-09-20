@@ -18,11 +18,11 @@
 
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:14.0 http://www.infinispan.org/schemas/infinispan-config-14.0.xsd"
-        xmlns="urn:infinispan:config:14.0">
+        xsi:schemaLocation="urn:infinispan:config:15.0 http://www.infinispan.org/schemas/infinispan-config-15.0.xsd"
+        xmlns="urn:infinispan:config:15.0">
 
     <cache-container name="keycloak">
-        <transport lock-timeout="60000"/>
+        <transport lock-timeout="60000" stack="udp"/>
         <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
@@ -37,20 +37,24 @@
             </encoding>
             <memory max-count="10000"/>
         </local-cache>
-        <distributed-cache name="sessions" owners="2">
+        <distributed-cache name="sessions" owners="1">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </distributed-cache>
         <distributed-cache name="authenticationSessions" owners="2">
             <expiration lifespan="-1"/>
         </distributed-cache>
-        <distributed-cache name="offlineSessions" owners="2">
+        <distributed-cache name="offlineSessions" owners="1">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </distributed-cache>
-        <distributed-cache name="clientSessions" owners="2">
+        <distributed-cache name="clientSessions" owners="1">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </distributed-cache>
-        <distributed-cache name="offlineClientSessions" owners="2">
+        <distributed-cache name="offlineClientSessions" owners="1">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </distributed-cache>
         <distributed-cache name="loginFailures" owners="2">
             <expiration lifespan="-1"/>

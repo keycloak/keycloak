@@ -39,7 +39,7 @@ public class GeneratedHmacKeyProviderFactory extends AbstractGeneratedSecretKeyP
 
     private static final String HELP_TEXT = "Generates HMAC secret key";
 
-    public static final int DEFAULT_HMAC_KEY_SIZE = 64;
+    public static final int DEFAULT_HMAC_KEY_SIZE = 128;
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = SecretKeyProviderUtils.configurationBuilder()
             .property(Attributes.SECRET_SIZE_PROPERTY)

@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jwe.JWE;

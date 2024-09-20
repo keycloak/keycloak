@@ -60,8 +60,7 @@ import jakarta.inject.Inject;
 
 @ControllerConfiguration(
     dependents = {
-        @Dependent(type = KeycloakDeploymentDependentResource.class),
-        @Dependent(type = KeycloakAdminSecretDependentResource.class),
+        @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
@@ -74,10 +73,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     Config config;
 
     @Inject
-    WatchedSecrets watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
+    
+    volatile KeycloakDeploymentDependentResource deploymentDependentResource;
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
@@ -94,7 +95,10 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Map<String, EventSource> sources = new HashMap<>();
         sources.put("serviceSource", servicesEvent);
-        sources.putAll(EventSourceInitializer.nameEventSources(watchedSecrets.getWatchedSecretsEventSource()));
+        
+        this.deploymentDependentResource = new KeycloakDeploymentDependentResource(config, watchedResources, distConfigurator);
+        sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, this.deploymentDependentResource));
+        
         return sources;
     }
 
@@ -103,8 +107,10 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 
-        Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
+        Log.debugf("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
+        // TODO - these modifications to the resource may belong in a webhook because dependents run first
+        // only the statefulset is deferred until after
         boolean modifiedSpec = false;
         if (kc.getSpec().getInstances() == null) {
             // explicitly set defaults - and let another reconciliation happen
@@ -126,13 +132,16 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         if (modifiedSpec) {
             return UpdateControl.updateResource(kc);
         }
+        
+        // after the spec has possibly been updated, reconcile the StatefulSet
+        this.deploymentDependentResource.reconcile(kc, context);
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         updateStatus(kc, context.getSecondaryResource(StatefulSet.class).orElse(null), statusAggregator, context);
         var status = statusAggregator.build();
 
-        Log.info("--- Reconciliation finished successfully");
+        Log.debug("--- Reconciliation finished successfully");
 
         UpdateControl<Keycloak> updateControl;
         if (status.equals(kc.getStatus())) {
@@ -143,10 +152,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (!status.isReady() || context.getSecondaryResource(StatefulSet.class)
-                .map(s -> s.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION))
-                .filter(Boolean::valueOf).isPresent()) {
+        var statefulSet = context.getSecondaryResource(StatefulSet.class);
+
+        if (!status.isReady()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+        } else if (statefulSet.filter(watchedResources::isWatching).isPresent()) {
+            updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);
         }
 
         return updateControl;
@@ -232,6 +243,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                     if (container.getImage() != null) {
                         status.addWarningMessage(
                                 "The image of the keycloak container cannot be modified using podTemplate");
+                    }
+                    if (container.getResources() != null) {
+                        status.addWarningMessage("Resources requirements of the Keycloak container cannot be modified using podTemplate");
                     }
                 });
 

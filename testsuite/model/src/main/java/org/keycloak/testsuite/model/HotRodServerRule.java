@@ -7,7 +7,6 @@ import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.jboss.marshalling.commons.GenericJBossMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.server.hotrod.HotRodServer;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfiguration;
@@ -15,10 +14,12 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuild
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.marshalling.KeycloakModelSchema;
 
 import java.io.IOException;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -63,7 +64,7 @@ public class HotRodServerRule extends ExternalResource {
 
         // Create a Hot Rod client
         org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
-        remoteBuilder.marshaller(new GenericJBossMarshaller());
+        remoteBuilder.addContextInitializers(KeycloakModelSchema.INSTANCE);
         org.infinispan.client.hotrod.configuration.Configuration cfg = remoteBuilder
                 .addServers(hotRodServer.getHost() + ":" + hotRodServer.getPort() + ";"
                         + hotRodServer2.getHost() + ":" + hotRodServer2.getPort()).build();
@@ -73,10 +74,10 @@ public class HotRodServerRule extends ExternalResource {
 
         // create remote keycloak caches
         createKeycloakCaches(async, USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME,
-                OFFLINE_CLIENT_SESSION_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE);
+                OFFLINE_CLIENT_SESSION_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
 
         getCaches(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME,
-                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE);
+                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
 
         // Use Keycloak time service in remote caches
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager);
@@ -113,10 +114,7 @@ public class HotRodServerRule extends ExternalResource {
 
     public static ConfigurationBuilder createCacheConfigurationBuilder() {
         ConfigurationBuilder builder = new ConfigurationBuilder();
-
-        // need to force the encoding to application/x-jboss-marshalling to avoid unnecessary conversion of keys/values. See WFLY-14356.
-        builder.encoding().mediaType(MediaType.APPLICATION_JBOSS_MARSHALLING_TYPE);
-
+        builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
         return builder;
     }
 

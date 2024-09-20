@@ -107,14 +107,11 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
-            UserSessionEntity userSession = new UserSessionEntity();
-            String id = getArg(1);
-
-            userSession.setId(id);
+            UserSessionEntity userSession = new UserSessionEntity(getArg(1));
             userSession.setRealmId(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
-            cache.put(id, new SessionEntityWrapper(userSession));
+            cache.put(userSession.getId(), new SessionEntityWrapper(userSession));
         }
 
         @Override
@@ -294,14 +291,11 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
             BatchTaskRunner.runInBatches(0, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession batchSession, int firstInIteration, int countInIteration) -> {
                 for (int i=0 ; i<countInIteration ; i++) {
-                    UserSessionEntity userSession = new UserSessionEntity();
-                    String id = KeycloakModelUtils.generateId();
-
-                    userSession.setId(id);
+                    UserSessionEntity userSession = new UserSessionEntity(KeycloakModelUtils.generateId());
                     userSession.setRealmId(realmName);
 
                     userSession.setLastSessionRefresh(Time.currentTime());
-                    cache.put(id, new SessionEntityWrapper(userSession));
+                    cache.put(userSession.getId(), new SessionEntityWrapper(userSession));
                 }
 
                 log.infof("Created '%d' sessions started from offset '%d'", countInIteration, firstInIteration);

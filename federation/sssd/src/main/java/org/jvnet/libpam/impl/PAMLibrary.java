@@ -74,7 +74,7 @@ public interface PAMLibrary extends Library {
     class pam_response extends Structure {
         /**
          * This is really a string, but this field needs to be malloc-ed by the conversation
-         * method, and to be freed by the caler, so I bind it to {@link Pointer} here.
+         * method, and to be freed by the caller, so I bind it to {@link Pointer} here.
          * <p>
          * The man page doesn't say that, but see
          * http://www.netbsd.org/docs/guide/en/chap-pam.html#pam-sample-conv

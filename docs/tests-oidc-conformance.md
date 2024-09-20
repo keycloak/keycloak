@@ -27,7 +27,7 @@ and then restart server.
 Reason: Keycloak supports rotation and dynamically downloading client's keys from configured jwks_url. However by default there is 10 seconds timeout 
 between 2 requests for download public keys to avoid DoS attacks. 
 The OIDC test OP-Rotation-RP-Sig registers client, then login user for the 1st time (which downloads new client keys) and 
-then immediatelly rotates client keys and expects refreshToken request to succeed with new key. This is just the testing scenario. 
+then immediately rotates client keys and expects refreshToken request to succeed with new key. This is just the testing scenario. 
 In real production environment, clients will very unlikely do something like this. Hence just for testing purposes is DoS protection disabled by set -1 here.
  
                                                                                                                

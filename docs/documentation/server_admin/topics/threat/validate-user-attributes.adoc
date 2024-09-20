@@ -1,0 +1,10 @@
+[[validate_user_attributes]]
+=== Validate user attributes
+
+With the functionality in <<user-profile>>, administrators can restrict the data users enter for attributes, for example, in user registration or the account console.
+
+Administrators should not allow unmanaged attributes for users to prevent attackers adding an unlimited number of attributes.
+Attributes should have a validation that restricts the amount of data entered by attackers.
+
+When using regular expressions to validate user attributes, avoid regular expressions that use an excessive amount of memory or CPU.
+See https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS[OWASP's Regular expression Denial of Service] for details.

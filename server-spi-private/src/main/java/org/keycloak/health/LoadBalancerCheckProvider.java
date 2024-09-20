@@ -24,6 +24,7 @@ import org.keycloak.provider.Provider;
  * the load balancer endpoint will return the {@code DOWN} status.
  *
  */
+@FunctionalInterface
 public interface LoadBalancerCheckProvider extends Provider {
 
     /**
@@ -39,4 +40,9 @@ public interface LoadBalancerCheckProvider extends Provider {
      * @return true if the component is down/unhealthy, false otherwise
      */
     boolean isDown();
+
+    @Override
+    default void close() {
+        //no-op by default
+    }
 }

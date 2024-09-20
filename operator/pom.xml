@@ -10,19 +10,16 @@
         <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    
+
     <name>Keycloak Operator</name>
     <artifactId>keycloak-operator</artifactId>
 
     <properties>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
+        <quarkus.docker.build-args.KEYCLOAK_VERSION>${project.version}</quarkus.docker.build-args.KEYCLOAK_VERSION>
     </properties>
 
     <dependencyManagement>
@@ -39,10 +36,17 @@
 
 
     <dependencies>
+        <!-- Sundrio -->
+        <dependency>
+            <groupId>io.sundr</groupId>
+            <artifactId>builder-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>crd-generator-apt</artifactId>
+            <artifactId>generator-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -66,18 +70,6 @@
             <groupId>io.quarkiverse.operatorsdk</groupId>
             <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy-jackson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -144,7 +136,6 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>${awaitility.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -167,10 +158,6 @@
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
             </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
-            </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -185,7 +172,7 @@
                     </goals>
                     <configuration>
                         <properties>
-                            <quarkus.package.filter-optional-dependencies>true</quarkus.package.filter-optional-dependencies> 
+                            <quarkus.package.jar.filter-optional-dependencies>true</quarkus.package.jar.filter-optional-dependencies>
                         </properties>
                     </configuration>
                     </execution>
@@ -308,8 +295,8 @@
             </plugin>
         </plugins>
     </build>
-    
-    
+
+
     <profiles>
         <profile>
             <id>operator-prod</id>

@@ -104,11 +104,7 @@ public class EventBuilder {
 
     public EventBuilder realm(RealmModel realm) {
         event.setRealmId(realm == null ? null : realm.getId());
-        return this;
-    }
-
-    public EventBuilder realm(String realmId) {
-        event.setRealmId(realmId);
+        event.setRealmName(realm == null ? null : realm.getName());
         return this;
     }
 

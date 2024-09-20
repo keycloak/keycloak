@@ -8,21 +8,23 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { getGroups } from "../api/methods";
 import { Group } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 
-const Groups = () => {
+export const Groups = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [directMembership, setDirectMembership] = useState(false);
 
   usePromise(
-    (signal) => getGroups({ signal }),
+    (signal) => getGroups({ signal, context }),
     (groups) => {
-      if (directMembership) {
+      if (!directMembership) {
         groups.forEach((el) =>
           getParents(
             el,
@@ -64,8 +66,9 @@ const Groups = () => {
                   <Checkbox
                     label={t("directMembership")}
                     id="directMembership-checkbox"
+                    data-testid="directMembership-checkbox"
                     isChecked={directMembership}
-                    onChange={(checked) => setDirectMembership(checked)}
+                    onChange={(_event, checked) => setDirectMembership(checked)}
                   />
                 </DataListCell>,
               ]}

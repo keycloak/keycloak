@@ -47,16 +47,11 @@ public final class AdminExtResource {
 
     @Path("/realms")
     public UIRealmsResource realms() {
-        return new UIRealmsResource(session);
+        return new UIRealmsResource(session, auth);
     }
 
     @Path("/")
     public UIRealmResource realm() {
         return new UIRealmResource(session, auth, adminEvent);
-    }
-
-    @Path("/users")
-    public UsersResource users() {
-        return new UsersResource(session);
     }
 }

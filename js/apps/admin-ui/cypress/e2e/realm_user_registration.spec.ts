@@ -36,9 +36,10 @@ describe("Realm settings - User registration tab", () => {
 
   it("Add admin role", () => {
     const role = "admin";
+    const roleType = "roles";
     userRegistration.addRole();
     sidebarPage.waitForPageLoad();
-    userRegistration.selectRow(role).assign();
+    userRegistration.changeRoleTypeFilter(roleType).selectRow(role).assign();
     masthead.checkNotificationMessage("Associated roles have been added");
     listingPage.searchItem(role, false).itemExist(role);
 

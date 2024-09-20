@@ -54,6 +54,8 @@ public interface ClientSessionContext {
 
     String getScopeString();
 
+    String getScopeString(boolean ignoreIncludeInTokenScope);
+
     void setAttribute(String name, Object value);
 
     <T> T getAttribute(String attribute, Class<T> clazz);

@@ -36,7 +36,7 @@ spec:
 ----
 
 This CR should be created in the same namespace as the Keycloak Deployment CR, defined in the field `keycloakCRName`.
-The `realm` field accepts a full https://www.keycloak.org/docs-api/{version}/rest-api/index.html#RealmRepresentation[RealmRepresentation].
+The `realm` field accepts a full {apidocs_adminrest_link}/index.html#RealmRepresentation[RealmRepresentation].
 
 The recommended way to obtain a `RealmRepresentation` is by leveraging the export functionality <@links.server id="importExport"/>.
 
@@ -94,4 +94,28 @@ CONDITION: HasErrors
   MESSAGE:
 ----
 
+=== Placeholders
+
+Imports support placeholders referencing environment variables, see <@links.server id="importExport"/> for more. 
+The `KeycloakRealmImport` CR allows you to leverage this functionality via the `spec.placeholders` stanza, for example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: my-realm-kc
+spec:
+  keycloakCRName: <name of the keycloak CR>
+  placeholders:
+    ENV_KEY:
+      secret:
+        name: SECRET_NAME
+        key: SECRET_KEY
+    ...
+----
+
+In the above example placeholder replacement will be enabled and an environment variable with key `ENV_KEY` will be created from the Secret `SECRET_NAME`'s value for key `SECRET_KEY`. 
+Currently only Secrets are supported and they must be in the same namespace as the Keycloak CR.
+  
 </@tmpl.guide>

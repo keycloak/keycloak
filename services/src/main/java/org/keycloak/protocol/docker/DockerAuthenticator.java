@@ -1,7 +1,7 @@
 package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.events.Errors;

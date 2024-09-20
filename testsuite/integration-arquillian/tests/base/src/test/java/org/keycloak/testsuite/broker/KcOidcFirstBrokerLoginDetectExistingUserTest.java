@@ -114,8 +114,8 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
     public void loginWhenUserExistsOnConsumer() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        final String firstname = "Firstname(loginWhenUserExistsOnConsumer)";
-        final String lastname = "Lastname(loginWhenUserExistsOnConsumer)";
+        final String firstname = "Firstname_loginWhenUserExistsOnConsumer";
+        final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
         final String username = "firstandlastname";
         final String email = "firstnamelastname@example.org";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);

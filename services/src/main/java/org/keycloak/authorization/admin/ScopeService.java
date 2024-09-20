@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -109,7 +109,7 @@ public class ScopeService {
             this.auth.realm().requireManageAuthorization();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, scope.getId());
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, scope.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -127,8 +127,7 @@ public class ScopeService {
     public Response delete(@PathParam("scope-id") String id) {
         this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        RealmModel realm = resourceServer.getRealm();
-        Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, id);
+        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
         if (scope == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -144,7 +143,7 @@ public class ScopeService {
 
         for (Policy policyModel : policies) {
             if (policyModel.getScopes().size() == 1) {
-                policyStore.delete(realm, policyModel.getId());
+                policyStore.delete(policyModel.getId());
             } else {
                 policyModel.removeScope(scope);
             }
@@ -153,7 +152,7 @@ public class ScopeService {
         //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
         ScopeRepresentation scopeRep = toRepresentation(scope);
 
-        storeFactory.getScopeStore().delete(realm, id);
+        storeFactory.getScopeStore().delete(id);
 
         audit(scopeRep, OperationType.DELETE);
 
@@ -173,7 +172,7 @@ public class ScopeService {
     })
     public Response findById(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
-        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -196,7 +195,7 @@ public class ScopeService {
     public Response getResources(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -226,7 +225,7 @@ public class ScopeService {
     public Response getPermissions(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -249,6 +248,14 @@ public class ScopeService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ScopeRepresentation.class, type = SchemaType.ARRAY))
+        ),
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public Response find(@QueryParam("name") String name) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();

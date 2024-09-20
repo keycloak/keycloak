@@ -21,13 +21,14 @@ package org.keycloak.representations.userprofile.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Configuration of the User Profile for one realm.
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
@@ -136,5 +137,24 @@ public class UPConfig implements Cloneable {
         }
 
         return cfg;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributes, groups, unmanagedAttributePolicy);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPConfig other = (UPConfig) obj;
+        return Objects.equals(this.attributes, other.attributes)
+                && Objects.equals(this.groups, other.groups)
+                && this.unmanagedAttributePolicy == other.unmanagedAttributePolicy;
     }
 }

@@ -3,9 +3,9 @@
 
 === SSSD and FreeIPA Identity Management integration
 
-{project_name} includes the https://fedoraproject.org/wiki/Features/SSSD[System Security Services Daemon (SSSD)] plugin. SSSD is part of the Fedora and Red Hat Enterprise Linux (RHEL), and it provides access to multiple identities and authentication providers. SSSD also provides benefits such as failover and offline support. For more information, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
+{project_name} includes the https://fedoraproject.org/wiki/Features/SSSD[System Security Services Daemon (SSSD)] plugin. SSSD is part of the Fedora and Red Hat Enterprise Linux (RHEL), and it provides access to multiple identities and authentication providers. SSSD also provides benefits such as failover and offline support. For more information, see https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
 
-SSSD integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. With this integration, {project_name} can authenticate against privileged access management (PAM) services and retrieve user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
+SSSD integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. With this integration, {project_name} can authenticate against privileged access management (PAM) services and retrieve user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
 
 image:images/keycloak-sssd-freeipa-integration-overview.png[]
 
@@ -31,7 +31,7 @@ The https://quay.io/repository/freeipa/freeipa-server?tab=tags/[FreeIPA Containe
  -v /var/lib/ipa-data:/data:Z freeipa/freeipa-server
 ----
 +
-The parameter `-h` with `server.freeipa.local` represents the FreeIPA/IdM server hostname. 
+The parameter `-h` with `server.freeipa.local` represents the FreeIPA/IdM server hostname.
 Change `YOUR_PASSWORD` to a password of your own.
 
 . After the container starts, change the `/etc/hosts` file to include:
@@ -156,7 +156,7 @@ ipaapi:x:992:988:IPA Framework User:/:/sbin/nologin
 
 {project_name} uses https://github.com/hypfvieh/dbus-java[DBus-Java] project to communicate at a low level with D-Bus and https://github.com/java-native-access/jna[JNA] to authenticate via Operating System Pluggable Authentication Modules (PAM).
 
-Although now {project_name} contains all the needed libraries to run the `SSSD` provider, JDK version 17 is needed. Therefore the `SSSD` provider will only be displayed when the host configuration is correct and JDK 17 is used to run {project_name}.
+Although now {project_name} contains all the needed libraries to run the `SSSD` provider, JDK version 21 is needed. Therefore the `SSSD` provider will only be displayed when the host configuration is correct and JDK 21 is used to run {project_name}.
 
 ==== Configuring a federated SSSD store
 

@@ -1,0 +1,54 @@
+- name: Initialization
+  run_once: yes
+  block:
+    - debug: msg="Variable `mvn_params` must be set."
+      failed_when: mvn_params == ""
+    - set_fact: local_results_dir="{{ local_workspace }}/results/{{ '%Y%m%d%H%M%S' | strftime }}"
+    - debug: var=local_results_dir
+
+- name: Cleanup Previous Runs
+  # Kill any currently running Java process from a previous (possibly aborted) run before starting the next.
+  shell: |
+    killall java
+  ignore_errors: yes
+
+- name: Run mvn command on the remote hosts
+  ansible.builtin.shell: |
+    set -o pipefail
+    cd {{ kc_home }}
+    echo "{{ mvn_params }}"
+    ./mvnw {{ mvn_params }}
+  args:
+    executable: /usr/bin/bash
+  # Tests can run for hours. To prevent the test from failing when the SSH connection breaks, use asynchronous polling.
+  async: 86400
+  poll: 10
+  register: result
+
+- debug: var=result
+
+- name: Recursively find surefire-report directories
+  ansible.builtin.find:
+    file_type: directory
+    paths: "{{ kc_home }}"
+    patterns: "surefire-reports*"
+    recurse: true
+  register: output
+
+- debug: var=output
+
+- name: Create local results directories
+  delegate_to: localhost
+  file:
+    path: "{{ local_results_dir }}/{{ item.path | replace(kc_home, '') }}"
+    state: directory
+  with_items:
+    - "{{ output.files }}"
+
+- name: Copy surefire-report directories to localhost
+  synchronize:
+    src: "{{ item.path }}/"
+    dest: "{{ local_results_dir }}/{{ item.path | replace(kc_home, '') }}"
+    mode: pull
+  with_items:
+    - "{{ output.files }}"

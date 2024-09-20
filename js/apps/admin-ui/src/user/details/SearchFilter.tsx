@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Dropdown,
   DropdownItem,
-  DropdownToggle,
-  Select,
+  DropdownList,
+  MenuToggle,
   SelectOption,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type SearchType = "default" | "attribute";
 
@@ -42,14 +43,21 @@ export const SearchDropdown = ({
   return (
     <Dropdown
       className="keycloak__users__searchtype"
-      toggle={
-        <DropdownToggle id="toggle-id" onToggle={setSearchToggle}>
-          <FilterIcon /> {t(`searchType.${searchType}`)}
-        </DropdownToggle>
-      }
+      onOpenChange={(isOpen) => setSearchToggle(isOpen)}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          id="toggle-id"
+          onClick={() => setSearchToggle(!searchToggle)}
+          icon={<FilterIcon />}
+        >
+          {t(`searchType.${searchType}`)}
+        </MenuToggle>
+      )}
       isOpen={searchToggle}
-      dropdownItems={options}
-    />
+    >
+      <DropdownList>{options}</DropdownList>
+    </Dropdown>
   );
 };
 
@@ -63,16 +71,16 @@ export const SearchToolbar = ({ searchType, onSelect }: SearchToolbarProps) => {
         <SearchDropdown searchType={searchType} onSelect={onSelect} />
       </ToolbarItem>
       <ToolbarItem>
-        <Select
+        <KeycloakSelect
           className="keycloak__users__searchtype"
-          onToggle={setOpen}
+          onToggle={(val) => setOpen(val)}
           isOpen={open}
           selections={[t("default"), t("attribute")]}
           onSelect={() => setOpen(false)}
         >
           <SelectOption value={"default"}>{t("default")}</SelectOption>
           <SelectOption value={"attribute"}>{t("attribute")}</SelectOption>
-        </Select>
+        </KeycloakSelect>
       </ToolbarItem>
     </>
   );

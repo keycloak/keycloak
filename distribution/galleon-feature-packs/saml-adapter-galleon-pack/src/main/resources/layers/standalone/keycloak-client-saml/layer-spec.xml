@@ -9,7 +9,7 @@
     <feature spec="subsystem.elytron.custom-realm">
         <param name="custom-realm" value="KeycloakSAMLRealm"/>
         <param name="class-name" value="org.keycloak.adapters.saml.elytron.KeycloakSecurityRealm"/>
-        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter"/>
+        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
     </feature>
     <feature spec="subsystem.elytron.security-domain">
         <param name="security-domain" value="KeycloakDomain"/>
@@ -24,7 +24,7 @@
     </feature>
     <feature spec="subsystem.elytron.service-loader-http-server-mechanism-factory">
         <param name="service-loader-http-server-mechanism-factory" value="keycloak-saml-http-server-mechanism-factory"/>
-        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter"/>
+        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
     </feature>
     <feature spec="subsystem.elytron.aggregate-http-server-mechanism-factory">
         <param name="aggregate-http-server-mechanism-factory" value="keycloak-http-server-mechanism-factory"/>

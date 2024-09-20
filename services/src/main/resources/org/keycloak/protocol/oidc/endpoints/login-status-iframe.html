@@ -28,6 +28,7 @@
       }
 
       let init;
+      let preventAdditionalRequests = false;
 
       async function checkState(clientId, origin, sessionState) {
         // Check if the browser has granted us access to 3rd-party storage (such as cookies).
@@ -41,6 +42,13 @@
 
         // If not initialized, verify this client is allowed access with a call to the server.
         if (!init) {
+          // Prevent additional requests to the server to avoid potential DoS attacks.
+          if (preventAdditionalRequests) {
+            return "error";
+          } else {
+            preventAdditionalRequests = true;
+          }
+
           const url = new URL(`${location.origin}${location.pathname}/init`);
 
           url.searchParams.set("client_id", clientId);
@@ -100,23 +108,17 @@
 
       function getSessionCookie() {
         const cookie = getCookieByName("KEYCLOAK_SESSION");
-
-        if (cookie !== null) {
-          return cookie;
-        }
-
-        return getCookieByName("KEYCLOAK_SESSION_LEGACY");
+        return cookie;
       }
 
       function getCookieByName(name) {
-        const cookies = new Map();
-
         for (const cookie of document.cookie.split(";")) {
           const [key, value] = cookie.split("=").map((value) => value.trim());
-          cookies.set(key, value);
+          if (key === name) {
+            return value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+          }
         }
-
-        return cookies.get(name) ?? null;
+        return null;
       }
     </script>
   </body>

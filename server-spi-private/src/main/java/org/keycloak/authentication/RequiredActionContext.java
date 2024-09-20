@@ -23,6 +23,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -31,7 +32,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
- * Interface that encapsulates current information about the current requred action
+ * Interface that encapsulates information about the current required action
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -49,6 +50,8 @@ public interface RequiredActionContext {
         CANCELLED,
         ERROR
     }
+
+    String getAction();
 
     /**
      * Get the action URL for the required action.
@@ -100,6 +103,12 @@ public interface RequiredActionContext {
     UriInfo getUriInfo();
     KeycloakSession getSession();
     HttpRequest getHttpRequest();
+
+    /**
+     * The configuration of the current required action. Returns {@literal null} if the current required action is not configurable.
+     * @return
+     */
+    RequiredActionConfigModel getConfig();
 
     /**
      * Generates access code and updates clientsession timestamp

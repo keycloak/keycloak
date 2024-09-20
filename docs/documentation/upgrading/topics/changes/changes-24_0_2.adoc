@@ -1,0 +1,6 @@
+ifeval::[{project_community}==true]
+= Changes to Password Hashing
+
+The release notes for {project_name} 24.0.0 have been updated with corrected description of the expected performance impact for the change, as well as sizing guide.
+
+endif::[]

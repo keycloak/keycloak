@@ -1,0 +1,77 @@
+header:
+  schema-version: 1.0.0
+  expiration-date: '2025-02-14T01:00:00.000Z'
+  last-updated: '2024-02-14'
+  last-reviewed: '2024-02-14'
+  project-url: 'https://github.com/keycloak/keycloak'
+  license: 'https://github.com/keycloak/keycloak/blob/main/LICENSE.txt'
+project-lifecycle:
+  bug-fixes-only: false
+  core-maintainers:
+    - https://github.com/keycloak/keycloak/blob/main/MAINTAINERS.md
+  status: Active
+contribution-policy:
+  accepts-pull-requests: true
+  accepts-automated-pull-requests: true
+  automated-tools-list:
+    - automated-tool: dependabot
+      action: allowed
+      path:
+        - /
+  contributing-policy: 'https://github.com/keycloak/keycloak/blob/main/CONTRIBUTING.md'
+  code-of-conduct:
+  - 'https://github.com/keycloak/keycloak?tab=coc-ov-file'
+documentation:
+  - 'https://www.keycloak.org/documentation'
+distribution-points:
+  - 'https://www.keycloak.org/downloads'
+  - 'https://github.com/keycloak/keycloak/releases'
+  - 'https://quay.io/repository/keycloak/keycloak'
+security-testing:
+- tool-type: sca
+  tool-name: Dependabot
+  tool-version: "2"
+  tool-url: https://github.com/dependabot
+  integration:
+    ad-hoc: false
+    ci: true
+    before-release: false 
+- tool-type: sca
+  tool-name: Snyk
+  tool-version: latest
+  integration:
+    ad-hoc: false
+    ci: true
+    before-release: false   
+- tool-type: sca
+  tool-name: CodeQL
+  tool-version: latest
+  integration:
+    ad-hoc: false
+    ci: true
+    before-release: false
+- tool-type: sca
+  tool-name: Trivy
+  tool-version: latest
+  integration:
+    ad-hoc: false
+    ci: true
+    before-release: false    
+security-contacts:
+- type: email
+  value: keycloak-security@googlegroups.com
+  primary: true
+vulnerability-reporting:
+  accepts-vulnerability-reports: true
+  email-contact: keycloak-security@googlegroups.com
+  security-policy: 'https://www.keycloak.org/security'
+  bug-bounty-available: false
+  bug-bounty-url: ''
+dependencies:
+  third-party-packages: true
+  dependencies-lists:
+  - 'https://github.com/keycloak/keycloak/blob/main/pom.xml'
+  dependencies-lifecycle:
+    policy-url: 'https://www.keycloak.org/security'
+  env-dependencies-policy:
+    policy-url: ''

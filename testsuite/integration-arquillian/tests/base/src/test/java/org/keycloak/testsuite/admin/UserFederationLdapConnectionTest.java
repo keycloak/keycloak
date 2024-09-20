@@ -18,11 +18,13 @@
 package org.keycloak.testsuite.admin;
 
 import java.util.List;
+import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
@@ -46,7 +48,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     public static LDAPRule ldapRule = new LDAPRule();
 
     @Test
-    public void testLdapConnections1() {
+    public void testLdapConnections() {
         // Unknown action
         Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation("unknown", "ldap://localhost:10389", "foo", "bar", "false", null));
         assertStatus(response, 400);
@@ -57,6 +59,14 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
         // Connection success
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldap://localhost:10389", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
+        assertStatus(response, 204);
+
+        // Connection success with invalid credentials
+        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(ldapRule.getConfig(), false);
+        getCleanup().addCleanup(() -> {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);;
+        });
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldap://localhost:10389", "invalid-db", ComponentRepresentation.SECRET_VALUE, "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE, ldapModelId));
         assertStatus(response, 204);
 
         // Bad authentication
@@ -71,9 +81,9 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
 
-        // Authentication success anonymous bind
+        // Authentication error for anonymous bind (default ldap rule does not allow anonymous binings)
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
-        assertStatus(response, 204);
+        assertStatus(response, 400);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
@@ -93,6 +103,15 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhostt:10636", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhost:10389", null, null, "false", null));
+        assertStatus(response, 400);
+
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhost:10389", null, null, "false", "5000"));
+        assertStatus(response, 400);
+
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_CONNECTION, "ldaps://localhost:10389", null, null, "false", "0"));
+        assertStatus(response, 400);
+
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
@@ -103,7 +122,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
-        assertStatus(response, 204);
+        assertStatus(response, 400);
 
         // Authentication success with bindCredential from Vault
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "true", null));
@@ -112,6 +131,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @Test
     public void testLdapConnectionMoreServers() {
+
         // Both servers work
         Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389 ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null));
         assertStatus(response, 204);
@@ -136,6 +156,66 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhostt:10389 ldaps://localhostt:10636", "uid=admin,ou=system", "secret", "true", null));
         assertStatus(response, 400);
 
+        // create LDAP component model using ldap
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://invalid:10389 ldap://localhost:10389");
+        cfg.put(LDAPConstants.CONNECTION_TIMEOUT, "1000");
+        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+
+        // Only 2nd server works with stored LDAP federation provider
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                cfg.get(LDAPConstants.CONNECTION_URL), cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),cfg.get(LDAPConstants.START_TLS),
+                cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+        assertStatus(response, 204);
+    }
+
+    @Test
+    public void testLdapConnectionComponentAlreadyCreated() {
+        // create ldap component model using ldaps
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldaps://localhost:10636");
+        cfg.put(LDAPConstants.START_TLS, "false");
+        cfg.put(LDAPConstants.USE_TRUSTSTORE_SPI, "true");
+        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+        try {
+            // test passing everything with password included
+            Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    cfg.get(LDAPConstants.CONNECTION_URL), cfg.get(LDAPConstants.BIND_DN), cfg.get(LDAPConstants.BIND_CREDENTIAL),
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 204);
+
+            // test passing the secret but not changing anything
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    cfg.get(LDAPConstants.CONNECTION_URL), cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 204);
+
+            // test passing the secret and changing the connection timeout which is allowed
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    cfg.get(LDAPConstants.CONNECTION_URL), cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), "1000",
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 204);
+
+            // test passing the secret but modifying the connection URL to plain ldap (different URL)
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    "ldap://localhost:10389", cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
+
+            // test passing the secret but modifying the user DN
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    cfg.get(LDAPConstants.CONNECTION_URL), "uid=anotheradmin,ou=people,dc=keycloak,dc=org", ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
     }
 
     @Test

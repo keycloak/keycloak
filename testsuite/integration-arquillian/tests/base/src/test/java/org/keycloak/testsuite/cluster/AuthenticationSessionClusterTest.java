@@ -25,10 +25,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.StickySessionEncoderProvider;
+import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -117,7 +117,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
         // Disable route on backend server
         getTestingClientFor(backendNode(0)).server().run(session -> {
-            InfinispanStickySessionEncoderProviderFactory factory = (InfinispanStickySessionEncoderProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(StickySessionEncoderProvider.class, "infinispan");
+            StickySessionEncoderProviderFactory factory = (StickySessionEncoderProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(StickySessionEncoderProvider.class);
             factory.setShouldAttachRoute(false);
         });
 
@@ -141,7 +141,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
         // Revert route on backend server
         getTestingClientFor(backendNode(0)).server().run(session -> {
-            InfinispanStickySessionEncoderProviderFactory factory = (InfinispanStickySessionEncoderProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(StickySessionEncoderProvider.class, "infinispan");
+            StickySessionEncoderProviderFactory factory = (StickySessionEncoderProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(StickySessionEncoderProvider.class);
             factory.setShouldAttachRoute(true);
         });
     }

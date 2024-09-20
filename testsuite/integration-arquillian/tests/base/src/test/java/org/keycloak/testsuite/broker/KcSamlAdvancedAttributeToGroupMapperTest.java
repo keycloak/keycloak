@@ -14,7 +14,10 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import jakarta.ws.rs.core.Response;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.testsuite.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
 
@@ -28,7 +31,7 @@ public class KcSamlAdvancedAttributeToGroupMapperTest extends AbstractGroupBroke
             "  {\n" +
             "    \"key\": \"" + ATTRIBUTE_TO_MAP_FRIENDLY_NAME + "\",\n" +
             "    \"value\": \"value 1\"\n" +
-            "  },\n" +"  {\n" +
+            "  },\n" + "  {\n" +
             "    \"key\": \"" + ATTRIBUTE_TO_MAP_FRIENDLY_NAME + "\",\n" +
             "    \"value\": \"value 2\"\n" +
             "  },\n" +
@@ -46,17 +49,18 @@ public class KcSamlAdvancedAttributeToGroupMapperTest extends AbstractGroupBroke
 
     @Override
     protected String createMapperInIdp(IdentityProviderRepresentation idp, String claimsOrAttributeRepresentation,
-                                     boolean areClaimsOrAttributeValuesRegexes, IdentityProviderMapperSyncMode syncMode, String groupValue) {
+                                       boolean areClaimsOrAttributeValuesRegexes, IdentityProviderMapperSyncMode syncMode, String groupValue) {
         IdentityProviderMapperRepresentation advancedAttributeToGroupMapper = new IdentityProviderMapperRepresentation();
         advancedAttributeToGroupMapper.setName("advanced-attribute-to-group-mapper");
         advancedAttributeToGroupMapper.setIdentityProviderMapper(AdvancedAttributeToGroupMapper.PROVIDER_ID);
-        advancedAttributeToGroupMapper.setConfig(ImmutableMap.<String, String> builder()
-                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-                .put(AdvancedAttributeToGroupMapper.ATTRIBUTE_PROPERTY_NAME, claimsOrAttributeRepresentation)
-                .put(AdvancedAttributeToGroupMapper.ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME,
-                        Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString())
-                .put(ConfigConstants.GROUP, MAPPER_TEST_GROUP_PATH)
-                .build());
+
+        final Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString());
+        config.put(AdvancedAttributeToGroupMapper.ATTRIBUTE_PROPERTY_NAME, claimsOrAttributeRepresentation);
+        config.put(AdvancedAttributeToGroupMapper.ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME,
+                Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString());
+        config.put(ConfigConstants.GROUP, MAPPER_TEST_GROUP_PATH);
+        advancedAttributeToGroupMapper.setConfig(config);
 
         IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
         advancedAttributeToGroupMapper.setIdentityProviderAlias(bc.getIDPAlias());
@@ -66,11 +70,11 @@ public class KcSamlAdvancedAttributeToGroupMapperTest extends AbstractGroupBroke
 
     @Test
     public void attributeFriendlyNameGetsConsideredAndMatchedToGroup() {
-        createAdvancedGroupMapper(ATTRIBUTES, false,KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
-                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String> builder().add("value 1").add("value 2").build())
+        createAdvancedGroupMapper(ATTRIBUTES, false, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2);
+        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
+                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
-                        ImmutableList.<String> builder().add("value 2").build())
+                        ImmutableList.<String>builder().add("value 2").build())
                 .build());
 
         logInAsUserInIDPForFirstTime();

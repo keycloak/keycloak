@@ -2,9 +2,8 @@ import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmI
 import type { TFunction } from "i18next";
 import type { ComponentType } from "react";
 import type { NonIndexRouteObject, RouteObject } from "react-router-dom";
-
-import { App } from "./App";
 import { PageNotFoundSection } from "./PageNotFoundSection";
+import { Root } from "./Root";
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
@@ -12,6 +11,8 @@ import dashboardRoutes from "./dashboard/routes";
 import eventRoutes from "./events/routes";
 import groupsRoutes from "./groups/routes";
 import identityProviders from "./identity-providers/routes";
+import organizationRoutes from "./organizations/routes";
+import pageRoutes from "./page/routes";
 import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
 import realmRoutes from "./realm/routes";
@@ -43,6 +44,7 @@ export const routes: AppRouteObject[] = [
   ...clientScopesRoutes,
   ...eventRoutes,
   ...identityProviders,
+  ...organizationRoutes,
   ...realmRoleRoutes,
   ...realmRoutes,
   ...realmSettingRoutes,
@@ -51,11 +53,12 @@ export const routes: AppRouteObject[] = [
   ...userRoutes,
   ...groupsRoutes,
   ...dashboardRoutes,
+  ...pageRoutes,
   NotFoundRoute,
 ];
 
 export const RootRoute: RouteObject = {
   path: "/",
-  element: <App />,
+  element: <Root />,
   children: routes,
 };

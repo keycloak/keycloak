@@ -29,7 +29,7 @@ This scope is also not defined in the OpenID Connect specification and not added
 +
 ** *microprofile-jwt*
 +
-This scope handles claims defined in the https://wiki.eclipse.org/MicroProfile/JWT_Auth[MicroProfile/JWT Auth Specification]. This scope defines a user property mapper for the *upn* claim and a realm role mapper for the *groups* claim. These mappers can be changed so different properties can be used to create the MicroProfile/JWT specific claims.
+This scope handles claims defined in the https://github.com/eclipse/microprofile/wiki/JWT_Auth[MicroProfile/JWT Auth Specification]. This scope defines a user property mapper for the *upn* claim and a realm role mapper for the *groups* claim. These mappers can be changed so different properties can be used to create the MicroProfile/JWT specific claims.
 +
 ** *offline_access*
 +

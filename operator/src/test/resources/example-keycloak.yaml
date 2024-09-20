@@ -17,3 +17,5 @@ spec:
     tlsSecret: example-tls-secret
   hostname:
     hostname: example.com
+  proxy:
+    headers: xforwarded # default nginx ingress sets x-forwarded

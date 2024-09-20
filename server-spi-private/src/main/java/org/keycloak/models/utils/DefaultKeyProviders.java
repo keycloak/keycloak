@@ -21,7 +21,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
 
@@ -79,16 +78,16 @@ public class DefaultKeyProviders {
     }
 
     public static void createSecretProvider(RealmModel realm) {
-        if (hasProvider(realm, "hmac-generated")) return;
+        if (hasProvider(realm, "hmac-generated", Algorithm.HS512)) return;
         ComponentModel generated = new ComponentModel();
-        generated.setName("hmac-generated");
+        generated.setName("hmac-generated-hs512");
         generated.setParentId(realm.getId());
         generated.setProviderId("hmac-generated");
         generated.setProviderType(KeyProvider.class.getName());
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", DEFAULT_PRIORITY);
-        config.putSingle("algorithm", Algorithm.HS256);
+        config.putSingle("algorithm", Algorithm.HS512);
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
@@ -110,8 +109,13 @@ public class DefaultKeyProviders {
     }
 
     protected static boolean hasProvider(RealmModel realm, String providerId) {
+        return hasProvider(realm, providerId, null);
+    }
+
+    protected static boolean hasProvider(RealmModel realm, String providerId, String algorithm) {
         return realm.getComponentsStream(realm.getId(), KeyProvider.class.getName())
-                .anyMatch(component -> Objects.equals(component.getProviderId(), providerId));
+                .anyMatch(component -> Objects.equals(component.getProviderId(), providerId)
+                        && (algorithm == null || algorithm.equals(component.getConfig().getFirst("algorithm"))));
     }
 
     public static void createProviders(RealmModel realm, String privateKeyPem, String certificatePem) {

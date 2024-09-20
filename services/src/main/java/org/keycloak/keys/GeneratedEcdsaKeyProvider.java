@@ -19,6 +19,7 @@ package org.keycloak.keys;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
@@ -29,15 +30,15 @@ import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-public class GeneratedEcdsaKeyProvider extends AbstractEcdsaKeyProvider {
+public class GeneratedEcdsaKeyProvider extends AbstractEcKeyProvider {
     private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProvider.class);
 
     public GeneratedEcdsaKeyProvider(RealmModel realm, ComponentModel model) {
         super(realm, model);
     }
 
-	@Override
-	protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
+    @Override
+    protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
         String privateEcdsaKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_PRIVATE_KEY_KEY);
         String publicEcdsaKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_PUBLIC_KEY_KEY);
         String ecInNistRep = model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY);
@@ -51,8 +52,8 @@ public class GeneratedEcdsaKeyProvider extends AbstractEcdsaKeyProvider {
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);
-
-            return createKeyWrapper(keyPair, ecInNistRep);
+            return createKeyWrapper(keyPair,
+                    GeneratedEcdsaKeyProviderFactory.convertECDomainParmNistRepToJWSAlgorithm(ecInNistRep), KeyUse.SIG);
         } catch (Exception e) {
             logger.warnf("Exception at decodeEcdsaPublicKey. %s", e.toString());
             return null;

@@ -20,7 +20,9 @@ package org.keycloak.it.cli;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
+import org.keycloak.it.junit5.extension.ConfigurationTestResource;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -29,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@QuarkusTestResource(value = ConfigurationTestResource.class, restrictToAnnotatedClass = true)
 @CLITest
 public class OptionValidationTest {
 
@@ -36,14 +39,28 @@ public class OptionValidationTest {
     @Launch({"build", "--db"})
     public void failMissingOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(), containsString("Missing required value for option '--db' (vendor). Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertThat(cliResult.getErrorOutput(), containsString("Missing required value. Option '--db' (vendor) expects a single value. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test
-    @Launch({"build", "--db", "foo", "bar"})
+    @Launch({"build", "--db", "mysql", "postgres"})
     public void failMultipleOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(), containsString("Option '--db' expects a single value (vendor) Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertThat(cliResult.getErrorOutput(), containsString("Option '--db' (vendor) expects a single value. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+    }
+
+    @Test
+    @Launch({"build", "--features", "linkedin-oauth", "account3"})
+    public void failMultipleMultiOptionValue(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertThat(cliResult.getErrorOutput(), containsString("Option '--features' (feature) expects one or more comma separated values without whitespace. Expected values are: "));
+    }
+
+    @Test
+    @Launch({"build", "--features", "xyz,account3"})
+    public void failInvalidMultiOptionValue(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertThat(cliResult.getErrorOutput(), containsString("xyz is an unrecognized feature, it should be one of"));
     }
 
     @Test
@@ -55,11 +72,11 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({"start", "--db-pasword mytestpw"})
+    @Launch({"start", "--db-pasword", "mytestpw"})
     public void failUnknownOptionWhitespaceSeparatorNotShowingValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-driver, --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 
@@ -68,16 +85,23 @@ public class OptionValidationTest {
     public void failUnknownOptionEqualsSeparatorNotShowingValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-driver, --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 
     @Test
-    @Launch({"start", "--db-username=foobar","--db-pasword=mytestpw", "--foobar=barfoo"})
+    @Launch({"start", "--db-username=foobar", "--db-pasword=mytestpw", "--foobar=barfoo"})
     public void failWithFirstOptionOnMultipleUnknownOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-driver, --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db postgres"})
+    void failSingleParamWithSpace(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Option: '--db postgres' is not expected to contain whitespace, please remove any unnecessary quoting/escaping");
     }
 }

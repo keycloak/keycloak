@@ -18,7 +18,7 @@ package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -178,7 +178,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
                     Response.Status.BAD_REQUEST);
         }
-        if (!TokenManager.isValidScope(scope, client)) {
+        if (!TokenManager.isValidScope(session, scope, client, user)) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }

@@ -1,47 +1,50 @@
 import { useTranslation } from "react-i18next";
 import { ActionGroup, ActionGroupProps, Button } from "@patternfly/react-core";
-import { PropsWithChildren } from "react";
 
 import style from "./fixed-buttons.module.css";
 
 type FixedButtonGroupProps = ActionGroupProps & {
   name: string;
   save?: () => void;
+  saveText?: string;
   reset?: () => void;
+  resetText?: string;
   isSubmit?: boolean;
-  isActive?: boolean;
+  isDisabled?: boolean;
 };
 
 export const FixedButtonsGroup = ({
   name,
   save,
+  saveText,
   reset,
+  resetText,
   isSubmit = false,
-  isActive = true,
+  isDisabled = false,
   children,
   ...rest
-}: PropsWithChildren<FixedButtonGroupProps>) => {
+}: FixedButtonGroupProps) => {
   const { t } = useTranslation();
   return (
     <ActionGroup className={style.buttonGroup} {...rest}>
       {(save || isSubmit) && (
         <Button
-          isDisabled={!isActive}
+          isDisabled={isDisabled}
           data-testid={`${name}-save`}
           onClick={() => save?.()}
           type={isSubmit ? "submit" : "button"}
         >
-          {t("save")}
+          {!saveText ? t("save") : saveText}
         </Button>
       )}
       {reset && (
         <Button
-          isDisabled={!isActive}
+          isDisabled={isDisabled}
           data-testid={`${name}-revert`}
           variant="link"
           onClick={() => reset()}
         >
-          {t("revert")}
+          {!resetText ? t("revert") : resetText}
         </Button>
       )}
       {children}

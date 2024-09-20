@@ -17,7 +17,9 @@
 package org.keycloak.testsuite.account.custom;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -29,6 +31,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -84,6 +87,12 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testLoginOneTimeCodePage.setAuthRealm(testRealmPage);
+    }
+
+    @Before
+    public void configureUserProfile() {
+        UserProfileResource userProfileRes = testRealmResource().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
     private void configureRequiredActions() {
@@ -522,7 +531,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         response.close();
         
         //add execution - username-password form
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("provider", "auth-username-password-form");
         getAuthMgmtResource().addExecution(flowAlias, data);
         

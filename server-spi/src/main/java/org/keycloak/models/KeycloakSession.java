@@ -94,6 +94,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @return
      * @deprecated Deprecated in favor of {@link #getComponentProvider)
      */
+    @Deprecated
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -203,6 +204,14 @@ public interface KeycloakSession extends AutoCloseable {
 
     SingleUseObjectProvider singleUseObjects();
 
+    /**
+     * Returns the default IDP provider .
+     *
+     * @return the default IDP provider.
+     */
+    IdentityProviderStorageProvider identityProviders();
+
+    @Override
     void close();
 
     /**
@@ -242,5 +251,7 @@ public interface KeycloakSession extends AutoCloseable {
      * Client Policy Manager
      */
     ClientPolicyManager clientPolicy();
+
+    boolean isClosed();
 
 }

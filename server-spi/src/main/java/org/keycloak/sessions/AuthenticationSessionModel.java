@@ -74,7 +74,7 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
     void setAuthenticatedUser(UserModel user);
 
     /**
-     * Returns required actions that are attached to this client session.
+     * Returns required actions (aliases) that are attached to this client session.
      * @return {@code Set<String>} Never returns {@code null}.
      */
     Set<String> getRequiredActions();

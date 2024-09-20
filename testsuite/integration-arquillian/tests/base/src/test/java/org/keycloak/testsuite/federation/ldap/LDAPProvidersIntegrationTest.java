@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
@@ -41,8 +42,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -215,8 +216,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", null, "newuser1", "newuser1", true);
             try (Response resp = testRealm().users().create(newUser1)) {
                 Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
-                ErrorRepresentation error = resp.readEntity(ErrorRepresentation.class);
-                Assert.assertEquals("Could not create user", error.getErrorMessage());
+                OAuth2ErrorRepresentation error = resp.readEntity(OAuth2ErrorRepresentation.class);
+                Assert.assertEquals("unknown_error", error.getError());
             }
             Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
 
@@ -570,7 +571,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
 
             appPage.assertCurrent();
-            events.expect(EventType.UPDATE_PASSWORD).user(userId).assertEvent();
+            events.expect(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+            events.expect(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
             loginEvent = events.expectLogin().user(userId).assertEvent();
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
@@ -1181,6 +1183,24 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "johnkeycloak"));
             Assert.assertNotNull(session.users().getUserByUsername(appRealm, "johnkeycloak"));
         });
+
+        // change username
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
+
+            // change username locally
+            user.setUsername("johnkeycloak-renamed");
+        });
+
+        // check user is found just once
+        List<UserRepresentation> users = testRealm().users().search("johnkeycloak", 0, 2);
+        Assert.assertEquals("More than one user is found", 1, users.size());
+        List<ComponentRepresentation> components = testRealm().components().query(
+                testRealm().toRepresentation().getId(), UserStorageProvider.class.getName(), "test-ldap");
+        Assert.assertEquals("LDAP component not found", 1, users.size());
+        Assert.assertEquals(components.iterator().next().getId(), users.iterator().next().getFederationLink());
 
         // Revert
         testingClient.server().run(session -> {

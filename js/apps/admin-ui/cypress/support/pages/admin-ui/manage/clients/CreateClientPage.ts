@@ -1,22 +1,22 @@
+import Select from "../../../../forms/Select";
 import CommonPage from "../../../CommonPage";
 
 export default class CreateClientPage extends CommonPage {
-  #clientTypeDrpDwn = ".pf-c-select__toggle";
-  #clientTypeList = ".pf-c-select__toggle + ul";
+  #clientTypeDrpDwn = "#protocol";
   #clientIdInput = "#clientId";
   #clientIdError = "#clientId + div";
   #clientNameInput = "#name";
   #clientDescriptionInput = "#kc-description";
   #alwaysDisplayInUISwitch =
-    '[for="kc-always-display-in-ui-switch"] .pf-c-switch__toggle';
+    '[for="kc-always-display-in-ui-switch"] .pf-v5-c-switch__toggle';
   #frontchannelLogoutSwitch =
-    '[for="kc-frontchannelLogout-switch"] .pf-c-switch__toggle';
+    '[for="kc-frontchannelLogout-switch"] .pf-v5-c-switch__toggle';
 
   #clientAuthenticationSwitch =
-    '[for="kc-authentication-switch"] > .pf-c-switch__toggle';
+    '[for="kc-authentication-switch"] > .pf-v5-c-switch__toggle';
   #clientAuthenticationSwitchInput = "#kc-authentication-switch";
   #clientAuthorizationSwitch =
-    '[for="kc-authorization-switch"] > .pf-c-switch__toggle';
+    '[for="kc-authorization-switch"] > .pf-v5-c-switch__toggle';
   #clientAuthorizationSwitchInput = "#kc-authorization-switch";
   #standardFlowChkBx = "#kc-flow-standard";
   #directAccessChkBx = "#kc-flow-direct";
@@ -25,43 +25,44 @@ export default class CreateClientPage extends CommonPage {
   #deviceAuthGrantChkBx = "#kc-oauth-device-authorization-grant";
   #serviceAccountRolesChkBx = "#kc-flow-service-account";
 
-  #rootUrlInput = "#kc-root-url";
-  #homeUrlInput = "#kc-home-url";
+  #rootUrlInput = "rootUrl";
+  #homeUrlInput = "baseUrl";
   #firstValidRedirectUrlInput = "redirectUris0";
   #firstWebOriginsInput = "webOrigins0";
-  #adminUrlInput = "#kc-admin-url";
+  #adminUrlInput = "adminUrl";
 
-  #loginThemeDrpDwn = "#loginTheme";
-  #loginThemeList = 'ul[aria-label="Login theme"]';
-  #consentRequiredSwitch = '[for="kc-consent-switch"] > .pf-c-switch__toggle';
-  #consentRequiredSwitchInput = "#kc-consent-switch";
-  #displayClientOnScreenSwitch = '[for="kc-display-on-client-switch"]';
-  #displayClientOnScreenSwitchInput = "#kc-display-on-client-switch";
-  #clientConsentScreenText = "#kc-consent-screen-text";
+  #loginThemeDrpDwn = "#login_theme";
+  #loginThemeList = 'ul[class="pf-v5-c-menu__list"]';
+  #consentRequiredSwitch = '[for="consentRequired"] .pf-v5-c-switch__toggle';
+  #consentRequiredSwitchInput = "#consentRequired";
+  #displayClientOnScreenSwitch =
+    '[for="attributes.display🍺on🍺consent🍺screen"].pf-v5-c-switch';
+  #displayClientOnScreenSwitchInput =
+    "#attributes\\.display🍺on🍺consent🍺screen";
+  #clientConsentScreenText = "attributes.consent🍺screen🍺text";
 
   #frontChannelLogoutSwitch =
-    '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
+    '[for="kc-frontchannelLogout-switch"] > .pf-v5-c-switch__toggle';
   #frontChannelLogoutSwitchInput = "#kc-frontchannelLogout-switch";
-  #frontChannelLogoutInput = "#frontchannelLogoutUrl";
-  #backChannelLogoutInput = "#backchannelLogoutUrl";
+  #frontChannelLogoutInput = "frontchannelLogoutUrl";
+  #backChannelLogoutInput = "backchannelLogoutUrl";
   #backChannelLogoutRequiredSwitchInput = "#backchannelLogoutSessionRequired";
   #backChannelLogoutRevoqueSwitch =
-    '.pf-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-c-switch__toggle';
+    '.pf-v5-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-v5-c-switch__toggle';
   #backChannelLogoutRevoqueSwitchInput =
     "#backchannelLogoutRevokeOfflineSessions";
 
   #actionDrpDwn = "action-dropdown";
   #deleteClientBtn = "delete-client";
 
-  #saveBtn = "save";
-  #continueBtn = "next";
-  #backBtn = "back";
-  #cancelBtn = "cancel";
+  #saveBtn = "Save";
+  #continueBtn = "Next";
+  #backBtn = "Back";
+  #cancelBtn = "Cancel";
 
   //#region General Settings
   selectClientType(clientType: string) {
-    cy.get(this.#clientTypeDrpDwn).click();
-    cy.get(this.#clientTypeList).findByTestId(`option-${clientType}`).click();
+    Select.selectItem(cy.get(this.#clientTypeDrpDwn), clientType);
 
     return this;
   }
@@ -105,14 +106,16 @@ export default class CreateClientPage extends CommonPage {
     return this;
   }
 
-  checkClientIdRequiredMessage(exist = true) {
-    cy.get(this.#clientIdError).should((!exist ? "not." : "") + "exist");
+  checkClientIdRequiredMessage() {
+    cy.get(this.#clientIdInput)
+      .parent()
+      .should("have.class", "pf-v5-c-form-control pf-m-error");
 
     return this;
   }
 
   checkGeneralSettingsStepActive() {
-    cy.get(".pf-c-wizard__nav-link")
+    cy.get(".pf-v5-c-wizard__nav-link")
       .contains("General settings")
       .should("have.class", "pf-m-current");
 
@@ -171,25 +174,25 @@ export default class CreateClientPage extends CommonPage {
   //#endregion
 
   save() {
-    cy.findByTestId(this.#saveBtn).click();
+    cy.contains("button", this.#saveBtn).click();
 
     return this;
   }
 
   continue() {
-    cy.findByTestId(this.#continueBtn).click();
+    cy.contains("button", this.#continueBtn).click();
 
     return this;
   }
 
   back() {
-    cy.findByTestId(this.#backBtn).click();
+    cy.contains("button", this.#backBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.findByTestId(this.#cancelBtn).click();
+    cy.contains("button", this.#cancelBtn).click();
 
     return this;
   }
@@ -227,22 +230,22 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkAccessSettingsElements() {
-    cy.get(this.#adminUrlInput).scrollIntoView();
-    cy.get(this.#rootUrlInput).should("not.be.disabled");
-    cy.get(this.#homeUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).scrollIntoView();
+    cy.findByTestId(this.#rootUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#homeUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstValidRedirectUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstWebOriginsInput).should("not.be.disabled");
-    cy.get(this.#adminUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).should("not.be.disabled");
 
     return this;
   }
 
   checkLoginSettingsElements() {
-    cy.get(this.#clientConsentScreenText).scrollIntoView();
+    cy.findByTestId(this.#clientConsentScreenText).scrollIntoView();
     cy.get(this.#loginThemeDrpDwn).should("not.be.disabled");
     cy.get(this.#consentRequiredSwitchInput).should("not.be.disabled");
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#loginThemeDrpDwn).click();
     cy.get(this.#loginThemeList).findByText("base").should("exist");
@@ -251,13 +254,13 @@ export default class CreateClientPage extends CommonPage {
 
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("not.be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("not.be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("not.be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
 
@@ -267,17 +270,17 @@ export default class CreateClientPage extends CommonPage {
   checkLogoutSettingsElements() {
     cy.get(this.#backChannelLogoutRevoqueSwitch).scrollIntoView();
     cy.get(this.#frontChannelLogoutSwitchInput).should("not.be.disabled");
-    cy.get(this.#frontChannelLogoutInput).should("not.be.disabled");
-    cy.get(this.#backChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#backChannelLogoutInput).should("not.be.disabled");
     cy.get(this.#backChannelLogoutRequiredSwitchInput).should(
       "not.be.disabled",
     );
     cy.get(this.#backChannelLogoutRevoqueSwitchInput).should("not.be.disabled");
 
     cy.get(this.#frontChannelLogoutSwitch).click();
-    cy.get(this.#frontChannelLogoutInput).should("not.exist");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.exist");
     cy.get(this.#frontChannelLogoutSwitch).click();
-    cy.get(this.#frontChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
 
     return this;
   }

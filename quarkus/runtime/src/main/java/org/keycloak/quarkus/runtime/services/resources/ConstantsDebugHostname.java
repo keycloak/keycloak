@@ -37,6 +37,19 @@ public class ConstantsDebugHostname {
             "hostname-path",
             "hostname-port",
             "proxy",
+            "proxy-headers",
+            "http-enabled",
+            "http-relative-path",
+            "http-port",
+            "https-port"
+    };
+
+    public static final String[] RELEVANT_OPTIONS_V2 = {
+            "hostname",
+            "hostname-admin",
+            "hostname-backchannel-dynamic",
+            "hostname-strict",
+            "proxy-headers",
             "http-enabled",
             "http-relative-path",
             "http-port",

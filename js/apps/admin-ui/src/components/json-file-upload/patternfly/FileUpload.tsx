@@ -104,6 +104,8 @@ export const FileUpload = ({
     : undefined,
   filename = "",
   children = null,
+  // TODO: This should be removed as part of https://github.com/keycloak/keycloak/issues/32420
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   onChange,
   onFileInputChange,
   onReadStarted,
@@ -119,7 +121,7 @@ export const FileUpload = ({
   const onDropAccepted = (acceptedFiles: File[], event: DropEvent) => {
     if (acceptedFiles.length > 0) {
       const fileHandle = acceptedFiles[0];
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
       if (event?.type === "drop") {
         onFileInputChange?.(event, fileHandle);
       }

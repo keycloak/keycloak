@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -25,9 +24,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -36,7 +35,6 @@ import jakarta.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
-    protected static ServicesLogger log = ServicesLogger.LOGGER;
 
     @Override
     public void action(AuthenticationFlowContext context) {
@@ -57,10 +55,10 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
-        String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
+        String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
             LoginFormsProvider form = context.form();

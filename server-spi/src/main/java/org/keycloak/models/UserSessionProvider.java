@@ -17,13 +17,13 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.Provider;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,7 +38,7 @@ public interface UserSessionProvider extends Provider {
     KeycloakSession getKeycloakSession();
 
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
-    
+
     /**
      * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, String, boolean)} instead.
      */
@@ -175,8 +175,6 @@ public interface UserSessionProvider extends Provider {
      */
     Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user);
 
-    UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
-
     /**
      * Obtains the offline user sessions associated with the user that matches the specified {@code brokerUserId}.
      *
@@ -200,10 +198,34 @@ public interface UserSessionProvider extends Provider {
      */
     Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
-    /** Triggered by persister during pre-load. It imports authenticatedClientSessions too **/
-    void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline);
+    /** Triggered by persister during pre-load. It imports authenticatedClientSessions too.
+     *
+     * @deprecated Deprecated as offline session preloading was removed in KC25. This method will be removed in KC27.
+     */
+    @Deprecated(forRemoval = true)
+    default void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline) {}
 
     void close();
 
     int getStartupTime(RealmModel realm);
+
+    default void migrate(String modelVersion) {
+    }
+
+    /**
+     * Returns the {@link UserSessionModel} if the user session with ID {@code userSessionId} exist, and it has an
+     * {@link AuthenticatedClientSessionModel} from a {@link ClientModel} with ID {@code clientUUID}.
+     * <p>
+     * If the {@link AuthenticatedClientSessionModel} from the client or the {@link UserSessionModel} does not exist,
+     * this method returns {@code null}.
+     *
+     * @param realm         The {@link RealmModel} where the session belongs to.
+     * @param userSessionId The ID of the {@link UserSessionModel}.
+     * @param offline       If {@code true}, it fetches an offline session and, if {@code false}, an online session.
+     * @param clientUUID    The {@link ClientModel#getId()}.
+     * @return The {@link UserSessionModel} if it has a session from the {@code clientUUID}.
+     */
+    default UserSessionModel getUserSessionIfClientExists(RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
+        return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
+    }
 }

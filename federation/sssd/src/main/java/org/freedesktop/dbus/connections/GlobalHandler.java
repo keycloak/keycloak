@@ -40,7 +40,7 @@ public class GlobalHandler implements org.freedesktop.dbus.interfaces.Peer, org.
             }
         }
         if (null == intro) {
-            throw new UnknownObject("Introspecting on non-existant object");
+            throw new UnknownObject("Introspecting on non-existent object");
         } else {
             return "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" "
                     + "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n" + intro;

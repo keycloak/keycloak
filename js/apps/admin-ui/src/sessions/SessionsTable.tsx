@@ -1,32 +1,33 @@
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
+  Label,
   List,
   ListItem,
   ListVariant,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
-import { CubesIcon } from "@patternfly/react-icons";
+import { CubesIcon, InfoCircleIcon } from "@patternfly/react-icons";
+import { IRowData } from "@patternfly/react-table";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { useMatch, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import {
   Action,
   Field,
   KeycloakDataTable,
   LoaderFunction,
-} from "../components/table-toolbar/KeycloakDataTable";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { keycloak } from "../keycloak";
-import { toUser, UserRoute } from "../user/routes/User";
+import { UserRoute, toUser } from "../user/routes/User";
 import { toUsers } from "../user/routes/Users";
 import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
@@ -50,9 +51,24 @@ export type SessionsTableProps = {
 
 const UsernameCell = (row: UserSessionRepresentation) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link to={toUser({ realm, id: row.userId!, tab: "sessions" })}>
       {row.username}
+      {row.transientUser && (
+        <>
+          {" "}
+          <Tooltip content={t("transientUserTooltip")}>
+            <Label
+              data-testid="user-details-label-transient-user"
+              icon={<InfoCircleIcon />}
+              isCompact
+            >
+              {t("transientUser")}
+            </Label>
+          </Tooltip>
+        </>
+      )}
     </Link>
   );
 };
@@ -81,6 +97,9 @@ export default function SessionsTable({
   isSearching,
   isPaginated,
 }: SessionsTableProps) {
+  const { keycloak } = useEnvironment();
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const navigate = useNavigate();
@@ -146,8 +165,24 @@ export default function SessionsTable({
     },
   });
 
-  async function onClickSignOut(session: UserSessionRepresentation) {
-    await adminClient.realms.deleteSession({ realm, session: session.id! });
+  async function onClickRevoke(rowData: IRowData) {
+    const session = rowData.data as UserSessionRepresentation;
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: true,
+    });
+
+    refresh();
+  }
+
+  async function onClickSignOut(rowData: IRowData) {
+    const session = rowData.data as UserSessionRepresentation;
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: false,
+    });
 
     if (session.userId === whoAmI.getUserId()) {
       await keycloak.logout({ redirectUri: "" });
@@ -179,12 +214,25 @@ export default function SessionsTable({
           )
         }
         columns={columns}
-        actions={[
-          {
-            title: t("signOut"),
-            onRowClick: onClickSignOut,
-          } as Action<UserSessionRepresentation>,
-        ]}
+        actionResolver={(rowData: IRowData) => {
+          if (
+            rowData.data.type === "Offline" ||
+            rowData.data.type === "OFFLINE"
+          ) {
+            return [
+              {
+                title: t("revoke"),
+                onClick: () => onClickRevoke(rowData),
+              } as Action<UserSessionRepresentation>,
+            ];
+          }
+          return [
+            {
+              title: t("signOut"),
+              onClick: () => onClickSignOut(rowData),
+            } as Action<UserSessionRepresentation>,
+          ];
+        }}
         emptyState={
           <ListEmptyState
             hasIcon

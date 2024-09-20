@@ -23,7 +23,7 @@ export const ClientRoleRoute: AppRouteObject = {
   element: <RealmRoleTabs />,
   breadcrumb: (t) => t("roleDetails"),
   handle: {
-    access: "view-clients",
+    access: "query-clients",
   },
 } satisfies AppRouteObject;
 

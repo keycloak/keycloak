@@ -62,7 +62,7 @@ public class LDAPUtils {
     private static final Logger log = Logger.getLogger(LDAPUtils.class);
 
     /**
-     * Method to crate a user in the LDAP. The user will be created when all
+     * Method to create a user in the LDAP. The user will be created when all
      * mandatory attributes specified by the mappers are set. The method
      * onRegisterUserToLDAP is first called in each mapper to set any default or
      * initial value.

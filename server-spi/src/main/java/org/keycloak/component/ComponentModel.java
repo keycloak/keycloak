@@ -17,10 +17,16 @@
 
 package org.keycloak.component;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -28,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class ComponentModel implements Serializable {
+public class ComponentModel {
 
     private String id;
     private String name;
@@ -52,6 +58,7 @@ public class ComponentModel implements Serializable {
     }
 
 
+    @ProtoField(1)
     public String getId() {
         return id;
     }
@@ -60,6 +67,7 @@ public class ComponentModel implements Serializable {
         this.id = id;
     }
 
+    @ProtoField(2)
     public String getName() {
         return name;
     }
@@ -136,6 +144,7 @@ public class ComponentModel implements Serializable {
         notes.remove(key);
     }
 
+    @ProtoField(3)
     public String getProviderId() {
         return providerId;
     }
@@ -144,6 +153,7 @@ public class ComponentModel implements Serializable {
         this.providerId = providerId;
     }
 
+    @ProtoField(4)
     public String getProviderType() {
         return providerType;
     }
@@ -152,6 +162,7 @@ public class ComponentModel implements Serializable {
         this.providerType = providerType;
     }
 
+    @ProtoField(5)
     public String getParentId() {
         return parentId;
     }
@@ -160,11 +171,53 @@ public class ComponentModel implements Serializable {
         this.parentId = parentId;
     }
 
+    @ProtoField(6)
     public String getSubType() {
         return subType;
     }
 
     public void setSubType(String subType) {
         this.subType = subType;
+    }
+
+    @ProtoField(7)
+    public List<MultiMapEntry> getConfigProto() {
+        return config.entrySet().stream().map(MultiMapEntry::new).collect(Collectors.toList());
+    }
+
+    public void setConfigProto(List<MultiMapEntry> configProto) {
+        if (configProto != null) {
+            configProto.forEach(multiMapEntry -> multiMapEntry.insert(config));
+        }
+    }
+
+    @ProtoTypeId(65538) //see org.keycloak.Marshalling
+    public static final class MultiMapEntry {
+        private final String key;
+        private final List<String> value;
+
+        @ProtoFactory
+        public MultiMapEntry(String key, List<String> value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public MultiMapEntry(Map.Entry<String, List<String>> entry) {
+            this(entry.getKey(), entry.getValue());
+        }
+
+        @ProtoField(1)
+        public String getKey() {
+            return key;
+        }
+
+        @ProtoField(2)
+        public List<String> getValue() {
+            return value;
+        }
+
+        public void insert(MultivaluedHashMap<String, String> config) {
+            config.put(key, value);
+        }
     }
 }

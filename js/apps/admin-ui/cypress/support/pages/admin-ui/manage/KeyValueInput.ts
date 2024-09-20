@@ -31,7 +31,7 @@ export default class KeyValueInput {
   }
 
   save() {
-    cy.findByTestId("save-attributes").click();
+    cy.findByTestId("attributes-save").click();
     return this;
   }
 

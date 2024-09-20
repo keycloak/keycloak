@@ -61,6 +61,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
             logger.errorv("Failed to lookup client given by service={0} parameter for realm: {1}.", service, realm.getName());
             throw new ErrorResponseException("invalid_client", "Client specified by 'service' parameter does not exist", Response.Status.BAD_REQUEST);
         }
+        session.getContext().setClient(client);
         scope = params.getFirst(DockerAuthV2Protocol.SCOPE_PARAM);
 
         checkSsl();

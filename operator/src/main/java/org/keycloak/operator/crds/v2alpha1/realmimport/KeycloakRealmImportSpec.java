@@ -16,10 +16,19 @@
  */
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Required;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.sundr.builder.annotations.Buildable;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.Map;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class KeycloakRealmImportSpec {
 
     @Required
@@ -28,6 +37,13 @@ public class KeycloakRealmImportSpec {
     @Required
     @JsonPropertyDescription("The RealmRepresentation to import into Keycloak.")
     private RealmRepresentation realm;
+
+    @JsonProperty("resources")
+    @JsonPropertyDescription("Compute Resources required by Keycloak container. If not specified, the value is inherited from the Keycloak CR.")
+    private ResourceRequirements resourceRequirements;
+
+    @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
+    private Map<String, Placeholder> placeholders;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -45,4 +61,19 @@ public class KeycloakRealmImportSpec {
         this.realm = realm;
     }
 
+    public ResourceRequirements getResourceRequirements() {
+        return resourceRequirements;
+    }
+
+    public void setResourceRequirements(ResourceRequirements resourceRequirements) {
+        this.resourceRequirements = resourceRequirements;
+    }
+
+    public Map<String, Placeholder> getPlaceholders() {
+        return placeholders;
+    }
+
+    public void setPlaceholders(Map<String, Placeholder> placeholders) {
+        this.placeholders = placeholders;
+    }
 }

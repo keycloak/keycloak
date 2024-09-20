@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--pf-global--BackgroundColor--200);
+  background-color: var(--pf-v5-global--BackgroundColor--200);
   border: 0;
 }
 
@@ -28,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--pf-global--BackgroundColor--200);
+  background-color: var(--pf-v5-global--BackgroundColor--200);
 }
 
 .keycloak__authentication__input_node.selected,
@@ -43,8 +43,8 @@
 }
 
 .edgebutton {
-  background-color: var(--pf-global--BackgroundColor--200);
-  border: 1px solid var(--pf-global--BackgroundColor--100);
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+  border: 1px solid var(--pf-v5-global--BackgroundColor--100);
   border-radius: 50%;
   cursor: pointer;
   height: 33px;

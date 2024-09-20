@@ -7,4 +7,4 @@ The OAuth 2.0 login specification requires that a state cookie matches against a
 
 The {project_name} Admin Console is a JavaScript/HTML5 application that makes REST calls to the backend {project_name} admin REST API. These calls all require bearer token authentication and consist of JavaScript Ajax calls, so CSRF is impossible. You can configure the admin REST API to validate the CORS origins.
 
-The user account management section in {project_name} can be vulnerable to CSRF. To prevent CSRF attacks, {project_name} sets a state cookie and embeds the value of this cookie in hidden form fields or query parameters within action links. {project_name} checks the query/form parameter against the state cookie to verify that the user makes the call.
+The Account Console in {project_name} can be vulnerable to CSRF. To prevent CSRF attacks, {project_name} sets a state cookie and embeds the value of this cookie in hidden form fields or query parameters within action links. {project_name} checks the query/form parameter against the state cookie to verify that the same user made the call.

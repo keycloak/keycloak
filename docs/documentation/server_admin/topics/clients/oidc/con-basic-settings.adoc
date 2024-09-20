@@ -24,9 +24,13 @@ the name, set up a replacement string value. For example, a string value such as
 
 *Home URL*:: Provides the default URL for when the auth server needs to redirect or link back to the client.
 
-*Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$
+*Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. Exact (case sensitive) string matching is used to compare valid redirect URIs.
 +
-Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
+You can use wildcards at the end of the URL pattern. For example `$$http://host.com/path/*$$`. To avoid security issues, if the passed redirect URI contains the *userinfo* part or its *path* manages access to parent directory (`/../`) no wildcard comparison is performed but the standard and secure exact string matching.
++
+The full wildcard `$$*$$` valid redirect URI can also be configured to allow any *http* or *https* redirect URI. Please do not use it in production environments.
++
+Exclusive redirect URI patterns are typically more secure. See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
 
 Web Origins:: Enter a URL pattern and click + to add and - to remove existing URLs. Click Save.
 +
@@ -34,11 +38,11 @@ This option handles link:https://fetch.spec.whatwg.org/[Cross-Origin Resource Sh
 If browser JavaScript attempts an AJAX HTTP request to a server whose domain is different from the one that the
 JavaScript code came from, the request must use CORS. The server must handle CORS requests, otherwise the browser will not display or allow the request to be processed. This protocol protects against XSS, CSRF, and other JavaScript-based attacks.
 +
-Domain URLs listed here are embedded within the access token sent to the client application. The client application uses this information to decide whether to allow a CORS request to be invoked on it. Only {project_name} client adapters support this feature. See link:{adapterguide_link}[{adapterguide_name}] for more information.
+Domain URLs listed here are embedded within the access token sent to the client application. The client application uses this information to decide whether to allow a CORS request to be invoked on it. Only {project_name} client adapters support this feature. See link:{securing_apps_link}[{securing_apps_name}] for more information.
 
 [[_admin-url]]
 Admin URL:: Callback endpoint for a client. The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations. For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
-For more information, see link:{adapterguide_link}[{adapterguide_name}].
+For more information, see link:{securing_apps_link}[{securing_apps_name}].
 
 == Capability Config
 [[_access-type]]

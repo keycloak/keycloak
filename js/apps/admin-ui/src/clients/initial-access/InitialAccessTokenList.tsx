@@ -4,20 +4,18 @@ import { wrappable } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 
 export const InitialAccessTokenList = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
@@ -31,7 +29,7 @@ export const InitialAccessTokenList = () => {
   const loader = async () => {
     try {
       return await adminClient.realms.getClientsInitialAccess({ realm });
-    } catch (error) {
+    } catch {
       return [];
     }
   };

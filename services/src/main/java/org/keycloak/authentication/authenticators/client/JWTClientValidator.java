@@ -19,6 +19,8 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -166,7 +168,7 @@ public class JWTClientValidator {
         }
 
         // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-        if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
+        if ((token.getExp() == null || token.getExp() <= 0) && token.getIat() + 10 < currentTime) {
             throw new RuntimeException("Token is not active");
         }
 
@@ -180,7 +182,7 @@ public class JWTClientValidator {
         if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
+        long lifespanInSecs = Math.max(Optional.ofNullable(token.getExp()).orElse(0L) - currentTime, 10);
         if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
             logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
 

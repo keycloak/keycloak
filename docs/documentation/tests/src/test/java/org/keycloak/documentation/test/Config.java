@@ -1,8 +1,6 @@
 package org.keycloak.documentation.test;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.OptionsBuilder;
@@ -15,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Config {
-
-    private static final Logger log = LogManager.getLogger(Config.class);
 
     protected static final Config instance = new Config();
 

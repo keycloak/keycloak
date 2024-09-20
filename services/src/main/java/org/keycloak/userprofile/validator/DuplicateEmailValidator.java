@@ -18,6 +18,7 @@ package org.keycloak.userprofile.validator;
 
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -62,14 +63,22 @@ public class DuplicateEmailValidator implements SimpleValidator {
 
         KeycloakSession session = context.getSession();
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
 
-        if (!realm.isDuplicateEmailsAllowed()) {
+        // Only check if duplicate email addresses are not allowed, and the user is either new or changed their email address
+        if (!realm.isDuplicateEmailsAllowed() && (user == null || !Objects.equals(user.getFirstAttribute(inputHint), value))) {
             UserModel userByEmail = session.users().getUserByEmail(realm, value);
-            UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
             // check for duplicated email
             if (userByEmail != null && (user == null || !userByEmail.getId().equals(user.getId()))) {
                 context.addError(new ValidationError(ID, inputHint, Messages.EMAIL_EXISTS)
                     .setStatusCode(Response.Status.CONFLICT));
+            } else if (realm.isLoginWithEmailAllowed()) {
+                // check for duplicated username
+                userByEmail = session.users().getUserByUsername(realm, value);
+                if (userByEmail != null && (user == null || !userByEmail.getId().equals(user.getId()))) {
+                    context.addError(new ValidationError(ID, inputHint, Messages.EMAIL_EXISTS)
+                            .setStatusCode(Response.Status.CONFLICT));
+                }
             }
         }
 

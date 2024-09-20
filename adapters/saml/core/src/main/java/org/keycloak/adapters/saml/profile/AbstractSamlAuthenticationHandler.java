@@ -32,6 +32,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.AbstractInitiateLogin;
+import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.OnSessionCreated;
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -148,7 +149,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             log.debug("AUTHENTICATED: was cached");
             return handleRequest();
         }
-        return initiateLogin();
+        return initiateLogin(true);
     }
 
     protected AuthOutcome handleRequest() {
@@ -361,7 +362,10 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
     	final ResponseType responseType = (ResponseType) responseHolder.getSamlObject();
         AssertionType assertion = null;
-        if (! isSuccessfulSamlResponse(responseType) || responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
+        if (isRetrayableSamlResponse(responseType)) {
+            // initiate the login but do not save the request cos it's /saml
+            return initiateLogin(false);
+        } else if (!isSuccessfulSamlResponse(responseType) || responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
             return failed(createAuthChallenge403(responseType));
         }
         try {
@@ -378,7 +382,8 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 // warning has been already emitted in DeploymentBuilder
             }
             if (! cvb.build().isValid()) {
-                return initiateLogin();
+                // initiate the login but do not save the request cos it's /saml
+                return initiateLogin(false);
             }
         } catch (Exception e) {
             log.error("Error extracting SAML assertion: " + e.getMessage());
@@ -523,6 +528,21 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
           && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
     }
 
+    private boolean isRetrayableSamlResponse(ResponseType responseType) {
+        if (responseType == null || responseType.getStatus() == null) {
+            return false;
+        }
+
+        StatusType status = responseType.getStatus();
+        return status.getStatusCode() != null
+          && AdapterConstants.AUTHENTICATION_EXPIRED_MESSAGE.equals(status.getStatusMessage())
+          && status.getStatusCode().getValue() != null
+          && Objects.equals(status.getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_RESPONDER.get())
+          && status.getStatusCode().getStatusCode() != null
+          && status.getStatusCode().getStatusCode().getValue() != null
+          && Objects.equals(status.getStatusCode().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_AUTHNFAILED.get());
+    }
+
     private Element getAssertionFromResponse(final SAMLDocumentHolder responseHolder) throws ConfigurationException, ProcessingException {
         Element encryptedAssertion = DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
         if (encryptedAssertion != null) {
@@ -601,13 +621,13 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
 
-    protected AuthOutcome initiateLogin() {
-        challenge = createChallenge();
+    protected AuthOutcome initiateLogin(boolean saveRequestUri) {
+        challenge = createChallenge(saveRequestUri);
         return AuthOutcome.NOT_ATTEMPTED;
     }
 
-    protected AbstractInitiateLogin createChallenge() {
-        return new AbstractInitiateLogin(deployment, sessionStore) {
+    protected AbstractInitiateLogin createChallenge(boolean saveRequestUri) {
+        return new AbstractInitiateLogin(deployment, sessionStore, saveRequestUri) {
             @Override
             protected void sendAuthnRequest(HttpFacade httpFacade, SAML2AuthnRequestBuilder authnRequestBuilder, BaseSAML2BindingBuilder binding) throws ProcessingException, ConfigurationException, IOException {
                 if (isAutodetectedBearerOnly(httpFacade.getRequest())) {

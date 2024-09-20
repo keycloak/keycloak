@@ -32,13 +32,13 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(id = "input-error-username")
     private WebElement usernameError;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-success")
+    @FindBy(className = "pf-v5-c-success")
     private WebElement emailSuccessMessage;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement emailErrorMessage;
 
     @FindBy(partialLinkText = "Back to Login")

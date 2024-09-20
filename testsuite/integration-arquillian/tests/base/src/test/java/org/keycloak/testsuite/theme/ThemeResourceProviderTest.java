@@ -118,7 +118,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             return deleted;
         }, Boolean.class);
 
-        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", "body {");
+        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", ".pf-v5-c-background-image");
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function Keycloak (config)");
 
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
@@ -134,6 +134,21 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
             assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
         });
+    }
+
+    @Test
+    public void notFoundOnInvalidThemeType() throws IOException {
+        final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/invalid-theme-type/keycloak/css/welcome.css");
+    }
+
+    private void assertNotFound(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(url);
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(404, response.getStatusLine().getStatusCode());
+            }
+        }
     }
 
     private void assertEncoded(String url, String expectedContent) throws IOException {

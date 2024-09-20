@@ -21,6 +21,7 @@ import org.keycloak.common.Version;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.utils.MediaType;
 
@@ -32,6 +33,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.InputStream;
 
 /**
@@ -39,6 +42,7 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/js")
 public class JsResource {
 
@@ -123,7 +127,7 @@ public class JsResource {
         }
 
         String contentType = "text/javascript";
-        Cors cors = Cors.add(session.getContext().getHttpRequest()).allowAllOrigins();
+        Cors cors = Cors.builder().allowAllOrigins();
 
         ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 
@@ -139,9 +143,9 @@ public class JsResource {
             if (encodingProvider != null) {
                 rb.encoding(encodingProvider.getEncoding());
             }
-            return cors.builder(rb).build();
+            return cors.add(rb);
         } else {
-            return cors.builder(Response.status(Response.Status.NOT_FOUND)).build();
+            return cors.add(Response.status(Response.Status.NOT_FOUND));
         }
     }
 }

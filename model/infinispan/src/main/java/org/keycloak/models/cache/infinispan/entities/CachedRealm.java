@@ -17,8 +17,20 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -27,29 +39,17 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -71,9 +71,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean resetPasswordAllowed;
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
+    protected boolean organizationsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
+    protected int maxTemporaryLockouts;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -120,16 +122,17 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected String masterAdminClient;
 
     protected List<RequiredCredentialModel> requiredCredentials;
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
+    protected MultivaluedMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
+    protected MultivaluedMap<String, ComponentModel> componentsByParentAndType = new ConcurrentMultivaluedHashMap<>();
     protected Map<String, ComponentModel> components;
-    protected List<IdentityProviderModel> identityProviders;
 
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpConfig;
     protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
     protected List<AuthenticationFlowModel> authenticationFlowList;
     protected Map<String, AuthenticatorConfigModel> authenticatorConfigs;
+    protected Map<String, RequiredActionConfigModel> requiredActionProviderConfigs = new HashMap<>();
+    protected Map<String, RequiredActionConfigModel> requiredActionProviderConfigsByAlias = new HashMap<>();
     protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
     protected List<RequiredActionProviderModel> requiredActionProviderList;
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
@@ -143,20 +146,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;
     protected AuthenticationFlowModel dockerAuthenticationFlow;
+    protected AuthenticationFlowModel firstBrokerLoginFlow;
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
     protected String defaultRoleId;
     private boolean allowUserManagedAccess;
-
-    public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
-        return identityProviderMapperSet;
-    }
 
     protected List<String> defaultGroups;
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
@@ -164,8 +163,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
-    protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
-    protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
 
     protected Map<String, String> attributes;
 
@@ -188,11 +185,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         loginWithEmailAllowed = model.isLoginWithEmailAllowed();
         duplicateEmailsAllowed = model.isDuplicateEmailsAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
-        identityFederationEnabled = model.isIdentityFederationEnabled();
         editUsernameAllowed = model.isEditUsernameAllowed();
+        organizationsEnabled = model.isOrganizationsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
+        maxTemporaryLockouts = model.getMaxTemporaryLockouts();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -240,17 +238,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         requiredCredentials = model.getRequiredCredentialsStream().collect(Collectors.toList());
         userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
 
-        this.identityProviders = model.getIdentityProvidersStream().map(IdentityProviderModel::new)
-                .collect(Collectors.toList());
-        this.identityProviders = Collections.unmodifiableList(this.identityProviders);
-
-        this.identityProviderMapperSet = model.getIdentityProviderMappersStream().collect(Collectors.toSet());
-        for (IdentityProviderMapperModel mapper : identityProviderMapperSet) {
-            identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
-        }
-
-
-
         smtpConfig = model.getSmtpConfig();
         browserSecurityHeaders = model.getBrowserSecurityHeaders();
 
@@ -286,9 +273,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         authenticatorConfigs = model.getAuthenticatorConfigsStream()
                 .collect(Collectors.toMap(AuthenticatorConfigModel::getId, Function.identity()));
+        List<RequiredActionConfigModel> requiredActionConfigsList = model.getRequiredActionConfigsStream().collect(Collectors.toList());
+        for (RequiredActionConfigModel requiredActionConfig : requiredActionConfigsList) {
+            requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
+            requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
+        }
+
         requiredActionProviderList = model.getRequiredActionProvidersStream().collect(Collectors.toList());
         for (RequiredActionProviderModel action : requiredActionProviderList) {
-            this.requiredActionProviders.put(action.getId(), action);
+            requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
@@ -300,6 +293,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
+        firstBrokerLoginFlow = model.getFirstBrokerLoginFlow();
 
         model.getComponentsStream().forEach(component ->
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component)
@@ -372,6 +366,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return permanentLockout;
     }
 
+    public int getMaxTemporaryLockouts() {
+        return maxTemporaryLockouts;
+    }
+
     public int getMaxFailureWaitSeconds() {
         return this.maxFailureWaitSeconds;
     }
@@ -399,11 +397,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public boolean isVerifyEmail() {
         return verifyEmail;
     }
-    
+
     public boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
-    
+
     public boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -414,6 +412,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isEditUsernameAllowed() {
         return editUsernameAllowed;
+    }
+
+    public boolean isOrganizationsEnabled() {
+        return organizationsEnabled;
     }
 
     public String getDefaultSignatureAlgorithm() {
@@ -537,10 +539,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return passwordPolicy;
     }
 
-    public boolean isIdentityFederationEnabled() {
-        return identityFederationEnabled;
-    }
-
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }
@@ -589,16 +587,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return adminEventsEnabled;
     }
 
-    public Set<String> getAdminEnabledEventOperations() {
-        return adminEnabledEventOperations;
-    }
-
     public boolean isAdminEventsDetailsEnabled() {
         return adminEventsDetailsEnabled;
-    }
-
-    public List<IdentityProviderModel> getIdentityProviders() {
-        return identityProviders;
     }
 
     public boolean isInternationalizationEnabled() {
@@ -611,10 +601,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public String getDefaultLocale() {
         return defaultLocale;
-    }
-
-    public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers() {
-        return identityProviderMappers;
     }
 
     public Map<String, AuthenticationFlowModel> getAuthenticationFlows() {
@@ -632,7 +618,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         return executionsByFlowId.get(flowId);
     }
-    
+
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
     }
@@ -681,6 +667,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return dockerAuthenticationFlow;
     }
 
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        return firstBrokerLoginFlow;
+    }
+
     public List<String> getDefaultGroups() {
         return defaultGroups;
     }
@@ -701,12 +691,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return requiredActionProviderList;
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParent() {
-        return componentsByParent;
+    public MultivaluedMap<String, ComponentModel> getComponentsByParent() {
+        return new MultivaluedHashMap<>(componentsByParent);
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType() {
-        return componentsByParentAndType;
+    public MultivaluedMap<String, ComponentModel> getComponentsByParentAndType() {
+        return new MultivaluedHashMap<>(componentsByParentAndType);
     }
 
     public Map<String, ComponentModel> getComponents() {
@@ -719,17 +709,17 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
     }
 
     public Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Long.valueOf(v) : defaultValue;
     }
 
     public Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
 
     public Map<String, String> getAttributes() {
@@ -742,5 +732,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Map<String, Map<String, String>> getRealmLocalizationTexts() {
         return realmLocalizationTexts;
+    }
+
+    public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigsByAlias() {
+        return requiredActionProviderConfigsByAlias;
+    }
+
+    public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigs() {
+        return requiredActionProviderConfigs;
     }
 }

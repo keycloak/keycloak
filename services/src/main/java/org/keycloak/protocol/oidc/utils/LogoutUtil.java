@@ -24,7 +24,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -45,12 +44,10 @@ public class LogoutUtil {
             return Response.status(302).location(finalRedirectUri).build();
         }
 
-        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT);
-        boolean usedSystemClient = logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()));
-        if (usedSystemClient) {
-            loginForm.setAttribute(Constants.SKIP_LINK, true);
-        }
-        return loginForm
+        SystemClientUtil.checkSkipLink(session, logoutSession);
+
+        return session.getProvider(LoginFormsProvider.class)
+                .setSuccess(Messages.SUCCESS_LOGOUT)
                 .setDetachedAuthSession()
                 .createInfoPage();
     }

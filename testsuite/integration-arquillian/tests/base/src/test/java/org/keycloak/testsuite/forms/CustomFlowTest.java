@@ -212,7 +212,7 @@ public class CustomFlowTest extends AbstractFlowTest {
     @Test
     public void testRequiredAfterAlternative() {
         AuthenticationManagementResource authMgmtResource = testRealm().flows();
-        Map<String, String> params = new HashMap();
+        Map<String, Object> params = new HashMap<>();
         String flowAlias = "Browser Flow With Extra";
         params.put("newName", flowAlias);
         Response response = authMgmtResource.copy("browser", params);

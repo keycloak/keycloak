@@ -1,15 +1,14 @@
-import { useTranslation } from "react-i18next";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   CodeBlock,
   CodeBlockAction,
   EmptyState,
   EmptyStateBody,
-  Title,
+  EmptyStateHeader,
+  TextArea,
 } from "@patternfly/react-core";
-
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useTranslation } from "react-i18next";
 import { CopyToClipboardButton } from "./CopyToClipboardButton";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 type GeneratedCodeTabProps = {
   user?: UserRepresentation;
@@ -33,13 +32,16 @@ export const GeneratedCodeTab = ({
         </CodeBlockAction>
       }
     >
-      <KeycloakTextArea id={`text-area-${label}`} rows={20} value={text} />
+      <TextArea
+        id={`text-area-${label}`}
+        rows={20}
+        value={text}
+        aria-label={label}
+      />
     </CodeBlock>
   ) : (
-    <EmptyState variant="large" id={label}>
-      <Title headingLevel="h2" size="lg">
-        {t(`${label}No`)}
-      </Title>
+    <EmptyState variant="lg" id={label}>
+      <EmptyStateHeader titleText={<>{t(`${label}No`)}</>} headingLevel="h2" />
       <EmptyStateBody>{t(`${label}IsDisabled`)}</EmptyStateBody>
     </EmptyState>
   );

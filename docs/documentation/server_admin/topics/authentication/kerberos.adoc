@@ -18,7 +18,7 @@ A typical use case for web authentication is the following:
 
 [WARNING]
 ====
-The https://www.ietf.org/rfc/rfc4559.txt[Negotiate] www-authenticate scheme allows NTLM as a fallback to Kerberos and on some web browsers in Windows NTLM is supported by default.  If a www-authenticate challenge comes from a server outside a browsers permitted list, users may encounter an NTLM dialog prompt.  A user would need to click the cancel button on the dialog to continue as Keycloak does not support this mechanism.  This situation can happen if Intranet web browsers are not strictly configured or if Keycloak serves users in both the Intranet and Internet.  A https://github.com/keycloak/keycloak/issues/8989[custom authenticator] can be used to restrict Negotiate challenges to a whitelist of hosts.
+The https://www.ietf.org/rfc/rfc4559.txt[Negotiate] www-authenticate scheme allows NTLM as a fallback to Kerberos and on some web browsers in Windows NTLM is supported by default.  If a www-authenticate challenge comes from a server outside a browsers permitted list, users may encounter an NTLM dialog prompt.  A user would need to click the cancel button on the dialog to continue as {project_name} does not support this mechanism.  This situation can happen if Intranet web browsers are not strictly configured or if {project_name} serves users in both the Intranet and Internet.  A https://github.com/keycloak/keycloak/issues/8989[custom authenticator] can be used to restrict Negotiate challenges to a whitelist of hosts.
 ====
 
 Perform the following steps to set up Kerberos authentication:
@@ -62,7 +62,7 @@ Install a Kerberos client on your machine.
 
 .Procedure
 . Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
-. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.21/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
 +
 Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on.
 +
@@ -118,7 +118,7 @@ User profile information, such as first name, last name, and email, are not prov
 
 ==== Setup and configuration of client machines
 
-Client machines must have a Kerberos client and set up the `krb5.conf` as described <<_server_setup, above>>. The client machines must also enable SPNEGO login support in their browser. See link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using the Firefox browser.
+Client machines must have a Kerberos client and set up the `krb5.conf` as described <<_server_setup, above>>. The client machines must also enable SPNEGO login support in their browser. See link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using the Firefox browser.
 
 The `.mydomain.org` URI must be in the `network.negotiate-auth.trusted-uris` configuration option.
 
@@ -139,7 +139,7 @@ endif::[]
 
 ==== Credential delegation
 
-Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can re-use it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
+Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can reuse it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
 
 Applications must deserialize the claim it receives from {project_name} before using it to make GSS calls against other services. When you deserialize the credential from the access token to the GSSCredential object, create the GSSContext with this credential passed to the `GSSManager.createContext` method. For example:
 
@@ -161,10 +161,6 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
     deserializedGssCredential, GSSContext.DEFAULT_LIFETIME);
 ----
 
-ifeval::[{project_community}==true]
-Examples of this code exist in `examples/kerberos` in the {project_name} example distribution or demo distribution download. You can also check the example sources directly https://github.com/keycloak/keycloak/tree/main/examples/kerberos[here].
-endif::[]
-
 [NOTE]
 ====
 Configure `forwardable` Kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
@@ -172,7 +168,7 @@ Configure `forwardable` Kerberos tickets in `krb5.conf` file and add support for
 
 [WARNING]
 ====
-Credential delegation has security implications, so use it only if necessary and only with HTTPS. See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details and an example.
+Credential delegation has security implications, so use it only if necessary and only with HTTPS. See https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details and an example.
 ====
 
 ==== Cross-realm trust

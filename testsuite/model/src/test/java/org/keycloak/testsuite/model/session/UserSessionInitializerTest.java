@@ -17,11 +17,20 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -33,21 +42,14 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
@@ -66,6 +68,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
@@ -81,6 +84,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Override
     public void cleanEnvironment(KeycloakSession s) {
         RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.sessions().removeUserSessions(realm);
 
         UserModel user1 = s.users().getUserByUsername(realm, "user1");
@@ -104,6 +108,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             // Assert sessions are in
             ClientModel testApp = realm.getClientByClientId("test-app");
@@ -136,6 +141,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             // Assert sessions are in
             ClientModel thirdparty = realm.getClientByClientId("third-party");
@@ -155,6 +161,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
+        assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());
@@ -176,8 +183,10 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
                     // try to get the user session at other nodes and also at different sites
                     inComittedTransaction(session -> {
                         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                        Cache<String, Object> localSessions = provider.getCache(USER_SESSION_CACHE_NAME);
-                        containsSession.get().add(localSessions.containsKey(userSessionId.get()));
+                        if (InfinispanUtils.isEmbeddedInfinispan()) {
+                            Cache<String, Object> localSessions = provider.getCache(USER_SESSION_CACHE_NAME);
+                            containsSession.get().add(localSessions.containsKey(userSessionId.get()));
+                        }
 
                         if (hotRodServer.isPresent()) {
                             RemoteCache<String, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
@@ -191,7 +200,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
         assertThat(containsSession.get(), everyItem(is(true)));
 
         // 3 nodes (first node just creates the session), with Hot Rod server we have local + remote cache, without just local cache
-        int size = hotRodServer.isPresent() ? 6 : 3;
+        int size = hotRodServer.isPresent() && InfinispanUtils.isEmbeddedInfinispan() ? 6 : 3;
         assertThat(containsSession.get().size(), is(size));
     }
 

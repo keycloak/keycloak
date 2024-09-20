@@ -144,3 +144,7 @@ $ git commit -m "Summary
 ```
 
 For more information linking PRs to issues refer to the [GitHub Documentation](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).
+
+### Contributing Translations
+
+In order to provide translations for Keycloak, kindly follow the instructions provided in [Translation Docs](./docs/translation.md).

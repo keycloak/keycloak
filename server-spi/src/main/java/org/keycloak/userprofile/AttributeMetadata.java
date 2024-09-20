@@ -51,7 +51,8 @@ public class AttributeMetadata {
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
     private int guiOrder;
-    
+    private boolean multivalued;
+
 
     AttributeMetadata(String attributeName, int guiOrder) {
         this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
@@ -199,9 +200,17 @@ public class AttributeMetadata {
         return this;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
     @Override
     public AttributeMetadata clone() {
-        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, writeAllowed, required, readAllowed);
+        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, new ArrayList<>(writeAllowed), required, new ArrayList<>(readAllowed));
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
@@ -215,9 +224,10 @@ public class AttributeMetadata {
         if (attributeGroupMetadata != null) {
             cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
         }
+        cloned.setMultivalued(multivalued);
         return cloned;
     }
-    
+
     public String getAttributeDisplayName() {
         if(attributeDisplayName == null || attributeDisplayName.trim().isEmpty())
             return attributeName;

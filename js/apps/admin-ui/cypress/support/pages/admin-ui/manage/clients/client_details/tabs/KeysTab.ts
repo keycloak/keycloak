@@ -1,3 +1,4 @@
+import Select from "../../../../../../forms/Select";
 import CommonPage from "../../../../../CommonPage";
 
 export default class KeysTab extends CommonPage {
@@ -29,8 +30,7 @@ export default class KeysTab extends CommonPage {
     keyPassword: string,
     storePassword: string,
   ) {
-    cy.get("#archiveFormat").click();
-    cy.findAllByRole("option").contains(archiveFormat).click();
+    Select.selectItem(cy.get("#format"), archiveFormat);
     cy.findByTestId(this.#keyAlias).type(keyAlias);
     cy.findByTestId(this.#keyPassword).type(keyPassword);
     cy.findByTestId(this.#storePassword).type(storePassword);

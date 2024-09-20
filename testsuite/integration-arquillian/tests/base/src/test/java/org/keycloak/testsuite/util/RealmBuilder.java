@@ -326,4 +326,9 @@ public class RealmBuilder {
         rep.setDefaultLocale(defaultLocale);
         return this;
     }
+
+    public RealmBuilder organizationEnabled(boolean enabled) {
+        rep.setOrganizationsEnabled(enabled);
+        return this;
+    }
 }

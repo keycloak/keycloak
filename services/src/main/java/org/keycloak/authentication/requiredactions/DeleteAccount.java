@@ -19,6 +19,8 @@ package org.keycloak.authentication.requiredactions;
 
 import java.util.Objects;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -39,7 +41,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 

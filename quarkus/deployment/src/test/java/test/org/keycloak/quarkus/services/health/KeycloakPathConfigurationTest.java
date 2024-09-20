@@ -17,53 +17,49 @@
 package test.org.keycloak.quarkus.services.health;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.restassured.RestAssured;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
 
 class KeycloakPathConfigurationTest {
+
+    @BeforeEach
+    void setUpPort() {
+        RestAssured.port = 9001;
+    }
 
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
                 .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
             .overrideConfigKey("kc.http-relative-path","/auth")
-            .overrideConfigKey("quarkus.http.non-application-root-path", "/q")
-            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics");
-
-
-    @Test
-    void testHealth() {
-        given().basePath("/")
-                .when().get("q/health")
-                .then()
-                .statusCode(200);
-    }
-
-    @Test
-    void testWrongHealthEndpoints() {
-        given().basePath("/")
-                .when().get("health")
-                .then()
-                // Health is available under `/q/health` (see non-application-root-path),
-                // so /health should return 404.
-                .statusCode(404);
-
-        given().basePath("/")
-                .when().get("auth/health")
-                .then()
-                // Health is available under `/q/health` (see non-application-root-path),
-                // so /auth/health one should return 404.
-                .statusCode(404);
-    }
+            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics")
+            .overrideConfigKey("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
 
     @Test
     void testMetrics() {
         given().basePath("/")
                 .when().get("prom/metrics")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void testHealth() {
+        given().basePath("/")
+                .when().get("health")
+                .then()
+                // Health is available under `/auth/health` (see http-relative-path),
+                .statusCode(404);
+
+        given().basePath("/")
+                .when().get("auth/health")
                 .then()
                 .statusCode(200);
     }
@@ -103,11 +99,16 @@ class KeycloakPathConfigurationTest {
     }
 
     @Test
-    void testRootUnavailable() {
+    void testRootRedirect() {
+        given().basePath("/").redirects().follow(false)
+                .when().get("")
+                .then()
+                .statusCode(302)
+                .header("Location", is("/auth"));
+
         given().basePath("/")
                 .when().get("")
                 .then()
-                // application root is configured to /auth, so we expect 404 on /
-                .statusCode(404);
+                .statusCode(200);
     }
 }

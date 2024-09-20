@@ -22,12 +22,15 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.services.clientregistration.ClientRegistrationService;
+import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProvider;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 
+import org.keycloak.utils.StringUtil;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 
@@ -50,7 +53,7 @@ public class Urls {
                 .build(realmName, providerAlias);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId) {
+    public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId, String clientData, String loginHint) {
         UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "performLogin");
 
@@ -62,6 +65,12 @@ public class Urls {
         }
         if (tabId != null) {
             uriBuilder.replaceQueryParam(Constants.TAB_ID, tabId);
+        }
+        if (clientData != null) {
+            uriBuilder.replaceQueryParam(Constants.CLIENT_DATA, clientData);
+        }
+        if (loginHint != null) {
+            uriBuilder.replaceQueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
         return uriBuilder.build(realmName, providerAlias);
@@ -82,23 +91,25 @@ public class Urls {
     }
 
     public static URI identityProviderAuthnRequest(URI baseURI, String providerAlias, String realmName) {
-        return identityProviderAuthnRequest(baseURI, providerAlias, realmName, null, null, null);
+        return identityProviderAuthnRequest(baseURI, providerAlias, realmName, null, null, null, null, null);
     }
 
-    public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId) {
+    public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId, String clientData) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "afterFirstBrokerLogin")
                 .replaceQueryParam(LoginActionsService.SESSION_CODE, accessCode)
                 .replaceQueryParam(Constants.CLIENT_ID, clientId)
                 .replaceQueryParam(Constants.TAB_ID, tabId)
+                .replaceQueryParam(Constants.CLIENT_DATA, clientData)
                 .build(realmName);
     }
 
-    public static URI identityProviderAfterPostBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId) {
+    public static URI identityProviderAfterPostBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId, String clientData) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "afterPostBrokerLoginFlow")
                 .replaceQueryParam(LoginActionsService.SESSION_CODE, accessCode)
                 .replaceQueryParam(Constants.CLIENT_ID, clientId)
+                .replaceQueryParam(Constants.CLIENT_DATA, clientData)
                 .replaceQueryParam(Constants.TAB_ID, tabId)
                 .build(realmName);
     }
@@ -115,24 +126,19 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "requiredAction");
     }
 
-
-    public static URI loginActionUpdateProfile(URI baseUri, String realmName) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "updateProfile").build(realmName);
-    }
-
-    public static UriBuilder loginActionEmailVerificationBuilder(URI baseUri) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "emailVerification");
-    }
-
     public static URI loginResetCredentials(URI baseUri, String realmName) {
         return loginResetCredentialsBuilder(baseUri).build(realmName);
     }
 
-    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString, String clientId, String tabId) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
-                .queryParam(Constants.KEY, tokenString)
-                .queryParam(Constants.CLIENT_ID, clientId)
-                .queryParam(Constants.TAB_ID, tabId);
+    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString, String clientId, String tabId, String clientData) {
+        UriBuilder res = loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
+          .queryParam(Constants.KEY, tokenString)
+          .queryParam(Constants.CLIENT_ID, clientId)
+          .queryParam(Constants.TAB_ID, tabId);
+        if (StringUtil.isNotBlank(clientData)) {
+            res = res.queryParam(Constants.CLIENT_DATA, clientData);
+        }
+        return res;
 
     }
 
@@ -209,5 +215,9 @@ public class Urls {
 
     public static URI samlRequestEndpoint(final URI baseUri, final String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getProtocol").build(realmName, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
+    public static URI clientRegistration(URI baseUri, String realm, String protocol, String clientId) {
+        return realmBase(baseUri).path(RealmsResource.class, "getClientsService").path(ClientRegistrationService.class, "provider").path(OIDCClientRegistrationProvider.class, "getOIDC").build(realm, protocol, clientId);
     }
 }

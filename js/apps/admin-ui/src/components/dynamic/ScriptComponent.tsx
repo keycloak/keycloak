@@ -3,7 +3,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
@@ -41,7 +41,7 @@ export const ScriptComponent = ({
             isReadOnly={isDisabled}
             type="text"
             onChange={field.onChange}
-            code={field.value}
+            code={Array.isArray(field.value) ? field.value[0] : field.value}
             height="600px"
             language={Language.javascript}
           />

@@ -15,7 +15,13 @@ import { AttributesTab } from "./AttributesTab";
 import { JsonEditorTab } from "./JsonEditorTab";
 import { UserProfileProvider } from "./UserProfileContext";
 
-export const UserProfileTab = () => {
+type UserProfileTabProps = {
+  setTableData: React.Dispatch<
+    React.SetStateAction<Record<string, string>[] | undefined>
+  >;
+};
+
+export const UserProfileTab = ({ setTableData }: UserProfileTabProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
 
@@ -37,14 +43,14 @@ export const UserProfileTab = () => {
           data-testid="attributesTab"
           {...attributesTab}
         >
-          <AttributesTab />
+          <AttributesTab setTableData={setTableData} />
         </Tab>
         <Tab
           title={<TabTitleText>{t("attributesGroup")}</TabTitleText>}
           data-testid="attributesGroupTab"
           {...attributesGroupTab}
         >
-          <AttributesGroupTab />
+          <AttributesGroupTab setTableData={setTableData} />
         </Tab>
         <Tab
           title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}

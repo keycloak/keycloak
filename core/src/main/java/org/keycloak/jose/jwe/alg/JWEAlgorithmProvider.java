@@ -19,7 +19,9 @@ package org.keycloak.jose.jwe.alg;
 
 import java.security.Key;
 
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
@@ -27,8 +29,8 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  */
 public interface JWEAlgorithmProvider {
 
-    byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws Exception;
+    byte[] decodeCek(byte[] encodedCek, Key encryptionKey, JWEHeader header, JWEEncryptionProvider encryptionProvider) throws Exception;
 
-    byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws Exception;
+    byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey, JWEHeaderBuilder headerBuilder) throws Exception;
 
 }

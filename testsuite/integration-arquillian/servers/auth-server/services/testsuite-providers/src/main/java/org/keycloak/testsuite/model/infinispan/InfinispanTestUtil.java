@@ -47,7 +47,7 @@ public class InfinispanTestUtil {
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
         if (ispnProvider != null) {
             logger.info("Will set KeycloakIspnTimeService to the infinispan cacheManager");
-            EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
+            EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheManager();
             origTimeService = setTimeServiceToKeycloakTime(cacheManager);
         }
     }

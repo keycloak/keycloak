@@ -16,6 +16,8 @@
  */
 package org.keycloak.broker.provider;
 
+import static java.util.Optional.ofNullable;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserSessionModel;
@@ -51,12 +53,13 @@ public class BrokeredIdentityContext {
     private Map<String, Object> contextData = new HashMap<>();
     private AuthenticationSessionModel authenticationSession;
 
-    public BrokeredIdentityContext(String id) {
+    public BrokeredIdentityContext(String id, IdentityProviderModel idpConfig) {
         if (id == null) {
             throw new RuntimeException("No identifier provider for identity.");
         }
 
         this.id = id;
+        this.idpConfig = idpConfig;
     }
 
     public String getId() {
@@ -86,7 +89,11 @@ public class BrokeredIdentityContext {
      * @return
      */
     public String getUsername() {
-        return username;
+        if (getIdpConfig().isCaseSensitiveOriginalUsername()) {
+            return username;
+        }
+
+        return username == null ? null : username.toLowerCase();
     }
 
     public void setUsername(String username) {
@@ -140,10 +147,6 @@ public class BrokeredIdentityContext {
 
     public IdentityProviderModel getIdpConfig() {
         return idpConfig;
-    }
-
-    public void setIdpConfig(IdentityProviderModel idpConfig) {
-        this.idpConfig = idpConfig;
     }
 
     public IdentityProvider getIdp() {

@@ -30,17 +30,159 @@ import java.util.stream.Stream;
  */
 public interface GroupModel extends RoleMapperModel {
 
-    interface GroupRemovedEvent extends ProviderEvent {
+    enum Type {
+        REALM(0),
+        ORGANIZATION(1);
+
+        private final int value;
+
+        Type(int value) {
+            this.value = value;
+        }
+
+        public static Type valueOf(int value) {
+            Type[] values = values();
+
+            for (int i = 0; i < values.length; i++) {
+                if (values[i].value == value) {
+                    return values[i];
+                }
+            }
+
+            throw new IllegalArgumentException("No type found with value " + value);
+        }
+
+        public int intValue() {
+            return value;
+        }
+    }
+
+    interface GroupEvent extends ProviderEvent {
         RealmModel getRealm();
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
 
-    interface GroupPathChangeEvent extends ProviderEvent {
-        RealmModel getRealm();
+    interface GroupCreatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupCreatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupRemovedEvent extends GroupEvent {
+
+    }
+
+    interface GroupUpdatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupUpdatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberJoinEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberJoinEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberLeaveEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberLeaveEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupPathChangeEvent extends GroupEvent {
         String getNewPath();
         String getPreviousPath();
-        KeycloakSession getKeycloakSession();
+
+        static void fire(GroupModel group, String newPath, String previousPath, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupPathChangeEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+
+                @Override
+                public String getNewPath() {
+                    return newPath;
+                }
+
+                @Override
+                public String getPreviousPath() {
+                    return previousPath;
+                }
+            });
+        }
     }
 
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
@@ -123,7 +265,7 @@ public interface GroupModel extends RoleMapperModel {
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     default Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        Stream<GroupModel> allSubgorupsGroups = getSubGroupsStream().filter(group -> {
+        Stream<GroupModel> allSubgroupsGroups = getSubGroupsStream().filter(group -> {
             if (search == null || search.isEmpty()) return true;
             if (Boolean.TRUE.equals(exact)) {
                 return group.getName().equals(search);
@@ -134,14 +276,14 @@ public interface GroupModel extends RoleMapperModel {
 
         // Copied over from StreamsUtil from server-spi-private which is not available here
         if (firstResult != null && firstResult > 0) {
-            allSubgorupsGroups = allSubgorupsGroups.skip(firstResult);
+            allSubgroupsGroups = allSubgroupsGroups.skip(firstResult);
         }
 
         if (maxResults != null && maxResults >= 0) {
-            allSubgorupsGroups = allSubgorupsGroups.limit(maxResults);
+            allSubgroupsGroups = allSubgroupsGroups.limit(maxResults);
         }
 
-        return allSubgorupsGroups;
+        return allSubgroupsGroups;
     }
 
     /**
@@ -173,4 +315,12 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    default boolean escapeSlashesInGroupPath() {
+        return GroupProvider.DEFAULT_ESCAPE_SLASHES;
+    }
+
+    default Type getType() {
+        return Type.REALM;
+    }
 }

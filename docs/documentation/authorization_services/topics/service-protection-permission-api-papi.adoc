@@ -12,7 +12,7 @@ A <<_overview_terminology_permission_ticket, permission ticket>> is a special se
 
 `A correlation handle that is conveyed from an authorization server to a resource server, from a resource server to a client, and ultimately from a client back to an authorization server, to enable the authorization server to assess the correct policies to apply to a request for authorization data.`
 
-In most cases, you won't need to deal with this endpoint directly. {project_name} provides a <<_enforcer_overview, policy enforcer>> that enables UMA for your
+In most cases, you won't need to deal with this endpoint directly. {project_name} provides a policy enforcer that enables UMA for your
 resource server so it can obtain a permission ticket from the authorization server, return this ticket to client application, and enforce authorization decisions based on a final requesting party token (RPT).
 
 The process of obtaining permission tickets from {project_name} is performed by resource servers and not regular client applications,

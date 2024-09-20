@@ -28,16 +28,13 @@
         <version.jar.plugin>3.0.2</version.jar.plugin>
         <version.install.plugin>2.5.2</version.install.plugin>
         <version.surefire.plugin>2.22.2</version.surefire.plugin>
-
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <version.plexus.utils>4.0.0</version.plexus.utils>
     </properties>
 
     <modules>
         <module>header-maven-plugin</module>
         <module>api_documentation</module>
         <module>authorization_services</module>
-        <module>securing_apps</module>
         <module>server_admin</module>
         <module>server_development</module>
         <module>release_notes</module>
@@ -63,15 +60,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${version.compiler.plugin}</version>
-                    <configuration>
-                        <source>${maven.compiler.target}</source>
-                        <target>${maven.compiler.source}</target>
-                    </configuration>
-                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>

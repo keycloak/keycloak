@@ -10,12 +10,8 @@ site push-site-state --all-caches --site={stale-site-name}
 [source,bash,subs="+attributes"]
 ----
 {
-  "offlineClientSessions" : "ok",
   "authenticationSessions" : "ok",
-  "sessions" : "ok",
-  "clientSessions" : "ok",
   "work" : "ok",
-  "offlineSessions" : "ok",
   "loginFailures" : "ok",
   "actionTokens" : "ok"
 }
@@ -44,29 +40,13 @@ site status --all-caches --site={stale-site-name}
 ----
 site push-site-status --cache=actionTokens
 site push-site-status --cache=authenticationSessions
-site push-site-status --cache=clientSessions
 site push-site-status --cache=loginFailures
-site push-site-status --cache=offlineClientSessions
-site push-site-status --cache=offlineSessions
-site push-site-status --cache=sessions
 site push-site-status --cache=work
 ----
 +
 .Output:
 [source,bash,subs="+attributes"]
 ----
-{
-  "{stale-site-name}" : "OK"
-}
-{
-  "{stale-site-name}" : "OK"
-}
-{
-  "{stale-site-name}" : "OK"
-}
-{
-  "{stale-site-name}" : "OK"
-}
 {
   "{stale-site-name}" : "OK"
 }
@@ -98,21 +78,13 @@ site push-site-state --cache=<cache-name> --site={stale-site-name}
 ----
 site clear-push-site-status --cache=actionTokens
 site clear-push-site-status --cache=authenticationSessions
-site clear-push-site-status --cache=clientSessions
 site clear-push-site-status --cache=loginFailures
-site clear-push-site-status --cache=offlineClientSessions
-site clear-push-site-status --cache=offlineSessions
-site clear-push-site-status --cache=sessions
 site clear-push-site-status --cache=work
 ----
 +
 .Output:
 [source,bash,subs="+attributes"]
 ----
-"ok"
-"ok"
-"ok"
-"ok"
 "ok"
 "ok"
 "ok"

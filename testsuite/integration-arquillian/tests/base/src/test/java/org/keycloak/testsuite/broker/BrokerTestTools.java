@@ -14,6 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,7 @@ public class BrokerTestTools {
     public static void waitForPage(final WebDriver driver, final String title, final boolean isHtmlTitle) {
         waitForPageToLoad();
 
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
         ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
             private String actualTitle = null;
 
@@ -89,7 +90,7 @@ public class BrokerTestTools {
     }
 
     public static void waitForElementEnabled(WebDriver driver, final String elementName) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
         ExpectedCondition<Boolean> condition = (WebDriver input) -> {
             List<WebElement> elements = input.findElements(By.name(elementName));

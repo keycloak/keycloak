@@ -363,7 +363,7 @@ public class AssertionUtil {
      * out of sync.
      *
      * @param assertion
-     * @param clockSkewInMilis in miliseconds
+     * @param clockSkewInMilis in milliseconds
      *
      * @return
      *
@@ -429,7 +429,7 @@ public class AssertionUtil {
      * out of sync.
      *
      * @param assertion
-     * @param clockSkewInMilis in miliseconds
+     * @param clockSkewInMilis in milliseconds
      *
      * @return
      *

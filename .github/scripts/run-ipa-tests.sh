@@ -39,9 +39,9 @@ EOF
   kdestroy
 fi
 
-echo "Installing jdk-17 in the container"
-dnf install -y java-17-openjdk-devel
-export JAVA_HOME=/etc/alternatives/java_sdk_17
+echo "Installing jdk-21 in the container"
+dnf install -y java-21-openjdk-devel
+export JAVA_HOME=/etc/alternatives/java_sdk_21
 
 echo "Building quarkus keyclok server with SSSD integration"
 ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus

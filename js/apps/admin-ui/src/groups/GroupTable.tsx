@@ -7,9 +7,9 @@ import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../admin-client";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import useToggle from "../utils/useToggle";
 import { GroupsModal } from "./GroupsModal";
@@ -18,17 +18,14 @@ import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
-import { adminClient } from "../admin-client";
 
 type GroupTableProps = {
   refresh: () => void;
-  canViewDetails: boolean;
 };
 
-export const GroupTable = ({
-  refresh: viewRefresh,
-  canViewDetails,
-}: GroupTableProps) => {
+export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
@@ -54,6 +51,7 @@ export const GroupTable = ({
     let groupsData = undefined;
     if (id) {
       const args: SubGroupQuery = {
+        search: search || "",
         first: first,
         max: max,
         parentId: id,
@@ -192,7 +190,7 @@ export const GroupTable = ({
             name: "name",
             displayKey: "groupName",
             cellRenderer: (group) =>
-              canViewDetails ? (
+              group.access?.view ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>

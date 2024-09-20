@@ -27,8 +27,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -45,6 +43,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -100,12 +100,12 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         }
         String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
         try {
-            truststore = loadStore(storepath, type, pass == null ? null :pass.toCharArray());
+            truststore = KeystoreUtil.loadKeyStore(storepath, pass, type);
         } catch (Exception e) {
             // in fips mode the default truststore type can be pkcs12, but the cacerts file will still be jks
             if (system && !"jks".equalsIgnoreCase(type)) {
                 try {
-                    truststore = loadStore(storepath, "jks", pass == null ? null :pass.toCharArray());
+                    truststore = KeystoreUtil.loadKeyStore(storepath, pass, "jks");
                 } catch (Exception e1) {
                 }
             }
@@ -114,12 +114,15 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
         if (policy == null) {
-            verificationPolicy = HostnameVerificationPolicy.WILDCARD;
+            verificationPolicy = HostnameVerificationPolicy.DEFAULT;
         } else {
             try {
                 verificationPolicy = HostnameVerificationPolicy.valueOf(policy);
             } catch (Exception e) {
-                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy + " (must be one of: ANY, WILDCARD, STRICT)");
+                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy
+                        + " (must be one of: " + Stream.of(HostnameVerificationPolicy.values())
+                                .map(HostnameVerificationPolicy::name).collect(Collectors.joining(", "))
+                        + ")");
             }
         }
 
@@ -128,14 +131,6 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 , Collections.unmodifiableMap(certsLoader.intermediateCerts));
         TruststoreProviderSingleton.set(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
-    }
-
-    private KeyStore loadStore(String path, String type, char[] password) throws Exception {
-        KeyStore ks = KeyStore.getInstance(type);
-        try (InputStream is = new FileInputStream(path)) {
-            ks.load(is, password);
-            return ks;
-        }
     }
 
     @Override
@@ -168,8 +163,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .name(HOSTNAME_VERIFICATION_POLICY)
                 .type("string")
                 .helpText("DEPRECATED: The hostname verification policy.")
-                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).map(String::toLowerCase).toArray(String[]::new))
-                .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
+                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).toArray(String[]::new))
+                .defaultValue(HostnameVerificationPolicy.DEFAULT.name())
                 .add()
                 .property()
                 .name("type")

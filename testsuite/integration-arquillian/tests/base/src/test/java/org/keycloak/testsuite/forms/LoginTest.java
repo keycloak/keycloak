@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -41,7 +42,9 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -50,7 +53,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -209,7 +211,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         //POST request to http://localhost:8180/auth/realms/test/protocol/openid-connect/auth;
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
         Response response = client.target(b.build(oauth.getRealm())).request().post(oauth.getLoginEntityForPOST());
-        
+
         assertThat(response.getStatus(), is(equalTo(200)));
         assertThat(response, Matchers.body(containsString("Sign in")));
 
@@ -460,7 +462,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         // Check identity cookie is signed with HS256
         String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals("HS256", algorithm);
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
@@ -473,7 +475,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // Check identity cookie is still signed with HS256
             algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-            assertEquals("HS256", algorithm);
+            assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
             // Check identity cookie still works
             oauth.openLoginForm();
@@ -530,7 +532,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             setTimeOffset(0);
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
             String currentUrl = driver.getCurrentUrl();
             String pageSource = driver.getPageSource();
@@ -709,14 +712,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             //login without remember me
             loginPage.setRememberMe(false);
             loginPage.login("login-test", "password");
-            
+
             // Expire session
             loginEvent = events.expectLogin().user(userId)
                                                    .detail(Details.USERNAME, "login-test")
                                                    .assertEvent();
             sessionId = loginEvent.getSessionId();
             testingClient.testing().removeUserSession("test", sessionId);
-            
+
             // Assert rememberMe not checked nor username/email prefilled
             loginPage.open();
             assertFalse(loginPage.isRememberMeChecked());
@@ -725,7 +728,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setRememberMe(false);
         }
     }
-    
+
     @Test
     // KEYCLOAK-3181
     public void loginWithEmailUserAndRememberMe() {
@@ -751,7 +754,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
-            
+
             Assert.assertEquals("login@test.com", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
@@ -774,7 +777,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
-        events.expectLogin().client((String) null).user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .assertEvent();
     }
 
@@ -794,7 +797,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 
@@ -851,7 +853,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expect(EventType.LOGIN_ERROR)
                 .user(new UserRepresentation())
-                .client(new ClientRepresentation())
                 .error(Errors.COOKIE_NOT_FOUND)
                 .assertEvent();
 
@@ -900,7 +901,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().refresh();
 
         // Assert authenticationSession in cache with 2 tabs
-        String authSessionId = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID).getValue();
+        String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
         Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
 
         loginPage.login("test-user@localhost", "password");
@@ -919,6 +920,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     public void loginRememberMeExpiredIdle() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionIdleTimeoutRememberMe(1)
+          .setSsoSessionIdleTimeout(1) // max of both values
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app
@@ -935,7 +937,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             appPage.assertCurrent();
 
             // expire idle timeout using the timeout window.
-            setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            setTimeOffset(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             loginPage.open();
@@ -1016,7 +1018,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // make sure the authentication session is no longer available
             for (Cookie cookie : driver.manage().getCookies()) {
-                if (cookie.getName().startsWith(AuthenticationSessionManager.AUTH_SESSION_ID)) {
+                if (cookie.getName().startsWith(CookieType.AUTH_SESSION_ID.getName())) {
                     driver.manage().deleteCookie(cookie);
                 }
             }

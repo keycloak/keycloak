@@ -151,7 +151,7 @@ describe("Realm roles test", () => {
   it("Should search non-existent associated role by name", () => {
     const itemName = "non-existent-associated-role";
     listingPage.searchItem(itemName, false);
-    cy.findByTestId(listingPage.emptyState).should("exist");
+    listingPage.assertNoResults();
   });
 
   it("Should hide inherited roles test", () => {
@@ -262,6 +262,7 @@ describe("Realm roles test", () => {
     });
 
     const keyValue = new KeyValueInput("attributes");
+
     it("should add attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 

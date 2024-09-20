@@ -28,7 +28,6 @@ import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
  */
 public class PermissionTicketRemovedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 
-    private String id;
     private String owner;
     private String resource;
     private String scope;
@@ -36,9 +35,12 @@ public class PermissionTicketRemovedEvent extends InvalidationEvent implements A
     private String requester;
     private String resourceName;
 
+    private PermissionTicketRemovedEvent(String id) {
+        super(id);
+    }
+
     public static PermissionTicketRemovedEvent create(String id, String owner, String requester, String resource, String resourceName, String scope, String serverId) {
-        PermissionTicketRemovedEvent event = new PermissionTicketRemovedEvent();
-        event.id = id;
+        PermissionTicketRemovedEvent event = new PermissionTicketRemovedEvent(id);
         event.owner = owner;
         event.requester = requester;
         event.resource = resource;
@@ -49,31 +51,26 @@ public class PermissionTicketRemovedEvent extends InvalidationEvent implements A
     }
 
     @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         PermissionTicketRemovedEvent that = (PermissionTicketRemovedEvent) o;
-        return Objects.equals(id, that.id) && Objects.equals(resource, that.resource) && Objects.equals(serverId, that.serverId);
+        return Objects.equals(resource, that.resource) && Objects.equals(serverId, that.serverId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), id, resource, serverId);
+        return Objects.hash(super.hashCode(), resource, serverId);
     }
 
     @Override
     public String toString() {
-        return String.format("PermissionTicketRemovedEvent [ id=%s, name=%s]", id, resource);
+        return String.format("PermissionTicketRemovedEvent [ id=%s, name=%s]", getId(), resource);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.permissionTicketRemoval(id, owner, requester, resource, resourceName, scope, serverId, invalidations);
+        cache.permissionTicketRemoval(getId(), owner, requester, resource, resourceName, scope, serverId, invalidations);
     }
 }

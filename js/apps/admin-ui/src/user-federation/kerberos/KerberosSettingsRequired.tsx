@@ -1,22 +1,21 @@
 import {
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+  HelpItem,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useState } from "react";
-import { Controller, UseFormReturn, useWatch } from "react-hook-form";
+import { useEffect } from "react";
+import {
+  Controller,
+  FormProvider,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 
 export type KerberosSettingsRequiredProps = {
   form: UseFormReturn;
@@ -30,24 +29,17 @@ export const KerberosSettingsRequired = ({
   showSectionDescription = false,
 }: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation();
-
-  const { realm } = useRealm();
-
-  const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
+  const { realm, realmRepresentation } = useRealm();
 
   const allowPassAuth = useWatch({
     control: form.control,
     name: "config.allowPasswordAuthentication",
   });
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (result) => form.setValue("parentId", result!.id),
-    [],
-  );
+  useEffect(() => form.setValue("parentId", realmRepresentation?.id), []);
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("requiredSettings")}
@@ -58,162 +50,54 @@ export const KerberosSettingsRequired = ({
 
       {/* Required settings */}
       <FormAccess role="manage-realm" isHorizontal>
-        <FormGroup
+        {/* These hidden fields are required so data object written back matches data retrieved */}
+        <input
+          type="hidden"
+          defaultValue="kerberos"
+          {...form.register("providerId")}
+        />
+        <input
+          type="hidden"
+          defaultValue="org.keycloak.storage.UserStorageProvider"
+          {...form.register("providerType")}
+        />
+        <input
+          type="hidden"
+          defaultValue={realm}
+          {...form.register("parentId")}
+        />
+        <TextControl
+          name="name"
           label={t("uiDisplayName")}
-          labelIcon={
-            <HelpItem
-              helpText={t("uiDisplayNameHelp")}
-              fieldLabelId="uiDisplayName"
-            />
-          }
-          fieldId="kc-ui-display-name"
-          isRequired
-          validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={(form.formState.errors.name as any)?.message}
-        >
-          {/* These hidden fields are required so data object written back matches data retrieved */}
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-providerId"
-            defaultValue="kerberos"
-            {...form.register("providerId")}
-          />
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-providerType"
-            defaultValue="org.keycloak.storage.UserStorageProvider"
-            {...form.register("providerType")}
-          />
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-parentId"
-            defaultValue={realm}
-            {...form.register("parentId")}
-          />
-
-          <KeycloakTextInput
-            isRequired
-            id="kc-ui-name"
-            data-testid="kerberos-name"
-            validated={form.formState.errors.name ? "error" : "default"}
-            aria-label={t("uiDisplayName")}
-            {...form.register("name", {
-              required: {
-                value: true,
-                message: t("validateName"),
-              },
-            })}
-          />
-        </FormGroup>
-
-        <FormGroup
+          labelIcon={t("uiDisplayNameHelp")}
+          rules={{
+            required: t("validateName"),
+          }}
+        />
+        <TextControl
+          name="config.kerberosRealm.0"
           label={t("kerberosRealm")}
-          labelIcon={
-            <HelpItem
-              helpText={t("kerberosRealmHelp")}
-              fieldLabelId="kc-kerberos-realm"
-            />
-          }
-          fieldId="kc-kerberos-realm"
-          isRequired
-          validated={
-            (form.formState.errors.config as any)?.kerberosRealm?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.kerberosRealm?.[0].message
-          }
-        >
-          <KeycloakTextInput
-            isRequired
-            id="kc-kerberos-realm"
-            data-testid="kerberos-realm"
-            validated={
-              (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                ? "error"
-                : "default"
-            }
-            {...form.register("config.kerberosRealm.0", {
-              required: {
-                value: true,
-                message: t("validateRealm"),
-              },
-            })}
-          />
-        </FormGroup>
-
-        <FormGroup
+          labelIcon={t("kerberosRealmHelp")}
+          rules={{
+            required: t("validateRealm"),
+          }}
+        />
+        <TextControl
+          name="config.serverPrincipal.0"
           label={t("serverPrincipal")}
-          labelIcon={
-            <HelpItem
-              helpText={t("serverPrincipalHelp")}
-              fieldLabelId="serverPrincipal"
-            />
-          }
-          fieldId="kc-server-principal"
-          isRequired
-          validated={
-            (form.formState.errors.config as any)?.serverPrincipal?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.serverPrincipal?.[0].message
-          }
-        >
-          <KeycloakTextInput
-            isRequired
-            id="kc-server-principal"
-            data-testid="kerberos-principal"
-            validated={
-              (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                ? "error"
-                : "default"
-            }
-            {...form.register("config.serverPrincipal.0", {
-              required: {
-                value: true,
-                message: t("validateServerPrincipal"),
-              },
-            })}
-          />
-        </FormGroup>
-
-        <FormGroup
+          labelIcon={t("serverPrincipalHelp")}
+          rules={{
+            required: t("validateServerPrincipal"),
+          }}
+        />
+        <TextControl
+          name="config.keyTab.0"
           label={t("keyTab")}
-          labelIcon={
-            <HelpItem helpText={t("keyTabHelp")} fieldLabelId="keyTab" />
-          }
-          fieldId="kc-key-tab"
-          isRequired
-          validated={
-            (form.formState.errors.config as any)?.keyTab?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.keyTab?.[0].message
-          }
-        >
-          <KeycloakTextInput
-            isRequired
-            id="kc-key-tab"
-            data-testid="kerberos-keytab"
-            validated={
-              (form.formState.errors.config as any)?.keyTab?.[0]
-                ? "error"
-                : "default"
-            }
-            {...form.register("config.keyTab.0", {
-              required: {
-                value: true,
-                message: t("validateKeyTab"),
-              },
-            })}
-          />
-        </FormGroup>
-
+          labelIcon={t("keyTabHelp")}
+          rules={{
+            required: t("validateKeyTab"),
+          }}
+        />
         <FormGroup
           label={t("debug")}
           labelIcon={
@@ -222,7 +106,6 @@ export const KerberosSettingsRequired = ({
           fieldId="kc-debug"
           hasNoPaddingTop
         >
-          {" "}
           <Controller
             name="config.debug"
             defaultValue={["false"]}
@@ -231,7 +114,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-debug"}
                 data-testid="debug"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -240,7 +123,6 @@ export const KerberosSettingsRequired = ({
             )}
           />
         </FormGroup>
-
         <FormGroup
           label={t("allowPasswordAuthentication")}
           labelIcon={
@@ -260,7 +142,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-allow-password-authentication"}
                 data-testid="allow-password-authentication"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -269,48 +151,18 @@ export const KerberosSettingsRequired = ({
             )}
           />
         </FormGroup>
-
         {isEqual(allowPassAuth, ["true"]) ? (
-          <FormGroup
+          <SelectControl
+            name="config.editMode[0]"
             label={t("editMode")}
-            labelIcon={
-              <HelpItem
-                helpText={t("editModeKerberosHelp")}
-                fieldLabelId="editMode"
-              />
-            }
-            isRequired
-            fieldId="kc-edit-mode"
-          >
-            {" "}
-            <Controller
-              name="config.editMode[0]"
-              defaultValue="READ_ONLY"
-              control={form.control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-edit-mode"
-                  required
-                  onToggle={() =>
-                    setIsEditModeDropdownOpen(!isEditModeDropdownOpen)
-                  }
-                  isOpen={isEditModeDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value as string);
-                    setIsEditModeDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                >
-                  <SelectOption key={0} value="READ_ONLY" isPlaceholder />
-                  <SelectOption key={1} value="UNSYNCED" />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
+            labelIcon={t("editModeKerberosHelp")}
+            controller={{
+              rules: { required: t("required") },
+              defaultValue: "READ_ONLY",
+            }}
+            options={["READ_ONLY", "UNSYNCED"]}
+          />
         ) : null}
-
         <FormGroup
           label={t("updateFirstLogin")}
           labelIcon={
@@ -330,7 +182,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-update-first-login"}
                 data-testid="update-first-login"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -340,6 +192,6 @@ export const KerberosSettingsRequired = ({
           />
         </FormGroup>
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

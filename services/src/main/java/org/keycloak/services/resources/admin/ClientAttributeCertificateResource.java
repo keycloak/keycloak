@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotAcceptableException;
 import jakarta.ws.rs.NotFoundException;
 
@@ -197,7 +197,9 @@ public class ClientAttributeCertificateResource {
         CertificateRepresentation info = new CertificateRepresentation();
         MultivaluedMap<String, FormPartValue> uploadForm = session.getContext().getHttpRequest().getMultiPartFormParameters();
         FormPartValue keystoreFormatPart = uploadForm.getFirst("keystoreFormat");
-        if (keystoreFormatPart == null) throw new BadRequestException();
+        if (keystoreFormatPart == null) {
+            throw new BadRequestException("keystoreFormat cannot be null");
+        }
         String keystoreFormat = keystoreFormatPart.asString();
         FormPartValue inputParts = uploadForm.getFirst("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {

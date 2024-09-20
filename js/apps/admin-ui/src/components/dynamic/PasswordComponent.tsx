@@ -1,11 +1,7 @@
-import { FormGroup } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { PasswordInput } from "../password-input/PasswordInput";
-import type { ComponentProps } from "./components";
+import { PasswordControl } from "@keycloak/keycloak-ui-shared";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 export const PasswordComponent = ({
   name,
@@ -16,22 +12,17 @@ export const PasswordComponent = ({
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
-  const { register } = useFormContext();
 
   return (
-    <FormGroup
+    <PasswordControl
+      name={convertToName(name!)}
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
-      fieldId={name!}
-      isRequired={required}
-    >
-      <PasswordInput
-        id={name!}
-        data-testid={name}
-        isDisabled={isDisabled}
-        defaultValue={defaultValue?.toString()}
-        {...register(convertToName(name!))}
-      />
-    </FormGroup>
+      labelIcon={t(helpText!)}
+      isDisabled={isDisabled}
+      defaultValue={defaultValue?.toString()}
+      rules={{
+        required: { value: !!required, message: t("required") },
+      }}
+    />
   );
 };

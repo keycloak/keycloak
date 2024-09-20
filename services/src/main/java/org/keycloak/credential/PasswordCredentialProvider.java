@@ -29,6 +29,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,6 +80,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         PasswordPolicy policy = realm.getPasswordPolicy();
         int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
+        int passwordAgeInDaysPolicy = Math.max(0, policy.getPasswordAgeInDays());
 
         // 1) create new or reset existing password
         CredentialModel createdCredential;
@@ -94,22 +96,32 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             createdCredential = credentialModel;
 
             // 2) add a password history item based on the old password
-            if (expiredPasswordsPolicyValue > 1) {
+            if (expiredPasswordsPolicyValue > 1 || passwordAgeInDaysPolicy > 0) {
                 oldPassword.setId(null);
                 oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
-                user.credentialManager().createStoredCredential(oldPassword);
+                oldPassword = user.credentialManager().createStoredCredential(oldPassword);
             }
         }
-        
-        // 3) remove old password history items
+
+        // 3) remove old password history items, if both history policies are set, more restrictive policy wins
         final int passwordHistoryListMaxSize = Math.max(0, expiredPasswordsPolicyValue - 1);
+
+        final long passwordMaxAgeMillis = Time.currentTimeMillis() - Duration.ofDays(passwordAgeInDaysPolicy).toMillis();
+
+        CredentialModel finalOldPassword = oldPassword;
         user.credentialManager().getStoredCredentialsByTypeStream(PasswordCredentialModel.PASSWORD_HISTORY)
                 .sorted(CredentialModel.comparingByStartDateDesc())
                 .skip(passwordHistoryListMaxSize)
+                .filter(credentialModel1 -> !(credentialModel1.getId().equals(finalOldPassword.getId())))
+                .filter(credential -> passwordAgePredicate(credential, passwordMaxAgeMillis))
                 .collect(Collectors.toList())
                 .forEach(p -> user.credentialManager().removeStoredCredentialById(p.getId()));
 
         return createdCredential;
+    }
+
+    private boolean passwordAgePredicate(CredentialModel credential, long passwordMaxAgeMillis) {
+        return credential.getCreatedDate() < passwordMaxAgeMillis;
     }
 
     @Override
@@ -124,12 +136,16 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
 
     protected PasswordHashProvider getHashProvider(PasswordPolicy policy) {
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-        if (hash == null) {
-            logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
-            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
+        if (policy != null && policy.getHashAlgorithm() != null) {
+            PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
+            if (provider != null) {
+                return provider;
+            } else {
+                logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
+            }
         }
-        return hash;
+
+        return session.getProvider(PasswordHashProvider.class);
     }
 
     @Override
@@ -183,29 +199,34 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 logger.debugv("Failed password validation for user {0} ", user.getUsername());
                 return false;
             }
-            PasswordPolicy policy = realm.getPasswordPolicy();
-            if (policy == null) {
-                return true;
-            }
-            hash = getHashProvider(policy);
-            if (hash == null) {
-                return true;
-            }
-            if (hash.policyCheck(policy, password)) {
-                return true;
-            }
 
-            PasswordCredentialModel newPassword = hash.encodedCredential(input.getChallengeResponse(), policy.getHashIterations());
-            newPassword.setId(password.getId());
-            newPassword.setCreatedDate(password.getCreatedDate());
-            newPassword.setUserLabel(password.getUserLabel());
-            user.credentialManager().updateStoredCredential(newPassword);
+            rehashPasswordIfRequired(session, realm, user, input, password);
         } catch (Throwable t) {
             logger.warn("Error when validating user password", t);
             return false;
         }
 
         return true;
+    }
+
+    private void rehashPasswordIfRequired(KeycloakSession session, RealmModel realm, UserModel user, CredentialInput input, PasswordCredentialModel password) {
+        PasswordPolicy passwordPolicy = realm.getPasswordPolicy();
+        PasswordHashProvider provider;
+        if (passwordPolicy != null && passwordPolicy.getHashAlgorithm() != null) {
+            provider = session.getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
+        } else {
+            provider = session.getProvider(PasswordHashProvider.class);
+        }
+
+        if (!provider.policyCheck(passwordPolicy, password)) {
+            int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+
+            PasswordCredentialModel newPassword = provider.encodedCredential(input.getChallengeResponse(), iterations);
+            newPassword.setId(password.getId());
+            newPassword.setCreatedDate(password.getCreatedDate());
+            newPassword.setUserLabel(password.getUserLabel());
+            user.credentialManager().updateStoredCredential(newPassword);
+        }
     }
 
     @Override

@@ -17,11 +17,16 @@
 
 package org.keycloak.testsuite.pages;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -39,34 +44,34 @@ public class RegisterPage extends AbstractPage {
     @Page
     private PasswordFields.PasswordErrors passwordErrors;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "username")
+    @FindBy(name = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "password")
+    @FindBy(name = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirm")
+    @FindBy(name = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(id = "termsAccepted")
+    @FindBy(name = "termsAccepted")
     private WebElement termsAcceptedInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     @FindBy(className = "instruction")
@@ -76,14 +81,18 @@ public class RegisterPage extends AbstractPage {
     private WebElement backToLoginLink;
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
-        register(firstName, lastName, email, username, password, passwordConfirm, null);
+        register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String department) {
-        register(firstName, lastName, email, username, password, passwordConfirm, department, null);
+        register(firstName, lastName, email, username, password, passwordConfirm, department, null, null);
     }
 
-    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String department, Boolean termsAccepted) {
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, Map<String, String> attributes) {
+        register(firstName, lastName, email, username, password, passwordConfirm, null, null, attributes);
+    }
+
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String department, Boolean termsAccepted, Map<String, String> attributes) {
         firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);
@@ -123,6 +132,12 @@ public class RegisterPage extends AbstractPage {
 
         if (termsAccepted != null && termsAccepted) {
             termsAcceptedInput.click();
+        }
+
+        if (attributes != null) {
+            for (Entry<String, String> attribute : attributes.entrySet()) {
+                driver.findElement(By.name(Constants.USER_ATTRIBUTES_PREFIX + attribute.getKey())).sendKeys(attribute.getValue());
+            }
         }
 
         submitButton.click();
@@ -223,7 +238,7 @@ public class RegisterPage extends AbstractPage {
 
     public boolean isDepartmentPresent() {
         try {
-            return driver.findElement(By.id("department")).isDisplayed();
+            return driver.findElement(By.name("department")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
@@ -231,7 +246,7 @@ public class RegisterPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Register");
+        return isCurrent("Register");
     }
 
     public AccountFields.AccountErrors getInputAccountErrors(){
@@ -253,4 +268,9 @@ public class RegisterPage extends AbstractPage {
         assertCurrent();
     }
 
+    public void assertCurrent(String orgName) {
+        String name = getClass().getSimpleName();
+        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
+                isCurrent("Create an account to join the " + orgName + " organization"));
+    }
 }

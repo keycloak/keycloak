@@ -20,8 +20,11 @@ package org.keycloak.theme.beans;
 import org.keycloak.models.RealmModel;
 
 import jakarta.ws.rs.core.UriBuilder;
+
+import java.text.Collator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -29,13 +32,21 @@ import java.util.stream.Collectors;
  */
 public class LocaleBean {
 
+    private static final Set<String> RTL_LANGUAGE_CODES =
+            Set.of("ar", "dv", "fa", "ha", "he", "iw", "ji", "ps", "sd", "ug", "ur", "yi");
+
     private String current;
     private String currentLanguageTag;
+    private boolean rtl; // right-to-left language
     private List<Locale> supported;
 
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
+        this.rtl = RTL_LANGUAGE_CODES.contains(current.getLanguage());
+
+        Collator collator = Collator.getInstance(current);
+        collator.setStrength(Collator.PRIMARY); // ignore case and accents
 
         supported = realm.getSupportedLocalesStream()
                 .map(l -> {
@@ -43,6 +54,7 @@ public class LocaleBean {
                     String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
                     return new Locale(l, label, url);
                 })
+                .sorted((o1, o2) -> collator.compare(o1.label, o2.label))
                 .collect(Collectors.toList());
     }
 
@@ -52,6 +64,13 @@ public class LocaleBean {
 
     public String getCurrentLanguageTag() {
         return currentLanguageTag;
+    }
+
+    /**
+     * Whether it is Right-to-Left language or not.
+     */
+    public boolean isRtl() {
+        return rtl;
     }
 
     public List<Locale> getSupported() {

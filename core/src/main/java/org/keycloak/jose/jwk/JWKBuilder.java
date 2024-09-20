@@ -17,33 +17,23 @@
 
 package org.keycloak.jose.jwk;
 
-import java.util.Collections;
-import java.util.List;
+import java.math.BigInteger;
+import java.security.Key;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.EdECPoint;
+import java.util.Arrays;
+import java.util.Optional;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JWKBuilder {
-
-    public static final KeyUse DEFAULT_PUBLIC_KEY_USE = KeyUse.SIG;
-
-    private String kid;
-
-    private String algorithm;
+public class JWKBuilder extends AbstractJWKBuilder {
 
     private JWKBuilder() {
     }
@@ -62,75 +52,57 @@ public class JWKBuilder {
         return this;
     }
 
-    public JWK rs256(PublicKey key) {
-        algorithm(Algorithm.RS256);
-        return rsa(key);
+    @Override
+    public JWK okp(Key key) {
+        return okp(key, DEFAULT_PUBLIC_KEY_USE);
     }
 
-    public JWK rsa(Key key) {
-        return rsa(key, null, KeyUse.SIG);
-    }
-    
-    public JWK rsa(Key key, X509Certificate certificate) {
-        return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
-    }
+    @Override
+    public JWK okp(Key key, KeyUse keyUse) {
+        EdECPublicKey eddsaPublicKey = (EdECPublicKey) key;
 
-    public JWK rsa(Key key, List<X509Certificate> certificates) {
-        return rsa(key, certificates, null);
-    }
-
-    public JWK rsa(Key key, List<X509Certificate> certificates, KeyUse keyUse) {
-        RSAPublicKey rsaKey = (RSAPublicKey) key;
-
-        RSAPublicJWK k = new RSAPublicJWK();
+        OKPPublicJWK k = new OKPPublicJWK();
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
-        k.setKeyId(kid);
-        k.setKeyType(KeyType.RSA);
-        k.setAlgorithm(algorithm);
-        k.setPublicKeyUse(keyUse == null ? KeyUse.SIG.getSpecName() : keyUse.getSpecName());
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-
-        if (certificates != null && !certificates.isEmpty()) {
-            String[] certificateChain = new String[certificates.size()];
-            for (int i = 0; i < certificates.size(); i++) {
-                certificateChain[i] = PemUtils.encodeCertificate(certificates.get(i));
-            }
-            k.setX509CertificateChain(certificateChain);
-        }
-
-        return k;
-    }
-
-    public JWK rsa(Key key, KeyUse keyUse) {
-        JWK k = rsa(key);
-        String keyUseString = keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName();
-        if (KeyUse.ENC == keyUse) keyUseString = "enc";
-        k.setPublicKeyUse(keyUseString);
-        return k;
-    }
-
-    public JWK ec(Key key) {
-        return ec(key, DEFAULT_PUBLIC_KEY_USE);
-    }
-
-    public JWK ec(Key key, KeyUse keyUse) {
-        ECPublicKey ecKey = (ECPublicKey) key;
-
-        ECPublicJWK k = new ECPublicJWK();
-
-        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
-        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
 
         k.setKeyId(kid);
-        k.setKeyType(KeyType.EC);
+        k.setKeyType(KeyType.OKP);
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
-        k.setCrv("P-" + fieldSize);
-        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
-        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
-        
+        k.setCrv(eddsaPublicKey.getParams().getName());
+
+        Optional<String> x = edPublicKeyInJwkRepresentation(eddsaPublicKey);
+        k.setX(x.orElse(""));
+
         return k;
     }
+
+    private Optional<String> edPublicKeyInJwkRepresentation(EdECPublicKey eddsaPublicKey) {
+        EdECPoint edEcPoint = eddsaPublicKey.getPoint();
+        BigInteger yCoordinate = edEcPoint.getY();
+
+        // JWK representation "x" of a public key
+        int bytesLength = 0;
+        if (Algorithm.Ed25519.equals(eddsaPublicKey.getParams().getName())) {
+            bytesLength = 32;
+        } else if (Algorithm.Ed448.equals(eddsaPublicKey.getParams().getName())) {
+            bytesLength = 57;
+        } else {
+            return Optional.ofNullable(null);
+        }
+
+        // consider the case where yCoordinate.toByteArray() is less than bytesLength due to relatively small value of y-coordinate.
+        byte[] yCoordinateLittleEndianBytes = new byte[bytesLength];
+
+        // convert big endian representation of BigInteger to little endian representation of JWK representation (RFC 8032,8027)
+        yCoordinateLittleEndianBytes = Arrays.copyOf(reverseBytes(yCoordinate.toByteArray()), bytesLength);
+
+        // set a parity of x-coordinate to the most significant bit of the last octet (RFC 8032, 8037)
+        if (edEcPoint.isXOdd()) {
+            yCoordinateLittleEndianBytes[yCoordinateLittleEndianBytes.length - 1] |= -128; // 0b10000000
+        }
+
+        return Optional.ofNullable(Base64Url.encode(yCoordinateLittleEndianBytes));
+    }
+
 }

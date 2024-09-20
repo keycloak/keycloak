@@ -25,6 +25,9 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 |Single Sign-On Service URL
 |The SAML endpoint that starts the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
 
+|Artifact service URL
+|The SAML artifact resolution endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
+
 |Single Logout Service URL
 |The SAML logout endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
 
@@ -45,6 +48,9 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 
 |HTTP-POST Binding Response
 |Controls the SAML binding in response to any SAML requests sent by an external IDP. When *OFF*, {project_name} uses Redirect Binding.
+
+|ARTIFACT Binding Response
+|Controls the SAML binding in response to any SAML requests sent by an external IDP. When *OFF*, {project_name} evaluates the HTTP-POST Binding Response configuration.
 
 |HTTP-POST Binding for AuthnRequest
 |Controls the SAML binding when requesting authentication from an external IDP. When *OFF*, {project_name} uses Redirect Binding.

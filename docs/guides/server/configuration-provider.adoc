@@ -40,22 +40,38 @@ spi-connections-http-client-default-connection-pool-size=10
 
 == Setting a provider configuration option
 
-Provider configuration options are provided when starting the server, as shown in the following example:
+Provider configuration options are provided when starting the server. See all support configuration sources and formats for options in <@links.server id="configuration"/>. For example via a command line option:
 
 .Setting the `connection-pool-size` for the `default` provider of the `connections-http-client` SPI
 <@kc.start parameters="--spi-connections-http-client-default-connection-pool-size=10"/>
 
-== Configuring a default provider
+== Configuring a single provider for an SPI
 
 Depending on the SPI, multiple provider implementations can co-exist but only one of them is going to be used at runtime.
-For these SPIs, a default provider is the primary implementation that is going to be active and used at runtime.
+For these SPIs, a specific provider is the primary implementation that is going to be active and used at runtime.
 
-To configure a provider as the default you should run the `build` command as follows:
+To configure a provider as the single provider you should run the `build` command as follows:
 
-.Marking the `mycustomprovider` provider as the default provider for the `email-template` SPI
+.Marking the `mycustomprovider` provider as the single provider for the `email-template` SPI
 <@kc.build parameters="--spi-email-template-provider=mycustomprovider"/>
 
-In the example above, we are using the `provider` property to set the id of the provider we want to mark as the default.
+== Configuring a default provider for an SPI
+
+Depending on the SPI, multiple provider implementations can co-exist and one is used by default.
+For these SPIs, a specific provider is the default implementation that is going to selected unless a specific provider
+is requested.
+
+The following logic is used to determine the default provider:
+
+1. The explicitly configured default provider
+2. The provider with the highest order (providers with order <= 0 are ignored)
+3. The provider with the id set to `default`
+
+To configure a provider as the default provider you should run the `build` command as follows:
+
+.Marking the `mycustomhash` provider as the default provider for the `password-hashing` SPI
+<@kc.build parameters="--spi-password-hashing-provider-default=mycustomprovider"/>
+
 
 == Enabling and disabling a provider
 

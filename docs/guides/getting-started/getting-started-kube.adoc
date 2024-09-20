@@ -9,6 +9,8 @@ summary="Get started with {project_name} on Kubernetes">
 
 == Before you start
 
+include::templates/hw-requirements.adoc[]
+
 Make sure you have Minikube installed, ideally with the Ingress addon enabled.
 
 To check if you have the Ingress addon enabled, enter the following command:

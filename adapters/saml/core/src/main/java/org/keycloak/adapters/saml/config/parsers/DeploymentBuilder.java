@@ -24,10 +24,9 @@ import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
+import org.keycloak.adapters.saml.config.PemUtils;
 import org.keycloak.adapters.saml.config.SP;
-import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
@@ -58,7 +57,6 @@ public class DeploymentBuilder {
     protected static Logger log = Logger.getLogger(DeploymentBuilder.class);
 
     public SamlDeployment build(InputStream xml, ResourceLoader resourceLoader) throws ParsingException {
-        CryptoIntegration.init(DeploymentBuilder.class.getClassLoader());
         DefaultSamlDeployment deployment = new DefaultSamlDeployment();
         DefaultSamlDeployment.DefaultIDP defaultIDP = new DefaultSamlDeployment.DefaultIDP();
         DefaultSamlDeployment.DefaultSingleSignOnService sso = new DefaultSamlDeployment.DefaultSingleSignOnService();

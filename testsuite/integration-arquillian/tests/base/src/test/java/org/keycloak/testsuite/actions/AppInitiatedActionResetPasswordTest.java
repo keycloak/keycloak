@@ -23,8 +23,12 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.cookie.CookieType;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -34,12 +38,15 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -84,9 +91,24 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isCancelDisplayed());
 
+        Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        String authSessionId = authSessionCookie.getValue().split("\\.")[0];
+        testingClient.server().run(session -> {
+            // ensure that our logic to detect the authentication session works as expected
+            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+        });
+
         changePasswordPage.changePassword("new-password", "new-password");
 
+        testingClient.server().run(session -> {
+            // ensure that the authentication session has been terminated
+            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+            assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+        });
+
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
         assertKcActionStatus(SUCCESS);
 
@@ -125,6 +147,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.changePassword("new-password", "new-password");
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         assertKcActionStatus(SUCCESS);
     }
 
@@ -168,6 +191,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             changePasswordPage.changePassword("new-password", "new-password");
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
             assertKcActionStatus(SUCCESS);
         } finally {
             // reset password policy to previous state
@@ -179,12 +203,12 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test
     public void cancelChangePassword() throws Exception {
         doAIA();
-        
+
         loginPage.login("test-user@localhost", "password");
-        
+
         changePasswordPage.assertCurrent();
         changePasswordPage.cancel();
-        
+
         assertKcActionStatus(CANCELLED);
     }
 
@@ -203,11 +227,16 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         changePasswordPage.assertCurrent();
+        /*
+         * cancel should not be supported, because the action is not only application-initiated, but also required by
+         * Keycloak
+         */
         assertFalse(changePasswordPage.isCancelDisplayed());
 
         changePasswordPage.changePassword("new-password", "new-password");
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
         assertKcActionStatus(SUCCESS);
     }
@@ -227,7 +256,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         final String firstSessionId = sessions.get(0).getId();
 
         oauth2.doLogin("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventRepresentation event2 = events.expectLogin().assertEvent();
         assertEquals(2, testUser.getUserSessions().size());
 
         doAIA();
@@ -235,7 +264,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.assertCurrent();
         assertTrue("Logout sessions is checked by default", changePasswordPage.isLogoutSessionsChecked());
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
+        events.expectLogout(event2.getSessionId()).detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name()).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         assertKcActionStatus(SUCCESS);
 
         sessions = testUser.getUserSessions();
@@ -264,6 +295,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.uncheckLogoutSessions();
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         assertKcActionStatus(SUCCESS);
 
         assertEquals(2, testUser.getUserSessions().size());

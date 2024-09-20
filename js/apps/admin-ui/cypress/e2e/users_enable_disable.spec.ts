@@ -1,11 +1,12 @@
-import { v4 as uuid } from "uuid";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import UsersPage from "../support/pages/admin-ui/manage/users/UsersPage";
 import UserDetailsPage from "../support/pages/admin-ui/manage/users/user_details/UserDetailsPage";
 import adminClient from "../support/util/AdminClient";
+import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
@@ -13,6 +14,7 @@ const sidebarPage = new SidebarPage();
 const usersPage = new UsersPage();
 const userDetailsPage = new UserDetailsPage();
 const masthead = new Masthead();
+const modal = new ModalUtils();
 
 const createUser = (fields: UserRepresentation) =>
   cy
@@ -35,6 +37,7 @@ describe("User enable/disable", () => {
       userDetailsPage.assertEnabled(username!);
 
       userDetailsPage.toggleEnabled(username!);
+      modal.confirmModal();
       masthead.checkNotificationMessage("The user has been saved");
       cy.wait(1000);
       userDetailsPage.assertDisabled(username!);
@@ -64,6 +67,7 @@ describe("User enable/disable", () => {
       userDetailsPage.assertEnabled(username!);
 
       userDetailsPage.toggleEnabled(username!);
+      modal.confirmModal();
       masthead.checkNotificationMessage("The user has been saved");
       cy.wait(1000);
       userDetailsPage.assertDisabled(username!);

@@ -22,15 +22,10 @@ public class GoogleAuthenticatorProvider implements OTPApplicationProviderFactor
 
     @Override
     public boolean supports(OTPPolicy policy) {
-        if (policy.getDigits() != 6) {
-            return false;
+        if (policy.getType().equals("totp")) {
+            return policy.getPeriod() == 30;
         }
-
-        if (!policy.getAlgorithm().equals("HmacSHA1")) {
-            return false;
-        }
-
-        return policy.getType().equals("totp") && policy.getPeriod() == 30;
+        return true;
     }
 
     @Override

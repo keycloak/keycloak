@@ -19,10 +19,7 @@ package org.keycloak.testsuite.util;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.opera.OperaDriver;
-import org.openqa.selenium.safari.SafariDriver;
 
 /**
  * Determine which WebDriver is used
@@ -41,17 +38,5 @@ public class BrowserDriverUtil {
 
     public static boolean isDriverFirefox(WebDriver driver) {
         return isDriverInstanceOf(driver, FirefoxDriver.class);
-    }
-
-    public static boolean isDriverOpera(WebDriver driver) {
-        return isDriverInstanceOf(driver, OperaDriver.class);
-    }
-
-    public static boolean isDriverEdge(WebDriver driver) {
-        return isDriverInstanceOf(driver, EdgeDriver.class);
-    }
-
-    public static boolean isDriverSafari(WebDriver driver) {
-        return isDriverInstanceOf(driver, SafariDriver.class);
     }
 }

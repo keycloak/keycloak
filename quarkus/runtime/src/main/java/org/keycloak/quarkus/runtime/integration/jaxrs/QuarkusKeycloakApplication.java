@@ -17,33 +17,44 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import jakarta.enterprise.event.Observes;
-import jakarta.ws.rs.ApplicationPath;
-
-import org.keycloak.config.HostnameOptions;
+import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.platform.Platform;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
-import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.enterprise.event.Observes;
+import jakarta.ws.rs.ApplicationPath;
 
 @ApplicationPath("/")
 @Blocking
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
+    private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
+    private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
+
     void onStartupEvent(@Observes StartupEvent event) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
         platform.started();
-        QuarkusPlatform.exitOnError();
         startup();
+        Environment.getParsedCommand().ifPresent(ac -> {
+            if (ac instanceof AbstractNonServerCommand) {
+                ((AbstractNonServerCommand)ac).onStart(this);
+            }
+        });
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
@@ -63,19 +74,47 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    public Set<Object> getSingletons() {
-        return Set.of();
+    protected void createTemporaryAdmin(KeycloakSession session) {
+        var adminUsername = getOption(BootstrapAdminOptions.USERNAME.getKey(), KEYCLOAK_ADMIN_ENV_VAR);
+        var adminPassword = getOption(BootstrapAdminOptions.PASSWORD.getKey(), KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
+
+        var clientId = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_ID.getKey()).orElse(null);
+        var clientSecret = Configuration.getOptionalKcValue(BootstrapAdminOptions.CLIENT_SECRET.getKey()).orElse(null);
+
+        try {
+            //Integer expiration = Configuration.getOptionalKcValue(BootstrapAdminOptions.EXPIRATION.getKey()).map(Integer::valueOf).orElse(null);
+            if (StringUtil.isNotBlank(adminPassword) && !createTemporaryMasterRealmAdminUser(adminUsername, adminPassword, /*expiration,*/ session)) {
+                throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin user account could not be created.");
+            }
+            if (StringUtil.isNotBlank(clientSecret) && !createTemporaryMasterRealmAdminService(clientId, clientSecret, /*expiration,*/ session)) {
+                throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin service account could not be created.");
+            }
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid admin expiration value provided. An integer is expected.", e);
+        }
     }
 
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = new HashSet<>(super.getClasses());
-
-        classes.add(QuarkusObjectMapperResolver.class);
-        classes.add(CloseSessionHandler.class);
-
-        classes.add(DebugHostnameSettingsResource.class);
-
-        return classes;
+    private String getOption(String option, String envVar) {
+        PropertyMappingInterceptor.disable(); // disable default handling
+        try {
+            return Configuration.getOptionalKcValue(option).orElseGet(() -> {
+                String value = System.getenv(envVar);
+                if (value != null) {
+                    ServicesLogger.LOGGER.usingDeprecatedEnvironmentVariable(envVar, Configuration.toEnvVarFormat(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + option));
+                }
+                return value;
+            });
+        } finally {
+            PropertyMappingInterceptor.enable();
+        }
     }
+
+    public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
+    }
+
+    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
+    }
+
 }

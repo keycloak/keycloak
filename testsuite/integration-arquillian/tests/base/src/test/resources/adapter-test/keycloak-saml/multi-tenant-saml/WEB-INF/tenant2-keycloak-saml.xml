@@ -7,8 +7,8 @@
         <Keys>
             <Key signing="true">
                 <KeyStore resource="/keystore-tenant2.jks" password="changeit">
-                    <PrivateKey alias="multi-tenant" password="changeit"/>
-                    <Certificate alias="multi-tenant"/>
+                    <PrivateKey alias="tenant2" password="changeit"/>
+                    <Certificate alias="tenant2"/>
                 </KeyStore>
             </Key>
         </Keys>

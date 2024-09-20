@@ -27,17 +27,20 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.CredentialHelper;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -53,7 +56,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
     }
-    
+
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -69,7 +72,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public void processAction(RequiredActionContext context) {
         EventBuilder event = context.getEvent();
-        event.event(EventType.UPDATE_TOTP);
+        event.event(EventType.UPDATE_CREDENTIAL);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String challengeResponse = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
@@ -78,6 +81,9 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         OTPPolicy policy = context.getRealm().getOTPPolicy();
         OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(context.getRealm(), totpSecret, userLabel);
+        event.detail(Details.CREDENTIAL_TYPE, credentialModel.getType());
+
+        EventBuilder deprecatedEvent = event.clone().event(EventType.UPDATE_TOTP);
         if (Validation.isBlank(challengeResponse)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
@@ -118,7 +124,9 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             context.challenge(challenge);
             return;
         }
+        context.getAuthenticationSession().removeAuthNote(Constants.TOTP_SECRET_KEY);
         context.success();
+        deprecatedEvent.success();
     }
 
 
@@ -157,6 +165,11 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
+    }
+
+    @Override
+    public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
+        return OTPCredentialModel.TYPE;
     }
 
     @Override

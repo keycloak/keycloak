@@ -17,20 +17,16 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import io.vertx.core.http.HttpServerRequest;
 import org.jboss.resteasy.reactive.server.core.CurrentRequestManager;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakContext;
 
-import io.vertx.core.http.HttpServerRequest;
-
 public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
-
-    private ClientConnection clientConnection;
 
     public QuarkusKeycloakContext(KeycloakSession session) {
         super(session);
@@ -43,26 +39,14 @@ public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
 
     @Override
     protected HttpResponse createHttpResponse() {
-        return new QuarkusHttpResponse(getSession(), getResteasyReactiveRequestContext());
+        return new QuarkusHttpResponse(getResteasyReactiveRequestContext());
     }
 
     @Override
-    public ClientConnection getConnection() {
-        if (clientConnection == null) {
-            ClientConnection contextualObject = Resteasy.getContextData(ClientConnection.class);
-
-            if (contextualObject == null) {
-                ResteasyReactiveRequestContext requestContext = getResteasyReactiveRequestContext();
-                HttpServerRequest serverRequest = requestContext.unwrap(HttpServerRequest.class);
-                clientConnection = new QuarkusClientConnection(serverRequest);
-            } else {
-                // in case the request is dispatched to a different thread like when using JAX-RS async responses
-                // in this case, we expect the client connection available as a contextual data
-                clientConnection = contextualObject;
-            }
-        }
-
-        return clientConnection;
+    protected ClientConnection createClientConnection() {
+        ResteasyReactiveRequestContext requestContext = getResteasyReactiveRequestContext();
+        HttpServerRequest serverRequest = requestContext.unwrap(HttpServerRequest.class);
+        return new QuarkusClientConnection(serverRequest);
     }
 
     private ResteasyReactiveRequestContext getResteasyReactiveRequestContext() {

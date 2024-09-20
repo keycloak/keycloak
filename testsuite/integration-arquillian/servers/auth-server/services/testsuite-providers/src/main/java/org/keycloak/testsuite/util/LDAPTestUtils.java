@@ -94,6 +94,12 @@ public class LDAPTestUtils {
     }
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
+                                         final String firstName, final String lastName, final String email,
+                                         final MultivaluedHashMap<String, String> otherAttrs) {
+        return addLDAPUser(ldapProvider, realm, username, firstName, lastName, email, null, otherAttrs);
+    }
+
+    public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
                                          final String firstName, final String lastName, final String email, final String street,
                                          final MultivaluedHashMap<String, String> otherAttrs, final String... postalCode) {
         UserModel helperUser = new UserModelDelegate(null) {
@@ -183,6 +189,14 @@ public class LDAPTestUtils {
     public static ComponentModel getLdapProviderModel(RealmModel realm) {
         return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
                 .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static ComponentModel getLdapProviderModel(RealmModel realm, String providerName) {
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .filter(component -> providerName == null || component.getName().equals(providerName))
                 .findFirst()
                 .orElse(null);
     }
@@ -347,7 +361,7 @@ public class LDAPTestUtils {
             }
         }
     }
-    
+
     public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm)) {
@@ -361,7 +375,7 @@ public class LDAPTestUtils {
             }
         }
     }
-    
+
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);

@@ -22,10 +22,10 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class UserSessionUpdateTask implements SessionUpdateTask<UserSessionEntity> {
+public abstract class UserSessionUpdateTask implements PersistentSessionUpdateTask<UserSessionEntity> {
 
     @Override
-    public CacheOperation getOperation(UserSessionEntity session) {
+    public CacheOperation getOperation() {
         return CacheOperation.REPLACE;
     }
 

@@ -34,6 +34,7 @@ import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
@@ -445,7 +446,10 @@ public class SAML2Response {
 
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
 
-        if (responseType instanceof ResponseType) {
+        if (responseType instanceof ArtifactResponseType) {
+            ArtifactResponseType response = (ArtifactResponseType) responseType;
+            writer.write(response);
+        } else if (responseType instanceof ResponseType) {
             ResponseType response = (ResponseType) responseType;
             writer.write(response);
         } else {

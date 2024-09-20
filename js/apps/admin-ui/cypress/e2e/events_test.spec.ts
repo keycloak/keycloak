@@ -272,6 +272,7 @@ describe.skip("Events tests", () => {
     const realmName = uuid();
 
     before(() => adminClient.createRealm(realmName));
+
     after(() => adminClient.deleteRealm(realmName));
 
     beforeEach(() => {
@@ -474,7 +475,7 @@ describe.skip("Events tests", () => {
     });
 
     it("Check a11y violations on admin events tab", () => {
-      eventsPage.goToAdminEventsTab;
+      eventsPage.goToAdminEventsTab();
       cy.checkA11y();
     });
 

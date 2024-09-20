@@ -26,6 +26,8 @@ import org.keycloak.models.RealmModel;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.util.TokenUtil;
+
 import java.util.regex.Pattern;
 
 /**
@@ -65,7 +67,7 @@ public class AppAuthManager extends AuthenticationManager {
         }
 
         String bearerPart = split[0];
-        if (!bearerPart.equalsIgnoreCase(BEARER)){
+        if (!bearerPart.equalsIgnoreCase(BEARER) && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
             return null;
         }
 

@@ -1,33 +1,28 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
   DropdownItem,
-  FormGroup,
   PageSection,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
 import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 import { useParams } from "../../utils/useParams";
 import {
@@ -45,16 +40,14 @@ export type Role = RoleRepresentation & {
 };
 
 export default function AddMapper() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const form = useForm<IdPMapperRepresentationWithAttributes>({
     shouldUnregister: true,
   });
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = form;
+  const { handleSubmit } = form;
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const localeSort = useLocaleSort();
@@ -92,7 +85,7 @@ export default function AddMapper() {
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
-        addError(t("mapperSaveError"), error);
+        addError("mapperSaveError", error);
       }
     } else {
       try {
@@ -111,7 +104,7 @@ export default function AddMapper() {
           }),
         );
       } catch (error) {
-        addError(t("mapperCreateError"), error);
+        addError("mapperCreateError", error);
       }
     }
   };
@@ -158,7 +151,7 @@ export default function AddMapper() {
 
       setMapperTypes(mappers);
     },
-    [],
+    [id],
   );
 
   const setupForm = (mapper: IdentityProviderMapperRepresentation) => {
@@ -200,43 +193,33 @@ export default function AddMapper() {
         role="manage-identity-providers"
         isHorizontal
         onSubmit={handleSubmit(save)}
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
       >
-        {id && (
-          <FormGroup
-            label={t("id")}
-            fieldId="kc-name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
-          >
-            <KeycloakTextInput
-              value={currentMapper.id}
-              id="kc-name"
-              isDisabled={!!id}
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              {...register("name")}
+        <FormProvider {...form}>
+          {id && (
+            <TextControl
+              name="id"
+              label={t("id")}
+              readOnly
+              rules={{
+                required: t("required"),
+              }}
             />
-          </FormGroup>
-        )}
-        {currentMapper.properties && (
-          <>
-            <AddMapperForm
-              form={form}
-              id={id}
-              mapperTypes={mapperTypes}
-              updateMapperType={setCurrentMapper}
-              mapperType={currentMapper}
-            />
-            <FormProvider {...form}>
-              <DynamicComponents properties={currentMapper.properties!} />
-            </FormProvider>
-          </>
-        )}
+          )}
+          {currentMapper.properties && (
+            <>
+              <AddMapperForm
+                form={form}
+                id={id}
+                mapperTypes={mapperTypes}
+                updateMapperType={setCurrentMapper}
+                mapperType={currentMapper}
+              />
 
+              <DynamicComponents properties={currentMapper.properties!} />
+            </>
+          )}
+        </FormProvider>
         <ActionGroup>
           <Button
             data-testid="new-mapper-save-button"

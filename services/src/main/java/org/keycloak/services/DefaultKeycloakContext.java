@@ -17,8 +17,8 @@
 
 package org.keycloak.services;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.locale.LocaleSelectorProvider;
@@ -26,13 +26,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
@@ -41,11 +40,13 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakContext implements KeycloakContext {
+public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     private RealmModel realm;
 
     private ClientModel client;
+
+    private OrganizationModel organization;
 
     protected KeycloakSession session;
 
@@ -54,6 +55,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
     private AuthenticationSessionModel authenticationSession;
     private HttpRequest request;
     private HttpResponse response;
+    private ClientConnection clientConnection;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
@@ -98,11 +100,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     @Override
-    public <T> T getContextObject(Class<T> clazz) {
-        return Resteasy.getContextData(clazz);
-    }
-
-    @Override
     public RealmModel getRealm() {
         return realm;
     }
@@ -124,20 +121,34 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     @Override
+    public OrganizationModel getOrganization() {
+        return organization;
+    }
+
+    @Override
+    public void setOrganization(OrganizationModel organization) {
+        this.organization = organization;
+    }
+
+    @Override
     public ClientConnection getConnection() {
-        return getContextObject(ClientConnection.class);
+        if (clientConnection == null) {
+            clientConnection = createClientConnection();
+        }
+
+        return clientConnection;
     }
 
     @Override
     public Locale resolveLocale(UserModel user) {
         return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user);
     }
-    
+
     @Override
     public AuthenticationSessionModel getAuthenticationSession() {
         return authenticationSession;
     }
-    
+
     @Override
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
@@ -146,12 +157,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpRequest getHttpRequest() {
         if (request == null) {
-            synchronized (this) {
-                request = getContextObject(HttpRequest.class);
-                if (request == null) {
-                    request = createHttpRequest();
-                }
-            }
+            request = createHttpRequest();
         }
 
         return request;
@@ -160,26 +166,37 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
-            synchronized (this) {
-                response = getContextObject(HttpResponse.class);
-                if (response == null) {
-                    response = createHttpResponse();
-                }
-            }
+            response = createHttpResponse();
         }
 
         return response;
     }
 
-    protected HttpRequest createHttpRequest() {
-        return new HttpRequestImpl(getContextObject(org.jboss.resteasy.spi.HttpRequest.class));
+    protected ClientConnection createClientConnection() {
+        return null;
     }
 
-    protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(session, getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
-    }
+    protected abstract HttpRequest createHttpRequest();
+
+    protected abstract HttpResponse createHttpResponse();
 
     protected KeycloakSession getSession() {
         return session;
     }
+
+    @Override
+    public void setConnection(ClientConnection clientConnection) {
+        this.clientConnection = clientConnection;
+    }
+
+    @Override
+    public void setHttpRequest(HttpRequest httpRequest) {
+        this.request = httpRequest;
+    }
+
+    @Override
+    public void setHttpResponse(HttpResponse httpResponse) {
+        this.response = httpResponse;
+    }
+
 }

@@ -1,0 +1,15 @@
+= Valid redirect URIs for clients are always compared with exact string matching
+
+Version 1.8.0 introduced a lower-case for the hostname and scheme when comparing a redirect URI with the specified valid redirects for a client. Unfortunately it did not fully work in all the protocols, and, for example, the host was lower-cased for `http` but not for `https`. As https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[OAuth 2.0 Security Best Current Practice] advises to compare URIs using exact string matching, {project_name} will follow the recommendation and for now on valid redirects are compared with exact case even for the hostname and scheme.
+
+For realms relying on the old behavior, the valid redirect URIs for their clients should now hold separate entries for each URI that should be recognized by the server.
+
+Although it introduces more steps and verbosity when configuring clients, the new behavior enables more secure deployments as pattern-based checks are frequently the cause of security issues. These issues are due to how they are implemented and how they are configured.
+
+ifeval::[{project_community}==true]
+= Operator -secrets-store Secret
+
+Older versions of the operator created a Secret to track watched Secrets. Newer versions of the operator no longer use the -secrets-store Secret, so it may be deleted. 
+
+If you are on 23.0.0 or 23.0.1 and see "org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource -> java.lang.IllegalStateException: More than 1 secondary resource related to      primary" in the operator log then either delete the -secrets-store Secret, or upgrade to 23.0.2 where this is no longer an issue.
+endif::[]

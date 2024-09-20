@@ -1,4 +1,3 @@
-import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import { MouseEvent as ReactMouseEvent, useMemo, useState } from "react";
 import {
   Background,
@@ -8,7 +7,6 @@ import {
   MiniMap,
   Node,
   NodeMouseHandler,
-  NodeTypes,
   Position,
   ReactFlow,
   ReactFlowInstance,
@@ -31,11 +29,55 @@ type FlowDiagramProps = {
   executionList: ExecutionList;
 };
 
-const createEdge = (fromNode: string, toNode: string): Edge => ({
+type ConditionLabel = "true" | "false" | "success" | "attempted";
+
+const nodeTypes = {
+  conditional: ConditionalNode,
+  startSubFlow: StartSubFlowNode,
+  endSubFlow: EndSubFlowNode,
+};
+
+const inOutClasses = new Map<string, string>([
+  ["input", "keycloak__authentication__input_node"],
+  ["output", "keycloak__authentication__output_node"],
+]);
+
+type NodeType =
+  | "conditional"
+  | "startSubFlow"
+  | "endSubFlow"
+  | "input"
+  | "output";
+
+type IntermediateFlowResult = {
+  startId: string;
+  nodes: Node[];
+  edges: Edge[];
+  nextLinkFns: ((id: string) => Edge)[];
+};
+
+function pairwise<T, U>(fn: (x: T, y: T) => U, arr: T[]): U[] {
+  const result: U[] = [];
+  for (let index = 0; index < arr.length - 1; index++) {
+    result.push(fn(arr[index], arr[index + 1]));
+  }
+  return result;
+}
+
+const isBypassable = (execution: ExpandableExecution) =>
+  execution.requirement === "ALTERNATIVE" ||
+  execution.requirement === "CONDITIONAL";
+
+const createEdge = (
+  fromNode: string,
+  toNode: string,
+  label?: ConditionLabel,
+): Edge => ({
   id: `edge-${fromNode}-to-${toNode}`,
   type: "buttonEdge",
   source: fromNode,
   target: toNode,
+  label: label,
   data: {
     onEdgeClick: (
       evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
@@ -47,233 +89,188 @@ const createEdge = (fromNode: string, toNode: string): Edge => ({
   },
 });
 
-const createNode = (ex: ExpandableExecution): Node => {
-  let nodeType: string | undefined = undefined;
-  if (ex.executionList) {
-    nodeType = "startSubFlow";
-  }
-  if (providerConditionFilter(ex)) {
-    nodeType = "conditional";
-  }
+const createNode = (
+  ex: { id?: string; displayName?: string },
+  nodeType?: NodeType,
+): Node => {
   return {
     id: ex.id!,
     type: nodeType,
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
+    sourcePosition: nodeType === "output" ? undefined : Position.Right,
+    targetPosition: nodeType === "input" ? undefined : Position.Left,
     data: { label: ex.displayName! },
     position: { x: 0, y: 0 },
+    className: inOutClasses.get(nodeType || ""),
   };
 };
 
-const renderParallelNodes = (execution: ExpandableExecution): Node[] => [
-  createNode(execution),
-];
-
-const renderParallelEdges = (
-  start: AuthenticationExecutionInfoRepresentation,
-  execution: ExpandableExecution,
-  end: AuthenticationExecutionInfoRepresentation,
-): Edge[] => [
-  createEdge(start.id!, execution.id!),
-  createEdge(execution.id!, end.id!),
-];
-
-const renderSequentialNodes = (execution: ExpandableExecution): Node[] => [
-  createNode(execution),
-];
-
-const renderSequentialEdges = (
-  start: AuthenticationExecutionInfoRepresentation,
-  execution: ExpandableExecution,
-  end: AuthenticationExecutionInfoRepresentation,
-  prefExecution: ExpandableExecution,
-  isFirst: boolean,
-  isLast: boolean,
-): Edge[] => {
-  const edges: Edge[] = [];
-
-  if (isFirst) {
-    edges.push(createEdge(start.id!, execution.id!));
-  } else {
-    edges.push(createEdge(prefExecution.id!, execution.id!));
-  }
-
-  if (isLast) {
-    edges.push(createEdge(execution.id!, end.id!));
-  }
-
-  return edges;
-};
-
-const renderSubFlowNodes = (execution: ExpandableExecution): Node[] => {
-  const nodes: Node[] = [];
-
-  nodes.push({
-    id: execution.id!,
-    type: "startSubFlow",
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    data: { label: execution.displayName! },
-    position: { x: 0, y: 0 },
-  });
-
-  const endSubFlowId = `flow-end-${execution.id}`;
-
-  nodes.push({
-    id: endSubFlowId,
-    type: "endSubFlow",
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    data: { label: execution.displayName! },
-    position: { x: 0, y: 0 },
-  });
-
-  return nodes.concat(renderFlowNodes(execution.executionList || []));
-};
-
-const renderSubFlowEdges = (
-  execution: ExpandableExecution,
-  start: AuthenticationExecutionInfoRepresentation,
-  end: AuthenticationExecutionInfoRepresentation,
-  prefExecution?: ExpandableExecution,
-): Edge[] => {
-  const edges: Edge[] = [];
-
-  const endSubFlowId = `flow-end-${execution.id}`;
-
-  edges.push(
-    createEdge(
-      prefExecution && prefExecution.requirement !== "ALTERNATIVE"
-        ? prefExecution.id!
-        : start.id!,
-      execution.id!,
-    ),
-  );
-  edges.push(createEdge(endSubFlowId, end.id!));
-
-  return edges.concat(
-    renderFlowEdges(execution, execution.executionList || [], {
-      ...execution,
-      id: endSubFlowId,
-    }),
-  );
-};
-
-const renderFlowNodes = (executionList: ExpandableExecution[]): Node[] => {
-  let elements: Node[] = [];
-
-  for (let index = 0; index < executionList.length; index++) {
-    const execution = executionList[index];
-    if (execution.executionList) {
-      elements = elements.concat(renderSubFlowNodes(execution));
-    } else {
-      if (
-        execution.requirement === "ALTERNATIVE" ||
-        execution.requirement === "DISABLED"
-      ) {
-        elements = elements.concat(renderParallelNodes(execution));
-      } else {
-        elements = elements.concat(renderSequentialNodes(execution));
-      }
-    }
-  }
-
-  return elements;
-};
-
-const renderFlowEdges = (
-  start: AuthenticationExecutionInfoRepresentation,
+const consecutiveBypassableFlows = (
   executionList: ExpandableExecution[],
-  end: AuthenticationExecutionInfoRepresentation,
-): Edge[] => {
-  let elements: Edge[] = [];
-
+): ExpandableExecution[] => {
+  const result = [];
   for (let index = 0; index < executionList.length; index++) {
     const execution = executionList[index];
-    if (execution.executionList) {
-      elements = elements.concat(
-        renderSubFlowEdges(execution, start, end, executionList[index - 1]),
-      );
-    } else {
-      if (
-        execution.requirement === "ALTERNATIVE" ||
-        execution.requirement === "DISABLED"
-      ) {
-        elements = elements.concat(renderParallelEdges(start, execution, end));
-      } else {
-        elements = elements.concat(
-          renderSequentialEdges(
-            start,
-            execution,
-            end,
-            executionList[index - 1],
-            index === 0,
-            index === executionList.length - 1,
-          ),
-        );
-      }
+    if (!isBypassable(execution)) {
+      break;
     }
+    result.push(execution);
   }
-
-  return elements;
+  return result;
 };
 
-const nodeTypes: NodeTypes = {
-  conditional: ConditionalNode,
-  startSubFlow: StartSubFlowNode,
-  endSubFlow: EndSubFlowNode,
+const borderStep = (
+  node: Node,
+  continuing: boolean = true,
+): IntermediateFlowResult => ({
+  startId: node.id,
+  nodes: [node],
+  edges: [],
+  nextLinkFns: continuing ? [(id: string) => createEdge(node.id, id)] : [],
+});
+
+const renderSubFlow = (
+  execution: ExpandableExecution,
+): IntermediateFlowResult => {
+  if (!execution.executionList)
+    throw new Error("Execution list is required for subflow");
+
+  const graph = createGraph(createConcurrentGroupings(execution.executionList));
+
+  graph.nextLinkFns.push(
+    ...execution.executionList
+      .filter((e) => providerConditionFilter(e))
+      .map((e) => (id: string) => createEdge(e.id!, id, "false")),
+  );
+  return graph;
+};
+
+const groupConcurrentSteps = (
+  executionList: ExpandableExecution[],
+): ExpandableExecution[] => {
+  const executions = consecutiveBypassableFlows(executionList);
+  if (executions.length > 0) {
+    return executions;
+  }
+  return [executionList[0]];
+};
+
+const createConcurrentSteps = (
+  executionList: ExpandableExecution[],
+): IntermediateFlowResult[] => {
+  if (executionList.length === 0) {
+    return [];
+  }
+
+  const executions = groupConcurrentSteps(executionList);
+  return executions.map((execution) => {
+    if (execution.executionList) {
+      return renderSubFlow(execution);
+    }
+
+    const isConditional = providerConditionFilter(execution);
+    const edgeLabel = (() => {
+      if (isConditional) {
+        return "true";
+      }
+      if (execution.requirement === "ALTERNATIVE") {
+        return "success";
+      }
+    })();
+
+    return {
+      startId: execution.id!,
+      nodes: [createNode(execution, isConditional ? "conditional" : undefined)],
+      edges: [],
+      nextLinkFns: [(id: string) => createEdge(execution.id!, id, edgeLabel)],
+    };
+  });
+};
+
+const createConcurrentGroupings = (
+  executionList: ExpandableExecution[],
+): IntermediateFlowResult[][] => {
+  if (executionList.length === 0) {
+    return [];
+  }
+  const steps = createConcurrentSteps(executionList);
+  return [
+    steps,
+    ...createConcurrentGroupings(executionList.slice(steps.length)),
+  ];
+};
+
+const createGraph = (
+  groupings: IntermediateFlowResult[][],
+): IntermediateFlowResult => {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let nextLinkFns: ((id: string) => Edge)[] = [];
+
+  for (const group of groupings) {
+    nodes.push(...group.flatMap((g) => g.nodes));
+    edges.push(
+      ...group.flatMap((g) => g.edges),
+      ...nextLinkFns.map((fn) => fn(group[0].startId)),
+      ...pairwise(
+        (prev, current) =>
+          createEdge(prev.startId, current.startId, "attempted"),
+        group,
+      ),
+    );
+    nextLinkFns = group.flatMap((g) => g.nextLinkFns);
+  }
+
+  return {
+    startId: groupings[0][0].startId,
+    nodes,
+    edges,
+    nextLinkFns,
+  };
 };
 
 const edgeTypes: ButtonEdges = {
   buttonEdge: ButtonEdge,
 };
 
-function renderNodes(expandableList: ExpandableExecution[]) {
-  return getLayoutedNodes([
-    {
-      id: "start",
-      sourcePosition: Position.Right,
-      type: "input",
-      data: { label: "Start" },
-      position: { x: 0, y: 0 },
-      className: "keycloak__authentication__input_node",
-    },
-    {
-      id: "end",
-      targetPosition: Position.Left,
-      type: "output",
-      data: { label: "End" },
-      position: { x: 0, y: 0 },
-      className: "keycloak__authentication__output_node",
-    },
-    ...renderFlowNodes(expandableList),
-  ]);
-}
-
-function renderEdges(expandableList: ExpandableExecution[]): Edge[] {
-  return getLayoutedEdges(
-    renderFlowEdges({ id: "start" }, expandableList, {
-      id: "end",
-    }),
+function renderGraph(executionList: ExpandableExecution[]): [Node[], Edge[]] {
+  const executionListNoDisabled = executionList.filter(
+    (e) => e.requirement !== "DISABLED",
   );
+  const groupings = [
+    [borderStep(createNode({ id: "start", displayName: "Start" }, "input"))],
+    ...createConcurrentGroupings(executionListNoDisabled),
+    [
+      borderStep(
+        createNode({ id: "end", displayName: "End" }, "output"),
+        false,
+      ),
+    ],
+  ];
+
+  const { nodes, edges } = createGraph(groupings);
+
+  return [getLayoutedNodes(nodes), getLayoutedEdges(edges)];
 }
 
 export const FlowDiagram = ({
   executionList: { expandableList },
 }: FlowDiagramProps) => {
   const [expandDrawer, setExpandDrawer] = useState(false);
-  const initialNodes = useMemo(() => renderNodes(expandableList), []);
-  const initialEdges = useMemo(() => renderEdges(expandableList), []);
+  const [initialNodes, initialEdges] = useMemo(
+    () => renderGraph(expandableList),
+    [],
+  );
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   useUpdateEffect(() => {
-    setNodes(renderNodes(expandableList));
-    setEdges(renderEdges(expandableList));
+    const [nodes, edges] = renderGraph(expandableList);
+    setNodes(nodes);
+    setEdges(edges);
   }, [expandableList]);
 
   const onInit = (reactFlowInstance: ReactFlowInstance) =>
-    reactFlowInstance.fitView();
+    reactFlowInstance.fitView({ duration: 100 });
 
   const onNodeClick: NodeMouseHandler = () => {
     setExpandDrawer(!expandDrawer);

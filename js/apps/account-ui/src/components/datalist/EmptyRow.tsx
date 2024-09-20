@@ -9,12 +9,16 @@ type EmptyRowProps = {
   message: string;
 };
 
-export const EmptyRow = ({ message }: EmptyRowProps) => {
+export const EmptyRow = ({ message, ...props }: EmptyRowProps) => {
   return (
-    <DataListItem className="pf-u-align-items-center pf-p-b-0">
+    <DataListItem className="pf-v5-u-align-items-center pf-p-b-0">
       <DataListItemRow>
         <DataListItemCells
-          dataListCells={[<DataListCell key="0">{message}</DataListCell>]}
+          dataListCells={[
+            <DataListCell key="0" {...props}>
+              {message}
+            </DataListCell>,
+          ]}
         />
       </DataListItemRow>
     </DataListItem>

@@ -324,4 +324,31 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();
     }
+
+    // Check that login fails as expected when an LDAP user that has already authenticated is removed from LDAP and attempts to authenticate again.
+    // See https://github.com/keycloak/keycloak/issues/28523
+    @Test
+    @LDAPConnectionParameters(bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
+    public void loginLDAPUserAuthenticationSimpleDeleteLDAPUser() {
+        // create another user for this test.
+        getTestingClient().server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPObject jane = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "janedoe", "Jane",
+                            "Doe", "janedoe@keycloak.org", "2nd Avenue", "09283");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), jane, DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+        });
+        // login with the new user, then logout - user is now cached in Keycloak.
+        this.verifyLoginSucceededAndLogout("janedoe", DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+
+        // now remove the user directly in LDAP.
+        getTestingClient().server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), appRealm, ctx.getLdapProvider().getLdapIdentityStore().getConfig(), "janedoe");
+        });
+
+        // attempt to login again with the deleted user should fail with the proper message.
+        this.verifyLoginFailed("janedoe", DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+    }
 }

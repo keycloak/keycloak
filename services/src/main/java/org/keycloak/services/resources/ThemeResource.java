@@ -16,6 +16,10 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -26,15 +30,14 @@ import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -54,6 +58,7 @@ import static java.util.stream.Collectors.toSet;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/resources")
 public class ThemeResource {
 
@@ -63,26 +68,28 @@ public class ThemeResource {
     /**
      * Get theme content
      *
-     * @param themType
+     * @param version
+     * @param themeType
      * @param themeName
      * @param path
      * @return
      */
     @GET
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
-    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
-        if (!version.equals(Version.RESOURCES_VERSION)) {
+    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
+        final Optional<Theme.Type> type = getThemeType(themeType);
+        if (!version.equals(Version.RESOURCES_VERSION) || type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
             String contentType = MimeTypeUtil.getContentType(path);
-            Theme theme = session.theme().getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
+            Theme theme = session.theme().getTheme(themeName, type.get());
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
             InputStream resource;
             if (encodingProvider != null) {
-                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themType, themeName, path.replace('/', File.separatorChar));
+                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themeType, themeName, path.replace('/', File.separatorChar));
             } else {
                 resource = theme.getResourceAsStream(path);
             }
@@ -102,6 +109,12 @@ public class ThemeResource {
         }
     }
 
+    @Path("/{realm}/{themeType}/{locale}")
+    @OPTIONS
+    public Response localizationTextPreflight() {
+        return Cors.builder().auth().preflight().add(Response.ok());
+    }
+
     @GET
     @Path("/{realm}/{themeType}/{locale}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -109,15 +122,18 @@ public class ThemeResource {
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
                                          @QueryParam("source") boolean showSource) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
+        final Optional<Theme.Type> type = getThemeType(themeType);
+        if (realm == null || type.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         session.getContext().setRealm(realm);
         List<KeySource> result;
 
         Theme theTheme;
-        final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
         if (theme == null) {
-            theTheme = session.theme().getTheme(type);
+            theTheme = session.theme().getTheme(type.get());
         } else {
-            theTheme = session.theme().getTheme(theme, type);
+            theTheme = session.theme().getTheme(theme, type.get());
         }
 
         final Locale locale = Locale.forLanguageTag(localeString);
@@ -138,8 +154,15 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
         }
 
-        Response.ResponseBuilder responseBuilder = Response.ok(result);
-        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.builder().allowedOrigins("*").auth().add(Response.ok(result));
+    }
+
+    private static Optional<Theme.Type> getThemeType(String themeType) {
+        try {
+            return Optional.of(Theme.Type.valueOf(themeType.toUpperCase()));
+        } catch (IllegalArgumentException iae) {
+            return Optional.empty();
+        }
     }
 }
 

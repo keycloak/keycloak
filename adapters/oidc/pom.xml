@@ -31,20 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-core</module>
-        <module>installed</module>
-        <module>jaxrs-oauth-client</module>
-        <module>jetty</module>
         <module>js</module>
-        <module>servlet-filter</module>
-        <module>jakarta-servlet-filter</module>
-        <module>spring-boot2</module>
-        <module>spring-boot-adapter-core</module>
-        <module>spring-boot-container-bundle</module>
-        <module>spring-security</module>
-        <module>tomcat</module>
-        <module>undertow</module>
-        <module>wildfly</module>
-        <module>wildfly-elytron</module>
     </modules>
 </project>

@@ -31,26 +31,30 @@ public enum StoreProvider {
     JPA("jpa") {
         @Override
         public void addStoreOptions(List<String> commands) {
-            getDbVendor().ifPresent(vendor -> commands.add("--db=" + vendor));
-            commands.add("--db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
-            commands.add("--db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
-            if ("mssql".equals(getDbVendor().orElse(null))){
-                commands.add("--transaction-xa-enabled=false");
-            }
-            commands.add("--db-url=" + System.getProperty("keycloak.connectionsJpa.url"));
+            addOptions("--", commands);
         }
 
         @Override
         public List<String> getStoreOptionsToKeycloakConfImport() {
             List<String> options = new ArrayList<>();
-            getDbVendor().ifPresent(vendor -> options.add("db=" + vendor));
-            options.add("db-url=" + System.getProperty("keycloak.connectionsJpa.url"));
-            options.add("db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
-            options.add("db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
-            if ("mssql".equals(getDbVendor().orElse(null))){
-                options.add("transaction-xa-enabled=false");
-            }
+            addOptions("", options);
             return options;
+        }
+
+        private void addOptions(String prefix, List<String> options) {
+            getDbVendor().ifPresent(vendor -> {
+                if ("mssql".equals(vendor)) {
+                    options.add(prefix + "transaction-xa-enabled=false");
+                } else if ("aurora-postgres".equals(vendor)){
+                    vendor = "postgres";
+                    options.add(prefix + "db-driver=" + System.getProperty("keycloak.connectionsJpa.driver"));
+                    options.add(prefix + "transaction-xa-enabled=false");
+                }
+                options.add(prefix + "db=" + vendor);
+            });
+            options.add(prefix + "db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
+            options.add(prefix + "db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
+            options.add(prefix + "db-url=" + System.getProperty("keycloak.connectionsJpa.url"));
         }
     },
     DEFAULT("default") {

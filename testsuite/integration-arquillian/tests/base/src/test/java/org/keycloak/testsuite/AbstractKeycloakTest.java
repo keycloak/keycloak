@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite;
 
-import io.appium.java_client.AppiumDriver;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -37,7 +36,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -88,10 +86,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import org.keycloak.models.UserModel;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
@@ -157,8 +159,13 @@ public abstract class AbstractKeycloakTest {
 
     private boolean resetTimeOffset;
 
+    public static final String PROPERTY_LOGIN_THEME_DEFAULT = "login.theme.default";
+
+    public static final String PREFERRED_DEFAULT_LOGIN_THEME = System.getProperty(PROPERTY_LOGIN_THEME_DEFAULT);
+
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
+        ProfileAssume.setTestContext(testContext);
         adminClient = testContext.getAdminClient();
         if (adminClient == null || adminClient.isClosed()) {
             reconnectAdminClient();
@@ -283,9 +290,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
-        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/testing/blank");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -304,24 +309,6 @@ public abstract class AbstractKeycloakTest {
 
     protected void resetRealmSession(String realmName) {
         deleteAllCookiesForRealm(realmName);
-
-        if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
-            try {
-                log.info("resetting realm session");
-
-                final RealmRepresentation realmRep = adminClient.realm(realmName).toRepresentation();
-
-                deleteAllSessionsInRealm(realmName); // logout users
-
-                if (realmRep.isInternationalizationEnabled()) { // reset the locale
-                    String locale = getDefaultLocaleName(realmRep.getRealm());
-                    loginPage.localeDropdown().selectByText(locale);
-                    log.info("locale reset to " + locale);
-                }
-            } catch (NotFoundException e) {
-                log.warn("realm not found");
-            }
-        }
     }
 
     protected String getDefaultLocaleName(String realmName) {
@@ -474,6 +461,10 @@ public abstract class AbstractKeycloakTest {
         assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
     }
 
+    protected boolean removeVerifyProfileAtImport() {
+        // remove verify profile by default because most tests are not prepared
+        return true;
+    }
 
     public void importRealm(RealmRepresentation realm) {
         if (modifyRealmForSSL()) {
@@ -504,7 +495,13 @@ public abstract class AbstractKeycloakTest {
             }
         }
 
-        log.debug("--importing realm: " + realm.getRealm());
+        // modify login theme if desired
+        if (PREFERRED_DEFAULT_LOGIN_THEME != null && ! PREFERRED_DEFAULT_LOGIN_THEME.isBlank() && realm.getLoginTheme() == null) {
+            log.debugf("Modifying login theme to %s", PREFERRED_DEFAULT_LOGIN_THEME);
+            realm.setLoginTheme(PREFERRED_DEFAULT_LOGIN_THEME);
+        }
+
+         log.debug("--importing realm: " + realm.getRealm());
         try {
             adminClient.realms().realm(realm.getRealm()).remove();
             log.debug("realm already existed on server, re-importing");
@@ -512,6 +509,19 @@ public abstract class AbstractKeycloakTest {
             // expected when realm does not exist
         }
         adminClient.realms().create(realm);
+
+        if (removeVerifyProfileAtImport()) {
+            try {
+                RequiredActionProviderRepresentation vpModel = adminClient.realm(realm.getRealm()).flows()
+                        .getRequiredAction(UserModel.RequiredAction.VERIFY_PROFILE.name());
+                vpModel.setEnabled(false);
+                vpModel.setDefaultAction(false);
+                adminClient.realm(realm.getRealm()).flows().updateRequiredAction(
+                        UserModel.RequiredAction.VERIFY_PROFILE.name(), vpModel);
+                testingClient.testing().pollAdminEvent(); // remove the event
+            } catch (NotFoundException ignore) {
+            }
+        }
     }
 
     public void removeRealm(String realmName) {
@@ -690,12 +700,9 @@ public abstract class AbstractKeycloakTest {
         Time.setOffset(offset);
         Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
 
-        // force refreshing token after time offset has changed
-        try {
-            adminClient.tokenManager().refreshToken();
-        } catch (RuntimeException e) {
-            adminClient.tokenManager().grantToken();
-        }
+        // force getting new token after time offset has changed
+        adminClient.tokenManager().grantToken();
+
 
         return String.valueOf(result);
     }
@@ -740,4 +747,40 @@ public abstract class AbstractKeycloakTest {
         }
         return in;
     }
+
+    protected void assertResponseSuccessful(Response response) {
+        try {
+            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
+        } catch (AssertionError ex) {
+            throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
+        }
+    }
+
+    public static <T> void eventuallyEquals(String message, T expected, Supplier<T> actual) {
+        eventuallyEquals(message, expected, actual, 10000, 100, MILLISECONDS);
+    }
+
+    public static <T> void eventuallyEquals(String message, T expected, Supplier<T> actual, long timeout,
+                                            long pollInterval, TimeUnit unit) {
+        if (pollInterval <= 0) {
+            throw new IllegalArgumentException("Check interval must be positive");
+        }
+        try {
+            long expectedEndTime = System.nanoTime() + TimeUnit.NANOSECONDS.convert(timeout, unit);
+            long sleepMillis = MILLISECONDS.convert(pollInterval, unit);
+            do {
+                if (Objects.equals(expected, actual.get())) {
+                    return;
+                }
+
+                Thread.sleep(sleepMillis);
+            } while (expectedEndTime - System.nanoTime() > 0);
+
+            //last attempt
+            assertEquals(message, expected, actual.get());
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected!", e);
+        }
+    }
+
 }

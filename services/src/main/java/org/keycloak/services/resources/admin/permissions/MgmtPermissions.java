@@ -29,21 +29,33 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.common.Profile;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.ForbiddenException;
+import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.UserSessionUtil;
+import org.keycloak.utils.RoleResolveUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -96,13 +108,28 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
-        if (Constants.ADMIN_CLI_CLIENT_ID.equals(auth.getToken().getIssuedFor())
-                || Constants.ADMIN_CONSOLE_CLIENT_ID.equals(auth.getToken().getIssuedFor())) {
-            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+        final String issuedFor = auth.getToken().getIssuedFor();
+        AccessToken accessToken = auth.getToken();
+        ClientModel client = adminsRealm.getClientByClientId(issuedFor);
+        //support for lightweight access token and transient session
+        if (accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
+            //get user session
+            EventBuilder event = new EventBuilder(adminsRealm, session);
+            event.event(EventType.INTROSPECT_TOKEN);
+            UserSessionModel userSession = UserSessionUtil.findValidSession(session, adminsRealm, accessToken, event, client);
 
-        } else {
-            this.identity = new KeycloakIdentity(auth.getToken(), session);
+            if (userSession != null) {
+                //get client session
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                //set realm roles
+                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, auth.getToken().getScope(), session);
+                AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
+                Map<String, AccessToken.Access> clientAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
+                accessToken.setRealmAccess(realmAccess);
+                accessToken.setResourceAccess(clientAccess);
+            }
         }
+        this.identity = new KeycloakIdentity(accessToken, session, adminsRealm);
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel adminsRealm, UserModel admin) {

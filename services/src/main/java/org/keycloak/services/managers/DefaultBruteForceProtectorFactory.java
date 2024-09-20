@@ -17,9 +17,12 @@
 
 package org.keycloak.services.managers;
 
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,6 +31,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFactory {
     DefaultBruteForceProtector protector;
 
+    private boolean allowConcurrentRequests;
+
     @Override
     public BruteForceProtector create(KeycloakSession session) {
         return protector;
@@ -35,24 +40,34 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void init(Config.Scope config) {
-
+        // this can be a brute force setting?
+        this.allowConcurrentRequests = config.getBoolean("allowConcurrentRequests", Boolean.FALSE);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        protector = new DefaultBruteForceProtector(factory);
-        protector.start();
-
+        protector = allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
     }
 
     @Override
     public void close() {
         protector.shutdown();
-
     }
 
     @Override
     public String getId() {
         return "default-brute-force-detector";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("allowConcurrentRequests")
+                .type("boolean")
+                .helpText("If concurrent logins are allowed by the brute force protection.")
+                .defaultValue(false)
+                .add()
+                .build();
     }
 }

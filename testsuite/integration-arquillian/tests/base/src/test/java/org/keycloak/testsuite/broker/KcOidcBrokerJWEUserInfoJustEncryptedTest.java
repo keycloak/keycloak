@@ -28,6 +28,6 @@ import org.keycloak.jose.jwe.JWEConstants;
 public class KcOidcBrokerJWEUserInfoJustEncryptedTest extends KcOidcBrokerJWETest {
 
     public KcOidcBrokerJWEUserInfoJustEncryptedTest() {
-        super(JWEConstants.RSA1_5, null, null);
+        super(JWEConstants.RSA_OAEP_256, null, null);
     }
 }

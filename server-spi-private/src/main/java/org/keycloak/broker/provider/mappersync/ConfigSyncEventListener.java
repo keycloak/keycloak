@@ -42,29 +42,12 @@ public final class ConfigSyncEventListener implements ProviderEventListener {
 
     @Override
     public void onEvent(ProviderEvent event) {
-        List<IdentityProviderMapperModel> realmMappers = null;
-
         for (ConfigSynchronizer<? extends ProviderEvent> s : SYNCHRONIZERS) {
             ConfigSynchronizer<ProviderEvent> configSynchronizer = (ConfigSynchronizer<ProviderEvent>) s;
 
             if (eventMatchesSynchronizer(event, configSynchronizer)) {
                 LOG.debugf("Synchronizer %s matches event: %s", configSynchronizer, event);
-
-                if (realmMappers == null) {
-                    /*
-                     * an event always refers to just one realm, so we can use an arbitrary synchronizer to extract the
-                     * realm
-                     */
-                    RealmModel realm = configSynchronizer.extractRealm(event);
-                    realmMappers = realm.getIdentityProviderMappersStream()
-                            .collect(Collectors.toList());
-                }
-
-                realmMappers.forEach(idpMapper -> {
-                    LOG.debugf("Apply synchronizer %s to event %s and mapper with name %s", configSynchronizer, event,
-                            idpMapper.getName());
-                    configSynchronizer.handleEvent(event, idpMapper);
-                });
+                configSynchronizer.handleEvent(event);
             } else {
                 LOG.debugf("Synchronizer %s does not match event: %s", configSynchronizer, event);
             }

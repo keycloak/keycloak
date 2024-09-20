@@ -196,7 +196,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         AuthenticationManagementResource authMgmtResource = adminClient.realm(TEST_REALM_NAME).flows();
 
         // Endpoint used by admin console
-        Map<String, String> scriptExecution = new HashMap<>();
+        Map<String, Object> scriptExecution = new HashMap<>();
         scriptExecution.put("provider", "script-authenticator-a.js");
 
         // It should be possible to add another script-authenticator to the flow
@@ -224,7 +224,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         }
 
         // Test copy flow is OK
-        Map<String, String> newFlow = new HashMap<>();
+        Map<String, Object> newFlow = new HashMap<>();
         newFlow.put("newName", "Copy of script flow");
         Response resp = authMgmtResource.copy("scriptBrowser", newFlow);
         Assert.assertEquals(201, resp.getStatus());

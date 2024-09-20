@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FileUpload } from "../json-file-upload/patternfly/FileUpload";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
@@ -13,6 +13,7 @@ export const FileComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export const FileComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

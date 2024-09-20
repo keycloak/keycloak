@@ -9,6 +9,7 @@ describe("Partial realm export", () => {
   const REALM_NAME = "Partial-export-test-realm";
 
   before(() => adminClient.createRealm(REALM_NAME));
+
   after(() => adminClient.deleteRealm(REALM_NAME));
 
   const loginPage = new LoginPage();

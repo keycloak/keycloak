@@ -507,7 +507,7 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password.toCharArray(), sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -600,7 +600,7 @@ public class LDAPOperationManager {
         }
     }
 
-    public void createSubContext(final LdapName name, final Attributes attributes) {
+    public String createSubContext(final LdapName name, final Attributes attributes) {
         try {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Creating entry [%s] with attributes: [", name);
@@ -622,14 +622,22 @@ public class LDAPOperationManager {
                 logger.tracef("]");
             }
 
-            execute(new LdapOperation<Void>() {
+            return execute(new LdapOperation<>() {
                 @Override
-                public Void execute(LdapContext context) throws NamingException {
+                public String execute(LdapContext context) throws NamingException {
                     DirContext subcontext = context.createSubcontext(name, attributes);
-
-                    subcontext.close();
-
-                    return null;
+                    try {
+                        String uuidLDAPAttributeName = config.getUuidLDAPAttributeName();
+                        Attribute id = subcontext.getAttributes("", new String[]{uuidLDAPAttributeName}).get(uuidLDAPAttributeName);
+                        if (id == null) {
+                            throw new ModelException("Could not retrieve identifier for entry [" + name + "].");
+                        }
+                        return decodeEntryUUID(id.get());
+                    } catch (NamingException ne) {
+                        throw new ModelException("Could not retrieve identifier for entry [" + name + "].", ne);
+                    } finally {
+                        subcontext.close();
+                    }
                 }
 
 

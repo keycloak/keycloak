@@ -20,45 +20,34 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Objects;
 import java.util.Set;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(RoleRemovedEvent.ExternalizerImpl.class)
-public class RoleRemovedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.ROLE_REMOVED_EVENT)
+public class RoleRemovedEvent extends BaseRoleEvent {
 
-    private String roleId;
-    private String roleName;
-    private String containerId;
+    @ProtoField(3)
+    final String roleName;
+
+    @ProtoFactory
+    RoleRemovedEvent(String id, String containerId, String roleName) {
+        super(id, containerId);
+        this.roleName = Objects.requireNonNull(roleName);
+    }
 
     public static RoleRemovedEvent create(String roleId, String roleName, String containerId) {
-        RoleRemovedEvent event = new RoleRemovedEvent();
-        event.roleId = roleId;
-        event.roleName = roleName;
-        event.containerId = containerId;
-        return event;
-    }
-
-    @Override
-    public String getId() {
-        return roleId;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("RoleRemovedEvent [ roleId=%s, containerId=%s ]", roleId, containerId);
+        return new RoleRemovedEvent(roleId, containerId, roleName);
     }
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.roleRemoval(roleId, roleName, containerId, invalidations);
+        realmCache.roleRemoval(getId(), roleName, containerId, invalidations);
     }
 
     @Override
@@ -66,45 +55,15 @@ public class RoleRemovedEvent extends InvalidationEvent implements RealmCacheInv
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
+
         RoleRemovedEvent that = (RoleRemovedEvent) o;
-        return Objects.equals(roleId, that.roleId) && Objects.equals(roleName, that.roleName) && Objects.equals(containerId, that.containerId);
+        return roleName.equals(that.roleName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), roleId, roleName, containerId);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<RoleRemovedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, RoleRemovedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.roleId, output);
-            MarshallUtil.marshallString(obj.roleName, output);
-            MarshallUtil.marshallString(obj.containerId, output);
-        }
-
-        @Override
-        public RoleRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public RoleRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            RoleRemovedEvent res = new RoleRemovedEvent();
-            res.roleId = MarshallUtil.unmarshallString(input);
-            res.roleName = MarshallUtil.unmarshallString(input);
-            res.containerId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
+        int result = super.hashCode();
+        result = 31 * result + roleName.hashCode();
+        return result;
     }
 }

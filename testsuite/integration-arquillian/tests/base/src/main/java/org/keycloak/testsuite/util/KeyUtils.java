@@ -1,28 +1,39 @@
 package org.keycloak.testsuite.util;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.AbstractEcKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
-import jakarta.ws.rs.core.Response;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -31,6 +42,35 @@ import static org.junit.Assert.fail;
  * @author mhajas
  */
 public class KeyUtils {
+    public static KeyPair generateECKey(String algorithm) {
+
+        try {
+            KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen("ECDSA");
+            String domainParamNistRep = GeneratedEcdsaKeyProviderFactory
+                    .convertJWSAlgorithmToECDomainParmNistRep(algorithm);
+            if (domainParamNistRep == null) {
+                domainParamNistRep = GeneratedEcdhKeyProviderFactory
+                        .convertJWEAlgorithmToECDomainParmNistRep(algorithm);
+            }
+            String curve = AbstractEcKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
+            ECGenParameterSpec parameterSpec = new ECGenParameterSpec(curve);
+            kpg.initialize(parameterSpec);
+            return kpg.generateKeyPair();
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static KeyPair generateEdDSAKey(String curve) throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(curve);
+        return kpg.generateKeyPair();
+    }
+
+    public static SecretKey generateSecretKey(String algorithm, int keySize) throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyGenerator keyGen = KeyGenerator.getInstance(JavaAlgorithm.getJavaAlgorithm(algorithm), BouncyIntegration.PROVIDER);
+        keyGen.init(keySize);
+        return keyGen.generateKey();
+    }
 
     public static PublicKey publicKeyFromString(String key) {
         try {
@@ -106,6 +146,7 @@ public class KeyUtils {
     public static AutoCloseable generateNewRealmKey(RealmResource realm, KeyUse keyUse, String algorithm) {
         return generateNewRealmKey(realm, keyUse, algorithm, "100");
     }
+
     /**
      * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
      */

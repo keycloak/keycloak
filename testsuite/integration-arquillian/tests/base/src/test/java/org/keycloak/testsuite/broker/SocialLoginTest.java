@@ -47,6 +47,7 @@ import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterConsentLoginPage;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -239,7 +240,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientPolicyRep);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientPolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        realm.getIdentityProvidersStream().forEach(idp -> {
+        session.identityProviders().getAllStream().forEach(idp -> {
             management.idps().setPermissionsEnabled(idp, true);
             management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
         });
@@ -289,6 +290,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void googleLogin() throws InterruptedException {
         setTestProvider(GOOGLE);
         performLogin();
+        DroneUtils.getCurrentDriver().findElement(By.xpath("//button//span[contains(.,'Continue')]")).click();
+        WaitUtils.pause(3000);
+        WaitUtils.waitForPageToLoad();
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -389,7 +393,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
-        navigateToLoginPage();
         assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
@@ -614,7 +617,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Client httpClient = AdminClientUtil.createResteasyClient();
         Response response = null;
         try {
-            testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
+            testingClient.server(REALM).run(SocialLoginTest::setupClientExchangePermissions);
 
             WebTarget exchangeUrl = getExchangeUrl(httpClient);
             response = exchangeUrl.request()
@@ -643,7 +646,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Assert.assertEquals(1, users.size());
 
         String username = users.get(0).getUsername();
-        checkFeature(501, username);
+        checkFeature(400, username);
 
         testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
@@ -730,7 +733,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         } finally {
             httpClient.close();
             testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
-            checkFeature(501, username);
+            checkFeature(400, username);
         }
     }
 }

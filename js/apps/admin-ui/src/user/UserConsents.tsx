@@ -10,20 +10,18 @@ import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { useParams } from "../utils/useParams";
 
 export const UserConsents = () => {
+  const { adminClient } = useAdminClient();
+
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
   const { t } = useTranslation();
@@ -99,16 +97,15 @@ export const UserConsents = () => {
           {
             name: "grantedClientScopes",
             displayKey: "grantedClientScopes",
-            cellFormatters: [emptyFormatter()],
             cellRenderer: clientScopesRenderer,
             transforms: [cellWidth(30)],
           },
           {
-            name: "createDate",
+            name: "createdDate",
             displayKey: "created",
             transforms: [cellWidth(20)],
-            cellRenderer: ({ createDate }) =>
-              createDate ? formatDate(new Date(createDate)) : "—",
+            cellRenderer: ({ createdDate }) =>
+              createdDate ? formatDate(new Date(createdDate)) : "—",
           },
           {
             name: "lastUpdatedDate",

@@ -16,7 +16,6 @@
  */
 package org.keycloak.protocol.saml;
 
-import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,14 +54,14 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
         this.forIdP = forIdP;
     }
 
-    protected abstract InputStream openInputStream() throws Exception;
+    protected abstract String getKeys() throws Exception;
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        InputStream inputStream = openInputStream();
+        String descriptor = getKeys();
 
         List<KeyDescriptorType> keyDescriptor;
-        EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(inputStream);
+        EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
         if (forIdP) {
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
             keyDescriptor = idpDescriptor != null? idpDescriptor.getKeyDescriptor() : null;

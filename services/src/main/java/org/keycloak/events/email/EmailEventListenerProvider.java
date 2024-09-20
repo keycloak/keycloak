@@ -20,7 +20,6 @@ package org.keycloak.events.email;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
@@ -88,7 +87,7 @@ public class EmailEventListenerProvider implements EventListenerProvider {
                     context.setClient(client);
                 }
 
-                Resteasy.pushContext(HttpRequest.class, request);
+                context.setHttpRequest(request);
 
                 UserModel user = session.users().getUserById(realm, event.getUserId());
 

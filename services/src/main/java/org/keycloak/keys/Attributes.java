@@ -71,7 +71,7 @@ public interface Attributes {
             Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
 
     ProviderConfigProperty HS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
-            Algorithm.HS256,
+            Algorithm.HS512,
             Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
 
     ProviderConfigProperty RS_ENC_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key encryption", LIST_TYPE,

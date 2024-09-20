@@ -5,8 +5,8 @@ export default class TabPage extends CommonElements {
   protected tabsList: string;
 
   constructor() {
-    super(".pf-c-tabs");
-    this.tabItemSelector = ".pf-c-tabs__item";
+    super(".pf-v5-c-tabs");
+    this.tabItemSelector = ".pf-v5-c-tabs__item";
     this.tabsList = '[role="tablist"]';
   }
 

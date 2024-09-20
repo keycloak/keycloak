@@ -17,90 +17,30 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
-import java.util.Objects;
 import java.util.Set;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(RoleAddedEvent.ExternalizerImpl.class)
-public class RoleAddedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.ROLE_ADDED_EVENT)
+public class RoleAddedEvent extends BaseRoleEvent {
 
-    private String roleId;
-    private String containerId;
+    @ProtoFactory
+    RoleAddedEvent(String id, String containerId) {
+        super(id, containerId);
+    }
 
     public static RoleAddedEvent create(String roleId, String containerId) {
-        RoleAddedEvent event = new RoleAddedEvent();
-        event.roleId = roleId;
-        event.containerId = containerId;
-        return event;
-    }
-
-    @Override
-    public String getId() {
-        return roleId;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("RoleAddedEvent [ roleId=%s, containerId=%s ]", roleId, containerId);
+        return new RoleAddedEvent(roleId, containerId);
     }
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.roleAdded(containerId, invalidations);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        RoleAddedEvent that = (RoleAddedEvent) o;
-        return Objects.equals(roleId, that.roleId) && Objects.equals(containerId, that.containerId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), roleId, containerId);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<RoleAddedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, RoleAddedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.roleId, output);
-            MarshallUtil.marshallString(obj.containerId, output);
-        }
-
-        @Override
-        public RoleAddedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public RoleAddedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            RoleAddedEvent res = new RoleAddedEvent();
-            res.roleId = MarshallUtil.unmarshallString(input);
-            res.containerId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
     }
 }

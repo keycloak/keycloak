@@ -17,49 +17,47 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
-import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory {
+public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<InfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
-    public static final int PROVIDER_PRIORITY = 1;
 
     private InfinispanKeyGenerator keyGenerator;
 
     private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
     private int authSessionsLimit;
-
-    public static final String PROVIDER_ID = "infinispan";
 
     public static final String AUTH_SESSIONS_LIMIT = "authSessionsLimit";
 
@@ -69,14 +67,15 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
 
-    public static final String CLIENT_REMOVED_AUTHSESSION_EVENT = "CLIENT_REMOVED_SESSION_AUTHSESSIONS";
-
     @Override
     public void init(Config.Scope config) {
-        // get auth sessions limit from config or use default if not provided
-        int configInt = config.getInt(AUTH_SESSIONS_LIMIT, DEFAULT_AUTH_SESSIONS_LIMIT);
+        authSessionsLimit = getAuthSessionsLimit(config);
+    }
+
+    public static int getAuthSessionsLimit(Config.Scope config) {
+        var limit = config.getInt(AUTH_SESSIONS_LIMIT, DEFAULT_AUTH_SESSIONS_LIMIT);
         // use default if provided value is not a positive number
-        authSessionsLimit = (configInt <= 0) ? DEFAULT_AUTH_SESSIONS_LIMIT : configInt;
+        return limit <= 0 ? DEFAULT_AUTH_SESSIONS_LIMIT : limit;
     }
 
 
@@ -117,18 +116,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         cluster.registerListener(REALM_REMOVED_AUTHSESSION_EVENT, new AbstractAuthSessionClusterListener<RealmRemovedSessionEvent>(sessionFactory) {
 
             @Override
-            protected void eventReceived(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
+            protected void eventReceived(InfinispanAuthenticationSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
                 provider.onRealmRemovedEvent(sessionEvent.getRealmId());
             }
 
-        });
-
-        cluster.registerListener(CLIENT_REMOVED_AUTHSESSION_EVENT, new AbstractAuthSessionClusterListener<ClientRemovedSessionEvent>(sessionFactory) {
-
-            @Override
-            protected void eventReceived(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, ClientRemovedSessionEvent sessionEvent) {
-                provider.onClientRemovedEvent(sessionEvent.getRealmId(), sessionEvent.getClientUuid());
-            }
         });
 
         log.debug("Registered cluster listeners");
@@ -136,17 +127,16 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
 
     @Override
-    public AuthenticationSessionProvider create(KeycloakSession session) {
+    public InfinispanAuthenticationSessionProvider create(KeycloakSession session) {
         lazyInit(session);
         return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache, authSessionsLimit);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
-        if (! (clEvent instanceof AuthenticationSessionAuthNoteUpdateEvent)) {
+        if (! (clEvent instanceof AuthenticationSessionAuthNoteUpdateEvent event)) {
             return;
         }
 
-        AuthenticationSessionAuthNoteUpdateEvent event = (AuthenticationSessionAuthNoteUpdateEvent) clEvent;
         RootAuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
         updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
     }
@@ -199,11 +189,16 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }

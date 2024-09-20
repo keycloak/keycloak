@@ -19,6 +19,9 @@ package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.events.admin.OperationType;
@@ -28,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -42,6 +46,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -76,11 +83,20 @@ public class ClientInitialAccessResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
     @Operation( summary = "Create a new initial access token.")
-    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config) {
+    @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
+    public Object create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
+        if (expiration < 0) {
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for expiration", "The expiration time interval cannot be less than 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        if (count < 0) {
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for count", "The count cannot be less than 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
 
         ClientInitialAccessModel clientInitialAccessModel = session.realms().createClientInitialAccessModel(realm, expiration, count);
 

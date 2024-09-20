@@ -48,6 +48,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
       return new ServiceSpecBuilder()
               .addNewPort()
+              .withName(Constants.KEYCLOAK_DISCOVERY_TCP_PORT_NAME)
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()

@@ -122,6 +122,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session5) -> {
 
             RealmModel realm = session5.realms().getRealmByName("TestComposites");
+            session5.getContext().setRealm(realm);
 
             Set<RoleModel> requestedRoles = getRequestedRoles(realm.getClientByClientId("APP_COMPOSITE_APPLICATION"), session.users().getUserByUsername(realm, "APP_COMPOSITE_USER"));
 

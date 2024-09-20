@@ -17,12 +17,16 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
+import java.util.List;
+
 /**
- * You must specify a file
- * META-INF/services/org.keycloak.authentication.RequiredActionFactory in the jar that this class is contained in
- * This file must have the fully qualified class name of all your RequiredActionFactory classes
+ * Factory interface for {@link RequiredActionProvider RequiredActionProvider's}.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -43,5 +47,24 @@ public interface RequiredActionFactory extends ProviderFactory<RequiredActionPro
      */
     default boolean isOneTimeAction() {
         return false;
+    }
+
+    /**
+     * Indicates whether this required action can be configured via the admin ui.
+     * @return
+     */
+    default boolean isConfigurable() {
+        List<ProviderConfigProperty> configMetadata = getConfigMetadata();
+        return configMetadata != null && !configMetadata.isEmpty();
+    }
+
+    /**
+     * Allows users to validate the provided configuration for this required action. Users can throw a {@link org.keycloak.models.ModelValidationException} to indicate that the configuration is invalid.
+     *
+     * @param session
+     * @param realm
+     * @param model
+     */
+    default void validateConfig(KeycloakSession session, RealmModel realm, RequiredActionConfigModel model) {
     }
 }

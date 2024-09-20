@@ -86,6 +86,7 @@ public class LogoutTest extends AbstractSamlTest {
     private static final String NAME_QUALIFIER = "nameQualifier";
 
     private static final String BROKER_SIGN_ON_SERVICE_URL = "https://saml.idp/saml";
+    private static final String BROKER_SIGN_ON_ARTIFACT_SERVICE_URL = "https://saml.idp/saml";
     private static final String BROKER_LOGOUT_SERVICE_URL = "https://saml.idp/SLO/saml";
     private static final String BROKER_SERVICE_ID = "https://saml.idp/saml";
 
@@ -128,7 +129,7 @@ public class LogoutTest extends AbstractSamlTest {
             .targetAttributeSamlResponse()
             .targetUri(getSamlBrokerUrl(REALM_NAME))
             .build()
-          .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
+          .updateProfile().username("aaa").email("a@b.c").firstName("A").lastName("B").build()
           .followOneRedirect()
 
           // Now returning back to the app
@@ -508,11 +509,13 @@ public class LogoutTest extends AbstractSamlTest {
           .alias(SAML_BROKER_ALIAS)
           .displayName("SAML")
           .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, BROKER_SIGN_ON_SERVICE_URL)
+          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, BROKER_SIGN_ON_ARTIFACT_SERVICE_URL)
           .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, BROKER_LOGOUT_SERVICE_URL)
           .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
           .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
           .build();
         return identityProvider;
     }

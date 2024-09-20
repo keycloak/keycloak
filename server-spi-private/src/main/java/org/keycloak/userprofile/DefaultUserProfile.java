@@ -56,7 +56,6 @@ public final class DefaultUserProfile implements UserProfile {
     private final Function<Attributes, UserModel> userSupplier;
     private final Attributes attributes;
     private final KeycloakSession session;
-    private final boolean isUserProfileEnabled;
     private boolean validated;
     private UserModel user;
 
@@ -67,8 +66,6 @@ public final class DefaultUserProfile implements UserProfile {
         this.attributes = attributes;
         this.user = user;
         this.session = session;
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        isUserProfileEnabled = provider.isEnabled(session.getContext().getRealm());
     }
 
     @Override
@@ -118,12 +115,11 @@ public final class DefaultUserProfile implements UserProfile {
         try {
             Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
 
-            for (Map.Entry<String, List<String>> attribute : writable.entrySet()) {
+            for (Map.Entry<String, List<String>> attribute : writable.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 String name = attribute.getKey();
                 List<String> currentValue = user.getAttributeStream(name)
                         .filter(Objects::nonNull).collect(Collectors.toList());
-                List<String> updatedValue = attribute.getValue().stream()
-                        .filter(StringUtil::isNotBlank).collect(Collectors.toList());
+                List<String> updatedValue = attribute.getValue();
 
                 if (CollectionUtil.collectionEquals(currentValue, updatedValue)) {
                     continue;
@@ -135,7 +131,11 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                user.setAttribute(name, updatedValue);
+                if (updatedValue.stream().allMatch(StringUtil::isBlank)) {
+                    user.removeAttribute(name);
+                } else {
+                    user.setAttribute(name, updatedValue.stream().filter(StringUtil::isNotBlank).collect(Collectors.toList()));
+                }
 
                 if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
                     user.setEmailVerified(false);
@@ -226,7 +226,7 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                boolean isUnmanagedAttribute = isUserProfileEnabled && metadata.getAttribute(name).isEmpty();
+                boolean isUnmanagedAttribute = metadata.getAttribute(name).isEmpty();
                 String value = isUnmanagedAttribute ? null : values.stream().findFirst().orElse(null);
 
                 if (UserModel.USERNAME.equals(name)) {
@@ -257,7 +257,7 @@ public final class DefaultUserProfile implements UserProfile {
         UserProfileContext context = metadata.getContext();
         R rep;
 
-        if (UserProfileContext.USER_API.equals(context)) {
+        if (context.isAdminContext()) {
             RealmModel realm = session.getContext().getRealm();
             rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
         } else {

@@ -17,29 +17,10 @@
 
 package org.keycloak.testsuite.oauth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECGenParameterSpec;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Rule;
@@ -47,35 +28,44 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
+import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
-import org.keycloak.crypto.SignatureException;
-import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.dpop.DPoP;
+import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.UserInfoResponse;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -83,9 +73,32 @@ import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.HttpMethod;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createDPoPBindEnforcerExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRsaJwk;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPProof;
 
 @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
 public class DPoPTest extends AbstractTestRealmKeycloakTest {
@@ -97,16 +110,15 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     private static final String TEST_USER_NAME = "test-user@localhost";
     private static final String TEST_USER_PASSWORD = "password";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
-
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
     private KeyPair ecKeyPair;
     private KeyPair rsaKeyPair;
     private JWK jwkRsa;
     private JWK jwkEc;
     private JWSHeader jwsRsaHeader;
     private JWSHeader jwsEcHeader;
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    private ClientRegistration reg;
 
     @Before
     public void beforeDPoPTest() throws Exception {
@@ -140,12 +152,13 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofEcEncoded);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK)jwkEc).getCrv());
-        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK)jwkEc).getX());
-        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK)jwkEc).getY());
+        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK) jwkEc).getCrv());
+        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK) jwkEc).getX());
+        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK) jwkEc).getY());
         String jkt = JWKSUtils.computeThumbprint(jwkEc);
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
@@ -156,6 +169,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         oauth.dpopProof(dpopProofEcEncoded);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
         accessToken = oauth.verifyToken(response.getAccessToken());
@@ -166,9 +180,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         // userinfo access
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET.toString(), oauth.getUserInfoUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
-
         oauth.idTokenHint(response.getIdToken()).openLogout();
     }
 
@@ -187,11 +200,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofRsaEncoded);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_CONFIDENTIAL_CLIENT_SECRET);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK)jwkRsa).getModulus());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK)jwkRsa).getPublicExponent());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
         String jkt = JWKSUtils.computeThumbprint(jwkRsa);
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
@@ -220,10 +234,11 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         oauth.dpopProof(dpopProofRsaEncoded);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK)jwkRsa).getModulus());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK)jwkRsa).getPublicExponent());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
         jkt = JWKSUtils.computeThumbprint(jwkRsa);
         accessToken = oauth.verifyToken(response.getAccessToken());
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
@@ -248,6 +263,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+            // token-type must be "Bearer" because no DPoP is present within the token-request
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
 
             assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -257,6 +274,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
             // token refresh
             response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
 
             assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
             accessToken = oauth.verifyToken(response.getAccessToken());
@@ -281,9 +299,11 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofEcEncoded);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         // token refresh
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        assertNull(response.getTokenType());
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
         assertEquals("DPoP proof has already been used", response.getErrorDescription());
@@ -302,10 +322,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofRsaEncoded);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_USER_PASSWORD);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         // token refresh
         oauth.dpopProof(null);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
+        assertNull(response.getTokenType());
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
         assertEquals("DPoP proof is missing", response.getErrorDescription());
@@ -325,7 +347,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofWithoutJwk() throws Exception {
-        JWSHeader jwsHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), (JWK)null);
+        JWSHeader jwsHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), (JWK) null);
         testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsHeader, ecKeyPair.getPrivate()), "No JWK in DPoP header");
     }
 
@@ -343,7 +365,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofInvalidSignature() throws Exception {
-        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate()), "DPoP verification failure");
+        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate()), "DPoP verification failure: org.keycloak.exceptions.TokenSignatureInvalidException: Invalid token signature");
     }
 
     @Test
@@ -361,6 +383,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_USER_PASSWORD);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
         oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
 
         testDPoPProofFailure(dpopProofEcEncoded, "DPoP proof has already been used");
@@ -402,7 +425,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testDPoPProofOnUserInfoByConfidentialClient() throws Exception {
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
         OAuthClient.AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
-        doSuccessfulUserInfoGet(response.getAccessToken(), rsaKeyPair);
+        doSuccessfulUserInfoGet(response, rsaKeyPair);
 
         oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
     }
@@ -414,11 +437,11 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         try {
             KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
             OAuthClient.AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
-            doSuccessfulUserInfoGet(response.getAccessToken(), rsaKeyPair);
+            doSuccessfulUserInfoGet(response, rsaKeyPair);
 
             // delete DPoP proof
             oauth.dpopProof(null);
-            UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+            UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
             assertEquals(401, userInfoResponse.getStatusCode());
             assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -434,7 +457,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         OAuthClient.AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
 
         oauth.dpopProof(null);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -451,7 +474,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         // invalid "htu" claim
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
         oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -462,10 +485,10 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testMultipleUseDPoPProofOnUserInfo() throws Exception {
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
         OAuthClient.AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
-        doSuccessfulUserInfoGet(response.getAccessToken(), rsaKeyPair);
+        doSuccessfulUserInfoGet(response, rsaKeyPair);
 
         // use the same DPoP proof
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -483,9 +506,233 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET.toString(), oauth.getUserInfoUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
         oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response.getAccessToken());
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+
+        oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
+    }
+
+    @Test
+    public void testDPoPBindEnforcerExecutor() throws Exception {
+        setInitialAccessTokenForDynamicClientRegistration();
+
+        KeyPair ecKeyPair = generateEcdsaKey("secp256r1");
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
+        JWK jwkEc = createEcJwk(ecKeyPair.getPublic());
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile("MyProfile", "Le Premier Profil")
+                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.FALSE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy("MyPolicy", "La Primera Plitica", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC)))
+                        .addProfile("MyProfile")
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // register by Admin REST API - fail
+        try {
+            createClientByAdmin(generateSuffixedName("App-by-Admin"), (ClientRepresentation rep) -> {
+                rep.setPublicClient(Boolean.TRUE);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
+        }
+
+        // register by Admin REST API - success
+        String cAppAdminAlphaId = createClientByAdmin(generateSuffixedName("App-by-Admin-Alpha"), (ClientRepresentation clientRep) -> {
+            clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setAttributes(new HashMap<>());
+            clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.TRUE.toString());
+        });
+
+        // update by Admin REST API - fail
+        try {
+            updateClientByAdmin(cAppAdminAlphaId, (ClientRepresentation clientRep) -> {
+                clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.FALSE.toString());
+            });
+        } catch (ClientPolicyException cpe) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, cpe.getError());
+        }
+        ClientRepresentation cRep = getClientByAdmin(cAppAdminAlphaId);
+        assertEquals(Boolean.TRUE.toString(), cRep.getAttributes().get(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS));
+        String appAlphaClientId = cRep.getClientId();
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile("MyProfile", "Le Premier Profil")
+                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register by Dynamic Client Registration - success
+        String cAppDynamicBetaId = createClientDynamically(generateSuffixedName("App-in-Dynamic-Beta"), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setTokenEndpointAuthMethod("none");
+            clientRep.setDpopBoundAccessTokens(Boolean.FALSE);
+        });
+        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicBetaId).user(is(emptyOrNullString())).assertEvent();
+        OIDCClientRepresentation oidcClientRep = getClientDynamically(cAppDynamicBetaId);
+        assertEquals(Boolean.TRUE, oidcClientRep.getDpopBoundAccessTokens());
+
+        // token request without a DPoP proof - fail
+        oauth.clientId(appAlphaClientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals("DPoP proof is missing", response.getErrorDescription());
+        oauth.idTokenHint(response.getIdToken()).openLogout();
+
+        // token request with a valid DPoP proof - success
+        // EC key for client alpha
+        oauth.doSilentLogin();
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
+        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        oauth.dpopProof(dpopProofEcEncoded);
+        response = oauth.doAccessTokenRequest(code, null);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+        String encodedAccessToken = response.getAccessToken();
+        String encodedRefreshToken = response.getRefreshToken();
+        String encodedIdToken = response.getIdToken();
+        AccessToken accessToken = oauth.verifyToken(encodedAccessToken);
+        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK) jwkEc).getCrv());
+        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK) jwkEc).getX());
+        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK) jwkEc).getY());
+        String jkt = JWKSUtils.computeThumbprint(jwkEc);
+        assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
+        RefreshToken refreshToken = oauth.parseRefreshToken(encodedRefreshToken);
+        assertEquals(jkt, refreshToken.getConfirmation().getKeyThumbprint());
+
+        // userinfo request without a DPoP proof - fail
+        oauth.dpopProof(null);
+        OAuthClient.UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        assertEquals(401, userInfoResponse.getStatusCode());
+
+        // userinfo request with a valid DPoP proof - success
+        jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
+        dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET.toString(), oauth.getUserInfoUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        oauth.dpopProof(dpopProofEcEncoded);
+        userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        assertEquals(200, userInfoResponse.getStatusCode());
+        assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
+
+        // token refresh without a DPoP Proof - fail
+        oauth.dpopProof(null);
+        response = oauth.doRefreshTokenRequest(encodedRefreshToken, null);
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals("DPoP proof is missing", response.getErrorDescription());
+
+        // token refresh with a valid DPoP Proof - success
+        dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        oauth.dpopProof(dpopProofEcEncoded);
+        response = oauth.doRefreshTokenRequest(encodedRefreshToken, null);
+        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+        encodedAccessToken = response.getAccessToken();
+        encodedRefreshToken = response.getRefreshToken();
+        accessToken = oauth.verifyToken(encodedAccessToken);
+        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK) jwkEc).getCrv());
+        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK) jwkEc).getX());
+        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK) jwkEc).getY());
+        jkt = JWKSUtils.computeThumbprint(jwkEc);
+        assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
+        refreshToken = oauth.parseRefreshToken(encodedRefreshToken);
+        assertEquals(jkt, refreshToken.getConfirmation().getKeyThumbprint());
+
+        // revoke token without a valid DPoP proof - fail
+        JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
+        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getTokenRevocationUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
+        oauth.dpopProof(dpopProofRsaEncoded);
+        CloseableHttpResponse closableHttpResponse = oauth.doTokenRevoke(encodedAccessToken, "access_token", null);
+        assertThat(closableHttpResponse, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+
+        // revoke token with a valid DPoP proof - success
+        dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getTokenRevocationUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        oauth.dpopProof(dpopProofEcEncoded);
+        closableHttpResponse = oauth.doTokenRevoke(encodedAccessToken, "access_token", null);
+        assertThat(closableHttpResponse, Matchers.statusCodeIsHC(Status.OK));
+        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(appAlphaClientId, null, encodedAccessToken);
+        TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        assertFalse(tokenMetadataRepresentation.isActive());
+
+        updatePolicies("{}");
+        updateProfiles("{}");
+
+        oauth.idTokenHint(encodedIdToken).openLogout();
+    }
+
+    @Test
+    public void testDPoPProofWithClientCredentialsGrant() throws Exception {
+        modifyClient(TEST_CONFIDENTIAL_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setServiceAccountsEnabled(true);
+            configWrapper.setUseDPoP(true);
+        });
+        oauth.clientId(TEST_CONFIDENTIAL_CLIENT_ID);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+
+        JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
+        JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
+        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
+
+        oauth.dpopProof(dpopProofRsaEncoded);
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CONFIDENTIAL_CLIENT_SECRET);
+        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
+        String jkt = JWKSUtils.computeThumbprint(jwkRsa);
+        assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
+
+        oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
+    }
+
+    @Test
+    public void testDPoPProofWithResourceOwnerPasswordCredentialsGrant() throws Exception {
+        modifyClient(TEST_CONFIDENTIAL_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setDirectAccessGrantsEnabled(true);
+            configWrapper.setUseDPoP(true);
+        });
+        oauth.clientId(TEST_CONFIDENTIAL_CLIENT_ID);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+
+        JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
+        JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
+        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
+
+        oauth.dpopProof(dpopProofRsaEncoded);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_CONFIDENTIAL_CLIENT_SECRET,
+                                                                                   TEST_USER_NAME,
+                                                                                   TEST_USER_PASSWORD);
+        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
+        String jkt = JWKSUtils.computeThumbprint(jwkRsa);
+        assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
 
         oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
     }
@@ -501,23 +748,24 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofRsaEncoded);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_CONFIDENTIAL_CLIENT_SECRET);
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
 
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK)jwkRsa).getModulus());
-        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK)jwkRsa).getPublicExponent());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
         String jkt = JWKSUtils.computeThumbprint(jwkRsa);
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
 
         return response;
     }
 
-    private void doSuccessfulUserInfoGet(String accessToken, KeyPair rsaKeyPair) throws Exception {
+    private void doSuccessfulUserInfoGet(OAuthClient.AccessTokenResponse accessTokenResponse, KeyPair rsaKeyPair) throws Exception {
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET.toString(), oauth.getUserInfoUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
         oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(accessToken);
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(accessTokenResponse);
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
     }
 
@@ -534,79 +782,6 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(errorDescription, response.getErrorDescription());
     }
 
-    private JWK createRsaJwk(Key publicKey) {
-        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-
-        RSAPublicJWK k = new RSAPublicJWK();
-        k.setKeyType(KeyType.RSA);
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-
-        return k;
-    }
-
-    private JWK createEcJwk(Key publicKey) {
-        ECPublicKey ecKey = (ECPublicKey) publicKey;
-
-        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
-        ECPublicJWK k = new ECPublicJWK();
-        k.setKeyType(KeyType.EC);
-        k.setCrv("P-" + fieldSize);
-        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
-        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
-
-        return k;
-    }
-
-    private static KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
-        keyGen.initialize(ecSpec, randomGen);
-        KeyPair keyPair = keyGen.generateKeyPair();
-        return keyPair;
-    }
-
-    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
-        switch (keyWrapper.getType()) {
-            case KeyType.RSA:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
-            case KeyType.EC:
-                return new ECDSASignatureSignerContext(keyWrapper);
-            default:
-                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
-        }
-    }
-
-    private static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey) throws IOException {
-
-        String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
-
-        DPoP dpop = new DPoP();
-        dpop.id(jti);
-        dpop.setHttpMethod(htm);
-        dpop.setHttpUri(htu);
-        dpop.iat(iat);
-
-        String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
-
-        try {
-            KeyWrapper keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(jwsHeader.getKeyId());
-            keyWrapper.setAlgorithm(algorithm);
-            keyWrapper.setPrivateKey(privateKey);
-            keyWrapper.setType(privateKey.getAlgorithm());
-            keyWrapper.setUse(KeyUse.SIG);
-            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
-
-            String data = dpopProofHeaderEncoded + "." + dpopProofPayloadEncoded;
-            byte[] signatureByteArray = sigCtx.sign(data.getBytes());
-            return data + "." + Base64Url.encode(signatureByteArray);
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void changeDPoPBound(String clientId, boolean isEnabled) {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -614,7 +789,15 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         clientResource.update(clientRep);
     }
 
-    private String createClientByAdmin(String clientName, Consumer<ClientRepresentation> op) {
+    private void modifyClient(String clientId, BiConsumer<ClientRepresentation, OIDCAdvancedConfigWrapper> modify) {
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+        modify.accept(clientRep, configWrapper);
+        clientResource.update(clientRep);
+    }
+
+    private String createClientByAdmin(String clientName, Consumer<ClientRepresentation> op) throws ClientPolicyException {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientName);
         clientRep.setName(clientName);
@@ -626,6 +809,16 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(Collections.singletonList("+"));
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
+        if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
+            String respBody = resp.readEntity(String.class);
+            Map<String, String> responseJson = null;
+            try {
+                responseJson = JsonSerialization.readValue(respBody, Map.class);
+            } catch (IOException e) {
+                fail();
+            }
+            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
+        }
         resp.close();
         assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
         // registered components will be removed automatically when a test method finishes regardless of its success or failure.
@@ -633,4 +826,94 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
         return cId;
     }
+
+    private void updateProfiles(String json) throws ClientPolicyException {
+        try {
+            ClientProfilesRepresentation clientProfiles = JsonSerialization.readValue(json, ClientProfilesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().updateProfiles(clientProfiles);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update profiles failed", e.getResponse().getStatusInfo().toString());
+        } catch (Exception e) {
+            throw new ClientPolicyException("update profiles failed", e.getMessage());
+        }
+    }
+
+    private void updatePolicies(String json) throws ClientPolicyException {
+        try {
+            ClientPoliciesRepresentation clientPolicies = json == null ? null : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update policies failed", e.getResponse().getStatusInfo().toString());
+        } catch (IOException e) {
+            throw new ClientPolicyException("update policies failed", e.getMessage());
+        }
+    }
+
+    private String generateSuffixedName(String name) {
+        return name + "-" + UUID.randomUUID().toString().subSequence(0, 7);
+    }
+
+    private void updateClientByAdmin(String cId, Consumer<ClientRepresentation> op) throws ClientPolicyException {
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        op.accept(clientRep);
+        try {
+            clientResource.update(clientRep);
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
+    }
+
+    private void processClientPolicyExceptionByAdmin(BadRequestException bre) throws ClientPolicyException {
+        Response resp = bre.getResponse();
+        if (resp.getStatus() != Response.Status.BAD_REQUEST.getStatusCode()) {
+            resp.close();
+            return;
+        }
+
+        String respBody = resp.readEntity(String.class);
+        Map<String, String> responseJson = null;
+        try {
+            responseJson = JsonSerialization.readValue(respBody, Map.class);
+        } catch (IOException e) {
+            fail();
+        }
+        throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    private ClientRepresentation getClientByAdmin(String cId) throws ClientPolicyException {
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
+        try {
+            return clientResource.toRepresentation();
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
+        return null;
+    }
+
+    private String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = new OIDCClientRepresentation();
+        clientRep.setClientName(clientName);
+        clientRep.setClientUri(ServerURLs.getAuthServerContextRoot());
+        clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        op.accept(clientRep);
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        reg.auth(Auth.token(response));
+        // registered components will be removed automatically when a test method finishes regardless of its success or failure.
+        String clientId = response.getClientId();
+        testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(clientId);
+        return clientId;
+    }
+
+    private void setInitialAccessTokenForDynamicClientRegistration() {
+        // get initial access token for Dynamic Client Registration with authentication
+        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", REALM_NAME).build();
+        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        reg.auth(Auth.token(token));
+    }
+
+    private OIDCClientRepresentation getClientDynamically(String clientId) throws ClientRegistrationException {
+        return reg.oidc().get(clientId);
+    }
+
 }

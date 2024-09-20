@@ -28,19 +28,10 @@ import org.keycloak.Config;
 public interface EnvironmentDependentProviderFactory {
 
     /**
-     * @return <code>true</code> if the provider is supported and should be available, <code>false</code> otherwise
-     * @deprecated Prefer overriding/using the {@link #isSupported(Config.Scope)} method.
-     */
-    boolean isSupported();
-
-    /**
-     * An alternative to {@link #isSupported()} method to check if the provider is supported based on the
-     * provider configuration.
+     * Check if the provider is supported and should be available based on the provider configuration.
      *
      * @param config the provider configuration
      * @return {@code true} if the provider is supported. Otherwise, {@code false}.
      */
-    default boolean isSupported(Config.Scope config) {
-        return isSupported();
-    }
+    boolean isSupported(Config.Scope config);
 }

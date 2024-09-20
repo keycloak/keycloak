@@ -9,8 +9,8 @@ export enum ClaimJsonType {
 }
 
 export default class MapperDetailsPage extends CommonPage {
-  #userAttributeInput = '[id="user.attribute"]';
-  #tokenClaimNameInput = '[id="claim.name"]';
+  #userAttributeInput = '[data-testid="config.user🍺attribute"]';
+  #tokenClaimNameInput = '[data-testid="claim.name"]';
   #claimJsonType = '[id="jsonType.label"]';
 
   fillUserAttribute(userAttribute: string) {

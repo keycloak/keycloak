@@ -34,7 +34,7 @@ yq ea -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].ima
 
 # Edit the CSV version, replaces, etc.
 
-yq ea -i ".metadata.annotations.createdAt = \"$(date "+%D %T")\"" "$CSV_PATH"
+yq ea -i ".metadata.annotations.createdAt = \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"" "$CSV_PATH"
 yq ea -i ".spec.version = \"$VERSION\"" "$CSV_PATH"
 yq ea -i ".metadata.name = \"keycloak-operator.v$VERSION\"" "$CSV_PATH"
 yq ea -i '.metadata.namespace = "placeholder"' "$CSV_PATH"
@@ -60,7 +60,6 @@ yq ea -i "del(.spec.install.spec.deployments[0].spec.template.spec.containers[0]
 yq ea -i "del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].startupProbe)" "$CSV_PATH"
 yq ea -i 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].env[] | select(.name == "KUBERNETES_NAMESPACE"))' "$CSV_PATH"
 
-yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].resources = {}' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.strategy = {}' "$CSV_PATH"
 yq ea -i '.spec.apiservicedefinitions = {}' "$CSV_PATH"
 

@@ -16,7 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.function.Function;
@@ -31,6 +30,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.w3c.dom.Element;
@@ -44,6 +44,8 @@ import org.w3c.dom.NodeList;
  * @since Jan 31, 2011
  */
 public class SAMLMetadataUtil {
+
+    public static final String UTF8_BOM = "\uFEFF";
 
     /**
      * Get the {@link X509Certificate} from the KeyInfo
@@ -106,8 +108,9 @@ public class SAMLMetadataUtil {
         return null;
     }
 
-    public static EntityDescriptorType parseEntityDescriptorType(InputStream inputStream) throws ParsingException {
-        Object parsedObject = SAMLParser.getInstance().parse(inputStream);
+    public static EntityDescriptorType parseEntityDescriptorType(String descriptor) throws ParsingException {
+        descriptor = removeUTF8BOM(descriptor);
+        Object parsedObject = SAMLParser.getInstance().parse(StaxParserUtil.getXMLEventReader(descriptor));
         EntityDescriptorType entityType;
 
         if (EntitiesDescriptorType.class.isInstance(parsedObject)) {
@@ -152,5 +155,12 @@ public class SAMLMetadataUtil {
             }
         }
         return descriptor;
+    }
+
+    public static String removeUTF8BOM(String s) {
+        if (s.startsWith(UTF8_BOM)) {
+            s = s.substring(1);
+        }
+        return s;
     }
 }

@@ -1,0 +1,29 @@
+ifeval::[{project_community}==true]
+= Changes to the `org.keycloak.userprofile.UserProfileDecorator` interface
+
+To properly support multiple user storage providers within a realm, the `org.keycloak.userprofile.UserProfileDecorator`
+interface has changed.
+
+The `decorateUserProfile` method is no longer invoked when parsing the user profile configuration for the first time (and caching it),
+but every time a user is being managed through the user profile provider. As a result, the method changed its contract to:
+
+```java
+List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata)
+```
+
+Differently than the previous contract and behavior, this method is only invoked for the user storage provider from where the user
+was loaded from.
+
+endif::[]
+= Changes in redirect URI verification when using wildcards
+
+Because of security concerns, the redirect URI verification now performs a exact string matching (no wildcard involved) if the passed redirect uri contains a `userinfo` part or its `path` accesses parent directory (`/../`).
+
+The full wildcard `*` can still be used as a valid redirect in development for http(s) URIs with those characteristics. In production environments a exact valid redirect URI without wildcard needs to be configured for any URI of that type.
+
+Please note that wildcard valid redirect URIs are not recommended for production and not covered by the OAuth 2.0 specification.
+
+= Deprecated Account REST endpoint for removing credential
+
+The Account REST endpoint for removing the credential of the user is deprecated. Starting at this version, the Account Console no longer uses this endpoint. It is replaced by the `Delete Credential` application-initiated
+action, which is triggered by the Account Console when a user want to remove the credential of a user.

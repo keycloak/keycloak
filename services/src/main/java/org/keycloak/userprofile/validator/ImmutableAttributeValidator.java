@@ -22,6 +22,7 @@ import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -34,7 +35,7 @@ import org.keycloak.validate.ValidatorConfig;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
- * 
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ImmutableAttributeValidator implements SimpleValidator {
@@ -58,7 +59,14 @@ public class ImmutableAttributeValidator implements SimpleValidator {
             return context;
         }
 
-        List<String> currentValue = user.getAttributeStream(inputHint).filter(Objects::nonNull).collect(Collectors.toList());
+        Stream<String> rawValues = user.getAttributeStream(inputHint).filter(Objects::nonNull);
+
+        // force usernames to lower-case to avoid validation errors if the external storage is using a different format
+        if (!user.isFederated() && UserModel.USERNAME.equals(inputHint)) {
+            rawValues = rawValues.map(String::toLowerCase);
+        }
+
+        List<String> currentValue = rawValues.collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
         if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {

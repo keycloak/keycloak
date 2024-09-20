@@ -51,7 +51,7 @@ public class PersisterLastSessionRefreshStore extends AbstractLastSessionRefresh
     protected void sendMessage(KeycloakSession kcSession, Map<String, SessionData> refreshesToSend) {
         Map<String, Set<String>> sessionIdsByRealm =
                 refreshesToSend.entrySet().stream().collect(
-                        Collectors.groupingBy(entry -> entry.getValue().getRealmId(),
+                        Collectors.groupingBy(entry -> entry.getValue().realmId(),
                                 Collectors.mapping(Map.Entry::getKey, Collectors.toSet())));
 
         // Update DB with a bit lower value than current time to ensure 'revokeRefreshToken' will work correctly taking server

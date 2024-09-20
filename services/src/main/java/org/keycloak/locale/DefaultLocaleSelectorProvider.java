@@ -17,12 +17,13 @@
 package org.keycloak.locale;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import java.util.List;
 import java.util.Locale;
@@ -131,12 +132,12 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        Cookie localeCookie = httpHeaders.getCookies().get(LOCALE_COOKIE);
+        String localeCookie = session.getProvider(CookieProvider.class).get(CookieType.LOCALE);
         if (localeCookie == null) {
             return null;
         }
 
-        return findLocale(realm, localeCookie.getValue());
+        return findLocale(realm, localeCookie);
     }
 
     private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {

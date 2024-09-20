@@ -21,6 +21,7 @@ package org.keycloak.representations.userprofile.config;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Configuration of the Attribute.
@@ -42,6 +43,7 @@ public class UPAttribute implements Cloneable {
     /** null means it is always selected */
     private UPAttributeSelector selector;
     private String group;
+    private boolean multivalued;
 
     public UPAttribute() {
     }
@@ -68,6 +70,11 @@ public class UPAttribute implements Cloneable {
 
     public UPAttribute(String name, UPAttributePermissions permissions) {
         this(name, permissions, null);
+    }
+
+    public UPAttribute(String name, boolean multivalued, UPAttributePermissions permissions) {
+        this(name, permissions, null);
+        setMultivalued(multivalued);
     }
 
     public String getName() {
@@ -141,9 +148,17 @@ public class UPAttribute implements Cloneable {
         this.group = group != null ? group.trim() : null;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + "]";
     }
 
     @Override
@@ -168,6 +183,32 @@ public class UPAttribute implements Cloneable {
         attr.setPermissions(this.permissions == null ? null : this.permissions.clone());
         attr.setSelector(this.selector == null ? null : this.selector.clone());
         attr.setGroup(this.group);
+        attr.setMultivalued(this.multivalued);
         return attr;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPAttribute other = (UPAttribute) obj;
+        return Objects.equals(this.name, other.name)
+                && Objects.equals(this.displayName, other.displayName)
+                && Objects.equals(this.group, other.group)
+                && Objects.equals(this.validations, other.validations)
+                && Objects.equals(this.annotations, other.annotations)
+                && Objects.equals(this.required, other.required)
+                && Objects.equals(this.permissions, other.permissions)
+                && Objects.equals(this.selector, other.selector)
+                && Objects.equals(this.multivalued, other.multivalued);
     }
 }

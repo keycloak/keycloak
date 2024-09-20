@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -172,10 +172,12 @@ public class SessionResource {
 
         for (String clientUUID : s.getAuthenticatedClientSessions().keySet()) {
             ClientModel client = realm.getClientById(clientUUID);
-            ClientRepresentation clientRep = new ClientRepresentation();
-            clientRep.setClientId(client.getClientId());
-            clientRep.setClientName(client.getName());
-            sessionRep.getClients().add(clientRep);
+            if (client != null) {
+                ClientRepresentation clientRep = new ClientRepresentation();
+                clientRep.setClientId(client.getClientId());
+                clientRep.setClientName(client.getName());
+                sessionRep.getClients().add(clientRep);
+            }
         }
         return sessionRep;
     }

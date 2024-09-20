@@ -37,13 +37,16 @@
             <artifactId>keycloak-guides-maven-plugin</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.0</version>
@@ -196,6 +199,18 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>securing-apps-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
                 </executions>

@@ -31,6 +31,14 @@ public class ValidationResult {
      */
     public static final ValidationResult OK = new ValidationResult(Collections.emptySet());
 
+    public static ValidationResult of(ValidationError... errors) {
+        return new ValidationResult(Set.of(errors));
+    }
+
+    public static ValidationResult of(Set<ValidationError> errors) {
+        return new ValidationResult(errors);
+    }
+
     /**
      * Holds the {@link ValidationError ValidationError's} that occurred during validation.
      */

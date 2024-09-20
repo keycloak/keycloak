@@ -2,20 +2,26 @@
 
 == Preparing for upgrading
 
-Before you upgrade, be aware of the order in which you need to perform the upgrade steps. In particular, be sure to upgrade {project_name} server before you upgrade the adapters.
+Perform the following steps before you upgrade the server.
+
+.Procedure
+. Shutdown {project_name}.
+. Back up the old installation, such as configuration, themes, and so on.
+. If XA transaction is enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
+. Back up the database using instructions in the documentation for your relational
+  database.
++
+The database will no longer be compatible with the old server after you upgrade the server. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
+
+[NOTE]
+====
+In case the feature `persistent-user-sessions` is disabled in your current setup and the server is upgraded, all user sessions will be lost except for offline user sessions.
+Users owning these sessions will have to log in again.
+Note the feature `persistent-user-sessions` is disabled by default in the {project_name} server releases prior to 26.0.0.
+====
 
 [WARNING]
 ====
-In a minor upgrade of {project_name}, all user sessions are lost. After the upgrade, all users will have to log in again.
+Information about failed logins for the brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Users currently authenticating, changing their passwords or resetting their password will need to restart the authentication flow once {project_name} is up and running again.
 ====
-
-.Procedure
-. Back up the old installation (configuration, themes, and so on).
-. Back up the database using instructions in the documentation for your relational
-  database.
-. Upgrade the {project_name} server.
-+
-The database will no longer be compatible with the old server after the upgrade.
-. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
-. Upgrade the adapters.
-

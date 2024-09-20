@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.runonserver;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
@@ -27,6 +28,6 @@ import java.io.Serializable;
  */
 public interface RunOnServer extends Serializable {
 
-    void run(KeycloakSession session) throws IOException;
+    void run(KeycloakSession session) throws IOException, VerificationException;
 
 }

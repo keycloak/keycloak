@@ -1,6 +1,7 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
+import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 type IDQuery = {
   id: string;
@@ -27,29 +28,27 @@ type ClientRole = {
   clientId: string;
 };
 
-const fetchEndpoint = async ({
-  id,
-  type,
-  first,
-  max,
-  search,
-  endpoint,
-}: Query): Promise<any> =>
-  fetchAdminUI(`/ui-ext/${endpoint}/${type}/${id}`, {
+const fetchEndpoint = async (
+  adminClient: KeycloakAdminClient,
+  { id, type, first, max, search, endpoint }: Query,
+): Promise<any> =>
+  fetchAdminUI(adminClient, `/ui-ext/${endpoint}/${type}/${id}`, {
     first: (first || 0).toString(),
     max: (max || 10).toString(),
     search: search || "",
   });
 
 export const getAvailableClientRoles = (
+  adminClient: KeycloakAdminClient,
   query: PaginatingQuery,
 ): Promise<ClientRole[]> =>
-  fetchEndpoint({ ...query, endpoint: "available-roles" });
+  fetchEndpoint(adminClient, { ...query, endpoint: "available-roles" });
 
 export const getEffectiveClientRoles = (
+  adminClient: KeycloakAdminClient,
   query: EffectiveClientRolesQuery,
 ): Promise<ClientRole[]> =>
-  fetchEndpoint({ ...query, endpoint: "effective-roles" });
+  fetchEndpoint(adminClient, { ...query, endpoint: "effective-roles" });
 
 type UserQuery = {
   lastName?: string;
@@ -69,8 +68,21 @@ export type BruteUser = UserRepresentation & {
   bruteForceStatus?: Record<string, object>;
 };
 
-export const findUsers = (query: UserQuery): Promise<BruteUser[]> =>
-  fetchAdminUI("ui-ext/brute-force-user", query as Record<string, string>);
+export const findUsers = (
+  adminClient: KeycloakAdminClient,
+  query: UserQuery,
+): Promise<BruteUser[]> =>
+  fetchAdminUI(
+    adminClient,
+    "ui-ext/brute-force-user",
+    query as Record<string, string>,
+  );
 
-export const fetchUsedBy = (query: PaginatingQuery): Promise<string[]> =>
-  fetchEndpoint({ ...query, endpoint: "authentication-management" });
+export const fetchUsedBy = (
+  adminClient: KeycloakAdminClient,
+  query: PaginatingQuery,
+): Promise<string[]> =>
+  fetchEndpoint(adminClient, {
+    ...query,
+    endpoint: "authentication-management",
+  });

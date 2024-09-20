@@ -25,13 +25,19 @@ export type UserProfileError = {
 };
 
 const isBundleKey = (displayName?: string) => displayName?.includes("${");
-export const unWrap = (key: string) => key.substring(2, key.length - 1);
+const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
   t: TFunction,
   text: string | undefined,
-  fallback: string | undefined,
-) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+  fallback?: string,
+  prefix?: string,
+) => {
+  const value = text || fallback;
+  const bundleKey = isBundleKey(value) ? unWrap(value!) : value;
+  const key = prefix ? `${prefix}.${bundleKey}` : bundleKey;
+  return t(key || "");
+};
 
 export const labelAttribute = (
   t: TFunction,
@@ -49,6 +55,12 @@ export const fieldName = (name?: string) =>
     "🍺",
   )}` as FieldPath<UserFormFields>;
 
+export const beerify = <T extends string>(name: T) =>
+  name.replaceAll(".", "🍺");
+
+export const debeerify = <T extends string>(name: T) =>
+  name.replaceAll("🍺", ".");
+
 export function setUserProfileServerError<T>(
   error: UserProfileError,
   setError: (field: keyof T, params: object) => void,
@@ -61,13 +73,16 @@ export function setUserProfileServerError<T>(
   ).forEach((e) => {
     const params = Object.assign(
       {},
-      e.params?.map((p) => t(isBundleKey(p.toString()) ? unWrap(p) : p)),
+      e.params?.map((p) => (isBundleKey(p.toString()) ? t(unWrap(p)) : p)),
     );
     setError(fieldName(e.field) as keyof T, {
-      message: t(e.errorMessage, {
-        ...params,
-        defaultValue: e.field,
-      }),
+      message: t(
+        isBundleKey(e.errorMessage) ? unWrap(e.errorMessage) : e.errorMessage,
+        {
+          ...params,
+          defaultValue: e.errorMessage || e.field,
+        },
+      ),
       type: "server",
     });
   });

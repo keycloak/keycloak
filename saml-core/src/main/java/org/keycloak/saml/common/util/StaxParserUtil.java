@@ -52,6 +52,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -557,6 +558,16 @@ public class StaxParserUtil {
             throw new RuntimeException(ex);
         }
         return xmlEventReader;
+    }
+
+    public static XMLEventReader getXMLEventReader(String xml) {
+        XMLInputFactory xmlInputFactory;
+        xmlInputFactory = XML_INPUT_FACTORY.get();
+        try {
+            return xmlInputFactory.createXMLEventReader(new StringReader(xml));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private static AtomicBoolean XML_EVENT_READER_ON_SOURCE_SUPPORTED = new AtomicBoolean(true);

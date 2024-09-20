@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Errors;
@@ -61,6 +62,11 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         HttpRequest request = context.getHttpRequest();
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
+            if (context.getAuthenticationSession().getAuthNote(AuthenticationProcessor.FORKED_FROM) != null) {
+                // skip spnego authentication if it was forked (reset-credentials)
+                context.attempted();
+                return;
+            }
             Response challenge = challengeNegotiation(context, null);
             context.forceChallenge(challenge);
             return;

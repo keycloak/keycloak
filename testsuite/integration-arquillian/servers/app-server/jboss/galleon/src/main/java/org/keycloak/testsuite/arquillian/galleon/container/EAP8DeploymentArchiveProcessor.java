@@ -21,7 +21,6 @@ import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArch
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
-import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 
 public class EAP8DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
@@ -44,12 +43,7 @@ public class EAP8DeploymentArchiveProcessor implements ApplicationArchiveProcess
 
         DeploymentArchiveProcessorUtils.useJakartaEEServletClass(archive, DeploymentArchiveProcessorUtils.WEBXML_PATH);
 
-        if (!testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) return;
         if (!archive.contains(DeploymentArchiveProcessorUtils.JBOSS_DEPLOYMENT_XML_PATH)) return;
-
-        log.debug("Modifying WEB.XML in " + archive.getName() + " for Servlet Filter.");
-        DeploymentArchiveProcessorUtils.modifyWebXMLForServletFilter(archive, testClass);
-        DeploymentArchiveProcessorUtils.addFilterDependencies(archive, testClass);
     }
 
     private void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {

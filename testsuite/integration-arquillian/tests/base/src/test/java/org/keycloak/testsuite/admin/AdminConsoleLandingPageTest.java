@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -41,7 +42,7 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
 
     @Test
     public void landingPage() throws IOException {
-        String body = SimpleHttp.doGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", client).asString();
+        String body = SimpleHttpDefault.doGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", client).asString();
 
         Map<String, String> config = getConfig(body);
         String authUrl = config.get("authUrl");

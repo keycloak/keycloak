@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import static org.keycloak.utils.StringUtil.isNotBlank;
+
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.Comparator;
@@ -47,6 +49,12 @@ public interface UserModel extends RoleMapperModel {
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
     interface UserRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface UserPreRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         UserModel getUser();
         KeycloakSession getKeycloakSession();
@@ -106,9 +114,9 @@ public interface UserModel extends RoleMapperModel {
     Map<String, List<String>> getAttributes();
 
     /**
-     * Obtains the names of required actions associated with the user.
+     * Obtains the aliases of required actions associated with the user.
      *
-     * @return a non-null {@link Stream} of required action names.
+     * @return a non-null {@link Stream} of required action aliases.
      */
     Stream<String> getRequiredActionsStream();
 
@@ -195,6 +203,9 @@ public interface UserModel extends RoleMapperModel {
     }
 
     void joinGroup(GroupModel group);
+    default void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        joinGroup(group);
+    }
     void leaveGroup(GroupModel group);
     boolean isMemberOf(GroupModel group);
 
@@ -203,6 +214,16 @@ public interface UserModel extends RoleMapperModel {
 
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
+
+    /**
+     * Indicates if this {@link UserModel} maps to a local account or an account
+     * federated from an external user storage.
+     *
+     * @return {@code true} if a federated account. Otherwise, {@code false}.
+     */
+    default boolean isFederated() {
+        return isNotBlank(getFederationLink());
+    }
 
     /**
      * Instance of a user credential manager to validate and update the credentials of this user.

@@ -23,7 +23,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ForbiddenException;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
 * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

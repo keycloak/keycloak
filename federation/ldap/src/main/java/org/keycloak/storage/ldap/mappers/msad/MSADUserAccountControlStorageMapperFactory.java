@@ -22,12 +22,10 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
-import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,17 +42,25 @@ public class MSADUserAccountControlStorageMapperFactory extends AbstractLDAPStor
         configProperties = getConfigProps(null);
     }
 
-    private static List<ProviderConfigProperty> getConfigProps(ComponentModel parent) {
-        return ProviderConfigurationBuilder.create()
+    private static List<ProviderConfigProperty> getConfigProps(ComponentModel parentModel) {
+        UserStorageProviderModel parent = parentModel != null ? new UserStorageProviderModel(parentModel) : new UserStorageProviderModel();
+
+        ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
                 .property().name(MSADUserAccountControlStorageMapper.LDAP_PASSWORD_POLICY_HINTS_ENABLED)
                 .label("Password Policy Hints Enabled")
                 .helpText("Applicable just for writable MSAD. If on, then updating password of MSAD user will use LDAP_SERVER_POLICY_HINTS_OID " +
                         "extension, which means that advanced MSAD password policies like 'password history' or 'minimal password age' will be applied. This extension works just for MSAD 2008 R2 or newer.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
-                .add()
-                .build();
+                .add();
 
+        if (parent.isImportEnabled()) {
+            config
+                .property().name(MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP).label("Always Read Enabled Value From LDAP")
+                .helpText("If on, the user enabled/disabled state will always be read from MSAD by checking the proper userAccountControl")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE).defaultValue("false").add();
+        }
+        return config.build();
     }
 
     @Override

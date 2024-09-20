@@ -17,95 +17,30 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
-import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Objects;
 import java.util.Set;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(ScopeRemovedEvent.ExternalizerImpl.class)
-public class ScopeRemovedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.SCOPE_REMOVED_EVENT)
+public class ScopeRemovedEvent extends BaseScopeEvent {
 
-    private String id;
-    private String name;
-    private String serverId;
+    @ProtoFactory
+    ScopeRemovedEvent(String id, String name, String serverId) {
+        super(id, name, serverId);
+    }
 
     public static ScopeRemovedEvent create(String id, String name, String serverId) {
-        ScopeRemovedEvent event = new ScopeRemovedEvent();
-        event.id = id;
-        event.name = name;
-        event.serverId = serverId;
-        return event;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ScopeRemovedEvent [ id=%s, name=%s]", id, name);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        ScopeRemovedEvent that = (ScopeRemovedEvent) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(serverId, that.serverId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), id, name, serverId);
+        return new ScopeRemovedEvent(id, name, serverId);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.scopeRemoval(id, name, serverId, invalidations);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<ScopeRemovedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, ScopeRemovedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.id, output);
-            MarshallUtil.marshallString(obj.name, output);
-            MarshallUtil.marshallString(obj.serverId, output);
-        }
-
-        @Override
-        public ScopeRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public ScopeRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            ScopeRemovedEvent res = new ScopeRemovedEvent();
-            res.id = MarshallUtil.unmarshallString(input);
-            res.name = MarshallUtil.unmarshallString(input);
-            res.serverId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
+        cache.scopeRemoval(getId(), name, serverId, invalidations);
     }
 }

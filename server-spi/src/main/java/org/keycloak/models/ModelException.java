@@ -40,10 +40,6 @@ public class ModelException extends RuntimeException {
         super(message, cause);
     }
 
-    public ModelException(Throwable cause) {
-        super(cause);
-    }
-
     public Object[] getParameters() {
         return parameters;
     }

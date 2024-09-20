@@ -50,5 +50,10 @@
             }
         ]
     },
+    "smtpServer": {
+      "from": "auto@keycloak.org",
+      "host": "localhost",
+      "port": "3025"
+    },
     "eventsListeners": ["jboss-logging", "event-queue"]
 }

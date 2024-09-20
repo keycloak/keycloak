@@ -1,4 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -16,16 +17,14 @@ import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { RolesList } from "../components/roles-list/RolesList";
 import {
@@ -44,7 +43,6 @@ import {
   convertToFormValues,
   exportClient,
 } from "../util";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
@@ -94,8 +92,8 @@ const ClientDetailHeader = ({
 }: ClientDetailHeaderProps) => {
   const { t } = useTranslation();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "disableConfirmTitle",
-    messageKey: "disableConfirm",
+    titleKey: "disableConfirmClientTitle",
+    messageKey: "disableConfirmClient",
     continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);
@@ -188,6 +186,8 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -413,7 +413,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"

@@ -15,19 +15,6 @@ ignore:
           The Keycloak services module is not affected by CVE-2021-3461 anymore,  
           the issue was fixed on Keycloak 14.0.0 last year. More details:
             - https://issues.redhat.com/browse/KEYCLOAK-17495
-  SNYK-JAVA-IONETTY-1042268:
-    - "*":
-        reason: >
-          There is no fixed version for io.netty:netty-handler. More details:
-            - https://github.com/netty/netty/issues/10806
-            - https://github.com/netty/netty/issues/8537
-            - https://github.com/netty/netty/issues/9930
-            - https://github.com/netty/netty/issues/10362
-          Netty Handler is a transitive dependency coming from Quarkus,
-          according to the Netty team, the fix should be available on Netty 5.
-          The expiry date was set as a reminder for us to upgrade, once they
-          provide the fix.
-        expires: 2024-06-31T00:00:00.000Z
   SNYK-JAVA-ORGKEYCLOAK-1658295:
     - "*":
         reason: >

@@ -41,6 +41,7 @@ import org.keycloak.services.resources.account.resources.AbstractResourceService
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -350,7 +351,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             permissions.add(permission);
         }
 
-        SimpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/permissions"), httpClient)
+        SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -386,7 +387,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         permissions.add(new Permission(users.get(users.size() - 1), "Scope A", "Scope B", "Scope C", "Scope D"));
 
         String resourceId = sharedResource.getId();
-        SimpleHttp.Response response = SimpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -410,7 +411,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     public void failShareResourceInvalidPermissions() throws Exception {
         List<Permission> permissions = new ArrayList<>();
 
-        SimpleHttp.Response response = SimpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(getMyResources().get(0).getId()) + "/permissions"), httpClient)
+        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(getMyResources().get(0).getId()) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -446,16 +447,16 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         // test read access
         for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
             assertEquals( "no-account-access GET " + url, 403,
-                    SimpleHttp.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus());
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus());
             assertEquals("view-account-access GET " + url,200,
-                    SimpleHttp.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus());
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus());
         }
 
         // test write access
         assertEquals( "no-account-access PUT " + permissionsUrl, 403,
-                SimpleHttp.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
         assertEquals( "view-account-access PUT " + permissionsUrl, 403,
-                SimpleHttp.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
     }
 
     @Test
@@ -475,7 +476,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         permissions.add(new Permission(users.get(users.size() - 1), "Scope B", "Scope D"));
 
         String resourceId = sharedResource.getId();
-        SimpleHttp.Response response = SimpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -611,7 +612,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             }
         }
 
-        SimpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/permissions"), httpClient)
+        SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(requests).asResponse();
 
@@ -706,7 +707,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private SimpleHttp get(String resource, String token) {
-        return SimpleHttp.doGet(getAccountUrl("resources" + resource), httpClient).auth(token);
+        return SimpleHttpDefault.doGet(getAccountUrl("resources" + resource), httpClient).auth(token);
     }
 
     private AuthzClient createAuthzClient(ClientRepresentation client) {

@@ -17,8 +17,11 @@
 
 package org.keycloak.jose.jws;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.util.JsonSerialization;
@@ -27,16 +30,22 @@ import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class JWSBuilder {
-    String type;
-    String kid;
-    String contentType;
-    byte[] contentBytes;
+    protected String type;
+    protected String kid;
+    protected String x5t;
+    protected JWK jwk;
+    protected List<X509Certificate> x5c;
+    protected String contentType;
+    protected byte[] contentBytes;
 
     public JWSBuilder type(String type) {
         this.type = type;
@@ -45,6 +54,21 @@ public class JWSBuilder {
 
     public JWSBuilder kid(String kid) {
         this.kid = kid;
+        return this;
+    }
+
+    public JWSBuilder x5t(String x5t) {
+        this.x5t = x5t;
+        return this;
+    }
+
+    public JWSBuilder jwk(JWK jwk) {
+        this.jwk = jwk;
+        return this;
+    }
+
+    public JWSBuilder x5c(List<X509Certificate> x5c) {
+        this.x5c = x5c;
         return this;
     }
 
@@ -70,10 +94,39 @@ public class JWSBuilder {
 
     protected String encodeHeader(String sigAlgName) {
         StringBuilder builder = new StringBuilder("{");
-        builder.append("\"alg\":\"").append(sigAlgName).append("\"");
+
+        if (org.keycloak.crypto.Algorithm.Ed25519.equals(sigAlgName) || org.keycloak.crypto.Algorithm.Ed448.equals(sigAlgName)) {
+            builder.append("\"alg\":\"").append(org.keycloak.crypto.Algorithm.EdDSA).append("\"");
+            builder.append(",\"crv\":\"").append(sigAlgName).append("\"");
+        } else {
+            builder.append("\"alg\":\"").append(sigAlgName).append("\"");
+        }
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
+        if (x5t != null) builder.append(",\"x5t\" : \"").append(x5t).append("\"");
+        if (x5c != null && !x5c.isEmpty()) {
+            builder.append(",\"x5c\" : [");
+            for (int i = 0; i < x5c.size(); i++) {
+                X509Certificate certificate = x5c.get(i);
+                if (i > 0) {
+                    builder.append(",");
+                }
+                try {
+                    builder.append("\"").append(Base64.encodeBytes(certificate.getEncoded())).append("\"");
+                } catch (CertificateEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            builder.append("]");
+        }
+        if (jwk != null) {
+            try {
+                builder.append(",\"jwk\" : ").append(JsonSerialization.mapper.writeValueAsString(jwk));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
         return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));

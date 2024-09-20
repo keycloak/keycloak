@@ -59,7 +59,9 @@ public final class Maven {
                     new ArtifactDescriptorRequest()
                             .setArtifact(new DefaultArtifact(project.getGroupId(), project.getArtifactId(),                                    "pom", project.getVersion()))
                             .setRepositories(remoteRepositories));
-            Artifact artifact = resolveArtifact(groupId, artifactId, projectDescriptor.getDependencies());
+            List<Dependency> dependencies = new ArrayList<>(projectDescriptor.getDependencies());
+            dependencies.addAll(projectDescriptor.getManagedDependencies());
+            Artifact artifact = resolveArtifact(groupId, artifactId, dependencies);
 
             if (artifact == null) {
                 resolveArtifact(groupId, artifactId, projectDescriptor.getManagedDependencies());

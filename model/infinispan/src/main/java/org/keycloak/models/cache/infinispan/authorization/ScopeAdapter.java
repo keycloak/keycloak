@@ -19,7 +19,6 @@ package org.keycloak.models.cache.infinispan.authorization;
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedScope;
 
 /**
@@ -40,7 +39,7 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
     public Scope getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerScopeInvalidation(cached.getId(), cached.getName(), cached.getResourceServerId());
-            updated = cacheSession.getScopeStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getId());
+            updated = cacheSession.getScopeStoreDelegate().findById(getResourceServer(), cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -67,7 +66,7 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getScopeStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getId());
+        updated = cacheSession.getScopeStoreDelegate().findById(getResourceServer(), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -119,7 +118,7 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
 
     @Override
     public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
+        return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
     }
 
     @Override

@@ -14,7 +14,7 @@ final class ClassLoaderPropertyMappers {
 
     private ClassLoaderPropertyMappers(){}
 
-    public static PropertyMapper[] getMappers() {
+    public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[] {
                 fromOption(ClassLoaderOptions.IGNORE_ARTIFACTS)
                         .to(QUARKUS_REMOVED_ARTIFACTS_PROPERTY)

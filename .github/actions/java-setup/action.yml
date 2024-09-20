@@ -9,14 +9,14 @@ inputs:
   java-version:
     description: The Java version that is going to be set up.
     required: false
-    default: "17"
+    default: "21"
 
 runs:
   using: composite
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}

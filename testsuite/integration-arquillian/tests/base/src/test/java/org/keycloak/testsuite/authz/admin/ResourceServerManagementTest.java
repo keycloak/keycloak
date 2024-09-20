@@ -20,12 +20,19 @@ package org.keycloak.testsuite.authz.admin;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -95,5 +102,58 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         } catch (NotFoundException nfe) {
             // expected
         }
+    }
+
+    @Test
+    public void testImportSettingsToDifferentClient() throws Exception {
+        ClientsResource clientsResource = testRealmResource().clients();
+        ClientRepresentation clientRep = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"), ClientRepresentation.class);
+        clientRep.setClientId(KeycloakModelUtils.generateId());
+        clientsResource.create(clientRep).close();
+        List<ClientRepresentation> clients = clientsResource.findByClientId(clientRep.getClientId());
+        assertFalse(clients.isEmpty());
+        String clientId = clients.get(0).getId();
+        AuthorizationResource authorization = clientsResource.get(clientId).authorization();
+        ResourceServerRepresentation settings = authorization.exportSettings();
+        assertEquals(PolicyEnforcementMode.PERMISSIVE, settings.getPolicyEnforcementMode());
+        assertEquals(DecisionStrategy.UNANIMOUS, settings.getDecisionStrategy());
+        assertFalse(authorization.resources().findByName("Resource 1").isEmpty());
+        assertFalse(authorization.resources().findByName("Resource 15").isEmpty());
+        assertFalse(authorization.resources().findByName("Resource 20").isEmpty());
+        assertNotNull(authorization.permissions().resource().findByName("Resource 15 Permission"));
+        assertNotNull(authorization.policies().role().findByName("Resource 1 Policy"));
+        settings.getPolicies().removeIf(p -> "js".equals(p.getType()));
+
+        ClientRepresentation anotherClientRep = ClientBuilder.create().clientId(KeycloakModelUtils.generateId()).secret("secret").authorizationServicesEnabled(true).serviceAccount().enabled(true).build();
+        clientsResource.create(anotherClientRep).close();
+        clients = clientsResource.findByClientId(anotherClientRep.getClientId());
+        assertFalse(clients.isEmpty());
+        ClientRepresentation anotherClient = clients.get(0);
+        authorization = clientsResource.get(anotherClient.getId()).authorization();
+        authorization.importSettings(settings);
+        ResourceServerRepresentation anotherSettings = authorization.exportSettings();
+        assertEquals(PolicyEnforcementMode.PERMISSIVE, anotherSettings.getPolicyEnforcementMode());
+        assertEquals(DecisionStrategy.UNANIMOUS, anotherSettings.getDecisionStrategy());
+        assertFalse(authorization.resources().findByName("Resource 1").isEmpty());
+        assertFalse(authorization.resources().findByName("Resource 15").isEmpty());
+        assertFalse(authorization.resources().findByName("Resource 20").isEmpty());
+        assertNotNull(authorization.permissions().resource().findByName("Resource 15 Permission"));
+        assertNotNull(authorization.policies().role().findByName("Resource 1 Policy"));
+    }
+
+    @Test
+    public void testExportSettings() throws Exception {
+        ClientsResource clientsResource = testRealmResource().clients();
+        ClientRepresentation clientRep = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"), ClientRepresentation.class);
+        clientRep.setClientId(KeycloakModelUtils.generateId());
+        clientsResource.create(clientRep).close();
+        List<ClientRepresentation> clients = clientsResource.findByClientId(clientRep.getClientId());
+        assertFalse(clients.isEmpty());
+        String clientId = clients.get(0).getId();
+        AuthorizationResource authorization = clientsResource.get(clientId).authorization();
+        ResourceServerRepresentation settings = authorization.exportSettings();
+        assertFalse(settings.getResources().stream().map(ResourceRepresentation::getId).anyMatch(Objects::nonNull));
+        assertFalse(settings.getScopes().stream().map(ScopeRepresentation::getId).anyMatch(Objects::nonNull));
+        assertFalse(settings.getPolicies().stream().map(PolicyRepresentation::getId).anyMatch(Objects::nonNull));
     }
 }

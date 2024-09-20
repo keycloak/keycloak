@@ -19,6 +19,7 @@ package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
@@ -31,12 +32,8 @@ import org.keycloak.utils.StringUtil;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,16 +93,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (inputData.containsKey("tryAnotherWay")) {
                 logger.trace("User clicked on link 'Try Another Way'");
 
-                List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
-
-                AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, null, null);
-                result.setAuthenticationSelections(selectionOptions);
-                return result.form().createSelectAuthenticator();
+                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, "true");
+                return createSelectAuthenticatorsScreen(model);
             }
 
             // check if the user has switched to a new authentication execution, and if so switch to it.
             if (authExecId != null && !authExecId.isEmpty()) {
 
+                processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
                 List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
 
                 // Check if switch to the requested authentication execution is allowed
@@ -225,9 +220,34 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
+    /**
+     * Create screen where user can select from multiple authentication methods (Usually displayed when user clicks on 'try another way' link during authentication)
+     *
+     * @param executionModel Last execution (should be typically available in the methods)
+     * @return response with the screen to be displayed to the user
+     */
+    private Response createSelectAuthenticatorsScreen(AuthenticationExecutionModel executionModel) {
+        List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(executionModel);
+
+        AuthenticationProcessor.Result result = processor.createAuthenticatorContext(executionModel, null, null);
+        result.setAuthenticationSelections(selectionOptions);
+        return result.form().createSelectAuthenticator();
+    }
+
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
+
+        if (Boolean.parseBoolean(processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED))) {
+            logger.tracef("Refreshed page on authentication selector screen");
+            String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            if (lastExecutionId != null) {
+                AuthenticationExecutionModel executionModel = processor.getRealm().getAuthenticationExecutionById(lastExecutionId);
+                if (executionModel != null) {
+                    return createSelectAuthenticatorsScreen(executionModel);
+                }
+            }
+        }
 
         //separate flow elements into required and alternative elements
         List<AuthenticationExecutionModel> requiredList = new ArrayList<>();
@@ -419,7 +439,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
         if (authenticator.requiresUser()) {
             if (authUser == null) {
-                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.UNKNOWN_USER);
+                throw new AuthenticationFlowException("authenticator '" + factory.getId() + "' requires user to be set in the authentication context by previous authenticators, but user is not set yet", AuthenticationFlowError.UNKNOWN_USER);
             }
             if (!authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser)) {
                 if (factory.isUserSetupAllowed() && model.isRequired() && authenticator.areRequiredActionsEnabled(processor.getSession(), processor.getRealm())) {
@@ -485,6 +505,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             case SUCCESS:
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+                AuthenticatorUtils.updateCompletedExecutions(processor.getAuthenticationSession(), processor.getUserSession(), execution.getId());
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
@@ -588,6 +609,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 .filter(Objects::nonNull)
                 .filter(AuthenticationFlowCallback.class::isInstance)
                 .map(AuthenticationFlowCallback.class::cast)
-                .forEach(AuthenticationFlowCallback::onTopFlowSuccess);
+                .forEach(callback -> callback.onTopFlowSuccess(flow));
     }
 }

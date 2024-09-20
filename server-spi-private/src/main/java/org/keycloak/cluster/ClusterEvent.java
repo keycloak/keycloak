@@ -17,10 +17,15 @@
 
 package org.keycloak.cluster;
 
-import java.io.Serializable;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface ClusterEvent extends Serializable {
+public interface ClusterEvent extends Consumer<ClusterListener> {
+
+    @Override
+    default void accept(ClusterListener listener) {
+        listener.eventReceived(this);
+    }
 }

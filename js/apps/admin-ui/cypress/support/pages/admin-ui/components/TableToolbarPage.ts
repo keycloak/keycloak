@@ -8,24 +8,20 @@ export default class TableToolbar extends CommonElements {
   #nextPageBtn: string;
   #previousPageBtn: string;
   #searchTypeDropdownBtn: string;
-  #searchTypeSelectToggleBtn: string;
   #actionToggleBtn: string;
 
   constructor() {
-    super(".pf-c-toolbar:visible");
+    super(".pf-v5-c-toolbar:visible");
     this.#searchBtn =
       this.parentSelector + "button[aria-label='Search']:visible";
     this.#searchInput =
-      this.parentSelector + ".pf-c-text-input-group__text-input:visible";
+      this.parentSelector + ".pf-v5-c-text-input-group__text-input:visible";
     this.#changeTypeBtn = this.parentSelector + "#change-type-dropdown";
     this.#nextPageBtn = this.parentSelector + "button[data-action=next]";
     this.#previousPageBtn =
       this.parentSelector + "button[data-action=previous]";
-    this.#searchTypeDropdownBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-dropdown__toggle";
-    this.#searchTypeSelectToggleBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-select__toggle";
-    this.#actionToggleBtn = this.dropdownToggleBtn + "[aria-label='Actions']";
+    this.#searchTypeDropdownBtn = "[data-testid='clientScopeSearchType']";
+    this.#actionToggleBtn = "[data-testid='kebab']";
   }
 
   clickNextPageButton(isUpperButton = true) {
@@ -73,7 +69,7 @@ export default class TableToolbar extends CommonElements {
 
   searchItem(searchValue: string, wait = true) {
     if (wait) {
-      const searchUrl = `/admin/realms/master/*${searchValue}*`;
+      const searchUrl = `/admin/realms/*/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
     cy.get(this.#searchInput).clear();
@@ -90,14 +86,14 @@ export default class TableToolbar extends CommonElements {
     return this;
   }
 
-  selectSearchType(itemName: Filter) {
-    cy.get(this.#searchTypeDropdownBtn).click();
+  selectSearchType(existingName: Filter, itemName: Filter) {
+    cy.contains("button", existingName).click();
     cy.get(this.dropdownMenuItem).contains(itemName).click();
     return this;
   }
 
   selectSecondarySearchType(itemName: FilterAssignedType) {
-    cy.get(this.#searchTypeSelectToggleBtn).click();
+    cy.get(this.#searchTypeDropdownBtn).click();
     cy.get(this.dropdownSelectToggleItem).contains(itemName).click();
     return this;
   }

@@ -32,7 +32,7 @@ public class Tasks {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.ADD_IF_ABSENT;
         }
 
@@ -42,19 +42,45 @@ public class Tasks {
         }
     };
 
-    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new SessionUpdateTask<SessionEntity>() {
+    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new PersistentSessionUpdateTask<SessionEntity>() {
         @Override
         public void runUpdate(SessionEntity entity) {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.REMOVE;
         }
 
         @Override
         public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<SessionEntity> sessionWrapper) {
             return CrossDCMessageStatus.SYNC;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return false;
+        }
+    };
+
+    private static final SessionUpdateTask<? extends SessionEntity> OFFLINE_REMOVE_SYNC = new PersistentSessionUpdateTask<>() {
+        @Override
+        public void runUpdate(SessionEntity entity) {
+        }
+
+        @Override
+        public CacheOperation getOperation() {
+            return CacheOperation.REMOVE;
+        }
+
+        @Override
+        public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<SessionEntity> sessionWrapper) {
+            return CrossDCMessageStatus.SYNC;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return true;
         }
     };
 
@@ -77,4 +103,18 @@ public class Tasks {
     public static <S extends SessionEntity> SessionUpdateTask<S> removeSync() {
         return (SessionUpdateTask<S>) REMOVE_SYNC;
     }
+
+    /**
+     * Returns a typed task of type {@link CacheOperation#REMOVE} that does no other update. This operation has DC message
+     * status {@link CrossDCMessageStatus#SYNC}.
+     *
+     * @param offline whether the operation should be performed on offline or non-offline session
+     * @param <S>
+     * @return
+     */
+    public static <S extends SessionEntity> SessionUpdateTask<S> removeSync(boolean offline) {
+        return offline ? (SessionUpdateTask<S>) OFFLINE_REMOVE_SYNC : (SessionUpdateTask<S>) REMOVE_SYNC;
+    }
+
+
 }

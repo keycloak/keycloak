@@ -57,7 +57,7 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
                 log.debugf("Received user session event '%s'. Should resend event: %b", sessionEvent.toString(), shouldResendEvent);
             }
 
-            eventReceived(session, provider, sessionEvent);
+            eventReceived(provider, sessionEvent);
 
             if (shouldResendEvent) {
                 session.getProvider(ClusterProvider.class).notify(sessionEvent.getEventKey(), event, true, ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC);
@@ -66,7 +66,7 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
         });
     }
 
-    protected abstract void eventReceived(KeycloakSession session, T provider, SE sessionEvent);
+    protected abstract void eventReceived(T provider, SE sessionEvent);
 
 
     private boolean shouldResendEvent(KeycloakSession session, SessionClusterEvent event) {

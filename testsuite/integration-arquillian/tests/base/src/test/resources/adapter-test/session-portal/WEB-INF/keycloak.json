@@ -1,9 +1,0 @@
-{
-  "realm" : "demo",
-  "resource" : "session-portal",
-  "auth-server-url" : "http://localhost:8180/auth",
-  "ssl-required" : "external",
-  "credentials" : {
-      "secret": "password"
-   }
-}

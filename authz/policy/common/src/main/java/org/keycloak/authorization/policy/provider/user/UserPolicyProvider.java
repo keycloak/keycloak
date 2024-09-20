@@ -18,8 +18,8 @@
 package org.keycloak.authorization.policy.provider.user;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -31,6 +31,8 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class UserPolicyProvider implements PolicyProvider {
+
+    private static final Logger logger = Logger.getLogger(UserPolicyProvider.class);
 
     private final BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction;
 
@@ -49,6 +51,7 @@ public class UserPolicyProvider implements PolicyProvider {
                 break;
             }
         }
+        logger.debugf("User policy %s evaluated to status %s on identity %s with accepted users: %s", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), representation.getUsers());
     }
 
     @Override

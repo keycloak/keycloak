@@ -17,7 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.common.util.PemUtils;
@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.Urls;
 
 import jakarta.ws.rs.GET;
@@ -67,7 +68,7 @@ public class PublicRealmResource {
     @Path("/")
     @OPTIONS
     public Response accountPreflight() {
-        return Cors.add(request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     /**
@@ -79,7 +80,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public PublishedRealmRepresentation getRealm() {
-        Cors.add(request).allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().build(response);
+        Cors.builder().allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().add();
         return realmRep(session, realm, session.getContext().getUri());
     }
 

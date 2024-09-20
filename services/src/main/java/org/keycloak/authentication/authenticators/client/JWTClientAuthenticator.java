@@ -199,8 +199,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
         String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
         String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl));
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
         String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         expectedAudiences.add(backchannelAuthenticationUrl);
 

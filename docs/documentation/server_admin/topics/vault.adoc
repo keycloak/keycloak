@@ -3,7 +3,7 @@
 
 == Using a vault to obtain secrets
 
-Keycloak currently provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
+{project_name} currently provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
 
 To obtain a secret from a vault rather than entering it directly, enter the following specially crafted string into the appropriate field:
 

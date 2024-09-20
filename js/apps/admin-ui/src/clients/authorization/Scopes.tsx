@@ -1,6 +1,11 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
+  ListEmptyState,
+  PaginatingTableToolbar,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   DescriptionList,
   PageSection,
@@ -8,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -18,13 +23,9 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { useAdminClient } from "../../admin-client";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toNewPermission } from "../routes/NewPermission";
 import { toNewScope } from "../routes/NewScope";
@@ -53,6 +54,8 @@ export const AuthorizationScopes = ({
   clientId,
   isDisabled = false,
 }: ScopesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -148,7 +151,7 @@ export const AuthorizationScopes = ({
   const noData = scopes.length === 0;
   const searching = search !== "";
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteScopeDialog
         clientId={clientId}
         open={deleteDialog}
@@ -184,7 +187,7 @@ export const AuthorizationScopes = ({
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("scopes")} variant="compact">
+            <Table aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -301,7 +304,7 @@ export const AuthorizationScopes = ({
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

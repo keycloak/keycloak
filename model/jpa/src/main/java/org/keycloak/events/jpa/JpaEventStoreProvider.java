@@ -34,7 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -84,34 +83,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clearExpiredEvents() {
-        // By default, realm provider is always "jpa", so we can optimize and delete all events in single SQL, assuming that realms are saved in the DB as well.
-        // Fallback to model API just with different realm provider than "jpa" (This is never the case in standard Keycloak installations)
         int numDeleted = 0;
         long currentTimeMillis = Time.currentTimeMillis();
-        if (KeycloakModelUtils.isRealmProviderJpa(session)) {
 
-            // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
-            for (Long expiration : eventExpirations) {
-                List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
-                        .setParameter("expiration", expiration)
-                        .getResultList();
-                int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
-                        .setParameter("realmIds", realmIds)
-                        .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                        .executeUpdate();
-                logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
-                numDeleted += currentNumDeleted;
-            }
-            logger.debugf("Cleared %d expired events in all realms", numDeleted);
-        } else {
-            session.realms().getRealmsStream().forEach(realm -> {
-                if (realm.isEventsEnabled() && realm.getEventsExpiration() > 0) {
-                    long olderThan = Time.currentTimeMillis() - realm.getEventsExpiration() * 1000;
-                    clear(realm, olderThan);
-                }
-            });
+        // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
+        List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
+        for (Long expiration : eventExpirations) {
+            List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
+                    .setParameter("expiration", expiration)
+                    .getResultList();
+            int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
+                    .setParameter("realmIds", realmIds)
+                    .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
+                    .executeUpdate();
+            logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
+            numDeleted += currentNumDeleted;
         }
+        logger.debugf("Cleared %d expired events in all realms", numDeleted);
     }
 
     @Override

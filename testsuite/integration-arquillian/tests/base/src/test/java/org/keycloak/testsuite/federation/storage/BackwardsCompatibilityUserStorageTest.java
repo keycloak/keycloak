@@ -42,6 +42,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -249,7 +250,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
             String otpCredentialId = otpCreds.get(0).getCredential().getId();
 
             // Delete OTP credential from federated storage
-            int deleteStatus = SimpleHttp.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
+            int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
                 .auth(accountToken).acceptJson().asStatus();
             Assert.assertEquals(204, deleteStatus);
 
@@ -352,7 +353,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     }
 
     private List<CredentialMetadataRepresentation> getOtpCredentialFromAccountREST(String accountCredentialsUrl, CloseableHttpClient httpClient, TokenUtil tokenUtil) throws IOException {
-        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(accountCredentialsUrl, httpClient)
+        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttpDefault.doGet(accountCredentialsUrl, httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
 
         return credentials.stream()

@@ -18,6 +18,8 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -46,5 +48,18 @@ public class ClientPolicyConditionRepresentation {
 
     public void setConfiguration(JsonNode configuration) {
         this.configuration = configuration;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientPolicyConditionRepresentation that = (ClientPolicyConditionRepresentation) o;
+        return Objects.equals(conditionProviderId, that.conditionProviderId) && Objects.equals(configuration, that.configuration);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(conditionProviderId, configuration);
     }
 }

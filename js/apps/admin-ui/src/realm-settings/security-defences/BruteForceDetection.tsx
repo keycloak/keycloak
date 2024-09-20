@@ -1,17 +1,20 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  HelpItem,
+  KeycloakSelect,
+  NumberControl,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   FormGroup,
-  NumberInput,
-  Switch,
+  SelectOption,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
 
@@ -29,22 +32,43 @@ export const BruteForceDetection = ({
   const {
     setValue,
     handleSubmit,
-    control,
     formState: { isDirty },
   } = form;
 
-  const enable = useWatch({
-    control,
-    name: "bruteForceProtected",
-  });
+  const [isBruteForceModeOpen, setIsBruteForceModeOpen] = useState(false);
+  const [isBruteForceModeUpdated, setIsBruteForceModeUpdated] = useState(false);
 
-  const permanentLockout = useWatch({
-    control,
-    name: "permanentLockout",
-  });
+  enum BruteForceMode {
+    Disabled = "Disabled",
+    PermanentLockout = "PermanentLockout",
+    TemporaryLockout = "TemporaryLockout",
+    PermanentAfterTemporaryLockout = "PermanentAfterTemporaryLockout",
+  }
 
-  const setupForm = () => convertToFormValues(realm, setValue);
+  const bruteForceModes = [
+    BruteForceMode.Disabled,
+    BruteForceMode.PermanentLockout,
+    BruteForceMode.TemporaryLockout,
+    BruteForceMode.PermanentAfterTemporaryLockout,
+  ];
+
+  const setupForm = () => {
+    convertToFormValues(realm, setValue);
+    setIsBruteForceModeUpdated(false);
+  };
   useEffect(setupForm, []);
+
+  const bruteForceMode = (() => {
+    if (!form.getValues("bruteForceProtected")) {
+      return BruteForceMode.Disabled;
+    }
+    if (!form.getValues("permanentLockout")) {
+      return BruteForceMode.TemporaryLockout;
+    }
+    return form.getValues("maxTemporaryLockouts") == 0
+      ? BruteForceMode.PermanentLockout
+      : BruteForceMode.PermanentAfterTemporaryLockout;
+  })();
 
   return (
     <FormProvider {...form}>
@@ -54,119 +78,96 @@ export const BruteForceDetection = ({
         onSubmit={handleSubmit(save)}
       >
         <FormGroup
-          label={t("enabled")}
-          fieldId="bruteForceProtected"
-          hasNoPaddingTop
+          label={t("bruteForceMode")}
+          fieldId="kc-brute-force-mode"
+          labelIcon={
+            <HelpItem
+              helpText={t("bruteForceModeHelpText")}
+              fieldLabelId="bruteForceMode"
+            />
+          }
         >
-          <Controller
-            name="bruteForceProtected"
-            defaultValue={false}
-            control={control}
-            render={({ field }) => (
-              <Switch
-                id="bruteForceProtected"
-                label={t("on")}
-                labelOff={t("off")}
-                isChecked={field.value}
-                onChange={field.onChange}
+          <KeycloakSelect
+            toggleId="kc-brute-force-mode"
+            onToggle={() => setIsBruteForceModeOpen(!isBruteForceModeOpen)}
+            onSelect={(value) => {
+              switch (value as BruteForceMode) {
+                case BruteForceMode.Disabled:
+                  form.setValue("bruteForceProtected", false);
+                  form.setValue("permanentLockout", false);
+                  form.setValue("maxTemporaryLockouts", 0);
+                  break;
+                case BruteForceMode.TemporaryLockout:
+                  form.setValue("bruteForceProtected", true);
+                  form.setValue("permanentLockout", false);
+                  form.setValue("maxTemporaryLockouts", 0);
+                  break;
+                case BruteForceMode.PermanentLockout:
+                  form.setValue("bruteForceProtected", true);
+                  form.setValue("permanentLockout", true);
+                  form.setValue("maxTemporaryLockouts", 0);
+                  break;
+                case BruteForceMode.PermanentAfterTemporaryLockout:
+                  form.setValue("bruteForceProtected", true);
+                  form.setValue("permanentLockout", true);
+                  form.setValue("maxTemporaryLockouts", 1);
+                  break;
+              }
+              setIsBruteForceModeUpdated(true);
+              setIsBruteForceModeOpen(false);
+            }}
+            selections={bruteForceMode}
+            variant={SelectVariant.single}
+            isOpen={isBruteForceModeOpen}
+            data-testid="select-brute-force-mode"
+            aria-label={t("selectUnmanagedAttributePolicy")}
+          >
+            {bruteForceModes.map((mode) => (
+              <SelectOption key={mode} value={mode}>
+                {t(`bruteForceMode.${mode}`)}
+              </SelectOption>
+            ))}
+          </KeycloakSelect>
+        </FormGroup>
+        {bruteForceMode !== BruteForceMode.Disabled && (
+          <>
+            <NumberControl
+              name="failureFactor"
+              label={t("failureFactor")}
+              labelIcon={t("failureFactorHelp")}
+              controller={{
+                defaultValue: 0,
+                rules: { required: t("required") },
+              }}
+            />
+            {bruteForceMode ===
+              BruteForceMode.PermanentAfterTemporaryLockout && (
+              <NumberControl
+                name="maxTemporaryLockouts"
+                label={t("maxTemporaryLockouts")}
+                labelIcon={t("maxTemporaryLockoutsHelp")}
+                controller={{
+                  defaultValue: 0,
+                }}
               />
             )}
-          />
-        </FormGroup>
-        {enable && (
-          <>
-            <FormGroup
-              label={t("failureFactor")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("failureFactorHelp")}
-                  fieldLabelId="failureFactor"
-                />
-              }
-              fieldId="failureFactor"
-            >
-              <Controller
-                name="failureFactor"
-                defaultValue={0}
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <NumberInput
-                    type="text"
-                    id="failureFactor"
-                    value={field.value}
-                    onPlus={() => field.onChange(field.value + 1)}
-                    onMinus={() => field.onChange(field.value - 1)}
-                    onChange={(event) =>
-                      field.onChange(
-                        Number((event.target as HTMLInputElement).value),
-                      )
-                    }
-                  />
-                )}
-              />
-            </FormGroup>
-            <FormGroup
-              label={t("permanentLockout")}
-              fieldId="permanentLockout"
-              hasNoPaddingTop
-            >
-              <Controller
-                name="permanentLockout"
-                defaultValue={false}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="permanentLockout"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value}
-                    onChange={field.onChange}
-                    aria-label={t("permanentLockout")}
-                  />
-                )}
-              />
-            </FormGroup>
-
-            {!permanentLockout && (
+            {(bruteForceMode === BruteForceMode.TemporaryLockout ||
+              bruteForceMode ===
+                BruteForceMode.PermanentAfterTemporaryLockout) && (
               <>
                 <Time name="waitIncrementSeconds" />
                 <Time name="maxFailureWaitSeconds" />
                 <Time name="maxDeltaTimeSeconds" />
               </>
             )}
-
-            <FormGroup
+            <NumberControl
+              name="quickLoginCheckMilliSeconds"
               label={t("quickLoginCheckMilliSeconds")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("quickLoginCheckMilliSecondsHelp")}
-                  fieldLabelId="quickLoginCheckMilliSeconds"
-                />
-              }
-              fieldId="quickLoginCheckMilliSeconds"
-            >
-              <Controller
-                name="quickLoginCheckMilliSeconds"
-                defaultValue={0}
-                control={control}
-                render={({ field }) => (
-                  <NumberInput
-                    type="text"
-                    id="quickLoginCheckMilliSeconds"
-                    value={field.value}
-                    onPlus={() => field.onChange(field.value + 1)}
-                    onMinus={() => field.onChange(field.value - 1)}
-                    onChange={(event) =>
-                      field.onChange(
-                        Number((event.target as HTMLInputElement).value),
-                      )
-                    }
-                  />
-                )}
-              />
-            </FormGroup>
-
+              labelIcon={t("quickLoginCheckMilliSecondsHelp")}
+              controller={{
+                defaultValue: 0,
+              }}
+            />
             <Time name="minimumQuickLoginWaitSeconds" />
           </>
         )}
@@ -176,7 +177,7 @@ export const BruteForceDetection = ({
             variant="primary"
             type="submit"
             data-testid="brute-force-tab-save"
-            isDisabled={!isDirty}
+            isDisabled={!isDirty && !isBruteForceModeUpdated}
           >
             {t("save")}
           </Button>

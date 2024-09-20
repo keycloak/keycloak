@@ -22,7 +22,7 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
-import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 
@@ -51,7 +51,7 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
             logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn() + ", attributes: " + ldapUser.getAttributes());
         }
         if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
-            throw new ModelException("LDAPObject cannot be commited because some mandatory attributes are not set: "
+            throw new ModelValidationException("LDAPObject cannot be committed because some mandatory attributes are not set: "
                     + ldapUser.getMandatoryAttributeNamesRemaining());
         }
 

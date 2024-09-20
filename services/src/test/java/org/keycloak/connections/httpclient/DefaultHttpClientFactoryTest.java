@@ -35,8 +35,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.utils.ScopeUtil;
 
 public class DefaultHttpClientFactoryTest {
@@ -49,7 +49,7 @@ public class DefaultHttpClientFactoryTest {
 		values.put(DISABLE_TRUST_MANAGER_PROPERTY, "true");
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
 		factory.init(ScopeUtil.createScope(values));
-		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		HttpClientProvider provider = factory.create(session);
         Optional<String> testURL = getTestURL();
         Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
@@ -63,7 +63,7 @@ public class DefaultHttpClientFactoryTest {
 	public void createHttpClientProviderWithUnvailableURL() throws IOException {
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
 		factory.init(ScopeUtil.createScope(new HashMap<>()));
-		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		HttpClientProvider provider = factory.create(session);
 		try (CloseableHttpClient httpClient = provider.getHttpClient()) {
 			Optional<String> testURL = getTestURL();

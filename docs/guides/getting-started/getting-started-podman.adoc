@@ -12,6 +12,8 @@ summary="Get started with {project_name} on Podman">
 
 == Before you start
 
+include::templates/hw-requirements.adoc[]
+
 Make sure you have Podman installed.
 
 include::templates/start-keycloak-container.adoc[]

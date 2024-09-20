@@ -27,6 +27,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem" export="true" services="export"/>
+        <module name="org.keycloak.keycloak-saml-wildfly-subsystem" export="true" services="export"/>
     </dependencies>
 </module>

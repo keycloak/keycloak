@@ -17,6 +17,9 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
+
+import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.cluster.ClusterEvent;
 
 /**
@@ -24,7 +27,16 @@ import org.keycloak.cluster.ClusterEvent;
  */
 public abstract class InvalidationEvent implements ClusterEvent {
 
-    public abstract String getId();
+    private final String id;
+
+    protected InvalidationEvent(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
+
+    @ProtoField(1)
+    public final String getId() {
+        return id;
+    }
 
     @Override
     public int hashCode() {
@@ -37,7 +49,6 @@ public abstract class InvalidationEvent implements ClusterEvent {
         if (!obj.getClass().equals(this.getClass())) return false;
 
         InvalidationEvent that = (InvalidationEvent) obj;
-        if (!that.getId().equals(getId())) return false;
-        return true;
+        return that.getId().equals(getId());
     }
 }

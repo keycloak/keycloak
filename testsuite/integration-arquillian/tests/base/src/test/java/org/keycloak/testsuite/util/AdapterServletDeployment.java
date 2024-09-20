@@ -35,11 +35,6 @@ import java.nio.charset.Charset;
 public class AdapterServletDeployment {
 
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
-    public static final String TOMCAT_CONTEXT_XML = "context.xml";
-
-    // hardcoded for now
-    public static final URL tomcatContext = AdapterServletDeployment.class
-            .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
     public static WebArchive oidcDeployment(String name, String configRoot, Class... servletClasses) {
         return oidcDeployment(name, configRoot, "keycloak.json");
@@ -73,22 +68,6 @@ public class AdapterServletDeployment {
         }
         if (jbossDeploymentStructure != null) deployment.addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
-        addContextXml(deployment, name);
-
         return deployment;
     }
-
-
-    public static void addContextXml(Archive archive, String contextPath) {
-        // hardcoded for now
-        try {
-            String contextXmlContent = IOUtils.toString(tomcatContext.openStream(), Charset.defaultCharset())
-                    .replace("%CONTEXT_PATH%", contextPath);
-            archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-
 }

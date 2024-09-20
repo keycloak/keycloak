@@ -32,7 +32,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.PermissionService;
@@ -128,7 +128,7 @@ public class UserManagedPermissionService {
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {
-        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getRealm(), resourceServer, policyId);
+        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
 
         if (existing == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Policy with [" + policyId + "] does not exist", Status.NOT_FOUND);
@@ -139,7 +139,7 @@ public class UserManagedPermissionService {
 
     private void checkRequest(String resourceId, UmaPermissionRepresentation representation) {
         ResourceStore resourceStore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceId);
+        Resource resource = resourceStore.findById(resourceServer, resourceId);
 
         if (resource == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource [" + resourceId + "] cannot be found", Response.Status.BAD_REQUEST);

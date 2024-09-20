@@ -60,7 +60,7 @@ import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
  * The {@code properties} file can contain both roles and principals as keys, and a list of zero or more roles separated by comma
  * as values. When the {@code {@link #map(String, Set)}} method is called, the implementation iterates through the set of roles
  * that were extracted from the assertion and checks, for eache role, if a mapping exists. If the role maps to an empty role,
- * it is discarded. If it maps to a set of one ore more different roles, then these roles are set in the result set. If no
+ * it is discarded. If it maps to a set of one or more different roles, then these roles are set in the result set. If no
  * mapping is found for the role then it is included as is in the result set.
  *
  * Once the roles have been processed, the implementation checks if the principal extracted from the assertion contains an entry

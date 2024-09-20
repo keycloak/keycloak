@@ -6,23 +6,11 @@ With this workflow, users will have to use an UPDATE_EMAIL action to change thei
 
 The action is associated with a single email input form. If the realm has email verification disabled, this action will allow to update the email without verification. If the realm has email verification enabled, the action will send an email update action token to the new email address without changing the account email. Only the action token triggering will complete the email update.
 
-Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an AIA (Application Initiated Action).
+Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an <<con-aia_{context},AIA (Application Initiated Action)>>.
 
-ifeval::[{project_product}==true]
 :tech_feature_name: UpdateEmail
-:tech_feature_setting: -Dkeycloak.profile.feature.update_email=enabled
 :tech_feature_id: update-email
 include::../templates/techpreview.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
-
-[IMPORTANT]
-====
-Please note that Update Email Workflow support is in development. Use this feature experimentally.
-====
-
-endif::[]
 
 [NOTE]
 ====

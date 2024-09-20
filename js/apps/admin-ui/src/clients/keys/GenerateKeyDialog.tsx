@@ -13,15 +13,12 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem } from "ui-shared";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -60,7 +57,6 @@ export const KeyForm = ({
   const { t } = useTranslation();
 
   const [filename, setFilename] = useState<string>();
-  const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
 
   const { control, watch } = useFormContext<FormFields>();
   const format = watch("format");
@@ -72,46 +68,17 @@ export const KeyForm = ({
   ];
 
   return (
-    <Form className="pf-u-pt-lg">
-      <FormGroup
+    <Form className="pf-v5-u-pt-lg">
+      <SelectControl
+        name="format"
         label={t("archiveFormat")}
-        labelIcon={
-          <HelpItem
-            helpText={t("archiveFormatHelp")}
-            fieldLabelId="archiveFormat"
-          />
-        }
-        fieldId="archiveFormat"
-      >
-        <Controller
-          name="format"
-          defaultValue={supportedKeystoreTypes[0]}
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="archiveFormat"
-              onToggle={setOpenArchiveFormat}
-              onSelect={(_, value) => {
-                field.onChange(value.toString());
-                setOpenArchiveFormat(false);
-              }}
-              selections={field.value}
-              variant={SelectVariant.single}
-              aria-label={t("archiveFormat")}
-              isOpen={openArchiveFormat}
-              menuAppendTo="parent"
-            >
-              {supportedKeystoreTypes.map((option) => (
-                <SelectOption
-                  selected={option === field.value}
-                  key={option}
-                  value={option}
-                />
-              ))}
-            </Select>
-          )}
-        />
-      </FormGroup>
+        labelIcon={t("archiveFormatHelp")}
+        controller={{
+          defaultValue: supportedKeystoreTypes[0],
+        }}
+        menuAppendTo="parent"
+        options={supportedKeystoreTypes}
+      />
       {useFile && (
         <FormGroup
           label={t("importFile")}

@@ -58,7 +58,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
 
     @Override
     public String getHelpText() {
-        return "Calculates a pairwise subject identifier using a salted sha-256 hash. See OpenID Connect specification for more info about pairwise subject identifiers.";
+        return "Calculates a pairwise subject identifier using a salted sha-256 hash and adds it to the 'sub' claim. See OpenID Connect specification for more info about pairwise subject identifiers.";
     }
 
     @Override

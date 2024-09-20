@@ -45,7 +45,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -100,7 +101,7 @@ public class AccountRestService {
     private final KeycloakSession session;
     private final EventBuilder event;
     private final Auth auth;
-    
+
     private final RealmModel realm;
     private final UserModel user;
     private final Locale locale;
@@ -119,7 +120,7 @@ public class AccountRestService {
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
-    
+
     /**
      * Get account information.
      *
@@ -187,7 +188,7 @@ public class AccountRestService {
                     AttributeMetadata am = userProfileAttributes.getMetadata(p.toString());
                     if(am != null)
                         ret[i++] = am.getAttributeDisplayName();
-                    else 
+                    else
                         ret[i++] = p.toString();
                 } else {
                     ret[i++] = p.toString();
@@ -214,7 +215,7 @@ public class AccountRestService {
     @Path("/credentials")
     public AccountCredentialResource credentials() {
         checkAccountApiEnabled();
-        return new AccountCredentialResource(session, user, auth);
+        return new AccountCredentialResource(session, user, auth, event);
     }
 
     @Path("/resources")
@@ -228,6 +229,16 @@ public class AccountRestService {
     @GET
     public List<String> supportedLocales() {
         return auth.getRealm().getSupportedLocalesStream().collect(Collectors.toList());
+    }
+
+    @Path("/organizations")
+    public OrganizationsResource organizations() {
+        checkAccountApiEnabled();
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            throw new NotFoundException();
+        }
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        return new OrganizationsResource(session, auth, user);
     }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
@@ -420,7 +431,7 @@ public class AccountRestService {
         }
         return consent;
     }
-    
+
     @Path("/linked-accounts")
     public LinkedAccountsResource linkedAccounts() {
         return new LinkedAccountsResource(session, request, auth, event, user);
@@ -482,10 +493,10 @@ public class AccountRestService {
     }
 
     // TODO Logs
-    
+
     private static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
-}
+        }
     }
 }

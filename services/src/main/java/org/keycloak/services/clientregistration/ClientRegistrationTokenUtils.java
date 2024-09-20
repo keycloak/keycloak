@@ -56,8 +56,7 @@ public class ClientRegistrationTokenUtils {
 
             regToken.type(auth.getJwt().getType());
             regToken.id(auth.getJwt().getId());
-            regToken.issuedAt(Time.currentTime());
-            regToken.expiration(0);
+            regToken.issuedNow();
             regToken.issuer(auth.getJwt().getIssuer());
             regToken.audience(auth.getJwt().getIssuer());
 
@@ -117,13 +116,13 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
-        jwt.issuedAt(Time.currentTime());
-        jwt.expiration(expiration);
+        jwt.issuedNow();
+        jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
 

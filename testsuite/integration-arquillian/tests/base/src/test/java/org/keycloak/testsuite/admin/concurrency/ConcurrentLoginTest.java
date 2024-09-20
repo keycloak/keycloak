@@ -405,6 +405,16 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             OAuthClient.AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
             Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
               200, accessRes.getStatusCode());
+
+            AccessToken token = JsonSerialization.readValue(new JWSInput(accessRes.getAccessToken()).getContent(), AccessToken.class);
+            Assert.assertNull(token.getNonce());
+
+            AccessToken refreshedToken = JsonSerialization.readValue(new JWSInput(accessRes.getRefreshToken()).getContent(), AccessToken.class);
+            Assert.assertNull(refreshedToken.getNonce());
+
+            AccessToken idToken = JsonSerialization.readValue(new JWSInput(accessRes.getIdToken()).getContent(), AccessToken.class);
+            Assert.assertEquals(oauth1.getNonce(), idToken.getNonce());
+
             accessResRef.set(accessRes);
 
             // Refresh access + refresh token using refresh token
@@ -420,11 +430,14 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             retryHistogram[invocationIndex].incrementAndGet();
 
-            AccessToken token = JsonSerialization.readValue(new JWSInput(accessResRef.get().getAccessToken()).getContent(), AccessToken.class);
-            Assert.assertEquals("Invalid nonce.", token.getNonce(), oauth1.getNonce());
+            token = JsonSerialization.readValue(new JWSInput(accessResRef.get().getAccessToken()).getContent(), AccessToken.class);
+            Assert.assertNull(token.getNonce());
 
-            AccessToken refreshedToken = JsonSerialization.readValue(new JWSInput(refreshResRef.get().getAccessToken()).getContent(), AccessToken.class);
-            Assert.assertEquals("Invalid nonce.", refreshedToken.getNonce(), oauth1.getNonce());
+            refreshedToken = JsonSerialization.readValue(new JWSInput(refreshResRef.get().getRefreshToken()).getContent(), AccessToken.class);
+            Assert.assertNull(refreshedToken.getNonce());
+
+            idToken = JsonSerialization.readValue(new JWSInput(refreshResRef.get().getIdToken()).getContent(), AccessToken.class);
+            Assert.assertNull(idToken.getNonce());
 
             if (userSessionId.get() == null) {
                 userSessionId.set(token.getSessionState());

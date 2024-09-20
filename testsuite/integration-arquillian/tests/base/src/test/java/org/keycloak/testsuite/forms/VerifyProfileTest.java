@@ -21,14 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,13 +39,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -61,6 +62,8 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -70,11 +73,11 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     public static final String SCOPE_DEPARTMENT = "department";
@@ -111,10 +114,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     private static ClientRepresentation client_scope_optional;
 
     @Override
+    protected boolean removeVerifyProfileAtImport() {
+        // we need the verify profile action enabled as default
+        return false;
+    }
+
+    @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-
-        enableDynamicUserProfile(testRealm);
-
         UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
         UserRepresentation user2 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test2").email("login2@test.com").enabled(true).password("password").build();
         UserRepresentation user3 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test3").email("login3@test.com").enabled(true).password("password").lastName("ExistingLast").build();
@@ -124,17 +130,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password("password").firstName("NoMailFirst").lastName("NoMailLast").build();
 
         RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6).user(userWithoutEmail);
-
-        RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
-        action.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setEnabled(true);
-        action.setDefaultAction(false);
-        action.setPriority(10);
-
-        List<RequiredActionProviderRepresentation> actions = new ArrayList<>();
-        actions.add(action);
-        testRealm.setRequiredActions(actions);
 
         testRealm.setClientScopes(new ArrayList<>());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build());
@@ -161,6 +156,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
     protected AppPage appPage;
@@ -193,11 +191,11 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         //assert field names
         // i18n replaced
-        Assert.assertEquals("First name",verifyProfilePage.getLabelForField("firstName"));
+        Assert.assertEquals("First name *",verifyProfilePage.getLabelForField("firstName"));
         // attribute name used if no display name set
         Assert.assertEquals("lastName",verifyProfilePage.getLabelForField("lastName"));
         // direct value in display name
-        Assert.assertEquals("Department",verifyProfilePage.getLabelForField("department"));
+        Assert.assertEquals("Department *",verifyProfilePage.getLabelForField("department"));
     }
 
     @Test
@@ -221,49 +219,22 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("login-test5", "password");
 
         verifyProfilePage.assertCurrent();
-        String htmlFormId="kc-update-profile-form";
 
-        //assert fields and groups location in form
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(1) > label#header-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > label#description-company")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
-                ).isDisplayed()
-        );
+        //assert fields and groups location in form, attributes without a group appear first
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form label"));
+        String[] labelOrder = new String[]{"lastName", "username", "firstName", "header-company", "description-company", "department", "header-contact", "email"};
+        for (int i = 0; i < element.size(); i++) {
+            WebElement webElement = element.get(i);
+            String id;
+            if (webElement.getAttribute("for") != null) {
+                id = webElement.getAttribute("for");
+                // see that the label has an element it belongs to
+                assertThat("Label with id: " + id + " should have component it belongs to", driver.findElement(By.id(id)).isDisplayed(), is(true));
+            } else {
+                id = webElement.getAttribute("id");
+            }
+            assertThat("Label at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     @Test
@@ -290,31 +261,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         verifyProfilePage.assertCurrent();
 
         //assert fields location in form
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(2) > div:nth-child(2) > input#department")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(3) > div:nth-child(2) > input#username")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
-                ).isDisplayed()
-        );
+        List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form input"));
+        String[] labelOrder = new String[]{"lastName", "department", "username", "firstName", "email"};
+        for (int i = 0; i < labelOrder.length; i++) {
+            WebElement webElement = element.get(i);
+            String id = webElement.getAttribute("id");
+            assertThat("Field at index: " + i + " with id: " + id + " was not in found in the same order in the dom", id, is(labelOrder[i]));
+        }
     }
 
     @Test
@@ -353,7 +306,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         verifyProfilePage.assertCurrent();
         //event when form is shown
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).detail("fields_to_update", "department").assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id)
+                .detail(Details.FIELDS_TO_UPDATE, "department")
+                .assertEvent();
 
         verifyProfilePage.update("First", "Last", "Department");
         //event after profile is updated
@@ -396,15 +351,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIgnoreCustomAttributeWhenUserProfileIsDisabled() {
-        try {
-            disableDynamicUserProfile(testRealm());
-            testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
-            testDefaultProfile();
-        } finally {
-            RealmRepresentation realm = testRealm().toRepresentation();
-            enableDynamicUserProfile(realm);
-            testRealm().update(realm);
-        }
+        testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
+        testDefaultProfile();
     }
 
     private static RunOnServer setEmptyFirstNameAndCustomAttribute() {
@@ -1158,7 +1106,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testConfigurationRemainsAfterReset() throws IOException {
+    public void testConfigurationPersisted() throws IOException {
         String customConfig = "{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
@@ -1167,13 +1115,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
 
-        RealmResource realmRes = testRealm();
-        disableDynamicUserProfile(realmRes, false);
-        RealmRepresentation realm = realmRes.toRepresentation();
-        enableDynamicUserProfile(realm);
-        testRealm().update(realm);
-
-        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), realmRes.users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), testRealm().users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
@@ -1193,32 +1135,15 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     protected UPConfig setUserProfileConfiguration(String configuration) {
-        return setUserProfileConfiguration(testRealm(), configuration);
+        assertAdminEvents.clear();
+        UPConfig result = setUserProfileConfiguration(testRealm(), configuration);
+        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME,
+                OperationType.UPDATE, AdminEventPaths.userProfilePath(), ResourceType.USER_PROFILE);
+        Assert.assertTrue("Incorrect representation in event", StringUtils.isBlank(configuration)
+                ? StringUtils.isBlank(adminEvent.getRepresentation())
+                : StringUtils.isNotBlank(adminEvent.getRepresentation()));
+        return result;
     }
-
-    public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-    }
-
-    public static void disableDynamicUserProfile(RealmResource realm) {
-        disableDynamicUserProfile(realm, true);
-    }
-
-    public static void disableDynamicUserProfile(RealmResource realm, boolean reset) {
-        RealmRepresentation realmRep = realm.toRepresentation();
-        if (realmRep.getAttributes() == null) {
-            realmRep.setAttributes(new HashMap<>());
-        }
-        realmRep.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.FALSE.toString());
-        realm.update(realmRep);
-        if (reset) {
-            setUserProfileConfiguration(realm, null);
-        }
-    }
-
 
     public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
         try {
@@ -1244,6 +1169,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         } catch (IOException ioe) {
             throw new RuntimeException("Failed to read configuration", ioe);
         }
+    }
+
+    public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {
+        UPConfig cfg = upResource.getConfiguration();
+        cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        upResource.update(cfg);
+        return cfg;
     }
 
     public static UserRepresentation getUser(RealmResource testRealm, String userId) {

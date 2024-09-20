@@ -7,9 +7,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import org.keycloak.theme.ThemeSelectorProvider;
 import static org.junit.Assert.assertEquals;
 
 public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
+
+    private static final String SYSTEM_DEFAULT_LOGIN_THEME = ThemeSelectorProvider.DEFAULT_V2;
 
     @Page
     protected LoginPage loginPage;
@@ -21,7 +24,7 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void clientOverride() {
         loginPage.open();
-        assertEquals("keycloak", detectTheme());
+        assertEquals(System.getProperty(PROPERTY_LOGIN_THEME_DEFAULT, SYSTEM_DEFAULT_LOGIN_THEME), detectTheme());
 
         ClientRepresentation rep = testRealm().clients().findByClientId("test-app").get(0);
 
@@ -37,7 +40,7 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
             testRealm().clients().get(rep.getId()).update(rep);
 
             loginPage.open();
-            assertEquals("keycloak", detectTheme());
+            assertEquals(SYSTEM_DEFAULT_LOGIN_THEME, detectTheme());
         } finally {
             rep.getAttributes().put("login_theme", "");
             testRealm().clients().get(rep.getId()).update(rep);
@@ -48,6 +51,8 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
         // for the purpose of the test does not matter which profile is used (product or community)
         if(driver.getPageSource().contains("/login/keycloak/css/login.css") || driver.getPageSource().contains("/login/rh-sso/css/login.css")) {
             return "keycloak";
+        } else if (driver.getPageSource().contains("/login/keycloak.v2/css/styles.css") || driver.getPageSource().contains("/login/rh-sso/css/styles.css")) {
+            return "keycloak.v2";
         } else {
             return "base";
         }

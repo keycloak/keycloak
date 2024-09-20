@@ -52,6 +52,42 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected List<String> groups;
     private Map<String, Boolean> access;
 
+    public UserRepresentation() {
+    }
+
+    public UserRepresentation(UserRepresentation rep) {
+        // AbstractUserRepresentation
+        this.id = rep.getId();
+        this.username = rep.getUsername();
+        this.firstName = rep.getFirstName();
+        this.lastName = rep.getLastName();
+        this.email = rep.getEmail();
+        this.emailVerified = rep.isEmailVerified();
+        this.attributes = rep.getAttributes();
+        this.setUserProfileMetadata(rep.getUserProfileMetadata());
+
+        this.self = rep.getSelf();
+        this.createdTimestamp = rep.getCreatedTimestamp();
+        this.enabled = rep.isEnabled();
+        this.totp = rep.isTotp();
+        this.federationLink = rep.getFederationLink();
+        this.serviceAccountClientId = rep.getServiceAccountClientId();
+        this.credentials = rep.getCredentials();
+        this.disableableCredentialTypes = rep.getDisableableCredentialTypes();
+        this.requiredActions = rep.getRequiredActions();
+        this.federatedIdentities = rep.getFederatedIdentities();
+        this.realmRoles = rep.getRealmRoles();
+        this.clientRoles = rep.getClientRoles();
+        this.clientConsents = rep.getClientConsents();
+        this.notBefore = rep.getNotBefore();
+
+        this.applicationRoles = rep.getApplicationRoles();
+        this.socialLinks = rep.getSocialLinks();
+
+        this.groups = rep.getGroups();
+        this.access = rep.getAccess();
+    }
+
     public String getSelf() {
         return self;
     }
@@ -183,13 +219,21 @@ public class UserRepresentation extends AbstractUserRepresentation{
      * Returns id of UserStorageProvider that loaded this user
      *
      * @return NULL if user stored locally
+     * @deprecated Use {@link #getFederationLink()} instead
      */
+    @Deprecated
     public String getOrigin() {
-        return origin;
+        return federationLink;
     }
 
+    /**
+     *
+     * @param origin the origin
+     * @deprecated Use {@link #setFederationLink(String)} instead
+     */
+    @Deprecated
     public void setOrigin(String origin) {
-        this.origin = origin;
+        // deprecated
     }
 
     public Set<String> getDisableableCredentialTypes() {

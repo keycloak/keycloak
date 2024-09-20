@@ -16,47 +16,49 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.GroupCommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
+import org.keycloak.client.admin.cli.KcAdmMain;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
-import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
+import picocli.CommandLine.Command;
 
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
-/**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
- */
-
-@GroupCommandDefinition(name = "kcadm", description = "COMMAND [ARGUMENTS]", groupCommands = {
-    HelpCmd.class, ConfigCmd.class, NewObjectCmd.class, CreateCmd.class, GetCmd.class, UpdateCmd.class, DeleteCmd.class,
-        AddRolesCmd.class, RemoveRolesCmd.class, GetRolesCmd.class, SetPasswordCmd.class} )
-public class KcAdmCmd extends AbstractGlobalOptionsCmd {
+@Command(name = "kcadm",
+header = {
+        "Keycloak - Open Source Identity and Access Management",
+        "",
+        "Find more information at: https://www.keycloak.org/docs/latest"
+},
+description = {
+        "%nCOMMAND [ARGUMENTS]"
+},
+subcommands = {
+        HelpCmd.class,
+        ConfigCmd.class,
+        NewObjectCmd.class,
+        CreateCmd.class,
+        GetCmd.class,
+        UpdateCmd.class,
+        DeleteCmd.class,
+        AddRolesCmd.class,
+        RemoveRolesCmd.class,
+        GetRolesCmd.class,
+        SetPasswordCmd.class
+})
+public class KcAdmCmd extends BaseGlobalOptionsCmd {
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            // if --help was requested then status is SUCCESS
-            // if not we print help anyway, but status is FAILURE
-            if (printHelp()) {
-                return CommandResult.SUCCESS;
-            } else if (args != null && args.size() > 0) {
-                printErr("Unknown command: " + args.get(0));
-                return CommandResult.FAILURE;
-            } else {
-                printOut(usage());
-                return CommandResult.FAILURE;
-            }
-        } finally {
-            commandInvocation.stop();
-        }
+    protected boolean nothingToDo() {
+        return true;
+    }
+
+    @Override
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {
@@ -81,7 +83,7 @@ public class KcAdmCmd extends AbstractGlobalOptionsCmd {
         out.println("Global options:");
         out.println("  -x            Print full stack trace when exiting with error");
         out.println("  --help        Print help for specific command");
-        out.println("  --config      Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("  --config      Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println();
         out.println("Commands: ");
         out.println("  config        Set up credentials, and other configuration settings using the config file");

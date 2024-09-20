@@ -21,4 +21,8 @@ public enum LogoutTokenValidationCode {
     public String getErrorMessage() {
         return errorMessage;
     }
+
+    LogoutTokenValidationContext toCtx() {
+        return new LogoutTokenValidationContext(this);
+    }
 }

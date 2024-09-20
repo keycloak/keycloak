@@ -67,30 +67,37 @@ public class BuildAndStartDistTest {
         cliResult.assertBuild();
         cliResult.assertStarted();
     }
+    
+    @Test
+    @WithEnvVars({"KEYCLOAK_ADMIN", "oldadmin123", "KEYCLOAK_ADMIN_PASSWORD", "oldadmin123"})
+    @Launch({"start-dev"})
+    void testCreateLegacyAdmin(KeycloakDistribution dist, LaunchResult result) {
+        assertAdminCreation(dist, result, "oldadmin123", "oldadmin123", "oldadmin123");
+    }
 
     @Test
-    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
     void testCreateAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertAdminCreation(dist, result, "admin123", "admin123", "admin123");
     }
 
     @Test
-    @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
+    @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
     @Launch({"start-dev"})
     void testCreateDifferentAdmin(KeycloakDistribution dist, LaunchResult result) {
         assertAdminCreation(dist, result, "admin123", "new-admin", "new-admin");
     }
 
     private void assertAdminCreation(KeycloakDistribution dist, LaunchResult result, String initialUsername, String nextUsername, String password) {
-        assertTrue(result.getOutput().contains("Added user '" + initialUsername + "' to realm 'master'"),
+        assertTrue(result.getOutput().contains("Created temporary admin user with username " + initialUsername),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
-        dist.setEnvVar("KEYCLOAK_ADMIN", nextUsername);
-        dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", password);
-        CLIResult cliResult = dist.run("start-dev", "--log-level=debug");
+        dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", nextUsername);
+        dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", password);
+        CLIResult cliResult = dist.run("start-dev", "--log-level=org.keycloak.services:debug");
 
-        cliResult.assertMessage("Skipping create admin user. Admin already exists in realm 'master'.");
+        cliResult.assertNoMessage("Added temporary admin user '");
         cliResult.assertStartedDevMode();
     }
 }

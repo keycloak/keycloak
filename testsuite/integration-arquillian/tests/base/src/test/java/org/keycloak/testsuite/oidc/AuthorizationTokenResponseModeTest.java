@@ -42,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloakTest {
@@ -193,7 +194,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         Assert.assertNotNull(responseToken.getOtherClaims().get("access_token"));
         String accessTokenEncoded = (String) responseToken.getOtherClaims().get("access_token");
         AccessToken accessToken = oauth.verifyToken(accessTokenEncoded);
-        assertEquals("123456", accessToken.getNonce());
+        assertNull(accessToken.getNonce());
 
         URI currentUri = new URI(driver.getCurrentUrl());
         Assert.assertNull(currentUri.getRawQuery());

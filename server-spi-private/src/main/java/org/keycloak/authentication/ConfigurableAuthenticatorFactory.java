@@ -41,7 +41,7 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
     /**
      * General authenticator type, i.e. totp, password, cert.
      *
-     * @return null if not a referencable category
+     * @return null if not a referenceable category
      */
     String getReferenceCategory();
 

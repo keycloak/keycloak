@@ -1,5 +1,6 @@
 configuration
 configuration-production
+bootstrap-admin-recovery
 containers
 enabletls
 hostname
@@ -12,8 +13,10 @@ features
 configuration-provider
 logging
 fips
+management-interface
 health
 configuration-metrics
+tracing
 importExport
 vault
 all-config

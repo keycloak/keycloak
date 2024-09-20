@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>client-registration-cli</module>
         <module>admin-cli</module>
         <module>client-cli-dist</module>
     </modules>

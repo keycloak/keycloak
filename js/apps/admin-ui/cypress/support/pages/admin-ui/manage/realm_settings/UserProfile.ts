@@ -1,6 +1,10 @@
-import Select from "../../../../forms/Select";
+import Masthead from "../../Masthead";
+import ValidatorConfigDialogue from "./ValidatorConfigDialogue";
 
 export default class UserProfile {
+  readonly masthead = new Masthead();
+  readonly validatorConfigDialogue = new ValidatorConfigDialogue(this);
+
   #userProfileTab = "rs-user-profile-tab";
   #attributesTab = "attributesTab";
   #attributesGroupTab = "attributesGroupTab";
@@ -13,26 +17,23 @@ export default class UserProfile {
   #newAttributeNameInput = "attribute-name";
   #newAttributeDisplayNameInput = "attribute-display-name";
   #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
-  #newAttributeRequiredWhen = 'input[name="requiredWhen"]';
   #newAttributeEmptyValidators = ".kc-emptyValidators";
   #newAttributeAnnotationBtn = "annotations-add-row";
   #newAttributeAnnotationKey = "annotations.0.key";
   #newAttributeAnnotationValue = "annotations.0.value";
-  #validatorRolesList = "#validator";
-  #validatorsList = 'tbody [data-label="name"]';
+  #validatorsList = "tbody";
   #saveNewAttributeBtn = "attribute-create";
   #addValidatorBtn = "addValidator";
-  #saveValidatorBtn = "save-validator-role-button";
   #removeValidatorBtn = "deleteValidator";
   #deleteValidatorBtn = "confirm";
-  #cancelAddingValidatorBtn = "cancel-validator-role-button";
   #cancelRemovingValidatorBtn = "cancel";
-  #newAttributeRequiredField = "input#kc-required.pf-c-switch__input";
+  #newAttributeRequiredField = "input#kc-required.pf-v5-c-switch__input";
   #newAttributeUserEdit = "user-edit";
   #newAttributeAdminEdit = "admin-edit";
   #newAttributeUserView = "user-view";
   #newAttributeAdminView = "admin-view";
-  #newAttributesGroupNameInput = "input#kc-name";
+  #createAttributesGroupButton = "create-attributes-groups-action";
+  #newAttributesGroupNameInput = "name";
   #newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
   #saveNewAttributesGroupBtn = "saveGroupBtn";
 
@@ -56,7 +57,7 @@ export default class UserProfile {
     return this;
   }
 
-  createAttributeButtonClick() {
+  clickOnCreateAttributeButton() {
     cy.findByTestId(this.#createAttributeButton).click();
     return this;
   }
@@ -81,7 +82,7 @@ export default class UserProfile {
     return this;
   }
 
-  createAttribute(name: string, displayName: string) {
+  setAttributeNames(name: string, displayName: string) {
     cy.findByTestId(this.#newAttributeNameInput).type(name);
     cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
     return this;
@@ -97,23 +98,21 @@ export default class UserProfile {
     return this;
   }
 
-  createAttributeNotRequiredWithPermissions(name: string, displayName: string) {
-    cy.findByTestId(this.#newAttributeNameInput).type(name);
-    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
-    cy.get(this.#newAttributeEnabledWhen).first().check();
-    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+  setAttributeRequired() {
+    cy.get(this.#newAttributeRequiredField).first().check({ force: true });
+
     return this;
   }
 
-  createAttributeNotRequiredWithoutPermissions(
-    name: string,
-    displayName: string,
-  ) {
-    cy.findByTestId(this.#newAttributeNameInput).type(name);
-    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
-    cy.get(this.#newAttributeEnabledWhen).first().check();
+  setAllAttributePermissions() {
+    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+
+    return this;
+  }
+
+  setNoAttributePermissions() {
     cy.findByTestId(this.#newAttributeAdminEdit)
       .first()
       .uncheck({ force: true });
@@ -121,20 +120,13 @@ export default class UserProfile {
     return this;
   }
 
-  createAttributeRequiredWithPermissions(name: string, displayName: string) {
-    cy.findByTestId(this.#newAttributeNameInput).type(name);
-    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
-    cy.get(this.#newAttributeEnabledWhen).first().check();
-    cy.get(this.#newAttributeRequiredField).first().check({ force: true });
-    cy.get(this.#newAttributeRequiredWhen).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+  clickOnCreatesAttributesGroupButton() {
+    cy.findByTestId(this.#createAttributesGroupButton).click();
     return this;
   }
 
   createAttributeGroup(name: string, displayName: string) {
-    cy.get(this.#newAttributesGroupNameInput).type(name);
+    cy.findByTestId(this.#newAttributesGroupNameInput).type(name);
     cy.get(this.#newAttributesGroupDisplayNameInput).type(displayName);
     return this;
   }
@@ -147,6 +139,21 @@ export default class UserProfile {
   selectElementInList(name: string) {
     cy.get(this.#validatorsList).contains(name).click();
     return this;
+  }
+
+  setAttributeGroup(group: string) {
+    cy.get("#group").click();
+    cy.get("#group")
+      .parent()
+      .get(".pf-v5-c-menu__list-item")
+      .contains(group)
+      .click();
+
+    return this;
+  }
+
+  resetAttributeGroup() {
+    return this.setAttributeGroup("None");
   }
 
   editAttribute(displayName: string) {
@@ -162,10 +169,9 @@ export default class UserProfile {
     return this;
   }
 
-  addValidator() {
-    cy.findByTestId(this.#addValidatorBtn).click();
-    Select.selectItem(cy.get(this.#validatorRolesList), "email");
-    cy.findByTestId(this.#saveValidatorBtn).click();
+  addValidator(type: string) {
+    this.clickAddValidator().selectValidatorType(type).clickSave();
+
     return this;
   }
 
@@ -175,11 +181,16 @@ export default class UserProfile {
     return this;
   }
 
-  cancelAddingValidator() {
-    cy.findByTestId(this.#addValidatorBtn).click();
-    Select.selectItem(cy.get(this.#validatorRolesList), "email");
-    cy.findByTestId(this.#cancelAddingValidatorBtn).click();
+  cancelAddingValidator(type: string) {
+    this.clickAddValidator().selectValidatorType(type).clickCancel();
+
     return this;
+  }
+
+  clickAddValidator() {
+    cy.findByTestId(this.#addValidatorBtn).click();
+
+    return this.validatorConfigDialogue;
   }
 
   cancelRemovingValidator() {
@@ -189,7 +200,7 @@ export default class UserProfile {
   }
 
   #textArea() {
-    return cy.get(".pf-c-code-editor__code textarea");
+    return cy.get(".pf-v5-c-code-editor__code textarea");
   }
 
   #getText() {
@@ -198,6 +209,22 @@ export default class UserProfile {
 
   typeJSON(text: string) {
     this.#textArea().type(text, { force: true });
+    return this;
+  }
+
+  assertNotificationSaved() {
+    this.masthead.checkNotificationMessage(
+      "Success! User Profile configuration has been saved.",
+    );
+
+    return this;
+  }
+
+  assertNotificationUpdated() {
+    this.masthead.checkNotificationMessage(
+      "User profile settings successfully updated.",
+    );
+
     return this;
   }
 

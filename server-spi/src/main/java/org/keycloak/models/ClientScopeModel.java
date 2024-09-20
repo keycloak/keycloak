@@ -34,6 +34,12 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         KeycloakSession getKeycloakSession();
     }
 
+    interface ClientScopeCreatedEvent extends ProviderEvent {
+        ClientScopeModel getClientScope();
+
+        KeycloakSession getKeycloakSession();
+    }
+
     String getId();
 
     String getName();

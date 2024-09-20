@@ -1,0 +1,21 @@
+== Basic steps to secure applications and services
+
+These are the basic steps for securing an application or a service in {project_name}.
+
+. Register a client to a realm using one of these options:
+
+* The {project_name} Admin Console
+
+* The client registration service
+
+* The CLI
+
+. Enable OpenID Connect or SAML protocols in your application using one these options:
+
+* Leveraging existing OpenID Connect and SAML support from the application ecosystem
+* Using a {project_name} Adapter
+
+This guide provides the detailed instructions for these steps. You can find more details
+in the link:{adminguide_link}[Server Administration Guide] about how to register a client to {project_name} through the
+administration console.
+

@@ -33,7 +33,7 @@ import com.webauthn4j.util.AssertUtil;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.OriginValidatorImpl;
 import com.webauthn4j.validator.exception.BadOriginException;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
@@ -248,8 +248,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
         webAuthnAuthenticationManager.getAuthenticationDataValidator().setOriginValidator(new OriginValidatorImpl(){
             @Override
-            protected void validate(@NonNull CollectedClientData collectedClientData,
-                                    @NonNull ServerProperty serverProperty) {
+            protected void validate(@Nonnull CollectedClientData collectedClientData,
+                                    @Nonnull ServerProperty serverProperty) {
                 AssertUtil.notNull(collectedClientData, "collectedClientData must not be null");
                 AssertUtil.notNull(serverProperty, "serverProperty must not be null");
                 final Origin clientOrigin = collectedClientData.getOrigin();

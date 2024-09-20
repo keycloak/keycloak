@@ -17,7 +17,7 @@ vpc-0b40bd7c59dbe4277
 ----
 +
 . Retrieve the ROSA cluster VPC
-.. Login to the ROSA cluster using `oc`
+.. Log in to the ROSA cluster using `oc`
 .. Retrieve the ROSA VPC
 +
 .Command:

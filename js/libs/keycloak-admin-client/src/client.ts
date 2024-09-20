@@ -9,6 +9,7 @@ import { Components } from "./resources/components.js";
 import { Groups } from "./resources/groups.js";
 import { IdentityProviders } from "./resources/identityProviders.js";
 import { Realms } from "./resources/realms.js";
+import { Organizations } from "./resources/organizations.js";
 import { Roles } from "./resources/roles.js";
 import { ServerInfo } from "./resources/serverInfo.js";
 import { Users } from "./resources/users.js";
@@ -34,6 +35,7 @@ export class KeycloakAdminClient {
   public userStorageProvider: UserStorageProvider;
   public groups: Groups;
   public roles: Roles;
+  public organizations: Organizations;
   public clients: Clients;
   public realms: Realms;
   public clientScopes: ClientScopes;
@@ -49,6 +51,7 @@ export class KeycloakAdminClient {
   // Members
   public baseUrl: string;
   public realmName: string;
+  public scope?: string;
   public accessToken?: string;
   public refreshToken?: string;
 
@@ -67,6 +70,7 @@ export class KeycloakAdminClient {
     this.userStorageProvider = new UserStorageProvider(this);
     this.groups = new Groups(this);
     this.roles = new Roles(this);
+    this.organizations = new Organizations(this);
     this.clients = new Clients(this);
     this.realms = new Realms(this);
     this.clientScopes = new ClientScopes(this);
@@ -84,6 +88,7 @@ export class KeycloakAdminClient {
     const { accessToken, refreshToken } = await getToken({
       baseUrl: this.baseUrl,
       realmName: this.realmName,
+      scope: this.scope,
       credentials,
       requestOptions: this.#requestOptions,
     });

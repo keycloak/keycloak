@@ -17,13 +17,12 @@
 
 package org.keycloak.keys.infinispan;
 
-import java.io.Serializable;
 import org.keycloak.crypto.PublicKeysWrapper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PublicKeysEntry implements Serializable {
+public class PublicKeysEntry {
 
     private final int lastRequestTime;
 
