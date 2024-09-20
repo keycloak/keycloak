@@ -64,8 +64,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             // we already have the organization, just fetch the organization's public enabled IDPs.
             if (this.organization != null) {
                 return organization.getIdentityProviders()
-                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin()
-                                && Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.BROKER_PUBLIC)))
+                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin())
                         .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                         .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
@@ -104,6 +103,6 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
             return false;
         }
-        return Boolean.parseBoolean(idp.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString()));
+        return !idp.isHideOnLogin();
     }
 }

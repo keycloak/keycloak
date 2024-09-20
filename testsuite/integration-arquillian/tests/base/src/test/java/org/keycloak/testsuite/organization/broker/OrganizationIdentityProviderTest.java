@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
-import static org.keycloak.models.OrganizationModel.BROKER_PUBLIC;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 
 import jakarta.ws.rs.BadRequestException;
@@ -111,7 +110,6 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         //remove Org related stuff from the template
         idpTemplate.setOrganizationId(null);
         idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpTemplate.getConfig().remove(OrganizationModel.BROKER_PUBLIC);
         idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
 
         for (int i = 0; i < 5; i++) {
@@ -191,7 +189,6 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         // broker no longer linked to the org
         Assert.assertNull(idpRep.getOrganizationId());
         Assert.assertNull(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
-        Assert.assertNull(idpRep.getConfig().get(BROKER_PUBLIC));
     }
 
     @Test

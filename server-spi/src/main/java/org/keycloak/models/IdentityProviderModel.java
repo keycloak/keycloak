@@ -50,6 +50,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String LOGIN_HINT = "loginHint";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
     public static final String ORGANIZATION_ID = "organizationId";
+    public static final String ORGANIZATION_ID_NOT_NULL = "organizationIdNotNull";
     public static final String PASS_MAX_AGE = "passMaxAge";
     public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
     public static final String SEARCH = "search";
