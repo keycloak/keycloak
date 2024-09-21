@@ -449,8 +449,7 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     private KeycloakSessionFactory createKeycloakSessionFactory() {
-        MicrometerMetricsEventListenerFactory micrometerMetricsEventListenerFactory = new MicrometerMetricsEventListenerFactory();
-        KeycloakSessionFactory factory = new KeycloakSessionFactory() {
+        return new KeycloakSessionFactory() {
             @Override
             public KeycloakSession create() {
                 return new KeycloakSession() {
@@ -530,7 +529,7 @@ public class MicrometerMetricsEventListenerTest {
 
                     @Override
                     public <T extends Provider> T getProvider(Class<T> clazz) {
-                        return keycloakSessionFactory.getProviderFactory(clazz).create(this);
+                        return (T) new MicrometerMetricsEventListener(this);
                     }
 
                     @Override
@@ -713,7 +712,7 @@ public class MicrometerMetricsEventListenerTest {
 
             @Override
             public <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz) {
-                return (ProviderFactory<T>) micrometerMetricsEventListenerFactory;
+                return null;
             }
 
             @Override
@@ -761,7 +760,6 @@ public class MicrometerMetricsEventListenerTest {
 
             }
         };
-        return factory;
     }
 
 
