@@ -143,7 +143,7 @@ public class DefaultMigrationManager implements MigrationManager {
             for (Migration m : migrations) {
                 if (databaseVersion == null || databaseVersion.lessThan(m.getVersion())) {
                     if (databaseVersion != null) {
-                        logger.debugf("Migrating older model to %s", m.getVersion());
+                        logger.infof("Migrating older model to %s", m.getVersion());
                     }
                     m.migrate(session);
                 }
