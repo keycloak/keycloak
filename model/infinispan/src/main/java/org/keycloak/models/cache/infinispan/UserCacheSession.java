@@ -214,7 +214,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
-        
+
         UserModel adapter = null;
         if (cached == null) {
             logger.trace("not cached");
@@ -344,7 +344,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = organizationProvider.getByMember(delegate);
 
-            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) || 
+            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) ||
                     (!organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate))) {
                 return new ReadOnlyUserModelDelegate(delegate) {
                     @Override
@@ -509,7 +509,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembersStream(realm, role);
-    }    
+    }
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
@@ -841,6 +841,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
     protected void fullyInvalidateUser(RealmModel realm, UserModel user) {
+        if (user instanceof CachedUserModel) {
+           ((CachedUserModel) user).invalidate();
+        }
+
         Stream<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ?
                 getFederatedIdentitiesStream(realm, user) : Stream.empty();
 
@@ -852,7 +856,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-         fullyInvalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 
