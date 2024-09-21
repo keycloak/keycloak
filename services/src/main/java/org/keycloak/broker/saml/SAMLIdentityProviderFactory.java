@@ -40,6 +40,8 @@ import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
 
+import static org.keycloak.models.IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR;
+
 /**
  * @author Pedro Igor
  */
@@ -160,7 +162,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     for (AttributeType attribute : entityType.getExtensions().getEntityAttributes().getAttribute()) {
                         if (MACEDIR_ENTITY_CATEGORY.equals(attribute.getName())
                                 && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
-                            samlIdentityProviderConfig.setHideOnLogin(true);
+                            samlIdentityProviderConfig.getConfig().put(LEGACY_HIDE_ON_LOGIN_ATTR, String.valueOf(true));
                         }
                     }
 

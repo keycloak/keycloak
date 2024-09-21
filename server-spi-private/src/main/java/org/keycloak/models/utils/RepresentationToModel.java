@@ -867,7 +867,7 @@ public class RepresentationToModel {
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setLinkOnly(representation.isLinkOnly());
         identityProviderModel.setHideOnLogin(representation.isHideOnLogin());
-        // check if the legacy hide on login attribute is present.
+        // remove the legacy hide on login attribute if present.
         String hideOnLoginAttr = representation.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
         if (hideOnLoginAttr != null) identityProviderModel.setHideOnLogin(Boolean.parseBoolean(hideOnLoginAttr));
         identityProviderModel.setTrustEmail(representation.isTrustEmail());

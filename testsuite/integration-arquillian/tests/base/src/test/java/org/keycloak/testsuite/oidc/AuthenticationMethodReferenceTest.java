@@ -288,13 +288,13 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      */
     @Test
     public void testAmrPastMaxAge() {
-        setAmr("browser", "auth-username-password-form", "password", 0);
+        setAmr("browser", "auth-username-password-form", "password", 10);
 
         List<String> expectedAmrs = new ArrayList<>();
         authenticatePassword("test-user", PASSWORD);
 
-        // server time forward by 60 seconds to ensure max age is exceeded
-        setTimeOffset(60);
+        // server time forward by 20 seconds to ensure max age is exceeded
+        setTimeOffset(20);
 
         Tokens tokens = assertLogin(passwordUserId);
 

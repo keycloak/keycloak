@@ -211,6 +211,8 @@ describe("Authentication test", () => {
   });
 
   it("Should display the default browser flow diagram", () => {
+    sidebarPage.goToRealm("master");
+    sidebarPage.goToAuthentication();
     listingPage.goToItemDetails("browser");
 
     detailPage.goToDiagram();

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
+package org.keycloak.quarkus.runtime.storage.infinispan;
 
 import io.quarkus.arc.Arc;
 import org.keycloak.Config;

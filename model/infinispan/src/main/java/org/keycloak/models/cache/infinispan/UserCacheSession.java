@@ -24,7 +24,6 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -834,6 +833,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
     protected void fullyInvalidateUser(RealmModel realm, UserModel user) {
+        if (user instanceof CachedUserModel) {
+           ((CachedUserModel) user).invalidate();
+        }
+
         Stream<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ?
                 getFederatedIdentitiesStream(realm, user) : Stream.empty();
 
@@ -845,7 +848,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-         fullyInvalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 

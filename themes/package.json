@@ -20,7 +20,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.7",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.21.3",
+    "rollup": "^4.22.0",
     "shx": "^0.3.4"
   }
 }

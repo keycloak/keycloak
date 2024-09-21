@@ -44,7 +44,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;

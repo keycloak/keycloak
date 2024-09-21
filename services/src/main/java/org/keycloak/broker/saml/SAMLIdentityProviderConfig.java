@@ -71,12 +71,6 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public SAMLIdentityProviderConfig() {
     }
 
-    @Override
-    public void setHideOnLogin(boolean hideOnLogin) {
-        super.setHideOnLogin(hideOnLogin);
-        getConfig().put(LEGACY_HIDE_ON_LOGIN_ATTR, String.valueOf(hideOnLogin));
-    }
-
     public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
     }

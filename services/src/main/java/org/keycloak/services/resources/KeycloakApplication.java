@@ -261,6 +261,7 @@ public abstract class KeycloakApplication extends Application {
                                 if (realm == null) {
                                     ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
                                 }
+                                session.getContext().setRealm(realm);
 
                                 UserProvider users = session.users();
 

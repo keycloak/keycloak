@@ -135,7 +135,7 @@ export function UserDataTableAttributeSearchForm({
     if (profile) {
       return (
         <KeycloakSelect
-          data-testid="search-attribute-name"
+          data-testid="search-attribute-name-select"
           variant={SelectVariant.typeahead}
           onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
@@ -188,7 +188,10 @@ export function UserDataTableAttributeSearchForm({
   };
 
   return (
-    <Form className="user-attribute-search-form">
+    <Form
+      className="user-attribute-search-form"
+      data-testid="user-attribute-search-form"
+    >
       <TextContent className="user-attribute-search-form-headline">
         <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
       </TextContent>
@@ -231,6 +234,7 @@ export function UserDataTableAttributeSearchForm({
           </InputGroupItem>
           <InputGroupItem>
             <Button
+              data-testid="user-attribute-search-add-filter-button"
               variant="control"
               icon={<CheckIcon />}
               onClick={addToFilter}

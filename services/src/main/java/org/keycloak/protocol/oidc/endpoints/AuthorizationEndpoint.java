@@ -211,7 +211,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.event(EventType.REGISTER);
         action = Action.REGISTER;
 
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
             //this call should extract orgId from token and set the organization to the session context
             Response errorResponse = new LoginActionsService(session, event).preHandleActionToken(tokenString);
             if (errorResponse != null) {

@@ -988,7 +988,7 @@ public class Reflections {
      * @throws InstantiationException
      * @deprecated for removal in Keycloak 27
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return newInstance(fromClass, fromClass.getName());
     }
@@ -1008,7 +1008,7 @@ public class Reflections {
      * @throws InstantiationException
      * @deprecated for removal in Keycloak 27
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
     }

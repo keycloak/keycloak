@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.models.Constants;
@@ -83,6 +84,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
         s.getContext().setRealm(realm);
+        realm.setSsoSessionMaxLifespan(Constants.DEFAULT_SESSION_MAX_LIFESPAN);
+        realm.setSsoSessionIdleTimeout(Constants.DEFAULT_SESSION_IDLE_TIMEOUT);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
@@ -281,6 +284,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             RealmModel fooRealm = session.realms().getRealmByName("foo");
             session.getContext().setRealm(fooRealm);
             UserSessionModel userSession = session.sessions().getUserSession(fooRealm, userSessionID.get());
+            assertNotNull(userSession);
             persistUserSession(session, userSession, true);
         });
 

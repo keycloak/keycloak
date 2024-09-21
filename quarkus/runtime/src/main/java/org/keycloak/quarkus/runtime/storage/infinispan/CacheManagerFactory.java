@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
+package org.keycloak.quarkus.runtime.storage.infinispan;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;

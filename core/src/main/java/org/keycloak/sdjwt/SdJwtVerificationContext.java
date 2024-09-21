@@ -32,7 +32,9 @@ import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.util.JWKSUtils;
 
 import java.time.Instant;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +77,9 @@ public class SdJwtVerificationContext {
     private Map<String, String> computeDigestDisclosureMap(List<String> disclosureStrings) {
         return disclosureStrings.stream()
                 .map(disclosureString -> {
-                    var digest = SdJwtUtils.hashAndBase64EncodeNoPad(
+                    String digest = SdJwtUtils.hashAndBase64EncodeNoPad(
                             disclosureString.getBytes(), issuerSignedJwt.getSdHashAlg());
-                    return Map.entry(digest, disclosureString);
+                    return new AbstractMap.SimpleEntry<String,String>(digest, disclosureString);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -103,7 +105,7 @@ public class SdJwtVerificationContext {
         validateIssuerSignedJwt(issuerSignedJwtVerificationOpts.getVerifier());
 
         // Validate disclosures.
-        var disclosedPayload = validateDisclosuresDigests();
+        JsonNode disclosedPayload = validateDisclosuresDigests();
 
         // Validate time claims.
         // Issuers will typically include claims controlling the validity of the SD-JWT in plaintext in the
@@ -182,13 +184,13 @@ public class SdJwtVerificationContext {
         validateKeyBindingJwtTyp();
 
         // Determine the public key for the Holder from the SD-JWT
-        var cnf = issuerSignedJwt.getCnfClaim().orElseThrow(
+        JsonNode cnf = issuerSignedJwt.getCnfClaim().orElseThrow(
                 () -> new VerificationException("No cnf claim in Issuer-signed JWT for key binding")
         );
 
         // Ensure that a signing algorithm was used that was deemed secure for the application.
         // The none algorithm MUST NOT be accepted.
-        var holderVerifier = buildHolderVerifier(cnf);
+        SignatureVerifierContext holderVerifier = buildHolderVerifier(cnf);
 
         // Validate the signature over the Key Binding JWT
         try {
@@ -219,7 +221,7 @@ public class SdJwtVerificationContext {
      * @throws VerificationException if verification failed
      */
     private void validateKeyBindingJwtTyp() throws VerificationException {
-        var typ = keyBindingJwt.getHeader().getType();
+        String typ = keyBindingJwt.getHeader().getType();
         if (!typ.equals(KeyBindingJWT.TYP)) {
             throw new VerificationException("Key Binding JWT is not of declared typ " + KeyBindingJWT.TYP);
         }
@@ -234,7 +236,7 @@ public class SdJwtVerificationContext {
         Objects.requireNonNull(cnf);
 
         // Read JWK
-        var cnfJwk = cnf.get("jwk");
+        JsonNode cnfJwk = cnf.get("jwk");
         if (cnfJwk == null) {
             throw new UnsupportedOperationException("Only cnf/jwk claim supported");
         }
@@ -394,7 +396,7 @@ public class SdJwtVerificationContext {
         Set<String> visitedSalts = new HashSet<>();
         Set<String> visitedDigests = new HashSet<>();
         Set<String> visitedDisclosureStrings = new HashSet<>();
-        var disclosedPayload = validateViaRecursiveDisclosing(
+        JsonNode disclosedPayload = validateViaRecursiveDisclosing(
                 SdJwtUtils.deepClone(issuerSignedJwt.getPayload()),
                 visitedSalts, visitedDigests, visitedDisclosureStrings);
 
@@ -427,11 +429,11 @@ public class SdJwtVerificationContext {
 
         // Find all objects having an _sd key that refers to an array of strings.
         if (currentNode.isObject()) {
-            var currentObjectNode = ((ObjectNode) currentNode);
+            ObjectNode currentObjectNode = ((ObjectNode) currentNode);
 
-            var sdArray = currentObjectNode.get(IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE);
+            JsonNode sdArray = currentObjectNode.get(IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE);
             if (sdArray != null && sdArray.isArray()) {
-                for (var el : sdArray) {
+                for (JsonNode el : sdArray) {
                     if (!el.isTextual()) {
                         throw new VerificationException(
                                 "Unexpected non-string element inside _sd array: " + el
@@ -441,16 +443,16 @@ public class SdJwtVerificationContext {
                     // Compare the value with the digests calculated previously and find the matching Disclosure.
                     // If no such Disclosure can be found, the digest MUST be ignored.
 
-                    var digest = el.asText();
+                    String digest = el.asText();
                     markDigestAsVisited(digest, visitedDigests);
-                    var disclosure = disclosures.get(digest);
+                    String disclosure = disclosures.get(digest);
 
                     if (disclosure != null) {
                         // Mark disclosure as visited
                         visitedDisclosureStrings.add(disclosure);
 
                         // Validate disclosure format
-                        var decodedDisclosure = validateSdArrayDigestDisclosureFormat(disclosure);
+                        DisclosureFields decodedDisclosure = validateSdArrayDigestDisclosureFormat(disclosure);
 
                         // Mark salt as visited
                         markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
@@ -475,29 +477,29 @@ public class SdJwtVerificationContext {
 
         // Find all array elements that are objects with one key, that key being ... and referring to a string
         if (currentNode.isArray()) {
-            var currentArrayNode = ((ArrayNode) currentNode);
-            var indexesToRemove = new ArrayList<Integer>();
+            ArrayNode currentArrayNode = ((ArrayNode) currentNode);
+            ArrayList<Integer> indexesToRemove = new ArrayList<>();
 
             for (int i = 0; i < currentArrayNode.size(); ++i) {
-                var itemNode = currentArrayNode.get(i);
+                JsonNode itemNode = currentArrayNode.get(i);
                 if (itemNode.isObject() && itemNode.size() == 1) {
                     // Check single "..." field
-                    var field = itemNode.fields().next();
+                    Map.Entry<String, JsonNode> field = itemNode.fields().next();
                     if (field.getKey().equals(UndisclosedArrayElement.SD_CLAIM_NAME)
                             && field.getValue().isTextual()) {
                         // Compare the value with the digests calculated previously and find the matching Disclosure.
                         // If no such Disclosure can be found, the digest MUST be ignored.
 
-                        var digest = field.getValue().asText();
+                        String digest = field.getValue().asText();
                         markDigestAsVisited(digest, visitedDigests);
-                        var disclosure = disclosures.get(digest);
+                        String disclosure = disclosures.get(digest);
 
                         if (disclosure != null) {
                             // Mark disclosure as visited
                             visitedDisclosureStrings.add(disclosure);
 
                             // Validate disclosure format
-                            var decodedDisclosure = validateArrayElementDigestDisclosureFormat(disclosure);
+                            DisclosureFields decodedDisclosure = validateArrayElementDigestDisclosureFormat(disclosure);
 
                             // Mark salt as visited
                             markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
@@ -584,10 +586,10 @@ public class SdJwtVerificationContext {
 
         // If the claim name is _sd or ..., the SD-JWT MUST be rejected.
 
-        var denylist = List.of(
+        List<String> denylist = Arrays.asList(new String[]{
                 IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE,
                 UndisclosedArrayElement.SD_CLAIM_NAME
-        );
+        });
 
         String claimName = arrayNode.get(1).asText();
         if (denylist.contains(claimName)) {
