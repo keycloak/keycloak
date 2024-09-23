@@ -207,7 +207,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             client.close();
         }
     }
-    
+
     @Test
     public void testSuccess_postMethod_charset_body() throws Exception {
         Client client = AdminClientUtil.createResteasyClient();
@@ -531,7 +531,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     public void testSuccessSignedResponseRS256AcceptJWT() throws Exception {
         testSuccessSignedResponse(Algorithm.RS256, MediaType.APPLICATION_JWT);
     }
- 
+
     @Test
     public void testSessionExpired() {
         Client client = AdminClientUtil.createResteasyClient();
@@ -607,8 +607,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());
@@ -630,7 +630,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             response.close();
 
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
-                    .error(Errors.INVALID_TOKEN)
+                    .error(Errors.USER_SESSION_NOT_FOUND)
                     .user(Matchers.nullValue(String.class))
                     .session(Matchers.nullValue(String.class))
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
@@ -1088,23 +1088,23 @@ public class UserInfoTest extends AbstractKeycloakTest {
         assertNull(userInfo.getOtherClaims().get("realm_access"));
         assertNull(userInfo.getOtherClaims().get("resource_access"));
     }
-    
+
     @Test
     public void test_noContentType() throws Exception {
         Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-                    
+
             WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .build("POST")
                     .invoke();
-            
+
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals("OK", response.getStatusInfo().toString());
-           	
+
         } finally {
             client.close();
         }
