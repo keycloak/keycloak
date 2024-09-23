@@ -79,6 +79,10 @@ public class BrowserTabUtil implements AutoCloseable {
         return instance;
     }
 
+    public static void cleanup() {
+        instances = new ArrayList<>();
+    }
+
     public WebDriver getDriver() {
         return driver;
     }
