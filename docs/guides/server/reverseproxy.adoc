@@ -18,6 +18,8 @@ Distributed environments frequently require the use of a reverse proxy. {project
 * `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
+NOTE: If you are using a reverse proxy and do not set the `proxy-headers` option, then by default you will see 403 Forbidden responses to requests via the proxy that perform origin checking.
+
 For example:
 
 <@kc.start parameters="--proxy-headers forwarded"/>
