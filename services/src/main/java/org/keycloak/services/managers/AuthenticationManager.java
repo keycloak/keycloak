@@ -308,8 +308,7 @@ public class AuthenticationManager {
                     checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
             logger.tracef("Removing logout session '%s' after backchannel logout", logoutAuthSession.getParentSession().getId());
-            RootAuthenticationSessionModel rootAuthSession = logoutAuthSession.getParentSession();
-            rootAuthSession.removeAuthenticationSessionByTabId(logoutAuthSession.getTabId());
+            session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);

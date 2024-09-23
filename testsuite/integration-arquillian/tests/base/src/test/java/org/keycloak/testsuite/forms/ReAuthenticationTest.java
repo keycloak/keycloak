@@ -49,6 +49,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
+import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -364,6 +365,42 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         rep.setSsoSessionIdleTimeout(originalSsoSessionIdleTimeout);
         rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
         realmsResouce().realm(rep.getRealm()).update(rep);
+    }
+
+    @Test
+    public void loginAfterLogoutWithDifferentSessionId() {
+        BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
+
+        assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        tabUtil.newTab(oauth.getLoginFormUrl());
+        assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+        oauth.openLoginForm();
+
+        tabUtil.closeTab(tabUtil.getCountOfTabs() - 1);
+        assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+        tabUtil.switchToTab(0);
+        loginPage.assertCurrent();
+
+        loginPage.login("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
+
+        oauth.doLogout(response1.getRefreshToken(), "password");
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
+
+        Assert.assertNotEquals(accessToken1.getId(), accessToken2.getId());
+        Assert.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
     }
 
     private void setupIdentityFirstFlow() {
