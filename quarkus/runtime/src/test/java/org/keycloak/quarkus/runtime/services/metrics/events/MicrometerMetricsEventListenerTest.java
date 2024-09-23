@@ -172,7 +172,7 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     @Test
-    public void shouldRecordLoginsPerRealm() {
+    public void shouldCountLoginsPerRealm() {
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             // realm 1
@@ -344,7 +344,7 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     @Test
-    public void shouldCorrectlyRecordGenericEvents() {
+    public void shouldCorrectlyCountGenericEvents() {
         final Event event1 = createEvent(EventType.UPDATE_EMAIL);
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             getMicrometerMetricsEventListener(session).onEvent(event1);
@@ -365,7 +365,7 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     @Test
-    public void shouldCorrectlyRecordGenericAdminEvents() {
+    public void shouldCorrectlyCountGenericAdminEvents() {
 
         final AdminEvent event1 = new AdminEvent();
         event1.setOperationType(OperationType.ACTION);
