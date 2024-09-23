@@ -30,6 +30,35 @@ $ kcadm.sh update events/config -r demorealm -s 'eventsListeners+=["micrometer-m
 c:\> kcadm update events/config -r demorealm -s "eventsListeners+=[\"micrometer-metrics\"]"
 ----
 
+The snippet below is an example of a response:
+
+[source]
+----
+
+# TYPE keycloak_admin_event_create counter
+# HELP keycloak_admin_event_create
+keycloak_admin_event_create_total{realm="master",resource="CLIENT"} 1.0
+# TYPE keycloak_code_to_tokens counter
+# HELP keycloak_code_to_tokens
+keycloak_code_to_tokens_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
+# TYPE keycloak_login_attempts counter
+# HELP keycloak_login_attempts
+keycloak_login_attempts_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
+# TYPE keycloak_user_event_logout counter
+# HELP keycloak_user_event_logout
+keycloak_user_event_logout_total{realm="master"} 1.0
+# TYPE keycloak_logins counter
+# HELP keycloak_logins
+keycloak_logins_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
+# TYPE keycloak_refresh_tokens counter
+# HELP keycloak_refresh_tokens
+keycloak_refresh_tokens_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
+# TYPE keycloak_admin_event_delete counter
+# HELP keycloak_admin_event_delete
+keycloak_admin_event_delete_total{realm="master",resource="CLIENT"} 1.0
+
+...
+----
 
 
 </@tmpl.guide>
