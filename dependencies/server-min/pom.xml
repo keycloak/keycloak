@@ -63,10 +63,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
         </dependency>
-         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter-jar</artifactId>
-        </dependency>
 
         <!-- forms -->
         <dependency>
