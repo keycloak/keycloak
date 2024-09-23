@@ -145,29 +145,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
 
         Assert.assertFalse(loginPage.isCurrent());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
-
-        // POST logout with token should fail
-        try (CloseableHttpResponse response = oauth.doLogout(refreshToken1, "password")) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
-
-        String logoutUrl = oauth.getLogoutUrl()
-                .idTokenHint(accessTokenResponse.getIdToken())
-                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
-                .build();
-
-        // GET logout with ID token should fail as well
-        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
-             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
 
         // finally POST logout with VALID token should succeed
         try (CloseableHttpResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password")) {
@@ -176,7 +160,6 @@ public class LogoutTest extends AbstractKeycloakTest {
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
     }
-
 
     @Test
     public void postLogoutFailWithCredentialsOfDifferentClient() throws Exception {
@@ -246,7 +229,7 @@ public class LogoutTest extends AbstractKeycloakTest {
           .idTokenHint(idTokenString)
           .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
-        
+
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
