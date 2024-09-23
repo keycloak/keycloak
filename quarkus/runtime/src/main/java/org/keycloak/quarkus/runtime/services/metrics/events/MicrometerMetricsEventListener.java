@@ -39,12 +39,8 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListener.class);
 
-    private static final EnumSet<EventType> NON_GENERIC_EVENT_TYPES =
-            EnumSet.of(EventType.LOGIN, EventType.LOGIN_ERROR,
-                    EventType.CLIENT_LOGIN, EventType.CLIENT_LOGIN_ERROR,
-                    EventType.REGISTER, EventType.REGISTER_ERROR,
-                    EventType.REFRESH_TOKEN, EventType.REFRESH_TOKEN_ERROR,
-                    EventType.CODE_TO_TOKEN, EventType.CODE_TO_TOKEN_ERROR);
+    private static final EnumSet<EventType> LOGIN_EVENT_TYPES =
+            EnumSet.of(EventType.LOGIN, EventType.LOGIN_ERROR);
 
     private static final String PROVIDER_KEYCLOAK_OPENID = "keycloak";
     private static final String REALM_TAG = "realm";
@@ -52,39 +48,19 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
     private static final String RESOURCE_TAG = "resource";
+
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
-    private static final String TOTAL_LOGINS =
-            KEYLOAK_METER_NAME_PREFIX + "logins";
-    private static final String TOTAL_LOGINS_ATTEMPTS =
-            KEYLOAK_METER_NAME_PREFIX + "login.attempts";
-    private static final String TOTAL_FAILED_LOGIN_ATTEMPTS =
-            KEYLOAK_METER_NAME_PREFIX + "failed.login.attempts";
-    private static final String TOTAL_REGISTRATIONS =
-            KEYLOAK_METER_NAME_PREFIX + "registrations";
-    private static final String TOTAL_REGISTRATIONS_ERRORS =
-            KEYLOAK_METER_NAME_PREFIX + "registrations.errors";
-    private static final String TOTAL_REFRESH_TOKENS =
-            KEYLOAK_METER_NAME_PREFIX + "refresh.tokens";
-    private static final String TOTAL_REFRESH_TOKENS_ERRORS =
-            KEYLOAK_METER_NAME_PREFIX + "refresh.tokens.errors";
-    private static final String TOTAL_CLIENT_LOGINS =
-            KEYLOAK_METER_NAME_PREFIX + "client.logins";
-    private static final String TOTAL_FAILED_CLIENT_LOGIN_ATTEMPTS =
-            KEYLOAK_METER_NAME_PREFIX + "failed.client.login.attempts";
-    private static final String TOTAL_CODE_TO_TOKENS =
-            KEYLOAK_METER_NAME_PREFIX + "code.to.tokens";
-    private static final String TOTAL_CODE_TO_TOKENS_ERRORS =
-            KEYLOAK_METER_NAME_PREFIX + "code.to.tokens.errors";
-    private static final String USER_EVENT_PREFIX =
-            KEYLOAK_METER_NAME_PREFIX + "user.event.";
-    private static final String ADMIN_EVENT_PREFIX =
-            KEYLOAK_METER_NAME_PREFIX + "admin.event.";
+    private static final String EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "event.";
+    private static final String LOGIN_COUNTER_NAME = EVENT_PREFIX + "login";
+    private static final String LOGIN_ATTEMPT_COUNTER_NAME = EVENT_PREFIX + "login.attempt";
+    private static final String LOGIN_ERROR_COUNTER_NAME = EVENT_PREFIX + "login.error";
+    private static final String ADMIN_EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "admin.event.";
 
     static final Map<OperationType, String> ADMIN_OPERATION_TYPE_TO_NAME =
             Arrays.stream(OperationType.values())
                     .collect(Collectors.toMap( o -> o, MicrometerMetricsEventListener::buildCounterName));
-    static final Map<EventType, String> USER_EVENT_TYPE_TO_NAME =
-            Arrays.stream(EventType.values()).filter(o -> !NON_GENERIC_EVENT_TYPES.contains(o))
+    static final Map<EventType, String> EVENT_TYPE_TO_NAME =
+            Arrays.stream(EventType.values()).filter(o -> !LOGIN_EVENT_TYPES.contains(o))
                     .collect(Collectors.toMap(e -> e, MicrometerMetricsEventListener::buildCounterName));
 
     private final EventListenerTransaction tx =
@@ -118,31 +94,19 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
                 countLoginError(event);
                 break;
             case CLIENT_LOGIN:
-                countRealmProviderClientIdTagsFromEvent(TOTAL_CLIENT_LOGINS, event);
+            case REGISTER:
+            case REFRESH_TOKEN:
+            case CODE_TO_TOKEN:
+                countRealmProviderClientIdTagsFromEvent(event);
                 break;
             case CLIENT_LOGIN_ERROR:
-                countRealmProviderClientIdErrorTagsFromEvent(TOTAL_FAILED_CLIENT_LOGIN_ATTEMPTS, event);
-                break;
-            case REGISTER:
-                countRealmProviderClientIdTagsFromEvent(TOTAL_REGISTRATIONS, event);
-                break;
             case REGISTER_ERROR:
-                countRealmProviderClientIdErrorTagsFromEvent(TOTAL_REGISTRATIONS_ERRORS, event);
-                break;
-            case REFRESH_TOKEN:
-                countRealmProviderClientIdTagsFromEvent(TOTAL_REFRESH_TOKENS, event);
-                break;
             case REFRESH_TOKEN_ERROR:
-                countRealmProviderClientIdErrorTagsFromEvent(TOTAL_REFRESH_TOKENS_ERRORS, event);
-                break;
-            case CODE_TO_TOKEN:
-                countRealmProviderClientIdTagsFromEvent(TOTAL_CODE_TO_TOKENS, event);
-                break;
             case CODE_TO_TOKEN_ERROR:
-                countRealmProviderClientIdErrorTagsFromEvent(TOTAL_CODE_TO_TOKENS_ERRORS, event);
+                countRealmProviderClientIdErrorTagsFromEvent(event);
                 break;
             default:
-                countRealmTagFromGenericEvent(event);
+                countRealmTagFromEvent(event);
         }
     }
 
@@ -153,8 +117,8 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
         }
     }
 
-    private void countRealmTagFromGenericEvent(final Event event) {
-        meterRegistry.counter(USER_EVENT_TYPE_TO_NAME.get(event.getType()),
+    private void countRealmTagFromEvent(final Event event) {
+        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
                 REALM_TAG, nullToEmpty(event.getRealmName())).increment();
     }
 
@@ -168,11 +132,11 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private void countLogin(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS,
+        meterRegistry.counter(LOGIN_ATTEMPT_COUNTER_NAME,
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, provider,
                 CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
-        meterRegistry.counter(TOTAL_LOGINS,
+        meterRegistry.counter(LOGIN_COUNTER_NAME,
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, provider,
                 CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
@@ -181,26 +145,26 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private void countLoginError(final Event event) {
         final String provider = getIdentityProvider(event);
         String clientId = getErrorClientId(event);
-        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS,
+        meterRegistry.counter(LOGIN_ATTEMPT_COUNTER_NAME,
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, provider,
                 CLIENT_ID_TAG, clientId).increment();
-        meterRegistry.counter(TOTAL_FAILED_LOGIN_ATTEMPTS,
+        meterRegistry.counter(LOGIN_ERROR_COUNTER_NAME,
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, provider,
                 CLIENT_ID_TAG, clientId,
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
-    private void countRealmProviderClientIdTagsFromEvent(String name, final Event event) {
-        meterRegistry.counter(name,
+    private void countRealmProviderClientIdTagsFromEvent(final Event event) {
+        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, getIdentityProvider(event),
                 CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
-    private void countRealmProviderClientIdErrorTagsFromEvent(String name, final Event event) {
-        meterRegistry.counter(name,
+    private void countRealmProviderClientIdErrorTagsFromEvent(final Event event) {
+        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 PROVIDER_TAG, getIdentityProvider(event),
                 CLIENT_ID_TAG, getErrorClientId(event),
@@ -232,7 +196,7 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     }
 
     private static String buildCounterName(EventType type) {
-        return USER_EVENT_PREFIX + type.name().toLowerCase().replace("_", ".");
+        return EVENT_PREFIX + type.name().toLowerCase().replace("_", ".");
     }
 
     @Override

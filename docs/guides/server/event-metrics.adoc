@@ -35,28 +35,30 @@ The snippet below is an example of a response:
 [source]
 ----
 
-# TYPE keycloak_admin_event_create counter
-# HELP keycloak_admin_event_create
-keycloak_admin_event_create_total{realm="master",resource="CLIENT"} 1.0
-# TYPE keycloak_code_to_tokens counter
-# HELP keycloak_code_to_tokens
-keycloak_code_to_tokens_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
-# TYPE keycloak_login_attempts counter
-# HELP keycloak_login_attempts
-keycloak_login_attempts_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
-# TYPE keycloak_user_event_logout counter
-# HELP keycloak_user_event_logout
-keycloak_user_event_logout_total{realm="master"} 1.0
-# TYPE keycloak_logins counter
-# HELP keycloak_logins
-keycloak_logins_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
-# TYPE keycloak_refresh_tokens counter
-# HELP keycloak_refresh_tokens
-keycloak_refresh_tokens_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
 # TYPE keycloak_admin_event_delete counter
 # HELP keycloak_admin_event_delete
 keycloak_admin_event_delete_total{realm="master",resource="CLIENT"} 1.0
-
+# TYPE keycloak_admin_event_create counter
+# HELP keycloak_admin_event_create
+keycloak_admin_event_create_total{realm="master",resource="CLIENT"} 1.0
+# TYPE keycloak_event_refresh_token counter
+# HELP keycloak_event_refresh_token
+keycloak_event_refresh_token_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
+# TYPE keycloak_event_login_error counter
+# HELP keycloak_event_login_error
+keycloak_event_login_error_total{client_id="security-admin-console",error="user_not_found",provider="keycloak",realm="master"} 1.0
+# TYPE keycloak_event_login_attempt counter
+# HELP keycloak_event_login_attempt
+keycloak_event_login_attempt_total{client_id="security-admin-console",provider="keycloak",realm="master"} 2.0
+# TYPE keycloak_event_code_to_token counter
+# HELP keycloak_event_code_to_token
+keycloak_event_code_to_token_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
+# TYPE keycloak_event_login counter
+# HELP keycloak_event_login
+keycloak_event_login_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
+# TYPE keycloak_event_logout counter
+# HELP keycloak_event_logout
+keycloak_event_logout_total{realm="master"} 1.0
 ...
 ----
 
