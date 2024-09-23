@@ -60,6 +60,7 @@ import org.keycloak.vault.VaultTranscriber;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -529,7 +530,8 @@ public class MicrometerMetricsEventListenerTest {
 
                     @Override
                     public <T extends Provider> T getProvider(Class<T> clazz) {
-                        return (T) new MicrometerMetricsEventListener(this);
+                        return (T) new MicrometerMetricsEventListener(
+                                this, EnumSet.allOf(EventType.class), true);
                     }
 
                     @Override

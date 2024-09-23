@@ -76,6 +76,10 @@ The table below summarizes the available metrics groups:
 |Cache
 |A set of metrics from Infinispan caches. See <@links.server id="caching"/> for more details.
 
+|Keycloak
+|A set of metrics from Keycloak events. See <@links.server id="event-metrics"/> for more details.
+
+
 |===
 
 </@tmpl.guide>

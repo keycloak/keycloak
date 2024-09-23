@@ -30,24 +30,27 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListener.class);
 
-    private static final Set<EventType> NON_GENERIC_EVENT_TYPES =
-            Set.of(EventType.LOGIN, EventType.LOGIN_ERROR, EventType.CLIENT_LOGIN, EventType.CLIENT_LOGIN_ERROR,
-                    EventType.REGISTER, EventType.REGISTER_ERROR, EventType.REFRESH_TOKEN,
-                    EventType.REFRESH_TOKEN_ERROR, EventType.CODE_TO_TOKEN, EventType.CODE_TO_TOKEN_ERROR);
+    private static final EnumSet<EventType> NON_GENERIC_EVENT_TYPES =
+            EnumSet.of(EventType.LOGIN, EventType.LOGIN_ERROR,
+                    EventType.CLIENT_LOGIN, EventType.CLIENT_LOGIN_ERROR,
+                    EventType.REGISTER, EventType.REGISTER_ERROR,
+                    EventType.REFRESH_TOKEN, EventType.REFRESH_TOKEN_ERROR,
+                    EventType.CODE_TO_TOKEN, EventType.CODE_TO_TOKEN_ERROR);
 
     private static final String PROVIDER_KEYCLOAK_OPENID = "keycloak";
     private static final String REALM_TAG = "realm";
     private static final String PROVIDER_TAG = "provider";
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
+    private static final String RESOURCE_TAG = "resource";
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String TOTAL_LOGINS =
             KEYLOAK_METER_NAME_PREFIX + "logins";
@@ -79,21 +82,28 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     static final Map<OperationType, String> ADMIN_OPERATION_TYPE_TO_NAME =
             Arrays.stream(OperationType.values())
                     .collect(Collectors.toMap( o -> o, MicrometerMetricsEventListener::buildCounterName));
-    static Map<EventType, String> USER_EVENT_TYPE_TO_NAME =
+    static final Map<EventType, String> USER_EVENT_TYPE_TO_NAME =
             Arrays.stream(EventType.values()).filter(o -> !NON_GENERIC_EVENT_TYPES.contains(o))
                     .collect(Collectors.toMap(e -> e, MicrometerMetricsEventListener::buildCounterName));
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(this::recordGenericAdminEvent, this::recordEvent);
     private final MeterRegistry meterRegistry = Metrics.globalRegistry;
+    private final EnumSet<EventType> includedEvents;
+    private final boolean adminEventEnabled;
 
-    public MicrometerMetricsEventListener(KeycloakSession session) {
+    public MicrometerMetricsEventListener(KeycloakSession session, EnumSet<EventType> includedEvents,
+                                          boolean adminEventEnabled) {
         session.getTransactionManager().enlistAfterCompletion(tx);
+        this.includedEvents = includedEvents;
+        this.adminEventEnabled = adminEventEnabled;
     }
 
     @Override
     public void onEvent(Event event) {
-        tx.addEvent(event);
+        if (includedEvents.contains(event.getType())) {
+            tx.addEvent(event);
+        }
     }
 
     private void recordEvent(Event event) {
@@ -137,89 +147,115 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        tx.addAdminEvent(event, includeRepresentation);
+        if (adminEventEnabled) {
+            tx.addAdminEvent(event, includeRepresentation);
+        }
     }
 
     private void recordGenericEvent(final Event event) {
         meterRegistry.counter(USER_EVENT_TYPE_TO_NAME.get(event.getType()),
-                        REALM_TAG, nullToEmpty(event.getRealmName())).increment();
+                REALM_TAG, nullToEmpty(event.getRealmName())).increment();
     }
 
     private void recordGenericAdminEvent(final AdminEvent event, boolean includeRepresentation) {
         logger.debugf("Received admin event of type %s (%s) in realm %s",
                 event.getOperationType().name(), event.getResourceType().name(), event.getRealmName());
         meterRegistry.counter(ADMIN_OPERATION_TYPE_TO_NAME.get(event.getOperationType()),
-                REALM_TAG, nullToEmpty(event.getRealmName()), "resource", event.getResourceType().name())
-                .increment();
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                RESOURCE_TAG, event.getResourceType().name()).increment();
     }
 
     private void recordLogin(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
-        meterRegistry.counter(TOTAL_LOGINS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_LOGINS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
     private void recordLoginError(final Event event) {
         final String provider = getIdentityProvider(event);
         String clientId = getErrorClientId(event);
-        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, clientId).increment();
-        meterRegistry.counter(TOTAL_FAILED_LOGIN_ATTEMPTS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, clientId,
+        meterRegistry.counter(TOTAL_LOGINS_ATTEMPTS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, clientId).increment();
+        meterRegistry.counter(TOTAL_FAILED_LOGIN_ATTEMPTS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, clientId,
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void recordRegistration(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_REGISTRATIONS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_REGISTRATIONS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
     private void recordRegistrationError(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_REGISTRATIONS_ERRORS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId()),
+        meterRegistry.counter(TOTAL_REGISTRATIONS_ERRORS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId()),
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void recordClientLogin(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_CLIENT_LOGINS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_CLIENT_LOGINS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
     private void recordClientLoginError(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_FAILED_CLIENT_LOGIN_ATTEMPTS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, getErrorClientId(event),
+        meterRegistry.counter(TOTAL_FAILED_CLIENT_LOGIN_ATTEMPTS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, getErrorClientId(event),
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void recordRefreshToken(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_REFRESH_TOKENS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_REFRESH_TOKENS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
     private void recordRefreshTokenError(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_REFRESH_TOKENS_ERRORS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, getErrorClientId(event),
+        meterRegistry.counter(TOTAL_REFRESH_TOKENS_ERRORS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, getErrorClientId(event),
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void recordCodeToToken(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_CODE_TO_TOKENS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
+        meterRegistry.counter(TOTAL_CODE_TO_TOKENS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
     }
 
     private void recordCodeToTokenError(final Event event) {
         final String provider = getIdentityProvider(event);
-        meterRegistry.counter(TOTAL_CODE_TO_TOKENS_ERRORS, REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider, CLIENT_ID_TAG, getErrorClientId(event),
+        meterRegistry.counter(TOTAL_CODE_TO_TOKENS_ERRORS,
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, provider,
+                CLIENT_ID_TAG, getErrorClientId(event),
                 ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
