@@ -202,6 +202,8 @@ The client libraries are these artifacts:
 
 It is possible that in the future, some more libraries will be included.
 
+The client libraries are supported with Java 8, so it is possible to use them with the client applications deployed on the older application servers.
+
 == Compatibility of the client libraries with the server
 
 Beginning with this release, we are testing and supporting client libraries with the same server version and a few previous major server versions.
