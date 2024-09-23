@@ -1302,6 +1302,14 @@
                 <scope>provided</scope>
             </dependency>
 
+            <!-- Added by vunet -->
+            <!-- Remove when quarkus.build.version is updated by upstream -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.25.5</version> <!-- https://github.com/keycloak/keycloak/issues/33156 -->
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
