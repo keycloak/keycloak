@@ -86,13 +86,12 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     @Test
-    public void shouldCorrectlyCountLoginAttemptsForSuccessfulAndFailedAttempts() {
+    public void shouldCorrectlyCountLoginAndLoginError() {
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             // with LOGIN event
             final Event login1 = createEvent(EventType.LOGIN, DEFAULT_REALM_NAME, "THE_CLIENT_ID");
             getMicrometerMetricsEventListener(session).onEvent(login1);
         });
-        assertMetric("keycloak.event.login.attempt", 1, "provider", "keycloak", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
         assertMetric("keycloak.event.login", 1, "provider", "keycloak", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -100,7 +99,6 @@ public class MicrometerMetricsEventListenerTest {
             final Event event2 = createEvent(EventType.LOGIN_ERROR, DEFAULT_REALM_NAME, "THE_CLIENT_ID", "user_not_found");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event.login.attempt", 2, "provider", "keycloak", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
         assertMetric("keycloak.event.login.error", 1, "provider", "keycloak", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 

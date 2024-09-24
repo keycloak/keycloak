@@ -27,7 +27,6 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Arrays;
@@ -49,9 +48,6 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "event.";
-    private static final String LOGIN_COUNTER_NAME = EVENT_PREFIX + "login";
-    private static final String LOGIN_ATTEMPT_COUNTER_NAME = EVENT_PREFIX + "login.attempt";
-    private static final String LOGIN_ERROR_COUNTER_NAME = EVENT_PREFIX + "login.error";
     private static final String ADMIN_EVENT_COUNTER_NAME = KEYLOAK_METER_NAME_PREFIX + "admin.event";
 
     private static final Map<EventType, String> EVENT_TYPE_TO_NAME =
@@ -84,17 +80,13 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
                 event.getType().name(), event.getRealmName());
         switch (event.getType()) {
             case LOGIN:
-                countLogin(event);
-                break;
-            case LOGIN_ERROR:
-                countLoginError(event);
-                break;
             case CLIENT_LOGIN:
             case REGISTER:
             case REFRESH_TOKEN:
             case CODE_TO_TOKEN:
                 countRealmProviderClientIdTagsFromEvent(event);
                 break;
+            case LOGIN_ERROR:
             case CLIENT_LOGIN_ERROR:
             case REGISTER_ERROR:
             case REFRESH_TOKEN_ERROR:
@@ -125,32 +117,6 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 RESOURCE_TAG, event.getResourceType().name(),
                 OPERATION_TAG, event.getOperationType().name()).increment();
-    }
-
-    private void countLogin(final Event event) {
-        final String provider = getIdentityProvider(event);
-        meterRegistry.counter(LOGIN_ATTEMPT_COUNTER_NAME,
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider,
-                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
-        meterRegistry.counter(LOGIN_COUNTER_NAME,
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider,
-                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
-    }
-
-    private void countLoginError(final Event event) {
-        final String provider = getIdentityProvider(event);
-        String clientId = getErrorClientId(event);
-        meterRegistry.counter(LOGIN_ATTEMPT_COUNTER_NAME,
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider,
-                CLIENT_ID_TAG, clientId).increment();
-        meterRegistry.counter(LOGIN_ERROR_COUNTER_NAME,
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, provider,
-                CLIENT_ID_TAG, clientId,
-                ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void countRealmProviderClientIdTagsFromEvent(final Event event) {
