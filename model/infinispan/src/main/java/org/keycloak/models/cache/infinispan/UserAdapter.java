@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -181,7 +182,7 @@ public class UserAdapter implements CachedUserModel {
         if (updated == null) {
             Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
             Set<String> newEntries = value != null ? Set.of(value) : Collections.emptySet();
-            if (Objects.equals(oldEntries, newEntries)) {
+            if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
         }
@@ -203,7 +204,7 @@ public class UserAdapter implements CachedUserModel {
             } else {
                 newEntries = new HashSet<>(values);
             }
-            if (Objects.equals(oldEntries, newEntries)) {
+            if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
         }
