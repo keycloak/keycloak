@@ -188,10 +188,10 @@ public class IdentityProviderBean {
                         .map(FederatedIdentityModel::getIdentityProvider)
                         .collect(Collectors.toSet());
 
-                if (!federatedIdentities.isEmpty() || organizationsDisabled(realm))
+                if (!federatedIdentities.isEmpty() || organizationsDisabled(realm)) {
                     // if orgs are enabled, we don't want to return an empty set - we want the organization IDPs to be shown if those are available.
                     result = new HashSet<>(federatedIdentities);
-
+                }
             }
         }
         return result;
