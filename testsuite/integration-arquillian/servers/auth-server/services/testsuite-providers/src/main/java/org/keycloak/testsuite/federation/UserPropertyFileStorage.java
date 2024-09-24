@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -214,6 +215,11 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public int getUsersCount(RealmModel realm) {
         return userPasswords.size();
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        return 0;
     }
 
 //    @Override

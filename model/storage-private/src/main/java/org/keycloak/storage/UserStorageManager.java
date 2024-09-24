@@ -431,15 +431,22 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserQueryMethodsProvider) {
-                return ((UserQueryMethodsProvider)provider).getGroupMembersStream(realm, group, firstResultInQuery, maxResultsInQuery);
+                    if (provider instanceof UserQueryMethodsProvider) {
+                        return ((UserQueryMethodsProvider) provider).getGroupMembersStream(realm, group, firstResultInQuery, maxResultsInQuery);
 
-            } else if (provider instanceof UserFederatedStorageProvider) {
-                return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, firstResultInQuery, maxResultsInQuery).
-                        map(id -> getUserById(realm, id));
-           }
-            return Stream.empty();
-        }, realm, firstResult, maxResults);
+                    } else if (provider instanceof UserFederatedStorageProvider) {
+                        return ((UserFederatedStorageProvider) provider).getMembershipStream(realm, group, firstResultInQuery, maxResultsInQuery).
+                                map(id -> getUserById(realm, id));
+                    }
+                    return Stream.empty();
+                },
+                (provider, firstResultInQuery, maxResultsInQuery) -> {
+                    if (provider instanceof UserCountMethodsProvider) {
+                        return ((UserCountMethodsProvider) provider).getUsersCount(realm, Set.of(group.getId()));
+                    }
+                    return 0;
+                },
+                realm, firstResult, maxResults);
 
         return importValidation(realm, results);
     }
