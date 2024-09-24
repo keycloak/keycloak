@@ -86,19 +86,6 @@ public class MicrometerMetricsEventListenerTest {
     }
 
     @Test
-    public void shouldRegisterCountersForAllKeycloakEvents() {
-
-        MatcherAssert.assertThat(
-                "All user events registered",
-                EventType.values().length - 2,                             // -2 comes from the events that
-                is(MicrometerMetricsEventListener.EVENT_TYPE_TO_NAME.size()));   // have their own counters outside the counter name map
-        MatcherAssert.assertThat(
-                "All admin events registered",
-                OperationType.values().length,
-                is(MicrometerMetricsEventListener.ADMIN_OPERATION_TYPE_TO_NAME.size()));
-    }
-
-    @Test
     public void shouldCorrectlyCountLoginAttemptsForSuccessfulAndFailedAttempts() {
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             // with LOGIN event
@@ -375,11 +362,13 @@ public class MicrometerMetricsEventListenerTest {
 
             getMicrometerMetricsEventListener(session).onEvent(event1, false);
         });
-        assertMetric("keycloak.admin.event.action", 1, "resource", "AUTHORIZATION_SCOPE", "realm", DEFAULT_REALM_NAME);
+        assertMetric("keycloak.admin.event", 1, "resource", "AUTHORIZATION_SCOPE",
+                "realm", DEFAULT_REALM_NAME, "operation", "ACTION");
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             getMicrometerMetricsEventListener(session).onEvent(event1, false);
         });
-        assertMetric("keycloak.admin.event.action", 2, "resource", "AUTHORIZATION_SCOPE", "realm", DEFAULT_REALM_NAME);
+        assertMetric("keycloak.admin.event", 2, "resource", "AUTHORIZATION_SCOPE",
+                "realm", DEFAULT_REALM_NAME, "operation", "ACTION");
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             final AdminEvent event2 = new AdminEvent();
@@ -388,8 +377,10 @@ public class MicrometerMetricsEventListenerTest {
             event2.setRealmName(DEFAULT_REALM_NAME);
             getMicrometerMetricsEventListener(session).onEvent(event2, false);
         });
-        assertMetric("keycloak.admin.event.update", 1, "resource", "CLIENT", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.admin.event.action", 2, "resource", "AUTHORIZATION_SCOPE", "realm", DEFAULT_REALM_NAME);
+        assertMetric("keycloak.admin.event", 1, "resource", "CLIENT",
+                "realm", DEFAULT_REALM_NAME, "operation", "UPDATE");
+        assertMetric("keycloak.admin.event", 2, "resource", "AUTHORIZATION_SCOPE",
+                "realm", DEFAULT_REALM_NAME, "operation", "ACTION");
     }
 
     @Test

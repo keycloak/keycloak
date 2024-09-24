@@ -39,32 +39,28 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListener.class);
 
-    private static final EnumSet<EventType> LOGIN_EVENT_TYPES =
-            EnumSet.of(EventType.LOGIN, EventType.LOGIN_ERROR);
-
     private static final String PROVIDER_KEYCLOAK_OPENID = "keycloak";
     private static final String REALM_TAG = "realm";
     private static final String PROVIDER_TAG = "provider";
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
     private static final String RESOURCE_TAG = "resource";
+    private static final String OPERATION_TAG = "operation";
 
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "event.";
     private static final String LOGIN_COUNTER_NAME = EVENT_PREFIX + "login";
     private static final String LOGIN_ATTEMPT_COUNTER_NAME = EVENT_PREFIX + "login.attempt";
     private static final String LOGIN_ERROR_COUNTER_NAME = EVENT_PREFIX + "login.error";
-    private static final String ADMIN_EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "admin.event.";
+    private static final String ADMIN_EVENT_COUNTER_NAME = KEYLOAK_METER_NAME_PREFIX + "admin.event";
 
-    static final Map<OperationType, String> ADMIN_OPERATION_TYPE_TO_NAME =
-            Arrays.stream(OperationType.values())
-                    .collect(Collectors.toMap( o -> o, MicrometerMetricsEventListener::buildCounterName));
-    static final Map<EventType, String> EVENT_TYPE_TO_NAME =
-            Arrays.stream(EventType.values()).filter(o -> !LOGIN_EVENT_TYPES.contains(o))
+    private static final Map<EventType, String> EVENT_TYPE_TO_NAME =
+            Arrays.stream(EventType.values())
                     .collect(Collectors.toMap(e -> e, MicrometerMetricsEventListener::buildCounterName));
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(this::countRealmResourceTagsFromGenericAdminEvent, this::countEvent);
+
     private final MeterRegistry meterRegistry = Metrics.globalRegistry;
     private final EnumSet<EventType> includedEvents;
     private final boolean adminEventEnabled;
@@ -125,9 +121,10 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private void countRealmResourceTagsFromGenericAdminEvent(final AdminEvent event, boolean includeRepresentation) {
         logger.debugf("Received admin event of type %s (%s) in realm %s",
                 event.getOperationType().name(), event.getResourceType().name(), event.getRealmName());
-        meterRegistry.counter(ADMIN_OPERATION_TYPE_TO_NAME.get(event.getOperationType()),
+        meterRegistry.counter(ADMIN_EVENT_COUNTER_NAME,
                 REALM_TAG, nullToEmpty(event.getRealmName()),
-                RESOURCE_TAG, event.getResourceType().name()).increment();
+                RESOURCE_TAG, event.getResourceType().name(),
+                OPERATION_TAG, event.getOperationType().name()).increment();
     }
 
     private void countLogin(final Event event) {
@@ -189,10 +186,6 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
-    }
-
-    private static String buildCounterName(OperationType type) {
-        return ADMIN_EVENT_PREFIX + type.name().toLowerCase().replace("_", ".");
     }
 
     private static String buildCounterName(EventType type) {
