@@ -69,12 +69,12 @@ public class StartCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void warnSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
+    void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
         CLIResult result = dist.run("build");
         result.assertBuild();
 
         result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
-        result.assertMessage("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
+        result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
 
     @Test
@@ -211,12 +211,12 @@ public class StartCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testWarningWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
+    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run("build", "--features=preview");
         cliResult.assertBuild();
         dist.setEnvVar("KC_DB", "postgres");
         cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
-        cliResult.assertMessage("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
+        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
     @Test

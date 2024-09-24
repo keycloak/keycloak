@@ -302,7 +302,7 @@ The following event types are now deprecated and will be removed in a future ver
 
 = `--import-realm` option can import the master realm
 
-When running a `start` or `start-dev` command with the `--import-realm` option before the master realm exists, it will be imported if it exists in the import material. The previous behavior was that the master realm was created first, then its import skipped. 
+When running a `start` or `start-dev` command with the `--import-realm` option before the master realm exists, it will be imported if it exists in the import material. The previous behavior was that the master realm was created first, then its import skipped.
 
 = BouncyCastle FIPS updated
 
@@ -325,3 +325,7 @@ Keycloak JS now utilizes the Web Crypto API to calculate the SHA-256 digests nee
 - `createRegisterUrl()`
 
 Make sure to update your code to `await` these methods.
+
+= Stricter startup behavior for build-time options
+
+When the provided build-time options differ at startup from the values persisted in the server image during the last optimized {project_name} build, {project_name} will now fail to start. Previously, a warning message was displayed in such cases.
