@@ -109,7 +109,7 @@ export default function IdentityProvidersSection() {
       params.search = search;
     }
     const providers = await adminClient.identityProviders.find(params);
-    return sortBy(providers, ["config.guiOrder", "alias"]);
+    return sortBy(providers, "alias");
   };
 
   const navigateToCreate = (providerId: string) =>
