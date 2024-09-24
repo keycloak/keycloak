@@ -510,8 +510,8 @@ importers:
         specifier: ^15.2.4
         version: 15.2.4(rollup@4.22.0)
       '@rollup/plugin-replace':
-        specifier: ^5.0.7
-        version: 5.0.7(rollup@4.22.0)
+        specifier: ^6.0.1
+        version: 6.0.1(rollup@4.22.0)
       '@rollup/plugin-terser':
         specifier: ^0.4.4
         version: 0.4.4(rollup@4.22.0)
@@ -1002,10 +1002,6 @@ packages:
     resolution: {integrity: sha512-4Bfj15dVJdoy3RfZmmo86RK1Fwzn6SstsvK9JS+BaVKqC6QQQQyXekNaC+g+LKNgkQ+2VhGAzm6hO40AhMR3zQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/js@9.10.0':
-    resolution: {integrity: sha512-fuXtbiP5GWIn8Fz+LWoOMVf/Jxm+aajZYkhi6CuEm4SxymFM+eUWzbO9qXT+L0iCkL5+KGYMCSGxo686H19S1g==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
   '@eslint/js@9.11.0':
     resolution: {integrity: sha512-LPkkenkDqyzTFauZLLAPhIb48fj6drrfMvRGSL9tS3AcZBSVTllemLSNyCvHNNL2t797S/6DJNSIwRwXgMO/eQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1280,8 +1276,8 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/plugin-replace@5.0.7':
-    resolution: {integrity: sha512-PqxSfuorkHz/SPpyngLyg5GCEkOcee9M1bkxiVDr41Pd61mqP1PLOoDPbpl44SB2mQGKwV/In74gqQmGITOhEQ==}
+  '@rollup/plugin-replace@6.0.1':
+    resolution: {integrity: sha512-2sPh9b73dj5IxuMmDAsQWVFT7mR+yoHweBaXG2W/R8vQ+IWZlnaI7BR7J6EguVQUp1hd8Z7XuozpDjEKQAAC2Q==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -5449,8 +5445,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@9.10.0': {}
-
   '@eslint/js@9.11.0': {}
 
   '@eslint/object-schema@2.1.4': {}
@@ -5833,7 +5827,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.22.0
 
-  '@rollup/plugin-replace@5.0.7(rollup@4.22.0)':
+  '@rollup/plugin-replace@6.0.1(rollup@4.22.0)':
     dependencies:
       '@rollup/pluginutils': 5.1.0(rollup@4.22.0)
       magic-string: 0.30.11
