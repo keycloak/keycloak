@@ -45,6 +45,10 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private static final String ERROR_TAG = "error";
     private static final String RESOURCE_TAG = "resource";
     private static final String OPERATION_TAG = "operation";
+    private static final String RESULT_TAG = "result";
+    private static final String SUCCESS = "success";
+    private static final String ERROR = "error";
+    private static final String EVENT_TYPE_ERROR_SUFFIX = "_ERROR";
 
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "event.";
@@ -80,21 +84,19 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
                 event.getType().name(), event.getRealmName());
         switch (event.getType()) {
             case LOGIN:
-            case CLIENT_LOGIN:
-            case REGISTER:
-            case REFRESH_TOKEN:
-            case CODE_TO_TOKEN:
-                countRealmProviderClientIdTagsFromEvent(event);
-                break;
             case LOGIN_ERROR:
+            case CLIENT_LOGIN:
             case CLIENT_LOGIN_ERROR:
+            case REGISTER:
             case REGISTER_ERROR:
+            case REFRESH_TOKEN:
             case REFRESH_TOKEN_ERROR:
+            case CODE_TO_TOKEN:
             case CODE_TO_TOKEN_ERROR:
-                countRealmProviderClientIdErrorTagsFromEvent(event);
+                countRealmProviderClientIdResultErrorTagsFromEvent(event);
                 break;
             default:
-                countRealmTagFromEvent(event);
+                countRealmResultTagsFromEvent(event);
         }
     }
 
@@ -105,9 +107,19 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
         }
     }
 
-    private void countRealmTagFromEvent(final Event event) {
+    private void countRealmResultTagsFromEvent(final Event event) {
         meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
-                REALM_TAG, nullToEmpty(event.getRealmName())).increment();
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                RESULT_TAG, getResultCode(event)).increment();
+    }
+
+    private void countRealmProviderClientIdResultErrorTagsFromEvent(final Event event) {
+        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
+                REALM_TAG, nullToEmpty(event.getRealmName()),
+                PROVIDER_TAG, getIdentityProvider(event),
+                CLIENT_ID_TAG, getErrorClientId(event),
+                RESULT_TAG, getResultCode(event),
+                ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private void countRealmResourceTagsFromGenericAdminEvent(final AdminEvent event, boolean includeRepresentation) {
@@ -117,21 +129,6 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
                 REALM_TAG, nullToEmpty(event.getRealmName()),
                 RESOURCE_TAG, event.getResourceType().name(),
                 OPERATION_TAG, event.getOperationType().name()).increment();
-    }
-
-    private void countRealmProviderClientIdTagsFromEvent(final Event event) {
-        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, getIdentityProvider(event),
-                CLIENT_ID_TAG, nullToEmpty(event.getClientId())).increment();
-    }
-
-    private void countRealmProviderClientIdErrorTagsFromEvent(final Event event) {
-        meterRegistry.counter(EVENT_TYPE_TO_NAME.get(event.getType()),
-                REALM_TAG, nullToEmpty(event.getRealmName()),
-                PROVIDER_TAG, getIdentityProvider(event),
-                CLIENT_ID_TAG, getErrorClientId(event),
-                ERROR_TAG, nullToEmpty(event.getError())).increment();
     }
 
     private String getIdentityProvider(Event event) {
@@ -145,6 +142,13 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
         return identityProvider;
     }
 
+    private String getResultCode(Event event) {
+        return isError(event) ? ERROR : SUCCESS;
+    }
+
+    private boolean isError(Event event) {
+        return event.getType().name().endsWith(EVENT_TYPE_ERROR_SUFFIX);
+    }
     private String getErrorClientId(Event event) {
         return nullToEmpty(Errors.CLIENT_NOT_FOUND.equals(event.getError())
                 ? Errors.CLIENT_NOT_FOUND : event.getClientId());
@@ -155,7 +159,11 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     }
 
     private static String buildCounterName(EventType type) {
-        return EVENT_PREFIX + type.name().toLowerCase().replace("_", ".");
+        String name = type.name();
+        if (name.endsWith(EVENT_TYPE_ERROR_SUFFIX)) {
+            name = name.substring(0, name.length() - EVENT_TYPE_ERROR_SUFFIX.length());
+        }
+        return EVENT_PREFIX + name.toLowerCase().replace("_", ".");
     }
 
     @Override

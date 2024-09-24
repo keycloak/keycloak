@@ -37,23 +37,21 @@ The snippet below is an example of a response:
 
 # TYPE keycloak_admin_event counter
 # HELP keycloak_admin_event
-keycloak_admin_event_total{realm="master",resource="CLIENT",operation="DELETE"} 1.0
-keycloak_admin_event_total{realm="master",resource="CLIENT",operation="CREATE"} 1.0
-# TYPE keycloak_event_refresh_token counter
-# HELP keycloak_event_refresh_token
-keycloak_event_refresh_token_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
-# TYPE keycloak_event_login_error counter
-# HELP keycloak_event_login_error
-keycloak_event_login_error_total{client_id="security-admin-console",error="user_not_found",provider="keycloak",realm="master"} 1.0
-# TYPE keycloak_event_code_to_token counter
-# HELP keycloak_event_code_to_token
-keycloak_event_code_to_token_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
-# TYPE keycloak_event_login counter
-# HELP keycloak_event_login
-keycloak_event_login_total{client_id="security-admin-console",provider="keycloak",realm="master"} 1.0
+keycloak_admin_event_total{operation="CREATE",realm="master",resource="CLIENT"} 1.0
+keycloak_admin_event_total{operation="DELETE",realm="master",resource="CLIENT"} 1.0
 # TYPE keycloak_event_logout counter
 # HELP keycloak_event_logout
-keycloak_event_logout_total{realm="master"} 1.0
+keycloak_event_logout_total{realm="master",result="success"} 1.0
+# TYPE keycloak_event_code_to_token counter
+# HELP keycloak_event_code_to_token
+keycloak_event_code_to_token_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 1.0
+# TYPE keycloak_event_login counter
+# HELP keycloak_event_login
+keycloak_event_login_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 1.0
+keycloak_event_login_total{client_id="client_not_found",error="client_not_found",provider="keycloak",realm="master",result="error"} 1.0
+# TYPE keycloak_event_refresh_token counter
+# HELP keycloak_event_refresh_token
+keycloak_event_refresh_token_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 2.0
 ...
 ----
 
