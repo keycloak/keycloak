@@ -367,6 +367,7 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+            map.put("attributes", realm.getAttributes());
             map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
 

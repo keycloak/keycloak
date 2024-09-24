@@ -51,7 +51,9 @@ export const Header = () => {
       features={{ hasManageAccount: false }}
       brand={{
         href: indexHref,
-        src: joinPath(environment.resourceUrl, brandImage),
+        src: brandImage.startsWith("/")
+          ? joinPath(environment.resourceUrl, brandImage)
+          : brandImage,
         alt: t("logo"),
         className: style.brand,
       }}

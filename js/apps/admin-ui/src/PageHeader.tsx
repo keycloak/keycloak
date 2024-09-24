@@ -23,7 +23,7 @@ import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
-import useToggle from "./utils/useToggle";
+import { joinPath } from "./utils/joinPath";
 import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { useAccess } from "./context/access/Access";
 
@@ -183,10 +183,11 @@ const UserDropdown = () => {
 export const Header = () => {
   const { environment, keycloak } = useEnvironment();
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
   const picture = keycloak.tokenParsed?.picture;
-  const logo = environment.logo ? environment.logo : "/logo.svg";
+  const customLogo = realmRepresentation?.attributes?.["style.logo"];
+  const logo = customLogo || environment.logo || "/logo.svg";
   const url = useHref(toDashboard({ realm }));
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
 
@@ -199,7 +200,11 @@ export const Header = () => {
       </MastheadToggle>
       <MastheadBrand href={logoUrl}>
         <img
-          src={environment.resourceUrl + logo}
+          src={
+            logo.startsWith("/")
+              ? joinPath(environment.resourceUrl, logo)
+              : logo
+          }
           id="masthead-logo"
           alt={t("logo")}
           aria-label={t("logo")}

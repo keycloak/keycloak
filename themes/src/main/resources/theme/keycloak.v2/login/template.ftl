@@ -92,6 +92,19 @@
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <style>
+      :root {
+      <#list realm.attributes as k, v>
+        <#if k?starts_with("style")>
+          <#if k?starts_with("style.logo")>
+            --keycloak-logo-url: url('${v}');
+          <#else>
+            --pf-v5-global--${k[6..]}: ${v?no_esc};
+          </#if>
+        </#if>
+      </#list>
+      }
+    </style>
     <#if authenticationSession??>
         <script type="module">
             import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
