@@ -39,7 +39,7 @@ function defineOptions({
           file: path.join(targetDir, `${file}.mjs`),
         },
       ],
-      external: ["@noble/hashes/sha256", "jwt-decode"],
+      external: ["jwt-decode"],
     },
     // Legacy Universal Module Definition, or “UMD”, with inlined dependencies.
     {

@@ -303,3 +303,13 @@ The following event types are now deprecated and will be removed in a future ver
 = `setOrCreateChild()` method removed from JavaScript Admin Client
 
 The `groups.setOrCreateChild()` method has been removed from that JavaScript-based Admin Client. If you are still using this method then use the `createChildGroup()` or `updateChildGroup()` methods instead.
+
+= Keycloak JS methods for login are now `async`
+
+Keycloak JS now utilizes the Web Crypto API to calculate the SHA-256 digests needed to support PKCE. Due to the asynchronous nature of this API the following public methods now return a `Promise`:
+
+- `login()`
+- `createLoginUrl()`
+- `createRegisterUrl()`
+
+Make sure to update your code to `await` these methods.
