@@ -57,6 +57,15 @@
         }
       }
     </script>
+    <style>
+      :root {
+      <#list attributes as k, v>
+        <#if k?starts_with("style")>
+          --pf-v5-global--${k[6..]}: ${v?no_esc};
+        </#if>
+      </#list>
+      }
+    </style>
     <#if devServerUrl?has_content>
       <script type="module">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";

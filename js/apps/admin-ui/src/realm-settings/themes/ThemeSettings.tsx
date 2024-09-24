@@ -14,19 +14,16 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormAccess } from "../components/form/FormAccess";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { convertToFormValues } from "../util";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { convertToFormValues } from "../../util";
 
-type RealmSettingsThemesTabProps = {
+type ThemeSettingsTabProps = {
   realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
 };
 
-export const RealmSettingsThemesTab = ({
-  realm,
-  save,
-}: RealmSettingsThemesTabProps) => {
+export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   const { t } = useTranslation();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
