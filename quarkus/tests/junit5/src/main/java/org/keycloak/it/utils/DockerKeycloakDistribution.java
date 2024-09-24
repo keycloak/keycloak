@@ -18,6 +18,7 @@ import org.testcontainers.utility.LazyFuture;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,9 +105,15 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
             keycloakContainer = getKeycloakContainer();
 
+            var allArgs = new ArrayList<>(arguments);
+
+            if (!allArgs.contains("--verbose")) {
+                allArgs.add("--verbose");
+            }
+
             keycloakContainer
                     .withLogConsumer(backupConsumer)
-                    .withCommand(arguments.toArray(new String[0]))
+                    .withCommand(allArgs.toArray(new String[0]))
                     .start();
             containerId = keycloakContainer.getContainerId();
 
