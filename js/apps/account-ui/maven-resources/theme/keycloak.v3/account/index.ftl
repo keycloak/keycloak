@@ -82,6 +82,13 @@
     </#if>
     <style>
       :root {
+      <#list attributes as k, v>
+        <#if k?starts_with("style")>
+          --pf-v5-global--${k[6..]}: ${v?no_esc};
+        </#if>
+      </#list>
+      }
+    </style>
       <#assign style = style?eval>
       <#if style.light??>
         <#list style.light as k, v>
