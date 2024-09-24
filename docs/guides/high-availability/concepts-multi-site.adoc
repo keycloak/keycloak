@@ -16,7 +16,7 @@ Use this setup to provide {project_name} deployments that are able to tolerate s
 Two independent {project_name} deployments running in different sites are connected with a low latency network connection.
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
 The data is also cached in the {project_name} Infinispan caches as local caches.
-When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the replicated `work` cache.
+When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the `work` cache.
 
 In the following paragraphs and diagrams, references to deploying {jdgserver_name} apply to the external {jdgserver_name}.
 
@@ -46,14 +46,14 @@ Monitoring is necessary to detect degraded setups.
 | Seconds to minutes (depending on the database)
 
 | {project_name} node
-| Multiple {project_name} instances run in each site. If one instance fails, it takes a few seconds for the other nodes to notice the change, and some incoming requests might receive an error message or are delayed for some seconds.
+| Multiple {project_name} instances run in each site. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
 | No data loss
-| Less than one minute
+| Less than 30 seconds
 
 | {jdgserver_name} node
 | Multiple {jdgserver_name} instances run in each site. If one instance fails, it takes a few seconds for the other nodes to notice the change. Entities are stored in at least two {jdgserver_name} nodes, so a single node failure does not lead to data loss.
 | No data loss
-| Less than one minute
+| Less than 30 seconds
 
 | {jdgserver_name} cluster failure
 | If the {jdgserver_name} cluster fails in one of the sites, {project_name} will not be able to communicate with the external {jdgserver_name} on that site, and the {project_name} service will be unavailable.
@@ -83,7 +83,7 @@ Manual operations might be necessary depending on the database.
 | If none of the {project_name} nodes are available, the loadbalancer will detect the outage and redirect the traffic to the other site.
 Some requests might receive an error message until the loadbalancer detects the failure.
 | No data loss^3^
-| Less than one minute
+| Less than two minutes
 
 |===
 
@@ -121,7 +121,7 @@ A synchronously replicated database ensures that data written in one site is alw
 It also ensures that the next request will not return stale data, independent on which site it is served.
 
 Why synchronous {jdgserver_name} replication?::
-A synchronously replicated {jdgserver_name} ensures that sessions created, updated and deleted in one site are always available on the other site after a site failure and no data is lost.
+A synchronously replicated {jdgserver_name} ensures that cached data in one site are always available on the other site after a site failure and no data is lost.
 It also ensures that the next request will not return stale data, independent on which site it is served.
 
 Why is a low-latency network between sites needed?::
@@ -134,7 +134,8 @@ However, as the two sites would never be fully up-to-date, this setup could lead
 This would include:
 +
 --
-* Lost logouts, meaning sessions are logged in one site although they are logged out in the other site at the point of failure when using an asynchronous {jdgserver_name} replication of sessions.
+// TODO storing sessions in Infinispan is experimental. Add this bullet point back when we support it
+//* Lost logouts, meaning sessions are logged in one site although they are logged out in the other site at the point of failure when using an asynchronous {jdgserver_name} replication of sessions.
 * Lost changes leading to users being able to log in with an old password because database changes are not replicated to the other site at the point of failure when using an asynchronous database.
 * Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failure to the other site when using an asynchronous {jdgserver_name} replication.
 --
