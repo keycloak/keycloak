@@ -33,8 +33,9 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -67,7 +68,7 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organization representation")
     public OrganizationRepresentation get() {
-        return Organizations.toRepresentation(organization);
+        return ModelToRepresentation.toRepresentation(organization);
     }
 
     @DELETE
@@ -84,7 +85,7 @@ public class OrganizationResource {
     @Operation(summary = "Updates the organization")
     public Response update(OrganizationRepresentation organizationRep) {
         try {
-            Organizations.toModel(organizationRep, organization);
+            RepresentationToModel.toModel(organizationRep, organization);
             return Response.noContent().build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);

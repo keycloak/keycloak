@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.admin.resource;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -49,11 +48,9 @@ import org.keycloak.models.UserModel;
 
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -193,7 +190,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getUser(id);
 
-        return provider.getByMember(member).map(Organizations::toRepresentation);
+        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
     }
 
     @Path("count")

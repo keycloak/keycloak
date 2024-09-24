@@ -31,14 +31,26 @@ import org.keycloak.provider.Provider;
 public interface OrganizationProvider extends Provider {
 
     /**
-     * Creates a new organization with given {@code name} to the realm.
+     * Creates a new organization with given {@code name} and {@code alias} to the realm.
      * The internal ID of the organization will be created automatically.
-     * @param name String name of the organization.
+     * @param name the name of the organization.
      * @param alias the alias of the organization. If not set, defaults to the value set to {@code name}. Once set, the alias is immutable.
      * @throws ModelDuplicateException If there is already an organization with the given name or alias
      * @return Model of the created organization.
      */
-    OrganizationModel create(String name, String alias);
+    default OrganizationModel create(String name, String alias) {
+        return create(null, name, alias);
+    }
+
+    /**
+     * Creates a new organization with given {@code id}, {@code name}, and {@code alias} to the realm
+     * @param id the id of the organization.
+     * @param name the name of the organization.
+     * @param alias the alias of the organization. If not set, defaults to the value set to {@code name}. Once set, the alias is immutable.
+     * @throws ModelDuplicateException If there is already an organization with the given name or alias
+     * @return Model of the created organization.
+     */
+    OrganizationModel create(String id, String name, String alias);
 
     /**
      * Returns a {@link OrganizationModel} by its {@code id};

@@ -42,6 +42,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -96,9 +98,7 @@ public class OrganizationsResource {
 
         try {
             OrganizationModel model = provider.create(organization.getName(), organization.getAlias());
-
-            Organizations.toModel(organization, model);
-
+            RepresentationToModel.toModel(organization, model);
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
@@ -137,9 +137,9 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(Organizations::toBriefRepresentation);
+            return provider.getAllStream(attributes, first, max).map(ModelToRepresentation::toBriefRepresentation);
         } else {
-            return provider.getAllStream(search, exact, first, max).map(Organizations::toBriefRepresentation);
+            return provider.getAllStream(search, exact, first, max).map(ModelToRepresentation::toBriefRepresentation);
         }
     }
 
