@@ -130,7 +130,7 @@ public class ExportUtils {
                     List<RoleRepresentation> currentAppRoleReps = exportRoles(currentAppRoles);
                     clientRolesReps.put(client.getClientId(), currentAppRoleReps);
                 }
-                if (clientRolesReps.size() > 0) {
+                if (!clientRolesReps.isEmpty()) {
                     rolesRep.setClient(clientRolesReps);
                 }
             }
@@ -156,11 +156,7 @@ public class ExportUtils {
                     } else {
                         ClientModel app = (ClientModel) scope.getContainer();
                         String appName = app.getClientId();
-                        List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.get(appName);
-                        if (currentAppScopes == null) {
-                            currentAppScopes = new ArrayList<>();
-                            clientScopeReps.put(appName, currentAppScopes);
-                        }
+                        List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.computeIfAbsent(appName, k -> new ArrayList<>());
 
                         ScopeMappingRepresentation currentClientScope = null;
                         for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
@@ -193,11 +189,7 @@ public class ExportUtils {
                 } else {
                     ClientModel app = (ClientModel)scope.getContainer();
                     String appName = app.getClientId();
-                    List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.get(appName);
-                    if (currentAppScopes == null) {
-                        currentAppScopes = new ArrayList<>();
-                        clientScopeReps.put(appName, currentAppScopes);
-                    }
+                    List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.computeIfAbsent(appName, k -> new ArrayList<>());
 
                     ScopeMappingRepresentation currentClientTemplateScope = null;
                     for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
@@ -216,7 +208,7 @@ public class ExportUtils {
             }
         });
 
-        if (clientScopeReps.size() > 0) {
+        if (!clientScopeReps.isEmpty()) {
             rep.setClientScopeMappings(clientScopeReps);
         }
 
@@ -226,7 +218,7 @@ public class ExportUtils {
                     .map(user -> exportUser(session, realm, user, options, internal))
                     .collect(Collectors.toList());
 
-            if (users.size() > 0) {
+            if (!users.isEmpty()) {
                 rep.setUsers(users);
             }
 
@@ -234,7 +226,7 @@ public class ExportUtils {
             if (userFederatedStorageProvider != null) {
                 List<UserRepresentation> federatedUsers = userFederatedStorage(session).getStoredUsersStream(realm, 0, -1)
                         .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
-                if (federatedUsers.size() > 0) {
+                if (!federatedUsers.isEmpty()) {
                     rep.setFederatedUsers(federatedUsers);
                 }
             }
@@ -251,7 +243,7 @@ public class ExportUtils {
                 }
             }
 
-            if (users.size() > 0) {
+            if (!users.isEmpty()) {
                 rep.setUsers(users);
             }
         }
@@ -265,32 +257,19 @@ public class ExportUtils {
 
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            orgProvider.getAllStream().map(m -> {
-                OrganizationRepresentation org = new OrganizationRepresentation();
+            orgProvider.getAllStream().map(model -> {
+                OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model);
 
-                org.setName(m.getName());
-                org.setAlias(m.getAlias());
-                org.setEnabled(m.isEnabled());
-                org.setDescription(m.getDescription());
-                m.getDomains().map(d -> {
-                    OrganizationDomainRepresentation domain = new OrganizationDomainRepresentation();
-
-                    domain.setName(d.getName());
-                    domain.setVerified(d.isVerified());
-
-                    return domain;
-                }).forEach(org::addDomain);
-
-                orgProvider.getMembersStream(m, null, null, null, null)
+                orgProvider.getMembersStream(model, null, null, null, null)
                         .forEach(user -> {
                             MemberRepresentation member = new MemberRepresentation();
                             member.setUsername(user.getUsername());
-                            member.setMembershipType(orgProvider.isManagedMember(m, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+                            member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
 
                             org.addMember(member);
                         });
 
-                orgProvider.getIdentityProviders(m)
+                orgProvider.getIdentityProviders(model)
                         .map(b -> {
                             IdentityProviderRepresentation broker = new IdentityProviderRepresentation();
                             broker.setAlias(b.getAlias());

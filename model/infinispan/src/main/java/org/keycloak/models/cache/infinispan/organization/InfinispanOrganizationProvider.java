@@ -57,9 +57,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name, String alias) {
+    public OrganizationModel create(String id, String name, String alias) {
         registerCountInvalidation();
-        return orgDelegate.create(name, alias);
+        return orgDelegate.create(id, name, alias);
     }
 
     @Override

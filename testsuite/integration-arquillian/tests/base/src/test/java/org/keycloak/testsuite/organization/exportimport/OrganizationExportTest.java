@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.organization.exportimport;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -42,6 +46,7 @@ import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -58,7 +63,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     @Test
     public void testExport() {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
-        List<String> expectedOrganizations = new ArrayList<>();
+        List<OrganizationRepresentation> expectedOrganizations = new ArrayList<>();
         Map<String, List<String>> expectedManagedMembers = new HashMap<>();
         Map<String, List<String>> expectedUnmanagedMembers = new HashMap<>();
 
@@ -70,7 +75,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             OrganizationRepresentation orgRep = createOrganization(testRealm(), getCleanup(), "org-" + i, broker, domain);
             OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
 
-            expectedOrganizations.add(orgRep.getName());
+            expectedOrganizations.add(orgRep);
 
             for (int j = 0; j < 3; j++) {
                 UserRepresentation member = addMember(organization, "realmuser-" + j + "@" + domain);
@@ -109,8 +114,27 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
         assertEquals(expectedOrganizations.size(), organizations.size());
-        assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
-        assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        // id, name, alias, and description should have all been preserved.
+        assertThat(organizations.stream().map(OrganizationRepresentation::getId).toList(),
+                Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getId).toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(),
+                Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getName).toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(),
+                Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getAlias).toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getDescription).toList(),
+                Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getDescription).toArray()));
+
+        // the endpoint search method returns brief representations of orgs - to get full rep we need to fetch by id.
+        for (OrganizationRepresentation organization : organizations) {
+            OrganizationRepresentation fullRep = testRealm().organizations().get(organization.getId()).toRepresentation();
+            // attributes should have been imported.
+            assertThat(fullRep.getAttributes(), notNullValue());
+            assertThat(fullRep.getAttributes().keySet(), hasSize(1));
+            assertThat(fullRep.getAttributes().keySet(), hasItem("key"));
+            List<String> attrValues = fullRep.getAttributes().get("key");
+            assertThat(attrValues, notNullValue());
+            assertThat(attrValues, containsInAnyOrder("value1", "value2"));
+        }
 
         for (OrganizationRepresentation orgRep : organizations) {
             OrganizationResource organization = testRealm().organizations().get(orgRep.getId());

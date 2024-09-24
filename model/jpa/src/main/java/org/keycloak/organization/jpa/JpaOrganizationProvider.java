@@ -55,6 +55,7 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
@@ -76,7 +77,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name, String alias) {
+    public OrganizationModel create(String id, String name, String alias) {
         if (StringUtil.isBlank(name)) {
             throw new ModelValidationException("Name can not be null");
         }
@@ -98,8 +99,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelDuplicateException("A organization with the same alias already exists");
         }
 
-        RealmModel realm = getRealm();
-        OrganizationAdapter adapter = new OrganizationAdapter(session, realm, this);
+        OrganizationEntity entity = new OrganizationEntity();
+        entity.setId(id != null ? id : KeycloakModelUtils.generateId());
+        entity.setRealmId(getRealm().getId());
+        OrganizationAdapter adapter = new OrganizationAdapter(session, getRealm(), entity, this);
 
         try {
             session.getContext().setOrganization(adapter);
