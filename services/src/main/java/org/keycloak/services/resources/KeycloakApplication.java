@@ -20,9 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.config.ConfigProviderFactory;
-import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -151,14 +149,18 @@ public abstract class KeycloakApplication extends Application {
                 // TODO up here ^^
 
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                bootstrapState.exportImportManager = new ExportImportManager(session);
+                var exportImportManager = bootstrapState.exportImportManager = new ExportImportManager(session);
                 bootstrapState.newInstall = applianceBootstrap.isNewInstall();
                 if (bootstrapState.newInstall) {
-                    if (!(bootstrapState.exportImportManager.isRunImport() && bootstrapState.exportImportManager.isImportMasterIncluded()) 
-                        && !(getImportDirectory().filter(bootstrapState.exportImportManager::isImportMasterIncludedAtStartup).isPresent())) {
+                    // check if this is an import command that is importing the master realm
+                    boolean importingMaster = exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded();
+                    // check if this is a start command that is importing the master realm
+                    importingMaster |= getImportDirectory().filter(exportImportManager::isImportMasterIncludedAtStartup).isPresent();
+                    if (!importingMaster) {
                         applianceBootstrap.createMasterRealm();
                     }
-                    runImports(bootstrapState.exportImportManager);
+                    // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
+                    runImports(exportImportManager);
                     createTemporaryAdmin(session);
                 } 
             }
@@ -206,7 +208,6 @@ public abstract class KeycloakApplication extends Application {
     public void importRealms(ExportImportManager exportImportManager) {
         getImportDirectory().ifPresent(dir -> {
             try {
-                System.setProperty(ExportImportConfig.STRATEGY, Strategy.IGNORE_EXISTING.toString());
                 exportImportManager.runImportAtStartup(dir);
             } catch (IOException cause) {
                 throw new RuntimeException("Failed to import realms", cause);

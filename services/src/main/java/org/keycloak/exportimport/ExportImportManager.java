@@ -118,8 +118,8 @@ public class ExportImportManager {
     }
     
     public void runImportAtStartup(String dir) throws IOException {
+        System.setProperty(ExportImportConfig.STRATEGY, Strategy.IGNORE_EXISTING.toString());
         ExportImportConfig.setReplacePlaceholders(true);
-        ExportImportConfig.setAction("import");
         
         importAtStartup(dir).map(Supplier::get).forEach(ip -> {
             try {
@@ -131,9 +131,6 @@ public class ExportImportManager {
     }
 
     private Stream<Supplier<ImportProvider>> importAtStartup(String dir) {
-        ExportImportConfig.setReplacePlaceholders(true);
-        ExportImportConfig.setAction("import");
-
         Stream<ProviderFactory> factories = sessionFactory.getProviderFactoriesStream(ImportProvider.class);
 
         return factories.flatMap(factory -> {
