@@ -74,7 +74,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.0",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.22.0",
+    "rollup": "^4.22.4",
     "shx": "^0.3.4"
   },
   "dependencies": {
