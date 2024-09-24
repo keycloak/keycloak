@@ -1,24 +1,25 @@
 import type { AppRouteObject } from "../routes";
+import { AddAttributeRoute } from "./routes/AddAttribute";
+import { AddClientPolicyRoute } from "./routes/AddClientPolicy";
+import { AddClientProfileRoute } from "./routes/AddClientProfile";
+import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
+import { AddExecutorRoute } from "./routes/AddExecutor";
+import { AttributeRoute } from "./routes/Attribute";
+import { ClientPoliciesRoute } from "./routes/ClientPolicies";
+import { ClientProfileRoute } from "./routes/ClientProfile";
+import { EditAttributesGroupRoute } from "./routes/EditAttributesGroup";
+import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
+import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
+import { ExecutorRoute } from "./routes/Executor";
 import { KeyProviderFormRoute } from "./routes/KeyProvider";
+import { KeysRoute } from "./routes/KeysTab";
+import { NewAttributesGroupRoute } from "./routes/NewAttributesGroup";
 import {
   RealmSettingsRoute,
   RealmSettingsRouteWithTab,
 } from "./routes/RealmSettings";
-import { ClientPoliciesRoute } from "./routes/ClientPolicies";
-import { AddClientProfileRoute } from "./routes/AddClientProfile";
-import { ClientProfileRoute } from "./routes/ClientProfile";
-import { AddExecutorRoute } from "./routes/AddExecutor";
-import { ExecutorRoute } from "./routes/Executor";
-import { AddClientPolicyRoute } from "./routes/AddClientPolicy";
-import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
-import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
-import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
+import { ThemeTabRoute } from "./routes/ThemesTab";
 import { UserProfileRoute } from "./routes/UserProfile";
-import { AddAttributeRoute } from "./routes/AddAttribute";
-import { KeysRoute } from "./routes/KeysTab";
-import { AttributeRoute } from "./routes/Attribute";
-import { NewAttributesGroupRoute } from "./routes/NewAttributesGroup";
-import { EditAttributesGroupRoute } from "./routes/EditAttributesGroup";
 
 const routes: AppRouteObject[] = [
   RealmSettingsRoute,
@@ -39,6 +40,7 @@ const routes: AppRouteObject[] = [
   AttributeRoute,
   NewAttributesGroupRoute,
   EditAttributesGroupRoute,
+  ThemeTabRoute,
 ];
 
 export default routes;
