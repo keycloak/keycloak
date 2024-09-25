@@ -34,11 +34,9 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_SERVER_ENABLED)
                         .to("quarkus.http.host-enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
