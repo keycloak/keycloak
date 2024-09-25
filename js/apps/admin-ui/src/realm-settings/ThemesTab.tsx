@@ -79,15 +79,24 @@ export const RealmSettingsThemesTab = ({
                 data-testid="select-login-theme"
                 aria-label={t("selectLoginTheme")}
               >
-                {themeTypes.login.map((theme, idx) => (
+                {[
                   <SelectOption
-                    selected={theme.name === field.value}
-                    key={`login-theme-${idx}`}
-                    value={theme.name}
+                    selected={"" === field.value}
+                    key="choose"
+                    value=""
                   >
-                    {theme.name}
-                  </SelectOption>
-                ))}
+                    {t("choose")}
+                  </SelectOption>,
+                  ...themeTypes.login.map((theme, idx) => (
+                    <SelectOption
+                      selected={theme.name === field.value}
+                      key={`login-theme-${idx}`}
+                      value={theme.name}
+                    >
+                      {theme.name}
+                    </SelectOption>
+                  )),
+                ]}
               </KeycloakSelect>
             )}
           />
@@ -121,17 +130,26 @@ export const RealmSettingsThemesTab = ({
                 placeholderText={t("selectATheme")}
                 data-testid="select-account-theme"
               >
-                {themeTypes.account
-                  .filter((theme) => theme.name !== "base")
-                  .map((theme, idx) => (
-                    <SelectOption
-                      selected={theme.name === field.value}
-                      key={`account-theme-${idx}`}
-                      value={theme.name}
-                    >
-                      {t(theme.name)}
-                    </SelectOption>
-                  ))}
+                {[
+                  <SelectOption
+                    selected={"" === field.value}
+                    key="choose"
+                    value=""
+                  >
+                    {t("choose")}
+                  </SelectOption>,
+                  ...themeTypes.account
+                    .filter((theme) => theme.name !== "base")
+                    .map((theme, idx) => (
+                      <SelectOption
+                        selected={theme.name === field.value}
+                        key={`account-theme-${idx}`}
+                        value={theme.name}
+                      >
+                        {t(theme.name)}
+                      </SelectOption>
+                    )),
+                ]}
               </KeycloakSelect>
             )}
           />
@@ -165,17 +183,26 @@ export const RealmSettingsThemesTab = ({
                 data-testid="select-admin-theme"
                 aria-label={t("selectAdminTheme")}
               >
-                {themeTypes.admin
-                  .filter((theme) => theme.name !== "base")
-                  .map((theme, idx) => (
-                    <SelectOption
-                      selected={theme.name === field.value}
-                      key={`admin-theme-${idx}`}
-                      value={theme.name}
-                    >
-                      {t(theme.name)}
-                    </SelectOption>
-                  ))}
+                {[
+                  <SelectOption
+                    selected={"" === field.value}
+                    key="choose"
+                    value=""
+                  >
+                    {t("choose")}
+                  </SelectOption>,
+                  ...themeTypes.admin
+                    .filter((theme) => theme.name !== "base")
+                    .map((theme, idx) => (
+                      <SelectOption
+                        selected={theme.name === field.value}
+                        key={`admin-theme-${idx}`}
+                        value={theme.name}
+                      >
+                        {t(theme.name)}
+                      </SelectOption>
+                    )),
+                ]}
               </KeycloakSelect>
             )}
           />
@@ -209,15 +236,24 @@ export const RealmSettingsThemesTab = ({
                 data-testid="select-email-theme"
                 aria-label={t("selectEmailTheme")}
               >
-                {themeTypes.email.map((theme, idx) => (
+                {[
                   <SelectOption
-                    selected={theme.name === field.value}
-                    key={`email-theme-${idx}`}
-                    value={theme.name}
+                    selected={"" === field.value}
+                    key="choose"
+                    value=""
                   >
-                    {t(theme.name)}
-                  </SelectOption>
-                ))}
+                    {t("choose")}
+                  </SelectOption>,
+                  ...themeTypes.email.map((theme, idx) => (
+                    <SelectOption
+                      selected={theme.name === field.value}
+                      key={`email-theme-${idx}`}
+                      value={theme.name}
+                    >
+                      {t(theme.name)}
+                    </SelectOption>
+                  )),
+                ]}
               </KeycloakSelect>
             )}
           />
