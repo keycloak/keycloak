@@ -390,7 +390,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    @Disabled
+    //@Disabled
     public void testPodNamePropagation() {
         var kc = getTestKeycloakDeployment(true);
         var featureSpec = new FeatureSpec();
