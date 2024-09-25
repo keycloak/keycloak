@@ -575,7 +575,7 @@ declare class Keycloak {
 	* Returns the URL to login form.
 	* @param options Supports same options as Keycloak#login.
 	*/
-	createLoginUrl(options?: KeycloakLoginOptions): string;
+	createLoginUrl(options?: KeycloakLoginOptions): Promise<string>;
 
 	/**
 	* Returns the URL to logout the user.
@@ -587,7 +587,7 @@ declare class Keycloak {
 	* Returns the URL to registration page.
 	* @param options The options used for creating the registration URL.
 	*/
-	createRegisterUrl(options?: KeycloakRegisterOptions): string;
+	createRegisterUrl(options?: KeycloakRegisterOptions): Promise<string>;
 
 	/**
 	* Returns the URL to the Account Management Console.

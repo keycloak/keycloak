@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { sha256 } from '@noble/hashes/sha256';
 import { jwtDecode } from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
@@ -200,9 +199,9 @@ function Keycloak (config) {
                 });
             }
 
-            var checkSsoSilently = function() {
+            var checkSsoSilently = async function() {
                 var ifrm = document.createElement("iframe");
-                var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
+                var src = await kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
                 ifrm.setAttribute("src", src);
                 ifrm.setAttribute("sandbox", "allow-storage-access-by-user-activation allow-scripts allow-same-origin");
                 ifrm.setAttribute("title", "keycloak-silent-check-sso");
@@ -371,13 +370,13 @@ function Keycloak (config) {
         return String.fromCharCode.apply(null, chars);
     }
 
-    function generatePkceChallenge(pkceMethod, codeVerifier) {
+    async function generatePkceChallenge(pkceMethod, codeVerifier) {
         if (pkceMethod !== "S256") {
             throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${pkceMethod}'.`);
         }
 
         // hash codeVerifier, then encode as url-safe base64 without padding
-        const hashBytes = sha256(codeVerifier);
+        const hashBytes = new Uint8Array(await sha256Digest(codeVerifier));
         const encodedHash = bytesToBase64(hashBytes)
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
@@ -395,7 +394,7 @@ function Keycloak (config) {
         return JSON.stringify(claims);
     }
 
-    kc.createLoginUrl = function(options) {
+    kc.createLoginUrl = async function(options) {
         var state = createUUID();
         var nonce = createUUID();
 
@@ -473,11 +472,15 @@ function Keycloak (config) {
         }
 
         if (kc.pkceMethod) {
-            var codeVerifier = generateCodeVerifier(96);
-            callbackState.pkceCodeVerifier = codeVerifier;
-            var pkceChallenge = generatePkceChallenge(kc.pkceMethod, codeVerifier);
-            url += '&code_challenge=' + pkceChallenge;
-            url += '&code_challenge_method=' + kc.pkceMethod;
+            if (!globalThis.isSecureContext) {
+                logWarn('[KEYCLOAK] PKCE is only supported in secure contexts (HTTPS)');
+            } else {
+                var codeVerifier = generateCodeVerifier(96);
+                callbackState.pkceCodeVerifier = codeVerifier;
+                var pkceChallenge = await generatePkceChallenge(kc.pkceMethod, codeVerifier);
+                url += '&code_challenge=' + pkceChallenge;
+                url += '&code_challenge_method=' + kc.pkceMethod;
+            }
         }
 
         callbackStorage.add(callbackState);
@@ -511,12 +514,12 @@ function Keycloak (config) {
         return adapter.register(options);
     }
 
-    kc.createRegisterUrl = function(options) {
+    kc.createRegisterUrl = async function(options) {
         if (!options) {
             options = {};
         }
         options.action = 'register';
-        return kc.createLoginUrl(options);
+        return await kc.createLoginUrl(options);
     }
 
     kc.createAccountUrl = function(options) {
@@ -1315,8 +1318,8 @@ function Keycloak (config) {
     function loadAdapter(type) {
         if (!type || type == 'default') {
             return {
-                login: function(options) {
-                    window.location.assign(kc.createLoginUrl(options));
+                login: async function(options) {
+                    window.location.assign(await kc.createLoginUrl(options));
                     return createPromise().promise;
                 },
 
@@ -1428,11 +1431,11 @@ function Keycloak (config) {
             }
 
             return {
-                login: function(options) {
+                login: async function(options) {
                     var promise = createPromise();
 
                     var cordovaOptions = createCordovaOptions(options);
-                    var loginUrl = kc.createLoginUrl(options);
+                    var loginUrl = await kc.createLoginUrl(options);
                     var ref = cordovaOpenWindowWrapper(loginUrl, '_blank', cordovaOptions);
                     var completed = false;
 
@@ -1550,9 +1553,9 @@ function Keycloak (config) {
             loginIframe.enable = false;
 
             return {
-                login: function(options) {
+                login: async function(options) {
                     var promise = createPromise();
-                    var loginUrl = kc.createLoginUrl(options);
+                    var loginUrl = await kc.createLoginUrl(options);
 
                     universalLinks.subscribe('keycloak', function(event) {
                         universalLinks.unsubscribe('keycloak');
@@ -1748,8 +1751,22 @@ function Keycloak (config) {
 
 export default Keycloak;
 
-// See: https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+/**
+ * @param {ArrayBuffer} bytes
+ * @see https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+ */
 function bytesToBase64(bytes) {
     const binString = String.fromCodePoint(...bytes);
     return btoa(binString);
+}
+
+/**
+ * @param {string} message
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#basic_example
+ */
+async function sha256Digest(message) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return hash;
 }
