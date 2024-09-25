@@ -112,7 +112,7 @@ Starting with {project_name} 26, the Organizations feature is fully supported.
 
 Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
 
-There is also new key provider `ecdh-generated` for generating realm keys and the support for ECDH algorithms is added into Java KeyStore provider.
+Also, a new key provider, `ecdh-generated`, is available to generate realm keys and support for ECDH algorithms is added into the Java KeyStore provider.
 
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
@@ -120,8 +120,8 @@ endif::[]
 
 = DPoP improvements
 
-There are improvements in the DPoP (OAuth 2.0 Demonstrating Proof-of-Possession) preview feature. The DPoP is now supported for all grant types.
-Until the previous release, it was supported only for the `authorization_code` grant type. There is also support for the DPoP token type on the UserInfo endpoint.
+The DPoP (OAuth 2.0 Demonstrating Proof-of-Possession) preview feature has improvements. The DPoP is now supported for all grant types.
+With previous releases, this feature was supported only for the `authorization_code` grant type. Support also exists for the DPoP token type on the UserInfo endpoint.
 
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
