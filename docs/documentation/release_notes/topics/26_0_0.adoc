@@ -259,6 +259,10 @@ There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing
 
 The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
 
+= The `https-trust-store-*` options have been undeprecated
+
+Based on the community feedback, we decided to undeprecate `https-trust-store-*` options to allow better granularity in trusted certificates.
+
 = Lightweight access tokens for Admin REST API
 
 Lightweight access tokens can now be used on the admin REST API. The `security-admin-console` and `admin-cli` clients are now using lightweight access tokens by default, so “Always Use Lightweight Access Token” and “Full Scope Allowed” are now enabled on these two clients. However, the behavior in the admin console should effectively remain the same. Be cautious if you have made changes to these two clients and if you are using them for other purposes.
