@@ -129,8 +129,8 @@ endif::[]
 
 = Client Attribute condition in Client Policies
 
-The condition based on the client-attribute was added into Client Policies. This condition can be used to specify that it is applied for the clients
-with the specified client attribute having specified value. It is possible to use either AND or OR condition when evaluating this condition as mentioned in the documentation
+The condition based on the client-attribute was added into Client Policies. You can use condition to specify for the clients
+with the specified client attribute having a specified value. It is possible to use either an AND or OR condition when evaluating this condition as mentioned in the documentation
 for client policies.
 
 ifeval::[{project_community}==true]
@@ -140,8 +140,8 @@ endif::[]
 ifeval::[{project_community}==true]
 = OpenID for Verifiable Credential Issuance
 
-The OpenID for Verifiable Credential Issuance (OID4VCI) is still experimental feature in {project_name}, but it was greatly improved in this release. Lots of development and discussions
-happen in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+The OpenID for Verifiable Credential Issuance (OID4VCI) is still an experimental feature in {project_name}, but it was greatly improved in this release. You will find significant development and discussions
+in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
 
 Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
 https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/tnorimat[Takashi Norimatsu],
