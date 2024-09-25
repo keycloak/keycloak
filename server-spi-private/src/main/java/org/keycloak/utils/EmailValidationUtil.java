@@ -25,7 +25,6 @@ public class EmailValidationUtil {
             "(?:" + LOCAL_PART_ATOM + "+|\"" + LOCAL_PART_INSIDE_QUOTES_ATOM + "+\")" +
                     "(?:\\." + "(?:" + LOCAL_PART_ATOM + "+|\"" + LOCAL_PART_INSIDE_QUOTES_ATOM + "+\")" + ")*", CASE_INSENSITIVE
     );
-    private static final int MAX_DOMAIN_PART_LENGTH = 255;
     private static final String DOMAIN_CHARS_WITHOUT_DASH = "[a-z\u0080-\uFFFF0-9!#$%&'*+/=?^`{|}~]";
     private static final String DOMAIN_LABEL = "(?:" + DOMAIN_CHARS_WITHOUT_DASH + "-*)*" + DOMAIN_CHARS_WITHOUT_DASH + "+";
     private static final String DOMAIN = DOMAIN_LABEL + "+(?:\\." + DOMAIN_LABEL + "+)*";
@@ -84,17 +83,14 @@ public class EmailValidationUtil {
             return false;
         }
 
-        String asciiString;
         try {
-            asciiString = IDN.toASCII( domain );
+            IDN.toASCII( domain );
         }
         catch (IllegalArgumentException e) {
             return false;
         }
 
-        if ( asciiString.length() > MAX_DOMAIN_PART_LENGTH ) {
-            return false;
-        }
+
 
         Matcher matcher = EMAIL_DOMAIN_PATTERN.matcher( domain );
         if ( !matcher.matches() ) {
