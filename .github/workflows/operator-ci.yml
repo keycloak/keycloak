@@ -36,10 +36,13 @@ jobs:
           upload-m2-repo: false
           upload-dist: true
 
-  test-local:
-    name: Test local
+  test-pod-prop:
+    name: Test Pod Propagation
     runs-on: ubuntu-latest
-    needs: [build]
+    strategy:
+      matrix:
+        run: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
+    needs: [ build ]
     steps:
       - uses: actions/checkout@v4
 
@@ -71,19 +74,6 @@ jobs:
           eval $(minikube -p minikube docker-env)
           (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_local }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_local }} keycloak custom-keycloak)
-
-  test-pod-propagation:
-    name: Test Pod Propagation
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        run: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-    needs: [ test-local ]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: ./.github/actions/java-setup
 
       - name: Test operator running locally
         run: |
