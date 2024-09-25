@@ -19,8 +19,10 @@ package org.keycloak.url;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +34,10 @@ import org.keycloak.urls.HostnameProviderFactory;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class HostnameV2ProviderFactory implements HostnameProviderFactory, EnvironmentDependentProviderFactory {
+    
+    private static final Logger LOGGER = Logger.getLogger(HostnameV2ProviderFactory.class);
+    private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy");
+    
     private static final String INVALID_HOSTNAME = "Provided hostname is neither a plain hostname nor a valid URL";
     private String hostname;
     private URI hostnameUrl;
@@ -41,7 +47,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
     @Override
     public void init(Config.Scope config) {
         // Strict mode is used just for enforcing that hostname is set
-        Boolean strictMode = config.getBoolean("hostname-strict", false);
+        boolean strictMode = config.getBoolean("hostname-strict", false);
 
         String hostnameRaw = config.get("hostname");
         if (strictMode && hostnameRaw == null) {
@@ -49,8 +55,15 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
         } else if (hostnameRaw != null && !strictMode) {
             // We might not need this validation as it doesn't matter in this case if strict is true or false. It's just for consistency – hostname XOR !strict.
 //            throw new IllegalArgumentException("hostname is configured, hostname-strict must be set to true");
+            LOGGER.info("If hostanme is specified, hostname-strict is effectively ignored");
         }
-
+        
+        List<String> inUse = REMOVED_OPTIONS.stream().filter(s -> config.get(s) != null).toList();
+        
+        if (!inUse.isEmpty()) {
+            LOGGER.warnf("Hostname v1 options %s are still in use, please review your configuruation", inUse);
+        }
+        
         // Set hostname, can be either a full URL, or just hostname
         if (hostnameRaw != null) {
             if (!(hostnameRaw.startsWith("http://") || hostnameRaw.startsWith("https://"))) {
