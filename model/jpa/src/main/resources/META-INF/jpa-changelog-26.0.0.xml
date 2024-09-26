@@ -113,4 +113,21 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="29399-jdbc-ping-default">
+        <createTable tableName="JGROUPSPING">
+            <column name="address" type="VARCHAR(200)">
+                <constraints nullable="false" />
+            </column>
+            <column name="name" type="VARCHAR(200)" />
+            <column name="cluster_name" type="VARCHAR(200)">
+                <constraints nullable="false" />
+            </column>
+            <column name="ip" type="VARCHAR(200)">
+                <constraints nullable="false" />
+            </column>
+            <column name="coord" type="BOOLEAN"/>
+        </createTable>
+        <addPrimaryKey columnNames="address" constraintName="CONSTRAINT_JGROUPSPING" tableName="JGROUPSPING"/>
+    </changeSet>
+
 </databaseChangeLog>

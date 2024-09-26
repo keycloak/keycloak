@@ -20,15 +20,21 @@ package org.keycloak.quarkus.runtime.storage.infinispan;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.instrument.Metrics;
+import io.quarkus.arc.Arc;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
@@ -50,8 +56,11 @@ import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
+import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.conf.ProtocolConfiguration;
+import org.jgroups.protocols.JDBC_PING2;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.util.TLS;
@@ -71,6 +80,7 @@ import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProv
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import javax.net.ssl.SSLContext;
+import javax.sql.DataSource;
 
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
@@ -94,11 +104,12 @@ public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
 
-    private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
     private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
+    private final String config;
+    private volatile DefaultCacheManager cacheManager;
 
     public CacheManagerFactory(String config) {
-        this.cacheManagerFuture = startEmbeddedCacheManager(config);
+        this.config = config;
         if (InfinispanUtils.isRemoteInfinispan()) {
             logger.debug("Remote Cache feature is enabled");
             this.remoteCacheManagerFuture = CompletableFuture.supplyAsync(this::startRemoteCacheManager);
@@ -109,7 +120,13 @@ public class CacheManagerFactory {
     }
 
     public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
-        return join(cacheManagerFuture);
+        if (cacheManager == null) {
+           synchronized (this) {
+              if (cacheManager == null)
+                 cacheManager = startEmbeddedCacheManager();
+           }
+        }
+        return cacheManager;
     }
 
     public RemoteCacheManager getOrCreateRemoteCacheManager() {
@@ -118,7 +135,7 @@ public class CacheManagerFactory {
 
     public void shutdown() {
         logger.debug("Shutdown embedded and remote cache managers");
-        cacheManagerFuture.thenAccept(CacheManagerFactory::close);
+        close(cacheManager);
         remoteCacheManagerFuture.thenAccept(CacheManagerFactory::close);
     }
 
@@ -277,7 +294,7 @@ public class CacheManagerFactory {
         admin.reindexCache(cacheName);
     }
 
-    private CompletableFuture<DefaultCacheManager> startEmbeddedCacheManager(String config) {
+    private DefaultCacheManager startEmbeddedCacheManager() {
         logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
@@ -318,8 +335,7 @@ public class CacheManagerFactory {
         configureCacheMaxCount(builder, CachingOptions.LOCAL_MAX_COUNT_CACHES);
         checkForRemoteStores(builder);
 
-        var start = isStartEagerly();
-        return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
+        return new DefaultCacheManager(builder, isStartEagerly());
     }
 
     private static boolean isRemoteTLSEnabled() {
@@ -361,6 +377,28 @@ public class CacheManagerFactory {
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
         if (transportStack != null && !transportStack.isBlank()) {
             transportConfig.defaultTransport().stack(transportStack);
+        } else {
+            var tableName = "JGROUPSPING";
+            var attributes = Map.of(
+                  // Leave initialize_sql blank as table is already created by Keycloak
+                  "initialize_sql", "",
+                  // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+                  // "cluster" cannot be used with Oracle DB as it's a reserved word.
+                  "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
+                  "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
+                  "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
+                  "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                  "remove_all_data_on_view_change", "true",
+                  "stack.combine", "REPLACE",
+                  "stack.position", "PING"
+            );
+            var stackName = "keycloak-jdbc-ping";
+            var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
+            builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), "udp");
+
+            Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
+            transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
+            transportConfig.defaultTransport().stack(stackName);
         }
 
         if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
@@ -376,7 +414,7 @@ public class CacheManagerFactory {
                     .setClientAuth(TLSClientAuth.NEED)
                     .setProtocols(new String[]{"TLSv1.3"});
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
-            Logger.getLogger(CacheManagerFactory.class).info("MTLS enabled for communications for embedded caches");
+            logger.info("MTLS enabled for communications for embedded caches");
         }
     }
 

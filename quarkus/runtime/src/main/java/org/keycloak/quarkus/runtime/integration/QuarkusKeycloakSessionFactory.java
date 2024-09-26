@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -99,9 +100,12 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         if (componentFactoryPF != null) {
             componentFactoryPF.postInit(this);
         }
+        // Init JpaConnectionProvider first to ensure that DB resources are available to all other providers
+        ProviderFactory<JpaConnectionProvider> jpaUpdaterProvider = getProviderFactory(JpaConnectionProvider.class);
+        jpaUpdaterProvider.postInit(this);
         for (Map<String, ProviderFactory> f : factoriesMap.values()) {
             for (ProviderFactory factory : f.values()) {
-                if (factory != componentFactoryPF) {
+                if (factory != componentFactoryPF && factory != jpaUpdaterProvider) {
                     factory.postInit(this);
                 }
             }
