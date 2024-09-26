@@ -70,9 +70,8 @@ When first initialized the `manage` permission does not have any policies associ
 You will need to create one by going to the policy tab.  To get there fast, click on
 the `Client details` link shown in the above image. Then click on the policies tab.
 
-There's a button on this page called `Create client policy`.  There's a multitude of policies
-you can define.  You can define a policy that is associated with a role or a group or even define
-rules in JavaScript.  For this simple example, we're going to create a `User Policy`.
+On this page, look for the `Create client policy` button, which you can use to define many policies.  You can define a policy that is associated with a role or a group or even define
+rules in JavaScript.  For this simple example, we are going to create a `User Policy`.
 
 .User policy
 image:images/fine-grain-client-user-policy.png[Fine grain client user policy]
