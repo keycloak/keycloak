@@ -95,12 +95,20 @@
     <style>
       :root {
       <#list realm.attributes as k, v>
-        <#if k?starts_with("style")>
-          <#if k?starts_with("style.logo")>
+        <#if k?contains("bglogo")>
+            --keycloak-bg-logo-ur: url('${v}');
+        <#elseif k?contains("logo")>
             --keycloak-logo-url: url('${v}');
-          <#else>
-            --pf-v5-global--${k[6..]}: ${v?no_esc};
-          </#if>
+        </#if>
+        <#if k?starts_with("style.light")>
+            --pf-v5-global--${k[12..]}: ${v?no_esc};
+        </#if>
+      </#list>
+      }
+      .pf-v5-theme-dark {
+      <#list realm.attributes as k, v>
+        <#if k?starts_with("style.dark")>
+          --pf-v5-global--${k[11..]}: ${v?no_esc};
         </#if>
       </#list>
       }

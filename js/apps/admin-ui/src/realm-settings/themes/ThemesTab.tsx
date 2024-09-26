@@ -28,7 +28,8 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     );
 
   const settingsTab = useThemesTab("settings");
-  const colorsTab = useThemesTab("colors");
+  const lightColorsTab = useThemesTab("lightColors");
+  const darkColorsTab = useThemesTab("darkColors");
 
   return (
     <RoutableTabs
@@ -48,12 +49,20 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
         <ThemeSettingsTab realm={realm} save={save} />
       </Tab>
       <Tab
-        id="colors"
-        title={<TabTitleText>{t("themeColors")}</TabTitleText>}
-        data-testid="colors-tab"
-        {...colorsTab}
+        id="lightColors"
+        title={<TabTitleText>{t("themeColorsLight")}</TabTitleText>}
+        data-testid="lightColors-tab"
+        {...lightColorsTab}
       >
-        <ThemeColors realm={realm} save={save} />
+        <ThemeColors realm={realm} save={save} theme="light" />
+      </Tab>
+      <Tab
+        id="darkColors"
+        title={<TabTitleText>{t("themeColorsDark")}</TabTitleText>}
+        data-testid="darkColors-tab"
+        {...darkColorsTab}
+      >
+        <ThemeColors realm={realm} save={save} theme="dark" />
       </Tab>
     </RoutableTabs>
   );

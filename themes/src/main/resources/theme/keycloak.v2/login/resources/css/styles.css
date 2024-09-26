@@ -1,5 +1,6 @@
-:where(:root) {
-    --keycloak-logo-url: url('../img/keycloak-logo.svg');
+:root {
+    --keycloak-logo-url: url('../img/keycloak-logo-text.png');
+    --keycloak-bg-logo-url: url("../img/keycloak-bg.png");
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
 }
@@ -11,7 +12,7 @@
 }
 
 .login-pf body {
-    background: url("../img/keycloak-bg.png") no-repeat center center fixed;
+    background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
     background-size: cover;
     height: 100%;
 }
@@ -21,6 +22,7 @@ div.kc-logo-text {
     height: var(--keycloak-logo-height);
     width: var(--keycloak-logo-width);
     background-repeat: no-repeat;
+    background-size: contain;
     margin: 0 auto;
 }
 
