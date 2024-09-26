@@ -30,7 +30,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.Urls;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -81,17 +80,21 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
-        if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
-            event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(session.getContext().getAuthenticationSession())
-                    .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
-                    .createInfoPage();
+        if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+            return sendEmailAlreadyVerified(session, event, user);
         }
 
-        event.success();
+        AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
 
         if (tokenContext.isAuthenticationSessionFresh()) {
+            AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getCompoundAuthenticationSessionId());
+            ClientModel originalClient = realm.getClientById(compoundId.getClientUUID());
+            AuthenticationSessionModel origAuthSession = asm.getAuthenticationSessionByIdAndClient(realm,
+                    compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
+            if (origAuthSession == null || origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+                return sendEmailAlreadyVerified(session, event, user);
+            }
+
             token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
 
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
@@ -109,9 +112,9 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
+        event.success();
 
         if (token.getOriginalCompoundAuthenticationSessionId() != null) {
-            AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(realm, authSession, true);
 
             AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getOriginalCompoundAuthenticationSessionId());
@@ -140,8 +143,11 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
 
-    private boolean isVerifyEmailActionSet(UserModel user, AuthenticationSessionModel authSession) {
-        return Stream.concat(user.getRequiredActionsStream(), authSession.getRequiredActions().stream())
-                .anyMatch(RequiredAction.VERIFY_EMAIL.name()::equals);
+    private Response sendEmailAlreadyVerified(KeycloakSession session, EventBuilder event, UserModel user) {
+        event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
+        return session.getProvider(LoginFormsProvider.class)
+                .setAuthenticationSession(session.getContext().getAuthenticationSession())
+                .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
+                .createInfoPage();
     }
 }
