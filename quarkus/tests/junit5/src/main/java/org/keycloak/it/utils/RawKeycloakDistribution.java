@@ -43,11 +43,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import javax.net.ssl.HostnameVerifier;
@@ -217,6 +215,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
+                threadDump();
                 throw new RuntimeException("Failed to stop the server", cause);
             }
         }
@@ -302,24 +301,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         allArgs.addAll(arguments);
 
         return allArgs.toArray(String[]::new);
-    }
-
-    @Override
-    public void assertStopped() {
-        try {
-            if (keycloak != null) {
-                keycloak.onExit().get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            LOG.warn("Process did not exit as expected, will attempt a thread dump");
-            threadDump();
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

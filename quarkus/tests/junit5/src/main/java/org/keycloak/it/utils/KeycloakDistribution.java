@@ -28,8 +28,6 @@ public interface KeycloakDistribution {
 
     boolean isManualStop();
 
-    void assertStopped();
-
     void setRequestPort();
 
     void setRequestPort(int port);
