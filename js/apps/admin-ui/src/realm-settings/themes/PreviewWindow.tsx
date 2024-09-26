@@ -32,7 +32,7 @@ export const PreviewWindow = ({ cssVars }: PreviewWindowProps) => {
             backgroundColor: cssVars["BackgroundColor--light-100"],
           }}
         >
-          <Tabs activeKey={1}>
+          <Tabs activeKey={1} className="pf-v5-u-p-lg">
             <Tab eventKey={0} title={<TabTitleText>Tab One</TabTitleText>} />
             <Tab eventKey={1} title={<TabTitleText>Tab Two</TabTitleText>} />
           </Tabs>

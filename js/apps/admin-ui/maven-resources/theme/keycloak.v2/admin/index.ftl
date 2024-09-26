@@ -63,8 +63,15 @@
     <style>
       :root {
       <#list attributes as k, v>
-        <#if k?starts_with("style")>
-          --pf-v5-global--${k[6..]}: ${v?no_esc};
+        <#if k?starts_with("style.light")>
+          --pf-v5-global--${k[12..]}: ${v?no_esc};
+        </#if>
+      </#list>
+      }
+      .pf-v5-theme-dark {
+      <#list attributes as k, v>
+        <#if k?starts_with("style.dark")>
+          --pf-v5-global--${k[11..]}: ${v?no_esc};
         </#if>
       </#list>
       }
