@@ -47,6 +47,7 @@ import org.openqa.selenium.support.PageFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
@@ -1016,6 +1017,53 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         driver2.navigate().to(url);
         waitForPage(driver, "your email address has been verified already.", false);
+    }
+
+    @Test
+    public void testLinkAccountByEmailVerificationInAnotherBrowser() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        UserResource userResource = realm.users().get(createUser("consumer"));
+        UserRepresentation consumerUser = userResource.toRepresentation();
+
+        consumerUser.setEmail(bc.getUserEmail());
+        consumerUser.setEmailVerified(true);
+        userResource.update(consumerUser);
+        configureSMTPServer();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        //link account by email
+        waitForPage(driver, "update account information", false);
+        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForPage(driver, "account already exists", false);
+        assertTrue(idpConfirmLinkPage.isCurrent());
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+        idpLinkEmailPage.assertCurrent();
+
+        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ", false);
+
+        // in the second browser confirm the mail
+        driver2.navigate().to(url);
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("Confirm linking the account"));
+        driver2.findElement(By.linkText("» Click here to proceed")).click();
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully verified your email."));
+
+        idpLinkEmailPage.continueLink();
+
+        //test if user is logged in
+        assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
+        // check user is linked
+        List<FederatedIdentityRepresentation> identities = userResource.getFederatedIdentity();
+        assertEquals(1, identities.size());
+        assertEquals(bc.getIDPAlias(), identities.iterator().next().getIdentityProvider());
+        assertEquals(bc.getUserLogin(), identities.iterator().next().getUserName());
     }
 
     @Test
