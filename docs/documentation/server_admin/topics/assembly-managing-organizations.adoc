@@ -2,10 +2,6 @@
 [[_managing_organizations]]
 ==  Managing organizations
 
-:tech_feature_name: Organizations
-:tech_feature_id: organization
-include::./templates/techpreview.adoc[]
-
 include::organizations/intro.adoc[leveloffset=+2]
 include::organizations/managing-organization.adoc[leveloffset=+2]
 include::organizations/managing-attributes.adoc[leveloffset=+2]
