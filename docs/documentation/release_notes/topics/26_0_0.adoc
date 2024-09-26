@@ -112,8 +112,47 @@ Starting with {project_name} 26, the Organizations feature is fully supported.
 
 Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
 
+Also, a new key provider, `ecdh-generated`, is available to generate realm keys and support for ECDH algorithms is added into the Java KeyStore provider.
+
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
+endif::[]
+
+= DPoP improvements
+
+The DPoP (OAuth 2.0 Demonstrating Proof-of-Possession) preview feature has improvements. The DPoP is now supported for all grant types.
+With previous releases, this feature was supported only for the `authorization_code` grant type. Support also exists for the DPoP token type on the UserInfo endpoint.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
+endif::[]
+
+= Client Attribute condition in Client Policies
+
+The condition based on the client-attribute was added into Client Policies. You can use condition to specify for the clients
+with the specified client attribute having a specified value. It is possible to use either an AND or OR condition when evaluating this condition as mentioned in the documentation
+for client policies.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/y-tabata[Yoshiyuki Tabata] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) is still an experimental feature in {project_name}, but it was greatly improved in this release. You will find significant development and discussions
+in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+
+Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/tnorimat[Takashi Norimatsu],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/wistefan[Stefan Wiedemann] and https://github.com/thomasdarimont[Thomas Darimont]
+endif::[]
+
+ifeval::[{project_community}==true]
+= Securing Applications documentation converted into the guide format
+
+The _Securing Applications and Services_ documentation was converted into the new format similar to the _Server Installation and Configuration_ documentation converted in the previous releases.
+The documentation is now available under https://www.keycloak.org/guides[Keycloak Guides].
 endif::[]
 
 = OpenTelemetry Tracing support _(Preview)_
