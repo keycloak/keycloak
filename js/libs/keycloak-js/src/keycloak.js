@@ -14,12 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { jwtDecode } from 'jwt-decode';
-
-if (typeof Promise === 'undefined') {
-    throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
-}
-
 function Keycloak (config) {
     if (!(this instanceof Keycloak)) {
         throw new Error("The 'Keycloak' constructor must be invoked with 'new'.")
@@ -983,7 +977,7 @@ function Keycloak (config) {
 
         if (refreshToken) {
             kc.refreshToken = refreshToken;
-            kc.refreshTokenParsed = jwtDecode(refreshToken);
+            kc.refreshTokenParsed = decodeToken(refreshToken);
         } else {
             delete kc.refreshToken;
             delete kc.refreshTokenParsed;
@@ -991,7 +985,7 @@ function Keycloak (config) {
 
         if (idToken) {
             kc.idToken = idToken;
-            kc.idTokenParsed = jwtDecode(idToken);
+            kc.idTokenParsed = decodeToken(idToken);
         } else {
             delete kc.idToken;
             delete kc.idTokenParsed;
@@ -999,7 +993,7 @@ function Keycloak (config) {
 
         if (token) {
             kc.token = token;
-            kc.tokenParsed = jwtDecode(token);
+            kc.tokenParsed = decodeToken(token);
             kc.sessionId = kc.tokenParsed.sid;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
@@ -1769,4 +1763,72 @@ async function sha256Digest(message) {
     const data = encoder.encode(message);
     const hash = await crypto.subtle.digest("SHA-256", data);
     return hash;
+}
+
+/**
+ * @param {string} token
+ */
+function decodeToken(token) {
+    const [header, payload] = token.split(".");
+
+    if (typeof payload !== "string") {
+        throw new Error("Unable to decode token, payload not found.");
+    }
+
+    let decoded;
+
+    try {
+        decoded = base64UrlDecode(payload);
+    } catch (error) {
+        throw new Error("Unable to decode token, payload is not a valid Base64URL value.", { cause: error });
+    }
+
+    try {
+        return JSON.parse(decoded);
+    } catch (error) {
+        throw new Error("Unable to decode token, payload is not a valid JSON value.", { cause: error });
+    }
+}
+
+/**
+ * @param {string} input
+ */
+function base64UrlDecode(input) {
+    let output = input
+        .replaceAll("-", "+")
+        .replaceAll("_", "/");
+
+    switch (output.length % 4) {
+        case 0:
+            break;
+        case 2:
+            output += "==";
+            break;
+        case 3:
+            output += "=";
+            break;
+        default:
+            throw new Error("Input is not of the correct length.");
+    }
+
+    try {
+        return b64DecodeUnicode(output);
+    } catch (error) {
+        return atob(output);
+    }
+}
+
+/**
+ * @param {string} input
+ */
+function b64DecodeUnicode(input) {
+    return decodeURIComponent(atob(input).replace(/(.)/g, (m, p) => {
+        let code = p.charCodeAt(0).toString(16).toUpperCase();
+
+        if (code.length < 2) {
+            code = "0" + code;
+        }
+
+        return "%" + code;
+    }));
 }
