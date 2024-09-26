@@ -5,14 +5,12 @@ import {
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
 import { FormGroup } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { AttributeForm } from "../components/key-value-form/AttributeForm";
-import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { keyValueToArray } from "../components/key-value-form/key-value-convert";
-import { useParams } from "react-router-dom";
-import { EditOrganizationParams } from "./routes/EditOrganization";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useEffect } from "react";
+import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 
 export type OrganizationFormType = AttributeForm &
   Omit<OrganizationRepresentation, "domains" | "attributes"> & {
@@ -27,20 +25,22 @@ export const convertToOrg = (
   attributes: keyValueToArray(org.attributes),
 });
 
-export const OrganizationForm = () => {
+type OrganizationFormProps = {
+  readOnly?: boolean;
+};
+
+export const OrganizationForm = ({
+  readOnly = false,
+}: OrganizationFormProps) => {
   const { t } = useTranslation();
-  const { tab } = useParams<EditOrganizationParams>();
-  const { setValue, getFieldState } = useFormContext();
+  const { setValue } = useFormContext();
   const name = useWatch({ name: "name" });
-  const isEditable = tab !== "settings";
 
   useEffect(() => {
-    const { isDirty } = getFieldState("alias");
-
-    if (isEditable && !isDirty) {
+    if (!readOnly) {
       setValue("alias", name);
     }
-  }, [name, isEditable]);
+  }, [name, readOnly]);
 
   return (
     <>
@@ -53,7 +53,7 @@ export const OrganizationForm = () => {
         label={t("alias")}
         name="alias"
         labelIcon={t("organizationAliasHelp")}
-        isDisabled={!isEditable}
+        isDisabled={readOnly}
       />
       <FormGroup
         label={t("domain")}
