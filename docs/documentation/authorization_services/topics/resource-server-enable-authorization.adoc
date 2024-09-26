@@ -4,7 +4,8 @@
 You can turn your OIDC client into a resource server and enable fine-grained authorization.
 
 .Procedure
-. Toggle *Authorization Enabled* to *`On*.
+. In the client settings page, scroll down to the *Capability Config* section.
+. Toggle *Authorization Enabled* to *On*.
 . Click *Save*.
 +
 .Enabling authorization services
