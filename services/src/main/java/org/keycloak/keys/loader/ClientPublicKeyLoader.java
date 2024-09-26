@@ -76,7 +76,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         } else if (config.isUseJwksString()) {
             JSONWebKeySet jwks = JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class);
             return JWKSUtils.getKeyWrappersForUse(jwks, keyUse);
-        } else if (keyUse == JWK.Use.SIG) {
+        } else if (keyUse == JWK.Use.SIG || keyUse == JWK.Use.ENCRYPTION) {
             try {
                 CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, JWTClientAuthenticator.ATTR_PREFIX);
                 KeyWrapper publicKey = getSignatureValidationKey(certInfo);
