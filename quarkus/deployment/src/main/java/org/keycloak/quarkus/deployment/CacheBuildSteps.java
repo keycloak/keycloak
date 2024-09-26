@@ -23,7 +23,6 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 import io.quarkus.deployment.logging.LoggingSetupBuildItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
@@ -40,11 +39,11 @@ public class CacheBuildSteps {
     @Consume(LoggingSetupBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
+    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems) {
         syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheManagerFactory.class)
                 .scope(ApplicationScoped.class)
                 .unremovable()
                 .setRuntimeInit()
-                .runtimeValue(recorder.createCacheInitializer(shutdownContext)).done());
+                .runtimeValue(recorder.createCacheInitializer()).done());
     }
 }
