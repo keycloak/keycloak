@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { ListEmptyState, useFetch } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import useToggle from "../utils/useToggle";
@@ -25,28 +25,19 @@ type GroupTableProps = {
 
 export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
-
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
-
   const [rename, setRename] = useState<GroupRepresentation>();
   const [isCreateModalOpen, toggleCreateOpen] = useToggle();
-  const [selectedDuplicateGroupId, setSelectedDuplicateGroupId] =
-    useState<string>();
-  const [duplicate, setDuplicate] = useState<GroupRepresentation>();
+  const [duplicateId, setDuplicateId] = useState<string>();
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
-
   const { currentGroup } = useSubGroups();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [search, setSearch] = useState<string>();
-
   const location = useLocation();
   const id = getLastId(location.pathname);
-
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
@@ -71,37 +62,6 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
 
     return groupsData;
   };
-
-  useFetch(
-    async () => {
-      if (!selectedDuplicateGroupId) {
-        return;
-      }
-
-      return adminClient.groups
-        .findOne({ id: selectedDuplicateGroupId })
-        .then(async (group) => {
-          const subGroups = await adminClient.groups.listSubGroups({
-            parentId: selectedDuplicateGroupId,
-          });
-          const roleMappings = await adminClient.groups.listRoleMappings({
-            id: selectedDuplicateGroupId,
-          });
-
-          return {
-            group,
-            subGroups,
-            roleMappings,
-          };
-        });
-    },
-    (groupData) => {
-      if (groupData) {
-        setDuplicate(groupData.group);
-      }
-    },
-    [selectedDuplicateGroupId],
-  );
 
   return (
     <>
@@ -137,15 +97,14 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
           }}
         />
       )}
-      {duplicate && (
+      {duplicateId && (
         <GroupsModal
-          id={duplicate.id}
-          duplicate={duplicate}
+          id={duplicateId}
           refresh={() => {
             refresh();
             viewRefresh();
           }}
-          handleModalToggle={() => setDuplicate(undefined)}
+          handleModalToggle={() => setDuplicateId(undefined)}
         />
       )}
       {move && (
@@ -222,7 +181,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                       {
                         title: t("duplicate"),
                         onRowClick: async (group: GroupRepresentation) => {
-                          setSelectedDuplicateGroupId(group.id!);
+                          setDuplicateId(group.id);
                           return false;
                         },
                       },
