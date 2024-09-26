@@ -75,6 +75,12 @@ public class MicrometerMetricsEventListenerTest {
 
     private MeterRegistry meterRegistry;
     private KeycloakSessionFactory keycloakSessionFactory;
+    private EnumSet<EventType> eventsWithAdditionalTags = EnumSet.of(
+            EventType.LOGIN, EventType.LOGIN_ERROR,
+            EventType.CLIENT_LOGIN, EventType.CLIENT_LOGIN_ERROR,
+            EventType.REFRESH_TOKEN, EventType.REFRESH_TOKEN_ERROR,
+            EventType.REGISTER, EventType.REGISTER_ERROR,
+            EventType.CODE_TO_TOKEN, EventType.CODE_TO_TOKEN_ERROR);
 
     @Before
     public void setup() {
@@ -572,7 +578,7 @@ public class MicrometerMetricsEventListenerTest {
                     @Override
                     public <T extends Provider> T getProvider(Class<T> clazz) {
                         return (T) new MicrometerMetricsEventListener(
-                                this, EnumSet.allOf(EventType.class), true);
+                                this, EnumSet.allOf(EventType.class), eventsWithAdditionalTags, true);
                     }
 
                     @Override

@@ -48,7 +48,7 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private static final String RESULT_TAG = "result";
     private static final String SUCCESS = "success";
     private static final String ERROR = "error";
-    private static final String EVENT_TYPE_ERROR_SUFFIX = "_ERROR";
+    public static final String EVENT_TYPE_ERROR_SUFFIX = "_ERROR";
 
     private static final String KEYLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String EVENT_PREFIX = KEYLOAK_METER_NAME_PREFIX + "event.";
@@ -63,12 +63,14 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
 
     private final MeterRegistry meterRegistry = Metrics.globalRegistry;
     private final EnumSet<EventType> includedEvents;
+    private final EnumSet<EventType> eventsWithAdditionalTags;
     private final boolean adminEventEnabled;
 
     public MicrometerMetricsEventListener(KeycloakSession session, EnumSet<EventType> includedEvents,
-                                          boolean adminEventEnabled) {
+                                          EnumSet<EventType> eventsWithAdditionalTags, boolean adminEventEnabled) {
         session.getTransactionManager().enlistAfterCompletion(tx);
         this.includedEvents = includedEvents;
+        this.eventsWithAdditionalTags = eventsWithAdditionalTags;
         this.adminEventEnabled = adminEventEnabled;
     }
 
@@ -82,21 +84,10 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
     private void countEvent(Event event) {
         logger.debugf("Received user event of type %s in realm %s",
                 event.getType().name(), event.getRealmName());
-        switch (event.getType()) {
-            case LOGIN:
-            case LOGIN_ERROR:
-            case CLIENT_LOGIN:
-            case CLIENT_LOGIN_ERROR:
-            case REGISTER:
-            case REGISTER_ERROR:
-            case REFRESH_TOKEN:
-            case REFRESH_TOKEN_ERROR:
-            case CODE_TO_TOKEN:
-            case CODE_TO_TOKEN_ERROR:
-                countRealmProviderClientIdResultErrorTagsFromEvent(event);
-                break;
-            default:
-                countRealmResultTagsFromEvent(event);
+        if (eventsWithAdditionalTags.contains(event.getType())) {
+            countRealmProviderClientIdResultErrorTagsFromEvent(event);
+        } else {
+            countRealmResultTagsFromEvent(event);
         }
     }
 

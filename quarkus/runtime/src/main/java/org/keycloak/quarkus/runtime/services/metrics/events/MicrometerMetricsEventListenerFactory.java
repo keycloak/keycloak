@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class MicrometerMetricsEventListenerFactory implements EventListenerProviderFactory {
 
@@ -42,16 +43,25 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
     private static final EventListenerProvider NO_OP_LISTENER = new NoOpEventListenerProvider();
     private static final String ID = "micrometer-metrics";
     private static final String EXCLUDED_EVENTS_OPTION = "excluded-events";
+    private static final String EVENTS_WITH_ADDITIONAL_TAGS_OPTION = "events-with-additional-tags";
     private static final String ADMIN_EVENTS_ENABLED_OPTION = "admin-events-enabled";
+    private static final String[] EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT =
+            Stream.of(EventType.LOGIN, EventType.LOGOUT, EventType.CLIENT_LOGIN,
+                            EventType.CODE_TO_TOKEN, EventType.REFRESH_TOKEN, EventType.REGISTER)
+                    .map(EventType::name)
+                    .map(String::toLowerCase)
+                    .toArray(String[]::new);
 
     private final EnumSet<EventType> includedEvents = EnumSet.allOf(EventType.class);
-    private boolean metricsEnabled;
+    private final EnumSet<EventType> eventsWithAdditionalTags = EnumSet.noneOf(EventType.class);
     private boolean adminEventsEnabled;
+    private boolean metricsEnabled;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
         if (metricsEnabled) {
-            return new MicrometerMetricsEventListener(session, includedEvents, adminEventsEnabled);
+            return new MicrometerMetricsEventListener(session, includedEvents,
+                    eventsWithAdditionalTags, adminEventsEnabled);
         } else {
             return NO_OP_LISTENER;
         }
@@ -64,6 +74,16 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
             for (String e : excluded) {
                 includedEvents.remove(EventType.valueOf(e.toUpperCase()));
             }
+        }
+        String[] eventWithAdditionalDetailsOption = config.getArray(EVENTS_WITH_ADDITIONAL_TAGS_OPTION);
+        if (eventWithAdditionalDetailsOption == null) {
+            eventWithAdditionalDetailsOption = EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT;
+        }
+        for (String e : eventWithAdditionalDetailsOption) {
+            String name = e.toUpperCase();
+            eventsWithAdditionalTags.add(EventType.valueOf(name));
+            eventsWithAdditionalTags.add(EventType.valueOf(name
+                    + MicrometerMetricsEventListener.EVENT_TYPE_ERROR_SUFFIX));
         }
         adminEventsEnabled = config.getBoolean(ADMIN_EVENTS_ENABLED_OPTION, true);
     }
@@ -88,12 +108,27 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
                 .map(String::toLowerCase)
                 .sorted(Comparator.naturalOrder())
                 .toArray(String[]::new);
+        String[] supportedEventsWithAdditionalTags = Arrays.stream(EventType.values())
+                .map(EventType::name)
+                .filter(n -> !n.endsWith(MicrometerMetricsEventListener.EVENT_TYPE_ERROR_SUFFIX))
+                .map(String::toLowerCase)
+                .sorted(Comparator.naturalOrder())
+                .toArray(String[]::new);
+        String eventsWithAdditionalTagsDefault = String.join(",", EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT);
         return ProviderConfigurationBuilder.create()
                 .property()
                 .name(EXCLUDED_EVENTS_OPTION)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .helpText("A comma-separated list of events that should not be collected as a metric.")
                 .options(supportedEvents)
+                .add()
+                .property()
+                .name(EVENTS_WITH_ADDITIONAL_TAGS_OPTION)
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .helpText("A comma-separated list of events that are counted with additional labels/tags (provider,client_id,error)."
+                        + "The corresponding Error Events are added automatically. Default value: "
+                        + eventsWithAdditionalTagsDefault)
+                .options(supportedEventsWithAdditionalTags)
                 .add()
                 .property()
                 .name(ADMIN_EVENTS_ENABLED_OPTION)
