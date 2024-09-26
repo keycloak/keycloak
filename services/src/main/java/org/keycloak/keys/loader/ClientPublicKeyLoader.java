@@ -82,11 +82,11 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
                 KeyWrapper publicKey = getSignatureValidationKey(certInfo);
                 return new PublicKeysWrapper(Collections.singletonList(publicKey));
             } catch (ModelException me) {
-                logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());
+                logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s or encrypt token' . Error details: %s", client.getClientId(), me.getMessage());
                 return PublicKeysWrapper.EMPTY;
             }
         } else {
-            logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature", client.getClientId());
+            logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature or encryption of token", client.getClientId());
             return PublicKeysWrapper.EMPTY;
         }
     }
