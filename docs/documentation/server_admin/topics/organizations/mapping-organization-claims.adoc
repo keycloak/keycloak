@@ -4,7 +4,7 @@
 [role="_abstract"]
 To map organization-specific claims into tokens, a client needs to request the *organization* scope when sending
 authorization requests to the server. When authenticating in the context of an organization, clients can request the `organization` scope to map information
-about the organizations the user is a member of to tokens.
+about the organizations where the user is a member.
 
 As a result, the token will contain a claim as follows:
 
