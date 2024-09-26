@@ -84,7 +84,7 @@ image:images/fine-grain-client-assign-user-policy.png[Fine grain client assign u
 
 The `sales-admin` user now has permission to manage the `sales-application` client.
 
-There's one more thing we have to do.  Go to `Users`, select the `sales-admin` user, then go to the `Role Mappings` tab and assign the `query-clients` role to the user.
+There is one more thing we have to do.  Go to `Users`, select the `sales-admin` user, then go to the `Role Mappings` tab and assign the `query-clients` role to the user.
 
 .Assign query-clients
 image:images/fine-grain-assign-query-clients.png[Fine grain assign query clients]
