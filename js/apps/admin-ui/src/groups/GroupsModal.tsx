@@ -255,8 +255,7 @@ export const GroupsModal = ({
           allowInvalid
           allowNonDirty
         >
-          {" "}
-          {actionLabel}{" "}
+          {actionLabel}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
@@ -265,16 +264,12 @@ export const GroupsModal = ({
           variant={ButtonVariant.link}
           onClick={handleModalToggle}
         >
-          {" "}
-          {t("cancel")}{" "}
+          {t("cancel")}
         </Button>,
       ]}
     >
-      {" "}
       <FormProvider {...form}>
-        {" "}
         <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
-          {" "}
           {id && (
             <Alert
               variant="warning"
@@ -282,15 +277,15 @@ export const GroupsModal = ({
               isInline
               title={t("duplicateGroupWarning")}
             />
-          )}{" "}
+          )}
           <TextControl
             name="name"
             label={t("name")}
             rules={{ required: t("required") }}
             autoFocus
-          />{" "}
-        </Form>{" "}
-      </FormProvider>{" "}
+          />
+        </Form>
+      </FormProvider>
     </Modal>
   );
 };
