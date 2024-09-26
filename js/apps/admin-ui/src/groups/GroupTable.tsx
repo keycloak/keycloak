@@ -100,6 +100,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
       {duplicateId && (
         <GroupsModal
           id={duplicateId}
+          duplicateId={duplicateId}
           refresh={() => {
             refresh();
             viewRefresh();

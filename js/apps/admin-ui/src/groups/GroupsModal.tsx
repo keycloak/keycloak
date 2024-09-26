@@ -22,6 +22,7 @@ import { useState } from "react";
 type GroupsModalProps = {
   id?: string;
   rename?: GroupRepresentation;
+  duplicateId?: string;
   handleModalToggle: () => void;
   refresh: (group?: GroupRepresentation) => void;
 };
@@ -32,11 +33,15 @@ type RoleMappingPayload = {
   clientUniqueId?: string;
 };
 
-type ClientRoleMapping = { clientId: string; roles: RoleMappingPayload[] };
+type ClientRoleMapping = {
+  clientId: string;
+  roles: RoleMappingPayload[];
+};
 
 export const GroupsModal = ({
   id,
   rename,
+  duplicateId,
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
@@ -45,19 +50,16 @@ export const GroupsModal = ({
   const { addAlert, addError } = useAlerts();
   const [duplicateGroupDetails, setDuplicateGroupDetails] =
     useState<GroupRepresentation | null>(null);
-  const actionLabel = rename ? t("rename") : id ? t("duplicate") : t("create");
-  const modalTitle = rename
-    ? t("renameAGroup")
-    : id
-      ? t("duplicateAGroup")
-      : t("createAGroup");
-  const form = useForm({ defaultValues: { name: "" } });
+
+  const form = useForm({
+    defaultValues: { name: "" },
+  });
   const { handleSubmit, formState } = form;
 
   useFetch(
     async () => {
-      if (id) {
-        return adminClient.groups.findOne({ id: id });
+      if (duplicateId) {
+        return adminClient.groups.findOne({ id: duplicateId });
       }
     },
     (group) => {
@@ -66,13 +68,14 @@ export const GroupsModal = ({
         form.reset({ name: t("copyOf", { name: group.name }) });
       }
     },
-    [id],
+    [duplicateId],
   );
 
   const fetchClientRoleMappings = async (groupId: string) => {
     try {
       const clientRoleMappings: ClientRoleMapping[] = [];
       const clients = await adminClient.clients.find();
+
       for (const client of clients) {
         const roles = await adminClient.groups.listClientRoleMappings({
           id: groupId,
@@ -81,12 +84,16 @@ export const GroupsModal = ({
 
         const clientRoles = roles
           .filter((role) => role.id && role.name)
-          .map((role) => ({ id: role.id!, name: role.name! }));
+          .map((role) => ({
+            id: role.id!,
+            name: role.name!,
+          }));
 
         if (clientRoles.length > 0) {
           clientRoleMappings.push({ clientId: client.id!, roles: clientRoles });
         }
       }
+
       return clientRoleMappings;
     } catch (error) {
       addError("couldNotFetchClientRoleMappings", error);
@@ -187,7 +194,6 @@ export const GroupsModal = ({
       const realmRoles = roles.filter(
         (role) => !role.clientUniqueId && role.name,
       );
-
       const clientRoles = roles.filter(
         (role) => role.clientUniqueId && role.name,
       );
@@ -216,8 +222,9 @@ export const GroupsModal = ({
 
   const submitForm = async (group: GroupRepresentation) => {
     group.name = group.name?.trim();
+
     try {
-      if (id && duplicateGroupDetails) {
+      if (duplicateId && duplicateGroupDetails) {
         await duplicateGroup(duplicateGroupDetails);
       } else if (!id) {
         await adminClient.groups.create(group);
@@ -229,10 +236,17 @@ export const GroupsModal = ({
       } else {
         await adminClient.groups.updateChildGroup({ id }, group);
       }
+
       refresh(rename ? { ...rename, name: group.name } : undefined);
       handleModalToggle();
       addAlert(
-        t(rename ? "groupUpdated" : id ? "groupDuplicated" : "groupCreated"),
+        t(
+          rename
+            ? "groupUpdated"
+            : duplicateId
+              ? "groupDuplicated"
+              : "groupCreated",
+        ),
         AlertVariant.success,
       );
     } catch (error) {
@@ -243,19 +257,25 @@ export const GroupsModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={modalTitle}
+      title={
+        rename
+          ? t("renameAGroup")
+          : duplicateId
+            ? t("duplicateAGroup")
+            : t("createAGroup")
+      }
       isOpen={true}
       onClose={handleModalToggle}
       actions={[
         <FormSubmitButton
           formState={formState}
-          data-testid={`${actionLabel}Group`}
+          data-testid={`${rename ? t("rename") : duplicateId ? t("duplicate") : t("create")}Group`}
           key="confirm"
           form="group-form"
           allowInvalid
           allowNonDirty
         >
-          {actionLabel}
+          {rename ? t("rename") : duplicateId ? t("duplicate") : t("create")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
@@ -270,7 +290,7 @@ export const GroupsModal = ({
     >
       <FormProvider {...form}>
         <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
-          {id && (
+          {duplicateId && (
             <Alert
               variant="warning"
               component="h2"
