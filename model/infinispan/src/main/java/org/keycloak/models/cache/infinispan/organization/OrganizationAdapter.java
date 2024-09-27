@@ -153,12 +153,14 @@ public class OrganizationAdapter implements OrganizationModel {
 
     @Override
     public boolean isManaged(UserModel user) {
-        return delegate.get().isManagedMember(this, user);
+        if (isUpdated()) delegate.get().isManagedMember(this, user);
+        return organizationCache.isManagedMember(this, user);
     }
 
     @Override
     public boolean isMember(UserModel user) {
-        return delegate.get().isMember(this, user);
+        if (isUpdated()) delegate.get().isMember(this, user);
+        return organizationCache.isMember(this, user);
     }
 
     @Override
