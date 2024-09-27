@@ -119,6 +119,12 @@ describe("Group test", () => {
         .assertNoSearchResultsMessageExist(true);
     });
 
+    it("Duplicate group", () => {
+      groupPage
+        .duplicateGroupItem(groupNames[0], true)
+        .assertNotificationGroupDuplicated();
+    });
+
     it("Delete group from item bar", () => {
       groupPage
         .searchGroup(groupNames[0], true)

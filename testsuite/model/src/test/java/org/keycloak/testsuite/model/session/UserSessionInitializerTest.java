@@ -108,6 +108,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             // Assert sessions are in
             ClientModel testApp = realm.getClientByClientId("test-app");
@@ -140,6 +141,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             // Assert sessions are in
             ClientModel thirdparty = realm.getClientByClientId("third-party");

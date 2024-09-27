@@ -8,6 +8,7 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { LifespanField } from "./LifespanField";
 import { RequiredActionMultiSelect } from "./RequiredActionMultiSelect";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type ResetCredentialDialogProps = {
   userId: string;
@@ -16,12 +17,7 @@ type ResetCredentialDialogProps = {
 
 type CredentialResetForm = {
   actions: RequiredActionAlias[];
-  lifespan: number;
-};
-
-export const credResetFormDefaultValues: CredentialResetForm = {
-  actions: [],
-  lifespan: 43200, // 12 hours
+  lifespan: number | undefined;
 };
 
 export const ResetCredentialDialog = ({
@@ -29,10 +25,13 @@ export const ResetCredentialDialog = ({
   onClose,
 }: ResetCredentialDialogProps) => {
   const { adminClient } = useAdminClient();
-
+  const { realmRepresentation: realm } = useRealm();
   const { t } = useTranslation();
   const form = useForm<CredentialResetForm>({
-    defaultValues: credResetFormDefaultValues,
+    defaultValues: {
+      actions: [],
+      lifespan: realm?.actionTokenGeneratedByAdminLifespan,
+    },
   });
   const { handleSubmit, control } = form;
 

@@ -41,6 +41,7 @@ While were in the transitioning process towards Weblate, the following translati
 
 - German
 - Dutch
+- French
 
 For all other translations, look for the `messages_*.properties` files in the main repository and create a pull request with your translations. 
 
@@ -50,3 +51,16 @@ If you have any questions or need assistance, feel free to reach out to the lang
 
 * German: [Robin Meese](https://github.com/robson90)
 * Dutch: [Jon Koops](https://github.com/jonkoops)
+* French: [Dimitri](https://github.com/DimitriDR) && [Gilbert Fernandes](https://github.com/gilbert-fernandes)
+
+
+### Steps to Add a New Language
+
+- Check the discussion, if your language is already proposed [discussion thread](https://github.com/keycloak/keycloak/discussions/9270).
+- Each language requires **two volunteers**
+- Volunteers should comment on the discussion thread to confirm their participation.
+- The Keycloak-Team will then
+    - enable the specific language
+    - invite the two volunteers
+    - comment on discussion thread, that the langauge has been enabled
+- Weblate synchronizes daily, so it may take up to 24 hours after enabling the language before you can start your first translations 

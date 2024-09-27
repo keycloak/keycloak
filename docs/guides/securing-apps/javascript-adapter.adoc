@@ -64,7 +64,7 @@ To enable the _silent_ `check-sso`, you provide a `silentCheckSsoRedirectUri` at
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     onLoad: 'check-sso',
     silentCheckSsoRedirectUri: `${r"${location.origin}"}/silent-check-sso.html`
 });
@@ -93,7 +93,7 @@ To enable `login-required` set `onLoad` to `login-required` and pass to the init
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     onLoad: 'login-required'
 });
 ----
@@ -158,7 +158,7 @@ To enable implicit flow, you enable the *Implicit Flow Enabled* flag for the cli
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     flow: 'implicit'
 })
 ----
@@ -176,7 +176,7 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     flow: 'hybrid'
 });
 ----
@@ -200,7 +200,7 @@ You can activate the native mode by passing the adapter type `cordova-native` to
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     adapter: 'cordova-native'
 });
 ----
@@ -242,7 +242,7 @@ import KeycloakCapacitorAdapter from 'keycloak-capacitor-adapter';
 
 const keycloak = new Keycloak();
 
-keycloak.init({
+await keycloak.init({
     adapter: KeycloakCapacitorAdapter,
 });
 ----
@@ -257,7 +257,7 @@ import Keycloak, { KeycloakAdapter } from 'keycloak-js';
 
 // Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
 const MyCustomAdapter: KeycloakAdapter = {
-    login(options) {
+    async login(options) {
         // Write your own implementation here.
     }
 
@@ -266,7 +266,7 @@ const MyCustomAdapter: KeycloakAdapter = {
 
 const keycloak = new Keycloak();
 
-keycloak.init({
+await keycloak.init({
     adapter: MyCustomAdapter,
 });
 ----
@@ -391,7 +391,7 @@ Returns a promise that resolves when initialization completes.
 
 *login(options)*
 
-Redirects to login form.
+Redirects to login form, returns a Promise.
 
 Options is an optional Object, where:
 
@@ -417,7 +417,7 @@ See link:{adminguide_link}#con-aia_server_administration_guide[Application Initi
 
 *createLoginUrl(options)*
 
-Returns the URL to login form.
+Returns a Promise containing the URL to login form.
 
 Options is an optional Object, which supports same options as the function `login` .
 
@@ -445,7 +445,7 @@ Options are same as for the login method but 'action' is set to 'register'
 
 *createRegisterUrl(options)*
 
-Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
+Returns a Promise containing the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
 Options are same as for the createLoginUrl method but 'action' is set to 'register'
 

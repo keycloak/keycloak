@@ -230,6 +230,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
                 "Used for testing purposes of Callback factory");
 
+        addProviderInfo(result, "idp-add-organization-member", "Organization Member Onboard", "Adds a federated user as a member of an organization");
+        addProviderInfo(result, "organization", "Organization Identity-First Login", "If organizations are enabled, automatically redirects users to the corresponding identity provider.");
+
         return result;
     }
 
@@ -246,9 +249,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     private List<Map<String, Object>> normalizeResults(List<Map<String, Object>> list) {
-        ArrayList<Map<String, Object>> result = new ArrayList();
+        ArrayList<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> item: list) {
-            result.add(new HashMap(item));
+            result.add(new HashMap<>(item));
         }
         return sortProviders(result);
     }

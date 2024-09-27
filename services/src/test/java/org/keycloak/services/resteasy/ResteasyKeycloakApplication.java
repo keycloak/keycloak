@@ -25,7 +25,6 @@ import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
 import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
-import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.LoadBalancerResource;
 import org.keycloak.services.resources.RealmsResource;
@@ -50,11 +49,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             classes.add(AdminRoot.class);
         }
         classes.add(ThemeResource.class);
-
-        if (Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
-            classes.add(JsResource.class);
-        }
-
         classes.add(KeycloakSecurityHeadersFilter.class);
         classes.add(KeycloakErrorHandler.class);
         classes.add(KcUnrecognizedPropertyExceptionHandler.class);

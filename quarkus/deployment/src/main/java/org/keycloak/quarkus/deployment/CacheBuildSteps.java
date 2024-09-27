@@ -27,7 +27,7 @@ import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 import io.quarkus.deployment.logging.LoggingSetupBuildItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 
 public class CacheBuildSteps {
 

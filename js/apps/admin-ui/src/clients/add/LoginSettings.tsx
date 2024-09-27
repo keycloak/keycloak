@@ -18,6 +18,7 @@ export const LoginSettings = ({
   const { watch } = useFormContext<FormFields>();
 
   const standardFlowEnabled = watch("standardFlowEnabled");
+  const implicitFlowEnabled = watch("implicitFlowEnabled");
 
   return (
     <>
@@ -33,7 +34,7 @@ export const LoginSettings = ({
         label={t("homeURL")}
         labelIcon={t("homeURLHelp")}
       />
-      {standardFlowEnabled && (
+      {(standardFlowEnabled || implicitFlowEnabled) && (
         <>
           <FormGroup
             label={t("validRedirectUri")}

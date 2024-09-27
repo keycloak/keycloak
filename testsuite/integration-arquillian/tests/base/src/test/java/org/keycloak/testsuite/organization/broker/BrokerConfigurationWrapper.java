@@ -81,6 +81,8 @@ public class BrokerConfigurationWrapper implements BrokerConfiguration {
     public IdentityProviderRepresentation setUpIdentityProvider() {
         IdentityProviderRepresentation broker = delegate.setUpIdentityProvider();
         broker.setAlias(getIDPAlias());
+        // by default set the test org idps as not available for login pages.
+        broker.setHideOnLogin(true);
         return broker;
     }
 

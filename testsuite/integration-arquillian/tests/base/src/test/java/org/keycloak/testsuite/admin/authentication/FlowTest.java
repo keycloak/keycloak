@@ -408,7 +408,8 @@ public class FlowTest extends AbstractAuthenticationTest {
         // adjust expected values before comparing
         browser.setAlias("Copy of browser");
         browser.setBuiltIn(false);
-        browser.getAuthenticationExecutions().get(3).setFlowAlias("Copy of browser forms");
+        browser.getAuthenticationExecutions().get(3).setFlowAlias("Copy of browser Organization");
+        browser.getAuthenticationExecutions().get(4).setFlowAlias("Copy of browser forms");
         compareFlows(browser, copyOfBrowser);
 
         // get new flow directly and compare

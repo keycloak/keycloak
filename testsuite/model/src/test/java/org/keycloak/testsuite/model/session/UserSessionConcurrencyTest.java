@@ -86,6 +86,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
         IntStream.range(0, 20 * CLIENTS_COUNT).parallel()
                 .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
+                    session.getContext().setRealm(realm);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
 
                     UserSessionModel uSession = session.sessions().getUserSession(realm, uId);

@@ -225,6 +225,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                             try {
                                 // Read user attribute
                                 RealmModel realm = session1.realms().getRealmByName("original");
+                                session1.getContext().setRealm(realm);
                                 UserModel john = session1.users().getUserByUsername(realm, "john");
                                 String attrVal = john.getFirstAttribute("foo");
 

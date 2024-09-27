@@ -126,13 +126,18 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecExport(flow, null, false, "auth-cookie", false, null, ALTERNATIVE, 10);
         addExecExport(flow, null, false, "auth-spnego", false, null, DISABLED, 20);
         addExecExport(flow, null, false, "identity-provider-redirector", false, null, ALTERNATIVE, 25);
+        addExecExport(flow, "Organization", false, null, true, null, ALTERNATIVE, 26);
         addExecExport(flow, "forms", false, null, true, null, ALTERNATIVE, 30);
 
         List<AuthenticationExecutionInfoRepresentation> execs = new LinkedList<>();
         addExecInfo(execs, "Cookie", "auth-cookie", false, 0, 0, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10);
         addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 1, DISABLED, null, kerberosAuthExpectedChoices, 20);
         addExecInfo(execs, "Identity Provider Redirector", "identity-provider-redirector", true, 0, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 25);
-        addExecInfo(execs, "forms", null, false, 0, 3, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 30);
+        addExecInfo(execs, "Organization", null, false, 0, 3, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 26);
+        addExecInfo(execs, "Browser - Conditional Organization", null, false, 1, 0, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 10);
+        addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
+        addExecInfo(execs, "Organization Identity-First Login", "organization", true, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "forms", null, false, 0, 4, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 30);
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
         addExecInfo(execs, "Browser - Conditional OTP", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
@@ -176,6 +181,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
                 "basic-flow", true, true);
         addExecExport(flow, null, false, "idp-review-profile", false, "review profile config", REQUIRED, 10);
         addExecExport(flow, "User creation or linking", false, null, true, null, REQUIRED, 20);
+        addExecExport(flow, "First Broker Login - Conditional Organization", false, null, true, null, CONDITIONAL, 50);
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Review Profile", "idp-review-profile", true, 0, 0, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10);
@@ -190,6 +196,9 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "First broker login - Conditional OTP", null, false, 4, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 5, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "First Broker Login - Conditional Organization", null, false, 0, 2, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 50);
+        addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
+        addExecInfo(execs, "Organization Member Onboard", "idp-add-organization-member", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("registration", "Registration flow", "basic-flow", true, true);

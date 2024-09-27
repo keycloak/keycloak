@@ -44,10 +44,8 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -62,13 +60,11 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest {
 
     @Before
@@ -128,9 +124,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     @SuppressWarnings("unchecked")
     @Test
     public void testOrganizationScopeMapsSpecificOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         // resolve organization based on the organization scope value
@@ -159,9 +155,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationScopeMapsAllOrganizations() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         // resolve organization based on the organization scope value
@@ -207,7 +203,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationScopeAnyMapsSingleOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
 
         // resolve organization based on the organization scope value
@@ -223,9 +219,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationScopeAnyAskUserToSelectOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.clientId("broker-app");
         oauth.scope("organization");
@@ -251,9 +247,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testRefreshTokenWithAllOrganizationsAskingForSpecificOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.clientId("broker-app");
@@ -284,9 +280,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testRefreshTokenWithSingleOrganizationsAskingAllOrganizations() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.clientId("broker-app");
@@ -319,9 +315,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testRefreshTokenWithSingleOrganizationsAskingDifferentOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.clientId("broker-app");
@@ -352,9 +348,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testRefreshTokenScopeAnyAskingAllOrganizations() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.clientId("broker-app");
         String originalScope = "organization";
@@ -388,9 +384,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testRefreshTokenScopeAnyAskingSingleOrganization() {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.clientId("broker-app");
         String originalScope = "organization";
@@ -458,9 +454,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationsClaimAsList() throws Exception {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
@@ -476,9 +472,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testOrganizationsClaimSingleValued() throws Exception {
-        OrganizationRepresentation orgA = createOrganization("orga", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        OrganizationRepresentation orgB = createOrganization("orgb", Map.of(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString()));
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, Boolean.FALSE.toString());

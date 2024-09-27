@@ -24,7 +24,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { GroupPath } from "../components/group/GroupPath";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -34,24 +33,7 @@ import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
 
-type MembersOf = UserRepresentation & {
-  membership: GroupRepresentation[];
-};
-
-const MemberOfRenderer = (member: MembersOf) => {
-  return (
-    <>
-      {member.membership.map((group, index) => (
-        <>
-          <GroupPath key={group.id + "-" + member.id} group={group} />
-          {member.membership[index + 1] ? ", " : ""}
-        </>
-      ))}
-    </>
-  );
-};
-
-const UserDetailLink = (user: MembersOf) => {
+const UserDetailLink = (user: UserRepresentation) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
   return (
@@ -94,9 +76,6 @@ export const Members = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  const getMembership = async (id: string) =>
-    await adminClient.users.listGroups({ id: id! });
-
   // this queries the subgroups using the new search paradigm but doesn't
   // account for pagination and therefore isn't going to scale well
   const getSubGroups = async (groupId?: string, count = 0) => {
@@ -128,6 +107,7 @@ export const Members = () => {
 
     let members = await adminClient.groups.listMembers({
       id: id!,
+      briefRepresentation: true,
       first,
       max,
     });
@@ -138,19 +118,19 @@ export const Members = () => {
         currentGroup.subGroupCount,
       );
       await Promise.all(
-        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+        subGroups.map((g) =>
+          adminClient.groups.listMembers({
+            id: g.id!,
+            briefRepresentation: true,
+          }),
+        ),
       ).then((values: UserRepresentation[][]) => {
         values.forEach((users) => (members = members.concat(users)));
       });
       members = uniqBy(members, (member) => member.username);
     }
 
-    const memberOfPromises = await Promise.all(
-      members.map((member) => getMembership(member.id!)),
-    );
-    return members.map((member: UserRepresentation, i) => {
-      return { ...member, membership: memberOfPromises[i] };
-    });
+    return members;
   };
 
   if (!currentGroup) {
@@ -304,11 +284,6 @@ export const Members = () => {
             name: "lastName",
             displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "membership",
-            displayKey: "membership",
-            cellRenderer: MemberOfRenderer,
           },
         ]}
         emptyState={

@@ -58,6 +58,7 @@ import static org.keycloak.models.IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_
 import static org.keycloak.models.IdentityProviderModel.HIDE_ON_LOGIN;
 import static org.keycloak.models.IdentityProviderModel.LINK_ONLY;
 import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID;
+import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID_NOT_NULL;
 import static org.keycloak.models.IdentityProviderModel.POST_BROKER_LOGIN_FLOW_ID;
 import static org.keycloak.models.IdentityProviderModel.SEARCH;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
@@ -250,6 +251,10 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                         } else {
                             predicates.add(builder.equal(idp.get(key), value));
                         }
+                        break;
+                    }
+                    case ORGANIZATION_ID_NOT_NULL: {
+                        predicates.add(builder.isNotNull(idp.get(ORGANIZATION_ID)));
                         break;
                     }
                     case SEARCH: {
@@ -459,7 +464,7 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                 builder.equal(mapper.get("realmId"), getRealm().getId()),
                 builder.equal(mapper.get("identityProviderAlias"), identityProviderAlias));
 
-        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(mapper).where(predicate));
+        TypedQuery<IdentityProviderMapperEntity> typedQuery = em.createQuery(query.select(mapper).where(predicate).orderBy(builder.asc(mapper.get("id"))));
 
         return closing(typedQuery.getResultStream().map(this::toModel));
     }

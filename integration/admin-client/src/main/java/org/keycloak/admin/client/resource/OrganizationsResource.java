@@ -30,6 +30,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
+/**
+ * @since Keycloak 25. All the child endpoints are also available since that version<p>
+ *
+ * This endpoint including all the child endpoints requires feature {@link org.keycloak.common.Profile.Feature#ORGANIZATION} to be enabled<p>
+ */
 public interface OrganizationsResource {
 
     @POST

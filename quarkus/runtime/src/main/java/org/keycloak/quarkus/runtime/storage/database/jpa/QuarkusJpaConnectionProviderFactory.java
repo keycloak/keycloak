@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.legacy.database;
+package org.keycloak.quarkus.runtime.storage.database.jpa;
 
 import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
-import static org.keycloak.quarkus.runtime.storage.legacy.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
+import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
 import java.io.File;
@@ -54,7 +54,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.storage.database.jpa.AbstractJpaConnectionProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

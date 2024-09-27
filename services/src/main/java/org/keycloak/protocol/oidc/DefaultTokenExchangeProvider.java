@@ -24,7 +24,6 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
@@ -677,7 +676,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         // make sure user attributes are updated based on attributes set to the context
-        for (Map.Entry<String, List<String>> attr : context.getAttributes().entrySet()) {
+        for (Map.Entry<String, List<String>> attr : context.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
             if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }

@@ -37,11 +37,16 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -62,6 +67,8 @@ public class OrganizationsResource {
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
 
+    private static final Logger logger = Logger.getLogger(OrganizationsResource.class);
+
     public OrganizationsResource() {
         // needed for registering to the JAX-RS stack
         this(null, null, null);
@@ -71,7 +78,7 @@ public class OrganizationsResource {
         this.session = session;
         this.provider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION);
     }
 
     /**
@@ -96,9 +103,9 @@ public class OrganizationsResource {
 
         try {
             OrganizationModel model = provider.create(organization.getName(), organization.getAlias());
-
-            Organizations.toModel(organization, model);
-
+            RepresentationToModel.toModel(organization, model);
+            organization.setId(model.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(organization).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
@@ -137,9 +144,9 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(Organizations::toBriefRepresentation);
+            return provider.getAllStream(attributes, first, max).map(ModelToRepresentation::toBriefRepresentation);
         } else {
-            return provider.getAllStream(search, exact, first, max).map(Organizations::toBriefRepresentation);
+            return provider.getAllStream(search, exact, first, max).map(ModelToRepresentation::toBriefRepresentation);
         }
     }
 
@@ -161,7 +168,7 @@ public class OrganizationsResource {
             throw ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND);
         }
 
-        session.setAttribute(OrganizationModel.class.getName(), organizationModel);
+        session.getContext().setOrganization(organizationModel);
 
         return new OrganizationResource(session, organizationModel, adminEvent);
     }

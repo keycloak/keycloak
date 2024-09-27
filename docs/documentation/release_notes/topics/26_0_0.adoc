@@ -104,12 +104,55 @@ when exporting a realm.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Keycloak Organization is now a supported feature
+
+Starting with {project_name} 26, the Organizations feature is fully supported.
+
 = Adding support for ECDH-ES encryption key management algorithms
 
 Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
 
+Also, a new key provider, `ecdh-generated`, is available to generate realm keys and support for ECDH algorithms is added into the Java KeyStore provider.
+
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
+endif::[]
+
+= DPoP improvements
+
+The DPoP (OAuth 2.0 Demonstrating Proof-of-Possession) preview feature has improvements. The DPoP is now supported for all grant types.
+With previous releases, this feature was supported only for the `authorization_code` grant type. Support also exists for the DPoP token type on the UserInfo endpoint.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
+endif::[]
+
+= Client Attribute condition in Client Policies
+
+The condition based on the client-attribute was added into Client Policies. You can use condition to specify for the clients
+with the specified client attribute having a specified value. It is possible to use either an AND or OR condition when evaluating this condition as mentioned in the documentation
+for client policies.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/y-tabata[Yoshiyuki Tabata] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) is still an experimental feature in {project_name}, but it was greatly improved in this release. You will find significant development and discussions
+in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+
+Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/tnorimat[Takashi Norimatsu],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/wistefan[Stefan Wiedemann] and https://github.com/thomasdarimont[Thomas Darimont]
+endif::[]
+
+ifeval::[{project_community}==true]
+= Securing Applications documentation converted into the guide format
+
+The _Securing Applications and Services_ documentation was converted into the new format similar to the _Server Installation and Configuration_ documentation converted in the previous releases.
+The documentation is now available under https://www.keycloak.org/guides[Keycloak Guides].
 endif::[]
 
 = OpenTelemetry Tracing support _(Preview)_
@@ -119,6 +162,15 @@ It helps to find performance bottlenecks, determine the cause of application fai
 The support is in preview mode, and we would be happy to obtain any feedback.
 
 For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
+
+= Automatic redirect from root to relative path
+
+User is automatically redirected to the path where {project_name} is hosted when the `http-relative-path` property is specified.
+It means when the relative path is set to `/auth`, and the user access `localhost:8080/`, the page is redirected to `localhost:8080/auth`.
+
+The same applies to the management interface when the `http-management-relative-path` or `http-relative-path` property is specified.
+
+It improves user experience as users no longer need to set the relative path to the URL explicitly.
 
 = Removal of legacy cookies
 
@@ -145,6 +197,10 @@ The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set
 = Option to reload trust and key material added
 
 The `https-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by https-* options. Use -1 to disable reloading. Defaults to 1h (one hour).
+
+= Options to configure cache max-count added
+
+The `--cache-embedded-$\{CACHE_NAME}-max-count=` can be set to define an upper bound on the number of cache entries in the specified cache.
 
 = Property `origin` in the `UserRepresentation` is deprecated
 
@@ -173,6 +229,29 @@ In {project_name} 26, this feature is enabled by default. This means that all us
 It is possible to revert this behavior to the previous state by disabling the feature. Follow the `Volatile user sessions` section in https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more details.
 
 For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Client libraries updates
+
+== Dedicated release cycle for the client libraries
+
+From this release, some of the {project_name} client libraries will have release cycle independent of the {project_name} server release cycle. The 26.0.0 release may be the last one
+when the client libraries are released together with the {project_name} server. But from now on, the client libraries may be released at a different time than the {project_name} server.
+
+The client libraries are these artifacts:
+
+* Java admin client - Maven artifact `org.keycloak:keycloak-admin-client`
+* Java authorization client - Maven artifact `org.keycloak:keycloak-authz-client`
+* Java policy enforcer - Maven artifact `org.keycloak:keycloak-policy-enforcer`
+
+It is possible that in the future, some more libraries will be included.
+
+The client libraries are supported with Java 8, so it is possible to use them with the client applications deployed on the older application servers.
+
+== Compatibility of the client libraries with the server
+
+Beginning with this release, we are testing and supporting client libraries with the same server version and a few previous major server versions.
+
+For details about supported versions of client libraries with server versions, see the link:{upgradingguide_link}#_upgrade_client_libraries[{upgradingguide_name}].
 
 = New generalized event types for credentials
 

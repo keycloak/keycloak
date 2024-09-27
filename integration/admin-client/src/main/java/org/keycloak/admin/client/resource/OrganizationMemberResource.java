@@ -37,6 +37,12 @@ public interface OrganizationMemberResource {
     @DELETE
     Response delete();
 
+    /**
+     * Returns the organizations associated with the user
+     *
+     * @since Keycloak server 26
+     * @return the organizations associated with the user
+     */
     @Path("organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

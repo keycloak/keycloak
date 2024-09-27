@@ -46,7 +46,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -60,13 +59,11 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
@@ -433,6 +430,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         // create non-org idp in a realm
         String idpAlias = "former-non-org-identity-provider";
         IdentityProviderRepresentation idpRep = brokerConfigFunction.apply("former-non-org").setUpIdentityProvider();
+        idpRep.setHideOnLogin(false);
         try (Response response = testRealm().identityProviders().create(idpRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             getCleanup().addCleanup(testRealm().identityProviders().get(bc.getIDPAlias())::remove);

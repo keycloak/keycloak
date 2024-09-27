@@ -45,6 +45,8 @@ import static org.keycloak.client.cli.util.HttpUtil.urlencode;
  */
 public class AuthUtil {
 
+    public static final int AUTH_BUFFER_TIME = 5000;
+
     public static String ensureToken(ConfigData config, String cmd) {
         if (config.getExternalToken() != null) {
             return config.getExternalToken();
@@ -58,15 +60,15 @@ public class AuthUtil {
 
         // check expires of access_token against time
         // if it's less than 5s to expiry, renew it
-        if (realmConfig.getExpiresAt() - now < 5000) {
+        if (realmConfig.getExpiresAt() - now < AUTH_BUFFER_TIME) {
 
             // check refresh_token against expiry time
             // if it's less than 5s to expiry, fail with credentials expired
-            if (realmConfig.getRefreshExpiresAt() != null && realmConfig.getRefreshExpiresAt() - now < 5000) {
+            if (realmConfig.getRefreshExpiresAt() != null && realmConfig.getRefreshExpiresAt() - now < AUTH_BUFFER_TIME) {
                 throw new RuntimeException("Session has expired. Login again with '" + cmd + " config credentials'");
             }
 
-            if (realmConfig.getSigExpiresAt() != null && realmConfig.getSigExpiresAt() - now < 5000) {
+            if (realmConfig.getSigExpiresAt() != null && realmConfig.getSigExpiresAt() - now < AUTH_BUFFER_TIME) {
                 throw new RuntimeException("Session has expired. Login again with '" + cmd + " config credentials'");
             }
 

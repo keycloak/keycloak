@@ -28,6 +28,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -59,7 +60,7 @@ public class OrganizationInvitationResource {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.organization = organization;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
         this.tokenExpiration = getTokenExpiration();
     }
 
@@ -76,10 +77,6 @@ public class OrganizationInvitationResource {
             }
 
             return sendInvitation(user);
-        }
-
-        if (!realm.isRegistrationAllowed()) {
-            throw ErrorResponse.error("Realm does not allow self-registration", Status.BAD_REQUEST);
         }
 
         user = new InMemoryUserAdapter(session, realm, null);

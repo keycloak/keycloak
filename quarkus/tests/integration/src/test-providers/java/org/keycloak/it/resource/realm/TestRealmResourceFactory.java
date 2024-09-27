@@ -31,7 +31,7 @@ public class TestRealmResourceFactory implements RealmResourceProviderFactory {
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestRealmResource();
+        return new TestRealmResource(session);
     }
 
     @Override

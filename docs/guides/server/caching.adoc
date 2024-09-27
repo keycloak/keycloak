@@ -166,6 +166,14 @@ This cache is needed for the Brute Force Protection feature to work in a multi-n
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
 The `actionTokens` distributed cache is used to track metadata about action tokens.
 
+=== Configuring cache maximum size
+In order to reduce memory usage, it's possible to place an upper bound on the number of entries which are stored in a given
+cache. To specify an upper bound of on a cache, you must provide the following command line argument
+`--cache-embedded-$\{CACHE_NAME}-max-count=`, with `$\{CACHE_NAME}` replaced with the name of the cache you would like to
+apply the upper bound to. For example, to apply an upper-bound of `1000` to the `offlineSessions` cache you would configure
+`--cache-embedded-offline-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
+`actionToken`, `authenticationSessions`, `loginFailures`, `work`.
+
 === Configuring caches for availability
 
 Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.

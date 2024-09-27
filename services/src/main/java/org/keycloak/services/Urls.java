@@ -18,6 +18,7 @@ package org.keycloak.services;
 
 import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
@@ -51,6 +52,13 @@ public class Urls {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "getEndpoint")
                 .build(realmName, providerAlias);
+    }
+
+    public static URI identityProviderAuthnResponse(URI baseUri, String providerAlias, String realmName, String client_id) {
+        return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "getEndpoint")
+                .path(SAMLEndpoint.class, "redirectBindingIdpInitiated")
+                .build(realmName, providerAlias, client_id);
     }
 
     public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId, String clientData, String loginHint) {

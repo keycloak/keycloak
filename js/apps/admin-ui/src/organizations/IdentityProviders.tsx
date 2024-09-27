@@ -1,6 +1,7 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   KeycloakDataTable,
+  ListEmptyState,
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
@@ -11,13 +12,14 @@ import {
   Switch,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { sortBy } from "lodash-es";
 import { BellIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { ManageOrderDialog } from "../identity-providers/ManageOrderDialog";
 import useToggle from "../utils/useToggle";
 import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
@@ -41,10 +43,7 @@ const ShownOnLoginPageCheck = ({
         { alias: row.alias! },
         {
           ...row,
-          config: {
-            ...row.config,
-            "kc.org.broker.public": `${value}`,
-          },
+          hideOnLogin: value,
         },
       );
       addAlert(t("linkUpdatedSuccessful"));
@@ -59,7 +58,7 @@ const ShownOnLoginPageCheck = ({
     <Switch
       label={t("on")}
       labelOff={t("off")}
-      isChecked={row.config?.["kc.org.broker.public"] === "true"}
+      isChecked={row.hideOnLogin}
       onChange={(_, value) => toggle(value)}
     />
   );
@@ -74,6 +73,7 @@ export const IdentityProviders = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
+  const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<IdentityProviderRepresentation>();
@@ -87,8 +87,12 @@ export const IdentityProviders = () => {
     [],
   );
 
-  const loader = () =>
-    adminClient.organizations.listIdentityProviders({ orgId: orgId! });
+  const loader = async () => {
+    const providers = await adminClient.organizations.listIdentityProviders({
+      orgId: orgId!,
+    });
+    return sortBy(providers, "alias");
+  };
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
     titleKey: "identityProviderUnlink",
@@ -111,88 +115,110 @@ export const IdentityProviders = () => {
   });
 
   return (
-    <PageSection variant="light">
-      <UnlinkConfirm />
-      {open && (
-        <LinkIdentityProviderModal
+    <>
+      {manageDisplayDialog && (
+        <ManageOrderDialog
           orgId={orgId!}
-          identityProvider={selectedRow}
           onClose={() => {
-            toggleOpen();
+            setManageDisplayDialog(false);
             refresh();
           }}
         />
       )}
-      {!hasProviders ? (
-        <ListEmptyState
-          icon={BellIcon}
-          message={t("noIdentityProvider")}
-          instructions={t("noIdentityProviderInstructions")}
-        />
-      ) : (
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          ariaLabelKey="identityProviders"
-          searchPlaceholderKey="searchProvider"
-          toolbarItem={
-            <ToolbarItem>
-              <Button
-                onClick={() => {
-                  setSelectedRow(undefined);
+      <PageSection variant="light">
+        <UnlinkConfirm />
+        {open && (
+          <LinkIdentityProviderModal
+            orgId={orgId!}
+            identityProvider={selectedRow}
+            onClose={() => {
+              toggleOpen();
+              refresh();
+            }}
+          />
+        )}
+        {!hasProviders ? (
+          <ListEmptyState
+            icon={BellIcon}
+            message={t("noIdentityProvider")}
+            instructions={t("noIdentityProviderInstructions")}
+          />
+        ) : (
+          <KeycloakDataTable
+            key={key}
+            loader={loader}
+            ariaLabelKey="identityProviders"
+            searchPlaceholderKey="searchProvider"
+            toolbarItem={
+              <>
+                <ToolbarItem>
+                  <Button
+                    onClick={() => {
+                      setSelectedRow(undefined);
+                      toggleOpen();
+                    }}
+                  >
+                    {t("linkIdentityProvider")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    data-testid="manageDisplayOrder"
+                    variant="link"
+                    onClick={() => setManageDisplayDialog(true)}
+                  >
+                    {t("manageDisplayOrder")}
+                  </Button>
+                </ToolbarItem>
+              </>
+            }
+            actions={[
+              {
+                title: t("edit"),
+                onRowClick: (row) => {
+                  setSelectedRow(row);
                   toggleOpen();
-                }}
-              >
-                {t("linkIdentityProvider")}
-              </Button>
-            </ToolbarItem>
-          }
-          actions={[
-            {
-              title: t("edit"),
-              onRowClick: (row) => {
-                setSelectedRow(row);
-                toggleOpen();
+                },
               },
-            },
-            {
-              title: t("unLinkIdentityProvider"),
-              onRowClick: (row) => {
-                setSelectedRow(row);
-                toggleUnlinkDialog();
+              {
+                title: t("unLinkIdentityProvider"),
+                onRowClick: (row) => {
+                  setSelectedRow(row);
+                  toggleUnlinkDialog();
+                },
               },
-            },
-          ]}
-          columns={[
-            {
-              name: "alias",
-            },
-            {
-              name: "config['kc.org.domain']",
-              displayKey: "domain",
-            },
-            {
-              name: "providerId",
-              displayKey: "providerDetails",
-            },
-            {
-              name: "config['kc.org.broker.public']",
-              displayKey: "shownOnLoginPage",
-              cellRenderer: (row) => (
-                <ShownOnLoginPageCheck row={row} refresh={refresh} />
-              ),
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              message={t("emptyIdentityProviderLink")}
-              instructions={t("emptyIdentityProviderLinkInstructions")}
-              primaryActionText={t("linkIdentityProvider")}
-              onPrimaryAction={toggleOpen}
-            />
-          }
-        />
-      )}
-    </PageSection>
+            ]}
+            columns={[
+              {
+                name: "alias",
+              },
+              {
+                name: "config['kc.org.domain']",
+                displayKey: "domain",
+              },
+              {
+                name: "providerId",
+                displayKey: "providerDetails",
+              },
+              {
+                name: "hideOnLogin",
+                displayKey: "hideOnLoginPage",
+                cellRenderer: (row) => (
+                  <ShownOnLoginPageCheck row={row} refresh={refresh} />
+                ),
+              },
+            ]}
+            emptyState={
+              <ListEmptyState
+                message={t("emptyIdentityProviderLink")}
+                instructions={t("emptyIdentityProviderLinkInstructions")}
+                primaryActionText={t("linkIdentityProvider")}
+                onPrimaryAction={toggleOpen}
+              />
+            }
+          />
+        )}
+      </PageSection>
+    </>
   );
 };

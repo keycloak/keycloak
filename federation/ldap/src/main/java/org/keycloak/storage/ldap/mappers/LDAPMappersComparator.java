@@ -18,15 +18,10 @@
 package org.keycloak.storage.ldap.mappers;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 /**
  * TODO: Possibly add "priority" instead of hardcoding behaviour
@@ -67,7 +62,7 @@ public class LDAPMappersComparator {
                 if (isO2AttrMapper) {
                     return 1;
                 } else {
-                    return 0;
+                    return compareWithStableOrdering(o1, o2);
                 }
             } else if (!isO2AttrMapper) {
                 return -1;
@@ -82,7 +77,7 @@ public class LDAPMappersComparator {
                 if (isO2UsernameMapper) {
                     return 1;
                 } else {
-                    return 0;
+                    return compareWithStableOrdering(o1, o2);
                 }
             } else if (!isO2UsernameMapper) {
                 return -1;
@@ -98,13 +93,21 @@ public class LDAPMappersComparator {
                 if (isO2LdapAttr) {
                     return 1;
                 } else {
-                    return 0;
+                    return compareWithStableOrdering(o1, o2);
                 }
             } else if (!isO2LdapAttr) {
                 return -1;
             }
 
-            return 0;
+            return compareWithStableOrdering(o1, o2);
+        }
+
+        /**
+         * Ensure a stable ordering, so the mappers are always executed in the same order.
+         * This can avoid database deadlocks as the mappers will modify attributes always in the same order.
+         */
+        private static int compareWithStableOrdering(ComponentModel o1, ComponentModel o2) {
+            return o1.getId().compareTo(o2.getId());
         }
 
     }

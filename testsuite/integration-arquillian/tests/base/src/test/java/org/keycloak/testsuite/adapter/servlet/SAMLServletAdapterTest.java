@@ -1133,6 +1133,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void testSavedPostRequest() {
         inputPortalPage.navigateTo();
         assertCurrentUrlStartsWith(inputPortalPage);
+        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
         inputPortalPage.execute("hello");
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1143,6 +1144,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // test that user principal and KeycloakSecurityContext available
         driver.navigate().to(inputPortalPage + "/insecure");
         waitUntilElement(By.xpath("//body")).text().contains("Insecure Page");
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
 
         if (System.getProperty("insecure.user.principal.unsupported") == null) waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
 

@@ -122,15 +122,11 @@ public class Organizations {
             try {
                 OrganizationProvider provider = getProvider(session);
 
-                session.setAttribute(OrganizationModel.class.getName(), provider.getById(group.getName()));
+                session.getContext().setOrganization(provider.getById(group.getName()));
 
                 realm.removeGroup(group);
             } finally {
-                if (current == null) {
-                    session.removeAttribute(OrganizationModel.class.getName());
-                } else {
-                    session.setAttribute(OrganizationModel.class.getName(), current);
-                }
+                session.getContext().setOrganization(current);
             }
         };
     }
@@ -153,66 +149,6 @@ public class Organizations {
         if (provider == null || !provider.isEnabled()) {
             throw ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND);
         }
-    }
-
-    public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
-        OrganizationRepresentation rep = toBriefRepresentation(model);
-
-        if (rep == null) {
-            return null;
-        }
-
-        rep.setAttributes(model.getAttributes());
-
-        return rep;
-    }
-
-    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
-        if (model == null) {
-            return null;
-        }
-
-        OrganizationRepresentation rep = new OrganizationRepresentation();
-
-        rep.setId(model.getId());
-        rep.setName(model.getName());
-        rep.setAlias(model.getAlias());
-        rep.setEnabled(model.isEnabled());
-        rep.setDescription(model.getDescription());
-        model.getDomains().filter(Objects::nonNull).map(Organizations::toRepresentation)
-                .forEach(rep::addDomain);
-
-        return rep;
-    }
-
-    public static OrganizationDomainRepresentation toRepresentation(OrganizationDomainModel model) {
-        OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
-        representation.setName(model.getName());
-        representation.setVerified(model.isVerified());
-        return representation;
-    }
-
-    public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {
-        if (rep == null) {
-            return null;
-        }
-
-        model.setName(rep.getName());
-        model.setAlias(rep.getAlias());
-        model.setEnabled(rep.isEnabled());
-        model.setDescription(rep.getDescription());
-        model.setAttributes(rep.getAttributes());
-        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
-                .filter(Objects::nonNull)
-                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
-                .map(Organizations::toModel)
-                .collect(Collectors.toSet()));
-
-        return model;
-    }
-
-    public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
-        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
     }
 
     public static InviteOrgActionToken parseInvitationToken(HttpRequest request) throws VerificationException {
@@ -249,7 +185,7 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
-        Optional<OrganizationModel> organization = Optional.ofNullable((OrganizationModel) session.getAttribute(OrganizationModel.class.getName()));
+        Optional<OrganizationModel> organization = Optional.ofNullable(session.getContext().getOrganization());
 
         if (organization.isPresent()) {
             // resolved from current keycloak session
@@ -296,5 +232,10 @@ public class Organizations {
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
         return session.getProvider(OrganizationProvider.class);
+    }
+
+    public static boolean isRegistrationAllowed(KeycloakSession session, RealmModel realm) {
+        if (session.getContext().getOrganization() != null) return true;
+        return realm.isRegistrationAllowed();
     }
 }

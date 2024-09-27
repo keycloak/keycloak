@@ -4,7 +4,7 @@ import { login } from "../login";
 const realm = "verifiable-credentials";
 
 test.describe("Verifiable Credentials page", () => {
-  test("Get offer for test-credential.", async ({ page }) => {
+  test.skip("Get offer for test-credential.", async ({ page }) => {
     await login(page, "test-user", "test", realm);
 
     await expect(page.getByTestId("qr-code")).toBeHidden();

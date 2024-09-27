@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
 
 class KeycloakPathConfigurationTest {
 
@@ -38,7 +39,8 @@ class KeycloakPathConfigurationTest {
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
                 .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
             .overrideConfigKey("kc.http-relative-path","/auth")
-            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics");
+            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics")
+            .overrideConfigKey("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
 
     @Test
     void testMetrics() {
@@ -97,11 +99,16 @@ class KeycloakPathConfigurationTest {
     }
 
     @Test
-    void testRootUnavailable() {
+    void testRootRedirect() {
+        given().basePath("/").redirects().follow(false)
+                .when().get("")
+                .then()
+                .statusCode(302)
+                .header("Location", is("/auth"));
+
         given().basePath("/")
                 .when().get("")
                 .then()
-                // application root is configured to /auth, so we expect 404 on /
-                .statusCode(404);
+                .statusCode(200);
     }
 }

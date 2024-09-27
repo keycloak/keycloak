@@ -122,11 +122,6 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     }
 
     @Override
-    public void assertStopped() {
-        delegate.assertStopped();
-    }
-
-    @Override
     public void setRequestPort() {
         delegate.setRequestPort();
     }

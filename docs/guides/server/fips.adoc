@@ -37,12 +37,13 @@ When {project_name} executes in fips mode, it will use the BCFIPS bits instead o
 
 === BouncyCastle FIPS bits
 
-BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-java/[BouncyCastle official page]. Then you can add them to the directory
+BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/download/bouncy-castle-java-fips/[BouncyCastle official page]. Then you can add them to the directory
 `KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle {project_name} dependencies. The supported BCFIPS bits needed are:
 
 * bc-fips version ${properties["bouncycastle.bcfips.version"]}.
 * bctls-fips version ${properties["bouncycastle.bctls-fips.version"]}.
 * bcpkix-fips version ${properties["bouncycastle.pkixfips.version"]}.
+* bcutil-fips version ${properties["bouncycastle.bcutilfips.version"]}.
 
 == Generating keystore
 
@@ -154,17 +155,18 @@ always fulfils this requirement.
 == Other restrictions
 
 To have SAML working, make sure that a `XMLDSig` security provider is available in your security providers.
-To have Kerberos working, make sure that a `SunJGSS` security provider is available. In FIPS enabled RHEL 9 in OpenJDK 17.0.6, these
-security providers are not present in the `java.security`, which means that they effectively cannot work.
+To have Kerberos working, make sure that a `SunJGSS` security provider is available. In FIPS enabled RHEL 9 in OpenJDK 21, the `XMLDSig` security provider may be already enabled
+in the `java.security` by default and the same applies with latest OpenJDK 17. But with older OpenJDK 17, it may not be enabled by default, which means that SAML effectively cannot work.
 
-To have SAML working, you can manually add the provider into `JAVA_HOME/conf/security/java.security` into the list fips providers. For example, add the line such as the following:
+To have SAML working, you can manually add the provider into `JAVA_HOME/conf/security/java.security` into the list fips providers. For example, add the line such as the following in case
+that it is not already available in your FIPS security providers:
 
 [source]
 ----
 fips.provider.7=XMLDSig
 ----
 
-Adding this security provider should work well. In fact, it is FIPS compliant and likely will be added by default in the future OpenJDK 17 micro version.
+Adding this security provider should work well. In fact, it is FIPS compliant and is already added by default in the OpenJDK 21.
 Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=1940064[bugzilla].
 
 NOTE: It is recommended to look at `JAVA_HOME/conf/security/java.security` and check all configured providers here and make sure that the number matches. In other words, `fips.provider.7`
@@ -195,6 +197,7 @@ it detects that corresponding BCFIPS jars are present (see above for the version
 ----
 cp $KEYCLOAK_HOME/providers/bc-fips-*.jar $KEYCLOAK_HOME/bin/client/lib/
 cp $KEYCLOAK_HOME/providers/bctls-fips-*.jar $KEYCLOAK_HOME/bin/client/lib/
+cp $KEYCLOAK_HOME/providers/bcutil-fips-*.jar $KEYCLOAK_HOME/bin/client/lib/
 ----
 
 NOTE: When trying to use BCFKS truststore/keystore with CLI, you may see issues due this truststore is not the default java keystore type. It can be good to specify it as default in java
@@ -223,7 +226,7 @@ For example in the current directory, you can create sub-directory `files` and a
 
 * BC FIPS jar files as described above
 * Custom keystore file - named for example `keycloak-fips.keystore.bcfks`
-* Security file `kc.java.security` with added provider for SAML
+* Security file `kc.java.security` with added provider for SAML (Not needed with OpenJDK 21 or newer OpenJDK 17)
 
 Then create `Containerfile` in the current directory similar to this:
 

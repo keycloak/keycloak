@@ -244,7 +244,7 @@ public class AccountRestService {
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());
-        representation.setClientName(StringPropertyReplacer.replaceProperties(model.getName(), getProperties()));
+        representation.setClientName(model.getName());
         representation.setDescription(model.getDescription());
         representation.setUserConsentRequired(model.isConsentRequired());
         representation.setInUse(inUseClients.contains(model.getClientId()));
