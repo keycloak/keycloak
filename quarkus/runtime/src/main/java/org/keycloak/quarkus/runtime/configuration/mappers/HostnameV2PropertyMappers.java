@@ -40,7 +40,7 @@ public final class HostnameV2PropertyMappers {
         List<String> inUse = REMOVED_OPTIONS.stream().filter(s -> Configuration.getOptionalKcValue(s).isPresent()).toList();
         
         if (!inUse.isEmpty()) {
-            LOGGER.errorf("Hostname v1 options %s are still in use, please review your configuruation", inUse);
+            LOGGER.errorf("Hostname v1 options %s are still in use, please review your configuration", inUse);
         }
     }
 
