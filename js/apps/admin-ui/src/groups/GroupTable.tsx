@@ -25,25 +25,19 @@ type GroupTableProps = {
 
 export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
-
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
-
   const [rename, setRename] = useState<GroupRepresentation>();
   const [isCreateModalOpen, toggleCreateOpen] = useToggle();
+  const [duplicateId, setDuplicateId] = useState<string>();
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
-
   const { currentGroup } = useSubGroups();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [search, setSearch] = useState<string>();
-
   const location = useLocation();
   const id = getLastId(location.pathname);
-
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
@@ -101,6 +95,17 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             refresh();
             viewRefresh();
           }}
+        />
+      )}
+      {duplicateId && (
+        <GroupsModal
+          id={duplicateId}
+          duplicateId={duplicateId}
+          refresh={() => {
+            refresh();
+            viewRefresh();
+          }}
+          handleModalToggle={() => setDuplicateId(undefined)}
         />
       )}
       {move && (
@@ -172,6 +177,17 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                     return false;
                   },
                 },
+                ...(!id
+                  ? [
+                      {
+                        title: t("duplicate"),
+                        onRowClick: async (group: GroupRepresentation) => {
+                          setDuplicateId(group.id);
+                          return false;
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   isSeparator: true,
                 },
