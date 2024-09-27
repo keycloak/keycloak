@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'keycloak/keycloak'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-      - uses: snyk/actions/setup@master
+      - uses: snyk/actions/setup@ae9442546152ba9bb0a1c85e2672112c97e7a06d # master
 
       - name: Check for vulnerabilities in Quarkus
         run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --json quarkus/deployment | .github/scripts/snyk-report.sh
