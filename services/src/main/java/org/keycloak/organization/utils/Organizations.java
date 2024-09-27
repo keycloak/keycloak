@@ -26,9 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -43,17 +41,13 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
-import org.keycloak.representations.idm.OrganizationDomainRepresentation;
-import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.utils.StringUtil;
 
 public class Organizations {
 
@@ -185,6 +179,10 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
+        if (!session.getContext().getRealm().isOrganizationsEnabled()) {
+            return null;
+        }
+
         Optional<OrganizationModel> organization = Optional.ofNullable(session.getContext().getOrganization());
 
         if (organization.isPresent()) {
