@@ -62,6 +62,10 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
 
         Optional.ofNullable(config.get("hostname-admin")).ifPresent(h ->
                 adminUrl = validateAndCreateUri(h, "Provided hostname-admin is not a valid URL"));
+        
+        if (adminUrl != null && hostnameUrl == null) {
+            throw new IllegalArgumentException("hostname must be set to a URL when hostname-admin is set");
+        }
 
         // Dynamic backchannel requires hostname to be specified as full URL. Otherwise we might end up with some parts of the
         // backend request in frontend URLs. Therefore frontend (and admin) needs to be fully static.
