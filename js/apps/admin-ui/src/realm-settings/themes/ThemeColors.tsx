@@ -30,7 +30,7 @@ type ColorControlProps = TextControlProps<any> & {
   color: string;
 };
 
-const ColorControl = ({ name, color, ...props }: ColorControlProps) => {
+const ColorControl = ({ name, color, label, ...props }: ColorControlProps) => {
   const { t } = useTranslation();
   const { control, setValue } = useFormContext();
   const currentValue = useWatch({
@@ -40,7 +40,7 @@ const ColorControl = ({ name, color, ...props }: ColorControlProps) => {
   return (
     <InputGroup>
       <InputGroupItem isFill>
-        <TextControl {...props} name={t(name)} />
+        <TextControl {...props} name={name} label={t(label)} />
       </InputGroupItem>
       <input
         type="color"
