@@ -96,7 +96,7 @@ public class ExportImportManager {
             throw new IllegalStateException("Import not enabled");
         }
         
-        return importAtStartup(dir).map(Supplier::get).anyMatch(provider -> {
+        return getStartupImportProviders(dir).map(Supplier::get).anyMatch(provider -> {
             try {
                 return provider.isMasterRealmExported();
             } catch (IOException e) {
@@ -120,8 +120,12 @@ public class ExportImportManager {
     public void runImportAtStartup(String dir) throws IOException {
         System.setProperty(ExportImportConfig.STRATEGY, Strategy.IGNORE_EXISTING.toString());
         ExportImportConfig.setReplacePlaceholders(true);
+        // enables logging of what is imported
+        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
         
-        importAtStartup(dir).map(Supplier::get).forEach(ip -> {
+        // TODO: ideally the static setting above should be unset after this is run 
+        
+        getStartupImportProviders(dir).map(Supplier::get).forEach(ip -> {
             try {
                 ip.importModel();
             } catch (IOException e) {
@@ -130,7 +134,7 @@ public class ExportImportManager {
         });
     }
 
-    private Stream<Supplier<ImportProvider>> importAtStartup(String dir) {
+    private Stream<Supplier<ImportProvider>> getStartupImportProviders(String dir) {
         Stream<ProviderFactory> factories = sessionFactory.getProviderFactoriesStream(ImportProvider.class);
 
         return factories.flatMap(factory -> {
