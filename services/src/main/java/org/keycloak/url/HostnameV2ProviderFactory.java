@@ -19,7 +19,6 @@ package org.keycloak.url;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
@@ -36,7 +35,6 @@ import org.keycloak.urls.HostnameProviderFactory;
 public class HostnameV2ProviderFactory implements HostnameProviderFactory, EnvironmentDependentProviderFactory {
     
     private static final Logger LOGGER = Logger.getLogger(HostnameV2ProviderFactory.class);
-    private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy", "hostname-strict-https");
     
     private static final String INVALID_HOSTNAME = "Provided hostname is neither a plain hostname nor a valid URL";
     private String hostname;
@@ -57,13 +55,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
 //            throw new IllegalArgumentException("hostname is configured, hostname-strict must be set to true");
             LOGGER.info("If hostanme is specified, hostname-strict is effectively ignored");
         }
-        
-        List<String> inUse = REMOVED_OPTIONS.stream().filter(s -> config.get(s) != null).toList();
-        
-        if (!inUse.isEmpty()) {
-            LOGGER.warnf("Hostname v1 options %s are still in use, please review your configuruation", inUse);
-        }
-        
+
         // Set hostname, can be either a full URL, or just hostname
         if (hostnameRaw != null) {
             if (!(hostnameRaw.startsWith("http://") || hostnameRaw.startsWith("https://"))) {
