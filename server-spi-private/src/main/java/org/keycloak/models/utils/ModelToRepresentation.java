@@ -1310,6 +1310,7 @@ public class ModelToRepresentation {
         rep.setName(model.getName());
         rep.setAlias(model.getAlias());
         rep.setEnabled(model.isEnabled());
+        rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());
         model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
                 .forEach(rep::addDomain);

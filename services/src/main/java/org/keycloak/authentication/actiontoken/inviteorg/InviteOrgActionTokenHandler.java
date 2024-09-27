@@ -143,7 +143,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
 
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        String redirectUri = token.getRedirectUri();
 
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");

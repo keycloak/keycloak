@@ -145,8 +145,11 @@ public class OrganizationInvitationResource {
 
         token.setOrgId(organization.getId());
 
-        String redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
-        token.setRedirectUri(redirectUri);
+        if (organization.getRedirectUrl() == null || organization.getRedirectUrl().isBlank()) {
+            token.setRedirectUri(Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString());
+        } else {
+            token.setRedirectUri(organization.getRedirectUrl());
+        }
 
         return token.serialize(session, realm, session.getContext().getUri());
     }

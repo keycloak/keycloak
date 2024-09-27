@@ -65,6 +65,10 @@ public interface OrganizationModel {
 
     void setDescription(String description);
 
+    String getRedirectUrl();
+
+    void setRedirectUrl(String redirectUrl);
+
     Map<String, List<String>> getAttributes();
 
     void setAttributes(Map<String, List<String>> attributes);

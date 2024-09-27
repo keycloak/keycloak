@@ -49,6 +49,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.organization.validation.OrganizationsValidation;
+import org.keycloak.organization.validation.OrganizationsValidation.OrganizationValidationException;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -102,15 +104,17 @@ public class OrganizationsResource {
         ReservedCharValidator.validateNoSpace(organization.getAlias());
 
         try {
+            OrganizationsValidation.validateUrl(organization.getRedirectUrl());
+
             OrganizationModel model = provider.create(organization.getName(), organization.getAlias());
             RepresentationToModel.toModel(organization, model);
             organization.setId(model.getId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(organization).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
-        } catch (ModelValidationException mve) {
-            throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
-        } catch (ModelDuplicateException mve) {
-            throw ErrorResponse.error(mve.getMessage(), Status.CONFLICT);
+        } catch (ModelValidationException | OrganizationValidationException ex) {
+            throw ErrorResponse.error(ex.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ModelDuplicateException mde) {
+            throw ErrorResponse.error(mde.getMessage(), Status.CONFLICT);
         }
     }
 

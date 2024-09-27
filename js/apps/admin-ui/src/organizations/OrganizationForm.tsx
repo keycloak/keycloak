@@ -72,6 +72,11 @@ export const OrganizationForm = ({
           addButtonLabel="addDomain"
         />
       </FormGroup>
+      <TextControl
+        label={t("redirectUrl")}
+        name="redirectUrl"
+        labelIcon={t("organizationRedirectUrlHelp")}
+      />
       <TextAreaControl name="description" label={t("description")} />
     </>
   );

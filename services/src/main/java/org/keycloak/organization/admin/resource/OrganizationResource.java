@@ -39,6 +39,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
+import org.keycloak.organization.validation.OrganizationsValidation.OrganizationValidationException;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -93,11 +95,12 @@ public class OrganizationResource {
     @Operation(summary = "Updates the organization")
     public Response update(OrganizationRepresentation organizationRep) {
         try {
+            OrganizationsValidation.validateUrl(organizationRep.getRedirectUrl());
             RepresentationToModel.toModel(organizationRep, organization);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(organizationRep).success();
             return Response.noContent().build();
-        } catch (ModelValidationException mve) {
-            throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ModelValidationException | OrganizationValidationException ex) {
+            throw ErrorResponse.error(ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 

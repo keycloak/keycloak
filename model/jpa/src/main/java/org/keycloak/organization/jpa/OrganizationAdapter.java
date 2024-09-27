@@ -127,6 +127,16 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public String getRedirectUrl() {
+        return entity.getRedirectUrl();
+    }
+
+    @Override
+    public void setRedirectUrl(String redirectUrl) {
+        entity.setRedirectUrl(redirectUrl);
+    }
+
+    @Override
     public void setAttributes(Map<String, List<String>> attributes) {
         if (attributes == null) {
             return;

@@ -22,6 +22,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,7 +47,6 @@ import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -74,6 +74,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             String domain = "org-" + i + ".org";
             OrganizationRepresentation orgRep = createOrganization(testRealm(), getCleanup(), "org-" + i, broker, domain);
             OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+
+            orgRep.setRedirectUrl("https://0.0.0.0:8080");
+            try (Response response = organization.update(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            }
 
             expectedOrganizations.add(orgRep);
 
@@ -114,7 +119,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
         assertEquals(expectedOrganizations.size(), organizations.size());
-        // id, name, alias, and description should have all been preserved.
+        // id, name, alias, description and redirectUrl should have all been preserved.
         assertThat(organizations.stream().map(OrganizationRepresentation::getId).toList(),
                 Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getId).toArray()));
         assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(),
@@ -123,6 +128,8 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
                 Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getAlias).toArray()));
         assertThat(organizations.stream().map(OrganizationRepresentation::getDescription).toList(),
                 Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getDescription).toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getRedirectUrl).toList(),
+                Matchers.containsInAnyOrder(expectedOrganizations.stream().map(OrganizationRepresentation::getRedirectUrl).toArray()));
 
         // the endpoint search method returns brief representations of orgs - to get full rep we need to fetch by id.
         for (OrganizationRepresentation organization : organizations) {
