@@ -134,6 +134,16 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/> 
 
+== PROXY Protocol
+
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+
+This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
+
+For example:
+
+<@kc.start parameters="--proxy-protocol-enabled true"/> 
+
 == Enabling client certificate lookup
 
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
