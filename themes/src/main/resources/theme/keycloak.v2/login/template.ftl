@@ -95,9 +95,9 @@
     <style>
       :root {
       <#list realm.attributes as k, v>
-        <#if k?contains("bglogo")>
-            --keycloak-bg-logo-ur: url('${v}');
-        <#elseif k?contains("logo")>
+        <#if k?contains("bglogo") && v?has_content>
+            --keycloak-bg-logo-url: url('${v}');
+        <#elseif k?contains("logo") && v?has_content>
             --keycloak-logo-url: url('${v}');
         </#if>
         <#if k?starts_with("style.light")>
