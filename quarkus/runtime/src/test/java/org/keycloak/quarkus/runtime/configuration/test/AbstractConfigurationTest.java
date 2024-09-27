@@ -29,6 +29,7 @@ import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -109,6 +110,7 @@ public abstract class AbstractConfigurationTest {
         }
 
         SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
+        PropertyMappers.reset();
     }
 
     protected Config.Scope initConfig(String... scope) {
