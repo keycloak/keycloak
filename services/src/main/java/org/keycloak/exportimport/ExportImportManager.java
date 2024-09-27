@@ -96,13 +96,13 @@ public class ExportImportManager {
             throw new IllegalStateException("Import not enabled");
         }
         
-        return importAtStartup(dir).map(Supplier::get).map(ip -> {
+        return importAtStartup(dir).map(Supplier::get).anyMatch(provider -> {
             try {
-                return ip.isMasterRealmExported();
+                return provider.isMasterRealmExported();
             } catch (IOException e) {
                 throw new RuntimeException("Failed to run import", e);
             }
-        }).anyMatch(b -> b);
+        });
     }
 
     public boolean isRunExport() {
