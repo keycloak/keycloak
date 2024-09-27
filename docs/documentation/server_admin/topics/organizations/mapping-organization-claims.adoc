@@ -3,22 +3,30 @@
 =  Mapping organization claims
 [role="_abstract"]
 To map organization-specific claims into tokens, a client needs to request the *organization* scope when sending
-authorization requests to the server. When authenticating in the context of an organization, clients can request the `organization` scope to map to tokens information
-about the organizations the user is a member.
+authorization requests to the server. When authenticating in the context of an organization, clients can request the `organization` scope to map information
+about the organizations where the user is a member.
 
 As a result, the token will contain a claim as follows:
 
 ```json
 "organization": {
-  "acme": {}
+  "testcorp": {
+    "attr1": [
+      "value1"
+    ]
+  }
 }
 ```
 
 The organization claim can be used by clients (for example, from ID Tokens) and resource servers (for example, from access tokens)
 to authorize access to protected resources based on the organization where the user is a member.
 
-The `organization` scope is a built-in optional client scope at the realm.  Therefore, this scope is added to any client created
-in the realm, by default.
+The `organization` scope is a built-in optional client scope at the realm.  Therefore, this scope is added to any client created in the realm by default. It also defines the `Organization Membership` mapper that controls how the organization membership information is mapped to the tokens.
+
+By default, the organization attributes are not included in the organization claim. To include the attributes in the claim, edit the mapper and enable *Add organization attributes*.
+
+.Including attributes in the organization claim
+image:images/organizations-add-org-attrs-in-claim.png[alt="Including attributes in the organization claim"]
 
 The `organization` scope is requested using different formats:
 
