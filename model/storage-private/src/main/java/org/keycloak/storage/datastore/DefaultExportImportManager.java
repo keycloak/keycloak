@@ -419,6 +419,13 @@ public class DefaultExportImportManager implements ExportImportManager {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
+        if (rep.getGroups() != null) {
+            importGroups(newRealm, rep);
+            if (rep.getDefaultGroups() != null) {
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
+            }
+        }
+
         if (rep.getComponents() != null) {
             MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
             String parentId = newRealm.getId();
@@ -427,12 +434,6 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-        if (rep.getGroups() != null) {
-            importGroups(newRealm, rep);
-            if (rep.getDefaultGroups() != null) {
-                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
-            }
-        }
 
 
         // create users and their role mappings and social mappings
@@ -662,7 +663,6 @@ public class DefaultExportImportManager implements ExportImportManager {
             throw new RuntimeException("Either client or clientScope needs to be specified in scope mappings");
         }
     }
-
 
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) {
