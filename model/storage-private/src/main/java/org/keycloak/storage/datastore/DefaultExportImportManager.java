@@ -66,6 +66,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -83,6 +84,8 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -132,8 +135,6 @@ import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
-import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.MembershipType;
 
 /**
  * This wraps the functionality about export/import for the storage.
@@ -1589,6 +1590,7 @@ public class DefaultExportImportManager implements ExportImportManager {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
+                OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
                 OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
                 RepresentationToModel.toModel(orgRep, orgModel);
 

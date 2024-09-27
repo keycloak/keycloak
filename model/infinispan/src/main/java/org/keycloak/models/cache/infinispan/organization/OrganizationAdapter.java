@@ -122,6 +122,18 @@ public class OrganizationAdapter implements OrganizationModel {
     }
 
     @Override
+    public String getRedirectUrl() {
+        if (isUpdated()) return updated.getRedirectUrl();
+        return cached.getRedirectUrl();
+    }
+
+    @Override
+    public void setRedirectUrl(String redirectUrl) {
+        getDelegateForUpdate();
+        updated.setRedirectUrl(redirectUrl);
+    }
+
+    @Override
     public Map<String, List<String>> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
         return cached.getAttributes(modelSupplier);

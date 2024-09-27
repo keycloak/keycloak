@@ -107,4 +107,10 @@
         <dropTable tableName="USER_SESSION"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.0.0-33201-org-redirect-url">
+        <addColumn tableName="ORG">
+            <column name="REDIRECT_URL" type="VARCHAR(2048)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

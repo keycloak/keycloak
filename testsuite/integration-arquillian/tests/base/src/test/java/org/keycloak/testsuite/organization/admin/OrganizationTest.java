@@ -551,4 +551,41 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
+
+    @Test
+    public void testInvalidRedirectUri() {
+        OrganizationRepresentation expected = createOrganization();
+        expected.setRedirectUrl("http://valid.url:8080/");
+
+        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), equalTo("http://valid.url:8080/"));
+        }
+
+        expected.setRedirectUrl("");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl(" ");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl("invalid");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl("https://\ninvalid");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+    }
 }

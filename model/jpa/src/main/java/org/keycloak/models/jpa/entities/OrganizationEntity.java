@@ -31,6 +31,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.keycloak.utils.StringUtil;
 
 @Table(name="ORG")
 @Entity
@@ -65,6 +66,9 @@ public class OrganizationEntity {
 
     @Column(name = "DESCRIPTION")
     private String description;
+
+    @Column(name = "REDIRECT_URL")
+    private String redirectUrl;
 
     @Column(name = "REALM_ID")
     private String realmId;
@@ -109,6 +113,17 @@ public class OrganizationEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
+
+    public void setRedirectUrl(String redirectUrl) {
+        if (StringUtil.isNullOrEmpty(redirectUrl)) {
+            redirectUrl = null;
+        }
+        this.redirectUrl = redirectUrl;
     }
 
     public String getRealmId() {
