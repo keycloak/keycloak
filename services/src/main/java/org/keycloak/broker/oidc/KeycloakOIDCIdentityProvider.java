@@ -31,6 +31,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.ErrorResponseException;
@@ -42,6 +43,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -152,6 +154,9 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         return validateJwt(event, subjectToken, subjectTokenType);
     }
 
-
+    protected boolean isTokenTypeSupported(JsonWebToken parsedToken) {
+        String type = parsedToken.getType();
+        return Objects.nonNull(type) && super.isTokenTypeSupported(parsedToken);
+    }
 
 }
