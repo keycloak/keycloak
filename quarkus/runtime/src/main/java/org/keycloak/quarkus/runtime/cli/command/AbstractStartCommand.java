@@ -23,7 +23,9 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.url.HostnameV2ProviderFactory;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -44,6 +46,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
         HttpPropertyMappers.validateConfig();
+        HostnameV2PropertyMappers.validateConfig();
         validateConfig();
 
         if (ConfigArgsConfigSource.getAllCliArgs().contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
