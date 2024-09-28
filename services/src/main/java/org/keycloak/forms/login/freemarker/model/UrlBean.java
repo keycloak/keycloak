@@ -96,7 +96,7 @@ public class UrlBean {
     }
 
     public String getResourcesUrl() {
-        return getThemeRootUri().toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
+        return getThemeRootUri().toString() + "/" + getResourcesPath();
     }
 
     public String getResourcesCommonUrl() {
