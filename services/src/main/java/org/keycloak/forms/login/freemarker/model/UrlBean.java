@@ -99,6 +99,10 @@ public class UrlBean {
         return getThemeRootUri().toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
+    public String getResourcesCommonUrl() {
+        return getThemeRootUri().toString() + "/" + getResourcesCommonPath();
+    }
+
     public String getOauthAction() {
         if (this.actionuri != null) {
             return this.actionuri.getPath();
