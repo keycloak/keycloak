@@ -40,7 +40,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.cli.PropertyMapperParameterConsumer;
+import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -417,11 +417,15 @@ public class PropertyMapper<T> {
             validator.accept(this, value);
         }
     }
+    
+    public boolean isList() {
+        return getOption().getType() == java.util.List.class;
+    }
 
     public void validateValues(ConfigValue configValue, BiConsumer<ConfigValue, String> singleValidator) {
         String value = configValue.getValue();
 
-        boolean multiValued = getOption().getType() == java.util.List.class;
+        boolean multiValued = isList();
         StringBuilder result = new StringBuilder();
 
         String[] values = multiValued ? value.split(",") : new String[] { value };
@@ -462,10 +466,10 @@ public class PropertyMapper<T> {
         if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
             throw new PropertyException(
                     String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
-                            PropertyMapperParameterConsumer.getExpectedValuesMessage(expectedValues, expectedValues)));
+                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues)));
         }
     }
-
+    
     String getOptionAndSourceMessage(ConfigValue configValue) {
         if (isCliOption(configValue)) {
             return String.format("'%s'", this.getCliFormat());

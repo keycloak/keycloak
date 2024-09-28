@@ -50,7 +50,7 @@ add_repository "pom.xml" "repository"
 add_repository "quarkus/pom.xml" "pluginRepository"
 add_repository "operator/pom.xml" "pluginRepository"
 
-./quarkus/scripts/set-quarkus-version.sh
+./quarkus/set-quarkus-version.sh
 git commit -am "Set quarkus version to 999-SNAPSHOT"
 
 snapshot_version_hash=$(git log origin/quarkus-next --grep="Set quarkus version to 999-SNAPSHOT" --format="%H" -n 1)

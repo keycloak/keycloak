@@ -16,7 +16,6 @@ final class MetricsPropertyMappers {
         return new PropertyMapper[] {
                 fromOption(MetricsOptions.METRICS_ENABLED)
                         .to("quarkus.micrometer.enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };
     }

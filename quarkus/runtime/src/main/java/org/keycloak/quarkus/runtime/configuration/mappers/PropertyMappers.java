@@ -39,12 +39,17 @@ import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourcePro
 public final class PropertyMappers {
 
     public static String VALUE_MASK = "*******";
-    private static final MappersConfig MAPPERS = new MappersConfig();
+    private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
 
     private PropertyMappers(){}
-
+    
     static {
+        reset();
+    }
+
+    public static void reset() {
+        MAPPERS = new MappersConfig();
         MAPPERS.addAll(CachingPropertyMappers.getClusteringPropertyMappers());
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnameV2PropertyMappers.getHostnamePropertyMappers());

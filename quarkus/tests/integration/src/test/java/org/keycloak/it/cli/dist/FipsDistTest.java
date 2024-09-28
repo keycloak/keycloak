@@ -33,7 +33,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @RawDistOnly(reason = "Containers are immutable")
 public class FipsDistTest {
 
-    private static final String BCFIPS_VERSION = "BCFIPS version 1.000205";
+    private static final String BCFIPS_VERSION = "BCFIPS version 2.0";
 
     @Test
     void testFipsNonApprovedMode(KeycloakDistribution dist) {
@@ -57,7 +57,7 @@ public class FipsDistTest {
             cliResult.assertMessage("password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
-            
+
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();
@@ -77,7 +77,6 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
-            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
@@ -125,7 +124,6 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
-            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
@@ -174,6 +172,7 @@ public class FipsDistTest {
         rawDist.copyProvider("org.bouncycastle", "bc-fips");
         rawDist.copyProvider("org.bouncycastle", "bctls-fips");
         rawDist.copyProvider("org.bouncycastle", "bcpkix-fips");
+        rawDist.copyProvider("org.bouncycastle", "bcutil-fips");
     }
 
 }

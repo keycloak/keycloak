@@ -18,6 +18,8 @@ Distributed environments frequently require the use of a reverse proxy. {project
 * `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
+NOTE: If you are using a reverse proxy for anything other than https passthrough and do not set the `proxy-headers` option, then by default you will see 403 Forbidden responses to requests via the proxy that perform origin checking.
+
 For example:
 
 <@kc.start parameters="--proxy-headers forwarded"/>
@@ -131,6 +133,16 @@ To ensure that proxy headers are used only from proxies you trust, set the `prox
 For example:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/> 
+
+== PROXY Protocol
+
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+
+This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
+
+For example:
+
+<@kc.start parameters="--proxy-protocol-enabled true"/> 
 
 == Enabling client certificate lookup
 

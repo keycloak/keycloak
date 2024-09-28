@@ -198,6 +198,14 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
+  clickMenuDuplicate() {
+    cy.get(this.#menuContent)
+      .find(this.#menuItemText)
+      .contains("Duplicate")
+      .click({ force: true });
+    return this;
+  }
+
   clickItemCheckbox(itemName: string) {
     cy.get(this.#itemsRows)
       .contains(itemName)
@@ -257,6 +265,13 @@ export default class ListingPage extends CommonElements {
   deleteItem(itemName: string) {
     this.clickRowDetails(itemName);
     this.clickMenuDelete();
+
+    return this;
+  }
+
+  duplicateItem(itemName: string) {
+    this.clickRowDetails(itemName);
+    this.clickMenuDuplicate();
 
     return this;
   }

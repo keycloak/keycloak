@@ -1291,4 +1291,35 @@ public class ModelToRepresentation {
         rep.setConfig(model.getConfig());
         return rep;
     }
+
+    public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
+        OrganizationRepresentation rep = toBriefRepresentation(model);
+        if (rep == null) {
+            return null;
+        }
+        rep.setAttributes(model.getAttributes());
+        return rep;
+    }
+
+    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
+        if (model == null) {
+            return null;
+        }
+        OrganizationRepresentation rep = new OrganizationRepresentation();
+        rep.setId(model.getId());
+        rep.setName(model.getName());
+        rep.setAlias(model.getAlias());
+        rep.setEnabled(model.isEnabled());
+        rep.setDescription(model.getDescription());
+        model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
+                .forEach(rep::addDomain);
+        return rep;
+    }
+
+    public static OrganizationDomainRepresentation toRepresentation(OrganizationDomainModel model) {
+        OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
+        representation.setName(model.getName());
+        representation.setVerified(model.isVerified());
+        return representation;
+    }
 }

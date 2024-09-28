@@ -5,6 +5,7 @@ export default class GroupModal extends ModalUtils {
   #groupNameInput = "name";
   #createGroupBnt = "createGroup";
   #renameButton = "renameGroup";
+  #duplicateGroup = "duplicateGroup";
 
   public setGroupNameInput(name: string) {
     cy.findByTestId(this.#groupNameInput).clear().type(name);
@@ -18,6 +19,11 @@ export default class GroupModal extends ModalUtils {
 
   public rename() {
     cy.findByTestId(this.#renameButton).click();
+    return this;
+  }
+
+  public duplicate() {
+    cy.findByTestId(this.#duplicateGroup).click();
     return this;
   }
 

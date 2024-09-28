@@ -22,7 +22,7 @@ If you are using the JavaScript adapter, you can also achieve the same behavior 
 ----
 const keycloak = new Keycloak('keycloak.json');
 
-keycloak.createLoginUrl({
+await keycloak.createLoginUrl({
 	idpHint: 'facebook'
 });
 ----

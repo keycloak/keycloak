@@ -107,7 +107,7 @@ export default function DetailOrganization() {
                 onSubmit={form.handleSubmit(save)}
                 isHorizontal
               >
-                <OrganizationForm />
+                <OrganizationForm readOnly />
                 <ActionGroup>
                   <FormSubmitButton
                     formState={form.formState}
