@@ -68,7 +68,7 @@ public class LoginStatusIframeEndpoint {
                 if (validWebOrigins.contains("*") || validWebOrigins.contains(origin)) {
                     return Response.noContent().build();
                 }
-                logger.debugf("client %s does not allow origin=%s for requestOrigin=%s (as determined by hostname settings), init will return a 403", clientId, origin, requestOrigin);
+                logger.debugf("client %s does not allow origin=%s for requestOrigin=%s (as determined by the proxy-header setting), init will return a 403", clientId, origin, requestOrigin);
             } else {
                 logger.debugf("client %s does not exist or not enabled, init will return a 403", clientId);
             }

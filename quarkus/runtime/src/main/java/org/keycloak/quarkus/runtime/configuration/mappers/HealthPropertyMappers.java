@@ -13,7 +13,6 @@ final class HealthPropertyMappers {
         return new PropertyMapper[] {
                 fromOption(HealthOptions.HEALTH_ENABLED)
                         .to("quarkus.smallrye-health.extensions.enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };
     }

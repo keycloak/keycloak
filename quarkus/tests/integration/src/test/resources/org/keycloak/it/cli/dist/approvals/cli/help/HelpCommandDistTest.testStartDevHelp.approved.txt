@@ -200,17 +200,14 @@ HTTP(S):
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     DEPRECATED. The trust store which holds the certificate information of the
-                       certificates to trust. Use the System Truststore instead, see the docs for
-                       details.
+                     The trust store which holds the certificate information of the certificates to
+                       trust.
 --https-trust-store-password <password>
-                     DEPRECATED. The password of the trust store file. Use the System Truststore
-                       instead, see the docs for details.
+                     The password of the trust store file.
 --https-trust-store-type <type>
-                     DEPRECATED. The type of the trust store file. If not given, the type is
-                       automatically detected based on the file extension. If 'fips-mode' is set to
-                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
-                       Truststore instead, see the docs for details.
+                     The type of the trust store file. If not given, the type is automatically
+                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
+                       no value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -270,6 +267,10 @@ Proxy:
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence
                        over the deprecated proxy option. Possible values are: forwarded, xforwarded.
+--proxy-protocol-enabled <true|false>
+                     Whether the server should use the HA PROXY protocol when serving requests from
+                       behind a proxy. When set to true, the remote address returned will be the
+                       one from the actual connecting client. Default: false.
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.

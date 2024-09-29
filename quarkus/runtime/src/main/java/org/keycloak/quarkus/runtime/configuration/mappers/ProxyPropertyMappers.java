@@ -21,6 +21,9 @@ final class ProxyPropertyMappers {
                         .transformer((v, c) -> proxyEnabled(null, v, c))
                         .paramLabel("headers")
                         .build(),
+                fromOption(ProxyOptions.PROXY_PROTOCOL_ENABLED)
+                        .to("quarkus.http.proxy.use-proxy-protocol")
+                        .build(),
                 fromOption(ProxyOptions.PROXY_FORWARDED_HOST)
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy-headers")

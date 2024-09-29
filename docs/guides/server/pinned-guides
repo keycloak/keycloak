@@ -9,6 +9,7 @@ db
 caching
 outgoinghttp
 keycloak-truststore
+mutual-tls
 features
 configuration-provider
 logging

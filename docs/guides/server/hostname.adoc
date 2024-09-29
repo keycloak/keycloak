@@ -48,7 +48,7 @@ The result of this configuration is that you can continue to access {project_nam
 
 == Using a reverse proxy
 
-When a proxy is in use, the `proxy-headers` should be set. Depending on the hostname settings, some or all of the URL, may be dynamically determined.
+When a proxy is forwarding http or reencrypted TLS requests, the `proxy-headers` option should be set. Depending on the hostname settings, some or all of the URL, may be dynamically determined.
 
 WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 

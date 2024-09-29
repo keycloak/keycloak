@@ -198,6 +198,10 @@ The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set
 
 The `https-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by https-* options. Use -1 to disable reloading. Defaults to 1h (one hour).
 
+= Option `proxy-protocol-enabled` added
+
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+
 = Options to configure cache max-count added
 
 The `--cache-embedded-$\{CACHE_NAME}-max-count=` can be set to define an upper bound on the number of cache entries in the specified cache.
@@ -258,6 +262,10 @@ For details about supported versions of client libraries with server versions, s
 There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events. The new event types are supported by the Email Event Listener.
 
 The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
+
+= The `https-trust-store-*` options have been undeprecated
+
+Based on the community feedback, we decided to undeprecate `https-trust-store-*` options to allow better granularity in trusted certificates.
 
 = Lightweight access tokens for Admin REST API
 
