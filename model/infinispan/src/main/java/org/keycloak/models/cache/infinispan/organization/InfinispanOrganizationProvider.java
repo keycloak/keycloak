@@ -112,7 +112,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             if (model == null) {
                 return null;
             }
-            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), Stream.of(model));
+            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), model);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
 

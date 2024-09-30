@@ -17,8 +17,8 @@
 
 package org.keycloak.models.cache.infinispan.organization;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.models.OrganizationModel;
@@ -28,21 +28,28 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedOrganizationIds extends AbstractRevisioned implements InRealm {
 
-    private final RealmModel realm;
-    private final Set<String> orgIds = new HashSet<>();
+    private final String realmId;
+    private final List<String> orgIds;
 
-    public CachedOrganizationIds(Long revision, String id, RealmModel realm, Stream<OrganizationModel> organizations) {
+    public CachedOrganizationIds(Long revision, String id, RealmModel realm, OrganizationModel model) {
         super(revision, id);
-        this.realm = realm;
-        organizations.map(OrganizationModel::getId).forEach(orgIds::add);
+        this.realmId = realm.getId();
+        orgIds = List.of(model.getId());
+    }
+
+    public CachedOrganizationIds(Long revision, String id, RealmModel realm, Stream<OrganizationModel> models) {
+        super(revision, id);
+        this.realmId = realm.getId();
+        var ids = models.map(OrganizationModel::getId).toList();
+        orgIds = ids.isEmpty() ? List.of() : ids;
+    }
+
+    public Collection<String> getOrgIds() {
+        return orgIds;
     }
 
     @Override
     public String getRealm() {
-        return realm.getId();
-    }
-
-    public Set<String> getOrgIds() {
-        return orgIds;
+        return realmId;
     }
 }
