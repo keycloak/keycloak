@@ -83,7 +83,8 @@ public class ImportAtStartupDistTest {
 
         CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
-        result.assertMessage("Realm 'master' already exists. Import skipped");
+        result.assertMessage("Realm 'master' imported");
+        result.assertNoMessage("Realm 'master' already exists. Import skipped");
     }
 
     @Test

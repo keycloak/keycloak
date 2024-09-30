@@ -37,6 +37,11 @@ public abstract class ExportImportSessionTask implements KeycloakSessionTask {
             throw new RuntimeException("Error during export/import: " + ioe.getMessage(), ioe);
         }
     }
+    
+    @Override
+    public boolean useExistingSession() {
+        return true;
+    }
 
     protected abstract void runExportImportTask(KeycloakSession session) throws IOException;
 }

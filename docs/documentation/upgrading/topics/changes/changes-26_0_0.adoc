@@ -300,6 +300,10 @@ The new event types are supported by the Email Event Listener.
 
 The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
 
+= `--import-realm` option can import the master realm
+
+When running a `start` or `start-dev` command with the `--import-realm` option before the master realm exists, it will be imported if it exists in the import material. The previous behavior was that the master realm was created first, then its import skipped. 
+
 = BouncyCastle FIPS updated
 
 Our FIPS 140-2 integration is now tested and supported with version 2 of BouncyCastle FIPS libraries. This version is certified with Java 21. If you use FIPS 140-2 integration, it is recommended to
