@@ -28,7 +28,7 @@ export interface KeycloakConfig {
 	/**
 	 * URL to the Keycloak server, for example: http://keycloak-server/auth
 	 */
-	url?: string;
+	url: string;
 	/**
 	 * Name of the realm, for example: 'myrealm'
 	 */
@@ -373,7 +373,7 @@ declare class Keycloak {
 	 * Creates a new Keycloak client instance.
 	 * @param config A configuration object or path to a JSON config file.
 	 */
-	constructor(config?: KeycloakConfig | string)
+	constructor(config: KeycloakConfig | string)
 
 	/**
 	 * Is true if the user is authenticated, false otherwise.
