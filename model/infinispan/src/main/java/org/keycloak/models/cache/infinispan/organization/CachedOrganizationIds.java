@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan.organization;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.models.OrganizationModel;
@@ -40,8 +41,8 @@ public class CachedOrganizationIds extends AbstractRevisioned implements InRealm
     public CachedOrganizationIds(Long revision, String id, RealmModel realm, Stream<OrganizationModel> models) {
         super(revision, id);
         this.realmId = realm.getId();
-        var ids = models.map(OrganizationModel::getId).toList();
-        orgIds = ids.isEmpty() ? List.of() : ids;
+        var ids = models.map(OrganizationModel::getId).collect(Collectors.toSet());
+        orgIds = ids.isEmpty() ? List.of() : List.of(ids.toArray(new String[0]));
     }
 
     public Collection<String> getOrgIds() {
