@@ -72,20 +72,6 @@ jobs:
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
-  keycloak-js:
-    name: Keycloak JS
-    needs: conditional
-    if: needs.conditional.outputs.js-ci == 'true'
-    runs-on: ubuntu-latest
-    env:
-      WORKSPACE: keycloak-js
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/pnpm-setup
-
-      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
-
   ui-shared:
     name: UI Shared
     needs: conditional
@@ -268,7 +254,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           install: false
-          browser: ${{ matrix.browser }} 
+          browser: ${{ matrix.browser }}
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
@@ -299,7 +285,6 @@ jobs:
       - conditional
       - build-keycloak
       - admin-client
-      - keycloak-js
       - ui-shared
       - account-ui
       - account-ui-e2e
