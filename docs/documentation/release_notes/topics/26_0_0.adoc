@@ -272,3 +272,9 @@ Based on the community feedback, we decided to undeprecate `https-trust-store-*`
 = Lightweight access tokens for Admin REST API
 
 Lightweight access tokens can now be used on the admin REST API. The `security-admin-console` and `admin-cli` clients are now using lightweight access tokens by default, so “Always Use Lightweight Access Token” and “Full Scope Allowed” are now enabled on these two clients. However, the behavior in the admin console should effectively remain the same. Be cautious if you have made changes to these two clients and if you are using them for other purposes.
+
+= Keycloak JS now standalone
+
+Keycloak JS is now a standalone library and is therefore no longer served statically from the Keycloak server. The goal is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifing the code and making it easier to maintain in the future. Additionaly the library is now free of third-party dependencies, which makes it more lightweight and easier to use in different environments.
+
+For a complete breakdown of the changes consult the link:{upgradingguide_link}[{upgradingguide_name}].
