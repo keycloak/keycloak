@@ -51,7 +51,22 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
             logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
             stdoutForwarderThread = new Thread(logProcessor);
             stdoutForwarderThread.start();
-            waitForReadiness();
+
+            try {
+                waitForReadiness();
+            } catch (Exception e) {
+                if (logProcessor.containsBuildTimeOptionsError()) {
+                    log.warn("The build time options have values that differ from what is persisted. Restarting container...");
+                    container.destroy();
+                    container = startContainer();
+                    logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
+                    stdoutForwarderThread = new Thread(logProcessor);
+                    stdoutForwarderThread.start();
+                    waitForReadiness();
+                } else {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -285,14 +300,17 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
                         loggedLines.remove(0);
                     }
                 }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         public String getBufferedLog() {
             return String.join("\n", loggedLines);
+        }
+
+        public boolean containsBuildTimeOptionsError() {
+            return loggedLines.stream().anyMatch(line -> line.contains("The following build time options have values that differ from what is persisted"));
         }
     }
 }
