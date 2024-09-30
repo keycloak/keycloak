@@ -250,7 +250,7 @@ The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previ
 = XA Transaction Changes
 
 * The option `transaction-xa-enabled` will default to false, rather than true. If you want XA transaction support you will now need to explicitly set this option to true.
-* XA Transaction recovery support is enabled by default if `transaction-xa-enabled` is true. Transaction logs will be stored at KEYCLOAK_HOME/data/transaction-logs.
+* XA Transaction recovery support is enabled by default. Transaction logs will be stored at KEYCLOAK_HOME/data/transaction-logs.
 
 = Removed offline session preloading
 
