@@ -62,18 +62,20 @@ The `java-keystore` key provider, which allows loading a realm key from an exter
 
 For more information about this subject, see link:{adminguide_link}#realm_keys[Configuring realm keys].
 
+= Deprecating `keycloak` login Theme
+
+The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2`. The `keycloak` login theme will be removed in a future version.
+
+While the `keycloak` login theme remains available for compatibility reasons, it is strongly recommended to switch to `keycoak.v2` as soon as posible.
+
+For all new realms, `keycloak.v2` will be the default login theme.  Also, any existing realm that never explicitly set a login theme will be switched to `keycloak.v2`.
+
 = Customizable Footer in login Themes
 
 The `template.ftl` file in the `base/login` and the `keycloak.v2/login` theme now allows to customize the footer
 of the login box. This can be used to show common links or include custom scripts at the end of the page.
 
 The new `footer.ftl` template provides a `content` macro that is rendered at the bottom of the "login box".
-
-= Deprecating `keycloak` login Theme
-
-The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2` and will be removed in a future version.
-While it remains the default for the new realms for compatibility reasons, it is strongly recommended to switch all the
-realm themes to `keycloak.v2`.
 
 = Highly available multi-site deployments
 
