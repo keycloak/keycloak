@@ -102,7 +102,7 @@ If the appsDomain changes, or should you need a different hostname for any reaso
 
 NOTE: If you set the `hostname-admin`, or the deprecated `hostname-admin-url`, even if you enable ingress, no ingress will be created specifically for admin access. 
 Admin access via a separate hostname is generally expected to have access restrictions, which are not currently expressible via the Keycloak CR. 
-Also the default ingress does not prevent accessing admin endpoints, so you may not want to enable ingress handling via the Keycloak CR at all when you have a separate hosname for admin endpoints.       
+Also the default ingress does not prevent accessing admin endpoints, so you may not want to enable ingress handling via the Keycloak CR at all when you have a separate hostname for admin endpoints.       
 
 ==== TLS Certificate and key
 
