@@ -86,7 +86,6 @@ intention to join the organization.
 On the other hand, if no user is associated with the given email address, the steps
 will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
 to provide the same email address used to send the invitation.
-Make sure to enable the *User registration* setting in the *Login* tab at the *Realm settings* to use this type of invitation.
 
 [[_onboard_member_identity_provider_]]
 == Onboarding members using an Identity Provider

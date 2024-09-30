@@ -11,6 +11,8 @@ To use organizations, you have to enable the feature for the current realm.
 
 . Toggle *Organizations* to *On*.
 
+. Click *Save*
+
 .Enabling Organizations
 image:images/organizations-enabling-orgs.png[alt="Enabling Organizations"]
 
