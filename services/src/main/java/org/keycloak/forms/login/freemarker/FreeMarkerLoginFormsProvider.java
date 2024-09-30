@@ -498,6 +498,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     switch (page) {
                         case LOGIN:
                         case LOGIN_USERNAME:
+                        case LOGIN_WEBAUTHN:
                         case X509_CONFIRM:
                             b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
                             break;
