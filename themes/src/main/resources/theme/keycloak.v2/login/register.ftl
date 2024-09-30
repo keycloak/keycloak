@@ -64,5 +64,35 @@
 
         <@validator.templates/>
         <@validator.script field="password"/>
+        <template id="passwordStrengthTemplate">
+            <div class="${properties.kcProgress} kc-password-strength-bar" id="bar">
+                <div
+                    class="${properties.kcProgressBar}"
+                    role="progressbar"
+                >
+                    <div class="${properties.kcProgressBarIndicator}" id="indicator" style="width:0%"></div>
+                </div>
+            </div>
+        </template>
+
+                { name: "passwordStrength", policy: { value: ${passwordPolicies.passwordStrength?then(0, -1) }, error: "passwordStrength"} }
+
+            if (activePolicies.filter(p => p.name === "passwordStrength").length !== 0) {
+                document.getElementById("input-error-client-password").appendChild(document.querySelector("#passwordStrengthTemplate").content.cloneNode(true));
+            }
+
+                    if (typeof e !== "string") {
+                        const percentage = (e.score + 1) * 20;
+                        document.getElementById("indicator").style.width = percentage + "%";
+                        document.getElementById("bar").classList.remove("pf-m-danger");
+                        document.getElementById("bar").classList.remove("pf-m-success");
+                        if (percentage < 40) {
+                            document.getElementById("bar").classList.add("pf-m-danger");
+                        }
+                        if (percentage >= 80) {
+                            document.getElementById("bar").classList.add("pf-m-success");
+                        }
+                        return;
+                    }
     </#if>
 </@layout.registrationLayout>

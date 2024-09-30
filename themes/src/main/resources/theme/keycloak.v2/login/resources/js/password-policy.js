@@ -37,6 +37,17 @@ const policies = {
       return templateError(policy);
     }
   },
+  passwordStrength: (policy, value) => {
+    const options = {
+      graphs: zxcvbnts["language-common"].adjacencyGraphs,
+      dictionary: {
+        ...zxcvbnts["language-common"].dictionary,
+        ...zxcvbnts["language-en"].dictionary,
+      },
+    };
+    zxcvbnts.core.zxcvbnOptions.setOptions(options);
+    return zxcvbnts.core.zxcvbn(value);
+  },
 };
 
 const templateError = (policy) => policy.error.replace("{0}", policy.value);

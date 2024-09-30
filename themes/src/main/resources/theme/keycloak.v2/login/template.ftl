@@ -85,6 +85,10 @@
         </#list>
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
+    <script src="${url.resourcesPath}/js/zxcvbn-ts-core.js"></script>
+    <script src="${url.resourcesPath}/js/dictionary/language-common.js"></script>
+    <script src="${url.resourcesPath}/js/dictionary/language-en.js"></script>
+  </head>
     <script type="module">
         import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
 
