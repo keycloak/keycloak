@@ -116,7 +116,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && user != null) {
             // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
             if (isOrganizationDisabled(session, user)) {
                 return new ReadOnlyUserModelDelegate(user) {
                     @Override
