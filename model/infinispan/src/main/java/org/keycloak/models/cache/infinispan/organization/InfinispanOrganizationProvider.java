@@ -207,7 +207,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             boolean isManaged = getDelegate().isManagedMember(organization, user);
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
             UserModel member = getDelegate().getMemberById(organization, user.getId());
-            cached = new CachedMembership(loaded, cacheKeyMembership(realm, organization, user), realm, isManaged, member != null);
+            cached = new CachedMembership(loaded, cacheKey, realm, isManaged, member != null);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
 
@@ -243,11 +243,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         String cacheKey = cacheKeyMembership(getRealm(), organization, user);
         CachedMembership cached = realmCache.getCache().get(cacheKey, CachedMembership.class);
 
-        if (cached == null && !isInvalid(cacheKey)) {
+        if (cached == null || isInvalid(cacheKey)) {
+            // this will not cache the result as calling getMemberById() to have a full caching entry would lead to a recursion
             return getDelegate().isManagedMember(organization, user);
         }
 
-        return cached == null ? false : cached.isManaged();
+        return cached.isManaged();
 
     }
 
