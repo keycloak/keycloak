@@ -68,7 +68,7 @@ The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2
 
 While the `keycloak` login theme remains available for compatibility reasons, it is strongly recommended to switch to `keycoak.v2` as soon as posible.
 
-For all new realms, `keycloak.v2` will be the default login theme.
+For all new realms, `keycloak.v2` will be the default login theme.  Also, any existing realm that never explicitly set a login theme will be switched to `keycloak.v2`.
 
 = Customizable Footer in login Themes
 
