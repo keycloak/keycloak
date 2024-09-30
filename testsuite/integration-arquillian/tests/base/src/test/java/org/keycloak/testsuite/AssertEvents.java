@@ -131,14 +131,18 @@ public class AssertEvents implements TestRule {
                 .session(isUUID());
     }
 
-    public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
+    public ExpectedEvent expectCodeToToken(String codeId, String sessionId, boolean offline) {
         return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.REFRESH_TOKEN_TYPE, offline ? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
+    }
+
+    public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
+        return expectCodeToToken(codeId, sessionId, false);
     }
 
     public ExpectedEvent expectDeviceVerifyUserCode(String clientId) {
@@ -169,14 +173,18 @@ public class AssertEvents implements TestRule {
                 .session(codeId);
     }
 
-    public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
+    public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId, boolean offline) {
         return expect(EventType.REFRESH_TOKEN)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.REFRESH_TOKEN_TYPE, offline ? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
+    }
+
+    public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
+        return expectRefresh(refreshTokenId, sessionId, false);
     }
 
     public ExpectedEvent expectLogout(String sessionId) {
@@ -195,7 +203,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectRegister(String username, String email) {
         return expectRegister(username, email, DEFAULT_CLIENT_ID);
     }
-    
+
     public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)

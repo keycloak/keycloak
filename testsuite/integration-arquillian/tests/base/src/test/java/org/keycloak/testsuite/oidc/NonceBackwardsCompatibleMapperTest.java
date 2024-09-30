@@ -77,6 +77,17 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     @Test
+    public void testOfflineSessionNonceWithMapper() throws JsonProcessingException {
+        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        String mapperId = createNonceMapper(testApp);
+        try {
+            testNonce(true, true);
+        } finally {
+            testApp.getProtocolMappers().delete(mapperId);
+        }
+    }
+
+    @Test
     public void testImplicitFlowWithoutMapper() throws Exception {
         try (ClientAttributeUpdater client = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
                 .setImplicitFlowEnabled(true)
@@ -143,8 +154,15 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     private void testNonce(boolean mapper) throws JsonProcessingException {
+        testNonce(mapper, false);
+    }
+
+    private void testNonce(boolean mapper, boolean offlineSession) throws JsonProcessingException {
         String nonce = KeycloakModelUtils.generateId();
         oauth.nonce(nonce);
+        if (offlineSession) {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        }
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -159,11 +177,13 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         checkNonce(nonce, refreshToken.getNonce(), mapper);
 
         EventRepresentation tokenEvent = events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID),
-                loginEvent.getSessionId()).assertEvent();
+                loginEvent.getSessionId(),
+                offlineSession).assertEvent();
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
         events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID),
-                loginEvent.getSessionId()).assertEvent();
+                loginEvent.getSessionId(),
+                offlineSession).assertEvent();
 
         token = oauth.verifyToken(response.getAccessToken());
         checkNonce(nonce, token.getNonce(), mapper);
