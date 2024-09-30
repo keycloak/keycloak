@@ -236,6 +236,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean isManagedMember(OrganizationModel organization, UserModel user) {
+        if (user == null) {
+            return false;
+        }
+
         String cacheKey = cacheKeyMembership(getRealm(), organization, user);
         CachedMembership cached = realmCache.getCache().get(cacheKey, CachedMembership.class);
 
