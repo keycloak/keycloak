@@ -1,6 +1,6 @@
 == Installation
 
-The provision of the feature pack is done using the https://docs.wildfly.org/wildfly-maven-plugin[wildfly-maven-plugin], https://docs.wildfly.org/bootablejar/[wildfly-jar-maven-plugin] or https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/8.0/html/using_jboss_eap_on_openshift_container_platform/assembly_provisioning-a-jboss-eap-server-using-the-maven-plugin_default[eap-maven-plugin] respectively.
+The provision of the feature pack is done using the https://docs.wildfly.org/wildfly-maven-plugin[wildfly-maven-plugin], https://docs.wildfly.org/bootablejar/[wildfly-jar-maven-plugin] or https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/8.0/html/using_jboss_eap_on_openshift_container_platform/assembly_provisioning-a-jboss-eap-server-using-the-maven-plugin_default[eap-maven-plugin] respectively. This is test.
 
 === Example of provision using wildfly maven plugin
 
