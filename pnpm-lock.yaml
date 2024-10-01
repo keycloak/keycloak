@@ -84,8 +84,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.0
-        version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.1
+        version: 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.15.1
         version: 23.15.1
@@ -169,8 +169,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0
       '@patternfly/react-table':
-        specifier: ^5.4.0
-        version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.1
+        version: 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
         version: '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.9)'
@@ -395,8 +395,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0
       '@patternfly/react-table':
-        specifier: ^5.4.0
-        version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.1
+        version: 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.15.1
         version: 23.15.1
@@ -1146,6 +1146,12 @@ packages:
       react: ^17 || ^18
       react-dom: ^17 || ^18
 
+  '@patternfly/react-core@5.4.1':
+    resolution: {integrity: sha512-PJjwN4OCR7jTdWKi0RzuFdtlSQ8gBR+0REczuDHHPW8ky0bs1cIcqGsn5p/b6OgPlztl3UaXqRYLsroiEMasOw==}
+    peerDependencies:
+      react: ^17 || ^18
+      react-dom: ^17 || ^18
+
   '@patternfly/react-icons@5.4.0':
     resolution: {integrity: sha512-2M3qN/naultvRHeG2laJMmoIroFCGAyfwTVrnCjSkG6/KnRoXV0+dqd+Xrh7xzpzvIJB1klvifC0oX42cEkDrA==}
     peerDependencies:
@@ -1155,8 +1161,8 @@ packages:
   '@patternfly/react-styles@5.4.0':
     resolution: {integrity: sha512-4ZE0s6LkX/0KsN0FOeogrDoj18m+BPA73YKnabZGB4SDRzrBNeBh2a6bSt546ZseEjkoJ+S81kOG0G8YckPQYg==}
 
-  '@patternfly/react-table@5.4.0':
-    resolution: {integrity: sha512-HkXxVEPeI6nRVSUSHb5BungF41IfjB8W2VqaA3SX+6fGxQAW0e/Hb58ctUdPR2VJ/S2YZFcIcqCCWQtQEf+xKA==}
+  '@patternfly/react-table@5.4.1':
+    resolution: {integrity: sha512-T05djy6YPqjbGWjpnwUs9oqup8oqqIOBnDOcThnHukgzlwnZvLNywgdoMR5XAKxTcIx/iBE1cu8ieETlITOGLw==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -5444,7 +5450,7 @@ snapshots:
       '@patternfly/react-core': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.0
-      '@patternfly/react-table': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-table': 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
       file-selector: 0.6.0
@@ -5625,6 +5631,17 @@ snapshots:
       react-dropzone: 14.2.3(react@18.3.1)
       tslib: 2.7.0
 
+  '@patternfly/react-core@5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles': 5.4.0
+      '@patternfly/react-tokens': 5.4.0
+      focus-trap: 7.5.4
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-dropzone: 14.2.3(react@18.3.1)
+      tslib: 2.7.0
+
   '@patternfly/react-icons@5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
@@ -5632,9 +5649,9 @@ snapshots:
 
   '@patternfly/react-styles@5.4.0': {}
 
-  '@patternfly/react-table@5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-table@5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@patternfly/react-core': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-core': 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.0
       '@patternfly/react-tokens': 5.4.0
