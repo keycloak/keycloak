@@ -217,6 +217,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public void clickRegister() {
         registerLink.click();
+        WaitUtils.waitForPageToLoad();
     }
 
     public void clickSocial(String alias) {
