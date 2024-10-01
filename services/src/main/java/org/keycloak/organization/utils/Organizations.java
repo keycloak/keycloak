@@ -191,6 +191,11 @@ public class Organizations {
         }
 
         OrganizationProvider provider = getProvider(session);
+
+        if (provider.count() == 0) {
+            return null;
+        }
+
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
         if (authSession != null) {
