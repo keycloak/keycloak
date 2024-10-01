@@ -85,7 +85,7 @@ public class ProfileTest {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
 
-        Assert.assertEquals("Feature account3 depends on disabled feature account-api",
+        Assert.assertEquals("Feature account-v3 depends on disabled feature account-api",
                 assertThrows(ProfileException.class,
                         () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
     }
@@ -93,7 +93,7 @@ public class ProfileTest {
     @Test
     public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature.account3", "disabled");
+        properties.setProperty("keycloak.profile.feature.account", "disabled");
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
         Profile.configure(new PropertiesProfileConfigResolver(properties));
                 Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3));
@@ -159,9 +159,9 @@ public class ProfileTest {
 
     @Test
     public void testKeys() {
-        Assert.assertEquals("account3", Profile.Feature.ACCOUNT_V3.getKey());
-        Assert.assertEquals("account3", Profile.Feature.ACCOUNT_V3.getUnversionedKey());
-        Assert.assertEquals("account3:v1", Profile.Feature.ACCOUNT_V3.getVersionedKey());
+        Assert.assertEquals("account-v3", Profile.Feature.ACCOUNT_V3.getKey());
+        Assert.assertEquals("account", Profile.Feature.ACCOUNT_V3.getUnversionedKey());
+        Assert.assertEquals("account:v3", Profile.Feature.ACCOUNT_V3.getVersionedKey());
     }
 
     @Test
