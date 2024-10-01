@@ -235,9 +235,9 @@ public class ServerInfoAdminResource {
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) &&
-                !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
+                !Profile.isFeatureEnabled(Profile.Feature.ADMIN_V2);
         boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
-                !Profile.isFeatureEnabled(Profile.Feature.LOGIN2);
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN_V2);
 
         if (filterAdminV2 || filterLoginV2) {
             filteredNames.remove("keycloak.v2");
@@ -245,7 +245,7 @@ public class ServerInfoAdminResource {
         }
 
         boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&
-            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3);
+            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3);
 
         if (filterAccountV3) {
             filteredNames.remove("keycloak.v3");

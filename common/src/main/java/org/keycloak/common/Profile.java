@@ -51,17 +51,17 @@ public class Profile {
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
-        ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
+        ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
+        ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
-        LOGIN2("New Login Theme", Type.DEFAULT),
+        LOGIN_V2("New Login Theme", Type.DEFAULT, 2),
 
-        LOGIN1("Legacy Login Theme", Type.DEPRECATED),
+        LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
