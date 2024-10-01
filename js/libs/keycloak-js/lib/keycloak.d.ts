@@ -74,8 +74,6 @@ export interface KeycloakInitOptions {
 	 * For example:
 	 *
 	 * ```ts
-	 * import Keycloak, { KeycloakAdapter } from 'keycloak-js';
-	 *
 	 * // Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
 	 * const MyCustomAdapter: KeycloakAdapter = {
 	 * 	login(options) {
@@ -84,8 +82,6 @@ export interface KeycloakInitOptions {
 	 *
 	 * 	// The other methods go here...
 	 * };
-	 *
-	 * const keycloak = new Keycloak();
 	 *
 	 * keycloak.init({
 	 * 	adapter: MyCustomAdapter,

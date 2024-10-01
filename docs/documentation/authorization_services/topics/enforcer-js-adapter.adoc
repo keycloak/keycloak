@@ -19,10 +19,9 @@ import Keycloak from "keycloak-js";
 import KeycloakAuthorization from "keycloak-js/authz";
 
 const keycloak = new Keycloak({
-    // Replace this with your own configuration.
     url: "http://keycloak-server",
-    realm: "myrealm",
-    clientId: "myapp"
+    realm: "my-realm",
+    clientId: "my-app"
 });
 
 const authorization = new KeycloakAuthorization(keycloak);
