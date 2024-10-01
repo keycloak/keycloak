@@ -19,6 +19,22 @@ function Keycloak (config) {
         throw new Error("The 'Keycloak' constructor must be invoked with 'new'.")
     }
 
+    if (typeof config !== 'string' && !isObject(config)) {
+        throw new Error("The 'Keycloak' constructor must be provided with a configuration object, or a URL to a JSON configuration file.");
+    }
+
+    if (isObject(config)) {
+        const requiredProperties = 'oidcProvider' in config
+            ? ['clientId']
+            : ['url', 'realm', 'clientId'];
+
+        for (const property of requiredProperties) {
+            if (!config[property]) {
+                throw new Error(`The configuration object is missing the required '${property}' property.`);
+            }
+        }
+    }
+
     var kc = this;
     var adapter;
     var refreshQueue = [];
@@ -175,7 +191,7 @@ function Keycloak (config) {
             promise.setError(error);
         });
 
-        var configPromise = loadConfig(config);
+        var configPromise = loadConfig();
 
         function onLoad() {
             var doLogin = function(prompt) {
@@ -797,13 +813,11 @@ function Keycloak (config) {
 
     }
 
-    function loadConfig(url) {
+    function loadConfig() {
         var promise = createPromise();
         var configUrl;
 
-        if (!config) {
-            configUrl = 'keycloak.json';
-        } else if (typeof config === 'string') {
+        if (typeof config === 'string') {
             configUrl = config;
         }
 
@@ -888,27 +902,10 @@ function Keycloak (config) {
 
             req.send();
         } else {
-            if (!config.clientId) {
-                throw 'clientId missing';
-            }
-
             kc.clientId = config.clientId;
 
             var oidcProvider = config['oidcProvider'];
             if (!oidcProvider) {
-                if (!config['url']) {
-                    var scripts = document.getElementsByTagName('script');
-                    for (var i = 0; i < scripts.length; i++) {
-                        if (scripts[i].src.match(/.*keycloak\.js/)) {
-                            config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
-                            break;
-                        }
-                    }
-                }
-                if (!config.realm) {
-                    throw 'realm missing';
-                }
-
                 kc.authServerUrl = config.url;
                 kc.realm = config.realm;
                 setupOidcEndoints(null);
@@ -1814,4 +1811,12 @@ function b64DecodeUnicode(input) {
 
         return "%" + code;
     }));
+}
+
+/**
+ * Check if the input is an object that can be operated on.
+ * @param {unknown} input
+ */
+function isObject(input) {
+    return typeof input === 'object' && input !== null;
 }
