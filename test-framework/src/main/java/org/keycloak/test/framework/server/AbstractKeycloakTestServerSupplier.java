@@ -1,5 +1,6 @@
 package org.keycloak.test.framework.server;
 
+import org.keycloak.it.TestProvider;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.database.TestDatabase;
@@ -57,7 +58,11 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
         }
 
         KeycloakTestServer server = getServer();
-        server.start(rawOptions, serverConfig.providerModules());
+        List<? extends TestProvider> providers = serverConfig.customProviders()
+                .stream()
+                .map(SupplierHelpers::getInstance)
+                .toList();
+        server.start(rawOptions, providers);
         return server;
     }
 

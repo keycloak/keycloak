@@ -30,6 +30,7 @@ public class CustomUserProvider implements TestProvider {
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("org.keycloak.models.UserProviderFactory", "services/org.keycloak.models.UserProviderFactory");
+        String packagePath = "com/acme/provider/legacy/jpa/user/";
+        return Collections.singletonMap(packagePath + "services/org.keycloak.models.UserProviderFactory", "services/org.keycloak.models.UserProviderFactory");
     }
 }

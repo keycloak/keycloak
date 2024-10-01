@@ -18,6 +18,6 @@ public class CustomTestProvider implements TestProvider {
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("org.keycloak.services.resource.RealmResourceProviderFactory", "services/org.keycloak.services.resource.RealmResourceProviderFactory");
+        return Collections.singletonMap("services/org.keycloak.services.resource.RealmResourceProviderFactory", "services/org.keycloak.services.resource.RealmResourceProviderFactory");
     }
 }
