@@ -227,6 +227,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
         loginPage.open();
+        loginPage.assertCurrent();
         loginPage.clickRegister();
 
         waitForPageToLoad();
