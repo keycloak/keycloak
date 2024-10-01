@@ -129,7 +129,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     public void selectOtpCredential(String credentialName) {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
-        UIUtils.clickLink(webElement);
+        UIUtils.click(webElement);
     }
 
 

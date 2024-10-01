@@ -10,7 +10,6 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -69,11 +68,35 @@ public final class UIUtils {
         performOperationWithPageReload(() -> getCurrentDriver().navigate().refresh());
     }
 
+    /**
+     * The method executes click or sendKeys(Keys.ENTER) in the element.
+     * In the chrome driver click is emulated by pressing the ENTER key. Since
+     * the upgrade to chrome 128 some clicks are missed and that triggers CI
+     * failures. The method is intended to be used for buttons and links which
+     * accept clicking by pressing the ENTER key. If the element passed does
+     * not allow clicking using keys use the {@link #click(WebElement) click}
+     * method.
+     *
+     * @param element The element to click
+     */
     public static void clickLink(WebElement element) {
         WebDriver driver = getCurrentDriver();
 
         waitUntilElement(element).is().clickable();
 
+        performOperationWithPageReload(BrowserDriverUtil.isDriverChrome(driver)
+                ? () -> element.sendKeys(Keys.ENTER)
+                : element::click);
+    }
+
+    /**
+     * The method executes click in the element. This method always uses click and
+     * is not emulated by key pressing in chrome.
+     *
+     * @param element The element to click
+     */
+    public static void click(WebElement element) {
+        waitUntilElement(element).is().clickable();
         performOperationWithPageReload(element::click);
     }
 

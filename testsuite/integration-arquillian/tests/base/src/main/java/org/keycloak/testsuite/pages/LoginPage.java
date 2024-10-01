@@ -24,6 +24,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -216,8 +217,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public void clickRegister() {
-        registerLink.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(registerLink);
     }
 
     public void clickSocial(String alias) {
