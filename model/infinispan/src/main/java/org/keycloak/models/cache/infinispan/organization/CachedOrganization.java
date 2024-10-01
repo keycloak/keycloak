@@ -32,7 +32,7 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
-    private final RealmModel realm;
+    private final String realm;
     private final String name;
     private final String alias;
     private final String description;
@@ -43,7 +43,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public CachedOrganization(Long revision, RealmModel realm, OrganizationModel organization) {
         super(revision, organization.getId());
-        this.realm = realm;
+        this.realm = realm.getId();
         this.name = organization.getName();
         this.alias = organization.getAlias();
         this.description = organization.getDescription();
@@ -55,10 +55,6 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     @Override
     public String getRealm() {
-        return realm.getId();
-    }
-
-    public RealmModel getRealmModel() {
         return realm;
     }
 
