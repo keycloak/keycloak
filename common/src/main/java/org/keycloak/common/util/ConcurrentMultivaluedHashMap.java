@@ -18,6 +18,7 @@
 package org.keycloak.common.util;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -28,6 +29,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @SuppressWarnings("serial")
 public class ConcurrentMultivaluedHashMap<K, V> extends ConcurrentHashMap<K, List<V>> implements MultivaluedMap<K, V>
 {
+    public ConcurrentMultivaluedHashMap() {
+    }
+
+    public ConcurrentMultivaluedHashMap(Map<K, List<V>> map) {
+        if (map == null) {
+            throw new IllegalArgumentException("Map can not be null");
+        }
+        putAll(map);
+    }
 
    @Override
    public List<V> createListInstance() {
