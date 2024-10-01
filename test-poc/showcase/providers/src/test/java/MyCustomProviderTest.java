@@ -13,7 +13,7 @@ import org.keycloak.test.framework.server.KeycloakTestServerConfig;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
+import java.util.List;
 
 
 /**
@@ -45,8 +45,8 @@ public class MyCustomProviderTest {
     // The definition of our supplier is in the CustomTestProvider class.
     public static class ServerConfig implements KeycloakTestServerConfig {
         @Override
-        public Set<Class<? extends TestProvider>> providerModules() {
-            return Set.of(CustomTestProvider.class);
+        public List<Class<? extends TestProvider>> customProviders() {
+            return List.of(CustomTestProvider.class);
         }
     }
 }

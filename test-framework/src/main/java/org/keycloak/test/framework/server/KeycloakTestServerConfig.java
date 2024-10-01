@@ -5,6 +5,7 @@ import org.keycloak.it.TestProvider;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 public interface KeycloakTestServerConfig {
 
@@ -18,7 +19,7 @@ public interface KeycloakTestServerConfig {
 
     default boolean enableSysLog() { return false; }
 
-    default Set<Class<? extends TestProvider>> providerModules() {
-        return Collections.emptySet();
+    default List<Class<? extends TestProvider>> customProviders() {
+        return Collections.emptyList();
     }
 }
