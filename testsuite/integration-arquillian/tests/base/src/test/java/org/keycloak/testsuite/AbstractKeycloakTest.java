@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.NotFoundException;
@@ -279,6 +280,7 @@ public abstract class AbstractKeycloakTest {
             log.debug("updating admin password");
 
             welcomePage.navigateTo();
+            WaitUtils.waitForPageToLoad();
             if (!welcomePage.isPasswordSet()) {
                 welcomePage.setPassword("admin", "admin");
             }
