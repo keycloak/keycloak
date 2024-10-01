@@ -54,6 +54,12 @@ export default class MembersTab extends GroupDetailPage {
     return this;
   }
 
+  public showGroupMembershipsItem(username: string) {
+    listingPage.clickRowDetails(username);
+    listingPage.clickDetailMenu("Show memberships");
+    return this;
+  }
+
   public clickCheckboxIncludeSubGroupUsers() {
     cy.findByTestId(this.#includeSubGroupsCheck).click();
     return this;
