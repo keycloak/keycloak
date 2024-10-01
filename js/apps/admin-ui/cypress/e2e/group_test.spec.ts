@@ -401,7 +401,8 @@ describe("Group test", () => {
       childGroupsTab.goToMembersTab();
       membersTab
         .showGroupMembershipsItem(users[3].username)
-        .assertGroupItemExist(predefinedGroups[0], true);
+        .assertGroupItemExist(predefinedGroups[0], true)
+        .cancelShowGroupMembershipsModal();
     });
   });
 

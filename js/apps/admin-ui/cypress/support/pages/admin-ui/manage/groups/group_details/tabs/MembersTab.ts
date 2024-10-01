@@ -60,6 +60,11 @@ export default class MembersTab extends GroupDetailPage {
     return this;
   }
 
+  public cancelShowGroupMembershipsModal() {
+    modalUtils.cancelModal();
+    return this;
+  }
+
   public clickCheckboxIncludeSubGroupUsers() {
     cy.findByTestId(this.#includeSubGroupsCheck).click();
     return this;
