@@ -205,13 +205,14 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                 refresh();
               }}
               isChecked={isDirectMembership}
-              className="direct-membership-check"
+              className="pf-v5-u-mt-sm"
             />
             <Button
               onClick={() => leave(selectedGroups)}
               data-testid="leave-group-button"
               variant="link"
               isDisabled={selectedGroups.length === 0}
+              className="pf-v5-u-ml-md"
             >
               {t("leave")}
             </Button>
