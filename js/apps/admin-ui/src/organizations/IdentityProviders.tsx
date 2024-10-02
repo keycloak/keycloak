@@ -43,10 +43,7 @@ const ShownOnLoginPageCheck = ({
         { alias: row.alias! },
         {
           ...row,
-          config: {
-            ...row.config,
-            "kc.org.broker.public": `${value}`,
-          },
+          hideOnLogin: value,
         },
       );
       addAlert(t("linkUpdatedSuccessful"));
@@ -61,7 +58,7 @@ const ShownOnLoginPageCheck = ({
     <Switch
       label={t("on")}
       labelOff={t("off")}
-      isChecked={row.config?.["kc.org.broker.public"] === "true"}
+      isChecked={row.hideOnLogin}
       onChange={(_, value) => toggle(value)}
     />
   );
@@ -204,8 +201,8 @@ export const IdentityProviders = () => {
                 displayKey: "providerDetails",
               },
               {
-                name: "config['kc.org.broker.public']",
-                displayKey: "shownOnLoginPage",
+                name: "hideOnLogin",
+                displayKey: "hideOnLoginPage",
                 cellRenderer: (row) => (
                   <ShownOnLoginPageCheck row={row} refresh={refresh} />
                 ),

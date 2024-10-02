@@ -72,6 +72,45 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriNative() {
+        Set<String> set = Stream.of(
+                "http://127.0.0.1",
+                "http://127.0.0.1/callback",
+                "http://[::1]",
+                "http://[::1]/callback",
+                "http://127.0.0.1/callback",
+                "http://localhost",
+                "http://localhost/callback"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("http://127.0.0.1", RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1", set, false));
+        Assert.assertEquals("http://127.0.0.1:12324", RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1:12324", set, false));
+        Assert.assertEquals("http://127.0.0.1/callback", RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1/callback", set, false));
+        Assert.assertEquals("http://127.0.0.1:12324/callback", RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1:12324/callback", set, false));
+        Assert.assertEquals("http://[::1]", RedirectUtils.verifyRedirectUri(session, null, "http://[::1]", set, false));
+        Assert.assertEquals("http://[::1]:12324", RedirectUtils.verifyRedirectUri(session, null, "http://[::1]:12324", set, false));
+        Assert.assertEquals("http://[::1]/callback", RedirectUtils.verifyRedirectUri(session, null, "http://[::1]/callback", set, false));
+        Assert.assertEquals("http://[::1]:12324/callback", RedirectUtils.verifyRedirectUri(session, null, "http://[::1]:12324/callback", set, false));
+        Assert.assertEquals("http://localhost", RedirectUtils.verifyRedirectUri(session, null, "http://localhost", set, false));
+        Assert.assertEquals("http://localhost:12324", RedirectUtils.verifyRedirectUri(session, null, "http://localhost:12324", set, false));
+        Assert.assertEquals("http://localhost/callback", RedirectUtils.verifyRedirectUri(session, null, "http://localhost/callback", set, false));
+        Assert.assertEquals("http://localhost:12324/callback", RedirectUtils.verifyRedirectUri(session, null, "http://localhost:12324/callback", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1:12324@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1@invalid.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://127.0.0.1:12324@invalid.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://[::1]@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://[::1]:12324@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://[::1]@invalid.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://[::1]:12324@invalid.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://localhost@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://localhost:12324@invalid.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://localhost@invalid.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://localhost:12324@invalid.com/callback", set, false));
+    }
+
+    @Test
     public void testverifyRedirectUriMixedSchemes() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/*",

@@ -290,8 +290,8 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation idpRep = testRealm().identityProviders().get("orga-identity-provider").toRepresentation();
         idpRep.setInternalId(null);
         idpRep.setOrganizationId(null);
+        idpRep.setHideOnLogin(false);
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
 
         for (int i = 0; i < 10; i++) {
             final String alias = "org-idp-" + i;
@@ -372,8 +372,6 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             idpRep.setEnabled((i % 2) == 0); // half of the IDPs will be disabled and won't qualify for login.
             idpRep.setDisplayName("Broker " + i);
             idpRep.setProviderId("keycloak-oidc");
-            if (i >= 10)
-                idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
             testRealm().identityProviders().create(idpRep).close();
             getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
         }
@@ -497,7 +495,6 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // 4- finally, change one of the realm-level login IDPs, linking it to an org - although it still qualifies for login, it is now
         // linked to an org, which should invalidate all login caches.
         idpRep = testRealm().identityProviders().get("idp-alias-20").toRepresentation();
-        idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get("idp-alias-20").update(idpRep);
         testRealm().organizations().get(orgaId).identityProviders().addIdentityProvider("idp-alias-20");
 

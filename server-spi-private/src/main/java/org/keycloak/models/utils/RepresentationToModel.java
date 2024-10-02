@@ -108,6 +108,8 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -127,6 +129,7 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
@@ -867,7 +870,7 @@ public class RepresentationToModel {
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setLinkOnly(representation.isLinkOnly());
         identityProviderModel.setHideOnLogin(representation.isHideOnLogin());
-        // check if the legacy hide on login attribute is present.
+        // remove the legacy hide on login attribute if present.
         String hideOnLoginAttr = representation.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
         if (hideOnLoginAttr != null) identityProviderModel.setHideOnLogin(Boolean.parseBoolean(hideOnLoginAttr));
         identityProviderModel.setTrustEmail(representation.isTrustEmail());
@@ -1673,5 +1676,28 @@ public class RepresentationToModel {
             // make sure the link to an organization does not change
             representation.setOrganizationId(orgId);
         }
+    }
+
+    public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {
+        if (rep == null) {
+            return null;
+        }
+
+        model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
+        model.setEnabled(rep.isEnabled());
+        model.setDescription(rep.getDescription());
+        model.setAttributes(rep.getAttributes());
+        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
+                .filter(Objects::nonNull)
+                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
+                .map(RepresentationToModel::toModel)
+                .collect(Collectors.toSet()));
+
+        return model;
+    }
+
+    public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
+        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
     }
 }

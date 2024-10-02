@@ -171,7 +171,7 @@ public class JavascriptTestExecutor {
         jsExecutor.executeScript("console.warn = event;");
 
         if (argumentsBuilder == null) {
-            jsExecutor.executeScript("window.keycloak = new Keycloak();");
+            jsExecutor.executeScript("window.keycloak = new Keycloak('./keycloak.json');");
         } else {
             String configArguments = argumentsBuilder.build();
             jsExecutor.executeScript("window.keycloak = new Keycloak(" + configArguments + ");");

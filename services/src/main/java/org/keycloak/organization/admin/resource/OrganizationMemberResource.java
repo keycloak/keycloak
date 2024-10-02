@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.admin.resource;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -41,6 +40,8 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
@@ -49,11 +50,9 @@ import org.keycloak.models.UserModel;
 
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -82,7 +81,7 @@ public class OrganizationMemberResource {
         this.realm = session.getContext().getRealm();
         this.provider = session.getProvider(OrganizationProvider.class);
         this.organization = organization;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
     }
 
     @POST
@@ -100,6 +99,10 @@ public class OrganizationMemberResource {
 
         try {
             if (provider.addMember(organization, user)) {
+                adminEvent.operation(OperationType.CREATE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
+                        .representation(ModelToRepresentation.toRepresentation(organization))
+                        .resourcePath(session.getContext().getUri())
+                        .success();
                 return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
             }
         } catch (ModelException me) {
@@ -174,6 +177,10 @@ public class OrganizationMemberResource {
         UserModel member = getMember(id);
 
         if (provider.removeMember(organization, member)) {
+            adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
+                    .representation(ModelToRepresentation.toRepresentation(organization))
+                    .resourcePath(session.getContext().getUri())
+                    .success();
             return Response.noContent().build();
         }
 
@@ -193,7 +200,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getUser(id);
 
-        return provider.getByMember(member).map(Organizations::toRepresentation);
+        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
     }
 
     @Path("count")

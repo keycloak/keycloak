@@ -13,6 +13,7 @@ export default class ModalUtils extends PageObject {
   #addModalDropdownItem = ".pf-v5-c-modal-box__footer .pf-v5-c-menu__content";
   #addBtn = "add";
   #tablePage = new TablePage(TablePage.tableSelector);
+  #confirmDuplicateModalBtn = "duplicateGroup";
 
   table() {
     return this.#tablePage;
@@ -25,6 +26,12 @@ export default class ModalUtils extends PageObject {
 
   confirmModal() {
     cy.findByTestId(this.#confirmModalBtn).click({ force: true });
+
+    return this;
+  }
+
+  confirmDuplicateModal() {
+    cy.findByTestId(this.#confirmDuplicateModalBtn).click();
 
     return this;
   }

@@ -34,9 +34,9 @@ The following example shows how to initialize the adapter. Make sure that you re
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-    url: 'http://keycloak-server',
-    realm: 'myrealm',
-    clientId: 'myapp'
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
 });
 
 try {
@@ -64,7 +64,7 @@ To enable the _silent_ `check-sso`, you provide a `silentCheckSsoRedirectUri` at
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     onLoad: 'check-sso',
     silentCheckSsoRedirectUri: `${r"${location.origin}"}/silent-check-sso.html`
 });
@@ -93,7 +93,7 @@ To enable `login-required` set `onLoad` to `login-required` and pass to the init
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     onLoad: 'login-required'
 });
 ----
@@ -147,7 +147,7 @@ WARNING: Session Status iframe functionality is limited in some modern browsers.
 
 By default, the adapter uses the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
 
-With this flow,  the {project_name} server returns an authorization code, not an authentication token, to the application. The JavaScript adapter exchanges the `code` for an access token and a refresh token after the browser is redirected back to the application.
+With this flow, the {project_name} server returns an authorization code, not an authentication token, to the application. The JavaScript adapter exchanges the `code` for an access token and a refresh token after the browser is redirected back to the application.
 
 {project_name} also supports the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token is sent immediately after successful authentication with {project_name}. This flow may have better performance than the standard flow because no additional request exists to exchange the code for tokens, but it has implications when the access token expires.
 
@@ -158,7 +158,7 @@ To enable implicit flow, you enable the *Implicit Flow Enabled* flag for the cli
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     flow: 'implicit'
 })
 ----
@@ -176,7 +176,7 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     flow: 'hybrid'
 });
 ----
@@ -200,7 +200,7 @@ You can activate the native mode by passing the adapter type `cordova-native` to
 
 [source,javascript]
 ----
-keycloak.init({
+await keycloak.init({
     adapter: 'cordova-native'
 });
 ----
@@ -240,9 +240,13 @@ In some situations, you may need to run the adapter in environments that are not
 import Keycloak from 'keycloak-js';
 import KeycloakCapacitorAdapter from 'keycloak-capacitor-adapter';
 
-const keycloak = new Keycloak();
+const keycloak = new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
 
-keycloak.init({
+await keycloak.init({
     adapter: KeycloakCapacitorAdapter,
 });
 ----
@@ -257,16 +261,20 @@ import Keycloak, { KeycloakAdapter } from 'keycloak-js';
 
 // Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
 const MyCustomAdapter: KeycloakAdapter = {
-    login(options) {
+    async login(options) {
         // Write your own implementation here.
     }
 
     // The other methods go here...
 };
 
-const keycloak = new Keycloak();
+const keycloak = new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
 
-keycloak.init({
+await keycloak.init({
     adapter: MyCustomAdapter,
 });
 ----
@@ -297,9 +305,17 @@ An affected browser is for example Safari starting with version 13.1.
 
 [source,javascript,subs="attributes+"]
 ----
-new Keycloak();
-new Keycloak('http://localhost/keycloak.json');
-new Keycloak({ url: 'http://localhost', realm: 'myrealm', clientId: 'myApp' });
+// Recommended way to initialize the adapter.
+new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
+
+// Alternatively a string to the path of the `keycloak.json` file.
+// Has some performance implications, as it will load the keycloak.json file from the server.
+// This version might also change in the future and is therefore not recommended.
+new Keycloak("http://keycloak-server/keycloak.json");
 ----
 
 === Properties
@@ -391,7 +407,7 @@ Returns a promise that resolves when initialization completes.
 
 *login(options)*
 
-Redirects to login form.
+Redirects to login form, returns a Promise.
 
 Options is an optional Object, where:
 
@@ -417,7 +433,7 @@ See link:{adminguide_link}#con-aia_server_administration_guide[Application Initi
 
 *createLoginUrl(options)*
 
-Returns the URL to login form.
+Returns a Promise containing the URL to login form.
 
 Options is an optional Object, which supports same options as the function `login` .
 
@@ -445,7 +461,7 @@ Options are same as for the login method but 'action' is set to 'register'
 
 *createRegisterUrl(options)*
 
-Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
+Returns a Promise containing the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
 Options are same as for the createLoginUrl method but 'action' is set to 'register'
 

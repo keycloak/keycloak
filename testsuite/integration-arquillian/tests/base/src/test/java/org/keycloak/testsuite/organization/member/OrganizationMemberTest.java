@@ -430,6 +430,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         // create non-org idp in a realm
         String idpAlias = "former-non-org-identity-provider";
         IdentityProviderRepresentation idpRep = brokerConfigFunction.apply("former-non-org").setUpIdentityProvider();
+        idpRep.setHideOnLogin(false);
         try (Response response = testRealm().identityProviders().create(idpRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             getCleanup().addCleanup(testRealm().identityProviders().get(bc.getIDPAlias())::remove);

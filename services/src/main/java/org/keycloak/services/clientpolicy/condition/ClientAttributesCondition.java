@@ -20,12 +20,14 @@ package org.keycloak.services.clientpolicy.condition;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,13 +48,13 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
 
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
-        protected Map<String, String> attributes;
+        private String attributes;
 
-        public Map<String, String> getAttributes() {
+        public String getAttributes() {
             return attributes;
         }
 
-        public void setAttributes(Map<String, String> attributes) {
+        public void setAttributes(String attributes) {
             this.attributes = attributes;
         }
     }
@@ -100,7 +102,7 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
     private boolean isAttributesMatched(ClientModel client) {
         if (client == null) return false;
 
-        Map<String, String> attributesForMatching = getAttributesForMatching();
+        Map<String, List<String>> attributesForMatching = getAttributesForMatching();
         if (attributesForMatching == null) return false;
 
         Map<String, String> clientAttributes = client.getAttributes();
@@ -111,12 +113,28 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
         }
 
         return attributesForMatching.entrySet().stream()
-                .allMatch(entry -> clientAttributes.containsKey(entry.getKey()) && clientAttributes.get(entry.getKey()).equals(entry.getValue()));
+                .allMatch(entry -> {
+                    String key = entry.getKey();
+                    if (key == null) {
+                        logger.warnf("Empty key in configuration of client-attributes condition");
+                        return false;
+                    }
+                    if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                        logger.warnf("Empty value in the configuration of client-attributes condition for the attribute %s. This cannot match any client", key);
+                        return false;
+                    }
+                    if (entry.getValue().size() > 1) {
+                        logger.warnf("More values in the configuration of client-attributes condition for the attribute %s. This cannot match any client", key);
+                        return false;
+                    }
+                    String value = entry.getValue().get(0);
+                    return clientAttributes.containsKey(key) && clientAttributes.get(key).equals(value);
+                });
     }
 
-    private Map<String, String> getAttributesForMatching() {
+    private Map<String, List<String>> getAttributesForMatching() {
         if (configuration.getAttributes() == null) return null;
-        return configuration.getAttributes();
+        return MapperTypeSerializer.deserialize(configuration.getAttributes());
     }
 
 }

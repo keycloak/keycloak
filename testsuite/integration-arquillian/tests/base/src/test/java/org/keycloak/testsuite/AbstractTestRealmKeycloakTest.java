@@ -17,10 +17,8 @@
 
 package org.keycloak.testsuite;
 
-import org.junit.After;
+import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
@@ -78,8 +76,13 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
     }
 
 
-    // Logout user after test
-    @After
+    @Before
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        deleteCookies();
+        super.beforeAbstractKeycloakTest();
+    }
+
     public void deleteCookies() {
         deleteAllCookiesForRealm("test");
     }

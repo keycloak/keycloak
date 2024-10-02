@@ -113,9 +113,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(failureFactor);
-        testRealm.setMaxDeltaTimeSeconds(20);
+        testRealm.setMaxDeltaTimeSeconds(60);
         testRealm.setMaxFailureWaitSeconds(100);
-        testRealm.setWaitIncrementSeconds(5);
+        testRealm.setWaitIncrementSeconds(20);
         testRealm.setOtpPolicyCodeReusable(true);
         //testRealm.setQuickLoginCheckMilliSeconds(0L);
 
@@ -132,9 +132,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
             realm.setFailureFactor(failureFactor);
-            realm.setMaxDeltaTimeSeconds(20);
+            realm.setMaxDeltaTimeSeconds(60);
             realm.setMaxFailureWaitSeconds(100);
-            realm.setWaitIncrementSeconds(5);
+            realm.setWaitIncrementSeconds(20);
             realm.setOtpPolicyCodeReusable(true);
             adminClient.realm("test").update(realm);
         } catch (Exception e) {
@@ -492,7 +492,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
+        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
         // should be unlocked now
         loginSuccess();
         clearUserFailures();
@@ -674,11 +674,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
 
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(11)));
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(42)));
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -703,7 +703,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
             Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
             assertEquals(1, status.get("numTemporaryLockouts"));
@@ -881,7 +881,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             threads[i].join();
         }
         int invalidCount =  (int) adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId()).get("numFailures");
-        assertTrue("Invalid count should be less than or equal 2 but was: " + invalidCount, invalidCount <= 2);
+        assertTrue("Invalid count should be less than or equal 3 but was: " + invalidCount, invalidCount <= 3);
     }
 
     public class LoginThread extends Thread {

@@ -25,6 +25,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.ClientModel;
@@ -49,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -152,6 +154,23 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
 
             ClientModel clientSilverAcr = realm.getClientByClientId("client-silver");
             Assert.assertEquals("silver", clientSilverAcr.getAttribute("default.acr.values"));
+        });
+    }
+
+    // https://github.com/keycloak/keycloak/issues/10730
+    @Test
+    public void importLdapWithReferenceToGroupBeingImported() {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/testrealm-ldap-group.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("ldap-group-import-bug");
+
+            Optional<ComponentModel> hardCodedGroup = realm.getComponentsStream()
+                    .filter((component) -> component.getName().equals("hard-coded-group"))
+                    .findFirst();
+
+
+            Assert.assertTrue(hardCodedGroup.isPresent());
         });
     }
 

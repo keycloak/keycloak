@@ -48,7 +48,6 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
@@ -420,6 +419,13 @@ public class DefaultExportImportManager implements ExportImportManager {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
+        if (rep.getGroups() != null) {
+            importGroups(newRealm, rep);
+            if (rep.getDefaultGroups() != null) {
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
+            }
+        }
+
         if (rep.getComponents() != null) {
             MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
             String parentId = newRealm.getId();
@@ -428,12 +434,6 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-        if (rep.getGroups() != null) {
-            importGroups(newRealm, rep);
-            if (rep.getDefaultGroups() != null) {
-                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
-            }
-        }
 
 
         // create users and their role mappings and social mappings
@@ -663,7 +663,6 @@ public class DefaultExportImportManager implements ExportImportManager {
             throw new RuntimeException("Either client or clientScope needs to be specified in scope mappings");
         }
     }
-
 
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) {
@@ -1590,21 +1589,20 @@ public class DefaultExportImportManager implements ExportImportManager {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
-                OrganizationModel org = provider.create(orgRep.getName(), orgRep.getAlias());
-
-                org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
+                OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
+                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
-                    provider.addIdentityProvider(org, idp);
+                    provider.addIdentityProvider(orgModel, idp);
                 }
 
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
                     if (MembershipType.MANAGED.equals(member.getMembershipType())) {
-                        provider.addManagedMember(org, m);
+                        provider.addManagedMember(orgModel, m);
                     } else {
-                        provider.addMember(org, m);
+                        provider.addMember(orgModel, m);
                     }
                 }
             }

@@ -32,6 +32,7 @@ import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.storage.StorageId;
 
@@ -269,9 +270,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private int calculateOldestSessionTime(RealmModel realm, boolean offline) {
         if (offline) {
-            return Time.currentTime() - realm.getOfflineSessionIdleTimeout();
+            return Time.currentTime() - SessionExpirationUtils.getOfflineSessionIdleTimeout(realm);
         } else {
-            return Time.currentTime() - Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe());
+            return Time.currentTime() - Math.max(SessionExpirationUtils.getSsoSessionIdleTimeout(realm), realm.getSsoSessionIdleTimeoutRememberMe());
         }
     }
 

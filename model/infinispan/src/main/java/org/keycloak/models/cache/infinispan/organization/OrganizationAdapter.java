@@ -25,7 +25,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.organization.OrganizationProvider;
 
 public class OrganizationAdapter implements OrganizationModel {
@@ -33,14 +32,12 @@ public class OrganizationAdapter implements OrganizationModel {
     private volatile boolean invalidated;
     private volatile OrganizationModel updated;
     private final Supplier<OrganizationModel> modelSupplier;
-    private final CacheRealmProvider realmCache;
     private final CachedOrganization cached;
-    private final OrganizationProvider delegate;
+    private final Supplier<OrganizationProvider> delegate;
     private final InfinispanOrganizationProvider organizationCache;
 
-    public OrganizationAdapter(CachedOrganization cached, CacheRealmProvider realmCache, OrganizationProvider delegate, InfinispanOrganizationProvider organizationCache) {
+    public OrganizationAdapter(CachedOrganization cached, Supplier<OrganizationProvider> delegate, InfinispanOrganizationProvider organizationCache) {
         this.cached = cached;
-        this.realmCache = realmCache;
         this.delegate = delegate;
         this.organizationCache = organizationCache;
         this.modelSupplier = this::getOrganizationModel;
@@ -51,7 +48,7 @@ public class OrganizationAdapter implements OrganizationModel {
     }
 
     private OrganizationModel getOrganizationModel() {
-        return delegate.getById(cached.getId());
+        return delegate.get().getById(cached.getId());
     }
 
     private boolean isUpdated() {
@@ -156,12 +153,14 @@ public class OrganizationAdapter implements OrganizationModel {
 
     @Override
     public boolean isManaged(UserModel user) {
-        return delegate.isManagedMember(this, user);
+        if (isUpdated()) delegate.get().isManagedMember(this, user);
+        return organizationCache.isManagedMember(this, user);
     }
 
     @Override
     public boolean isMember(UserModel user) {
-        return delegate.isMember(this, user);
+        if (isUpdated()) delegate.get().isMember(this, user);
+        return organizationCache.isMember(this, user);
     }
 
     @Override

@@ -18,7 +18,7 @@ The provision of the feature pack is done using the https://docs.wildfly.org/wil
             <feature-pack>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
-                <version>25.0.2</version>
+                <version>{version}</version>
             </feature-pack>
         </feature-packs>
         <layers>
@@ -58,7 +58,7 @@ The provision of the feature pack is done using the https://docs.wildfly.org/wil
             <feature-pack>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
-                <version>25.0.2</version>
+                <version>{version}</version>
             </feature-pack>
         </feature-packs>
         <layers>

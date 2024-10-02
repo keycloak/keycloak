@@ -250,8 +250,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());

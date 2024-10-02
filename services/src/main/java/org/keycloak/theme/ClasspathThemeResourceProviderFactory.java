@@ -41,21 +41,7 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
 
     @Override
     public InputStream getResourceAsStream(String path) throws IOException {
-        return getResourceAsStream(path, classLoader.getResource(THEME_RESOURCES_RESOURCES));
-    }
-
-    protected InputStream getResourceAsStream(String path, URL rootResourceURL) throws IOException {
-        if (rootResourceURL == null) {
-            return null;
-        }
-        final String rootPath = rootResourceURL.getPath();
-        final URL resourceURL = classLoader.getResource(THEME_RESOURCES_RESOURCES + path);
-        if(resourceURL == null || !resourceURL.getPath().startsWith(rootPath)) {
-            return null;
-        }
-        else {
-            return resourceURL.openConnection().getInputStream();
-        }
+        return ResourceLoader.getResourceAsStream(THEME_RESOURCES_RESOURCES, path);
     }
 
     @Override

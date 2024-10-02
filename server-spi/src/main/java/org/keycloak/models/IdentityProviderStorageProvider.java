@@ -176,8 +176,9 @@ public interface IdentityProviderStorageProvider extends Provider {
             if (organizationId != null) {
                 // we want the IDPs associated with a specific org.
                 searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, organizationId);
+            } else {
+                searchOptions.put(IdentityProviderModel.ORGANIZATION_ID_NOT_NULL, "");
             }
-            searchOptions.put(OrganizationModel.BROKER_PUBLIC, "true");
             result = Stream.concat(result, getAllStream(searchOptions, null, null));
         }
         return result;
@@ -251,7 +252,6 @@ public interface IdentityProviderStorageProvider extends Provider {
 
         public static Predicate<IdentityProviderModel> getLoginPredicate() {
             return ((Predicate<IdentityProviderModel>) Objects::nonNull)
-                    .and(idp -> idp.getOrganizationId() == null || Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.BROKER_PUBLIC)))
                     .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(Predicate::and).get());
         }
     }

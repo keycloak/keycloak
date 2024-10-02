@@ -39,6 +39,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="operate-synchronize" />
 * <@links.ha id="operate-site-offline" />
 * <@links.ha id="operate-site-online" />
+* <@links.ha id="health-checks-multi-site" />
 
 </@profile.ifCommunity>
 

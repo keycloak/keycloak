@@ -1,16 +1,21 @@
 import PageObject from "../../components/PageObject";
-import ListingPage from "../../ListingPage";
-
-const listingPage = new ListingPage();
+import UsersListingPage from "./UsersListingPage";
 
 export default class UsersPage extends PageObject {
   #userListTabLink = "listTab";
   #permissionsTabLink = "permissionsTab";
+  #userAttributeSearchChipsGroup =
+    "[data-testid='user-attribute-search-chips-group']";
+  #usersListingPage = new UsersListingPage(this);
 
   public goToUserListTab() {
     cy.findByTestId(this.#userListTabLink).click();
 
     return this;
+  }
+
+  public listing() {
+    return this.#usersListingPage;
   }
 
   public goToPermissionsTab() {
@@ -20,8 +25,23 @@ export default class UsersPage extends PageObject {
   }
 
   public goToUserDetailsPage(username: string) {
-    listingPage.searchItem(username);
-    listingPage.goToItemDetails(username);
+    this.#usersListingPage.searchItem(username);
+    this.#usersListingPage.goToItemDetails(username);
+
+    return this;
+  }
+
+  public assertAttributeSearchChipExists(
+    attributeLabel: string,
+    attributeValue: string,
+    exists: boolean,
+  ) {
+    super.assertLabeledChipGroupItemExist(
+      this.#userAttributeSearchChipsGroup,
+      attributeLabel,
+      attributeValue,
+      exists,
+    );
 
     return this;
   }

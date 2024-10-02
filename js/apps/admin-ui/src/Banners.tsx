@@ -12,11 +12,14 @@ const WarnBanner = ({ msg }: WarnBannerProps) => {
 
   return (
     <Banner screenReaderText={t(msg)} variant="gold" isSticky>
-      <Flex spaceItems={{ default: "spaceItemsSm" }}>
-        <FlexItem>
-          <ExclamationTriangleIcon />
+      <Flex
+        spaceItems={{ default: "spaceItemsSm" }}
+        flexWrap={{ default: "wrap" }}
+      >
+        <FlexItem style={{ whiteSpace: "normal" }}>
+          <ExclamationTriangleIcon style={{ marginRight: "0.3rem" }} />
+          {t(msg)}
         </FlexItem>
-        <FlexItem>{t(msg)}</FlexItem>
       </Flex>
     </Banner>
   );

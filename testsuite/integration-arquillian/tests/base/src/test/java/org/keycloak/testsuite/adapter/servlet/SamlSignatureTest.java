@@ -34,6 +34,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -66,6 +67,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import org.keycloak.saml.common.util.DocumentUtil;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
@@ -180,6 +182,20 @@ public class SamlSignatureTest extends AbstractAdapterTest {
             Element object = document.createElement("Object");
             originalSignature.appendChild(object);
             object.appendChild(assertion);
+        }
+
+        public static void noDocumentSignatureOnlyOneAssertionSignedBelowResponse(Document document){
+            // remove the signature for the whole response
+            removeDocumentSignature(document);
+            // move the signature from the assertion to the response level
+            Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NSURI.get(), "Assertion").item(0);
+            Element signature = (Element) assertion.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature").item(0);
+            assertion.removeChild(signature);
+            document.getDocumentElement().appendChild(signature);
+            // create a second assertion without signature
+            Element evilAssertion = (Element) assertion.cloneNode(true);
+            evilAssertion.setAttribute("ID", "_evil_assertion_ID");
+            document.getDocumentElement().insertBefore(evilAssertion, assertion);
         }
     }
 
@@ -321,9 +337,19 @@ public class SamlSignatureTest extends AbstractAdapterTest {
         }
     }
 
+    private static void removeDocumentSignature(Document doc) throws DOMException {
+        Element responseSignature = (Element) doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature").item(0);
+        Assert.assertNotNull(doc.getDocumentElement().removeChild(responseSignature));
+    }
+
     @Test
     public void testNoChange() throws Exception {
         testSamlResponseModifications(r -> {}, true);
+    }
+
+    @Test
+    public void testOnlyAssertionSignature() throws Exception {
+        testSamlResponseModifications(SamlSignatureTest::removeDocumentSignature, true);
     }
 
     @Test
@@ -371,4 +397,8 @@ public class SamlSignatureTest extends AbstractAdapterTest {
         testSamlResponseModifications(XSWHelpers::applyXSW8, false);
     }
 
+    @Test
+    public void testNoDocumentSignatureOnlyOneAssertionSignedBelowResponse() throws Exception {
+        testSamlResponseModifications(XSWHelpers::noDocumentSignatureOnlyOneAssertionSignedBelowResponse, false);
+    }
 }

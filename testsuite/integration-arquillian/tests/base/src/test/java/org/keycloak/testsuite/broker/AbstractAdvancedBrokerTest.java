@@ -29,6 +29,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 
 import jakarta.ws.rs.client.Client;
@@ -566,14 +567,15 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             loginTotpPage.assertCurrent();
 
+            events.clear();
+
             // Login for 2 times with incorrect TOTP. This should temporarily disable the user
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-
-            events.clear();
-
+            WaitUtils.waitForPageToLoad();
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+            WaitUtils.waitForPageToLoad();
 
             // wait for the disabled to come
             events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)
