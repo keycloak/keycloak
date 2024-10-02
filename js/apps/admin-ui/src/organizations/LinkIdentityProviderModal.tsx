@@ -148,6 +148,7 @@ export const LinkIdentityProviderModal = ({
             name="hideOnLogin"
             label={t("hideOnLoginPage")}
             labelIcon={t("hideOnLoginPageHelp")}
+            defaultValue={true}
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(

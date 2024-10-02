@@ -48,7 +48,6 @@ export const IdentityProviderSelect = ({
   const {
     control,
     getValues,
-    setValue,
     formState: { errors },
   } = useFormContext();
   const values: string[] | undefined = getValues(name!);
@@ -201,7 +200,6 @@ export const IdentityProviderSelect = ({
             selected={field.value}
             onSelect={(_, v) => {
               const idp = v as IdentityProviderRepresentation;
-              setValue("hideOnLogin", idp.hideOnLogin);
               const option = idp.alias!;
               if (variant !== "typeaheadMulti") {
                 const removed = field.value.includes(option);
