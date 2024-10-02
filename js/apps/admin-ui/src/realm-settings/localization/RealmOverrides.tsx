@@ -121,6 +121,8 @@ export const RealmOverrides = ({
             whoAmI.getLocale(),
         });
 
+        setTranslations(Object.entries(result));
+
         if (filter) {
           const searchInTranslations = (idx: number) => {
             return Object.entries(result).filter((i) =>
@@ -143,8 +145,6 @@ export const RealmOverrides = ({
     };
 
     fetchLocalizationTexts().then((translations) => {
-      setTranslations(translations);
-
       const updatedRows: IRow[] = translations.map(
         (translation): IRow => ({
           rowEditBtnAriaLabel: () =>
