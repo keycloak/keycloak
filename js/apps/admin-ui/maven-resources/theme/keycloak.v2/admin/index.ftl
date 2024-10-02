@@ -57,6 +57,9 @@
         }
       }
     </script>
+    <#if !isSecureContext>
+      <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
+    </#if>
     <#if devServerUrl?has_content>
       <script type="module">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";

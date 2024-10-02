@@ -9,6 +9,7 @@ import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.common.util.SecureContextResolver;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -109,6 +110,9 @@ public class AccountConsole implements AccountResourceProvider {
                 .path("/")
                 .build(realm);
 
+        final var isSecureContext = SecureContextResolver.isSecureContext(serverBaseUri);
+
+        map.put("isSecureContext", isSecureContext);
         map.put("serverBaseUrl", serverBaseUrl);
         // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
         // Note that these should be removed from the template of the Account Console as well.

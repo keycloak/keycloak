@@ -33,6 +33,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.common.util.SecureContextResolver;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
@@ -347,7 +348,9 @@ public class AdminConsole {
 
             final var map = new HashMap<String, Object>();
             final var theme = AdminRoot.getTheme(session, realm);
+            final var isSecureContext = SecureContextResolver.isSecureContext(adminBaseUri);
 
+            map.put("isSecureContext", isSecureContext);
             map.put("serverBaseUrl", serverBaseUrl);
             map.put("adminBaseUrl", adminBaseUrl);
             // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
