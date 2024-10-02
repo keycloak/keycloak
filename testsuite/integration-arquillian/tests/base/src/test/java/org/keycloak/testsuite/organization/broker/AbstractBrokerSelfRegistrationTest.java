@@ -635,7 +635,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
-        // create a user to the provider realm using a email that does not share the same domain as the org
+        // create a user to the provider realm using an email that does not share the same domain as the org
         UserRepresentation user = UserBuilder.create()
                 .username("user")
                 .email("user@different.org")
@@ -660,7 +660,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
-        // create a user to the provider realm using a email that does not share the same domain as the org
+        // create a user to the provider realm using an email that does not share the same domain as the org
         UserRepresentation user = UserBuilder.create()
                 .username("user")
                 .email("user@different.org")
