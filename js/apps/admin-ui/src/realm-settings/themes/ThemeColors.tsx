@@ -20,7 +20,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { convertAttributeNameToForm, convertToFormValues } from "../../util";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 
@@ -51,20 +50,6 @@ const ColorControl = ({ name, color, label, ...props }: ColorControlProps) => {
   );
 };
 
-const convertToCssVars = (
-  attributes: Record<string, string>,
-  theme: ThemeType,
-) =>
-  Object.entries(attributes)
-    .filter(([key]) => key.startsWith("style"))
-    .reduce(
-      (acc, [key, value]) => ({
-        ...acc,
-        [key.substring(`style.${theme}.`.length + 2)]: value,
-      }),
-      {},
-    );
-
 const switchTheme = (theme: ThemeType) => {
   if (theme === "light") {
     document.documentElement.classList.remove("pf-v5-theme-dark");
@@ -81,13 +66,9 @@ type ThemeColorsProps = {
 
 export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   const { t } = useTranslation();
-  const form = useForm<RealmRepresentation>();
-  const { handleSubmit, setValue } = form;
-  const attributes = useWatch({
-    control: form.control,
-    name: "attributes",
-    defaultValue: {},
-  });
+  const form = useForm();
+  const { handleSubmit, watch } = form;
+  const style = watch();
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const mapping = useMemo(
@@ -95,27 +76,39 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     [],
   );
 
-  const reset = () =>
-    convertToFormValues(
-      {
-        attributes: {
-          style: {
-            [theme]: mapping.reduce(
-              (acc, m) => ({
-                ...acc,
-                [m.variable!]: m.defaultValue,
-              }),
-              {},
-            ),
-          },
-        },
-      },
-      setValue,
-    );
+  const reset = () => {
+    form.reset({
+      [theme]: mapping.reduce(
+        (acc, m) => ({
+          ...acc,
+          [m.variable!]: m.defaultValue,
+        }),
+        {},
+      ),
+    });
+  };
 
   const setupForm = () => {
-    reset();
-    convertToFormValues(realm, setValue);
+    const values = JSON.parse(realm.attributes?.style || "{}");
+    if (values) {
+      form.reset(values);
+    } else {
+      reset();
+    }
+  };
+
+  const convert = (values: Record<string, string>) => {
+    const styles = JSON.parse(realm.attributes?.style || "{}");
+    save({
+      ...realm,
+      attributes: {
+        ...realm.attributes,
+        style: JSON.stringify({
+          ...styles,
+          ...values,
+        }),
+      },
+    });
   };
 
   useEffect(() => {
@@ -135,21 +128,13 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
         <FlexItem>
           <FormAccess isHorizontal role="manage-realm">
             <FormProvider {...form}>
-              <TextControl
-                name={convertAttributeNameToForm("attributes.style.logo")}
-                label={t("logo")}
-              />
-              <TextControl
-                name={convertAttributeNameToForm("attributes.style.bglogo")}
-                label={t("backgroundLogo")}
-              />
+              <TextControl name="logo" label={t("logo")} />
+              <TextControl name="bgimage" label={t("backgroundImage")} />
               {mapping.map((m) => (
                 <ColorControl
                   key={m.name}
                   color={m.defaultValue!}
-                  name={convertAttributeNameToForm(
-                    `attributes.style.${theme}.${m.variable}`,
-                  )}
+                  name={`${theme}.${m.variable!}`}
                   label={m.name}
                 />
               ))}
@@ -157,12 +142,12 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           </FormAccess>
         </FlexItem>
         <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
-          <PreviewWindow cssVars={convertToCssVars(attributes!, theme)} />
+          <PreviewWindow cssVars={style?.[theme] || {}} />
         </FlexItem>
       </Flex>
       <FixedButtonsGroup
         name="colors"
-        save={handleSubmit(save)}
+        save={handleSubmit(convert)}
         reset={setupForm}
       >
         <Button type="button" variant="link" onClick={reset}>
