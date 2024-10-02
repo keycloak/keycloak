@@ -918,13 +918,16 @@ public class UserTest extends AbstractAdminTest {
     public void searchByMultipleAttributes() {
         createUsers();
 
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("test", "test1");
-        attributes.put("attr", "common");
-        attributes.put("test1", "test1");
+        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("username", "user", "test", "test1", "attr", "common", "test1", "test1")));
+        assertThat(users, hasSize(1));
 
-        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
-        assertEquals(1, users.size());
+        //custom user attribute should use wildcard search by default
+        users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("username", "user", "test", "est", "attr", "mm", "test1", "test1")));
+        assertThat(users, hasSize(1));
+
+        //with exact=true the user shouldn't be returned
+        users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("test", "est", "attr", "mm", "test1", "test1")), Boolean.TRUE);
+        assertThat(users, hasSize(0));
     }
 
     @Test

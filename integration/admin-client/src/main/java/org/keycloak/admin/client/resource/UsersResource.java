@@ -117,6 +117,12 @@ public interface UsersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByAttributes(@QueryParam("q") String searchQuery,
+                                                @QueryParam("exact") Boolean exact);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     List<UserRepresentation> searchByAttributes(@QueryParam("first") Integer firstResult,
                                                 @QueryParam("max") Integer maxResults,
                                                 @QueryParam("enabled") Boolean enabled,
