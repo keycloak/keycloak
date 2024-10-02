@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.ModelValidationException;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
@@ -34,6 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -97,17 +99,25 @@ public class PersistenceExceptionConverter implements InvocationHandler {
                 || (throwable instanceof SQLException bue && bue.getSQLState().startsWith("23"))
                 || throwable instanceof SQLIntegrityConstraintViolationException;
 
-        throwModelDuplicateEx = throwModelDuplicateEx.or(checkDuplicationMessage);
-
-        if (t.getCause() != null && throwModelDuplicateEx.test(t.getCause())) {
-            throw new ModelDuplicateException("Duplicate resource error", t.getCause());
-        } else if (throwModelDuplicateEx.test(t)) {
-            throw new ModelDuplicateException("Duplicate resource error", t);
-        } else if (t instanceof OptimisticLockException) {
+        Consumer<Throwable> converter = throwable -> {
+            if (throwModelDuplicateEx.or(checkDuplicationMessage).test(throwable)) {
+                throw new ModelDuplicateException("Duplicate resource error", throwable);
+            }
+            // SQL state class 22 captures errors like 22001 = Value too long for column, we do not 
+            // necessarily need to check for DataException as that includes 21xxx errors as well 
+            if (throwable instanceof SQLException bue && bue.getSQLState().startsWith("22")) {
+                throw new ModelValidationException("Resource validation error", throwable);
+            }
+        };
+        
+        if (t.getCause() != null) {
+            converter.accept(t.getCause());
+        } 
+        converter.accept(t);
+        if (t instanceof OptimisticLockException) {
             throw new ModelIllegalStateException("Database operation failed", t);
-        } else {
-            throw new ModelException("Database operation failed", t);
-        }
+        } 
+        throw new ModelException("Database operation failed", t);
     }
 
 }

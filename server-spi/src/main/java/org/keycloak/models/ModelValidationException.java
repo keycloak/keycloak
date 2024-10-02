@@ -30,4 +30,8 @@ public class ModelValidationException extends ModelException {
     public ModelValidationException(String message) {
         super(message);
     }
+    
+    public ModelValidationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

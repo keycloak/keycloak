@@ -40,7 +40,6 @@ import org.keycloak.testsuite.util.ContainerAssume;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -668,13 +667,11 @@ public class FlowTest extends AbstractAuthenticationTest {
         try {
             authMgmtResource.updateFlow(rep.getId(), rep);
             fail("Should fail because the description is too long");
-        } catch (InternalServerErrorException isee) {
-            try (Response response = isee.getResponse()) {
-                assertEquals(500, response.getStatus());
+        } catch (BadRequestException e) {
+            try (Response response = e.getResponse()) {
+                assertEquals(400, response.getStatus());
                 assertFalse(StreamUtil.readString((InputStream) response.getEntity(), Charset.forName("UTF-8")).toLowerCase().contains("exception"));
             }
-        } catch (Exception e) {
-            fail("Unexpected exception");
         }
     }
 
