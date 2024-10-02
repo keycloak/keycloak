@@ -50,7 +50,7 @@ This command verifies the `lb-check` endpoint of the load balancer and ensures t
 curl -s https://keycloak-load-balancer-url/lb-check
 ----
 
-These commands will return the running status of the Site A and Site B of the {project_name} in a cross-site setup (whether it is Active/Passive or Active/Active).
+These commands will return the running status of the Site A and Site B of the {project_name} in a multi-site setup.
 
 [source,bash]
 ----
