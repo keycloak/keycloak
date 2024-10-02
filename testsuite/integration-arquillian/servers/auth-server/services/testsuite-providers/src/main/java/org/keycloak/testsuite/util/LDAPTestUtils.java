@@ -21,6 +21,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -173,6 +174,27 @@ public class LDAPTestUtils {
         dn.addFirst("ou", name);
         ldapObject.setDn(dn);
         ldapProvider.getLdapIdentityStore().add(ldapObject);
+        return ldapObject;
+    }
+
+    public static LDAPObject addLdapOUinBaseDn(LDAPStorageProvider ldapProvider, String name) {
+        LDAPObject ldapObject = new LDAPObject();
+        ldapObject.setRdnAttributeName("ou");
+        ldapObject.setObjectClasses(Collections.singletonList("organizationalUnit"));
+        ldapObject.setSingleAttribute("ou", name);
+        LDAPDn dn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getBaseDn());
+        dn.addFirst("ou", name);
+        ldapObject.setDn(dn);
+
+        // remove OU before adding it in case it already exists
+        try {
+            ldapProvider.getLdapIdentityStore().remove(ldapObject);
+        } catch (ModelException e) {
+                // OK
+        }
+
+        ldapProvider.getLdapIdentityStore().add(ldapObject);
+
         return ldapObject;
     }
 

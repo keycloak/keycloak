@@ -79,6 +79,10 @@ public class LDAPConfig {
         return usersDn;
     }
 
+    public String getBaseDn() {
+        return config.getFirst(LDAPConstants.BASE_DN);
+    }
+
     public Collection<String> getUserObjectClasses() {
         String objClassesCfg = config.getFirst(LDAPConstants.USER_OBJECT_CLASSES);
         String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson,organizationalPerson";
