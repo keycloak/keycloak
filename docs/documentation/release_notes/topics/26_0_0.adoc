@@ -83,6 +83,8 @@ The new `footer.ftl` template provides a `content` macro that is rendered at the
 
 - {project_name} deployments are now able to handle user requests simultaneously in both sites.
 
+- Active monitoring of the connectivity between the sites is now required to update the replication between the sites in case of a failure.
+
 - The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times caused by DNS caching by clients.
 
 - Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
