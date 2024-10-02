@@ -75,7 +75,7 @@ If you do this please be aware:
 
 - all Operators share the CRDs (Custom Resource Definitions) as they are installed cluster wide.
 - CRD revisions from newer Operator versions won't introduce breaking changes except for the eventual removal of fields that have been well deprecated. Thus newer CRDs are generally backward compatible.
-- the CRDs installed last will be the ones in use.
+- the CRDs installed last will be the ones in use. This applies to OLM installations as well where the Operator version, that is installed as the last, also installs and overrides the CRDs if they exists in the cluster already.
 - older CRDs may not be forwards compatible with new fields used by newer operators. When using OLM it will check if your custom resources are compatible with the CRDs being installed, so the usage of new fields can prevent the simultaneous installation of older operator versions.
 - fields introduced by newer CRDs will not be supported by older Operators. Older Operator will fail to handle such CRs with an error deserializing an unrecognized field.
 
