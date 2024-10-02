@@ -1,6 +1,5 @@
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { TextControlProps } from "@keycloak/keycloak-ui-shared/dist/controls/TextControl";
 import {
   Alert,
   Button,
@@ -9,6 +8,7 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
+  TextInputProps,
 } from "@patternfly/react-core";
 import { useEffect, useMemo } from "react";
 import {
@@ -25,7 +25,9 @@ import { PreviewWindow } from "./PreviewWindow";
 
 type ThemeType = "light" | "dark";
 
-type ColorControlProps = TextControlProps<any> & {
+type ColorControlProps = TextInputProps & {
+  name: string;
+  label: string;
   color: string;
 };
 
