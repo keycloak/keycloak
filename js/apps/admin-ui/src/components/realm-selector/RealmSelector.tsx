@@ -213,6 +213,7 @@ export const RealmSelector = () => {
                     navigate(toDashboard({ realm: realm.name }));
                     setOpen(false);
                     setSearch("");
+                    window.location.reload();
                   }}
                 >
                   <RealmText
