@@ -81,7 +81,9 @@ The new `footer.ftl` template provides a `content` macro that is rendered at the
 
 {project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
 
-- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active setups are now supported.
+- {project_name} deployments are now able to handle user requests simultaneously in both sites.
+
+- Active monitoring of the connectivity between the sites is now required to update the replication between the sites in case of a failure.
 
 - The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times caused by DNS caching by clients.
 
