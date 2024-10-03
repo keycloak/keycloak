@@ -449,7 +449,7 @@ Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Sec
 
 When the provided build-time options differ at startup from the values persisted in the server image during the last optimized {project_name} build, {project_name} will now fail to start. Previously, a warning message was displayed in such cases.
 
-== Features renamed
+= Features renamed
 
 With feature versions the features `account3`, `admin2`, and `login2` have been renamed. When disabling a feature there
 is no need to use the version, for example the admin console is now disabled with `--features-disabled=admin`.
