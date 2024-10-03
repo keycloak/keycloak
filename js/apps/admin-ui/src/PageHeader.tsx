@@ -186,7 +186,9 @@ export const Header = () => {
   const { realm, realmRepresentation } = useRealm();
 
   const picture = keycloak.tokenParsed?.picture;
-  const customLogo = realmRepresentation?.attributes?.["style.logo"];
+  const customLogo = JSON.parse(
+    realmRepresentation?.attributes?.style || "{}",
+  )?.logo;
   const logo = customLogo || environment.logo || "/logo.svg";
   const url = useHref(toDashboard({ realm }));
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
