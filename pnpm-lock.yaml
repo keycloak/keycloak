@@ -211,8 +211,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-dropzone:
-        specifier: ^14.2.3
-        version: 14.2.3(react@18.3.1)
+        specifier: ^14.2.6
+        version: 14.2.6(react@18.3.1)
       react-hook-form:
         specifier: ^7.53.0
         version: 7.53.0(react@18.3.1)
@@ -4059,6 +4059,12 @@ packages:
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
 
+  react-dropzone@14.2.6:
+    resolution: {integrity: sha512-arXJyFVV+ld869AOS7ikqYJLuSklxXfiiD/+b+umknqC+u0hg+K3HMYgzKDLAi6RVnfBiILk5oluGZ8Z/PVrEw==}
+    engines: {node: '>= 20.17'}
+    peerDependencies:
+      react: '>= 16.8 || 18.0.0'
+
   react-hook-form@7.53.0:
     resolution: {integrity: sha512-M1n3HhqCww6S2hxLxciEXy2oISPnAzxY7gvwVPrtlczTM/1dDadXgUxDpHMrMTblDOcm/AXtXxHwZ3jpg1mqKQ==}
     engines: {node: '>=18.0.0'}
@@ -5542,7 +5548,7 @@ snapshots:
       p-debounce: 4.0.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      react-dropzone: 14.2.3(react@18.3.1)
+      react-dropzone: 14.2.6(react@18.3.1)
       react-hook-form: 7.53.0(react@18.3.1)
       react-i18next: 15.0.2(i18next@23.15.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.26.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -8880,6 +8886,13 @@ snapshots:
       scheduler: 0.23.2
 
   react-dropzone@14.2.3(react@18.3.1):
+    dependencies:
+      attr-accept: 2.2.2
+      file-selector: 0.6.0
+      prop-types: 15.8.1
+      react: 18.3.1
+
+  react-dropzone@14.2.6(react@18.3.1):
     dependencies:
       attr-accept: 2.2.2
       file-selector: 0.6.0
