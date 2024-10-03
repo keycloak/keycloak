@@ -418,7 +418,7 @@ const keycloak = new Keycloak('http://keycloak-server/path/to/keycloak.json');
 
 == Methods for login are now `async`
 
-Keycloak JS now utilizes the Web Crypto API to calculate the SHA-256 digests needed to support PKCE. Due to the asynchronous nature of this API the following public methods will now always return a `Promise`:
+Keycloak JS now utilizes the Web Crypto API for various cryptographic functions. Due to the asynchronous nature of this API the following public methods will now always return a `Promise`:
 
 - `login()`
 - `createLoginUrl()`
@@ -443,7 +443,7 @@ Make sure to update your code to `await` these methods.
 
 == A secure context is now required
 
-Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API to calculate the SHA-256 digests needed to support PKCE. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
+Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
 
 = Stricter startup behavior for build-time options
 
