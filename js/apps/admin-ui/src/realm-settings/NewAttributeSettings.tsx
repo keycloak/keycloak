@@ -295,7 +295,7 @@ export default function NewAttributeSettings() {
               },
               translation.value,
             );
-          } catch (error) {
+          } catch {
             console.error(`Error saving translation for ${translation.locale}`);
           }
         },
@@ -379,7 +379,7 @@ export default function NewAttributeSettings() {
         (translation) => translation.value.trim() !== "",
       );
 
-      if (!hasNonEmptyTranslations) {
+      if (!hasNonEmptyTranslations && !formFields.displayName) {
         addError("createAttributeError", t("translationError"));
         return;
       }
