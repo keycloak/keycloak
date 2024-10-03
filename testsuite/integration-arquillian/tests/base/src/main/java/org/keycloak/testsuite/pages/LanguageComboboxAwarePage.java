@@ -17,13 +17,12 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.junit.Assert;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.junit.Assert;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -96,7 +95,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public void clickTryAnotherWayLink() {
-        tryAnotherWayLink.click();
+        UIUtils.clickLink(tryAnotherWayLink);
     }
 
     public void assertAccountLinkAvailability(boolean expectedAvailability) {
@@ -109,7 +108,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public void clickAccountLink() {
-        accountLink.click();
+        UIUtils.clickLink(accountLink);
     }
 
     // If false, we don't expect "attempted username" link available on the page. If true, we expect that it is available on the page
@@ -131,6 +130,6 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public void clickResetLogin() {
-        resetLoginLink.click();
+        UIUtils.clickLink(resetLoginLink);
     }
 }
