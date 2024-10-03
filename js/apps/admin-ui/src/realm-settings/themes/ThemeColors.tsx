@@ -92,7 +92,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
 
   const setupForm = () => {
     const values = JSON.parse(realm.attributes?.style || "{}");
-    if (values) {
+    if (values[theme]) {
       form.reset(values);
     } else {
       reset();

@@ -73,7 +73,7 @@ const variables = [
   },
   { name: "iconColor", defaultValue: "#f0f0f0", variable: "Color--light-200" },
   {
-    name: "textTolor",
+    name: "textColor",
     defaultValue: { light: "#151515", dark: "#e0e0e0" },
     variable: "Color--100",
   },
