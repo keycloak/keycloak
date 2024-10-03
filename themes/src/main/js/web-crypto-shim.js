@@ -1,4 +1,5 @@
 import { sha256 } from '@noble/hashes/sha256';
+import { v4 as uuidv4 } from 'uuid';
 
 // Shim for Web Crypto API specifically for Keycloak JS, as this API can sometimes be missing, for example in an insecure context:
 // https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts
@@ -29,6 +30,14 @@ if (typeof crypto.getRandomValues === "undefined") {
       }
 
       return array;
+    }
+  });
+}
+
+if (typeof crypto.randomUUID === "undefined") {
+  Object.defineProperty(crypto, "randomUUID", {
+    value: () => {
+      return uuidv4();
     }
   });
 }

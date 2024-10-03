@@ -53,7 +53,11 @@ function Keycloak (config) {
     var logWarn = createLogger(console.warn);
 
     if (!globalThis.isSecureContext) {
-        logWarn('[KEYCLOAK] Keycloak JS should only be used in a secure context: https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts');
+        logWarn(
+            "[KEYCLOAK] Keycloak JS must be used in a 'secure context' to function properly as it relies on browser APIs that are otherwise not available.\n" +
+            "Continuing to run your application insecurely will lead to unexpected behavior and breakage.\n\n" +
+            "For more information see: https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts"
+        );
     }
 
     kc.init = function (initOptions) {
@@ -341,9 +345,7 @@ function Keycloak (config) {
             throw new Error("Web Crypto API is not available.");
         }
 
-        const array = new Uint8Array(len);
-        crypto.getRandomValues(array);
-        return array;
+        return crypto.getRandomValues(new Uint8Array(len));
     }
 
     function generateCodeVerifier(len) {
@@ -1007,13 +1009,11 @@ function Keycloak (config) {
     }
 
     function createUUID() {
-        var hexDigits = '0123456789abcdef';
-        var s = generateRandomString(36, hexDigits).split("");
-        s[14] = '4';
-        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
-        s[8] = s[13] = s[18] = s[23] = '-';
-        var uuid = s.join('');
-        return uuid;
+        if (typeof crypto === "undefined" || typeof crypto.randomUUID === "undefined") {
+            throw new Error("Web Crypto API is not available.");
+        }
+
+        return crypto.randomUUID();
     }
 
     function parseCallback(url) {
