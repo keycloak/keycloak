@@ -3,6 +3,7 @@ import {
   KeycloakSelect,
   SelectVariant,
   label,
+  useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -10,6 +11,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Checkbox,
   InputGroup,
   InputGroupItem,
   SelectOption,
@@ -20,19 +22,20 @@ import {
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { UserAttribute } from "./UserDataTable";
+import { UserAttribute, UserFilter } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
-  activeFilters: UserAttribute[];
-  setActiveFilters: (filters: UserAttribute[]) => void;
+  activeFilters: UserFilter;
+  setActiveFilters: (filters: UserFilter) => void;
   profile: UserProfileConfig;
   createAttributeSearchChips: () => ReactNode;
   searchUserWithAttributes: () => void;
 };
+
+type UserFilterForm = UserAttribute & { exact: boolean };
 
 export function UserDataTableAttributeSearchForm({
   activeFilters,
@@ -59,13 +62,16 @@ export function UserDataTableAttributeSearchForm({
     setValue,
     setError,
     clearErrors,
-  } = useForm<UserAttribute>({
+    control,
+  } = useForm<UserFilterForm>({
     mode: "onChange",
     defaultValues,
   });
 
   const isAttributeKeyDuplicate = () => {
-    return activeFilters.some((filter) => filter.name === getValues().name);
+    return activeFilters.userAttribute.some(
+      (filter) => filter.name === getValues().name,
+    );
   };
 
   const isAttributeNameValid = () => {
@@ -76,7 +82,9 @@ export function UserDataTableAttributeSearchForm({
         message: t("searchUserByAttributeMissingKeyError"),
       });
     } else if (
-      activeFilters.some((filter) => filter.name === getValues().name)
+      activeFilters.userAttribute.some(
+        (filter) => filter.name === getValues().name,
+      )
     ) {
       setError("name", {
         type: "conflict",
@@ -106,13 +114,11 @@ export function UserDataTableAttributeSearchForm({
 
   const addToFilter = () => {
     if (isAttributeValid()) {
-      setActiveFilters([
-        ...activeFilters,
-        {
-          ...getValues(),
-        },
-      ]);
-      reset();
+      setActiveFilters({
+        exact: getValues().exact,
+        userAttribute: [...activeFilters.userAttribute, { ...getValues() }],
+      });
+      reset({ exact: getValues().exact });
     } else {
       if (errors.name?.message) {
         addAlert(errors.name.message, AlertVariant.danger);
@@ -125,10 +131,10 @@ export function UserDataTableAttributeSearchForm({
   };
 
   const clearActiveFilters = () => {
-    const filtered = [...activeFilters].filter(
+    const filtered = [...activeFilters.userAttribute].filter(
       (chip) => chip.name !== chip.name,
     );
-    setActiveFilters(filtered);
+    setActiveFilters({ exact: getValues().exact, userAttribute: filtered });
   };
 
   const createAttributeKeyInputField = () => {
@@ -244,12 +250,29 @@ export function UserDataTableAttributeSearchForm({
         </InputGroup>
       </div>
       {createAttributeSearchChips()}
+
+      <div className="pf-v5-u-pt-lg">
+        <Controller
+          name="exact"
+          defaultValue={false}
+          control={control}
+          render={({ field }) => (
+            <Checkbox
+              id="exact"
+              data-testid="exact"
+              label={t("exactSearch")}
+              isChecked={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </div>
       <ActionGroup className="user-attribute-search-form-action-group">
         <Button
           data-testid="search-user-attribute-btn"
           variant="primary"
           type="submit"
-          isDisabled={!activeFilters.length}
+          isDisabled={!activeFilters.userAttribute.length}
           onClick={searchUserWithAttributes}
         >
           {t("search")}
