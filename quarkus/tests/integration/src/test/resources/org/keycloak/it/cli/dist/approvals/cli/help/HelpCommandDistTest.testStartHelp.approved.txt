@@ -160,7 +160,8 @@ Hostname v2:
 HTTP(S):
 
 --http-enabled <true|false>
-                     Enables the HTTP listener. Default: false.
+                     Enables the HTTP listener. Only for production usage if you restricted
+                       external access, such as with a TLS termination proxy Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload

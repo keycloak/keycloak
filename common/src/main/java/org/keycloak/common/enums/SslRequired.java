@@ -27,7 +27,9 @@ import java.net.UnknownHostException;
  */
 public enum SslRequired {
 
+    @Deprecated
     ALL,
+    @Deprecated
     EXTERNAL,
     NONE;
 

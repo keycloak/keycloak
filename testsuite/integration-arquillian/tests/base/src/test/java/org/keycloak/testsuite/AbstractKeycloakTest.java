@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -473,11 +474,14 @@ public abstract class AbstractKeycloakTest {
     public void importRealm(RealmRepresentation realm) {
         if (modifyRealmForSSL()) {
             if (AUTH_SERVER_SSL_REQUIRED) {
+                realm.setSslRequired(SslRequired.EXTERNAL.name());
                 log.debugf("Modifying %s for SSL", realm.getId());
-                for (ClientRepresentation cr : realm.getClients()) {
-                    modifyMainUrls(cr);
-                    modifyRedirectUrls(cr);
-                    modifySamlAttributes(cr);
+                if (realm.getClients() != null) {
+                    for (ClientRepresentation cr : realm.getClients()) {
+                        modifyMainUrls(cr);
+                        modifyRedirectUrls(cr);
+                        modifySamlAttributes(cr);
+                    }
                 }
             }
         }

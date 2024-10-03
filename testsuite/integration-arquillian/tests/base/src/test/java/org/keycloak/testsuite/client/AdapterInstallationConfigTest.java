@@ -38,6 +38,11 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
     private ClientRepresentation client;
     private ClientRepresentation client2;
     private ClientRepresentation clientPublic;
+    
+    @Override
+    protected boolean modifyRealmForSSL() {
+        return true;
+    }
 
     @Before
     @Override

@@ -10,7 +10,7 @@ public class HttpOptions {
 
     public static final Option<Boolean> HTTP_ENABLED = new OptionBuilder<>("http-enabled", Boolean.class)
             .category(OptionCategory.HTTP)
-            .description("Enables the HTTP listener.")
+            .description("Enables the HTTP listener. Only for production usage if you restricted external access, such as with a TLS termination proxy")
             .defaultValue(Boolean.FALSE)
             .build();
 

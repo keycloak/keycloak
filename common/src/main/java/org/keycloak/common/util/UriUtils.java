@@ -123,6 +123,8 @@ public class UriUtils {
             throw new IllegalArgumentException("Invalid protocol/scheme for url [" + name + "]");
         }
 
+        // TODO: as we transition to NONE / removal of SslRequired this check either needs to
+        // consider http settings (which aren't immediately available here) or just go away
         if (!"https".equals(protocol) && sslRequired.isRequired(parsed.getHost())) {
             throw new IllegalArgumentException("The url [" + name + "] requires secure connections");
         }

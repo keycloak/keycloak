@@ -259,7 +259,7 @@ public class RealmManager {
         realm.setQuickLoginCheckMilliSeconds(1000);
         realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
         realm.setFailureFactor(30);
-        realm.setSslRequired(SslRequired.EXTERNAL);
+        realm.setSslRequired(SslRequired.NONE);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 

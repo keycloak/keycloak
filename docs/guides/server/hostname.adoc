@@ -40,15 +40,16 @@ In this manner, your applications, referred to as clients, can connect with {pro
 
 == Using edge TLS termination
 
-As you can observe, the HTTPS protocol is the default choice, adhering to {project_name}'s commitment to security best practices. However, {project_name} also provides the flexibility for users to opt for HTTP if necessary. This can be achieved simply by specifying the HTTP listener, consult the <@links.server id="enabletls"/> for details. With an edge TLS-termination proxy you can start the server as follows:
+As you can observe, the HTTPS protocol is the default choice, adhering to {project_name}'s commitment to security best practices. However, {project_name} also provides the flexibility for users to opt for HTTP if necessary. This can be achieved by specifying `http-enabled`. 
+With an edge TLS-termination proxy you can start the server as follows:
 
 <@kc.start parameters="--hostname https://my.keycloak.org --http-enabled true"/>
 
-The result of this configuration is that you can continue to access {project_name} at `https://my.keycloak.org` via HTTPS, while the proxy interacts with the instance using HTTP and port `8080`.
+The result of this configuration is that you can continue to access {project_name} at `https://my.keycloak.org` via HTTPS, while the proxy interacts with the instance using HTTP and port `8080`. For more details refer to the <@links.server id="reverseproxy"/> guide and the following section "Using a reverse proxy".
 
 == Using a reverse proxy
 
-When a proxy is forwarding http or reencrypted TLS requests, the `proxy-headers` option should be set. Depending on the hostname settings, some or all of the URL, may be dynamically determined.
+When a proxy is forwarding http or reencrypted TLS requests, the `proxy-headers` option should be set. For more details refer to the <@links.server id="reverseproxy"/> guide. Depending on the hostname settings, some or all of the URL, may be dynamically determined.
 
 WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 

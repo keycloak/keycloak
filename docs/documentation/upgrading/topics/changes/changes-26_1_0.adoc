@@ -1,0 +1,6 @@
+= SslRequired deprecations
+
+`SslRequired.EXTERNAL`, `SslRequired.ALL` have been deprecated. 
+New realms will default to `SslRequired.NONE` meaning that you must explicitly set `SslRequired.EXTERNAL` to enable the legacy behavior. 
+Moving forward if you want `SslRequired.EXTERNAL` behavior, then your proxy should only allow https access, and if you want `SslRequired.ALL` behavior, you should not enable http.
+To align with this you should change your existing realms to `SslRequired.NONE`.

@@ -219,7 +219,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void failCreateInvalidUrl() throws Exception {
-        try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
+        try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm(REALM_NAME))
                 .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
                 .update()
         ) {
