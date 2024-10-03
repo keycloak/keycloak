@@ -339,7 +339,7 @@ public class LogoutEndpoint {
 
         SessionCodeChecks checks = new LogoutSessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, code, clientId, tabId);
         checks.initialVerify();
-        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest() || !formData.containsKey("confirmLogout")) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest()) {
             AuthenticationSessionModel logoutSession = checks.getAuthenticationSession();
             String errorMessage = "Failed verification during logout.";
             logger.debugf( "%s logoutSessionId=%s, clientId=%s, tabId=%s",
