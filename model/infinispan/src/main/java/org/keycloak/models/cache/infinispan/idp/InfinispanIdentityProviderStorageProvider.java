@@ -426,7 +426,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     }
 
     private boolean isInvalid(String cacheKey) {
-        return realmCache.getInvalidations().contains(cacheKey);
+        return realmCache.isInvalid(cacheKey);
     }
 
     private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
