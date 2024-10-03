@@ -46,7 +46,7 @@ If you want to run Keycloak standalone (without the script) against the Vite dev
 ```sh
 KC_ACCOUNT_VITE_URL=http://localhost:5173
 KC_ADMIN_VITE_URL=http://localhost:5174
-KC_FEATURES=login2,account3,admin-fine-grained-authz,transient-users,oid4vc-vci
+KC_FEATURES=login:v2,account:v3,admin-fine-grained-authz,transient-users,oid4vc-vci
 ```
 
 **All other arguments will be passed through to the underlying Keycloak server.**

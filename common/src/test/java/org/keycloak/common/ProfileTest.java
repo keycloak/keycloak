@@ -31,7 +31,7 @@ public class ProfileTest {
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ;
     private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
-    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LOGIN1;
+    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LOGIN_V1;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -85,7 +85,7 @@ public class ProfileTest {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
 
-        Assert.assertEquals("Feature account3 depends on disabled feature account-api",
+        Assert.assertEquals("Feature account-v3 depends on disabled feature account-api",
                 assertThrows(ProfileException.class,
                         () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
     }
@@ -93,10 +93,10 @@ public class ProfileTest {
     @Test
     public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature.account3", "disabled");
+        properties.setProperty("keycloak.profile.feature.account", "disabled");
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
         Profile.configure(new PropertiesProfileConfigResolver(properties));
-                Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3));
+                Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API));
     }
 
@@ -159,9 +159,9 @@ public class ProfileTest {
 
     @Test
     public void testKeys() {
-        Assert.assertEquals("account3", Profile.Feature.ACCOUNT3.getKey());
-        Assert.assertEquals("account3", Profile.Feature.ACCOUNT3.getUnversionedKey());
-        Assert.assertEquals("account3:v1", Profile.Feature.ACCOUNT3.getVersionedKey());
+        Assert.assertEquals("account-v3", Profile.Feature.ACCOUNT_V3.getKey());
+        Assert.assertEquals("account", Profile.Feature.ACCOUNT_V3.getUnversionedKey());
+        Assert.assertEquals("account:v3", Profile.Feature.ACCOUNT_V3.getVersionedKey());
     }
 
     @Test
