@@ -363,7 +363,7 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
-            map.put("attributes", realm.getAttributes());
+            map.put("style", realm.getAttributes().getOrDefault("style", "{}"));
 
             final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ADMIN_VITE_URL) : null;
 

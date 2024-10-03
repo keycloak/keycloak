@@ -93,23 +93,26 @@
     </script>
     <style>
       :root {
-      <#list realm.attributes as k, v>
-        <#if k?contains("bglogo") && v?has_content>
-            --keycloak-bg-logo-url: url('${v}');
-        <#elseif k?contains("logo") && v?has_content>
-            --keycloak-logo-url: url('${v}');
-        </#if>
-        <#if k?starts_with("style.light")>
-            --pf-v5-global--${k[12..]}: ${v?no_esc};
-        </#if>
-      </#list>
+      <#assign styleString = realm.attributes.style!"{}">
+      <#assign style = styleString?eval>
+      <#if style.bgimage??>
+          --keycloak-bg-logo-url: url('${style.bgimage}');
+      </#if>
+      <#if style.logo??>
+          --keycloak-logo-url: url('${style.logo}');
+      </#if>
+      <#if style.light??>
+        <#list style.light as k, v>
+            --pf-v5-global--${k}: ${v?no_esc};
+        </#list>
+      </#if>
       }
       .pf-v5-theme-dark {
-      <#list realm.attributes as k, v>
-        <#if k?starts_with("style.dark")>
-          --pf-v5-global--${k[11..]}: ${v?no_esc};
-        </#if>
-      </#list>
+      <#if style.dark??>
+        <#list style.dark as k, v>
+            --pf-v5-global--${k}: ${v?no_esc};
+        </#list>
+      </#if>
       }
     </style>
 </head>
