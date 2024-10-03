@@ -3,14 +3,14 @@ import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs
 import {
   Button,
   ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
   InputGroup,
+  InputGroupItem,
+  MenuToggle,
   SearchInput,
   ToolbarItem,
-  InputGroupItem,
-  Dropdown,
-  MenuToggle,
-  DropdownList,
-  DropdownItem,
 } from "@patternfly/react-core";
 import { ArrowRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
@@ -18,9 +18,9 @@ import { useTranslation } from "react-i18next";
 
 import { useAccess } from "../../context/access/Access";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
-import { UserAttribute } from "./UserDataTable";
-import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 import DropdownPanel from "../dropdown-panel/DropdownPanel";
+import { UserFilter } from "./UserDataTable";
+import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 
 type UserDataTableToolbarItemsProps = {
   searchDropdownOpen: boolean;
@@ -34,8 +34,8 @@ type UserDataTableToolbarItemsProps = {
   setSearchType: (searchType: SearchType) => void;
   searchUser: string;
   setSearchUser: (searchUser: string) => void;
-  activeFilters: UserAttribute[];
-  setActiveFilters: (activeFilters: UserAttribute[]) => void;
+  activeFilters: UserFilter;
+  setActiveFilters: (activeFilters: UserFilter) => void;
   refresh: () => void;
   profile: UserProfileConfig;
   clearAllFilters: () => void;

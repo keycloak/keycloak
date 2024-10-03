@@ -33,6 +33,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
+import { fetchRealmInfo } from "../../context/auth/admin-ui-endpoint";
+import { UiRealmInfo } from "../../context/auth/uiRealmInfo";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { SearchType } from "../../user/details/SearchFilter";
 import { toAddUser } from "../../user/routes/AddUser";
@@ -41,8 +43,11 @@ import { emptyFormatter } from "../../util";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
-import { UiRealmInfo } from "../../context/auth/uiRealmInfo";
-import { fetchRealmInfo } from "../../context/auth/admin-ui-endpoint";
+
+export type UserFilter = {
+  exact: boolean;
+  userAttribute: UserAttribute[];
+};
 
 export type UserAttribute = {
   name: string;
@@ -119,7 +124,10 @@ export function UserDataTable() {
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const [searchType, setSearchType] = useState<SearchType>("default");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<UserAttribute[]>([]);
+  const [activeFilters, setActiveFilters] = useState<UserFilter>({
+    exact: false,
+    userAttribute: [],
+  });
   const [profile, setProfile] = useState<UserProfileConfig>({});
   const [query, setQuery] = useState("");
 
@@ -145,10 +153,11 @@ export function UserDataTable() {
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const params: { [name: string]: string | number } = {
+    const params: { [name: string]: string | number | boolean } = {
       first: first!,
       max: max!,
       q: query!,
+      exact: activeFilters.exact,
     };
 
     const searchParam = search || searchUser || "";
@@ -219,17 +228,16 @@ export function UserDataTable() {
   const listUsers = !uiRealmInfo.userProfileProvidersEnabled;
 
   const clearAllFilters = () => {
-    const filtered = [...activeFilters].filter(
-      (chip) => chip.name !== chip.name,
-    );
-    setActiveFilters(filtered);
+    setActiveFilters({ exact: false, userAttribute: [] });
     setSearchUser("");
     setQuery("");
     refresh();
   };
 
-  const createQueryString = (filters: UserAttribute[]) => {
-    return filters.map((filter) => `${filter.name}:${filter.value}`).join(" ");
+  const createQueryString = (filters: UserFilter) => {
+    return filters.userAttribute
+      .map((filter) => `${filter.name}:${filter.value}`)
+      .join(" ");
   };
 
   const searchUserWithAttributes = () => {
@@ -241,9 +249,9 @@ export function UserDataTable() {
   const createAttributeSearchChips = () => {
     return (
       <FlexItem>
-        {activeFilters.length > 0 && (
+        {activeFilters.userAttribute.length > 0 && (
           <>
-            {Object.values(activeFilters).map((entry) => {
+            {Object.values(activeFilters.userAttribute).map((entry) => {
               return (
                 <ChipGroup
                   className="pf-v5-u-mt-md pf-v5-u-mr-md"
@@ -256,13 +264,16 @@ export function UserDataTable() {
                   onClick={(event) => {
                     event.stopPropagation();
 
-                    const filtered = [...activeFilters].filter(
+                    const filtered = [...activeFilters.userAttribute].filter(
                       (chip) => chip.name !== entry.name,
                     );
-                    const attributes = createQueryString(filtered);
+                    const active = {
+                      userAttribute: filtered,
+                      exact: activeFilters.exact,
+                    };
 
-                    setActiveFilters(filtered);
-                    setQuery(attributes);
+                    setActiveFilters(active);
+                    setQuery(createQueryString(active));
                     refresh();
                   }}
                 >
@@ -304,7 +315,7 @@ export function UserDataTable() {
   };
 
   const subtoolbar = () => {
-    if (!activeFilters.length) {
+    if (!activeFilters.userAttribute.length) {
       return;
     }
     return (
@@ -329,7 +340,9 @@ export function UserDataTable() {
       <DeleteConfirm />
       <UnlockUsersConfirm />
       <KeycloakDataTable
-        isSearching={searchUser !== "" || activeFilters.length !== 0}
+        isSearching={
+          searchUser !== "" || activeFilters.userAttribute.length !== 0
+        }
         key={key}
         loader={loader}
         isPaginated
