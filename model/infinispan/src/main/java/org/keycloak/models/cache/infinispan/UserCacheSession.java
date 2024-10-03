@@ -24,6 +24,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -995,5 +996,22 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return organizationProvider.getByMember(delegate)
                 .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
                         (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+    }
+
+    public UserCacheManager getCache() {
+        return cache;
+    }
+
+    public long getStartupRevision() {
+        return startupRevision;
+    }
+
+    public void registerInvalidation(String id) {
+        cache.invalidateCacheKey(id, invalidations);
+        invalidationEvents.add(new CacheKeyInvalidatedEvent(id));
+    }
+
+    public boolean isInvalid(String key) {
+        return invalidations.contains(key);
     }
 }
