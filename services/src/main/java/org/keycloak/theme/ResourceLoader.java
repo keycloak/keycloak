@@ -15,7 +15,12 @@ public class ResourceLoader {
         Path rootPath = Path.of("/", root).normalize().toAbsolutePath();
         Path resourcePath = rootPath.resolve(resource).normalize().toAbsolutePath();
         if (resourcePath.startsWith(rootPath)) {
-            URL url = classLoader().getResource(resourcePath.toString().substring(1));
+            if (File.separatorChar == '/') {
+                resource = resourcePath.toString().substring(1);
+            } else {
+                resource = resourcePath.toString().substring(2).replace('\\', '/');
+            }
+            URL url = classLoader().getResource(resource);
             return url != null ? url.openStream() : null;
         } else {
             return null;
