@@ -40,4 +40,12 @@ export default defineConfig([
     external: ["react"],
     plugins,
   },
+  {
+    input: "src/main/js/web-crypto-shim.js",
+    output: {
+      dir: path.join(targetDir, "web-crypto-shim"),
+      format: "es",
+    },
+    plugins,
+  },
 ]);

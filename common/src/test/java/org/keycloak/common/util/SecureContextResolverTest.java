@@ -1,4 +1,4 @@
-package org.keycloak.cookie;
+package org.keycloak.common.util;
 
 import org.junit.Assert;
 import org.junit.Test;

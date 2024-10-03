@@ -8,6 +8,7 @@
     "build:clean": "shx rm -rf vendor"
   },
   "dependencies": {
+    "@noble/hashes": "^1.5.0",
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.3.1",
     "@patternfly/patternfly": "^4.224.5",
     "patternfly": "^3.59.5",

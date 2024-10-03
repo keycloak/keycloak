@@ -3,9 +3,11 @@ package org.keycloak.cookie;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.SecureContextResolver;
 import org.keycloak.models.KeycloakContext;
 
 import java.util.Map;
+
 public class DefaultCookieProvider implements CookieProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultCookieProvider.class);

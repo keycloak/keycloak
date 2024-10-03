@@ -441,6 +441,10 @@ const registerUrl = await keycloak.createRegisterUrl();
 
 Make sure to update your code to `await` these methods.
 
+== A secure context is now required
+
+Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API to calculate the SHA-256 digests needed to support PKCE. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
+
 = Stricter startup behavior for build-time options
 
 When the provided build-time options differ at startup from the values persisted in the server image during the last optimized {project_name} build, {project_name} will now fail to start. Previously, a warning message was displayed in such cases.

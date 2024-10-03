@@ -1,9 +1,9 @@
-package org.keycloak.cookie;
+package org.keycloak.common.util;
 
 import java.net.URI;
 import java.util.regex.Pattern;
 
-class SecureContextResolver {
+public class SecureContextResolver {
 
     private static final Pattern LOCALHOST_IPV4 = Pattern.compile("127.\\d{1,3}.\\d{1,3}.\\d{1,3}");
 
@@ -15,7 +15,7 @@ class SecureContextResolver {
      * @param uri The URI to check.
      * @return Whether the URI can be considered potentially trustworthy.
      */
-    static boolean isSecureContext(URI uri) {
+    public static boolean isSecureContext(URI uri) {
         if (uri.getScheme().equals("https")) {
             return true;
         }
