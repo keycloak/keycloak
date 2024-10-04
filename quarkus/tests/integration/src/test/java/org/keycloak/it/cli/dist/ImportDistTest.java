@@ -26,7 +26,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
