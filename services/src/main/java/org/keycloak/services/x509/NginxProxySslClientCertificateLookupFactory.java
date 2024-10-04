@@ -10,6 +10,7 @@ import org.keycloak.truststore.TruststoreProviderFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * The factory and the corresponding providers extract a client certificate
@@ -84,8 +85,11 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
             TruststoreProvider provider = truststoreFactory.create(kcSession);
 
             if (provider != null && provider.getTruststore() != null) {
-                trustedRootCerts.addAll(provider.getRootCertificates().values());
-                intermediateCerts.addAll(provider.getIntermediateCertificates().values());
+                Set<X509Certificate> rootCertificates = provider.getRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+                Set<X509Certificate> intermediateCertficiates = provider.getIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+
+                trustedRootCerts.addAll(rootCertificates);
+                intermediateCerts.addAll(intermediateCertficiates);
                 logger.debug("Keycloak truststore loaded for NGINX x509cert-lookup provider.");
 
                 isTruststoreLoaded = true;
