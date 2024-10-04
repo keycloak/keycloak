@@ -12,7 +12,7 @@ import {
 
 export interface ErrorBoundaryContextValue {
   error?: Error;
-  showBoundary: (error: Error) => void;
+  showBoundary: (error?: Error) => void;
 }
 
 const ErrorBoundaryContext = createNamedContext<
@@ -42,7 +42,7 @@ export class ErrorBoundaryProvider extends Component<
     return { error };
   };
 
-  showBoundary = (error: Error) => {
+  showBoundary = (error?: Error) => {
     this.setState({ error });
   };
 
