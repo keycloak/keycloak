@@ -98,6 +98,8 @@
         <infinispan.version>15.0.8.Final</infinispan.version>
         <!-- version number is needed for the proto-schema-compatibility-maven-plugin and needs to be in-sync with the version used in Infinispan -->
         <protostream.version>5.0.8.Final</protostream.version>
+        <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.10.Final -->
+        <protostream.plugin.version>5.0.10.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -1559,7 +1561,7 @@
                 <plugin>
                     <groupId>org.infinispan.protostream</groupId>
                     <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
-                    <version>${protostream.version}</version>
+                    <version>${protostream.plugin.version}</version>
                     <configuration>
                         <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
                     </configuration>
