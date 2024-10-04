@@ -192,13 +192,13 @@ Probably this can be better explained with an example: When the variant `de-CH-1
 
 = `UserQueryProvider` changes
 
-`UserQueryProvider` interface was split into two. One is `UserQueryMethodsProvider` providing capabilities for querying users. Second one is `UserCountMethodsProvider` which provides capability for counting number of users in particular storage. 
+`UserQueryProvider` interface was split into two. One is `UserQueryMethodsProvider` providing capabilities for querying users. Second one is `UserCountMethodsProvider` which provides capability for counting number of users in particular storage.
 
 Keycloak now has the ability to differentiate between user storage providers that can efficiently execute count queries and those that cannot. The `UserQueryProvider` interface still exists and extends both new interfaces. Therefore, there is no need for any modifications in the existing implementations of `UserQueryProvider` since it retains the same methods.
 
 = `LDAPStorageProvider` search changes
 
-Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database. 
+Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database.
 Searching for users should be consistent with search in local database.
 
 Since this release `LDAPStorageProvider` implements only `UserQueryMethodsProvider`, not `UserQueryProvider`.
@@ -215,7 +215,7 @@ This move is already reflected in our documentation and in our quickstart reposi
 references for more information:
 
 * link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
-* link:https://www.keycloak.org/docs/latest/securing_apps/[Keycloak Securing Applications Documentation]
+* link:{securing_apps_link}[Keycloak Securing Applications Documentation]
 
 We recommend starting to look into moving your applications to the alternatives from the references above. Those adapters should not be available anymore in future releases.
 
@@ -228,7 +228,7 @@ The official adapter is now based on Jakarta and should be used as soon as you s
 This change is already in our documentation and in our quickstart repository. For more information, please consider looking at the following references:
 
 * link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
-* link:https://www.keycloak.org/docs/latest/securing_apps/[Keycloak Securing Applications Documentation]
+* link:{securing_apps_link}[Keycloak Securing Applications Documentation]
 
 If you cannot migrate your applications to Jakarta, you can still use the "legacy" SAML JEE adapter and still
 be able to integrate with future releases of the server. However, consider upgrading your applications as soon as possible
@@ -340,8 +340,8 @@ You should also make sure your JAX-RS methods are declaring the expected media t
 
 = Deprecated methods from data providers and models
 
-In earlier versions of Keycloak, provider and model interfaces underwent a cleanup process that involved deprecating certain methods. 
-In this release the methods were removed and some additional methods were deprecated. The Javadoc for these methods from Keycloak 21 included information about 
+In earlier versions of Keycloak, provider and model interfaces underwent a cleanup process that involved deprecating certain methods.
+In this release the methods were removed and some additional methods were deprecated. The Javadoc for these methods from Keycloak 21 included information about
 their corresponding replacements.
 
 * `RealmModel#searchForGroupByNameStream(String, Integer, Integer)` was removed.
