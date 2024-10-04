@@ -60,6 +60,17 @@
             <li></li>
         </template>
 
+        <template id="passwordStrengthTemplate">
+            <div class="${properties.kcProgress} kc-password-strength-bar" id="bar">
+                <div
+                    class="${properties.kcProgressBar}"
+                    role="progressbar"
+                >
+                    <div class="${properties.kcProgressBarIndicator}" id="indicator" style="width:0%"></div>
+                </div>
+            </div>
+        </template>
+
         <script type="module">
             import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
 
@@ -71,8 +82,14 @@
                 { name: "lowerCase", policy: { value: ${passwordPolicies.lowerCase!-1}, error: "${msg('invalidPasswordMinLowerCaseCharsMessage')}"} },
                 { name: "upperCase", policy: { value: ${passwordPolicies.upperCase!-1}, error: "${msg('invalidPasswordMinUpperCaseCharsMessage')}"} },
                 { name: "digits", policy: { value: ${passwordPolicies.digits!-1}, error: "${msg('invalidPasswordMinDigitsMessage')}"} },
-                { name: "specialChars", policy: { value: ${passwordPolicies.specialChars!-1}, error: "${msg('invalidPasswordMinSpecialCharsMessage')}"} }
+                { name: "specialChars", policy: { value: ${passwordPolicies.specialChars!-1}, error: "${msg('invalidPasswordMinSpecialCharsMessage')}"} },
+                { name: "passwordStrength", policy: { value: ${passwordPolicies.passwordStrength?then(0, -1) }, error: "passwordStrength"} }
+
             ].filter(p => p.policy.value !== -1);
+
+            if (activePolicies.filter(p => p.name === "passwordStrength").length !== 0) {
+                document.getElementById("input-error-client-password").appendChild(document.querySelector("#passwordStrengthTemplate").content.cloneNode(true));
+            }
 
             document.getElementById("password").addEventListener("change", (event) => {
                 const serverErrors = document.getElementById("input-error-password");
@@ -82,6 +99,19 @@
                 const errors = validatePassword(event.target.value, activePolicies);
                 const errorList = template.querySelector("ul");
                 const htmlErrors = errors.forEach((e) => {
+                    if (typeof e !== "string") {
+                        const percentage = (e.score + 1) * 20;
+                        document.getElementById("indicator").style.width = percentage + "%";
+                        document.getElementById("bar").classList.remove("pf-m-danger");
+                        document.getElementById("bar").classList.remove("pf-m-success");
+                        if (percentage < 40) {
+                            document.getElementById("bar").classList.add("pf-m-danger");
+                        }
+                        if (percentage >= 80) {
+                            document.getElementById("bar").classList.add("pf-m-success");
+                        }
+                        return;
+                    }
                     const row = document.querySelector("#errorItemTemplate").content.cloneNode(true);
                     const li = row.querySelector("li");
                     li.textContent = e;
