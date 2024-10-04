@@ -1,5 +1,7 @@
 const CHECK_INTERVAL_MILLISECS = 2000;
+const AUTH_SESSION_INTERVAL_MILLISECS = 1000;
 const initialSession = getSession();
+const initialKcAuthSession = getKcAuthSession();
 
 let timeout;
 
@@ -11,6 +13,13 @@ addEventListener("beforeunload", () => {
     timeout = undefined;
   }
 });
+
+setTimeout(function() {
+  const kcAuthSession = getKcAuthSession();
+  if (kcAuthSession !== initialKcAuthSession) {
+    location.reload();
+  }
+}, AUTH_SESSION_INTERVAL_MILLISECS);
 
 export function checkCookiesAndSetTimer(loginRestartUrl) {
   if (initialSession) {
@@ -30,6 +39,10 @@ export function checkCookiesAndSetTimer(loginRestartUrl) {
     // Redirect to the login restart URL. This can typically automatically login user due the SSO
     location.href = loginRestartUrl;
   }
+}
+
+function getKcAuthSession() {
+  return getCookieByName("KC_AUTH_SESSION");
 }
 
 function getSession() {
