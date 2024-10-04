@@ -42,6 +42,7 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
@@ -58,6 +59,7 @@ public class PropertyMapper<T> {
             null,
             null,
             null,
+            null,
             false,
             null,
             null) {
@@ -71,8 +73,9 @@ public class PropertyMapper<T> {
     private final String to;
     private BooleanSupplier enabled;
     private String enabledWhen;
-    private final BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper;
+    private final BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
     private final String mapFrom;
+    private final BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper;
     private final boolean mask;
     private final String paramLabel;
     private final String envVarFormat;
@@ -81,14 +84,15 @@ public class PropertyMapper<T> {
     private final String description;
 
     PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
-                   BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
-                   String mapFrom, String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
+                   BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
+                   String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper, 
+                   String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
                    String description) {
         this.option = option;
         this.to = to == null ? getFrom() : to;
         this.enabled = enabled;
         this.enabledWhen = enabledWhen;
-        this.mapper = mapper == null ? PropertyMapper::defaultTransformer : mapper;
+        this.mapper = mapper;
         this.mapFrom = mapFrom;
         this.paramLabel = paramLabel;
         this.mask = mask;
@@ -96,10 +100,7 @@ public class PropertyMapper<T> {
         this.envVarFormat = toEnvVarFormat(getFrom());
         this.validator = validator;
         this.description = description;
-    }
-
-    private static Optional<String> defaultTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
-        return value;
+        this.parentMapper = parentMapper;
     }
 
     ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
@@ -122,53 +123,25 @@ public class PropertyMapper<T> {
         // try to obtain the value for the property we want to map first
         ConfigValue config = convertValue(context.proceed(from));
 
-        if (config == null || config.getValue() == null) {
-            if (mapFrom != null) {
-                // if the property we want to map depends on another one, we use the value from the other property to call the mapper
-                String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + mapFrom;
-                ConfigValue parentValue = convertValue(context.proceed(parentKey));
+        boolean parentValue = false;
+        if (mapFrom != null && (config == null || config.getValue() == null)) {
+            // if the property we want to map depends on another one, we use the value from the other property to call the mapper
+            config = Configuration.getKcConfigValue(mapFrom);
+            parentValue = true;
+        } 
 
-                if (parentValue == null) {
-                    // parent value not explicitly set, try to resolve the default value set to the parent property
-                    PropertyMapper<?> parentMapper = PropertyMappers.getMapper(parentKey);
-
-                    if (parentMapper != null && parentMapper.getDefaultValue().isPresent()) {
-                        parentValue = ConfigValue.builder().withValue(Option.getDefaultValueString(parentMapper.getDefaultValue().get())).build();
-                    }
-                }
-
-                return transformValue(name, ofNullable(parentValue == null ? null : parentValue.getValue()), context, null);
-            }
-
-            ConfigValue defaultValue = transformValue(name, this.option.getDefaultValue().map(Option::getDefaultValueString), context, null);
-
-            if (defaultValue != null) {
-                return defaultValue;
-            }
-
-            // now tries any defaults from quarkus
-            ConfigValue current = context.proceed(name);
-
-            if (current != null) {
-                return transformValue(name, ofNullable(current.getValue()), context, current.getConfigSourceName());
-            }
-
-            return current;
+        if (config != null && config.getValue() != null) {
+            config = transformValue(name, config.getValue(), context, config.getConfigSourceName(), parentValue);
+        } else {
+            config = transformValue(name, this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null), context, null, false);
         }
-
-        ConfigValue transformedValue = transformValue(name, ofNullable(config.getValue()), context, config.getConfigSourceName());
-
-        // we always fallback to the current value from the property we are mapping
-        if (transformedValue == null) {
-            return ConfigValue.builder()
-                    .withName(name)
-                    .withValue(null)
-                    .withRawValue(config.getValue())
-                    .withConfigSourceName(config.getConfigSourceName())
-                    .build();
+        
+        if (config != null) {
+            return config;
         }
-
-        return transformedValue;
+        
+        // now try any defaults from quarkus
+        return context.proceed(name);
     }
 
     public Option<T> getOption() {
@@ -259,30 +232,22 @@ public class PropertyMapper<T> {
         return option.getDeprecatedMetadata();
     }
 
-    private ConfigValue transformValue(String name, Optional<String> value, ConfigSourceInterceptorContext context, String configSourceName) {
-        if (value == null) {
-            return null;
+    private ConfigValue transformValue(String name, String value, ConfigSourceInterceptorContext context, String configSourceName, boolean parentValue) {
+        String mappedValue = value;
+        
+        var theMapper = parentValue ? this.parentMapper : this.mapper;
+        if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+            mappedValue = theMapper.apply(value, context);
         }
-
-        if (mapper == null || (mapFrom == null && name.equals(getFrom()))) {
-            // no mapper set or requesting a property that does not depend on other property, just return the value from the config source
-            return ConfigValue.builder()
-                    .withName(name)
-                    .withValue(value.orElse(null))
-                    .withConfigSourceName(configSourceName)
-                    .build();
-        }
-
-        Optional<String> mappedValue = mapper.apply(value, context);
-
-        if (mappedValue == null || mappedValue.isEmpty()) {
+        
+        if (value == null && mappedValue == null) {
             return null;
         }
 
         return ConfigValue.builder()
                 .withName(name)
-                .withValue(mappedValue.get())
-                .withRawValue(value.orElse(null))
+                .withValue(mappedValue)
+                .withRawValue(value)
                 .withConfigSourceName(configSourceName)
                 .build();
     }
@@ -299,8 +264,9 @@ public class PropertyMapper<T> {
 
         private final Option<T> option;
         private String to;
-        private BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper;
+        private BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
         private String mapFrom = null;
+        private BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper;
         private boolean isMasked = false;
         private BooleanSupplier isEnabled = () -> true;
         private String enabledWhen = "";
@@ -318,7 +284,12 @@ public class PropertyMapper<T> {
             return this;
         }
 
-        public Builder<T> transformer(BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper) {
+        /**
+         * NOTE: This transformer will not apply to the mapFrom value. When using
+         * {@link #mapFrom} you generally need a transformer specifically for the parent
+         * value, see {@link #mapFrom(Option, BiFunction)}
+         */
+        public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
             this.mapper = mapper;
             return this;
         }
@@ -333,8 +304,9 @@ public class PropertyMapper<T> {
             return this;
         }
 
-        public Builder<T> mapFrom(String mapFrom) {
-            this.mapFrom = mapFrom;
+        public Builder<T> mapFrom(Option<?> mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper) {
+            this.mapFrom = mapFrom.getKey();
+            this.parentMapper = parentMapper;
             return this;
         }
 
@@ -404,7 +376,7 @@ public class PropertyMapper<T> {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            return new PropertyMapper<T>(option, to, isEnabled, enabledWhen, mapper, mapFrom, paramLabel, isMasked, validator, description);
+            return new PropertyMapper<T>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description);
         }
     }
 

@@ -27,8 +27,6 @@ import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import java.util.Optional;
-
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isBlank;
@@ -117,10 +115,10 @@ public final class ExportPropertyMappers {
                 .isPresent();
     }
 
-    private static Optional<String> transformExporter(Optional<String> option, ConfigSourceInterceptorContext context) {
+    private static String transformExporter(String option, ConfigSourceInterceptorContext context) {
         ConfigValue exporter = context.proceed(EXPORTER_PROPERTY);
         if (exporter != null) {
-            return Optional.of(exporter.getValue());
+            return exporter.getValue();
         }
 
         var file = Configuration.getOptionalValue("kc.spi-export-single-file-file").map(f -> SINGLE_FILE);
@@ -131,7 +129,7 @@ public final class ExportPropertyMappers {
         // Only one option can be specified
         boolean xor = file.isPresent() ^ dir.isPresent();
 
-        return xor ? file.or(() -> dir) : Optional.empty();
+        return xor ? file.or(() -> dir).get() : null;
     }
 
 }

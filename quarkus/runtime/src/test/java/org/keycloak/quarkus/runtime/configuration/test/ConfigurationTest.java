@@ -358,7 +358,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty(org.keycloak.common.util.Environment.PROFILE);
-        ConfigArgsConfigSource.setCliArgs("--cache=cluster-foo.xml");
+        ConfigArgsConfigSource.setCliArgs("--cache-config-file=cluster-foo.xml");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
@@ -449,7 +449,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
 
         Environment.setProfile("prod");
-        assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
+        assertEquals("true", createConfig().getConfigValue("kc.spi-hostname-v2-hostname-strict").getValue());
     }
 
     @Test
