@@ -2,6 +2,7 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/keycloak/keycloak?label=latest%20release)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6818/badge)](https://bestpractices.coreinfrastructure.org/projects/6818)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/keycloak/keycloak/badge)](https://scorecard.dev/viewer/?uri=github.com/keycloak/keycloak)
 ![GitHub Repo stars](https://img.shields.io/github/stars/keycloak/keycloak?style=flat)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/keycloak/keycloak)
 
