@@ -126,6 +126,65 @@ The following table shows the recommended paths to expose.
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
+Here is an example nginx reverse proxy configuration to expose only needed paths. In this example, `/admin/` is exposed as a separated host (`https://admin.my.keycloak.org`) and accesses to `https://admin.my.keycloak.org` is restricted. We assume you run {project_name} at `https://internal.keycloak.org:8443`:
+[source]
+----
+server {
+  listen 443;
+  listen [::]:443;
+  server_name my.keycloak.org;
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  # You need to add TLS configurations here
+
+  location /realms/ {
+    proxy_pass https://internal.keycloak.org:8443/realms/;
+    # You need to add TLS configurations here and for each additional proxy_pass
+  }
+  location /resources/ {
+    proxy_pass https://internal.keycloak.org:8443/resources/;
+  }
+  location /robots.txt {
+    proxy_pass https://internal.keycloak.org:8443/robots;
+  }
+}
+
+server {
+  listen 443;
+  listen [::]:443;
+  server_name admin.my.keycloak.org;
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  # You need to add TLS configurations here
+
+  # You can restrict accessable clients
+  # allow 192.168.0.0/24;
+  # deny all;
+
+  location /admin/ {
+    proxy_pass https://internal.keycloak.org:8443/admin/;
+    # You need to add TLS configurations here and for each additional proxy_pass
+  }
+  location /resources/ {
+    proxy_pass https://internal.keycloak.org:8443/resources/;
+  }
+}
+----
+
+In this example, we assume that {project_name} is started like the following:
+
+<@kc.start parameters="--hostname https://my.keycloak.org --hostname-admin https://admin.keycloak.org --proxy-headers xforwarded ..."/>
+
+See also: <@links.server id="hostname"/>
+
 == Trusted Proxies
 
 To ensure that proxy headers are used only from proxies you trust, set the `proxy-trusted-addresses` option to a comma separated list of IP addresses (IPv4 or IPv6) or Classless Inter-Domain Routing (CIDR) notations.
