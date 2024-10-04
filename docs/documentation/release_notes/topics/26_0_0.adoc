@@ -41,6 +41,7 @@ There is now a new version (`v2`) of the `keycloak` login theme, which provides 
 The previous version (`v1`) is now deprecated, and will be removed in a future release.
 
 For all new realms, `keycloak.v2` will be the default login theme.  Also, any existing realm that never explicitly set a login theme will be switched to `keycloak.v2`.
+
 = Highly available multi-site deployments
 
 {project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
