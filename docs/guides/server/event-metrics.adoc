@@ -35,23 +35,17 @@ The snippet below is an example of a response:
 [source]
 ----
 
-# TYPE keycloak_admin_event counter
-# HELP keycloak_admin_event
-keycloak_admin_event_total{operation="CREATE",realm="master",resource="CLIENT"} 1.0
-keycloak_admin_event_total{operation="DELETE",realm="master",resource="CLIENT"} 1.0
-# TYPE keycloak_event_logout counter
-# HELP keycloak_event_logout
-keycloak_event_logout_total{realm="master",result="success"} 1.0
-# TYPE keycloak_event_code_to_token counter
-# HELP keycloak_event_code_to_token
-keycloak_event_code_to_token_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 1.0
-# TYPE keycloak_event_login counter
-# HELP keycloak_event_login
-keycloak_event_login_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 1.0
-keycloak_event_login_total{client_id="client_not_found",error="client_not_found",provider="keycloak",realm="master",result="error"} 1.0
-# TYPE keycloak_event_refresh_token counter
-# HELP keycloak_event_refresh_token
-keycloak_event_refresh_token_total{client_id="security-admin-console",error="",provider="keycloak",realm="master",result="success"} 2.0
+# TYPE keycloak_simple_events counter
+# HELP keycloak_simple_events The total number of Keycloak events
+keycloak_simple_events_total{event="update_password",realm="master"} 1.0
+keycloak_simple_events_total{event="update_credential",realm="master"} 1.0
+# TYPE keycloak_events counter
+# HELP keycloak_events The total number of Keycloak events
+keycloak_events_total{client_id="security-admin-console",error="",event="code_to_token",idp="",realm="master"} 6.0
+keycloak_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master"} 2.0
+keycloak_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master"} 6.0
+keycloak_events_total{client_id="security-admin-console",error="",event="refresh_token",idp="",realm="master"} 2.0
+keycloak_events_total{client_id="client_not_found",error="client_not_found",event="login_error",idp="",realm="master"} 1.0
 ...
 ----
 

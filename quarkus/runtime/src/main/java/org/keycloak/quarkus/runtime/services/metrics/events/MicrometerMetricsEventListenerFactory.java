@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 public class MicrometerMetricsEventListenerFactory implements EventListenerProviderFactory {
@@ -44,24 +45,25 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
     private static final String ID = "micrometer-metrics";
     private static final String EXCLUDED_EVENTS_OPTION = "excluded-events";
     private static final String EVENTS_WITH_ADDITIONAL_TAGS_OPTION = "events-with-additional-tags";
-    private static final String ADMIN_EVENTS_ENABLED_OPTION = "admin-events-enabled";
     private static final String[] EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT =
-            Stream.of(EventType.LOGIN, EventType.LOGOUT, EventType.CLIENT_LOGIN,
-                            EventType.CODE_TO_TOKEN, EventType.REFRESH_TOKEN, EventType.REGISTER)
-                    .map(EventType::name)
-                    .map(String::toLowerCase)
+            Stream.of(EventType.LOGIN, EventType.LOGIN_ERROR,
+                            EventType.LOGOUT, EventType.LOGOUT_ERROR,
+                            EventType.CLIENT_LOGIN, EventType.CLIENT_LOGIN_ERROR,
+                            EventType.CODE_TO_TOKEN, EventType.CODE_TO_TOKEN_ERROR,
+                            EventType.REFRESH_TOKEN, EventType.REFRESH_TOKEN_ERROR,
+                            EventType.REGISTER, EventType.REGISTER_ERROR)
+                    .map(MicrometerMetricsEventListenerFactory::format)
                     .toArray(String[]::new);
-
     private final EnumSet<EventType> includedEvents = EnumSet.allOf(EventType.class);
     private final EnumSet<EventType> eventsWithAdditionalTags = EnumSet.noneOf(EventType.class);
-    private boolean adminEventsEnabled;
+
     private boolean metricsEnabled;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
         if (metricsEnabled) {
             return new MicrometerMetricsEventListener(session, includedEvents,
-                    eventsWithAdditionalTags, adminEventsEnabled);
+                    eventsWithAdditionalTags);
         } else {
             return NO_OP_LISTENER;
         }
@@ -72,7 +74,7 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
         String[] excluded = config.getArray(EXCLUDED_EVENTS_OPTION);
         if (excluded != null) {
             for (String e : excluded) {
-                includedEvents.remove(EventType.valueOf(e.toUpperCase()));
+                includedEvents.remove(EventType.valueOf(e.toUpperCase(Locale.ROOT)));
             }
         }
         String[] eventWithAdditionalDetailsOption = config.getArray(EVENTS_WITH_ADDITIONAL_TAGS_OPTION);
@@ -80,12 +82,9 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
             eventWithAdditionalDetailsOption = EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT;
         }
         for (String e : eventWithAdditionalDetailsOption) {
-            String name = e.toUpperCase();
+            String name = e.toUpperCase(Locale.ROOT);
             eventsWithAdditionalTags.add(EventType.valueOf(name));
-            eventsWithAdditionalTags.add(EventType.valueOf(name
-                    + MicrometerMetricsEventListener.EVENT_TYPE_ERROR_SUFFIX));
         }
-        adminEventsEnabled = config.getBoolean(ADMIN_EVENTS_ENABLED_OPTION, true);
     }
 
     @Override
@@ -104,14 +103,7 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         String[] supportedEvents = Arrays.stream(EventType.values())
-                .map(EventType::name)
-                .map(String::toLowerCase)
-                .sorted(Comparator.naturalOrder())
-                .toArray(String[]::new);
-        String[] supportedEventsWithAdditionalTags = Arrays.stream(EventType.values())
-                .map(EventType::name)
-                .filter(n -> !n.endsWith(MicrometerMetricsEventListener.EVENT_TYPE_ERROR_SUFFIX))
-                .map(String::toLowerCase)
+                .map(MicrometerMetricsEventListenerFactory::format)
                 .sorted(Comparator.naturalOrder())
                 .toArray(String[]::new);
         String eventsWithAdditionalTagsDefault = String.join(",", EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT);
@@ -126,15 +118,9 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
                 .name(EVENTS_WITH_ADDITIONAL_TAGS_OPTION)
                 .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
                 .helpText("A comma-separated list of events that are counted with additional labels/tags (provider,client_id,error)."
-                        + "The corresponding Error Events are added automatically. Default value: "
+                        + " Default value: "
                         + eventsWithAdditionalTagsDefault)
-                .options(supportedEventsWithAdditionalTags)
-                .add()
-                .property()
-                .name(ADMIN_EVENTS_ENABLED_OPTION)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .helpText("AdminEvents should be collected as a metric.")
-                .defaultValue(true)
+                .options(supportedEvents)
                 .add()
                 .build();
     }
@@ -142,6 +128,11 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
     @Override
     public String getId() {
         return ID;
+    }
+
+    public static String format(EventType type) {
+        String name = type.name();
+        return name.toLowerCase(Locale.ROOT);
     }
 
     private static class NoOpEventListenerProvider implements EventListenerProvider {
