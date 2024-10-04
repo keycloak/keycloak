@@ -94,7 +94,7 @@ public class MicrometerMetricsEventListenerTest {
             final Event login1 = createEvent(EventType.LOGIN, DEFAULT_REALM_NAME, "THE_CLIENT_ID");
             getMicrometerMetricsEventListener(session).onEvent(login1);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -102,7 +102,7 @@ public class MicrometerMetricsEventListenerTest {
             final Event event2 = createEvent(EventType.LOGIN_ERROR, DEFAULT_REALM_NAME, "THE_CLIENT_ID", "user_not_found");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -115,7 +115,7 @@ public class MicrometerMetricsEventListenerTest {
                     tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(login1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -123,7 +123,7 @@ public class MicrometerMetricsEventListenerTest {
                     tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(login2);
         });
-        assertMetric("keycloak.event", 2, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 2, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -134,14 +134,14 @@ public class MicrometerMetricsEventListenerTest {
             final Event login1 = createEvent(EventType.LOGIN);
             getMicrometerMetricsEventListener(session).onEvent(login1);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             final Event login2 = createEvent(EventType.LOGIN);
             getMicrometerMetricsEventListener(session).onEvent(login2);
         });
-        assertMetric("keycloak.event", 2, "idp", "",
+        assertMetric("keycloak", 2, "idp", "",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -155,7 +155,7 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(login1);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -164,9 +164,9 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(login2);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -187,9 +187,9 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(login2);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login", "error", "", "client.id", "THE_CLIENT_ID", "realm", "OTHER_REALM");
     }
 
@@ -203,7 +203,7 @@ public class MicrometerMetricsEventListenerTest {
                     tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -212,9 +212,9 @@ public class MicrometerMetricsEventListenerTest {
                     "THE_CLIENT_ID", "user_not_found");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "", "error", "user_not_found",
+        assertMetric("keycloak", 1, "idp", "", "error", "user_not_found",
                 "event", "login_error", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -226,7 +226,7 @@ public class MicrometerMetricsEventListenerTest {
                     tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "register", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -234,9 +234,9 @@ public class MicrometerMetricsEventListenerTest {
             final Event event2 = createEvent(EventType.REGISTER, DEFAULT_REALM_NAME, "THE_CLIENT_ID");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "register", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "register", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -249,7 +249,7 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "refresh_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -258,9 +258,9 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "refresh_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "refresh_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -274,7 +274,7 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "refresh_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -283,9 +283,9 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "refresh_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "refresh_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -298,7 +298,7 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "client_login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -307,9 +307,9 @@ public class MicrometerMetricsEventListenerTest {
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
 
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "client_login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "client_login", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -322,7 +322,7 @@ public class MicrometerMetricsEventListenerTest {
                     "user_not_found", tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "client_login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -331,9 +331,9 @@ public class MicrometerMetricsEventListenerTest {
                     "THE_CLIENT_ID", "user_not_found");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "client_login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "client_login_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -346,16 +346,16 @@ public class MicrometerMetricsEventListenerTest {
                     tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "code_to_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             // without id provider defined
             final Event event2 = createEvent(EventType.CODE_TO_TOKEN, DEFAULT_REALM_NAME, "THE_CLIENT_ID");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "code_to_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "code_to_token", "error", "", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -368,7 +368,7 @@ public class MicrometerMetricsEventListenerTest {
                     "user_not_found", tuple(Details.IDENTITY_PROVIDER, "THE_ID_PROVIDER"));
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "code_to_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
 
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
@@ -377,9 +377,9 @@ public class MicrometerMetricsEventListenerTest {
                     "user_not_found");
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "code_to_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
-        assertMetric("keycloak.event", 1, "idp", "THE_ID_PROVIDER",
+        assertMetric("keycloak", 1, "idp", "THE_ID_PROVIDER",
                 "event", "code_to_token_error", "error", "user_not_found", "client.id", "THE_CLIENT_ID", "realm", DEFAULT_REALM_NAME);
     }
 
@@ -389,21 +389,21 @@ public class MicrometerMetricsEventListenerTest {
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.simple.event", 1, "realm", DEFAULT_REALM_NAME,
+        assertMetric("keycloak.simple", 1, "realm", DEFAULT_REALM_NAME,
                 "event", "update_email");
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             getMicrometerMetricsEventListener(session).onEvent(event1);
         });
-        assertMetric("keycloak.simple.event", 2, "realm", DEFAULT_REALM_NAME,
+        assertMetric("keycloak.simple", 2, "realm", DEFAULT_REALM_NAME,
                 "event", "update_email");
 
         final Event event2 = createEvent(EventType.REVOKE_GRANT_ERROR);
         KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, (KeycloakSession session) -> {
             getMicrometerMetricsEventListener(session).onEvent(event2);
         });
-        assertMetric("keycloak.simple.event", 1, "realm", DEFAULT_REALM_NAME,
+        assertMetric("keycloak.simple", 1, "realm", DEFAULT_REALM_NAME,
                 "event", "revoke_grant_error");
-        assertMetric("keycloak.simple.event", 2, "realm", DEFAULT_REALM_NAME,
+        assertMetric("keycloak.simple", 2, "realm", DEFAULT_REALM_NAME,
                 "event", "update_email");
     }
 
@@ -419,7 +419,7 @@ public class MicrometerMetricsEventListenerTest {
 
             getMicrometerMetricsEventListener(session).onEvent(nullEvent);
         });
-        assertMetric("keycloak.event", 1, "idp", "",
+        assertMetric("keycloak", 1, "idp", "",
                 "event", "login_error", "error", "", "client.id", "", "realm", "");
     }
 
