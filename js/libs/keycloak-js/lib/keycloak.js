@@ -175,6 +175,12 @@ function Keycloak (config) {
             } else {
                 kc.messageReceiveTimeout = 10000;
             }
+
+            if (typeof initOptions.jwtRefreshToken === 'boolean') {
+                kc.jwtRefreshToken = initOptions.jwtRefreshToken;
+            } else {
+                kc.jwtRefreshToken = initOptions.jwtRefreshToken;
+            }
         }
 
         if (!kc.responseMode) {
@@ -955,7 +961,9 @@ function Keycloak (config) {
 
         if (refreshToken) {
             kc.refreshToken = refreshToken;
-            kc.refreshTokenParsed = decodeToken(refreshToken);
+            if (kc.jwtRefreshToken === true) {
+              kc.refreshTokenParsed = decodeToken(refreshToken);
+            }
         } else {
             delete kc.refreshToken;
             delete kc.refreshTokenParsed;
