@@ -67,7 +67,7 @@ For more information, see the https://www.keycloak.org/server/health[Health guid
 
 As stated in the release notes, Keycloak now supports gelf logging for centralized logging systems out of the box.
 
-When you added the gelf related quarkus jars yourself in a prior version, make sure to switch to the supported configuration options in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging guide] and remove your jars from the `providers` folder.
+When you added the gelf related quarkus jars yourself in a prior version, make sure to switch to the supported configuration options in the https://www.keycloak.org/server/logging[logging guide] and remove your jars from the `providers` folder.
 
 = Changes affecting developers
 
