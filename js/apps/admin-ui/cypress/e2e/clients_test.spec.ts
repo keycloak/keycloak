@@ -1221,7 +1221,8 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Sessions, true)
         .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(5);
+        .checkTabExists(ClientsDetailsTab.UserEvents, true)
+        .checkNumberOfTabsIsEqual(6);
     });
 
     it("Hides the delete action", () => {
