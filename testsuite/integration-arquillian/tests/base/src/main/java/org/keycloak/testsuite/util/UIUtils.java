@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -98,6 +100,28 @@ public final class UIUtils {
     public static void click(WebElement element) {
         waitUntilElement(element).is().clickable();
         performOperationWithPageReload(element::click);
+    }
+
+    /**
+     * The method switches the checkbox to the expected state.
+     *
+     * It looks that since chrome 128, the single click sometimes does
+     * not work (See also similar issue {@link #clickLink(WebElement)}, so it is possible repeated multiple times until it reach
+     * the desired state
+     *
+     * @param checkbox Checkbox element to enable or disable
+     * @param enable If true, the checkbox should be switched to enabled (checked). If false, the checkbox should be switched to disabled (unchecked)
+     */
+    public static void switchCheckbox(WebElement checkbox, boolean enable) {
+        int maxAttempts = 4;
+
+        Retry.execute(() -> {
+            boolean current = checkbox.isSelected();
+            if (current != enable) {
+                UIUtils.click(checkbox);
+                Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
+            }
+        }, maxAttempts, 0);
     }
 
     /**

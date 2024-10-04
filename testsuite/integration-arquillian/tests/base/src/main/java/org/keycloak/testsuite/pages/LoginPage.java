@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -247,10 +248,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public void setRememberMe(boolean enable) {
-        boolean current = rememberMe.isSelected();
-        if (current != enable) {
-            rememberMe.click();
-        }
+        UIUtils.switchCheckbox(rememberMe, enable);
     }
 
     public boolean isRememberMeChecked() {
