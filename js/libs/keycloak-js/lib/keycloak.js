@@ -179,7 +179,7 @@ function Keycloak (config) {
             if (typeof initOptions.jwtRefreshToken === 'boolean') {
                 kc.jwtRefreshToken = initOptions.jwtRefreshToken;
             } else {
-                kc.jwtRefreshToken = initOptions.jwtRefreshToken;
+                kc.jwtRefreshToken = true;
             }
         }
 
