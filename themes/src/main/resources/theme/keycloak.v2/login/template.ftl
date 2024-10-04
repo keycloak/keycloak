@@ -92,6 +92,15 @@
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <#if authenticationSession??>
+        <script type="module">
+            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+
+            checkAuthSession(
+                "${authenticationSession.authSessionIdHash}"
+            );
+        </script>
+    </#if>
     <script>
       // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1404468
       const isFirefox;
