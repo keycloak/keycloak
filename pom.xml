@@ -95,7 +95,7 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.8.Final</infinispan.version>
+        <infinispan.version>15.0.10.Final</infinispan.version>
         <!-- version number is needed for the proto-schema-compatibility-maven-plugin and needs to be in-sync with the version used in Infinispan -->
         <protostream.version>5.0.8.Final</protostream.version>
         <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.10.Final -->
