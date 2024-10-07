@@ -88,7 +88,8 @@ public class KeycloakMain implements QuarkusApplication {
 
             try {
                 PropertyMappers.sanitizeDisabledMappers();
-                Picocli.validateConfig(cliArgs, new Start());
+                PrintWriter outStream = new PrintWriter(System.out, true);
+                Picocli.validateConfig(cliArgs, new Start(), outStream);
             } catch (PropertyException | ProfileException e) {
                 handleUsageError(e.getMessage(), e.getCause());
                 return;
