@@ -32,6 +32,8 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -194,6 +196,26 @@ public abstract class SdJwtVPTest {
         // Verify with public key from cnf claim
         presenteSdJwtVP.getKeyBindingJWT().get()
                 .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+    }
+
+
+    @Test
+    public void testOf_validInput() {
+        String sdJwtString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
+        SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtString);
+
+        assertNotNull(sdJwtVP);
+        assertEquals(4, sdJwtVP.getDisclosures().size());
+    }
+
+    @Test
+    public void testOf_MalformedSdJwt_ThrowsIllegalArgumentException() {
+        // Given
+        String malformedSdJwt = "issuer-signed-jwt";
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> SdJwtVP.of(malformedSdJwt));
+        assertEquals("SD-JWT is malformed, expected to contain a '~'", exception.getMessage());
     }
 
 }
