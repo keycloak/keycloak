@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class TwitterLoginPage extends AbstractSocialLoginPage {
 
-    @FindBy(xpath = "//input[@type='text' and @name='text']")
+    @FindBy(xpath = "//input[@type='text']")
     private WebElement usernameInput;
 
     @FindBy(xpath = "//input[@type='password']")
@@ -39,10 +39,7 @@ public class TwitterLoginPage extends AbstractSocialLoginPage {
         // needs lots of JS, twitter does not work with default HtmlUnit driver
         usernameInput.clear();
         usernameInput.sendKeys(user);
-        usernameInput.sendKeys(Keys.RETURN);
 
-        // wait for the password input to appear
-        WaitUtils.waitUntilElement(passwordInput).is().visible();
         passwordInput.clear();
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
