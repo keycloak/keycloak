@@ -105,11 +105,11 @@ public class SdJwtVP {
         int disclosureEnd = sdJwtString.lastIndexOf(SdJwt.DELIMITER);
 
         if (disclosureStart == -1) {
-            throw new IllegalArgumentException("SD-JWT is malformed, expected to end with " + SdJwt.DELIMITER);
+            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + SdJwt.DELIMITER + "'");
         }
 
         String issuerSignedJWTString = sdJwtString.substring(0, disclosureStart);
-        String disclosuresString ="";
+        String disclosuresString = "";
 
         if (disclosureEnd > disclosureStart) {
             disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);

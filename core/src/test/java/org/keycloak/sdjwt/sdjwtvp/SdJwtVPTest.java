@@ -211,11 +211,11 @@ public abstract class SdJwtVPTest {
     @Test
     public void testOf_MalformedSdJwt_ThrowsIllegalArgumentException() {
         // Given
-        String malformedSdJwt = "issuer-signed-jwt"; // missing delimiter at the end
+        String malformedSdJwt = "issuer-signed-jwt";
 
         // When & Then
-        var exception = assertThrows(IllegalArgumentException.class, () -> SdJwtVP.of(malformedSdJwt));
-        assertEquals("SD-JWT is malformed, expected to end with ~", exception.getMessage());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> SdJwtVP.of(malformedSdJwt));
+        assertEquals("SD-JWT is malformed, expected to contain a '~'", exception.getMessage());
     }
 
 }
