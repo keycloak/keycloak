@@ -296,7 +296,13 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         }
     }
 
-    private WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
+    /**
+     * Create WebAuthnRegistrationManager instance
+     * Can be overridden in subclasses to customize the used attestation validators
+     *
+     * @return webauthn4j WebAuthnRegistrationManager instance
+     */
+    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
         return new WebAuthnRegistrationManager(
                 Arrays.asList(
                         new NoneAttestationStatementValidator(),
