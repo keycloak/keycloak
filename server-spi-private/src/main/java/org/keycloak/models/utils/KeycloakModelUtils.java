@@ -51,6 +51,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.RequestContextHelper;
 
 import javax.crypto.spec.SecretKeySpec;
 import jakarta.transaction.InvalidTransactionException;
@@ -253,10 +254,7 @@ public final class KeycloakModelUtils {
      * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, null, session -> {
-            task.run(session);
-            return null;
-        });
+        runJobInTransaction(factory, null, task);
     }
 
     /**
@@ -269,7 +267,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        });
+        }, task.getTaskName());
     }
 
     /**
@@ -359,7 +357,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable);
+        return runJobInTransactionWithResult(factory, null, callable, "Non-HTTP task");
     }
 
     /**
@@ -368,11 +366,13 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
+     * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
-    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable, String taskName) {
         V result;
         try (KeycloakSession session = factory.create()) {
+            RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
             try {
                 cloneContextRealmClientToSession(context, session);

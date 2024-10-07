@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TaskRunner;
+import org.keycloak.transaction.RequestContextHelper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,16 +51,20 @@ public class ScheduledTaskRunner implements TaskRunner {
     @Override
     public void run() {
         try {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-                try {
-                    if (transactionLimit != 0) {
-                        KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
-                    }
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new NamedSessionTask("Scheduled task: " + task.getTaskName()) {
 
-                    runTask(session);
-                } finally {
-                    if (transactionLimit != 0) {
-                        KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                @Override
+                public void run(KeycloakSession session) {
+                    try {
+                        if (transactionLimit != 0) {
+                            KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
+                        }
+
+                        runTask(session);
+                    } finally {
+                        if (transactionLimit != 0) {
+                            KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                        }
                     }
                 }
             });

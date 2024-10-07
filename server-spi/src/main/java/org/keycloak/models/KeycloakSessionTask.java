@@ -26,4 +26,11 @@ public interface KeycloakSessionTask {
 
     void run(KeycloakSession session);
 
+    /**
+     * @return Details about the task. Can be useful for logging purposes
+     */
+    default String getTaskName() {
+        return "Non-HTTP task";
+    }
+
 }

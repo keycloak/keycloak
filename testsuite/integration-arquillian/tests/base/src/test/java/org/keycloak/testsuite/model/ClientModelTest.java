@@ -292,13 +292,13 @@ public class ClientModelTest extends AbstractKeycloakTest {
     @ModelTest
     public void testAddApplicationWithId(KeycloakSession session) {
         final String id = KeycloakModelUtils.generateId();
-        String newClientId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), (KeycloakSession sessionAppWithId1) -> {
+        String newClientId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionAppWithId1) -> {
             currentSession = sessionAppWithId1;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
             client = realm.addClient(id, "application2");
             return client.getId();
-        });
+        }, "ClientModel task");
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionAppWithId2) -> {
             currentSession = sessionAppWithId2;
