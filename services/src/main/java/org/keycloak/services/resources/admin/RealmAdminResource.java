@@ -1104,12 +1104,12 @@ public class RealmAdminResource {
         auth.realm().requireManageRealm();
         try {
             return Response.ok(
-                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), kcSession -> {
                         RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
                         AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
                         // calling a static method to avoid using the wrong instances
                         return getPartialImportResults(requestBody, kcSession, realmClone, adminEventClone);
-                    })
+                    }, "Partial import in realm " + realm.getName())
             ).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists(e.getLocalizedMessage());
