@@ -16,9 +16,11 @@
  */
 package org.keycloak.testsuite.actions;
 
+import java.io.IOException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -27,6 +29,8 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,6 +52,9 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected VerifyEmailPage verifyEmailPage;
 
     @Test
     public void executeUnknownAction() {
@@ -91,6 +98,34 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
         } finally {
             configureTotp.setEnabled(true);
             testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", configureTotp);
+        }
+    }
+
+    @Test
+    public void executeActionWithVerifyEmailUnsupportedAIA() throws IOException {
+        RealmResource realm = testRealm();
+        RequiredActionProviderRepresentation model = realm.flows().getRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        int prevPriority = model.getPriority();
+
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(realm, "test-user@localhost")
+                .setRequiredActions(UserModel.RequiredAction.VERIFY_EMAIL).update()) {
+            // Set max priority for verify email (AIA not supported) to be executed before update password
+            model.setPriority(1);
+            realm.flows().updateRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name(), model);
+
+            oauth.kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).openLoginForm();
+            loginPage.login("test-user@localhost", "password");
+
+            // the update password should be displayed
+            passwordUpdatePage.assertCurrent();
+            passwordUpdatePage.changePassword("password", "password");
+
+            // once the AIA password is executed the verify profile should be displayed for the login
+            verifyEmailPage.assertCurrent();
+        } finally {
+            model.setPriority(prevPriority);
+            realm.flows().updateRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name(), model);
         }
     }
 }
