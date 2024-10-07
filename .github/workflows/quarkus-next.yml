@@ -14,9 +14,6 @@ concurrency:
   group: quarkus-next-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  
 jobs:
   update-quarkus-next-branch:
     name: Update quarkus-next branch

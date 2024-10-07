@@ -12,9 +12,6 @@ on:
         type: string
         required: true
 
-permissions:
-  contents: read
-
 jobs:
   delete:
     name: Delete Aurora DB

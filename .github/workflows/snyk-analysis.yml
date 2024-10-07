@@ -10,9 +10,6 @@ defaults:
   run:
     shell: bash
 
-permissions:
-  contents: read
-
 jobs:
   analysis:
     name: Analysis of Quarkus and Operator

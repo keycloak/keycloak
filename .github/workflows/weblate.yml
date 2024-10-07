@@ -22,9 +22,6 @@ concurrency:
   group: weblate-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  
 jobs:
   update-weblate:
     name: Trigger Weblate to pull the latest changes

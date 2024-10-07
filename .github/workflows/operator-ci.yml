@@ -23,9 +23,6 @@ concurrency:
   group: operator-ci-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
 
   conditional:
