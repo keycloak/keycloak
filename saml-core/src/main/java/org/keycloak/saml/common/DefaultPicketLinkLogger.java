@@ -441,14 +441,10 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
         return new RuntimeException(expectedXsi);
     }
 
-    /*
-     *(non-Javadoc)
-     *
-     *@see org.picketlink.identity.federation.PicketLinkLogger#parserExpectedTag(java.lang.String, java.lang.String)
-     */
     @Override
-    public RuntimeException parserExpectedTag(String tag, String foundElementTag) {
-        return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ".  Found <" + foundElementTag + ">");
+    public RuntimeException parserExpectedTag(String tag, String foundElementTag, Integer line, Integer column) {
+        return new RuntimeException(ErrorCodes.EXPECTED_TAG + " " + tag + ".  Found " + foundElementTag +
+                " at line " + line.toString() + ", column " + column);
     }
 
     @Override
@@ -2386,7 +2382,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
 
     @Override
     public ProcessingException samlExtensionUnknownChild(Class<?> clazz) {
-        return new ProcessingException("Unknown child type specified for extension: " 
+        return new ProcessingException("Unknown child type specified for extension: "
           + (clazz == null ? "<null>" : clazz.getSimpleName())
           + ".");
     }

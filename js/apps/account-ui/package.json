@@ -26,37 +26,36 @@
   "dependencies": {
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.0",
-    "@patternfly/react-core": "^5.4.0",
+    "@patternfly/react-core": "^5.4.1",
     "@patternfly/react-icons": "^5.4.0",
-    "@patternfly/react-table": "^5.4.0",
-    "i18next": "^23.15.0",
+    "@patternfly/react-table": "^5.4.1",
+    "i18next": "^23.15.2",
     "i18next-http-backend": "^2.6.1",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",
-    "react-i18next": "^15.0.1",
+    "react-i18next": "^15.0.2",
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@playwright/test": "^1.47.0",
+    "@playwright/test": "^1.47.2",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.3.5",
+    "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react-swc": "^3.7.0",
-    "lightningcss": "^1.26.0",
-    "vite": "^5.4.3",
+    "@vitejs/plugin-react-swc": "^3.7.1",
+    "lightningcss": "^1.27.0",
+    "vite": "^5.4.8",
     "vite-plugin-checker": "^0.8.0",
-    "vite-plugin-dts": "^4.2.1"
+    "vite-plugin-dts": "^4.2.3"
   },
   "wireit": {
     "dev": {
       "command": "vite --host",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -64,7 +63,6 @@
       "command": "vite preview",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -72,7 +70,6 @@
       "command": "vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -80,7 +77,6 @@
       "command": "eslint .",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },

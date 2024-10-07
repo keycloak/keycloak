@@ -54,6 +54,14 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
         return new EmailEventListenerProvider(session, includedEvents);
     }
 
+    public void addIncludedEvents(EventType... types) {
+        includedEvents.addAll(Arrays.asList(types));
+    }
+
+    public void removeIncludedEvents(EventType... types) {
+        includedEvents.removeAll(Arrays.asList(types));
+    }
+
     @Override
     public void init(Config.Scope config) {
         String[] include = config.getArray("include-events");

@@ -226,4 +226,7 @@ public abstract class CacheManager {
 
     protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations);
 
+    public void invalidateCacheKey(String key, Set<String> invalidations) {
+        invalidations.add(key);
+    }
 }

@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
-import { credResetFormDefaultValues } from "./ResetCredentialDialog";
 
 export const LifespanField = () => {
   const { t } = useTranslation();
@@ -12,9 +11,7 @@ export const LifespanField = () => {
       labelIcon={t("lifespanHelp")}
       units={["minute", "hour", "day"]}
       menuAppendTo="parent"
-      controller={{
-        defaultValue: credResetFormDefaultValues.lifespan,
-      }}
+      controller={{}}
     />
   );
 };

@@ -17,14 +17,41 @@
 
 <html>
 <head>
-    <script src="js/keycloak.js"></script>
-    <script>
-        var keycloak = new Keycloak({
+    <script type="importmap">
+      {
+        "imports": {
+          "keycloak-js": "./js/keycloak.js"
+        }
+      }
+    </script>
+    <script type="module">
+        import Keycloak from 'keycloak-js';
+
+        function output(data) {
+            if (typeof data === 'object') {
+                data = JSON.stringify(data, null, '  ');
+            }
+            document.getElementById('output').innerHTML = data;
+        }
+
+        function event(event) {
+            var e = document.getElementById('events').innerHTML;
+            document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
+        }
+
+        const keycloak = new Keycloak({
             url: '${js-adapter.auth-server-url}',
             realm: 'test',
             clientId: 'js-console'
         });
-        keycloak.init({}).then(function(authenticated) {
+
+        // Expose globals for tests.
+        globalThis.Keycloak = Keycloak;
+        globalThis.keycloak = keycloak;
+        globalThis.output = output;
+        globalThis.event = event;
+
+        keycloak.init({}).then((authenticated) => {
             output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
         }).catch(function() {
             output('Init Error');
@@ -46,20 +73,5 @@
 
 <h2>Events</h2>
 <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
-
-
-<script>
-    function output(data) {
-        if (typeof data === 'object') {
-            data = JSON.stringify(data, null, '  ');
-        }
-        document.getElementById('output').innerHTML = data;
-    }
-
-    function event(event) {
-        var e = document.getElementById('events').innerHTML;
-        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
-    }
-</script>
 </body>
 </html>

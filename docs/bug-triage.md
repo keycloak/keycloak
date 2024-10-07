@@ -97,3 +97,7 @@ When triaging or fixing an issue consider if the fix should be backported. If it
 corresponding `backport/<release branch>` label.
 
 For convenience, use the `.github/scripts/pr-backport.sh` to help create the backport PRs. 
+
+By adding a `backport/<release branch>` label to the issue it is automatically added to the patch release project, and
+additionally when merging the PR the `backport/<release branch>` is automatically replaced with a `release/x.y.z` label.
+Please do not add `release/x.y.z` manually!  

@@ -85,7 +85,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw install -pl "$PROJECTS" -am
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -373,7 +373,7 @@ jobs:
     timeout-minutes: 150
     strategy:
       matrix:
-        variant: [ "remote-cache,multi-site" ]
+        variant: [ "clusterless,multi-site" ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -384,7 +384,7 @@ jobs:
 
       - name: Run base tests without cache
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh remote-cache`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 

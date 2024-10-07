@@ -94,7 +94,7 @@ import picocli.CommandLine.Model.ISetter;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.ArgGroupSpec;
 
-public final class Picocli {
+public class Picocli {
 
     public static final String ARG_PREFIX = "--";
     public static final String ARG_SHORT_PREFIX = "-";
@@ -105,10 +105,7 @@ public final class Picocli {
         boolean includeBuildTime;
     }
 
-    private Picocli() {
-    }
-
-    public static void parseAndRun(List<String> cliArgs) {
+    public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
         CommandLine cmd = createCommandLine(spec -> spec
                 .addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
@@ -135,7 +132,7 @@ public final class Picocli {
                 exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
             } else {
                 PropertyMappers.sanitizeDisabledMappers();
-                exitCode = cmd.execute(argArray);
+                exitCode = run(cmd, argArray);
             }
 
             exitOnFailure(exitCode, cmd);
@@ -146,7 +143,11 @@ public final class Picocli {
         }
     }
 
-    private static CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
+    protected int run(CommandLine cmd, String[] argArray) {
+        return cmd.execute(argArray);
+    }
+
+    private CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
         return createCommandLine(spec -> {
             // use the incoming commandLineList from the initial parsing to determine the current command
             CommandSpec currentSpec = spec;
@@ -177,7 +178,7 @@ public final class Picocli {
         });
     }
 
-    private static void catchParameterException(ParameterException parEx, CommandLine cmd, String[] args) {
+    private void catchParameterException(ParameterException parEx, CommandLine cmd, String[] args) {
         int exitCode;
         try {
             exitCode = cmd.getParameterExceptionHandler().handleParseException(parEx, args);
@@ -189,20 +190,20 @@ public final class Picocli {
         exitOnFailure(exitCode, cmd);
     }
 
-    private static void catchProfileException(String message, Throwable cause, CommandLine cmd) {
+    private void catchProfileException(String message, Throwable cause, CommandLine cmd) {
         ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
         errorHandler.error(cmd.getErr(), message, cause);
         exitOnFailure(CommandLine.ExitCode.USAGE, cmd);
     }
 
-    private static void exitOnFailure(int exitCode, CommandLine cmd) {
+    protected void exitOnFailure(int exitCode, CommandLine cmd) {
         if (exitCode != cmd.getCommandSpec().exitCodeOnSuccess() && !Environment.isTestLaunchMode() || isRebuildCheck()) {
             // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
             System.exit(exitCode);
         }
     }
 
-    private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
+    protected int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
         int exitCode = 0;
 
         if (currentCommand == null) {
@@ -374,7 +375,7 @@ public final class Picocli {
             if (options.includeRuntime) {
                 disabledMappers.addAll(PropertyMappers.getDisabledRuntimeMappers().values());
             }
-            
+
             checkSpiOptions(options, ignoredBuildTime, ignoredRunTime);
 
             for (OptionCategory category : abstractCommand.getOptionCategories()) {
@@ -429,7 +430,7 @@ public final class Picocli {
             Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
 
             if (!ignoredBuildTime.isEmpty()) {
-                logger.warn(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
+                throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
                 logger.warn(format("The following run time options were found, but will be ignored during build time: %s\n",
@@ -459,7 +460,7 @@ public final class Picocli {
                 continue;
             }
             boolean buildTimeOption = key.endsWith("-provider") || key.endsWith("-provider-default") || key.endsWith("-enabled");
-            
+
             ConfigValue configValue = Configuration.getConfigValue(key);
             String configValueStr = configValue.getValue();
 
@@ -467,7 +468,7 @@ public final class Picocli {
             if (configValueStr == null || configValue.getConfigSourceOrdinal() < 300) {
                 continue;
             }
-            
+
             if (!options.includeBuildTime) {
                 if (buildTimeOption) {
                     String currentValue = getRawPersistedProperty(key).orElse(null);
@@ -669,7 +670,7 @@ public final class Picocli {
         return key.startsWith("kc.provider.file");
     }
 
-    public static CommandLine createCommandLine(Consumer<CommandSpec> consumer) {
+    public CommandLine createCommandLine(Consumer<CommandSpec> consumer) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main()).name(Environment.getCommand());
         consumer.accept(spec);
 
@@ -679,9 +680,13 @@ public final class Picocli {
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
-        cmd.setErr(new PrintWriter(System.err, true));
+        cmd.setErr(getErrWriter());
 
         return cmd;
+    }
+
+    protected PrintWriter getErrWriter() {
+        return new PrintWriter(System.err, true);
     }
 
     private static void addHelp(CommandSpec currentSpec) {
@@ -795,7 +800,6 @@ public final class Picocli {
                                 return mapper.getExpectedValues().iterator();
                             }
                         })
-                        .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                         .hidden(mapper.isHidden());
 
                 if (mapper.getDefaultValue().isPresent()) {
@@ -804,6 +808,14 @@ public final class Picocli {
 
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
+                    if (mapper.isList()) {
+                        // make picocli aware of the only list convention we allow
+                        optBuilder.splitRegex(",");
+                    } else if (mapper.getType().isEnum()) {
+                        // prevent the auto-conversion that picocli does
+                        // we validate the expected values later
+                        optBuilder.type(String.class); 
+                    }
                 } else {
                     optBuilder.type(String.class);
                 }

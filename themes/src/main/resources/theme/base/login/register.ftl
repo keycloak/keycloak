@@ -49,7 +49,7 @@
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">
                                     <input type="password" id="password-confirm" class="${properties.kcInputClass!}"
-                                           name="password-confirm"
+                                           name="password-confirm" autocomplete="new-password"
                                            aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
                                     />
                                     <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"

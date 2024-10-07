@@ -18,13 +18,18 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.dialect.H2Dialect;
@@ -37,6 +42,7 @@ import org.hibernate.dialect.MariaDBDialect;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -63,7 +69,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testKeycloakConfPlaceholder() {
-        assertEquals("warn", createConfig().getRawValue("kc.log-level"));
+        assertEquals("info", createConfig().getRawValue("kc.log-level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
     }
@@ -417,10 +423,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testResolveHealthOption() {
         ConfigArgsConfigSource.setCliArgs("--health-enabled=true");
         SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
-        assertEquals("false", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
     }
 
     @Test
@@ -474,5 +480,36 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("secret", secret.getValue());
+    }
+
+    @Test
+    public void testReloadPeriod() {
+        ConfigArgsConfigSource.setCliArgs("");
+        assertEquals("1h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
+        assertNull(createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
+        assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+    }
+
+    @Test
+    public void testCacheMaxCount() {
+        int maxCount = 500;
+        Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
+              .flatMap(Arrays::stream)
+              .collect(Collectors.toSet());
+
+        StringBuilder sb = new StringBuilder();
+        for (String cache : maxCountCaches)
+            sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
+
+        String args = sb.toString();
+        ConfigArgsConfigSource.setCliArgs(args.split(" "));
+        SmallRyeConfig config = createConfig();
+
+        for (String cache : maxCountCaches) {
+            String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
+            assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
+        }
     }
 }

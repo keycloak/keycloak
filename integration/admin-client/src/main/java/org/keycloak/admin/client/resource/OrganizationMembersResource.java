@@ -82,6 +82,10 @@ public interface OrganizationMembersResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);
 
+    /**
+     * @since Keycloak server 26
+     * @return count of members of the organization
+     */
     @Path("count")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

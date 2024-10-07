@@ -77,6 +77,14 @@ public class LoggingOptions {
             .description("Set the log output to JSON or default (plain) unstructured logging.")
             .build();
 
+    public static final Option<Level> LOG_CONSOLE_LEVEL = new OptionBuilder<>("log-console-level", Level.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(Level.ALL)
+            .description("Set the log level for the console handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
+                    + "For more information, check the Logging guide.")
+            .build();
+
     public static final Option<String> LOG_CONSOLE_FORMAT = new OptionBuilder<>("log-console-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("The format of unstructured console log entries. If the format has spaces in it, escape the value using \"<format>\".")
@@ -112,6 +120,14 @@ public class LoggingOptions {
             .defaultValue(new File(DEFAULT_LOG_PATH))
             .build();
 
+    public static final Option<Level> LOG_FILE_LEVEL = new OptionBuilder<>("log-file-level", Level.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(Level.ALL)
+            .description("Set the log level for the file handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
+                    + "For more information, check the Logging guide.")
+            .build();
+
     public static final Option<String> LOG_FILE_FORMAT = new OptionBuilder<>("log-file-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("Set a format specific to file log entries.")
@@ -140,6 +156,14 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("Set the IP address and port of the Syslog server.")
             .defaultValue("localhost:514")
+            .build();
+
+    public static final Option<Level> LOG_SYSLOG_LEVEL = new OptionBuilder<>("log-syslog-level", Level.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(Level.ALL)
+            .description("Set the log level for the Syslog handler. It specifies the most verbose log level for logs shown in the output. "
+                    + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
+                    + "For more information, check the Logging guide.")
             .build();
 
     public static final Option<String> LOG_SYSLOG_TYPE = new OptionBuilder<>("log-syslog-type", String.class)

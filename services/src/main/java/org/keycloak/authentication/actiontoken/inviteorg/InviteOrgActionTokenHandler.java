@@ -73,6 +73,26 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     }
 
     @Override
+    public Response preHandleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
+        KeycloakSession session = tokenContext.getSession();
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        OrganizationModel organization = orgProvider.getById(token.getOrgId());
+
+        if (organization == null) {
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
+                    .createInfoPage();
+        }
+
+        session.getContext().setOrganization(organization);
+
+        return super.preHandleToken(token, tokenContext);
+    }
+
+    @Override
     public Response handleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         KeycloakSession session = tokenContext.getSession();
@@ -123,7 +143,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
 
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        String redirectUri = token.getRedirectUri();
 
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");

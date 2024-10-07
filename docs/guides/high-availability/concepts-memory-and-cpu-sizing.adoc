@@ -25,7 +25,6 @@ Still, those caches need to be filled when an instance is restarted, so do not s
 Summary:
 
 * The used CPU scales linearly with the number of requests up to the tested limit below.
-* The used memory scales linearly with the number of active sessions up to the tested limit below.
 
 Recommendations:
 
@@ -44,8 +43,8 @@ Most CPU time goes into creating new TLS connections, as each client runs only a
 
 * For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).
 
-* Leave 200% extra head-room for CPU usage to handle spikes in the load.
-This ensures a fast startup of the node, and sufficient capacity to handle failover tasks like, for example, re-balancing Infinispan caches, when one node fails.
+* Leave 150% extra head-room for CPU usage to handle spikes in the load.
+This ensures a fast startup of the node, and sufficient capacity to handle failover tasks.
 Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
 
 {project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
@@ -73,9 +72,9 @@ Limits calculated:
 +
 (45 logins per second = 3 vCPU, 600 client credential grants per second = 3 vCPU, 345 refresh token = 3 vCPU. This sums up to 9 vCPU total. With 3 Pods running in the cluster, each Pod then requests 3 vCPU)
 
-* CPU limit per Pod: 9 vCPU
+* CPU limit per Pod: 7.5 vCPU
 +
-(Allow for three times the CPU requested to handle peaks, startups and failover tasks)
+(Allow for an additional 150% CPU requested to handle peaks, startups and failover tasks)
 
 * Memory requested per Pod: 1250 MB
 +
@@ -120,14 +119,14 @@ Slower failover and more cost-effective::
 Reduce the CPU requests and limits as above by 50% for the second site. When one of the sites fails, scale the remaining site from 3 Pod to 6 Pods either manually, automated, or using a Horizontal Pod Autoscaler. This requires enough spare capacity on the cluster or cluster auto-scaling capabilities.
 
 Alternative setup for some environments::
-Reduce the CPU requests by 50% for the second site, but keep the CPU limits as above. This way the remaining site can take the traffic but only at the downside the Nodes will experience a CPU pressure and therefore slower response times during peak traffic.
-The benefit of this setup is that the number of Pod do not need to scale during failovers which is simpler to set up.
+Reduce the CPU requests by 50% for the second site, but keep the CPU limits as above. This way, the remaining site can take the traffic, but only at the downside that the Nodes will experience CPU pressure and therefore slower response times during peak traffic.
+The benefit of this setup is that the number of Pods does not need to scale during failovers which is simpler to set up.
 
 == Reference architecture
 
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
 
-* OpenShift 4.15.x deployed on AWS via ROSA.
+* OpenShift 4.16.x deployed on AWS via ROSA.
 * Machinepool with `m5.4xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
 * OpenShift's reverse proxy running in passthrough mode were the TLS connection of the client is terminated at the Pod.

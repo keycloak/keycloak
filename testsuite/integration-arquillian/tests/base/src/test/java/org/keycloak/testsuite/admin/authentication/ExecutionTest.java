@@ -155,7 +155,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         AuthenticationExecutionInfoRepresentation previousExecution = findPreviousExecution(exec, executionReps);
         Assert.assertNotNull(previousExecution);
-        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 4, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE,DISABLED}, previousExecution.getPriority() + 1), exec);
+        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 5, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE,DISABLED}, previousExecution.getPriority() + 1), exec);
 
         // remove execution
         authMgmtResource.removeExecution(exec.getId());

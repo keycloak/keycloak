@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -497,6 +498,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     switch (page) {
                         case LOGIN:
                         case LOGIN_USERNAME:
+                        case LOGIN_WEBAUTHN:
                         case X509_CONFIRM:
                             b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
                             break;
@@ -645,6 +647,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 if (value == null || value.trim().isEmpty()) {
                     this.formData.putSingle("username", loginHint);
                 }
+            }
+        }
+
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            String email = (String) attributes.get(RegistrationPage.FIELD_EMAIL);
+            if (this.formData == null) {
+                this.formData = new MultivaluedHashMap<>();
+            }
+            String value = this.formData.getFirst(RegistrationPage.FIELD_EMAIL);
+            if (value == null || value.trim().isEmpty()) {
+                this.formData.putSingle(RegistrationPage.FIELD_EMAIL, email);
             }
         }
 

@@ -260,7 +260,7 @@ An example for a custom `footer.ftl` may look like this:
 </#macro>
 ```
 
-==== Adding an image to a email theme
+==== Adding an image to an email theme
 
 To make images available to the theme add them to the `<THEME TYPE>/email/resources/img` directory of your theme. These can be used from within directly in HTML templates.
 

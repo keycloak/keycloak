@@ -64,20 +64,19 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             // we already have the organization, just fetch the organization's public enabled IDPs.
             if (this.organization != null) {
                 return organization.getIdentityProviders()
-                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin()
-                                && Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.BROKER_PUBLIC)))
+                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin())
                         .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                         .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
             }
             // we don't have a specific organization - fetch public enabled IDPs linked to any org.
             return session.identityProviders().getForLogin(ORG_ONLY, null)
-                    .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                    .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
         return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
-                .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
+                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }
@@ -104,6 +103,6 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
             return false;
         }
-        return Boolean.parseBoolean(idp.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString()));
+        return !idp.isHideOnLogin();
     }
 }

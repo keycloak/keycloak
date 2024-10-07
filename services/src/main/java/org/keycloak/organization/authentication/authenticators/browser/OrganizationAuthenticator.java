@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -103,7 +104,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         // make sure the organization is set to the session to make it available to templates
-        session.setAttribute(OrganizationModel.class.getName(), organization);
+        session.getContext().setOrganization(organization);
 
         if (tryRedirectBroker(context, organization, user, username, domain)) {
             return;
@@ -287,7 +288,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean hasPublicBrokers(OrganizationModel organization) {
-        return organization.getIdentityProviders().anyMatch(p -> Boolean.parseBoolean(p.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString())));
+        return organization.getIdentityProviders().anyMatch(Predicate.not(IdentityProviderModel::isHideOnLogin));
     }
 
     private OrganizationProvider getOrganizationProvider() {

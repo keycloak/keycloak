@@ -1,5 +1,6 @@
 package org.keycloak.guides.maven;
 
+import static org.aesh.readline.terminal.Key.r;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -146,16 +147,25 @@ public class Options {
                 .orElseGet(Collections::emptySet);
     }
 
-    public List<Option> getOptions(String includeOptions, String deniedCategories) {
-        final String r = includeOptions.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*").replace(' ', '|');
+    public List<Option> getOptions(String includeOptions, String excludedOptions, String deniedCategories) {
+        final String include = replaceSpecialCharsInOptions(includeOptions);
+        final String exclude = replaceSpecialCharsInOptions(excludedOptions);
         final Set<OptionCategory> denied = getDeniedCategories(deniedCategories);
 
         return options.values()
                 .stream()
                 .flatMap(Collection::stream)
                 .filter(f -> !denied.contains(f.category))
-                .filter(f -> f.getKey().matches(r))
+                .filter(f -> f.getKey().matches(include) && (exclude == null || !f.getKey().matches(exclude)))
                 .toList();
+    }
+
+    private String replaceSpecialCharsInOptions(String options) {
+        if (options != null) {
+            return options.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*").replace(' ', '|');
+        } else {
+            return null;
+        }
     }
 
     public Map<String, Map<String, List<Option>>> getProviderOptions() {

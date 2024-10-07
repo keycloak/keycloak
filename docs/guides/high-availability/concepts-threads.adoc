@@ -33,6 +33,8 @@ Low numbers ensure fast response times for all clients, even if there is an occa
 
 === JGroups connection pool
 
+NOTE: This currently applies to single-site setups only. In a multi-site setup with an external {jdgserver_name} this is no longer a restriction.
+
 The combined number of executor threads in all {project_name} nodes in the cluster should not exceed the number of threads available in JGroups thread pool to avoid the error `org.jgroups.util.ThreadPool: thread pool is full`.
 To see the error the first time it happens, the system property `jgroups.thread_dumps_threshold` needs to be set to `1`, as otherwise the message appears only after 10000 requests have been rejected.
 

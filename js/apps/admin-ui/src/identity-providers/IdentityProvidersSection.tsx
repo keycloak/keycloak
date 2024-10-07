@@ -1,12 +1,20 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
-import { IconMapper, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  Action,
+  IconMapper,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
   Button,
   ButtonVariant,
   CardTitle,
+  Checkbox,
   Dropdown,
   DropdownGroup,
   DropdownItem,
@@ -28,7 +36,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
-import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -102,6 +109,7 @@ export default function IdentityProvidersSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
+  const [hide, setHide] = useState(false);
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
@@ -121,12 +129,13 @@ export default function IdentityProvidersSection() {
     const params: IdentityProvidersQuery = {
       first: first!,
       max: max!,
+      realmOnly: hide,
     };
     if (search) {
       params.search = search;
     }
     const providers = await adminClient.identityProviders.find(params);
-    return sortBy(providers, ["config.guiOrder", "alias"]);
+    return sortBy(providers, "alias");
   };
 
   const navigateToCreate = (providerId: string) =>
@@ -184,6 +193,7 @@ export default function IdentityProvidersSection() {
       <DeleteConfirm />
       {manageDisplayDialog && (
         <ManageOrderDialog
+          hideRealmBasedIdps={hide}
           onClose={() => {
             setManageDisplayDialog(false);
             refresh();
@@ -243,6 +253,18 @@ export default function IdentityProvidersSection() {
             searchPlaceholderKey="searchForProvider"
             toolbarItem={
               <>
+                <ToolbarItem alignSelf="center">
+                  <Checkbox
+                    label={t("hideOrganizationLinkedIdps")}
+                    id="hideOrganizationLinkedIdps"
+                    data-testid="hideOrganizationLinkedIdps"
+                    isChecked={hide}
+                    onChange={(_event, check) => {
+                      setHide(check);
+                      refresh();
+                    }}
+                  />
+                </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
@@ -299,6 +321,23 @@ export default function IdentityProvidersSection() {
                 cellRenderer: OrganizationLink,
               },
             ]}
+            emptyState={
+              <ListEmptyState
+                message={t("identityProviders")}
+                instructions={t("emptyRealmBasedIdps")}
+                isSearchVariant
+                secondaryActions={[
+                  {
+                    text: t("clearAllFilters"),
+                    onClick: () => {
+                      setHide(false);
+                      refresh();
+                    },
+                    type: ButtonVariant.link,
+                  },
+                ]}
+              />
+            }
           />
         )}
       </PageSection>

@@ -148,6 +148,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
 
                 UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
                 Assert.assertEquals(origSessions[0], userSession);
@@ -194,6 +195,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
     public void testTransientUserSessionIsNotPersisted() {
         String id = inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             ClientModel testApp = realm.getClientByClientId("test-app");
@@ -217,6 +219,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
     public void testClientSessionIsNotPersistedForTransientUserSession() {
         Object[] transientUserSessionWithClientSessionId = inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
             ClientModel testApp = realm.getClientByClientId("test-app");
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);

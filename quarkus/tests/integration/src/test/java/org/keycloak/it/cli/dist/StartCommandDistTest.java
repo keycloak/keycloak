@@ -25,7 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
@@ -34,9 +37,14 @@ import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 public class StartCommandDistTest {
+
+    private static final Logger log = LoggerFactory.getLogger(StartCommandDistTest.class);
 
     @Test
     @Launch({ "start", "--hostname-strict=false" })
@@ -60,10 +68,13 @@ public class StartCommandDistTest {
     }
 
     @Test
-    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false" })
-    void warnSpiBuildtimeAtRuntime(LaunchResult result) {
-        assertTrue(result.getOutput().contains("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    @RawDistOnly(reason = "Containers are immutable")
+    void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
+        CLIResult result = dist.run("build");
+        result.assertBuild();
+
+        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
+        result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
 
     @Test
@@ -93,6 +104,22 @@ public class StartCommandDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
         assertEquals(4, cliResult.getErrorStream().size());
+    }
+
+    @Test
+    @Launch({ "start", "--optimized" })
+    @Order(1)
+    void failIfOptimizedUsedForFirstFastStartup(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("The '--optimized' flag was used for first ever server start.");
+    }
+
+    @Test
+    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
+    @Order(2)
+    void failIfOptimizedUsedForFirstStartup(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("The '--optimized' flag was used for first ever server start.");
     }
 
     @Test
@@ -132,7 +159,7 @@ public class StartCommandDistTest {
 
     @Test
     @WithEnvVars({"KC_LOG", "invalid"})
-    @Launch({ "start", "--optimized" })
+    @Launch({ "start" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog");
@@ -184,12 +211,12 @@ public class StartCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testWarningWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
+    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run("build", "--features=preview");
         cliResult.assertBuild();
         dist.setEnvVar("KC_DB", "postgres");
         cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
-        cliResult.assertMessage("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
+        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
     @Test

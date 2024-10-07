@@ -346,7 +346,7 @@
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                    <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips</includeArtifactIds>
+                                    <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips,bcutil-fips</includeArtifactIds>
                                 </configuration>
                             </execution>
                             <execution>
@@ -357,7 +357,7 @@
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${auth.server.home}/bin/client/lib</outputDirectory>
-                                    <includeArtifactIds>bc-fips,bctls-fips</includeArtifactIds>
+                                    <includeArtifactIds>bc-fips,bctls-fips,bcutil-fips</includeArtifactIds>
                                 </configuration>
                             </execution>
                         </executions>

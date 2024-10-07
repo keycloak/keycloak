@@ -65,7 +65,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshCounters() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
 
         testingClient.server().run(new  LastSessionRefreshServerCounterTest());
@@ -112,7 +112,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshIntervals() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
 
         testingClient.server().run(new  LastSessionRefreshServerIntervalsTest());

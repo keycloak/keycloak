@@ -54,7 +54,7 @@ public class ExternalInfinispanTest {
     @Test
     @Launch({
             "start-dev",
-            "--features=multi-site,remote-cache",
+            "--features=multi-site,clusterless",
             "--cache=ispn",
             "--cache-remote-host=127.0.0.1",
             "--cache-remote-username=keycloak",

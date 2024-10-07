@@ -73,6 +73,10 @@ public interface KeycloakContext {
 
     void setClient(ClientModel client);
 
+    OrganizationModel getOrganization();
+
+    void setOrganization(OrganizationModel organization);
+
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);

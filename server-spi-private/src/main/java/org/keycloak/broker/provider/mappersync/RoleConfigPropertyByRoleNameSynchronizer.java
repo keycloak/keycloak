@@ -31,8 +31,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-public class RoleConfigPropertyByRoleNameSynchronizer
-        extends AbstractConfigPropertySynchronizer<RoleModel.RoleNameChangeEvent> {
+public class RoleConfigPropertyByRoleNameSynchronizer implements ConfigSynchronizer<RoleModel.RoleNameChangeEvent> {
 
     public static final RoleConfigPropertyByRoleNameSynchronizer INSTANCE =
             new RoleConfigPropertyByRoleNameSynchronizer();
@@ -54,7 +53,7 @@ public class RoleConfigPropertyByRoleNameSynchronizer
                 .forEach(idpMapper -> {
                     String newRoleValue = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getNewName());
                     idpMapper.getConfig().put(ConfigConstants.ROLE, newRoleValue);
-                    super.logEventProcessed(ConfigConstants.ROLE, currentRoleValue, newRoleValue, event.getRealm().getName(),
+                    logEventProcessed(ConfigConstants.ROLE, currentRoleValue, newRoleValue, event.getRealm().getName(),
                             idpMapper.getName(), idpMapper.getIdentityProviderAlias());
                     event.getKeycloakSession().identityProviders().updateMapper(idpMapper);
                 });

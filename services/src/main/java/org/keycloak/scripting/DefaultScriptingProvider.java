@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.platform.Platform;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.utils.ProxyClassLoader;
 
 /**
  * A {@link ScriptingProvider} that uses a {@link ScriptEngineManager} to evaluate scripts with a {@link ScriptEngine}.
@@ -128,24 +127,6 @@ public class DefaultScriptingProvider implements ScriptingProvider {
      * Looks-up a {@link ScriptEngine} based on the MIME-type provided by the given {@link Script}.
      */
     private ScriptEngine lookupScriptEngineFor(ScriptModel script) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        try {
-            ClassLoader scriptClassLoader = Platform.getPlatform().getScriptEngineClassLoader(factory.getConfig());
-
-            // Also need to use classloader of keycloak services itself to be able to use keycloak classes in the scripts
-            if (scriptClassLoader != null) {
-                scriptClassLoader = new ProxyClassLoader(scriptClassLoader, DefaultScriptingProvider.class.getClassLoader());
-            } else {
-                scriptClassLoader = DefaultScriptingProvider.class.getClassLoader();
-            }
-
-            logger.debugf("Using classloader %s to load script engine", scriptClassLoader);
-
-            Thread.currentThread().setContextClassLoader(scriptClassLoader);
-            return new ScriptEngineManager().getEngineByMimeType(script.getMimeType());
-        }
-        finally {
-            Thread.currentThread().setContextClassLoader(cl);
-        }
+        return new ScriptEngineManager().getEngineByMimeType(script.getMimeType());
     }
 }

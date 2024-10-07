@@ -83,7 +83,11 @@ public class AssertEvents implements TestRule {
     }
 
     public EventRepresentation poll() {
-        EventRepresentation event = fetchNextEvent();
+        return poll(0);
+    }
+
+    public EventRepresentation poll(int seconds) {
+        EventRepresentation event = fetchNextEvent(seconds);
         Assert.assertNotNull("Event expected", event);
 
         return event;

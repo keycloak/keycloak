@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 import java.io.File;
-import java.util.Optional;
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;

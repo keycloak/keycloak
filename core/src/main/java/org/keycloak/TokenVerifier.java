@@ -115,7 +115,7 @@ public class TokenVerifier<T extends JsonWebToken> {
 
             return true;
         }
-    };
+    }
 
     public static class TokenTypeCheck implements Predicate<JsonWebToken> {
 
@@ -134,7 +134,7 @@ public class TokenVerifier<T extends JsonWebToken> {
             }
             throw new VerificationException("Token type is incorrect. Expected '" + tokenTypes.toString() + "' but was '" + t.getType() + "'");
         }
-    };
+    }
 
 
     public static class AudienceCheck implements Predicate<JsonWebToken> {
@@ -162,7 +162,7 @@ public class TokenVerifier<T extends JsonWebToken> {
 
             throw new VerificationException("Expected audience not available in the token");
         }
-    };
+    }
 
 
     public static class IssuedForCheck implements Predicate<JsonWebToken> {
@@ -317,7 +317,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     /**
      * Sets the key for verification of HMAC-based signature.
      * @param secretKey
-     * @return 
+     * @return
      */
     public TokenVerifier<T> secretKey(SecretKey secretKey) {
         this.secretKey = secretKey;

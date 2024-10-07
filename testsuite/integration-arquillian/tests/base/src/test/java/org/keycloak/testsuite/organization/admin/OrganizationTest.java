@@ -51,7 +51,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
@@ -61,12 +60,10 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationTest extends AbstractOrganizationTest {
 
     @Test
@@ -552,6 +549,43 @@ public class OrganizationTest extends AbstractOrganizationTest {
         org.setAlias("");
         try (Response response = testRealm().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testInvalidRedirectUri() {
+        OrganizationRepresentation expected = createOrganization();
+        expected.setRedirectUrl("http://valid.url:8080/");
+
+        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), equalTo("http://valid.url:8080/"));
+        }
+
+        expected.setRedirectUrl("");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl(" ");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl("invalid");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
+        }
+
+        expected.setRedirectUrl("https://\ninvalid");
+        try (Response response = organization.update(expected)) {
+            assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
         }
     }
 }

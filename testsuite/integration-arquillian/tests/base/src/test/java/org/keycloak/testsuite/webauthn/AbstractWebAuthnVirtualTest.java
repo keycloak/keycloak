@@ -71,6 +71,7 @@ import java.util.Optional;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -391,7 +392,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
             infoPage.assertCurrent();
-            waitForPageToLoad();
+            assertEquals("You are logged out", infoPage.getInfo());
         } catch (Exception e) {
             throw new RuntimeException("Cannot logout user", e);
         }

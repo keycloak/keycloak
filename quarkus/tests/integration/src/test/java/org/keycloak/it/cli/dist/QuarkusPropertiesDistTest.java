@@ -17,15 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
-import java.util.Optional;
-import java.util.function.Consumer;
-
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -41,8 +34,15 @@ import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
@@ -50,10 +50,10 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class QuarkusPropertiesDistTest {
 
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
-    private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
+    private static final String QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY = "quarkus.log.handler.console.\"console-2\".enable";
 
     @Test
-    @Launch({ "build" })
+    @Launch({"build"})
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -61,48 +61,48 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(QuarkusPropertiesDistTest.UpdateConsoleLogLevelToWarnFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.AddConsoleHandlerFromQuarkusProps.class)
+    @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(2)
     void testPropertyEnabledAtRuntime(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO"));
+        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.console.level=info", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO"));
+        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.console.level=info", "build" })
+    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build"})
     @Order(4)
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO"));
+        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
         cliResult.assertBuild();
     }
 
     @Test
-    @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromKeycloakConf.class)
-    @Launch({ "build" })
+    @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
+    @Launch({"build"})
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("INFO"));
+        assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
         cliResult.assertBuild();
     }
 
     @Test
-    @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
+    @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(6)
     void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("INFO"));
+        assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
         cliResult.assertNoBuild();
     }
 
@@ -166,7 +166,7 @@ public class QuarkusPropertiesDistTest {
     void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG"));
+        assertThat(cliResult.getOutput(),containsString("DEBUG"));
         cliResult.assertStarted();
     }
 
@@ -179,7 +179,7 @@ public class QuarkusPropertiesDistTest {
     @Order(13)
     void testHttpCertsPathTransformer(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("ERROR: /tmp/kc/bin/../conf/server.crt.pem"));
+        assertThat(cliResult.getOutput(),containsString("ERROR: /tmp/kc/bin/../conf/server.crt.pem"));
     }
 
     @Test
@@ -191,31 +191,33 @@ public class QuarkusPropertiesDistTest {
     @Order(14)
     void testHttpCertsPathTransformerOnWindows(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("ERROR: C:/tmp/kc/bin/../conf/server.crt.pem"));
+        assertThat(cliResult.getOutput(),containsString("ERROR: C:/tmp/kc/bin/../conf/server.crt.pem"));
     }
 
-    public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "WARN");
+            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
+            distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".format", "Keycloak is the best");
+            distribution.setQuarkusProperty("quarkus.log.handlers", "console-2");
         }
     }
 
-    public static class UpdateConsoleLogLevelToInfoFromKeycloakConf implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromKeycloakConf implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
-            distribution.setProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "INFO");
+            distribution.setProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "false");
         }
     }
 
-    public static class UpdateConsoleLogLevelToInfoFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
-            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "INFO");
+            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
         }
     }
 

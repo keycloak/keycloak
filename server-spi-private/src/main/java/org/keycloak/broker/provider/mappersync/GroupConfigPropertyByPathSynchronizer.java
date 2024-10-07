@@ -33,7 +33,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
  *
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-public class GroupConfigPropertyByPathSynchronizer extends AbstractConfigPropertySynchronizer<GroupModel.GroupPathChangeEvent> {
+public class GroupConfigPropertyByPathSynchronizer implements ConfigSynchronizer<GroupModel.GroupPathChangeEvent> {
 
     public static final GroupConfigPropertyByPathSynchronizer INSTANCE = new GroupConfigPropertyByPathSynchronizer();
 
@@ -53,7 +53,7 @@ public class GroupConfigPropertyByPathSynchronizer extends AbstractConfigPropert
         event.getKeycloakSession().identityProviders().getMappersStream(Map.of(ConfigConstants.GROUP, event.getPreviousPath()), null, null)
                 .forEach(idpMapper -> {
                     idpMapper.getConfig().put(ConfigConstants.GROUP, event.getNewPath());
-                    super.logEventProcessed(ConfigConstants.GROUP, event.getPreviousPath(), event.getNewPath(), event.getRealm().getName(),
+                    logEventProcessed(ConfigConstants.GROUP, event.getPreviousPath(), event.getNewPath(), event.getRealm().getName(),
                             idpMapper.getName(), idpMapper.getIdentityProviderAlias());
                     event.getKeycloakSession().identityProviders().updateMapper(idpMapper);
                 });
@@ -65,7 +65,7 @@ public class GroupConfigPropertyByPathSynchronizer extends AbstractConfigPropert
                     String currentGroupPath = idpMapper.getConfig().get(ConfigConstants.GROUP);
                     String newGroupPath = event.getNewPath() + currentGroupPath.substring(event.getPreviousPath().length());
                     idpMapper.getConfig().put(ConfigConstants.GROUP, newGroupPath);
-                    super.logEventProcessed(ConfigConstants.GROUP, currentGroupPath, newGroupPath, event.getRealm().getName(),
+                    logEventProcessed(ConfigConstants.GROUP, currentGroupPath, newGroupPath, event.getRealm().getName(),
                             idpMapper.getName(), idpMapper.getIdentityProviderAlias());
                     event.getKeycloakSession().identityProviders().updateMapper(idpMapper);
                 });

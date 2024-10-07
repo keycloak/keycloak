@@ -38,6 +38,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
+    public static final String DISPLAY_NAME = "displayName";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
     public static final String ENABLED = "enabled";
     public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
@@ -49,6 +50,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String LOGIN_HINT = "loginHint";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
     public static final String ORGANIZATION_ID = "organizationId";
+    public static final String ORGANIZATION_ID_NOT_NULL = "organizationIdNotNull";
     public static final String PASS_MAX_AGE = "passMaxAge";
     public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
     public static final String SEARCH = "search";

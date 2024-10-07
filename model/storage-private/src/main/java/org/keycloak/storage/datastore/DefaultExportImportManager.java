@@ -48,7 +48,6 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
@@ -67,6 +66,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -84,6 +84,8 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -133,8 +135,6 @@ import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
-import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.MembershipType;
 
 /**
  * This wraps the functionality about export/import for the storage.
@@ -364,6 +364,14 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
 
+        // import attributes
+
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+                newRealm.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
         Map<String, ClientModel> createdClients = new HashMap<>();
         if (rep.getClients() != null) {
             createdClients = createClients(session, rep, newRealm, mappedFlows);
@@ -412,6 +420,13 @@ public class DefaultExportImportManager implements ExportImportManager {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
+        if (rep.getGroups() != null) {
+            importGroups(newRealm, rep);
+            if (rep.getDefaultGroups() != null) {
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
+            }
+        }
+
         if (rep.getComponents() != null) {
             MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
             String parentId = newRealm.getId();
@@ -420,12 +435,6 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-        if (rep.getGroups() != null) {
-            importGroups(newRealm, rep);
-            if (rep.getDefaultGroups() != null) {
-                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
-            }
-        }
 
 
         // create users and their role mappings and social mappings
@@ -454,14 +463,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         if (rep.getDefaultLocale() != null) {
             newRealm.setDefaultLocale(rep.getDefaultLocale());
-        }
-
-        // import attributes
-
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
-                newRealm.setAttribute(attr.getKey(), attr.getValue());
-            }
         }
 
         if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
@@ -663,7 +664,6 @@ public class DefaultExportImportManager implements ExportImportManager {
             throw new RuntimeException("Either client or clientScope needs to be specified in scope mappings");
         }
     }
-
 
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) {
@@ -905,7 +905,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
         if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 List<String> value = entry.getValue();
                 if (value != null) {
                     user.setAttribute(entry.getKey(), new ArrayList<>(value));
@@ -1590,21 +1590,21 @@ public class DefaultExportImportManager implements ExportImportManager {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
-                OrganizationModel org = provider.create(orgRep.getName(), orgRep.getAlias());
-
-                org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
+                OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
+                OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
+                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
-                    provider.addIdentityProvider(org, idp);
+                    provider.addIdentityProvider(orgModel, idp);
                 }
 
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
                     if (MembershipType.MANAGED.equals(member.getMembershipType())) {
-                        provider.addManagedMember(org, m);
+                        provider.addManagedMember(orgModel, m);
                     } else {
-                        provider.addMember(org, m);
+                        provider.addMember(orgModel, m);
                     }
                 }
             }

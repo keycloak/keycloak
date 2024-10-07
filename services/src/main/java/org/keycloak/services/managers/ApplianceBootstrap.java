@@ -169,6 +169,7 @@ public class ApplianceBootstrap {
         adminClient.setClientId(clientId);
         adminClient.setEnabled(true);
         adminClient.setServiceAccountsEnabled(true);
+        adminClient.setStandardFlowEnabled(false);
         adminClient.setPublicClient(false);
         adminClient.setSecret(clientSecret);
 
@@ -180,6 +181,7 @@ public class ApplianceBootstrap {
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             serviceAccount.grantRole(adminRole);
 
+            adminClientModel.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
             adminClientModel.setAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
             // also set the expiration - could be relative to a creation timestamp, or computed
 

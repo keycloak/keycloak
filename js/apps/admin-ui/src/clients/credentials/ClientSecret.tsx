@@ -46,7 +46,7 @@ const SecretInput = ({
     <Split hasGutter>
       <SplitItem isFilled>
         <InputGroup>
-          <InputGroupItem>
+          <InputGroupItem isFill>
             <PasswordInput id={id} value={secret} readOnly />
           </InputGroupItem>
           <InputGroupItem>

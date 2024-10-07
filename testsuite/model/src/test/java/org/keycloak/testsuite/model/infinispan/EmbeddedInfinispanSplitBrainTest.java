@@ -37,7 +37,7 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
    public static final TestRule SKIPPED_PROFILES = (base, description) -> {
       // We skip split-brain tests for the REMOTE_CACHE and MULTI_SITE features as neither of these architectures
       // utilise embedded distributed/replicated caches
-      Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
+      Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
       Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE));
       return base;
    };

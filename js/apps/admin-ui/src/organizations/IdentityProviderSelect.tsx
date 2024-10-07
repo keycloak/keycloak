@@ -72,8 +72,7 @@ export const IdentityProviderSelect = ({
         params.search = search;
       }
 
-      const idps = await adminClient.identityProviders.find(params);
-      return idps;
+      return await adminClient.identityProviders.find(params);
     },
     setIdps,
     [search],
@@ -85,7 +84,7 @@ export const IdentityProviderSelect = ({
     const options = identityProviders.map((option) => (
       <SelectOption
         key={option!.alias}
-        value={option!.alias}
+        value={option}
         selected={values?.includes(option!.alias!)}
       >
         {option!.alias}
@@ -200,7 +199,8 @@ export const IdentityProviderSelect = ({
             isOpen={open}
             selected={field.value}
             onSelect={(_, v) => {
-              const option = v?.toString();
+              const idp = v as IdentityProviderRepresentation;
+              const option = idp.alias!;
               if (variant !== "typeaheadMulti") {
                 const removed = field.value.includes(option);
 

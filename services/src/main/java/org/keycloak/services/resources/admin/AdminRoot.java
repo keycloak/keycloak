@@ -321,6 +321,6 @@ public class AdminRoot {
     }
 
     private static boolean isAdminConsoleEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_V2);
     }
 }

@@ -1,0 +1,10 @@
+= Dark mode enabled for the welcome theme
+
+We've now enabled dark mode support for all the `keycloak` themes. This feature was previously present in the admin console, account console and login, and is now also available in the welcome page. If a user indicates their preference through an operating system setting (e.g. light or dark mode) or a user agent setting, the theme will automatically follow these preferences.
+
+If you are using a custom theme that extends any of the `keycloak` themes and are not yet ready to support dark mode, or have styling conflicts that prevent you from implementing dark mode, you can disable support by adding the following property to your theme:
+
+[source,properties]
+----
+darkMode=false
+----

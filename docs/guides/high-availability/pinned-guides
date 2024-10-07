@@ -6,6 +6,7 @@ deploy-infinispan-kubernetes-crossdc
 deploy-keycloak-kubernetes
 deploy-aws-route53-loadbalancer
 deploy-aws-route53-failover-lambda
+health-checks-multi-site
 operate-failover
 operate-switch-over
 operate-network-partition-recovery

@@ -31,6 +31,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -206,11 +207,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         throw new RuntimeException("Unknown action " + action);
     }
 
-    public AuthorizationEndpoint register() {
+    public AuthorizationEndpoint register(String tokenString) {
         event.event(EventType.REGISTER);
         action = Action.REGISTER;
 
-        if (!realm.isRegistrationAllowed()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            Response errorResponse = new LoginActionsService(session, event).preHandleActionToken(tokenString);
+            if (errorResponse != null) {
+                throw new ErrorPageException(errorResponse);
+            }
+        }
+
+        if (!Organizations.isRegistrationAllowed(session, realm)) {
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
         }
 

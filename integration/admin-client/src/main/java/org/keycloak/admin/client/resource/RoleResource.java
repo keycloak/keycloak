@@ -110,7 +110,7 @@ public interface RoleResource {
      * Note: This method just returns the first 100 users. In order to retrieve all users, use paging (see
      * {@link #getUserMembers(Integer, Integer)}).
      * </p>
-     * 
+     *
      * @return a list of users with the given role
      */
     @GET
@@ -138,7 +138,7 @@ public interface RoleResource {
      * <p>Returns users that have the given role, sorted by username ascending, paginated according to the query
      * parameters.</p>
      *
-     * @param briefRepresentation If the user should be returned in brief or full representation
+     * @param briefRepresentation If the user should be returned in brief or full representation. Parameter available since Keycloak server 26. Will be ignored on older Keycloak versions with the default value false.
      * @param firstResult Pagination offset
      * @param maxResults Pagination size
      * @return a list of users with the given role
@@ -149,7 +149,7 @@ public interface RoleResource {
     List<UserRepresentation> getUserMembers(@QueryParam("briefRepresentation") Boolean briefRepresentation,
             @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
-    
+
     /**
      * Get role groups.
      * <p>Returns groups that have the given role.</p>

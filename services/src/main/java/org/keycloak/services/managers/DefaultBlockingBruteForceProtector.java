@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.core.UriInfo;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -133,10 +134,10 @@ public class DefaultBlockingBruteForceProtector extends DefaultBruteForceProtect
     }
 
     @Override
-    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, boolean success) {
+    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, boolean success) {
         // mark the off-thread is started for this request
         loginAttempts.computeIfPresent(user.getId(), (k, v) -> v + OFF_THREAD_STARTED);
-        super.processLogin(realm, user, clientConnection, success);
+        super.processLogin(realm, user, clientConnection, uriInfo, success);
     }
 
     @Override

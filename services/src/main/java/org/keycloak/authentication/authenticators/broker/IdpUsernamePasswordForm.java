@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.broker;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -44,6 +45,8 @@ import jakarta.ws.rs.core.Response;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpUsernamePasswordForm extends UsernamePasswordForm {
+
+    private final static Logger log = Logger.getLogger(IdpUsernamePasswordForm.class);
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {

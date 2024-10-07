@@ -1,6 +1,7 @@
 <#import "template.ftl" as layout>
 <#import "field.ftl" as field>
 <#import "buttons.ftl" as buttons>
+<#import "social-providers.ftl" as identityProviders>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username') displayInfo=(realm.password && realm.registrationAllowed && !registrationDisabled??); section>
 <!-- template: login-username.ftl -->
 
@@ -17,7 +18,7 @@
                                 <#assign label>
                                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                                 </#assign>
-                                <@field.input name="username" label=label value="${(login.username!'')}" />
+                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="username" />
 
                                 <#if messagesPerField.existsError('username')>
                                     <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -42,29 +43,12 @@
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
             <div id="kc-registration">
-                <span>${msg("noAccount")} <a tabindex="6" href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+                <span>${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a></span>
             </div>
         </#if>
     <#elseif section = "socialProviders" >
-        <#if realm.password && social?? && social.providers?has_content>
-            <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
-                <hr/>
-                <h4>${msg("identity-provider-login-label")}</h4>
-
-                <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
-                    <#list social.providers as p>
-                        <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
-                                type="button" href="${p.loginUrl}">
-                            <#if p.iconClasses?has_content>
-                                <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
-                                <span class="${properties.kcFormSocialAccountNameClass!} kc-social-icon-text">${p.displayName!}</span>
-                            <#else>
-                                <span class="${properties.kcFormSocialAccountNameClass!}">${p.displayName!}</span>
-                            </#if>
-                        </a>
-                    </#list>
-                </ul>
-            </div>
+        <#if realm.password && social.providers?? && social.providers?has_content>
+            <@identityProviders.show social=social />
         </#if>
     </#if>
 

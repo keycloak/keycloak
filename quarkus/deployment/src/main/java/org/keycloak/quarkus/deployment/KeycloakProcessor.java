@@ -25,7 +25,6 @@ import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
-import io.quarkus.builder.item.EmptyBuildItem;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
@@ -48,6 +47,7 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
@@ -77,6 +77,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
@@ -112,7 +113,6 @@ import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.LoadBalancerResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -123,6 +123,7 @@ import org.keycloak.theme.ThemeResourceSpi;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
@@ -160,7 +161,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getProper
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
-import static org.keycloak.quarkus.runtime.storage.legacy.database.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -235,16 +236,42 @@ class KeycloakProcessor {
     }
 
     @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void configureRedirectForRootPath(BuildProducer<RouteBuildItem> routes,
+                                      HttpRootPathBuildItem httpRootPathBuildItem,
+                                      KeycloakRecorder recorder) {
+        Configuration.getOptionalKcValue(HttpOptions.HTTP_RELATIVE_PATH)
+                .filter(StringUtil::isNotBlank)
+                .filter(f -> !f.equals("/"))
+                .ifPresent(relativePath ->
+                        routes.produce(httpRootPathBuildItem.routeBuilder()
+                                .route("/")
+                                .handler(recorder.getRedirectHandler(relativePath))
+                                .build())
+                );
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
     void configureManagementInterface(BuildProducer<RouteBuildItem> routes,
                                       NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
                                       KeycloakRecorder recorder) {
-        final var path = Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH.getKey()).orElse("/");
+        final var relativePath = Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH).orElse("/");
+
+        if (StringUtil.isNotBlank(relativePath) && !relativePath.equals("/")) {
+            // redirect from / to the relativePath
+            routes.produce(nonApplicationRootPathBuildItem.routeBuilder()
+                    .management()
+                    .route("/")
+                    .handler(recorder.getRedirectHandler(relativePath))
+                    .build());
+        }
 
         routes.produce(nonApplicationRootPathBuildItem.routeBuilder()
                 .management()
-                .route(path)
+                .route(relativePath)
                 .handler(recorder.getManagementHandler())
                 .build());
     }
@@ -664,11 +691,6 @@ class KeycloakProcessor {
         if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     AdminRoot.class.getName())), false));
-        }
-
-        if (!Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
-            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
-                    JsResource.class.getName())), false));
         }
 
         if (!MultiSiteUtils.isMultiSiteEnabled()) {

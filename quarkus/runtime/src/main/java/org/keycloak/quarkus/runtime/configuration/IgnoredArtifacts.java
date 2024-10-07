@@ -60,7 +60,8 @@ public class IgnoredArtifacts {
             "org.keycloak:keycloak-crypto-fips1402",
             "org.bouncycastle:bc-fips",
             "org.bouncycastle:bctls-fips",
-            "org.bouncycastle:bcpkix-fips"
+            "org.bouncycastle:bcpkix-fips",
+            "org.bouncycastle:bcutil-fips"
     );
 
     private static Set<String> fips() {

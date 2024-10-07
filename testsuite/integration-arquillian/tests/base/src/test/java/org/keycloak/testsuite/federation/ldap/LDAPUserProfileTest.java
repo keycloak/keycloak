@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -267,6 +268,12 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             ldapCompModel.put(PrioritizedComponentModel.PRIORITY, "100");
             testRealm.addComponentModel(ldapModel);
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+            // if AD, create new OU in a base DN because users.ldif is ignored for AD
+            if (LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(ldapModel.getConfig().getFirst(LDAPConstants.VENDOR))) {
+                LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OtherPeople2");
+                LDAPTestUtils.removeAllLDAPUsers(ldapProvider, testRealm);
+            }
             LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, testRealm, "anotherjohn", "AnotherJohn", "AnotherDoe", "anotherjohn@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ldapProvider, john, "Password1");
         });
@@ -304,6 +311,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
     @Test
     public void testUsernameRespectFormatFromExternalStore() {
+        Assume.assumeFalse("Skip for AD", testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            return LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(ctx.getLdapModel().getConfig().getFirst(LDAPConstants.VENDOR));
+        }, Boolean.class));
+
         String upperCaseUsername = "JOHNKEYCLOAK3";
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
@@ -327,6 +339,43 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             otherAttrs.put(LDAPConstants.GIVENNAME, List.of(upperCaseUsername));
 
             LDAPObject john3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, upperCaseUsername, "John", "Doe", "john3@email.org", otherAttrs);
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john3, "Password1");
+        });
+
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealm(), upperCaseUsername);
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertEquals(upperCaseUsername, john.getUsername());
+
+        johnResource = ApiUtil.findUserByUsernameId(testRealm(), upperCaseUsername.toLowerCase());
+        john = johnResource.toRepresentation(true);
+        Assert.assertEquals(upperCaseUsername, john.getUsername());
+
+        loginPage.open();
+        loginPage.login(upperCaseUsername, "Password1");
+        appPage.assertCurrent();
+        testRealm().users().get(john.getId()).logout();
+        loginPage.open();
+        loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testUsernameRespectFormatFromExternalStoreAD() {
+        Assume.assumeTrue("Only run for AD", testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            return LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(ctx.getLdapModel().getConfig().getFirst(LDAPConstants.VENDOR));
+        }, Boolean.class));
+
+        String upperCaseUsername = "JOHNKEYCLOAK3";
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel ldapComponentMapper = LDAPTestUtils.addUserAttributeMapper(appRealm, ctx.getLdapModel(), "username-cn-mapper", "username", LDAPConstants.CN);
+            ldapComponentMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
+            appRealm.updateComponent(ldapComponentMapper);
+
+            LDAPObject john3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, upperCaseUsername, "John", "Doe", "john3@email.org", "12345");
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john3, "Password1");
         });
 

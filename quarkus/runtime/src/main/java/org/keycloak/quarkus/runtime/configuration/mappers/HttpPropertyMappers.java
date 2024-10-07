@@ -34,11 +34,9 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_SERVER_ENABLED)
                         .to("quarkus.http.host-enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
@@ -67,6 +65,12 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTPS_PROTOCOLS)
                         .to("quarkus.http.ssl.protocols")
                         .paramLabel("protocols")
+                        .build(),
+                fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
+                        .to("quarkus.http.ssl.certificate.reload-period")
+                        // -1 means no reload
+                        .transformer((value, context) -> "-1".equals(value.get()) ? null : value)
+                        .paramLabel("reload period")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
                         .to(QUARKUS_HTTPS_CERT_FILES)

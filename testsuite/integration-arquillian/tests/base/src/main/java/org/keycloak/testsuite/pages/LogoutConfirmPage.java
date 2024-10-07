@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -50,14 +51,14 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
     }
 
     public void confirmLogout() {
-        confirmLogoutButton.click();
+        UIUtils.clickLink(confirmLogoutButton);
     }
 
     public void confirmLogout(WebDriver driver) {
-        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+        UIUtils.clickLink(driver.findElement(By.cssSelector("input[type=\"submit\"]")));
     }
 
     public void clickBackToApplicationLink() {
-        backToApplicationLink.click();
+        UIUtils.clickLink(backToApplicationLink);
     }
 }

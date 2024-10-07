@@ -1,3 +1,25 @@
+<#import "field.ftl" as field>
+<#macro username>
+  <#assign label>
+    <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+  </#assign>
+  <@field.group name="username" label=label>
+    <div class="${properties.kcInputGroup}">
+      <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
+        <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">
+          <input id="kc-attempted-username" value="${auth.attemptedUsername}" readonly>
+        </span>
+      </div>
+      <div class="${properties.kcInputGroupItemClass}">
+        <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" 
+              aria-label="${msg('restartLoginTooltip')}" onclick="location.href='${url.loginRestartFlowUrl}'">
+            <i class="fa-sync-alt fas" aria-hidden="true"></i>
+            <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
+        </button>
+      </div>
+    </@field.group>
+</#macro>
+
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
@@ -6,6 +28,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
+    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
 
     <#if properties.meta?has_content>
         <#list properties.meta?split(' ') as meta>
@@ -31,6 +54,25 @@
             }
         }
     </script>
+    <#if properties.darkMode?boolean>
+      <script type="module" async blocking="render">
+          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+          updateDarkMode(mediaQuery.matches);
+          mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
+
+          function updateDarkMode(isEnabled) {
+            const { classList } = document.documentElement;
+
+            if (isEnabled) {
+              classList.add(DARK_MODE_CLASS);
+            } else {
+              classList.remove(DARK_MODE_CLASS);
+            }
+          }
+      </script>
+    </#if>
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
@@ -48,21 +90,6 @@
         checkCookiesAndSetTimer(
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
-
-        const DARK_MODE_CLASS = "pf-v5-theme-dark";
-        const mediaQuery =window.matchMedia("(prefers-color-scheme: dark)");
-        updateDarkMode(mediaQuery.matches);
-        mediaQuery.addEventListener("change", (event) =>
-          updateDarkMode(event.matches),
-        );
-        function updateDarkMode(isEnabled) {
-          const { classList } = document.documentElement;
-          if (isEnabled) {
-            classList.add(DARK_MODE_CLASS);
-          } else {
-            classList.remove(DARK_MODE_CLASS);
-          }
-        }
     </script>
 </head>
 
@@ -135,30 +162,15 @@
                           <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
                         </span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
                         <#nested "show-username">
-                        <div id="kc-username" class="${properties.kcFormGroupClass!}">
-                            <label id="kc-attempted-username">${auth.attemptedUsername}</label>
-                            <a id="reset-login" href="${url.loginRestartFlowUrl}" aria-label="${msg('restartLoginTooltip')}">
-                                <div class="kc-login-tooltip">
-                                    <i class="${properties.kcResetFlowIcon!}"></i>
-                                    <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
-                                </div>
-                            </a>
-                        </div>
+                        <@username />
                     </div>
                 </div>
             <#else>
-                <#nested "show-username">
-                <div id="kc-username" class="${properties.kcFormGroupClass!}">
-                    <label id="kc-attempted-username">${auth.attemptedUsername}</label>
-                    <a id="reset-login" href="${url.loginRestartFlowUrl}" aria-label="${msg('restartLoginTooltip')}">
-                        <div class="kc-login-tooltip">
-                            <i class="${properties.kcResetFlowIcon!}"></i>
-                            <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
-                        </div>
-                    </a>
-                    <hr />
+                <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
+                  <#nested "show-username">
+                  <@username />
                 </div>
             </#if>
         </#if>
@@ -173,7 +185,7 @@
                     <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                     <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                 </div>
-                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
+                <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
             </div>
         </#if>
 
@@ -181,11 +193,11 @@
 
         <#if auth?has_content && auth.showTryAnotherWayLink()>
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
-              <div class="${properties.kcFormGroupClass!}">
-                  <input type="hidden" name="tryAnotherWay" value="on"/>
-                  <a href="#" id="try-another-way"
-                      onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
-              </div>
+              <input type="hidden" name="tryAnotherWay" value="on"/>
+              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].submit()"
+                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                    ${kcSanitize(msg("doTryAnotherWay"))?no_esc}
+              </a>
           </form>
         </#if>
 

@@ -46,9 +46,13 @@ As you can observe, the HTTPS protocol is the default choice, adhering to {proje
 
 The result of this configuration is that you can continue to access {project_name} at `https://my.keycloak.org` via HTTPS, while the proxy interacts with the instance using HTTP and port `8080`.
 
-== Relying on a trusted proxy for dynamic URL resolution
+== Using a reverse proxy
 
-If you fully trust your proxy, the `proxy-headers` option is used to dynamically resolve the URL.
+When a proxy is forwarding http or reencrypted TLS requests, the `proxy-headers` option should be set. Depending on the hostname settings, some or all of the URL, may be dynamically determined.
+
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+=== Fully dynamic URLs.
 
 For example if your reverse proxy correctly sets the Forwarded header, and you don't want to hardcode the hostname, {project_name} can accommodate this. You simply need to initiate the server as follows:
 
@@ -56,13 +60,21 @@ For example if your reverse proxy correctly sets the Forwarded header, and you d
 
 With this configuration, the server respects the value set by the Forwarded header. This also implies that all endpoints are dynamically resolved.
 
+=== Partially dynamic URLs
+
 The `proxy-headers` option can be also used to resolve the URL partially dynamically when the `hostname` option is not specified as a full URL. For example:
 
 <@kc.start parameters="--hostname my.keycloak.org --proxy-headers xforwarded"/>
 
 In this case, scheme, port and context path are resolved dynamically from X-Forwarded-* headers, while hostname is statically defined as `my.keycloak.org`.
 
-WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+=== Fixed URLs
+
+The `proxy-headers` is still relevant even when the `hostname` is set to a full URL as the headers are used to determine the origin of the request. For example:
+
+<@kc.start parameters="--hostname https://my.keycloak.org --proxy-headers xforwarded"/>
+
+In this case, while nothing is dynamically resolved from the X-Forwarded-* headers, the X-Forwarded-* headers are used to determine the correct origin of the request.
 
 == Exposing the Administration Console on a separate hostname
 
@@ -141,6 +153,8 @@ As indicated in the previous sections, URLs can be resolved in several ways: the
 ** `hostname-strict` must be set to false.
 * If `hostname-admin` is configured, `hostname` must be set to a URL (not just hostname). Otherwise {project_name} would not know what is the correct frontend URL (incl. port etc.) when accessing the Admin Console.
 * If `hostname-backchannel-dynamic` is set to true, `hostname` must be set to a URL (not just hostname). Otherwise {project_name} would not know what is the correct frontend URL (incl. port etc.) when being access via the dynamically resolved bachchannel.
+
+Additionally if hostname is configured, then hostname-strict is ignored.
 
 == Troubleshooting
 

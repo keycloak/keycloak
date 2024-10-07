@@ -32,6 +32,7 @@ public class OrganizationRepresentation {
     private String alias;
     private boolean enabled = true;
     private String description;
+    private String redirectUrl;
     private Map<String, List<String>> attributes;
     private Set<OrganizationDomainRepresentation> domains;
     private List<MemberRepresentation> members;
@@ -75,6 +76,14 @@ public class OrganizationRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
+
+    public void setRedirectUrl(String redirectUrl) {
+        this.redirectUrl = redirectUrl;
     }
 
     public Map<String, List<String>> getAttributes() {

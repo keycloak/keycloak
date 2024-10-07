@@ -3,6 +3,7 @@
 [[_managing_members_]]
 =  Managing members
 [role="_abstract"]
+
 An organization member is basically a realm user but with a link to a single organization. They are logically separated
 from other users in a realm so that you know exactly which users belong to an organization.
 
@@ -13,12 +14,12 @@ There are different ways to add, or onboard, a member to an organization:
 * Sending an invitation to create a new account
 * Sending an invitation to an existing user to join an organization
 
-Once a member of an organization, that user's account can be managed just like any regular account in a realm by accessing the *Users* section
-in the menu.
+Once a member of an organization, that user's account can be managed just like any regular account in a realm by accessing the *Users* section in the menu.
 
-However, you can narrow the users to only those associated with an organization by accessing the *Members* tab
-when managing an organization. In this tab, you have a list of all the organization members and actions to add new members and to edit and remove
-existing ones.
+However, you can narrow the users to only those associated with an organization by accessing the *Members* tab when managing an organization. In this tab, you have a list of all the organization members and actions to add new members and to edit and remove existing ones.
+
+.Managing organization members
+image:images/organizations-manage-members.png[alt="Managing organization members"]
 
 [[_managed_unmanaged_members_]]
 == Managed and unmanaged members
@@ -52,6 +53,9 @@ An existing realm user can join an organization by selecting that user from a li
 . Click *Add realm user*.
 . Select one or more users and click *Add* to add them to the organization.
 
+.Adding a realm user
+image:images/organizations-add-realm-user.png[alt="Adding a realm user"]
+
 Once a user is a member of the organization, that user is able to authenticate to the realm just like a regular user and using
 any credential supported by the realm.
 
@@ -66,6 +70,9 @@ An administrator can email users to join an organization.
 . Provide an email address
 . Click *Send*
 
+.Inviting members
+image:images/organizations-invite-member.png[alt="Inviting members"]
+
 Optionally, you can also provide a value for the *First name* and *Last name* fields for a more personalized email
 message using a greeting message with the first and last names of the person receiving the email.
 
@@ -79,7 +86,6 @@ intention to join the organization.
 On the other hand, if no user is associated with the given email address, the steps
 will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
 to provide the same email address used to send the invitation.
-Make sure to enable the *User registration* setting in the *Login* tab at the *Realm settings* to use this type of invitation.
 
 [[_onboard_member_identity_provider_]]
 == Onboarding members using an Identity Provider
@@ -99,8 +105,8 @@ the email domain matches the organization, and an identity provider is associate
 setting is enabled, the user is automatically redirected to the identity provider. Once the user authenticates at the identity provider
 and completes the first broker login flow, the user is automatically added as an organization member.
 
-On the other hand, if *Redirect when email domain matches* is not enabled, but the identity provider is configured to
-*Show on login page*, the user can select the identity provider and then be redirected to the identity provider to continue
+On the other hand, if *Redirect when email domain matches* is not enabled, but the identity provider is configured not to
+*Hide on login page*, the user can select the identity provider and then be redirected to the identity provider to continue
 the onboarding process.
 
 For more details, see <<_managing_identity_provider_,Managing Identity Providers>>.

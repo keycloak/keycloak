@@ -5,6 +5,7 @@
     <base href="${resourceUrl}/">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
     <meta name="description" content="${properties.description!'The Keycloak Administration Console is a web-based interface for managing Keycloak.'}">
     <title>${properties.title!'Keycloak Administration Console'}</title>
     <style>
@@ -57,6 +58,28 @@
         }
       }
     </script>
+    <#if properties.darkMode?boolean>
+      <script type="module" async blocking="render">
+          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+          updateDarkMode(mediaQuery.matches);
+          mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
+
+          function updateDarkMode(isEnabled) {
+            const { classList } = document.documentElement;
+
+            if (isEnabled) {
+              classList.add(DARK_MODE_CLASS);
+            } else {
+              classList.remove(DARK_MODE_CLASS);
+            }
+          }
+      </script>
+    </#if>
+    <#if !isSecureContext>
+      <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
+    </#if>
     <#if devServerUrl?has_content>
       <script type="module">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";

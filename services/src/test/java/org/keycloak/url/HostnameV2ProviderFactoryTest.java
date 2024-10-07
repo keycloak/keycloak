@@ -17,7 +17,9 @@
 
 package org.keycloak.url;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -45,6 +47,16 @@ public class HostnameV2ProviderFactoryTest {
         assertHostname("ldap://my-example.com/auth%20this", false);
         assertHostname("?my-example.com", false);
         assertHostname("192.196.0.5555", false);
+    }
+    
+    @Test
+    public void hostnameUrlExpected() throws IOException {
+        Map<String, String> values = new HashMap<>();
+        values.put("hostname", "short");
+        values.put("hostname-admin", "https://other");
+        HostnameV2ProviderFactory factory = new HostnameV2ProviderFactory();
+        assertEquals("hostname must be set to a URL when hostname-admin is set",
+                assertThrows(IllegalArgumentException.class, () -> factory.init(ScopeUtil.createScope(values))).getMessage());
     }
 
     private void assertHostname(String hostname, boolean valid) {

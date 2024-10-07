@@ -19,14 +19,13 @@ package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
@@ -216,7 +215,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public void clickRegister() {
-        registerLink.click();
+        clickLink(registerLink);
     }
 
     public void clickSocial(String alias) {
@@ -235,21 +234,11 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public void resetPassword() {
-        // Since Chrome 128, the user can be still kept on the "Login page" after click to "Forget Password" link. Clicking the "Forget Password" link another
-        // time usually helps. Limit to 4 attempts for now.
-        Retry.execute(() -> {
-            clickLink(resetPasswordLink);
-            if (driver instanceof ChromeDriver) {
-                Assert.assertEquals("Forgot Your Password?", PageUtils.getPageTitle(driver));
-            }
-        }, 4, 0);
+        clickLink(resetPasswordLink);
     }
 
     public void setRememberMe(boolean enable) {
-        boolean current = rememberMe.isSelected();
-        if (current != enable) {
-            rememberMe.click();
-        }
+        UIUtils.switchCheckbox(rememberMe, enable);
     }
 
     public boolean isRememberMeChecked() {

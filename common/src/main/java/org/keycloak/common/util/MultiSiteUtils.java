@@ -29,6 +29,6 @@ public class MultiSiteUtils {
      * @return true when user sessions are stored in the database. In multi-site setup this is false when REMOTE_CACHE feature is enabled
      */
     public static boolean isPersistentSessionsEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) || (isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
+        return Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) || (isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
     }
 }

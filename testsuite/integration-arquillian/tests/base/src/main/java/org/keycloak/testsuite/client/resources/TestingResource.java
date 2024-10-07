@@ -20,6 +20,7 @@ package org.keycloak.testsuite.client.resources;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -470,4 +471,22 @@ public interface TestingResource {
     @GET
     @Path("/pre-authorized-code")
     String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
+
+    /**
+     * Adds the following types to the email event listener included list.
+     * @param events The events to be included
+     */
+    @POST
+    @Path("/email-event-litener-provide/add-events")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addEventsToEmailEventListenerProvider(List<EventType> events);
+
+    /**
+     * Removes the following types from the email event listener included list.
+     * @param events The events to be removed
+     */
+    @POST
+    @Path("/email-event-litener-provide/remove-events")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void removeEventsToEmailEventListenerProvider(List<EventType> events);
 }

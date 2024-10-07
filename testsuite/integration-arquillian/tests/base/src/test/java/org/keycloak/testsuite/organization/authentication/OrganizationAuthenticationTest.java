@@ -25,14 +25,11 @@ import java.io.IOException;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test

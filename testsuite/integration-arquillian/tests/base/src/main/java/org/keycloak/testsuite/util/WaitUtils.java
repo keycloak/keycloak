@@ -139,7 +139,9 @@ public final class WaitUtils {
                 wait.until(not(urlToBe(currentUrl)));
             }
             catch (TimeoutException e) {
-                break; // URL has not changed recently - ok, the URL is stable and page is current
+                if (driver.getPageSource() != null) {
+                    break; // URL has not changed recently - ok, the URL is stable and page is current
+                }
             }
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");
