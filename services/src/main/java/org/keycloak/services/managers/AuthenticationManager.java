@@ -1052,7 +1052,7 @@ public class AuthenticationManager {
 
         final var kcAction = authSession.getClientNote(Constants.KC_ACTION);
         final var nextApplicableAction =
-                getFirstApplicableRequiredAction(realm, authSession, user, kcAction);
+                getFirstApplicableRequiredAction(realm, authSession, user, kcAction, new HashSet<>());
         if (nextApplicableAction != null) {
             return nextApplicableAction.getAlias();
         }
@@ -1232,7 +1232,7 @@ public class AuthenticationManager {
             HttpRequest request, EventBuilder event, RealmModel realm, UserModel user, Set<String> ignoredActions) {
         final var kcAction = authSession.getClientNote(Constants.KC_ACTION);
         final var firstApplicableRequiredAction =
-                getFirstApplicableRequiredAction(realm, authSession, user, kcAction);
+                getFirstApplicableRequiredAction(realm, authSession, user, kcAction, ignoredActions);
 
         if (firstApplicableRequiredAction != null) {
             return executeAction(session, authSession, firstApplicableRequiredAction, request, event, realm, user,
@@ -1265,11 +1265,13 @@ public class AuthenticationManager {
             if (actionProvider.initiatedActionSupport() == InitiatedActionSupport.NOT_SUPPORTED) {
                 logger.debugv("Requested action {0} does not support being invoked with kc_action", factory.getId());
                 setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
-                return null;
+                ignoredActions.add(factory.getId());
+                return nextActionAfterAuthentication(session, authSession, session.getContext().getConnection(), request, session.getContext().getUri(), event, ignoredActions);
             } else if (!model.isEnabled()) {
                 logger.debugv("Requested action {0} is disabled and can't be invoked with kc_action", factory.getId());
                 setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
-                return null;
+                ignoredActions.add(factory.getId());
+                return nextActionAfterAuthentication(session, authSession, session.getContext().getConnection(), request, session.getContext().getUri(), event, ignoredActions);
             } else {
                 authSession.setClientNote(Constants.KC_ACTION_EXECUTING, factory.getId());
             }
@@ -1311,9 +1313,9 @@ public class AuthenticationManager {
     }
 
     private static RequiredActionProviderModel getFirstApplicableRequiredAction(final RealmModel realm,
-            final AuthenticationSessionModel authSession, final UserModel user, final String kcAction) {
+            final AuthenticationSessionModel authSession, final UserModel user, final String kcAction, final Set<String> ignoredActions) {
         final var applicableRequiredActionsSorted =
-                getApplicableRequiredActionsSorted(realm, authSession, user, kcAction);
+                getApplicableRequiredActionsSorted(realm, authSession, user, kcAction, ignoredActions);
 
         final RequiredActionProviderModel firstApplicableRequiredAction;
         if (applicableRequiredActionsSorted.isEmpty()) {
@@ -1328,7 +1330,7 @@ public class AuthenticationManager {
     }
 
     private static List<RequiredActionProviderModel> getApplicableRequiredActionsSorted(final RealmModel realm,
-            final AuthenticationSessionModel authSession, final UserModel user, final String kcActionAlias) {
+            final AuthenticationSessionModel authSession, final UserModel user, final String kcActionAlias, final Set<String> ignoredActions) {
         final Set<String> nonInitiatedActionAliases = new HashSet<>();
         nonInitiatedActionAliases.addAll(user.getRequiredActionsStream().toList());
         nonInitiatedActionAliases.addAll(authSession.getRequiredActions());
@@ -1336,6 +1338,7 @@ public class AuthenticationManager {
         final var applicableNonInitiatedActions = nonInitiatedActionAliases.stream()
                 .map(alias -> getApplicableRequiredAction(realm, alias))
                 .filter(Objects::nonNull)
+                .filter(model -> !ignoredActions.contains(model.getProviderId()))
                 .collect(Collectors.toMap(RequiredActionProviderModel::getAlias, Function.identity()));
 
         RequiredActionProviderModel kcAction = null;
