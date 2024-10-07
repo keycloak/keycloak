@@ -1,0 +1,4 @@
+= Infinispan default XML configuration location
+
+Starting from {project_name} 26.1, when `--cache-config-file` is not set, the default Infinispan XML configuration file is `conf/cache-ispn.xml`.
+If the file does not exist, it fallbacks to `cache-ispn.xml` shipped in {project_name} JAR file, as it currently does in older versions of {project_name}.
