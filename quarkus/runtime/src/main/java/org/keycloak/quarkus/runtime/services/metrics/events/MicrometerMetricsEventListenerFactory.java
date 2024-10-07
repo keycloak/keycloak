@@ -54,6 +54,13 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
                             EventType.REGISTER, EventType.REGISTER_ERROR)
                     .map(MicrometerMetricsEventListenerFactory::format)
                     .toArray(String[]::new);
+    private static final String[] EXCLUDED_EVENTS_DEFAULT =
+            Stream.of(EventType.UPDATE_PASSWORD, EventType.UPDATE_PASSWORD_ERROR,
+                            EventType.UPDATE_TOTP, EventType.UPDATE_TOTP_ERROR,
+                            EventType.REMOVE_TOTP, EventType.REMOVE_TOTP_ERROR,
+                            EventType.VALIDATE_ACCESS_TOKEN, EventType.VALIDATE_ACCESS_TOKEN_ERROR)
+                    .map(MicrometerMetricsEventListenerFactory::format)
+                    .toArray(String[]::new);
     private final EnumSet<EventType> includedEvents = EnumSet.allOf(EventType.class);
     private final EnumSet<EventType> eventsWithAdditionalTags = EnumSet.noneOf(EventType.class);
 
@@ -74,6 +81,10 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
         String[] excluded = config.getArray(EXCLUDED_EVENTS_OPTION);
         if (excluded != null) {
             for (String e : excluded) {
+                includedEvents.remove(EventType.valueOf(e.toUpperCase(Locale.ROOT)));
+            }
+        } else {
+            for (String e : EXCLUDED_EVENTS_DEFAULT) {
                 includedEvents.remove(EventType.valueOf(e.toUpperCase(Locale.ROOT)));
             }
         }
@@ -107,11 +118,14 @@ public class MicrometerMetricsEventListenerFactory implements EventListenerProvi
                 .sorted(Comparator.naturalOrder())
                 .toArray(String[]::new);
         String eventsWithAdditionalTagsDefault = String.join(",", EVENTS_WITH_ADDITIONAL_TAGS_DEFAULT);
+        String excludedEventsDefault = String.join(",", EXCLUDED_EVENTS_DEFAULT);
         return ProviderConfigurationBuilder.create()
                 .property()
                 .name(EXCLUDED_EVENTS_OPTION)
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .helpText("A comma-separated list of events that should not be collected as a metric.")
+                .helpText("A comma-separated list of events that should not be collected as a metric."
+                        + " Default value: "
+                        + excludedEventsDefault)
                 .options(supportedEvents)
                 .add()
                 .property()
