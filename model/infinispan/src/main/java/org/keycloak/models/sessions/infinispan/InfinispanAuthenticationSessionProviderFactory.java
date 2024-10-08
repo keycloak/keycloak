@@ -31,11 +31,18 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
+import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitializer;
+import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
+import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
+import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -55,7 +62,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private InfinispanKeyGenerator keyGenerator;
 
-    private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
+    private volatile Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> authSessionsCache;
 
     private int authSessionsLimit;
 
@@ -67,9 +74,16 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
 
+    private RemoteCacheInvoker remoteCacheInvoker;
+    SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
+
+    private Config.Scope config;
+
+
     @Override
     public void init(Config.Scope config) {
         authSessionsLimit = getAuthSessionsLimit(config);
+        this.config = config;
     }
 
     public static int getAuthSessionsLimit(Config.Scope config) {
@@ -78,23 +92,64 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         return limit <= 0 ? DEFAULT_AUTH_SESSIONS_LIMIT : limit;
     }
 
-
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.remoteCacheInvoker = new RemoteCacheInvoker();
+        keyGenerator = new InfinispanKeyGenerator();
         factory.register(new ProviderEventListener() {
 
             @Override
             public void onEvent(ProviderEvent event) {
                 if (event instanceof PostMigrationEvent) {
-
                     KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
-
                         registerClusterListeners(session);
-
+                        loadAuthSessionsFromRemoteCaches(session);
                     });
                 }
             }
         });
+    }
+
+    private void loadAuthSessionsFromRemoteCaches(KeycloakSession session) {
+        for (String cacheName : remoteCacheInvoker.getRemoteCacheNames()) {
+            loadAuthSessionsFromRemoteCaches(session.getKeycloakSessionFactory(), cacheName, getSessionsPerSegment(), getMaxErrors());
+        }
+    }
+
+    private int getStalledTimeoutInSeconds(int defaultTimeout) {
+        return config.getInt("stalledTimeoutInSeconds", defaultTimeout);
+    }
+
+    private void loadAuthSessionsFromRemoteCaches(final KeycloakSessionFactory sessionFactory, String cacheName, final int sessionsPerSegment, final int maxErrors) {
+        log.debugf("Check pre-loading sessions from remote cache '%s'", cacheName);
+
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+                Cache<String, InitializerState> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                int defaultStateTransferTimeout = (int) (connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME)
+                        .getCacheConfiguration().clustering().stateTransfer().timeout() / 1000);
+
+                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, maxErrors,
+                        getStalledTimeoutInSeconds(defaultStateTransferTimeout));
+                initializer.loadSessions();
+            }
+        });
+
+        log.debugf("Pre-loading auth sessions from remote cache '%s' finished", cacheName);
+    }
+
+    // Max count of worker errors. Initialization will end with exception when this number is reached
+    private int getMaxErrors() {
+        return config.getInt("maxErrors", 20);
+    }
+
+    // Count of sessions to be computed in each segment
+    private int getSessionsPerSegment() {
+        return config.getInt("sessionsPerSegment", 64);
     }
 
     @Override
@@ -121,15 +176,17 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             }
 
         });
+        cluster.registerListener(AUTHENTICATION_SESSION_EVENTS, this::updateAuthNotes);
 
         log.debug("Registered cluster listeners");
     }
 
-
     @Override
     public InfinispanAuthenticationSessionProvider create(KeycloakSession session) {
-        lazyInit(session);
-        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache, authSessionsLimit);
+        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+        Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+        this.authSessionsCache = cache;
+        return new InfinispanAuthenticationSessionProvider(session, remoteCacheInvoker, keyGenerator, cache, authSessionsLimit, serializer);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
@@ -137,16 +194,23 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             return;
         }
 
-        RootAuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
-        updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
-    }
-
-
-    private static void updateAuthSession(RootAuthenticationSessionEntity rootAuthSession, String tabId, Map<String, String> authNotesFragment) {
-        if (rootAuthSession == null) {
+        var distribution = authSessionsCache.getAdvancedCache().getDistributionManager();
+        if (distribution != null && !distribution.getCacheTopology().getDistribution(event.getAuthSessionId()).isPrimary()) {
+            // Distribution is null for non-clustered caches (local-cache, used by start-dev mode).
+            // If not the primary owner of the key, skip event handling.
             return;
         }
 
+        SessionEntityWrapper<RootAuthenticationSessionEntity> authSession = this.authSessionsCache.get(event.getAuthSessionId());
+        updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
+    }
+
+    private void updateAuthSession(SessionEntityWrapper<RootAuthenticationSessionEntity> rootAuthSessionWrapper, String tabId, Map<String, String> authNotesFragment) {
+        if (rootAuthSessionWrapper == null || rootAuthSessionWrapper.getEntity() == null) {
+            return;
+        }
+
+        RootAuthenticationSessionEntity rootAuthSession = rootAuthSessionWrapper.getEntity();
         AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(tabId);
 
         if (authSession != null) {
@@ -163,24 +227,8 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 }
             }
         }
-    }
 
-    private void lazyInit(KeycloakSession session) {
-        if (authSessionsCache == null) {
-            synchronized (this) {
-                if (authSessionsCache == null) {
-                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                    authSessionsCache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
-
-                    keyGenerator = new InfinispanKeyGenerator();
-
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(AUTHENTICATION_SESSION_EVENTS, this::updateAuthNotes);
-
-                    log.debugf("[%s] Registered cluster listeners", authSessionsCache.getCacheManager().getAddress());
-                }
-            }
-        }
+        this.authSessionsCache.replace(rootAuthSession.getId(), new SessionEntityWrapper<>(rootAuthSessionWrapper.getLocalMetadata(), rootAuthSession));
     }
 
     @Override
