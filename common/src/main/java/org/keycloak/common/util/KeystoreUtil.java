@@ -30,6 +30,7 @@ import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,8 +39,8 @@ import java.util.Optional;
 public class KeystoreUtil {
 
     public enum KeystoreFormat {
-        JKS("jks"),
-        PKCS12("p12", "pfx"),
+        JKS("jks", "truststore"),
+        PKCS12("p12", "pfx", "pkcs12"),
         BCFKS("bcfks");
 
         // Typical file extension for this keystore format
@@ -105,6 +106,17 @@ public class KeystoreUtil {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
     }
+    
+    public static Optional<KeystoreFormat> getKeystoreFormat(String path) {
+        int lastDotIndex = path.lastIndexOf('.');
+        if (lastDotIndex > -1) {
+            String ext = path.substring(lastDotIndex + 1).toLowerCase();
+            return Arrays.stream(KeystoreUtil.KeystoreFormat.values())
+                    .filter(ksFormat -> ksFormat.getFileExtensions().contains(ext))
+                    .findFirst();
+        }
+        return Optional.empty();
+    }
 
 
     /**
@@ -120,16 +132,13 @@ public class KeystoreUtil {
         if (preferredType != null) return preferredType;
 
         // Fallback to path
-        int lastDotIndex = path.lastIndexOf('.');
-        if (lastDotIndex > -1) {
-            String ext = path.substring(lastDotIndex + 1).toLowerCase();
-            Optional<KeystoreFormat> detectedType = Arrays.stream(KeystoreUtil.KeystoreFormat.values())
-                    .filter(ksFormat -> ksFormat.getFileExtensions().contains(ext))
-                    .findFirst();
-            if (detectedType.isPresent()) return detectedType.get().toString();
+        Optional<KeystoreFormat> format = getKeystoreFormat(path);
+        if (format.isPresent()) {
+            return format.get().toString();
         }
 
         // Fallback to default
         return defaultType;
     }
+    
 }

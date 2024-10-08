@@ -275,7 +275,7 @@ To ensure proper TLS configuration, use the `tlsSecret` and `truststores` fields
 
 If you need to provide trusted certificates, the Keycloak CR provides a top level feature for configuring the server's truststore as discussed in <@links.server id="keycloak-truststore"/>.
 
-Use the truststores stanza of the Keycloak spec to specify Secrets containing PEM encoded files, or PKCS12 files with extension `.p12` or `.pfx`, for example:
+Use the truststores stanza of the Keycloak spec to specify Secrets containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
 
 [source,yaml]
 ----
