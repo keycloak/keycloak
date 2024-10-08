@@ -17,6 +17,7 @@ import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -103,6 +104,9 @@ public class HotRodServerRule extends ExternalResource {
         sessionConfigBuilder2.sites().addBackup()
                 .site("site-1").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
                 .replicationTimeout(15000);
+
+        sessionConfigBuilder1.locking().lockAcquisitionTimeout(1, TimeUnit.SECONDS);
+        sessionConfigBuilder2.locking().lockAcquisitionTimeout(1, TimeUnit.SECONDS);
 
         Configuration sessionCacheConfiguration1 = sessionConfigBuilder1.build();
         Configuration sessionCacheConfiguration2 = sessionConfigBuilder2.build();

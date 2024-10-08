@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -45,19 +46,22 @@ import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser
 public class AuthenticationSessionAdapter implements AuthenticationSessionModel {
 
     private final KeycloakSession session;
-    private final RootAuthenticationSessionAdapter parent;
+    private final  SessionEntityUpdater<AuthenticationSessionEntity> updater;;
     private final String tabId;
     private final AuthenticationSessionEntity entity;
 
-    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
+    private final RootAuthenticationSessionModel parent;
+
+    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionModel parent, SessionEntityUpdater<AuthenticationSessionEntity> updater, String tabId, AuthenticationSessionEntity entity) {
         this.session = session;
-        this.parent = parent;
+        this.updater = updater;
         this.tabId = tabId;
         this.entity = entity;
+        this.parent = parent;
     }
 
     private void update() {
-        parent.update();
+        updater.onEntityUpdated();
     }
 
     @Override

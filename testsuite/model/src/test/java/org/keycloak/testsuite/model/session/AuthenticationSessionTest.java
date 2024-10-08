@@ -31,6 +31,7 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -195,6 +196,31 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             Assert.assertNull(rootAuthSession);
 
+            return null;
+        });
+    }
+
+    @Test
+    public void testConcurrentAuthenticationSessionsCreation() throws InterruptedException {
+        final String rootId = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            return rootAuthSession.getId();
+        });
+        ConcurrentHashMap.KeySetView<String, Boolean> tabIds = ConcurrentHashMap.newKeySet();
+        inIndependentFactories(4, 60, () -> {
+                withRealm(realmId, (session, realm) -> {
+                    RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+                    ClientModel client = realm.getClientByClientId("test-app");
+                    AuthenticationSessionModel authenticationSession = rootAuthSession.createAuthenticationSession(client);
+                    tabIds.add(authenticationSession.getTabId());
+                    return null;
+                });
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+            Assert.assertEquals(4, rootAuthSession.getAuthenticationSessions().size());
+            assertThat(rootAuthSession.getAuthenticationSessions().keySet(), Matchers.containsInAnyOrder(tabIds.toArray()));
             return null;
         });
     }
