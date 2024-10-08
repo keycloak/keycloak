@@ -75,8 +75,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ui-shared
       '@patternfly/patternfly':
-        specifier: ^5.4.0
-        version: 5.4.0
+        specifier: ^5.4.1
+        version: 5.4.1
       '@patternfly/react-core':
         specifier: ^5.4.1
         version: 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -154,8 +154,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ui-shared
       '@patternfly/patternfly':
-        specifier: ^5.4.0
-        version: 5.4.0
+        specifier: ^5.4.1
+        version: 5.4.1
       '@patternfly/react-code-editor':
         specifier: ^5.4.3
         version: 5.4.3(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -459,8 +459,8 @@ importers:
         specifier: npm:@patternfly/patternfly@^5.3.1
         version: '@patternfly/patternfly@5.4.0'
       '@patternfly/patternfly':
-        specifier: ^4.224.5
-        version: 4.224.5
+        specifier: ^5.4.1
+        version: 5.4.1
       patternfly:
         specifier: ^3.59.5
         version: 3.59.5
@@ -1151,11 +1151,11 @@ packages:
   '@octokit/types@13.5.0':
     resolution: {integrity: sha512-HdqWTf5Z3qwDVlzCrP8UJquMwunpDiMPt5er+QjGzL4hqr/vBVY/MauQgS1xWxCDT1oMx1EULyqxncdCY/NVSQ==}
 
-  '@patternfly/patternfly@4.224.5':
-    resolution: {integrity: sha512-io0huj+LCP5FgDZJDaLv1snxktTYs8iCFz/W1VDRneYoebNHLmGfQdF7Yn8bS6PF7qmN6oJKEBlq3AjmmE8vdA==}
-
   '@patternfly/patternfly@5.4.0':
     resolution: {integrity: sha512-9B33M4N0/KDyss6NpCwAhz18za7R+sXYiFrUObhGoJ1Cmg06SeScVrEAjT4yJwAClWUlKh604Af9wE4D7IF8Lg==}
+
+  '@patternfly/patternfly@5.4.1':
+    resolution: {integrity: sha512-0+KxsQJrFzOMANALW82BHAO7bSm9tEbG1RrOlGT23ME1CaBoetGSMRLymutvojn/b/EKfJIr5rLzQa+14Lvg2g==}
 
   '@patternfly/react-code-editor@5.4.3':
     resolution: {integrity: sha512-zcnbJpMzHgKG/Zi9lYc3iYS+R4J+/mlrjdHeV2FXy1qssMrl7ZCDuCck0eefPOcZWImQ8cTtNx/9cXhvG0iqLA==}
@@ -5567,7 +5567,7 @@ snapshots:
     dependencies:
       '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
-      '@patternfly/patternfly': 5.4.0
+      '@patternfly/patternfly': 5.4.1
       '@patternfly/react-code-editor': 5.4.3(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5727,9 +5727,9 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 22.2.0
 
-  '@patternfly/patternfly@4.224.5': {}
-
   '@patternfly/patternfly@5.4.0': {}
+
+  '@patternfly/patternfly@5.4.1': {}
 
   '@patternfly/react-code-editor@5.4.3(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:

@@ -73,7 +73,7 @@
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
-    "@patternfly/patternfly": "^5.4.0",
+    "@patternfly/patternfly": "^5.4.1",
     "@patternfly/react-code-editor": "^5.4.3",
     "@patternfly/react-core": "^5.4.1",
     "@patternfly/react-icons": "^5.4.0",
