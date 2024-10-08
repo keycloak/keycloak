@@ -242,6 +242,7 @@
 
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
+        <skipProtoLock>false</skipProtoLock>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1564,6 +1565,7 @@
                     <version>${protostream.plugin.version}</version>
                     <configuration>
                         <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
+                        <skip>${skipProtoLock}</skip>
                     </configuration>
                 </plugin>
             </plugins>
