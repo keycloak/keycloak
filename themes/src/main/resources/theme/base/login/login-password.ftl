@@ -10,7 +10,7 @@
                     <div class="${properties.kcFormGroupClass!} no-bottom-margin">
                         <hr/>
                         <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
-                        <div class="${properties.kcInputGroup!}" dir="ltr">
+                        <div class="${properties.kcInputGroup!}">
                             <input tabindex="2" id="password" class="${properties.kcInputClass!}" name="password"
                                    type="password" autocomplete="on" autofocus
                                    aria-invalid="<#if messagesPerField.existsError('password')>true</#if>"

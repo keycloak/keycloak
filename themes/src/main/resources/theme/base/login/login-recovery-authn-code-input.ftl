@@ -17,8 +17,7 @@
                            autocomplete="off"
                            type="text"
                            class="${properties.kcInputClass!}"
-                           autofocus
-                           dir="ltr"/>
+                           autofocus />
 
                     <#if messagesPerField.existsError('recoveryCodeInput')>
                         <span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">

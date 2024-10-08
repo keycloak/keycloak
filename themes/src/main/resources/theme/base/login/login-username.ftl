@@ -17,8 +17,7 @@
                                        aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
                                        class="${properties.kcInputClass!}" name="username"
                                        value="${(login.username!'')}"
-                                       type="text" autofocus autocomplete="off"
-                                       dir="ltr"/>
+                                       type="text" autofocus autocomplete="off" />
 
                                 <#if messagesPerField.existsError('username')>
                                     <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
