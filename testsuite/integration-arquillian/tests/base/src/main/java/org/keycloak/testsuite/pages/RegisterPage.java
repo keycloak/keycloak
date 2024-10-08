@@ -140,7 +140,7 @@ public class RegisterPage extends AbstractPage {
             }
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
@@ -176,11 +176,11 @@ public class RegisterPage extends AbstractPage {
             passwordConfirmInput.sendKeys(passwordConfirm);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void clickBackToLogin() {
-        backToLoginLink.click();
+        UIUtils.clickLink(backToLoginLink);
     }
 
     public String getAlertError() {
