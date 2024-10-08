@@ -20,6 +20,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.junit.Assert;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -37,15 +38,16 @@ public class DeleteCredentialPage extends AbstractPage {
     @FindBy(id = "kc-delete-text")
     private WebElement message;
 
+    @Override
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).startsWith("Delete ");
     }
 
     public void confirm() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
     public void cancel() {
-        cancelButton.click();
+        UIUtils.clickLink(cancelButton);
     }
 
     public void assertCredentialInMessage(String expectedLabel) {
