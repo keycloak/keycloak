@@ -42,7 +42,7 @@ kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstart
 This command starts {project_name} on Kubernetes and creates an initial admin user with the username `admin` and password
 `admin`.
 
-NOTE: if you will eventually want more than 1 server replica please see <@links.gettingstarted id="getting-started-scaling-tuning" anchor="horizontal-scaling" />.
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
 
 === Access {project_name} with Ingress addon enabled
 

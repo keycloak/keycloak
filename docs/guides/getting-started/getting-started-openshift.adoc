@@ -12,7 +12,7 @@ summary="Get started with {project_name} on OpenShift">
 
 include::templates/hw-requirements.adoc[]
 
-. Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a 
+. Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a
 local OpenShift cluster.
 
 . Make sure the cluster is functional by entering the following command:
@@ -100,7 +100,7 @@ echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
 echo ""
 ----
 
-NOTE: if you will eventually want more than 1 server replica please see <@links.gettingstarted id="getting-started-scaling-tuning" anchor="horizontal-scaling" />.
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
 
 Remember these URLs as you will need them throughout this {section}. The URL for the account console won't work
 right now as you will need to create the realm first.
