@@ -1,4 +1,5 @@
 <#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Kubernetes"
@@ -40,6 +41,8 @@ kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstart
 
 This command starts {project_name} on Kubernetes and creates an initial admin user with the username `admin` and password
 `admin`.
+
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
 
 === Access {project_name} with Ingress addon enabled
 
