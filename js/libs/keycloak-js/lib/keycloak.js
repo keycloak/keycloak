@@ -1329,8 +1329,8 @@ function Keycloak (config) {
                     throw new Error("Logout failed, request returned an error code.");
                 },
 
-                register: function(options) {
-                    window.location.assign(kc.createRegisterUrl(options));
+                register: async function(options) {
+                    window.location.assign(await kc.createRegisterUrl(options));
                     return createPromise().promise;
                 },
 
@@ -1486,9 +1486,9 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                register : function(options) {
+                register : async function(options) {
                     var promise = createPromise();
-                    var registerUrl = kc.createRegisterUrl();
+                    var registerUrl = await kc.createRegisterUrl();
                     var cordovaOptions = createCordovaOptions(options);
                     var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
                     ref.addEventListener('loadstart', function(event) {
@@ -1555,9 +1555,9 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                register : function(options) {
+                register : async function(options) {
                     var promise = createPromise();
-                    var registerUrl = kc.createRegisterUrl(options);
+                    var registerUrl = await kc.createRegisterUrl(options);
                     universalLinks.subscribe('keycloak' , function(event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();

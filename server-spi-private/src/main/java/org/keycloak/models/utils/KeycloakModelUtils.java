@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.RequestContextHelper;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import jakarta.transaction.InvalidTransactionException;
@@ -259,10 +260,7 @@ public final class KeycloakModelUtils {
      * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, null, session -> {
-            task.run(session);
-            return null;
-        }, task.useExistingSession());
+        runJobInTransaction(factory, null, task);
     }
 
     /**
@@ -275,7 +273,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        }, task.useExistingSession());
+        }, task.useExistingSession(), task.getTaskName());
     }
 
     /**
@@ -365,7 +363,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable, false);
+        return runJobInTransactionWithResult(factory, null, callable, false, "Non-HTTP task");
     }
 
     /**
@@ -375,16 +373,19 @@ public final class KeycloakModelUtils {
      * @param context The context from the previous session to use
      * @param callable The callable to execute
      * @param useExistingSession if the existing session should be used
+     * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
-    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable, boolean useExistingSession) {
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable,
+                                                      boolean useExistingSession, String taskName) {
         V result;
         KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
         if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
             return callable.run(existing);
         }
-        
+
         try (KeycloakSession session = factory.create()) {
+            RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
             KeycloakSessionUtil.setKeycloakSession(session);
             try {

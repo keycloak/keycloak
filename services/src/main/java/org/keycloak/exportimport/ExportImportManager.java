@@ -95,6 +95,7 @@ public class ExportImportManager {
         if (dir == null) {
             throw new IllegalStateException("Import not enabled");
         }
+        ExportImportConfig.setReplacePlaceholders(true);
         
         return getStartupImportProviders(dir).map(Supplier::get).anyMatch(provider -> {
             try {
