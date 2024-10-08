@@ -595,6 +595,7 @@ jobs:
             -Pdb-${{ matrix.db }} \
             -Dtest=RealmInvalidationClusterTest \
             -Dsession.cache.owners=2 \
+            -Dauth.server.quarkus.cluster.stack=jdbc-ping \
             -pl testsuite/integration-arquillian/tests/base \
             2>&1 | misc/log/trimmer.sh
 

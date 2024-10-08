@@ -112,7 +112,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
-        lazyInit();
+        lazyInit(session);
 
         return InfinispanUtils.isRemoteInfinispan() ?
                 new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
@@ -191,7 +191,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         });
     }
 
-    protected void lazyInit() {
+    protected void lazyInit(KeycloakSession keycloakSession) {
         if (cacheManager == null) {
             synchronized (this) {
                 if (cacheManager == null) {
@@ -207,7 +207,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                             throw new RuntimeException("Multiple " + org.keycloak.cluster.ManagedCacheManagerProvider.class + " providers found.");
                         }
 
-                        managedCacheManager = provider.getEmbeddedCacheManager(config);
+                        managedCacheManager = provider.getEmbeddedCacheManager(keycloakSession, config);
                         if (InfinispanUtils.isRemoteInfinispan()) {
                             rcm = provider.getRemoteCacheManager(config);
                         }

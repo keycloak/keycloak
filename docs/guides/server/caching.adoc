@@ -231,7 +231,9 @@ The following table shows transport stacks that are available without any furthe
 
 |tcp|TCP|MPING (uses UDP multicast).
 |udp|UDP|UDP multicast
+|jdbc-ping|UDP|JDBC_PING2
 |===
+
 
 The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 

@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.instrument.Metrics;
 import io.quarkus.arc.Arc;
+import jakarta.persistence.EntityManager;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
@@ -69,10 +70,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.query.ClientSessionQueries;
 import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
@@ -119,11 +123,11 @@ public class CacheManagerFactory {
         }
     }
 
-    public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
+    public DefaultCacheManager getOrCreateEmbeddedCacheManager(KeycloakSession keycloakSession) {
         if (cacheManager == null) {
            synchronized (this) {
               if (cacheManager == null)
-                 cacheManager = startEmbeddedCacheManager();
+                 cacheManager = startEmbeddedCacheManager(keycloakSession);
            }
         }
         return cacheManager;
@@ -294,7 +298,7 @@ public class CacheManagerFactory {
         admin.reindexCache(cacheName);
     }
 
-    private DefaultCacheManager startEmbeddedCacheManager() {
+    private DefaultCacheManager startEmbeddedCacheManager(KeycloakSession keycloakSession) {
         logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
@@ -326,7 +330,7 @@ public class CacheManagerFactory {
         } else {
             // embedded mode!
             if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
-                configureTransportStack(builder);
+                configureTransportStack(builder, keycloakSession);
                 configureRemoteStores(builder);
             }
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
@@ -371,34 +375,35 @@ public class CacheManagerFactory {
         return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
     }
 
-    private static void configureTransportStack(ConfigurationBuilderHolder builder) {
+    private static void configureTransportStack(ConfigurationBuilderHolder builder, KeycloakSession keycloakSession) {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
 
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
         if (transportStack != null && !transportStack.isBlank()) {
-            transportConfig.defaultTransport().stack(transportStack);
-        } else {
-            var tableName = "JGROUPSPING";
-            var attributes = Map.of(
-                  // Leave initialize_sql blank as table is already created by Keycloak
-                  "initialize_sql", "",
-                  // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-                  // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                  "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                  "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                  "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-                  "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
-                  "remove_all_data_on_view_change", "true",
-                  "stack.combine", "REPLACE",
-                  "stack.position", "PING"
-            );
-            var stackName = "keycloak-jdbc-ping";
-            var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
-            builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), "udp");
+            if ("jdbc-ping".equals(transportStack)) {
+                EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
+                var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPSPING", em);
+                var attributes = Map.of(
+                      // Leave initialize_sql blank as table is already created by Keycloak
+                      "initialize_sql", "",
+                      // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+                      // "cluster" cannot be used with Oracle DB as it's a reserved word.
+                      "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
+                      "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
+                      "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
+                      "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                      "remove_all_data_on_view_change", "true",
+                      "stack.combine", "REPLACE",
+                      "stack.position", "PING"
+                );
+                var stackName = "jdbc-ping";
+                var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
+                builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), "udp");
 
-            Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
-            transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
-            transportConfig.defaultTransport().stack(stackName);
+                Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
+                transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
+            }
+            transportConfig.defaultTransport().stack(transportStack);
         }
 
         if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
