@@ -1,10 +1,11 @@
 package org.keycloak.test.framework.server;
 
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.it.TestProvider;
+import org.keycloak.it.utils.JarUtil;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.test.framework.util.ServerUtil;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
@@ -22,8 +23,7 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     public void start(List<String> rawOptions, List<? extends TestProvider> customProviders) {
         keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT);
         for(TestProvider provider : customProviders) {
-            JavaArchive providerJar = createProviderJar(provider);
-            keycloak.deployProviderJar(providerJar);
+            createProviderJar(provider, keycloak.getProvidersDirPath());
         }
         keycloak.run(rawOptions).assertStartedDevMode();
     }
@@ -38,8 +38,9 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
         return "http://localhost:8080";
     }
 
-    public JavaArchive createProviderJar(TestProvider provider) {
-        return ServerUtil.createProviderJar(provider, JavaArchive.class);
+    public void createProviderJar(TestProvider provider, Path jarPath) {
+        Path providerPackagePath = ServerUtil.getProviderPackagePath(provider);
+        JarUtil.createProviderJar(provider, providerPackagePath, jarPath);
     }
 
 }

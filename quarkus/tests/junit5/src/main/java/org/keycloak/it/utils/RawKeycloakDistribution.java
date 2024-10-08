@@ -669,6 +669,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return distPath;
     }
 
+    public Path getProvidersDirPath() {
+        return distPath.resolve("providers");
+    }
+
     public void copyProvider(TestProvider provider) {
         URL pathUrl = provider.getClass().getResource(".");
         File fileUri;
@@ -678,26 +682,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Invalid package provider path", e);
         }
         Path providerPackagePath = Paths.get(fileUri.getPath());
-        JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
-                .addClasses(provider.getClasses())
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        Map<String, String> manifestResources = provider.getManifestResources();
-
-        for (Map.Entry<String, String> resource : manifestResources.entrySet()) {
-            try {
-                providerJar.addAsManifestResource(providerPackagePath.resolve(resource.getKey()).toFile(), resource.getValue());
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to add manifest resource: " + resource.getKey(), cause);
-            }
-        }
 
         copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
-        deployProviderJar(providerJar);
-    }
-
-    public void deployProviderJar(JavaArchive providerJar) {
-        providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
+        JarUtil.createProviderJar(provider, providerPackagePath, getProvidersDirPath());
     }
 
     @Override

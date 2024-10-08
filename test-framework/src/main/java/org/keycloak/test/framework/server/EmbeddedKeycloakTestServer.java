@@ -3,6 +3,7 @@ package org.keycloak.test.framework.server;
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
+import org.keycloak.it.utils.JarUtil;
 import org.keycloak.test.framework.util.ServerUtil;
 
 import java.nio.file.Path;
@@ -38,7 +39,9 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
     }
 
     public Path createProviderJar(TestProvider provider) {
-        return ServerUtil.createProviderJar(provider, Path.class);
+        Path providerPackagePath = ServerUtil.getProviderPackagePath(provider);
+        Path jarPath = providerPackagePath.getParent()/*.resolve(provider.getName())*/;
+        return JarUtil.createProviderJar(provider, providerPackagePath, jarPath);
     }
 
 }

@@ -1,8 +1,5 @@
 package org.keycloak.test.framework.util;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.it.TestProvider;
 
 import java.io.File;
@@ -11,11 +8,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 
 public class ServerUtil {
-
-    public static <T> T createProviderJar(TestProvider provider, Class<T> returnType) {
+    public static Path getProviderPackagePath(TestProvider provider) {
         String fullPathUrl = provider.getClasses()[0].getResource(".").toString();
         String packagePath = provider.getClasses()[0].getPackageName().replace('.', '/').concat("/");
         URL pathUrl;
@@ -31,30 +26,6 @@ public class ServerUtil {
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid package provider path", e);
         }
-        Path providerPackagePath = Paths.get(fileUri.getPath());
-        JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
-                .addClasses(provider.getClasses());
-        Map<String, String> manifestResources = provider.getManifestResources();
-
-        for (Map.Entry<String, String> resource : manifestResources.entrySet()) {
-            try {
-                providerJar.addAsManifestResource(providerPackagePath.resolve("META-INF/beans.xml").toFile(), "beans.xml");
-                providerJar.addAsManifestResource(providerPackagePath.resolve("META-INF/services/" + resource.getKey()).toFile(), resource.getValue());
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to add manifest resource: " + resource.getKey(), cause);
-            }
-        }
-
-        if (returnType == Path.class) {
-            Path jarPath = providerPackagePath.getParent().resolve(providerJar.getName());
-            providerJar.as(ZipExporter.class).exportTo(jarPath.toFile(), true);
-            return returnType.cast(jarPath);
-        }
-        else if (returnType == JavaArchive.class) {
-            return returnType.cast(providerJar);
-        }
-        else {
-            throw new IllegalArgumentException("Invalid return type for a test provider deployment");
-        }
+        return Paths.get(fileUri.getPath());
     }
 }
