@@ -527,7 +527,7 @@ public class CacheManagerFactory {
         }
         var cacheMode = cacheBuilder.clustering().cacheMode();
         if (!cacheMode.isReplicated()) {
-            throw new RuntimeException("Unable to start Keycloak. '%s' cache should be replicated but is %s".formatted(WORK_CACHE_NAME, cacheMode.friendlyCacheModeString().toLowerCase()));
+            throw new RuntimeException("Unable to start Keycloak. '%s' cache must be replicated but is %s".formatted(WORK_CACHE_NAME, cacheMode.friendlyCacheModeString().toLowerCase()));
         }
     }
 
