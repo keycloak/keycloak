@@ -3,13 +3,12 @@ package org.keycloak.services.resources.account;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
-import org.keycloak.common.util.SecureContextResolver;
+import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -38,7 +37,6 @@ import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -110,7 +108,7 @@ public class AccountConsole implements AccountResourceProvider {
                 .path("/")
                 .build(realm);
 
-        final var isSecureContext = SecureContextResolver.isSecureContext(serverBaseUri);
+        final var isSecureContext = SecureContextResolver.isSecureContext(session);
 
         map.put("isSecureContext", isSecureContext);
         map.put("serverBaseUrl", serverBaseUrl);

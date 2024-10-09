@@ -33,7 +33,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
-import org.keycloak.common.util.SecureContextResolver;
+import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
@@ -54,14 +54,12 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -348,7 +346,7 @@ public class AdminConsole {
 
             final var map = new HashMap<String, Object>();
             final var theme = AdminRoot.getTheme(session, realm);
-            final var isSecureContext = SecureContextResolver.isSecureContext(adminBaseUri);
+            final var isSecureContext = SecureContextResolver.isSecureContext(session);
 
             map.put("isSecureContext", isSecureContext);
             map.put("serverBaseUrl", serverBaseUrl);
