@@ -17,32 +17,23 @@
 
 package org.keycloak.sdjwt;
 
-import org.keycloak.crypto.SignatureVerifierContext;
-
 /**
  * Options for Issuer-signed JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class IssuerSignedJwtVerificationOpts {
-    private final SignatureVerifierContext verifier;
     private final boolean validateIssuedAtClaim;
     private final boolean validateExpirationClaim;
     private final boolean validateNotBeforeClaim;
 
     public IssuerSignedJwtVerificationOpts(
-            SignatureVerifierContext verifier,
             boolean validateIssuedAtClaim,
             boolean validateExpirationClaim,
             boolean validateNotBeforeClaim) {
-        this.verifier = verifier;
         this.validateIssuedAtClaim = validateIssuedAtClaim;
         this.validateExpirationClaim = validateExpirationClaim;
         this.validateNotBeforeClaim = validateNotBeforeClaim;
-    }
-
-    public SignatureVerifierContext getVerifier() {
-        return verifier;
     }
 
     public boolean mustValidateIssuedAtClaim() {
@@ -62,15 +53,9 @@ public class IssuerSignedJwtVerificationOpts {
     }
 
     public static class Builder {
-        private SignatureVerifierContext verifier;
         private boolean validateIssuedAtClaim;
         private boolean validateExpirationClaim = true;
         private boolean validateNotBeforeClaim = true;
-
-        public Builder withVerifier(SignatureVerifierContext verifier) {
-            this.verifier = verifier;
-            return this;
-        }
 
         public Builder withValidateIssuedAtClaim(boolean validateIssuedAtClaim) {
             this.validateIssuedAtClaim = validateIssuedAtClaim;
@@ -89,7 +74,6 @@ public class IssuerSignedJwtVerificationOpts {
 
         public IssuerSignedJwtVerificationOpts build() {
             return new IssuerSignedJwtVerificationOpts(
-                    verifier,
                     validateIssuedAtClaim,
                     validateExpirationClaim,
                     validateNotBeforeClaim

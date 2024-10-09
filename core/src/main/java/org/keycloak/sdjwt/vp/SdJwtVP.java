@@ -30,6 +30,7 @@ import java.util.Set;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.SdJwt;
@@ -209,21 +210,28 @@ public class SdJwtVP {
     /**
      * Verifies SD-JWT presentation.
      *
-     * @param issuerSignedJwtVerificationOpts Options to parameterize the verification. A verifier must be specified
-     *                                        for validating the Issuer-signed JWT. The caller is responsible for
-     *                                        establishing trust in that associated public keys belong to the
-     *                                        intended issuer.
+     * @param issuerVerifyingKeys             Verifying keys for validating the Issuer-signed JWT. The caller
+     *                                        is responsible for establishing trust in that the keys belong
+     *                                        to the intended issuer.
+     * @param issuerSignedJwtVerificationOpts Options to parameterize the Issuer-Signed JWT verification.
      * @param keyBindingJwtVerificationOpts   Options to parameterize the Key Binding JWT verification.
      *                                        Must, among others, specify the Verifier's policy whether
      *                                        to check Key Binding.
+     * @return the fully disclosed Issuer-signed JWT's payload
      * @throws VerificationException if verification failed
      */
-    public void verify(
+    public JsonNode verify(
+            List<SignatureVerifierContext> issuerVerifyingKeys,
             IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
-        new SdJwtVerificationContext(sdJwtVpString, issuerSignedJWT, disclosures, keyBindingJWT.orElse(null))
-                .verifyPresentation(issuerSignedJwtVerificationOpts, keyBindingJwtVerificationOpts);
+        SdJwtVerificationContext sdJwtVerificationContext = new SdJwtVerificationContext(
+                sdJwtVpString, issuerSignedJWT, disclosures, keyBindingJWT.orElse(null)
+        );
+
+        return sdJwtVerificationContext.verifyPresentation(
+                issuerVerifyingKeys, issuerSignedJwtVerificationOpts, keyBindingJwtVerificationOpts
+        );
     }
 
     // Recursively searches the node with the given value.

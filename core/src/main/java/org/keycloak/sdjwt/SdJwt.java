@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -198,14 +199,18 @@ public class SdJwt {
     /**
      * Verifies SD-JWT as to whether the Issuer-signed JWT's signature and disclosures are valid.
      *
-     * @param verificationOpts Options to parameterize the Issuer-Signed JWT verification. A verifier
-     *                         must be specified for validating the Issuer-signed JWT. The caller
-     *                         is responsible for establishing trust in that associated public keys
-     *                         belong to the intended issuer.
+     * @param issuerVerifyingKeys Verifying keys for validating the Issuer-signed JWT. The caller
+     *                            is responsible for establishing trust in that the keys belong
+     *                            to the intended issuer.
+     * @param verificationOpts    Options to parameterize the Issuer-Signed JWT verification.
      * @throws VerificationException if verification failed
      */
-    public void verify(IssuerSignedJwtVerificationOpts verificationOpts) throws VerificationException {
-        new SdJwtVerificationContext(issuerSignedJWT, disclosures).verifyIssuance(verificationOpts);
+    public void verify(
+            List<SignatureVerifierContext> issuerVerifyingKeys,
+            IssuerSignedJwtVerificationOpts verificationOpts
+    ) throws VerificationException {
+        new SdJwtVerificationContext(issuerSignedJWT, disclosures)
+                .verifyIssuance(issuerVerifyingKeys, verificationOpts);
     }
 
     // builder for SdJwt
