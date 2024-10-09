@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.StreamSupport.stream;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
@@ -27,16 +26,11 @@ import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOp
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurrentBuiltTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
-import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
@@ -56,6 +50,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
@@ -247,15 +242,11 @@ public class Picocli {
             // run time dev mode is not set
             && !org.keycloak.common.util.Environment.isDevMode()
             // build time dev mode was set
-            && org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null))) {
+            && org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(Configuration.getRawPersistedProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null))) {
             return true;
         }
 
-        if (hasConfigChanges(cmdCommand)) {
-            if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
-                return false;
-            }
-
+        if (Configuration.getRawPersistedProperties().isEmpty() || hasConfigChanges(cmdCommand)) {
             return true;
         }
 
@@ -290,7 +281,9 @@ public class Picocli {
     private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
         if(!isDevMode() && cmd != null) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            checkChangesInBuildOptionsDuringAutoBuild();
+            if (Configuration.isOptimized()) {
+                checkChangesInBuildOptionsDuringAutoBuild(cmd.getOut());
+            }
         }
 
         List<String> configArgsList = new ArrayList<>();
@@ -550,61 +543,18 @@ public class Picocli {
                 String.join("\n", properties)));
     }
 
+    private record ModifiedOption (String name, String oldValue, String newValue) {}
+
     private static boolean hasConfigChanges(CommandLine cmdCommand) {
         Optional<String> currentProfile = ofNullable(org.keycloak.common.util.Environment.getProfile());
-        Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
+        Optional<String> persistedProfile = Configuration.getRawPersistedProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {
             return true;
         }
 
-        for (String propertyName : getConfig().getPropertyNames()) {
-            // only check keycloak build-time properties
-            if (!isBuildTimeProperty(propertyName)) {
-                continue;
-            }
-
-            ConfigValue configValue = getConfig().getConfigValue(propertyName);
-
-            if (configValue == null || configValue.getConfigSourceName() == null) {
-                continue;
-            }
-
-            // try to resolve any property set using profiles
-            if (propertyName.startsWith("%")) {
-                propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
-            }
-
-            String persistedValue = getBuildTimeProperty(propertyName).orElse("");
-            String runtimeValue = getRuntimeProperty(propertyName).orElse(null);
-
-            // compare only the relevant options for this command, as not all options might be set for this command
-            if (cmdCommand.getCommand() instanceof AbstractCommand) {
-                AbstractCommand abstractCommand = cmdCommand.getCommand();
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
-                if (mapper != null) {
-                    if (!abstractCommand.getOptionCategories().contains(mapper.getCategory())) {
-                        continue;
-                    }
-                }
-            }
-
-            if (runtimeValue == null && isNotBlank(persistedValue)) {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
-
-                if (mapper != null && persistedValue.equals(Option.getDefaultValueString(mapper.getDefaultValue().orElse(null)))) {
-                    // same as default
-                    continue;
-                }
-
-                // probably because it was unset
-                return true;
-            }
-
-            // changes to a single property is enough to indicate changes to configuration
-            if (!persistedValue.equals(runtimeValue)) {
-                return true;
-            }
+        if (getModifiedBuildTimeOptions().findAny().isPresent()) {
+            return true;
         }
 
         //check for defined quarkus raw build properties for UserStorageProvider extensions
@@ -614,40 +564,27 @@ public class Picocli {
             if (quarkusPropertiesConfigSource.isPresent()) {
                 Map<String, String> foundQuarkusBuildProperties = findSupportedRawQuarkusBuildProperties(quarkusPropertiesConfigSource.get().getProperties().entrySet());
 
-                //only check if buildProps are found in quarkus properties file.
-                if (!foundQuarkusBuildProperties.isEmpty()) {
-                    Optional<ConfigSource> persistedConfigSource = getConfig().getConfigSource(PersistedConfigSource.NAME);
-
-                    if(persistedConfigSource.isPresent()) {
-                        for(String key : foundQuarkusBuildProperties.keySet()) {
-                            if (notContainsKey(persistedConfigSource.get(), key)) {
-                                //if persisted cs does not contain raw quarkus key from quarkus.properties, assume build is needed as the key is new.
-                                return true;
-                            }
-                        }
-
-                        //if it contains the key, check if the value actually changed from the persisted one.
-                        return hasAtLeastOneChangedBuildProperty(foundQuarkusBuildProperties, persistedConfigSource.get().getProperties().entrySet());
-                    }
-                }
+                return !Configuration.getRawPersistedProperties().entrySet().containsAll(foundQuarkusBuildProperties.entrySet());
             }
         }
 
         return false;
     }
 
-    private static boolean hasAtLeastOneChangedBuildProperty(Map<String, String> foundQuarkusBuildProperties, Set<Map.Entry<String, String>> persistedEntries) {
-        for(Map.Entry<String, String> persistedEntry : persistedEntries) {
-            if (foundQuarkusBuildProperties.containsKey(persistedEntry.getKey())) {
-                return isChangedValue(foundQuarkusBuildProperties, persistedEntry);
+    // TODO: determine if this can be called just a single time
+    private static Stream<ModifiedOption> getModifiedBuildTimeOptions() {
+        return PropertyMappers.getBuildTimeMappers().values().stream().flatMap(List::stream).map(mapper -> {
+            ConfigValue currentValue = Configuration.getNonPersistedConfigValue(mapper.getFrom());
+            if (currentValue.getConfigSourceName() == null
+                    || !Objects.equals(currentValue.getValue(), currentValue.getRawValue())) {
+                return null; // this is a default or mapped value
             }
-        }
-
-        return false;
-    }
-
-    private static boolean notContainsKey(ConfigSource persistedConfigSource, String key) {
-        return !persistedConfigSource.getProperties().containsKey(key);
+            String persisted = Configuration.getRawPersistedProperty(mapper.getFrom()).orElse(null);
+            if (Objects.equals(persisted, currentValue.getValue())) {
+                return null;
+            }
+            return new ModifiedOption(persisted, persisted, persisted);
+        }).filter(Objects::nonNull);
     }
 
     private static Map<String, String> findSupportedRawQuarkusBuildProperties(Set<Map.Entry<String, String>> entries) {
@@ -660,10 +597,6 @@ public class Picocli {
             }
         }
         return result;
-    }
-
-    private static boolean isChangedValue(Map<String, String> foundQuarkusBuildProps, Map.Entry<String, String> persistedEntry) {
-        return !foundQuarkusBuildProps.get(persistedEntry.getKey()).equals(persistedEntry.getValue());
     }
 
     private static boolean isProviderKey(String key) {
@@ -917,48 +850,25 @@ public class Picocli {
         return args;
     }
 
-    private static void checkChangesInBuildOptionsDuringAutoBuild() {
-        if (Configuration.isOptimized()) {
-            List<PropertyMapper<?>>  buildOptions = stream(Configuration.getPropertyNames(true).spliterator(), false)
-                    .sorted()
-                    .map(PropertyMappers::getMapper)
-                    .filter(Objects::nonNull).collect(Collectors.toList());
+    private static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
+        StringBuilder options = new StringBuilder();
 
-            if (buildOptions.isEmpty()) {
-                return;
-            }
+        // the assumption here is that no build time options need mask handling
+        getModifiedBuildTimeOptions().forEach(modifiedOption -> {
+            options.append("\n\t- ").append(modifiedOption.name).append("=").append(modifiedOption.oldValue)
+                    .append(" > ").append(modifiedOption.name).append("=").append(modifiedOption.newValue);
+        });
 
-            StringBuilder options = new StringBuilder();
-
-            for (PropertyMapper<?> mapper : buildOptions) {
-                String newValue = ofNullable(getCurrentBuiltTimeProperty(mapper.getFrom()))
-                        .map(ConfigValue::getValue)
-                        .orElse("<unset>");
-                String currentValue = getRawPersistedProperty(mapper.getFrom()).get();
-
-                if (newValue.equals(currentValue)) {
-                    continue;
-                }
-
-                String name = mapper.getOption().getKey();
-
-                options.append("\n\t- ")
-                    .append(name).append("=").append(currentValue)
-                    .append(" > ")
-                    .append(name).append("=").append(newValue);
-            }
-
-            if (options.length() > 0) {
-                System.out.println(
-                        Ansi.AUTO.string(
-                                new StringBuilder("@|bold,red ")
-                                        .append("The previous optimized build will be overridden with the following build options:")
-                                        .append(options)
-                                        .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
-                                        .append("|@").toString()
-                        )
-                );
-            }
+        if (options.length() > 0) {
+            out.println(
+                    Ansi.AUTO.string(
+                            new StringBuilder("@|bold,red ")
+                                    .append("The previous optimized build will be overridden with the following build options:")
+                                    .append(options)
+                                    .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
+                                    .append("|@").toString()
+                    )
+            );
         }
     }
 }

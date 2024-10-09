@@ -21,7 +21,6 @@ import static org.keycloak.quarkus.runtime.Environment.getCurrentOrPersistedProf
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 import java.util.HashSet;
@@ -38,8 +37,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
@@ -140,12 +137,6 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
         if (value == null) {
             value = configValue.getValue();
-        }
-
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
-
-        if (mapper != null && mapper.isRunTime()) {
-            value = getRuntimeProperty(property).orElse(value);
         }
 
         value = maskValue(configValue.getName(), value, configValue.getConfigSourceName());

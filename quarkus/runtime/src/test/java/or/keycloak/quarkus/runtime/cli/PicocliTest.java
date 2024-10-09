@@ -103,7 +103,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
-
+        onAfter();
+        
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
@@ -157,12 +158,26 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void failInvalidMultiOptionValue() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--features", "xyz,account3");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--features", "xyz,account3");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
                 containsString("xyz is an unrecognized feature, it should be one of"));
     }
-
+    
+    @Test
+    public void failDBRequired() {
+        // dev profile has a default
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        onAfter();
+        
+        // prod profiles require db
+        nonRunningPicocli = pseudoLaunch("build");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("The db option must be explicitly provided in the production profile."));
+    }
+    
     @Test
     public void failUnknownOption() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--nosuch");
