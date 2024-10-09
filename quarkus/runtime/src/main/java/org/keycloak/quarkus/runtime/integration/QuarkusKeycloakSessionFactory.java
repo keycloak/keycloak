@@ -18,12 +18,13 @@
 package org.keycloak.quarkus.runtime.integration;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToIntFunction;
 
 import org.keycloak.Config;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -95,21 +96,10 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
 
     @Override
     public void init() {
-        // Component factory must be initialized first, so that postInit in other factories can use component factories
-        updateComponentFactoryProviderFactory();
-        if (componentFactoryPF != null) {
-            componentFactoryPF.postInit(this);
-        }
-        // Init JpaConnectionProvider first to ensure that DB resources are available to all other providers
-        ProviderFactory<JpaConnectionProvider> jpaUpdaterProvider = getProviderFactory(JpaConnectionProvider.class);
-        jpaUpdaterProvider.postInit(this);
-        for (Map<String, ProviderFactory> f : factoriesMap.values()) {
-            for (ProviderFactory factory : f.values()) {
-                if (factory != componentFactoryPF && factory != jpaUpdaterProvider) {
-                    factory.postInit(this);
-                }
-            }
-        }
+        factoriesMap.values().stream()
+              .flatMap(f -> f.values().stream())
+              .sorted(Comparator.comparingInt((ToIntFunction<ProviderFactory>) ProviderFactory::postInitPriority).reversed())
+              .forEach(pf -> pf.postInit(this));
 
         AdminPermissions.registerListener(this);
         // make the session factory ready for hot deployment

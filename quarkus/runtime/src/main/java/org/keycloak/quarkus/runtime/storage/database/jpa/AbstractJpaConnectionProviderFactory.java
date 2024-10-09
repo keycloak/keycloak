@@ -78,6 +78,13 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     }
 
     @Override
+    public int postInitPriority() {
+        // The DB must be post initialized before any ProviderFactory that depends on the Infinispan EmbeddedCacheManager
+        // as this requires the DB to be available on startup in order to perform discovery via JDBC_PING2
+        return 1;
+    }
+
+    @Override
     public void close() {
         if (entityManagerFactory != null) {
             entityManagerFactory.close();
