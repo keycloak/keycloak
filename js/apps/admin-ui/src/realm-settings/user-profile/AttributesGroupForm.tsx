@@ -17,7 +17,6 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
   FormProvider,
@@ -27,7 +26,6 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
@@ -44,6 +42,8 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./attribute/AddTranslationsDialog";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
+import { useAdminClient } from "../../admin-client";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -77,11 +77,6 @@ type Translations = {
   translations: TranslationForm[];
 };
 
-type TranslationsSets = {
-  displayHeader: Translations;
-  displayDescription: Translations;
-};
-
 const defaultValues: FormFields = {
   annotations: [],
   displayDescription: "",
@@ -112,20 +107,21 @@ export default function AttributesGroupForm() {
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const regexPattern = /\$\{([^}]+)\}/;
   const [type, setType] = useState<TranslationsType>();
-  const [translationsData, setTranslationsData] = useState<TranslationsSets>({
+
+  const [translationsData, setTranslationsData] = useState({
     displayHeader: {
       key: "",
-      translations: [],
+      translations: [] as { locale: string; value: string }[],
     },
     displayDescription: {
       key: "",
-      translations: [],
+      translations: [] as { locale: string; value: string }[],
     },
   });
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
-    [config?.groups],
+    [config?.groups, params.name],
   );
 
   useEffect(() => {
@@ -138,120 +134,99 @@ export default function AttributesGroupForm() {
       : [];
 
     form.reset({ ...defaultValues, ...matchingGroup, annotations });
-  }, [matchingGroup]);
+  }, [matchingGroup, form]);
 
   useEffect(() => {
     form.setValue(
       "displayHeader",
-      matchingGroup
-        ? matchingGroup.displayHeader!
-        : generatedAttributesGroupDisplayName,
+      matchingGroup?.displayHeader || generatedAttributesGroupDisplayName || "",
     );
     form.setValue(
       "displayDescription",
-      matchingGroup
-        ? matchingGroup.displayDescription!
-        : generatedAttributesGroupDisplayDescription,
+      matchingGroup?.displayDescription ||
+        generatedAttributesGroupDisplayDescription ||
+        "",
     );
   }, [
     generatedAttributesGroupDisplayName,
     generatedAttributesGroupDisplayDescription,
+    matchingGroup,
+    form,
   ]);
 
   useFetch(
     async () => {
       const translationsToSaveDisplayHeader: Translations[] = [];
       const translationsToSaveDisplayDescription: Translations[] = [];
-      const formData = form.getValues();
 
-      const translationsResults = await Promise.all(
-        combinedLocales.map(async (selectedLocale) => {
+      await Promise.all(
+        combinedLocales.map(async (locale: string) => {
           try {
             const translations =
               await adminClient.realms.getRealmLocalizationTexts({
                 realm: realmName,
-                selectedLocale,
+                selectedLocale: locale,
               });
 
-            const formattedDisplayHeaderKey = formData.displayHeader?.substring(
-              2,
-              formData.displayHeader.length - 1,
-            );
-            const formattedDisplayDescriptionKey =
-              formData.displayDescription?.substring(
-                2,
-                formData.displayDescription.length - 1,
-              );
-
-            return {
-              locale: selectedLocale,
-              headerTranslation: translations[formattedDisplayHeaderKey] ?? "",
-              descriptionTranslation:
-                translations[formattedDisplayDescriptionKey] ?? "",
+            const formData = form.getValues();
+            const extractKey = (value: string | undefined) => {
+              const match = value?.match(/\$\{(.*?)\}/);
+              return match ? match[1] : "";
             };
+
+            const displayHeaderKey = extractKey(formData.displayHeader) || "";
+            const displayDescriptionKey =
+              extractKey(formData.displayDescription) || "";
+
+            const headerTranslation = translations[displayHeaderKey] || "";
+            const descriptionTranslation =
+              translations[displayDescriptionKey] || "";
+
+            if (headerTranslation) {
+              translationsToSaveDisplayHeader.push({
+                key: displayHeaderKey,
+                translations: [{ locale, value: headerTranslation }],
+              });
+            }
+
+            if (descriptionTranslation) {
+              translationsToSaveDisplayDescription.push({
+                key: displayDescriptionKey,
+                translations: [{ locale, value: descriptionTranslation }],
+              });
+            }
           } catch (error) {
-            console.error(
-              `Error fetching translations for ${selectedLocale}:`,
-              error,
-            );
-            return null;
+            console.error(`Error fetching translations for ${locale}:`, error);
           }
         }),
       );
 
-      translationsResults.forEach((translationsResult) => {
-        if (translationsResult) {
-          const { locale, headerTranslation, descriptionTranslation } =
-            translationsResult;
-          translationsToSaveDisplayHeader.push({
-            key: formData.displayHeader?.substring(
-              2,
-              formData.displayHeader.length - 1,
-            ),
-            translations: [
-              {
-                locale,
-                value: headerTranslation,
-              },
-            ],
-          });
-          translationsToSaveDisplayDescription.push({
-            key: formData.displayDescription?.substring(
-              2,
-              formData.displayDescription.length - 1,
-            ),
-            translations: [
-              {
-                locale,
-                value: descriptionTranslation,
-              },
-            ],
-          });
-        }
-      });
-
-      return {
-        translationsToSaveDisplayHeader,
-        translationsToSaveDisplayDescription,
-      };
-    },
-    (data) => {
-      setTranslationsData({
+      const translationsDataNew = {
         displayHeader: {
-          key: data.translationsToSaveDisplayHeader[0].key,
-          translations: data.translationsToSaveDisplayHeader.flatMap(
-            (translationData) => translationData.translations,
+          key:
+            translationsToSaveDisplayHeader.length > 0
+              ? translationsToSaveDisplayHeader[0].key
+              : "",
+          translations: translationsToSaveDisplayHeader.flatMap(
+            (data) => data.translations,
           ),
         },
         displayDescription: {
-          key: data.translationsToSaveDisplayDescription[0].key,
-          translations: data.translationsToSaveDisplayDescription.flatMap(
-            (translationData) => translationData.translations,
+          key:
+            translationsToSaveDisplayDescription.length > 0
+              ? translationsToSaveDisplayDescription[0].key
+              : "",
+          translations: translationsToSaveDisplayDescription.flatMap(
+            (data) => data.translations,
           ),
         },
-      });
+      };
+
+      setTranslationsData(translationsDataNew);
     },
-    [combinedLocales],
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    () => {},
+    [combinedLocales, realmName, form],
   );
 
   const saveTranslations = async () => {
@@ -277,30 +252,28 @@ export default function AttributesGroupForm() {
     };
 
     try {
-      if (
-        translationsData.displayHeader &&
-        translationsData.displayHeader.translations.length > 0
-      ) {
+      if (translationsData.displayHeader?.translations.length > 0) {
         for (const translation of translationsData.displayHeader.translations) {
-          await addLocalization(
-            translationsData.displayHeader.key,
-            translation.locale,
-            translation.value,
-          );
+          if (translation.locale && translation.value) {
+            await addLocalization(
+              translationsData.displayHeader.key,
+              translation.locale,
+              translation.value,
+            );
+          }
         }
       }
 
-      if (
-        translationsData.displayDescription &&
-        translationsData.displayDescription.translations.length > 0
-      ) {
+      if (translationsData.displayDescription?.translations.length > 0) {
         for (const translation of translationsData.displayDescription
           .translations) {
-          await addLocalization(
-            translationsData.displayDescription.key,
-            translation.locale,
-            translation.value,
-          );
+          if (translation.locale && translation.value) {
+            await addLocalization(
+              translationsData.displayDescription.key,
+              translation.locale,
+              translation.value,
+            );
+          }
         }
       }
     } catch (error) {
@@ -331,7 +304,6 @@ export default function AttributesGroupForm() {
         translationsData.displayHeader.translations.some(
           (translation) => translation.value.trim() !== "",
         );
-
       const hasNonEmptyDisplayDescriptionTranslations =
         translationsData.displayDescription.translations.some(
           (translation) => translation.value.trim() !== "",
