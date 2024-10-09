@@ -210,8 +210,8 @@ public class Organizations {
             if (organizations.size() == 1) {
                 // single organization mapped from authentication session
                 return organizations.get(0);
-            } else if (scope != null) {
-                // organization scope requested but no single organization mapped from the scope
+            } else if (scope != null && user != null) {
+                // organization scope requested but no user and no single organization mapped from the scope
                 return null;
             }
         }
