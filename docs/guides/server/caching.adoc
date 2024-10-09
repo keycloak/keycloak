@@ -219,7 +219,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping` when distributed caches are enabled.
 
 === Available transport stacks
 

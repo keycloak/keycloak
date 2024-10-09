@@ -378,32 +378,32 @@ public class CacheManagerFactory {
     private static void configureTransportStack(ConfigurationBuilderHolder builder, KeycloakSession keycloakSession) {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
 
+        var jdbcStackName = "jdbc-ping";
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
-        if (transportStack != null && !transportStack.isBlank()) {
-            if ("jdbc-ping".equals(transportStack)) {
-                EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
-                var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPSPING", em);
-                var attributes = Map.of(
-                      // Leave initialize_sql blank as table is already created by Keycloak
-                      "initialize_sql", "",
-                      // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-                      // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                      "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                      "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                      "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-                      "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
-                      "remove_all_data_on_view_change", "true",
-                      "stack.combine", "REPLACE",
-                      "stack.position", "PING"
-                );
-                var stackName = "jdbc-ping";
-                var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
-                builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), "udp");
-
-                Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
-                transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
-            }
+        if (transportStack != null && !transportStack.isBlank() && !jdbcStackName.equals(transportStack)) {
             transportConfig.defaultTransport().stack(transportStack);
+        } else {
+            EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
+            var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPSPING", em);
+            var attributes = Map.of(
+                  // Leave initialize_sql blank as table is already created by Keycloak
+                  "initialize_sql", "",
+                  // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+                  // "cluster" cannot be used with Oracle DB as it's a reserved word.
+                  "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
+                  "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
+                  "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
+                  "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                  "remove_all_data_on_view_change", "true",
+                  "stack.combine", "REPLACE",
+                  "stack.position", "PING"
+            );
+            var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
+            builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(jdbcStackName, stack, null), "udp");
+
+            Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
+            transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
+            transportConfig.defaultTransport().stack(jdbcStackName);
         }
 
         if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
