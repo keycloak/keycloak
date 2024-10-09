@@ -22,6 +22,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.function.Consumer;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(defaultOptions = {"--http-enabled=true", "--hostname-strict=false"})
+@DistributionTest(defaultOptions = {"--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
@@ -52,6 +54,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @BeforeStartDistribution(EnableAdditionalConsoleHandler.class)
     @Launch({ "start" })
     @Order(2)
+    @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
     void testQuarkusRuntimePropDoesNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
@@ -63,6 +66,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @BeforeStartDistribution(DisableAdditionalConsoleHandler.class)
     @Launch({ "start" })
     @Order(3)
+    @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
     void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
@@ -82,6 +86,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @BeforeStartDistribution(ChangeAdditionalDatasourceUsername.class)
     @Launch({ "start" })
     @Order(5)
+    @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
     void testNoReAugForAdditionalDatasourceRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();

@@ -38,11 +38,11 @@ public class ImportDistTest {
 
     @Test
     void testImport(KeycloakDistribution dist) throws IOException {
-        CLIResult cliResult = dist.run("build");
+        CLIResult cliResult = dist.run("build", "--db=dev-file");
         
         File dir = new File("target");
 
-        cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
+        cliResult = dist.run("export", "--db=dev-file", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
         
@@ -54,13 +54,13 @@ public class ImportDistTest {
         mapper.writer().writeValue(file, node);
         
         dist.setEnvVar("REALM_ENABLED", "true");
-        cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
+        cliResult = dist.run("import", "--db=dev-file", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
 
-        cliResult = dist.run("import");
+        cliResult = dist.run("import", "--db=dev-file");
         cliResult.assertError("Must specify either --dir or --file options.");
     }
 }

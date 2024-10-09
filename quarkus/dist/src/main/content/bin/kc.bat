@@ -34,14 +34,12 @@ if "%KEY%" == "" (
 )
 if "%KEY%" == "--debug" (
   set DEBUG_MODE=true
-  set DEBUG_PORT_VAR=%2
-  if "%DEBUG_PORT_VAR%" == "" (
+  if 1%2 EQU +1%2 (
+     set DEBUG_PORT_VAR=%2
+     shift
+  ) else (
      set DEBUG_PORT_VAR=8787
   )
-  if "%DEBUG_SUSPEND_VAR%" == "" (
-     set DEBUG_SUSPEND_VAR=n
-  )
-  shift
   shift
   goto READ-ARGS
 )
@@ -50,22 +48,26 @@ if "%KEY%" == "start-dev" (
   shift
   goto READ-ARGS
 )
-if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
-  set SERVER_OPTS=%SERVER_OPTS% %KEY%=%2
+if "%KEY:~0,2%"=="-D" (
+  if "%~2"=="" (
+    set SERVER_OPTS=%SERVER_OPTS% %KEY%
+  ) else (
+    set SERVER_OPTS=%SERVER_OPTS% %KEY%^=%2
+    shift
+  )
   shift
+  goto READ-ARGS
 )
 if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
   set CONFIG_ARGS=%CONFIG_ARGS% %1
+  shift
+  goto READ-ARGS
 )
-if not "%KEY:~0,2%"=="-D" (
-  if "%KEY:~0,1%"=="-" (
-      if "%~2"=="" (
-        set CONFIG_ARGS=%CONFIG_ARGS% %1
-      ) else (
-        set CONFIG_ARGS=%CONFIG_ARGS% %1 %2
-      )
-      shift
-  )
+if "%~2"=="" (
+  set CONFIG_ARGS=%CONFIG_ARGS% %1
+) else (
+  set CONFIG_ARGS=%CONFIG_ARGS% %1 %2
+  shift
 )
 shift
 goto READ-ARGS

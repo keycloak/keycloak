@@ -305,10 +305,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
+        // if not in the dev profile, there's no default for the db
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertNull(config.getConfigValue("kc.db-dialect").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
