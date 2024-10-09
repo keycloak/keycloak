@@ -6,15 +6,10 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Stream;
 
 import org.keycloak.config.CachingOptions;
-import org.keycloak.config.OptionBuilder;
-import org.keycloak.config.OptionCategory;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
 
@@ -41,7 +36,7 @@ final class CachingPropertyMappers {
                         if (CachingOptions.Mechanism.local.name().equals(value)) {
                             return "cache-local.xml";
                         } else if (CachingOptions.Mechanism.ispn.name().equals(value)) {
-                            return "cache-ispn.xml";
+                            return resolveConfigFile("cache-ispn.xml", null);
                         } else
                             return null;
                     })
@@ -107,16 +102,11 @@ final class CachingPropertyMappers {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        String pathPrefix;
         String homeDir = Environment.getHomeDir();
 
-        if (homeDir == null) {
-            pathPrefix = "";
-        } else {
-            pathPrefix = homeDir + File.separator + "conf" + File.separator;
-        }
-
-        return pathPrefix + value;
+        return homeDir == null ?
+                value :
+                homeDir + File.separator + "conf" + File.separator + value;
     }
 
     private static String getDefaultKeystorePathValue() {
