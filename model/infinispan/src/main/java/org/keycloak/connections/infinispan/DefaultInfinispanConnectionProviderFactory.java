@@ -371,7 +371,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 workBuilder.simpleCache(false);
                 workBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
             }
-            defineClusteredCache(cacheManager, WORK_CACHE_NAME, builder.build());
+            defineClusteredCache(cacheManager, WORK_CACHE_NAME, workBuilder.build());
         }
 
         return cacheManager;

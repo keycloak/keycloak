@@ -87,6 +87,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
@@ -314,6 +315,7 @@ public class CacheManagerFactory {
             }
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
             configureSessionsCaches(builder);
+            validateWorkCacheConfiguration(builder);
         }
         configureCacheMaxCount(builder, CachingOptions.LOCAL_MAX_COUNT_CACHES);
         checkForRemoteStores(builder);
@@ -511,6 +513,21 @@ public class CacheManagerFactory {
                         .memory()
                         .maxCount(maxCount)
                   );
+        }
+    }
+
+    private static void validateWorkCacheConfiguration(ConfigurationBuilderHolder builder) {
+        var cacheBuilder  = builder.getNamedConfigurationBuilders().get(WORK_CACHE_NAME);
+        if (cacheBuilder == null) {
+            throw new RuntimeException("Unable to start Keycloak. '%s' cache is missing".formatted(WORK_CACHE_NAME));
+        }
+        if (builder.getGlobalConfigurationBuilder().cacheContainer().transport().getTransport() == null) {
+            // non-clustered, Keycloak started in dev mode?
+            return;
+        }
+        var cacheMode = cacheBuilder.clustering().cacheMode();
+        if (!cacheMode.isReplicated()) {
+            throw new RuntimeException("Unable to start Keycloak. '%s' cache must be replicated but is %s".formatted(WORK_CACHE_NAME, cacheMode.friendlyCacheModeString().toLowerCase()));
         }
     }
 
