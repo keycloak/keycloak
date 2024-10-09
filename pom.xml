@@ -99,7 +99,7 @@
         <!-- version number is needed for the proto-schema-compatibility-maven-plugin and needs to be in-sync with the version used in Infinispan -->
         <protostream.version>5.0.8.Final</protostream.version>
         <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.10.Final -->
-        <protostream.plugin.version>5.0.10.Final</protostream.plugin.version>
+        <protostream.plugin.version>5.0.12.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
