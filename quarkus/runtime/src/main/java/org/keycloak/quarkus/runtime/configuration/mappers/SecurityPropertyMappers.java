@@ -1,9 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.Optional;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -25,15 +22,15 @@ final class SecurityPropertyMappers {
         };
     }
 
-    private static Optional<String> resolveFipsMode(Optional<String> value, ConfigSourceInterceptorContext context) {
-        if (value.isEmpty()) {
+    private static String resolveFipsMode(String value, ConfigSourceInterceptorContext context) {
+        if (value == null) {
             if (Profile.isFeatureEnabled(Feature.FIPS)) {
-                return of(FipsMode.NON_STRICT.toString());
+                return FipsMode.NON_STRICT.toString();
             }
 
-            return of(FipsMode.DISABLED.toString());
+            return FipsMode.DISABLED.toString();
         }
 
-        return of(FipsMode.valueOfOption(value.get()).toString());
+        return value;
     }
 }

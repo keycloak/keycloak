@@ -18,8 +18,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HttpPropertyMappers {
@@ -69,7 +67,7 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
                         .to("quarkus.http.ssl.certificate.reload-period")
                         // -1 means no reload
-                        .transformer((value, context) -> "-1".equals(value.get()) ? null : value)
+                        .transformer((value, context) -> "-1".equals(value) ? null : value)
                         .paramLabel("reload period")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
@@ -94,8 +92,7 @@ public final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_TYPE)
                         .to("quarkus.http.ssl.certificate.key-store-file-type")
-                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
-                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
+                        .mapFrom(SecurityOptions.FIPS_MODE, HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_FILE)
@@ -109,8 +106,7 @@ public final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .to("quarkus.http.ssl.certificate.trust-store-file-type")
-                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
-                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
+                        .mapFrom(SecurityOptions.FIPS_MODE, HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
                         .build(),
                 fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
@@ -133,7 +129,7 @@ public final class HttpPropertyMappers {
     }
 
     public static void validateConfig() {
-        boolean enabled = isHttpEnabled(Configuration.getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()));
+        boolean enabled = isHttpEnabled(Configuration.getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
         boolean trustStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey()).isPresent();
         boolean keyStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_FILE.getKey()).isPresent();
 
@@ -194,23 +190,19 @@ public final class HttpPropertyMappers {
         }
     }
 
-    private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> validatePath(String key) {
-        return (value, context) -> Environment.isWindows() ? value.filter(v -> v.equals(context.proceed(key).getValue())).map(p -> p.replace("\\", "/")) : value;
+    private static BiFunction<String, ConfigSourceInterceptorContext, String> validatePath(String key) {
+        return (value, context) -> Environment.isWindows() && value != null && value.equals(context.proceed(key).getValue()) ? value.replace("\\", "/") : value;
     }
 
-    private static Optional<String> getHttpEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
-        return of(isHttpEnabled(value) ? "enabled" : "disabled");
+    private static String getHttpEnabledTransformer(String value, ConfigSourceInterceptorContext context) {
+        return isHttpEnabled(value) ? "enabled" : "disabled";
     }
 
-    private static boolean isHttpEnabled(Optional<String> value) {
-        boolean enabled = Boolean.parseBoolean(value.get());
-        Optional<String> proxy = Configuration.getOptionalKcValue("proxy");
-
-        if (Environment.isDevMode() || Environment.isNonServerMode()
-                || ("edge".equalsIgnoreCase(proxy.orElse("")))) {
-            enabled = true;
+    private static boolean isHttpEnabled(String value) {
+        if (Environment.isDevMode() || Environment.isNonServerMode()) {
+            return true;
         }
-        return enabled;
+        return Boolean.parseBoolean(value);
     }
 
     private static File getDefaultKeystorePathValue() {
@@ -227,24 +219,18 @@ public final class HttpPropertyMappers {
         return null;
     }
 
-    private static Optional<String> resolveKeyStoreType(Optional<String> value,
+    private static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (value.isPresent()) {
-            try {
-                if (FipsMode.valueOfOption(value.get()).equals(FipsMode.STRICT)) {
-                    return of("BCFKS");
-                }
-                return empty();
-            } catch (IllegalArgumentException ignore) {
-            }
+        if (FipsMode.STRICT.toString().equals(value)) {
+            return "BCFKS";
         }
-        return value;
+        return null;
     }
 
-    private static Optional<String> resolveMaxThreads(Optional<String> value,
+    private static String resolveMaxThreads(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (value.isEmpty()) {
-            return of(String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors())));
+        if (value == null) {
+            return String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors()));
         }
         return value;
     }

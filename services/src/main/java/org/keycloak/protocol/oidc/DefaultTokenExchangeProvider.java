@@ -396,15 +396,19 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
     }
 
-    protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  ClientModel targetClient, String audience, String scope) {
-        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
-        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
-
+    private AuthenticationSessionModel createSessionModel(UserSessionModel targetUserSession, RootAuthenticationSessionModel rootAuthSession, UserModel targetUser, ClientModel client, String scope) {
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
         authSession.setAuthenticatedUser(targetUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+        return authSession;
+    }
+
+    protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
+                                                  ClientModel targetClient, String audience, String scope) {
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
+        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
 
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
@@ -416,6 +420,12 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+
+        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
+            // create the requester client session if needed
+            AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
+            TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
+        }
 
         updateUserSessionFromClientAuth(targetUserSession);
 

@@ -198,6 +198,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "set-client-note-authenticator", "Set Client Note Authenticator", "Set client note of specified name with the specified value to the authenticationSession.");
         addProviderInfo(result, "testsuite-username", "Testsuite Username Only",
                 "Testsuite Username authenticator.  Username parameter sets username");
+        addProviderInfo(result, "test-suite-fire-error-event", "Fire Error Event",
+                "Testsuite Error event firer authenticator.");
         addProviderInfo(result, "webauthn-authenticator", "WebAuthn Authenticator", "Authenticator for WebAuthn. Usually used for WebAuthn two-factor authentication");
         addProviderInfo(result, "webauthn-authenticator-passwordless", "WebAuthn Passwordless Authenticator", "Authenticator for Passwordless WebAuthn authentication");
 
@@ -223,7 +225,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
         addProviderInfo(result, "conditional-level-of-authentication", "Condition - Level of Authentication",
                 "Flow is executed only if the configured LOA or a higher one has been requested but not yet satisfied. After the flow is successfully finished, the LOA in the session will be updated to value prescribed by this condition.");
-        
+
         addProviderInfo(result, "user-session-limits", "User session count limiter",
                 "Configures how many concurrent sessions a single user is allowed to create for this realm and/or client");
 
