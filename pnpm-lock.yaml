@@ -118,8 +118,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
       '@playwright/test':
-        specifier: ^1.47.2
-        version: 1.47.2
+        specifier: ^1.48.0
+        version: 1.48.0
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -1195,8 +1195,8 @@ packages:
     resolution: {integrity: sha512-cq8o4cWH0ibXh9VGi5P20Tu9XF/0fFXl9EUinr9QfTM7a7p0oTA4iJRCQWppXR1Pg8dSM0UCItCkPwsk9qWWYA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@playwright/test@1.47.2':
-    resolution: {integrity: sha512-jTXRsoSPONAs8Za9QEQdyjFn+0ZQFjCiIztAIF6bi1HqhBzG9Ma7g1WotyiGqFSBRZjIEqMdT8RUlbk1QVhzCQ==}
+  '@playwright/test@1.48.0':
+    resolution: {integrity: sha512-W5lhqPUVPqhtc/ySvZI5Q8X2ztBOUgZ8LbAFy0JQgrXZs2xaILrUcNO3rQjwbLPfGK13+rZsDa1FpG+tqYkT5w==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -3965,13 +3965,13 @@ packages:
   pkg-types@1.2.0:
     resolution: {integrity: sha512-+ifYuSSqOQ8CqP4MbZA5hDpb97n3E8SVWdJe+Wms9kj745lmd3b7EZJiqvmLwAlmRfjrI7Hi5z3kdBJ93lFNPA==}
 
-  playwright-core@1.47.2:
-    resolution: {integrity: sha512-3JvMfF+9LJfe16l7AbSmU555PaTl2tPyQsVInqm3id16pdDfvZ8TTZ/pyzmkbDrZTQefyzU7AIHlZqQnxpqHVQ==}
+  playwright-core@1.48.0:
+    resolution: {integrity: sha512-RBvzjM9rdpP7UUFrQzRwR8L/xR4HyC1QXMzGYTbf1vjw25/ya9NRAVnXi/0fvFopjebvyPzsmoK58xxeEOaVvA==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.47.2:
-    resolution: {integrity: sha512-nx1cLMmQWqmA3UsnjaaokyoUpdVaaDhJhMoxX2qj3McpjnsqFHs516QAKYhqHAgOP+oCFTEOCOAaD1RgD/RQfA==}
+  playwright@1.48.0:
+    resolution: {integrity: sha512-qPqFaMEHuY/ug8o0uteYJSRfMGFikhUysk8ZvAtfKmUK3kc/6oNl/y3EczF8OFGYIi/Ex2HspMfzYArk6+XQSA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -5784,9 +5784,9 @@ snapshots:
 
   '@pkgr/core@0.1.1': {}
 
-  '@playwright/test@1.47.2':
+  '@playwright/test@1.48.0':
     dependencies:
-      playwright: 1.47.2
+      playwright: 1.48.0
 
   '@reactflow/background@11.3.14(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -8809,11 +8809,11 @@ snapshots:
       mlly: 1.7.1
       pathe: 1.1.2
 
-  playwright-core@1.47.2: {}
+  playwright-core@1.48.0: {}
 
-  playwright@1.47.2:
+  playwright@1.48.0:
     dependencies:
-      playwright-core: 1.47.2
+      playwright-core: 1.48.0
     optionalDependencies:
       fsevents: 2.3.2
 
