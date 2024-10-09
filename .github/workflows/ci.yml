@@ -117,7 +117,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dlogin.theme.default=keycloak.v2 -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -196,7 +196,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+          ./mvnw test -f quarkus/pom.xml -Dlogin.theme.default=keycloak -pl '!tests,!tests/junit5,!tests/integration,!dist'
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -778,7 +778,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/base/pom.xml 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Dlogin.theme.default=keycloak.v2 -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/base/pom.xml 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
