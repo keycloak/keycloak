@@ -44,7 +44,8 @@ public class MicrometerMetricsEventListener implements GlobalEventListenerProvid
     private static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
     private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
-    private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak_";
+    // Micrometer naming convention that separates lowercase words with a . (dot) character.
+    private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
     private final boolean withIdp, withRealm, withClientId;

@@ -19,14 +19,11 @@ package org.keycloak.quarkus.runtime.services.metrics.events;
 
 import org.bouncycastle.util.Strings;
 import org.keycloak.Config;
-import org.keycloak.events.EventType;
 import org.keycloak.events.GlobalEventListenerProvider;
 import org.keycloak.events.GlobalEventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import java.util.Locale;
 
 public class MicrometerMetricsEventListenerFactory implements GlobalEventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
