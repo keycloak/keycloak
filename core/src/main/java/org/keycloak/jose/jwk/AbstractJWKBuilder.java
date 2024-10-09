@@ -53,7 +53,7 @@ public abstract class AbstractJWKBuilder {
     public JWK rsa(Key key) {
         return rsa(key, null, KeyUse.SIG);
     }
-    
+
     public JWK rsa(Key key, X509Certificate certificate) {
         return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
     }
@@ -99,6 +99,10 @@ public abstract class AbstractJWKBuilder {
     }
 
     public JWK ec(Key key, KeyUse keyUse) {
+        return this.ec(key, null, keyUse);
+    }
+
+    public JWK ec(Key key, List<X509Certificate> certificates, KeyUse keyUse) {
         ECPublicKey ecKey = (ECPublicKey) key;
 
         ECPublicJWK k = new ECPublicJWK();
@@ -113,7 +117,15 @@ public abstract class AbstractJWKBuilder {
         k.setCrv("P-" + fieldSize);
         k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
         k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
-        
+
+        if (certificates != null && !certificates.isEmpty()) {
+            String[] certificateChain = new String[certificates.size()];
+            for (int i = 0; i < certificates.size(); i++) {
+                certificateChain[i] = PemUtils.encodeCertificate(certificates.get(i));
+            }
+            k.setX509CertificateChain(certificateChain);
+        }
+
         return k;
     }
 

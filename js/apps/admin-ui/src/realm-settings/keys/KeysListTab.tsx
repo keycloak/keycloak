@@ -194,21 +194,8 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "publicKeys",
             displayKey: "publicKeys",
-            cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
-              if (type === "EC") {
-                return (
-                  <Button
-                    onClick={() => {
-                      togglePublicKeyDialog();
-                      setPublicKey(publicKey!);
-                    }}
-                    variant="secondary"
-                    id="kc-public-key"
-                  >
-                    {t("publicKey")}
-                  </Button>
-                );
-              } else if (type === "RSA") {
+            cellRenderer: ({ publicKey, certificate }: KeyData) => {
+              if (certificate) {
                 return (
                   <div className="button-wrapper">
                     <Button
@@ -234,7 +221,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     </Button>
                   </div>
                 );
-              } else if (type === "OKP") {
+              } else if (publicKey) {
                 return (
                   <Button
                     onClick={() => {

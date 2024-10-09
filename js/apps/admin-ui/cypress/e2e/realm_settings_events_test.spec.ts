@@ -144,6 +144,7 @@ describe("Realm settings events tab tests", () => {
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_ecdsa-generated");
     realmSettingsPage.toggleSwitch("active", false);
+    realmSettingsPage.toggleSwitch("ecGenerateCertificate", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
