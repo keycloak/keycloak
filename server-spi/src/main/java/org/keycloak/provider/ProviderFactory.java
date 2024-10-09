@@ -48,14 +48,6 @@ public interface ProviderFactory<T extends Provider> {
     void postInit(KeycloakSessionFactory factory);
 
     /**
-     * A larger value indicates that the ProviderFactory should have it's postInit method called before all others with
-     * a lower priority value.
-     */
-    default int postInitPriority() {
-        return 0;
-    }
-
-    /**
      * This is called when the server shuts down.
      *
      */
@@ -63,9 +55,6 @@ public interface ProviderFactory<T extends Provider> {
 
     String getId();
 
-    /**
-     * Determines which Provider is chosen when multiple implementations exist for the same SPI
-     */
     default int order() {
         return 0;
     }
