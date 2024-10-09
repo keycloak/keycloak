@@ -8,6 +8,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
+import { getNetworkErrorDescription } from "../utils/errors";
 
 type ErrorPageProps = {
   error?: unknown;
@@ -16,7 +17,10 @@ type ErrorPageProps = {
 export const ErrorPage = (props: ErrorPageProps) => {
   const { t } = useTranslation();
   const error = props.error;
-  const errorMessage = getErrorMessage(error);
+  const errorMessage =
+    getErrorMessage(error) ||
+    getNetworkErrorDescription(error)?.replace(/\+/g, " ");
+  console.error(error);
 
   function onRetry() {
     location.href = location.origin + location.pathname;
