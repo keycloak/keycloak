@@ -107,6 +107,16 @@ Management:
                        server (not recommended). If set to true, the management interface is
                        disabled. Default: false.
 
+Events (Experimental):
+
+--user-event-metrics-enabled <true|false>
+                     Experimental: Create metrics based on user events. Default: false. Available
+                       only when metrics are enabled and feature user-event-metrics + is enabled.
+--user-event-metrics-tags <tags>
+                     Experimental: Comma-separated list of tags to be collected for events.
+                       Default: realm,clientId,idp. Available only when user event metrics are
+                       enabled.
+
 Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file, keystore.

@@ -33,6 +33,7 @@ org.keycloak.models.UserLoginFailureSpi
 org.keycloak.models.UserSpi
 org.keycloak.migration.MigrationSpi
 org.keycloak.events.EventListenerSpi
+org.keycloak.events.GlobalEventListenerSpi
 org.keycloak.events.EventStoreSpi
 org.keycloak.exportimport.ExportSpi
 org.keycloak.exportimport.ImportSpi

@@ -249,6 +249,16 @@ Management:
                        exposed on the management interface - see the guide for details. Default:
                        password.
 
+Events (Experimental):
+
+--user-event-metrics-enabled <true|false>
+                     Experimental: Create metrics based on user events. Default: false. Available
+                       only when metrics are enabled and feature user-event-metrics + is enabled.
+--user-event-metrics-tags <tags>
+                     Experimental: Comma-separated list of tags to be collected for events.
+                       Default: realm,clientId,idp. Available only when user event metrics are
+                       enabled.
+
 Proxy:
 
 --proxy-headers <headers>

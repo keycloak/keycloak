@@ -26,94 +26,73 @@ import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
-import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
+import org.keycloak.events.GlobalEventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Locale;
 
-public class MicrometerMetricsEventListener implements EventListenerProvider {
+public class MicrometerMetricsEventListener implements GlobalEventListenerProvider {
 
     private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListener.class);
 
-    private static final String EMPTY_IDP = "";
     private static final String REALM_TAG = "realm";
     private static final String IDP_TAG = "idp";
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
-    // TODO better description
-    private static final String DESCRIPTION_OF_EVENT_METER = "The total number of Keycloak events";
-    private static final String KEYLOAK_METER_NAME = "keycloak";
-    // TODO better name for simple
-    private static final String SIMPLE_EVENT_METER_NAME = KEYLOAK_METER_NAME + ".simple";
+    private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
+    private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak_";
+    private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
-    private static final Map<EventType, String> EVENT_TYPE_TO_TAG_VALUE =
-            Arrays.stream(EventType.values())
-                    .collect(Collectors.toMap(e -> e, MicrometerMetricsEventListenerFactory::format));
+    private final boolean withIdp, withRealm, withClientId;
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(null, this::countEvent);
 
-    private final EnumSet<EventType> includedEvents;
-    private final EnumSet<EventType> eventsWithAdditionalTags;
-
-    public MicrometerMetricsEventListener(KeycloakSession session,
-                                          EnumSet<EventType> includedEvents,
-                                          EnumSet<EventType> eventsWithAdditionalTags) {
+    public MicrometerMetricsEventListener(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId) {
+        this.withIdp = withIdp;
+        this.withRealm = withRealm;
+        this.withClientId = withClientId;
         session.getTransactionManager().enlistAfterCompletion(tx);
-        this.includedEvents = includedEvents;
-        this.eventsWithAdditionalTags = eventsWithAdditionalTags;
     }
 
     @Override
     public void onEvent(Event event) {
-        if (includedEvents.contains(event.getType())) {
-            tx.addEvent(event);
-        }
+        tx.addEvent(event);
     }
 
     private void countEvent(Event event) {
         logger.debugf("Received user event of type %s in realm %s",
                 event.getType().name(), event.getRealmName());
-        if (eventsWithAdditionalTags.contains(event.getType())) {
-            countRealmEventIdpClientIdErrorTagsFromEvent(event);
-        } else {
-            countRealmEventTagsFromEvent(event);
+
+        Counter.Builder counterBuilder = Counter.builder(USER_EVENTS_METER_NAME)
+                .description(DESCRIPTION_OF_EVENT_METER)
+                .tags(Tags.of(Tag.of(EVENT_TAG, format(event.getType())),
+                        Tag.of(ERROR_TAG, getError(event))))
+                .baseUnit(BaseUnits.EVENTS);
+
+        if (withRealm) {
+            counterBuilder.tag(REALM_TAG, nullToEmpty(event.getRealmName()));
         }
+
+        if (withIdp) {
+            counterBuilder.tag(IDP_TAG, getIdentityProvider(event));
+        }
+
+        if (withClientId) {
+            counterBuilder.tag(CLIENT_ID_TAG, getClientId(event));
+        }
+
+        counterBuilder.register(Metrics.globalRegistry)
+                .increment();
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        // do nothing
-    }
-
-    private void countRealmEventTagsFromEvent(final Event event) {
-        Counter.builder(SIMPLE_EVENT_METER_NAME)
-                .description(DESCRIPTION_OF_EVENT_METER)
-                .tags(Tags.of(Tag.of(REALM_TAG, nullToEmpty(event.getRealmName())),
-                        Tag.of(EVENT_TAG, EVENT_TYPE_TO_TAG_VALUE.get(event.getType()))))
-                .baseUnit(BaseUnits.EVENTS)
-                .register(Metrics.globalRegistry)
-                .increment();
-    }
-
-    private void countRealmEventIdpClientIdErrorTagsFromEvent(final Event event) {
-        Counter.builder(KEYLOAK_METER_NAME)
-                .description(DESCRIPTION_OF_EVENT_METER)
-                .tags(Tags.of(Tag.of(REALM_TAG, nullToEmpty(event.getRealmName())),
-                        Tag.of(EVENT_TAG, EVENT_TYPE_TO_TAG_VALUE.get(event.getType())),
-                        Tag.of(IDP_TAG, getIdentityProvider(event)),
-                        Tag.of(CLIENT_ID_TAG, getErrorClientId(event)),
-                        Tag.of(ERROR_TAG, nullToEmpty(event.getError()))))
-                .baseUnit(BaseUnits.EVENTS)
-                .register(Metrics.globalRegistry)
-                .increment();
+        // do nothing for now
     }
 
     private String getIdentityProvider(Event event) {
@@ -121,20 +100,37 @@ public class MicrometerMetricsEventListener implements EventListenerProvider {
         if (event.getDetails() != null) {
             identityProvider = event.getDetails().get(Details.IDENTITY_PROVIDER);
         }
-        if (identityProvider == null) {
-            identityProvider = EMPTY_IDP;
-        }
-        return identityProvider;
+        return nullToEmpty(identityProvider);
     }
 
 
-    private String getErrorClientId(Event event) {
+    private String getClientId(Event event) {
+        // Don't use the clientId as a tag value of the event CLIENT_NOT_FOUND as it would lead to a metrics cardinality explosion
         return nullToEmpty(Errors.CLIENT_NOT_FOUND.equals(event.getError())
-                ? Errors.CLIENT_NOT_FOUND : event.getClientId());
+                ? "unknown" : event.getClientId());
+    }
+
+    private String getError(Event event) {
+        String error = event.getError();
+        if (error == null && event.getType().name().endsWith("_ERROR")) {
+            error = "unknown";
+        }
+        return nullToEmpty(error);
     }
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+
+    public static String format(EventType type) {
+        // Remove the error suffix so that all events have the same tag.
+        // In dashboards, we can distinguish errors from non-errors by looking at the error tag.
+        String name = type.name();
+        if (name.endsWith("_ERROR")) {
+            name = name.substring(0, name.length() - "_ERROR".length());
+        }
+        return name.toLowerCase(Locale.ROOT);
     }
 
     @Override

@@ -546,8 +546,7 @@ public class MicrometerMetricsEventListenerTest {
 
                     @Override
                     public <T extends Provider> T getProvider(Class<T> clazz) {
-                        return (T) new MicrometerMetricsEventListener(
-                                this, EnumSet.allOf(EventType.class), eventsWithAdditionalTags);
+                        return (T) new MicrometerMetricsEventListener(this, true, true, true);
                     }
 
                     @Override

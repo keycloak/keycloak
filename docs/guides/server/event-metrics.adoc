@@ -6,31 +6,26 @@
 <@tmpl.guide
 title="Enabling {project_name} Event Metrics"
 summary="Learn how to enable and use {project_name} Event Metrics"
-includedOptions="metrics-enabled">
+includedOptions="metrics-enabled user-event-metrics-*">
 
 == Enable event metrics
 
-- To enable the event listener via the GUI interface, go to
-. Click *Realm settings* in the menu.
-. Click the *Events* tab.
-. The *Event Listeners* configuration should have an entry named `micrometer-metrics`.
+To start collecting metrics, enable the feature `user-event-metrics`, enable metrics, and enable the metrics for user events.
 
-- To enable the event listener via the Keycloak CLI, such as when building a Docker container, use these commands.
+The following shows the required startup parameters:
 
-* Linux:
-+
-[options="nowrap"]
-----
-$ kcadm.sh update events/config -r demorealm -s 'eventsListeners+=["micrometer-metrics"]'
-----
-* Windows:
-+
-[options="nowrap"]
-----
-c:\> kcadm update events/config -r demorealm -s "eventsListeners+=[\"micrometer-metrics\"]"
-----
+<@kc.start parameters="--features=user-event-metrics --metrics-enabled=true --user-event-metrics-enabled=true ..."/>
+
+There will be a separate metric for each realm, client and identity provider.
+If your installation has a lot of them, you'll see a lot of individual metrics. To reduce the number of individual metrics created by them, you can limit the metrics dimension using the configuration option `user-event-metrics-tags`.
+
+The following limits the tags to the realm tag:
 
 The snippet below is an example of a response:
+
+<@kc.start parameters="... --user-event-metrics-tags=realm ..."/>
+
+// FIXME: Example might be outdated
 
 [source]
 ----
@@ -45,7 +40,7 @@ keycloak_events_total{client_id="security-admin-console",error="",event="code_to
 keycloak_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master"} 2.0
 keycloak_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master"} 6.0
 keycloak_events_total{client_id="security-admin-console",error="",event="refresh_token",idp="",realm="master"} 2.0
-keycloak_events_total{client_id="client_not_found",error="client_not_found",event="login_error",idp="",realm="master"} 1.0
+keycloak_events_total{client_id="",error="client_not_found",event="login_error",idp="",realm="master"} 1.0
 ...
 ----
 
