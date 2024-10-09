@@ -126,7 +126,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public String getAttemptedUsername() {
-        return attemptedUsernameLabel.getAttribute("value");
+        String text = attemptedUsernameLabel.getAttribute("value");
+        if (text == null) return attemptedUsernameLabel.getText();
+        return text;
     }
 
     public void clickResetLogin() {

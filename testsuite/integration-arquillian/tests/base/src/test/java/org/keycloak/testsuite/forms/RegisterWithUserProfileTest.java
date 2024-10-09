@@ -265,11 +265,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         //assert field names
         // i18n replaced
-        Assert.assertEquals("First name *",registerPage.getLabelForField("firstName"));
+        Assert.assertEquals("First name",registerPage.getLabelForField("firstName"));
         // attribute name used if no display name set
         Assert.assertEquals("lastName",registerPage.getLabelForField("lastName"));
         // direct value in display name
-        Assert.assertEquals("Department *",registerPage.getLabelForField("department"));
+        Assert.assertEquals("Department",registerPage.getLabelForField("department"));
     }
 
     @Test
