@@ -21,6 +21,7 @@ org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapperFactory
 org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory
 org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory
 org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory
+org.keycloak.storage.ldap.mappers.KerberosPrincipalAttributeMapperFactory
 org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory
 org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory
 org.keycloak.storage.ldap.mappers.msadlds.MSADLDSUserAccountControlStorageMapperFactory

@@ -193,6 +193,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     }
 
     protected OAuthClient.AccessTokenResponse assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
+        events.clear();
         oauth.clientId(clientId);
         Response spnegoResponse = spnegoLogin(loginUsername, password);
         Assert.assertEquals(302, spnegoResponse.getStatus());
@@ -264,7 +265,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         if (client != null) {
             cleanupApacheHttpClient();
         }
-        
+
         HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
         if (useSpnego) {
             BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
