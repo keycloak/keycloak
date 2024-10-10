@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -24,11 +24,13 @@ import { OrganizationModal } from "../organizations/OrganizationModal";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
+import { toUsers } from "./routes/Users";
 
 export const Organizations = () => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { id } = useParams<UserParams>();
+  const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -65,6 +67,10 @@ export const Organizations = () => {
           ),
         );
         addAlert(t("organizationRemovedSuccess"));
+        const user = await adminClient.users.findOne({ id: id! });
+        if (!user) {
+          navigate(toUsers({ realm: realm }));
+        }
         setSelectedOrgs([]);
         refresh();
       } catch (error) {
