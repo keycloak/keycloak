@@ -144,8 +144,11 @@ public class ProtocolMapperUtils {
                         .filter(Objects::nonNull)
                         .filter(filter);
 
-        return Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper())
-                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
+        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(ctx.getClientSession().getClient().getProtocol())) {
+            protocolMapperStream = Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper());
+        }
+
+        return protocolMapperStream.sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 
     public static int compare(Entry<ProtocolMapperModel, ProtocolMapper> entry) {
