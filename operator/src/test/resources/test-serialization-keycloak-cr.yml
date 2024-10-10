@@ -40,9 +40,7 @@ spec:
   hostname:
     hostname: my-hostname
     admin: my-admin-hostname
-    adminUrl: https://www.my-admin-hostname.org:8448/something
     strict: true
-    strictBackchannel: true
     backchannelDynamic: true
   cache:
     configMapFile:
