@@ -29,7 +29,7 @@ The following `Containerfile` creates a pre-configured {project_name} image that
 .Containerfile:
 [source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:{containerlabel} as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} AS builder
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
