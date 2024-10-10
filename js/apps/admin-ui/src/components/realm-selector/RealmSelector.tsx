@@ -200,7 +200,12 @@ export const RealmSelector = () => {
         {(realms.length !== 0
           ? [
               first !== 0 ? (
-                <DropdownItem onClick={() => setFirst(first - MAX_RESULTS)}>
+                <DropdownItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFirst(first - MAX_RESULTS);
+                  }}
+                >
                   <AngleLeftIcon /> {t("previous")}
                 </DropdownItem>
               ) : (
@@ -224,7 +229,12 @@ export const RealmSelector = () => {
                 </DropdownItem>
               )),
               realms.length > MAX_RESULTS ? (
-                <DropdownItem onClick={() => setFirst(first + MAX_RESULTS)}>
+                <DropdownItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFirst(first + MAX_RESULTS);
+                  }}
+                >
                   <AngleRightIcon />
                   {t("next")}
                 </DropdownItem>
