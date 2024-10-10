@@ -51,7 +51,7 @@ public class JpaUserProviderFactory implements UserProviderFactory {
     @Override
     public UserProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaUserProvider(session, em);
+        return new JpaUserProvider(session, em, new JpaUserCredentialStore(session, em));
     }
 
     @Override
