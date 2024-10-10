@@ -84,6 +84,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyPasswordChangeException;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
@@ -819,6 +820,22 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             try {
                 ldapIdentityStore.validatePassword(ldapUser, password);
+                return true;
+            } catch (PasswordPolicyPasswordChangeException e) {
+                // LDAP password policy requires a forced password change.
+                // Check for (1) import enabled, so that we can persist required actions and
+                // (2) edit mode writable, so that user can modify LDAP password.
+                if (!model.isImportEnabled() || editMode != EditMode.WRITABLE) {
+                    logger.debugf("User '%s' in realm '%s' is forced to change password but UPDATE_PASSWORD cannot be set: import not enabled or edit mode not writable. Failing login.", user.getUsername(), realm.getName());
+                    return false;
+                }
+                if (user.getRequiredActionsStream()
+                        .noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                    logger.debugf("Adding requiredAction UPDATE_PASSWORD to user %s", user.getUsername());
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                } else {
+                    logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), realm.getName());
+                }
                 return true;
             } catch (AuthenticationException ae) {
                 AtomicReference<Boolean> processed = new AtomicReference<>(false);
