@@ -43,6 +43,7 @@ public interface UserModel extends RoleMapperModel {
     String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
+    String CREATE_ID_OVERRIDE = "keycloak.session.realm.users.create.id";
     String EXACT = "keycloak.session.realm.users.query.exact";
     String DISABLED_REASON = "disabledReason";
 
