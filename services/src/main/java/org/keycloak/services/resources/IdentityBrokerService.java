@@ -376,9 +376,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             logger.debugf("Sending authentication request to identity provider [%s].", providerAlias);
         }
 
-        try {
-            AuthenticationSessionModel authSession = parseSessionCode(code, clientId, tabId, clientData);
+        AuthenticationSessionModel authSession = parseSessionCode(code, clientId, tabId, clientData);
 
+        try {
             ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
             clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
             IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(providerAlias);
