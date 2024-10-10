@@ -120,6 +120,8 @@ public interface RequiredActionContext {
 
     Status getStatus();
 
+    String getErrorMessage();
+
     /**
      * Send a challenge Response back to user
      *
@@ -128,10 +130,18 @@ public interface RequiredActionContext {
     void challenge(Response response);
 
     /**
+     * Abort the authentication with an error, optionally with an erroMessage.
+     *
+     */
+    void failure(String errorMessage);
+
+    /**
      * Abort the authentication with an error
      *
      */
-    void failure();
+    default void failure() {
+        failure(null);
+    }
 
     /**
      * Mark this required action as successful.  The required action will be removed from the UserModel
