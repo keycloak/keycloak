@@ -29,6 +29,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -79,17 +80,18 @@ public class EventBuilder {
     }
 
     private static List<EventListenerProvider> getEventListeners(KeycloakSession session, RealmModel realm) {
-        return realm.getEventsListenersStream().map(id -> {
-            EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-            if (listener != null) {
-                return listener;
-            } else {
-                log.error("Event listener '" + id + "' registered, but provider not found");
-                return null;
-            }
-        })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        List<EventListenerProvider> result = session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> ((EventListenerProviderFactory) providerFactory).isEnabled(session))
+                .map(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    return (EventListenerProvider) providerFactory.create(session);
+                })
+                .toList();
+        if (!realmListeners.isEmpty()) {
+            log.error("Event listeners " + realmListeners + " registered, but provider not found");
+        }
+        return result;
     }
 
     private EventBuilder(KeycloakSession session, EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
@@ -263,15 +265,6 @@ public class EventBuilder {
                 log.error("Failed to send type to " + l, t);
             }
         }
-
-        session.getAllProviders(GlobalEventListenerProvider.class).forEach(p -> {
-            try {
-                p.onEvent(event);
-            } catch (Throwable t) {
-                log.error("Failed to send type to " + p, t);
-            }
-        });
-
     }
 
 }

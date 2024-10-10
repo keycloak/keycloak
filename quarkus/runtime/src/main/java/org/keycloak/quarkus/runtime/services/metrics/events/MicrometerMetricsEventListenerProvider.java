@@ -26,18 +26,18 @@ import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
-import org.keycloak.events.GlobalEventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.HashSet;
 import java.util.Locale;
 
-public class MicrometerMetricsEventListener implements GlobalEventListenerProvider {
+public class MicrometerMetricsEventListenerProvider implements EventListenerProvider {
 
-    private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListener.class);
+    private static final Logger logger = Logger.getLogger(MicrometerMetricsEventListenerProvider.class);
 
     private static final String REALM_TAG = "realm";
     private static final String IDP_TAG = "idp";
@@ -57,7 +57,7 @@ public class MicrometerMetricsEventListener implements GlobalEventListenerProvid
     private final EventListenerTransaction tx =
             new EventListenerTransaction(null, this::countEvent);
 
-    public MicrometerMetricsEventListener(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events) {
+    public MicrometerMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events) {
         this.withIdp = withIdp;
         this.withRealm = withRealm;
         this.withClientId = withClientId;

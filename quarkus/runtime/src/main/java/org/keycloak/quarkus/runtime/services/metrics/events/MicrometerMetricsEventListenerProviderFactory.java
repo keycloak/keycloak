@@ -19,15 +19,15 @@ package org.keycloak.quarkus.runtime.services.metrics.events;
 
 import org.bouncycastle.util.Strings;
 import org.keycloak.Config;
-import org.keycloak.events.GlobalEventListenerProvider;
-import org.keycloak.events.GlobalEventListenerProviderFactory;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.HashSet;
 
-public class MicrometerMetricsEventListenerFactory implements GlobalEventListenerProviderFactory, EnvironmentDependentProviderFactory {
+public class MicrometerMetricsEventListenerProviderFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final String ID = "micrometer-metrics";
 
@@ -36,8 +36,8 @@ public class MicrometerMetricsEventListenerFactory implements GlobalEventListene
     private HashSet<String> events;
 
     @Override
-    public GlobalEventListenerProvider create(KeycloakSession session) {
-        return new MicrometerMetricsEventListener(session, withIdp, withRealm, withClientId, events);
+    public EventListenerProvider create(KeycloakSession session) {
+        return new MicrometerMetricsEventListenerProvider(session, withIdp, withRealm, withClientId, events);
     }
 
     @Override
@@ -74,6 +74,11 @@ public class MicrometerMetricsEventListenerFactory implements GlobalEventListene
     @Override
     public String getId() {
         return ID;
+    }
+
+    @Override
+    public boolean isEnabled(KeycloakSession session) {
+        return true;
     }
 
     @Override

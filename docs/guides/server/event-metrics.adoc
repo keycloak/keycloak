@@ -8,6 +8,13 @@ title="Enabling {project_name} Event Metrics"
 summary="Learn how to enable and use {project_name} Event Metrics"
 includedOptions="metrics-enabled user-event-metrics-*">
 
+Event metrics can provide admins an overview of the different activities in a {project_name} instance.
+For example, you can monitor the number of logins per second, login failures per second, or token refreshes performed per second.
+
+The metrics are exposed using the standard metrics endpoint, and you can use it in your own metrics collection system to create dashboards and alerts.
+
+The metrics are reported per {project_name} instance. If you have multiple instances running in a cluster, you will need to collect the metrics from all instances and sum them up to get the total number of events in your cluster.
+
 == Enable event metrics
 
 To start collecting metrics, enable the feature `user-event-metrics`, enable metrics, and enable the metrics for user events.
@@ -23,25 +30,24 @@ The following limits the tags to the realm tag:
 
 <@kc.start parameters="... --user-event-metrics-tags=realm ..."/>
 
-The snippet below is an example of a response:
+You can limit the metrics for which {project_name} will expose metrics.
 
-// FIXME: Example might be outdated
+The following example limits the events collected to `LOGIN` and `LOGOUT` events:
+
+<@kc.start parameters="... --user-event-metrics-events=login,logout ..."/>
+
+All error events will be collected with the primary event type and will have the `error` tag filled with the error code.
+
+The snippet below is an example of a response provided by the metric endpoint:
 
 [source]
 ----
-
-# TYPE keycloak_simple_events counter
-# HELP keycloak_simple_events The total number of Keycloak events
-keycloak_simple_events_total{event="update_password",realm="master"} 1.0
-keycloak_simple_events_total{event="update_credential",realm="master"} 1.0
-# TYPE keycloak_events counter
-# HELP keycloak_events The total number of Keycloak events
-keycloak_events_total{client_id="security-admin-console",error="",event="code_to_token",idp="",realm="master"} 6.0
-keycloak_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master"} 2.0
-keycloak_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master"} 6.0
-keycloak_events_total{client_id="security-admin-console",error="",event="refresh_token",idp="",realm="master"} 2.0
-keycloak_events_total{client_id="",error="client_not_found",event="login_error",idp="",realm="master"} 1.0
-...
+# HELP keycloak_user_events_total Keycloak user events
+# TYPE keycloak_user_events_total counter
+keycloak_user_events_total{client_id="security-admin-console",error="",event="code_to_token",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="invalid_user_credentials",event="login",idp="",realm="master",} 1.0
 ----
 
 

@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.quarkus.runtime.services.metrics.events.MicrometerMetricsEventListenerFactory
+org.keycloak.quarkus.runtime.services.metrics.events.MicrometerMetricsEventListenerProviderFactory

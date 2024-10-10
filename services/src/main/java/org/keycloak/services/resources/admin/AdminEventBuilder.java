@@ -22,8 +22,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.GlobalEventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
@@ -38,9 +38,9 @@ import org.keycloak.util.JsonSerialization;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 public class AdminEventBuilder {
 
@@ -129,16 +129,14 @@ public class AdminEventBuilder {
     }
 
     private AdminEventBuilder addListeners(KeycloakSession session) {
-        realm.getEventsListenersStream()
-                .filter(((Predicate<String>) listeners::containsKey).negate())
-                .forEach(id -> {
-                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                    if (listener != null) {
-                        listeners.put(id, listener);
-                    } else {
-                        ServicesLogger.LOGGER.providerNotFound(id);
-                    }
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> ((EventListenerProviderFactory) providerFactory).isEnabled(session))
+                .forEach(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    listeners.put(providerFactory.getId(), ((EventListenerProviderFactory) providerFactory).create(session));
                 });
+        realmListeners.forEach(ServicesLogger.LOGGER::providerNotFound);
         return this;
     }
 
@@ -292,11 +290,6 @@ public class AdminEventBuilder {
                 }
             }
         }
-
-        session.getAllProviders(GlobalEventListenerProvider.class).forEach(p -> {
-            p.onEvent(eventCopy, includeRepresentation);
-        });
-
     }
 
 }

@@ -454,8 +454,8 @@ public class MicrometerMetricsEventListenerTest {
         return createEvent(type, DEFAULT_REALM_NAME, "THE_CLIENT_ID", (String) null);
     }
 
-    private static MicrometerMetricsEventListener getMicrometerMetricsEventListener(KeycloakSession session) {
-        return session.getProvider(MicrometerMetricsEventListener.class);
+    private static MicrometerMetricsEventListenerProvider getMicrometerMetricsEventListener(KeycloakSession session) {
+        return session.getProvider(MicrometerMetricsEventListenerProvider.class);
     }
 
     private KeycloakSessionFactory createKeycloakSessionFactory() {
@@ -539,7 +539,7 @@ public class MicrometerMetricsEventListenerTest {
 
                     @Override
                     public <T extends Provider> T getProvider(Class<T> clazz) {
-                        return (T) new MicrometerMetricsEventListener(this, true, true, true, null);
+                        return (T) new MicrometerMetricsEventListenerProvider(this, true, true, true, null);
                     }
 
                     @Override
