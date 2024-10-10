@@ -224,6 +224,7 @@ export default function AttributesGroupForm() {
 
       setTranslationsData(translationsDataNew);
     },
+
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     () => {},
     [combinedLocales, realmName, form],
@@ -252,7 +253,10 @@ export default function AttributesGroupForm() {
     };
 
     try {
-      if (translationsData.displayHeader?.translations.length > 0) {
+      if (
+        translationsData &&
+        translationsData.displayHeader.translations.length > 0
+      ) {
         for (const translation of translationsData.displayHeader.translations) {
           if (translation.locale && translation.value) {
             await addLocalization(
@@ -264,7 +268,10 @@ export default function AttributesGroupForm() {
         }
       }
 
-      if (translationsData.displayDescription?.translations.length > 0) {
+      if (
+        translationsData &&
+        translationsData.displayDescription.translations.length > 0
+      ) {
         for (const translation of translationsData.displayDescription
           .translations) {
           if (translation.locale && translation.value) {
