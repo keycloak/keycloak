@@ -19,14 +19,18 @@ package org.keycloak.storage.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -36,9 +40,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -92,13 +101,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     private static List<ProviderConfigProperty> getConfigProps(ComponentModel parent) {
-        boolean readOnly = false;
-        if (parent != null) {
-            LDAPConfig config = new LDAPConfig(parent.getConfig());
-            readOnly = config.getEditMode() != UserStorageProvider.EditMode.WRITABLE;
-        }
-
-
         return ProviderConfigurationBuilder.create()
                 .property().name(LDAPConstants.EDIT_MODE)
                 .type(ProviderConfigProperty.STRING_TYPE)
@@ -641,13 +643,20 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         if (!userModelOptional.isPresent() && currentUserLocal == null) {
                             // Add new user to Keycloak
                             exists.value = false;
-                            ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
+                            UserModel newUser = ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
+                            
+                            newAdminEventBuilder(currentRealm, session)
+                                .operation(OperationType.CREATE)
+                                .resource(ResourceType.USER)
+                                .representation(StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(session, currentRealm, newUser)))
+                                .resourcePath(session.getContext().getUri())
+                                .success();
+                            
                             syncResult.increaseAdded();
 
                         } else {
                             UserModel currentUser = userModelOptional.isPresent() ? userModelOptional.get() : currentUserLocal;
                             if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getFirstAttribute(LDAPConstants.LDAP_ID)))) {
-
                                 // Update keycloak user
                                 LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(ldapFedProvider.getLdapIdentityStore().getConfig());
                                 currentRealm.getComponentsStream(fedModel.getId(), LDAPStorageMapper.class.getName())
@@ -662,6 +671,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                     userCache.evict(currentRealm, currentUser);
                                 }
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
+                                newAdminEventBuilder(currentRealm, session)
+                                    .operation(OperationType.UPDATE)
+                                    .resource(ResourceType.USER)
+                                    .representation(StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(session, currentRealm, currentUser)))
+                                    .resourcePath(session.getContext().getUri())
+                                    .success();
                                 syncResult.increaseUpdated();
                             } else {
                                 logger.warnf("User with ID '%s' is not updated during sync as he already exists in Keycloak database but is not linked to federation provider '%s'", ldapUser.getUuid(), fedModel.getName());
@@ -709,6 +724,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         }
 
         return syncResult;
+    }
+
+    private AdminEventBuilder newAdminEventBuilder(RealmModel realm, KeycloakSession session) {
+        return new AdminEventBuilder(realm, new AdminAuth(realm, null, null, null), session, session.getContext().getConnection());
     }
 
     protected SPNEGOAuthenticator createSPNEGOAuthenticator(String spnegoToken, CommonKerberosConfig kerberosConfig) {
