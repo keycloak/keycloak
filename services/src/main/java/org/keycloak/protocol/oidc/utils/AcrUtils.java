@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -43,14 +44,21 @@ public class AcrUtils {
     }
 
     public static List<String> getAcrValues(String claimsParam, String acrValuesParam, ClientModel client) {
+        // Use forced ACR values of client (if configured)
+        List<String> forcedAcrValues = getAcrValues(client, Constants.FORCED_ACR_VALUES);
+        if (!forcedAcrValues.isEmpty()) {
+            return forcedAcrValues;
+        }
+
         List<String> fromParams = getAcrValues(claimsParam, acrValuesParam, false);
         if (!fromParams.isEmpty()) {
             return fromParams;
         }
 
         // Fallback to default ACR values of client (if configured)
-        return getDefaultAcrValues(client);
+        return getAcrValues(client, Constants.DEFAULT_ACR_VALUES);
     }
+
 
     private static List<String> getAcrValues(String claimsParam, String acrValuesParam, boolean essential) {
         List<String> acrValues = new ArrayList<>();
@@ -150,6 +158,10 @@ public class AcrUtils {
 
 
     public static List<String> getDefaultAcrValues(ClientModel client) {
-        return OIDCAdvancedConfigWrapper.fromClientModel(client).getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+        return getAcrValues(client, Constants.DEFAULT_ACR_VALUES);
+    }
+
+    public static List<String> getAcrValues(final ClientModel client, final String constantKey) {
+        return OIDCAdvancedConfigWrapper.fromClientModel(client).getAttributeMultivalued(constantKey);
     }
 }

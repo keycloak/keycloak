@@ -189,6 +189,7 @@ For example, assume that you configure the `Default ACR Values` to level 2. Then
 However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
 really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and double-check that it contains the requested level 2.
 
+The `Forced ACR Values` can be used to specify values to be used to enforce a requirement that users authenticate with a certain level.
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
 For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].

@@ -249,6 +249,23 @@ export const AdvancedSettings = ({
               stringify
             />
           </FormGroup>
+          <FormGroup
+            label={t("forcedACRValues")}
+            fieldId="forcedACRValues"
+            labelIcon={
+              <HelpItem
+                helpText={t("forcedACRValuesHelp")}
+                fieldLabelId="forcedACRValues"
+              />
+            }
+          >
+            <MultiLineInput
+              id="forcedACRValues"
+              aria-label="forcedACRValues"
+              name={convertAttributeNameToForm("attributes.forced.acr.values")}
+              stringify
+            />
+          </FormGroup>
         </>
       )}
       <ActionGroup>

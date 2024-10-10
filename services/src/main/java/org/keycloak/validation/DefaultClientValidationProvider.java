@@ -18,6 +18,7 @@ package org.keycloak.validation;
 
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -185,6 +186,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         new CibaClientValidation(context).validate();
         validateJwks(context);
         validateDefaultAcrValues(context);
+        validateForcedAcrValues(context);
 
         return context.toResult();
     }
@@ -195,6 +197,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
         validateDefaultAcrValues(context);
+        validateForcedAcrValues(context);
 
         return context.toResult();
     }
@@ -372,7 +375,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     private void validateDefaultAcrValues(ValidationContext<ClientModel> context) {
         ClientModel client = context.getObjectToValidate();
-        List<String> defaultAcrValues = AcrUtils.getDefaultAcrValues(client);
+        List<String> defaultAcrValues = AcrUtils.getAcrValues(client, Constants.DEFAULT_ACR_VALUES);
         Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
         if (acrToLoaMap.isEmpty()) {
             acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
@@ -382,6 +385,22 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             if (!LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
                     .anyMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
                 context.addError("defaultAcrValues", "Default ACR values need to contain values specified in the ACR-To-Loa mapping or number levels from set realm browser flow");
+            }
+        }
+    }
+
+    private void validateForcedAcrValues(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        List<String> forcedAcrValues = AcrUtils.getAcrValues(client, Constants.FORCED_ACR_VALUES);
+        Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
+        if (acrToLoaMap.isEmpty()) {
+            acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
+        }
+        for (String configuredAcr : forcedAcrValues) {
+            if (acrToLoaMap.containsKey(configuredAcr)) continue;
+            if (!LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                    .anyMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
+                context.addError("forcedAcrValues", "Forced ACR values need to contain values specified in the ACR-To-Loa mapping or number levels from set realm browser flow");
             }
         }
     }

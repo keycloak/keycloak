@@ -92,6 +92,8 @@ public class OIDCClientRepresentation {
 
     private List<String> default_acr_values;
 
+    private List<String> forced_acr_values;
+
     private String initiate_login_uri;
 
     private List<String> request_uris;
@@ -125,7 +127,7 @@ public class OIDCClientRepresentation {
     private String backchannel_logout_uri;
 
     private Boolean backchannel_logout_session_required;
-    
+
     private Boolean backchannel_logout_revoke_offline_tokens;
 
     // OIDC CIBA
@@ -395,6 +397,14 @@ public class OIDCClientRepresentation {
 
     public void setDefaultAcrValues(List<String> default_acr_values) {
         this.default_acr_values = default_acr_values;
+    }
+
+    public List<String> getForcedAcrValues() {
+        return forced_acr_values;
+    }
+
+    public void setForcedAcrValues(List<String> forced_acr_values) {
+        this.forced_acr_values = forced_acr_values;
     }
 
     public String getInitiateLoginUri() {

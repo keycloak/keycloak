@@ -893,6 +893,44 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testLoginWithForcedAcrWithoutAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.FORCED_ACR_VALUES, List.of("gold"));
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with gold
+        oauth.openLoginForm();
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        testClientRep.getAttributes().put(Constants.FORCED_ACR_VALUES, null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testLoginWithForcedAcrWithAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.FORCED_ACR_VALUES, List.of("gold"));
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with gold, even if the client sends silver
+        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam("acr_values", "silver")
+                .build().toString());
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        testClientRep.getAttributes().put(Constants.FORCED_ACR_VALUES, null);
+        testClient.update(testClientRep);
+    }
+
     private String getCredentialIdByLabel(String credentialLabel) {
         return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
                 .stream()
