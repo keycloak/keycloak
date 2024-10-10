@@ -16,6 +16,8 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
 
     private final KeycloakSession session;
 
+    private DeviceRepresentation deviceRepresentation;
+
     DeviceRepresentationProviderImpl(KeycloakSession session, Parser parser) {
         this.session = session;
         this.parser = parser;
@@ -23,6 +25,10 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
 
     @Override
     public DeviceRepresentation deviceRepresentation() {
+        if (deviceRepresentation != null) {
+            return deviceRepresentation;
+        }
+
         KeycloakContext context = session.getContext();
 
         if (context.getRequestHeaders() == null) {
@@ -81,6 +87,8 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
             current.setOsVersion(osVersion);
             current.setIpAddress(context.getConnection().getRemoteAddr());
             current.setMobile(userAgent.toLowerCase().contains("mobile"));
+
+            deviceRepresentation = current;
         } catch (Exception cause) {
             logger.error("Failed to create device info from user agent header", cause);
             return null;

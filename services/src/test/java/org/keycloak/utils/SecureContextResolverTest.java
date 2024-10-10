@@ -1,12 +1,16 @@
-package org.keycloak.common.util;
+package org.keycloak.utils;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.representations.account.DeviceRepresentation;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.function.Supplier;
 
 public class SecureContextResolverTest {
+
+    static final String BROWSER_SAFARI = "Safari/18.0.1";
 
     @Test
     public void testHttps() {
@@ -47,9 +51,32 @@ public class SecureContextResolverTest {
         assertSecureContext("http://test.localhost.not", false);
     }
 
+    @Test
+    public void testQuirksSafari() {
+        assertSecureContext("https://127.0.0.1", BROWSER_SAFARI, true);
+        assertSecureContext("https://something", BROWSER_SAFARI, true);
+        assertSecureContext("http://[::1]", BROWSER_SAFARI,false);
+        assertSecureContext("http://[0000:0000:0000:0000:0000:0000:0000:0001]", BROWSER_SAFARI, false);
+        assertSecureContext("http://localhost", BROWSER_SAFARI, false);
+        assertSecureContext("http://localhost.", BROWSER_SAFARI, false);
+        assertSecureContext("http://test.localhost", BROWSER_SAFARI, false);
+        assertSecureContext("http://test.localhost.", BROWSER_SAFARI, false);
+    }
+
     void assertSecureContext(String url, boolean expectedSecureContext) {
+        assertSecureContext(url, null, expectedSecureContext);
+    }
+
+    void assertSecureContext(String url, String browser, boolean expectedSecureContext) {
+        DeviceRepresentation deviceRepresentation = new DeviceRepresentation();
+        Supplier<DeviceRepresentation> deviceRepresentationSupplier = () -> deviceRepresentation;
+
+        if (browser != null) {
+            deviceRepresentation.setBrowser(browser);
+        }
+
         try {
-            Assert.assertEquals(expectedSecureContext, SecureContextResolver.isSecureContext(new URI(url)));
+            Assert.assertEquals(expectedSecureContext, SecureContextResolver.isSecureContext(new URI(url), deviceRepresentationSupplier));
         } catch (URISyntaxException e) {
             Assert.fail(e.getMessage());
         }
