@@ -79,7 +79,7 @@ public final class Build extends AbstractCommand implements Runnable {
             configureBuildClassLoader();
 
             beforeReaugmentationOnWindows();
-            QuarkusEntryPoint.main();
+            picocli.build();
 
             if (!isDevProfile()) {
                 println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
@@ -133,7 +133,7 @@ public final class Build extends AbstractCommand implements Runnable {
     private void cleanTempResources() {
         if (!LaunchMode.current().isDevOrTest()) {
             // only needed for dev/testing purposes
-            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
+            Optional.ofNullable(getHomePath()).ifPresent(path -> path.resolve("quarkus-artifact.properties").toFile().delete());
         }
     }
 
