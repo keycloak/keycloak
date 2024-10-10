@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-empty-function */
 import type {
   UserProfileAttribute,
   UserProfileConfig,
@@ -195,7 +197,6 @@ export default function NewAttributeSettings() {
               translations,
             )
               .filter(([key]) => key === formattedKey)
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               .map(([_, value]) => ({
                 locale: selectedLocale,
                 value,
@@ -242,8 +243,6 @@ export default function NewAttributeSettings() {
         ),
       );
     },
-
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     () => {},
     [combinedLocales, realmName, form],
   );

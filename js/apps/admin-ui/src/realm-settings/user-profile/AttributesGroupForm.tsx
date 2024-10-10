@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   HelpItem,
@@ -224,8 +225,6 @@ export default function AttributesGroupForm() {
 
       setTranslationsData(translationsDataNew);
     },
-
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     () => {},
     [combinedLocales, realmName, form],
   );
