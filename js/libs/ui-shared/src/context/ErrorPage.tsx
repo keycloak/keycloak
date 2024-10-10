@@ -5,9 +5,9 @@ import {
   Page,
   Text,
   TextContent,
-  TextVariants,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
+import { label } from "../user-profile/utils";
 import { getNetworkErrorDescription } from "../utils/errors";
 
 type ErrorPageProps = {
@@ -30,7 +30,7 @@ export const ErrorPage = (props: ErrorPageProps) => {
     <Page>
       <Modal
         variant={ModalVariant.small}
-        title={t("somethingWentWrong")}
+        title={errorMessage ? "" : t("somethingWentWrong")}
         titleIconVariant="danger"
         showClose={false}
         isOpen
@@ -41,9 +41,10 @@ export const ErrorPage = (props: ErrorPageProps) => {
         ]}
       >
         <TextContent>
-          <Text>{t("somethingWentWrongDescription")}</Text>
-          {errorMessage && (
-            <Text component={TextVariants.small}>{errorMessage}</Text>
+          {errorMessage ? (
+            <Text>{label(t, errorMessage)}</Text>
+          ) : (
+            <Text>{t("somethingWentWrongDescription")}</Text>
           )}
         </TextContent>
       </Modal>
