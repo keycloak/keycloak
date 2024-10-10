@@ -25,28 +25,39 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import java.util.HashSet;
+
 public class MicrometerMetricsEventListenerFactory implements GlobalEventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final String ID = "micrometer-metrics";
 
     private boolean withIdp, withRealm, withClientId;
 
+    private HashSet<String> events;
+
     @Override
     public GlobalEventListenerProvider create(KeycloakSession session) {
-        return new MicrometerMetricsEventListener(session, withIdp, withRealm, withClientId);
+        return new MicrometerMetricsEventListener(session, withIdp, withRealm, withClientId, events);
     }
 
     @Override
     public void init(Config.Scope config) {
-        String tags = config.get("tags");
-        if (tags != null) {
-            for (String s : Strings.split(tags, ',')) {
+        String tagsConfig = config.get("tags");
+        if (tagsConfig != null) {
+            for (String s : Strings.split(tagsConfig, ',')) {
                 switch (s.trim()) {
                     case "idp" -> withIdp = true;
                     case "realm" -> withRealm = true;
                     case "clientId" -> withClientId = true;
                     default -> throw new IllegalArgumentException("Unknown tag for collecting user event metrics: '" + s + "'");
                 }
+            }
+        }
+        String eventsConfig = config.get("events");
+        if (eventsConfig != null && !eventsConfig.trim().isEmpty()) {
+            events = new HashSet<>();
+            for (String s : Strings.split(eventsConfig, ',')) {
+                events.add(s.trim());
             }
         }
     }
@@ -67,7 +78,8 @@ public class MicrometerMetricsEventListenerFactory implements GlobalEventListene
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return config.getBoolean("enabled");
+        Boolean enabled = config.getBoolean("enabled");
+        return enabled != null && enabled;
     }
 
 }

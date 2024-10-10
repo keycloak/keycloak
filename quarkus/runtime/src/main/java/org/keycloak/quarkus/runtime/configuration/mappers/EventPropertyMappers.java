@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import org.keycloak.common.Profile;
 
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_ENABLED;
+import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_EVENTS;
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_TAGS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsPropertyMappers.METRICS_ENABLED_MSG;
@@ -23,6 +24,11 @@ final class EventPropertyMappers {
                 fromOption(USER_EVENT_METRICS_TAGS)
                         .to("kc.spi-global-events-listener-micrometer-metrics-tags")
                         .paramLabel("tags")
+                        .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
+                        .build(),
+                fromOption(USER_EVENT_METRICS_EVENTS)
+                        .to("kc.spi-global-events-listener-micrometer-metrics-events")
+                        .paramLabel("events")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build(),
         };

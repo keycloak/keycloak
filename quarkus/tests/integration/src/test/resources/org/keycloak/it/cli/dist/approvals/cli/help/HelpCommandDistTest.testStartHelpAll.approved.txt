@@ -297,16 +297,6 @@ Metrics:
                      If the server should expose metrics. If enabled, metrics are available at the
                        '/metrics' endpoint. Default: false.
 
-Events (Experimental):
-
---user-event-metrics-enabled <true|false>
-                     Experimental: Create metrics based on user events. Default: false. Available
-                       only when metrics are enabled and feature user-event-metrics + is enabled.
---user-event-metrics-tags <tags>
-                     Experimental: Comma-separated list of tags to be collected for events.
-                       Default: realm,clientId,idp. Available only when user event metrics are
-                       enabled.
-
 Proxy:
 
 --proxy-headers <headers>
@@ -457,6 +447,21 @@ Tracing (Preview):
                      Preview: OpenTelemetry service name. Takes precedence over 'service.name'
                        defined in the 'tracing-resource-attributes' property. Default: keycloak.
                        Available only when 'opentelemetry' feature and Tracing is enabled.
+
+Events (Preview):
+
+--user-event-metrics-enabled <true|false>
+                     Preview: Create metrics based on user events. Default: false. Available only
+                       when metrics are enabled and feature user-event-metrics is enabled.
+--user-event-metrics-events <events>
+                     Preview: Comma-separated list of events to be collected for event metrics.
+                       Reduce the number of metrics. If empty or not set, all events create a
+                       metric. Available only when user event metrics are enabled.
+--user-event-metrics-tags <tags>
+                     Preview: Comma-separated list of tags to be collected for event metrics.
+                       Reduce the tags to avoid a high metrics cardinality if you use a lot of
+                       client, realms or IDPs. Default: realm,clientId,idp. Available only when
+                       user event metrics are enabled.
 
 Truststore:
 

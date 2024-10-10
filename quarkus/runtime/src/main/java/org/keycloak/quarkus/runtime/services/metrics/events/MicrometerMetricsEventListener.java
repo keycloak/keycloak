@@ -32,6 +32,7 @@ import org.keycloak.events.GlobalEventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
+import java.util.HashSet;
 import java.util.Locale;
 
 public class MicrometerMetricsEventListener implements GlobalEventListenerProvider {
@@ -48,15 +49,19 @@ public class MicrometerMetricsEventListener implements GlobalEventListenerProvid
     private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
-    private final boolean withIdp, withRealm, withClientId;
+    private final boolean withIdp;
+    private final boolean withRealm;
+    private final boolean withClientId;
+    private final HashSet<String> events;
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(null, this::countEvent);
 
-    public MicrometerMetricsEventListener(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId) {
+    public MicrometerMetricsEventListener(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events) {
         this.withIdp = withIdp;
         this.withRealm = withRealm;
         this.withClientId = withClientId;
+        this.events = events;
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
@@ -69,9 +74,14 @@ public class MicrometerMetricsEventListener implements GlobalEventListenerProvid
         logger.debugf("Received user event of type %s in realm %s",
                 event.getType().name(), event.getRealmName());
 
+        String eventTag = format(event.getType());
+        if (events != null && !events.contains(eventTag)) {
+            return;
+        }
+
         Counter.Builder counterBuilder = Counter.builder(USER_EVENTS_METER_NAME)
                 .description(DESCRIPTION_OF_EVENT_METER)
-                .tags(Tags.of(Tag.of(EVENT_TAG, format(event.getType())),
+                .tags(Tags.of(Tag.of(EVENT_TAG, eventTag),
                         Tag.of(ERROR_TAG, getError(event))))
                 .baseUnit(BaseUnits.EVENTS);
 

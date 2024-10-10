@@ -21,9 +21,9 @@ If your installation has a lot of them, you'll see a lot of individual metrics. 
 
 The following limits the tags to the realm tag:
 
-The snippet below is an example of a response:
-
 <@kc.start parameters="... --user-event-metrics-tags=realm ..."/>
+
+The snippet below is an example of a response:
 
 // FIXME: Example might be outdated
 
