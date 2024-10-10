@@ -93,6 +93,9 @@
     </changeSet>
 
     <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <indexExists indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
+        </preConditions>
         <dropIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
     </changeSet>
     
