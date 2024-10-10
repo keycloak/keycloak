@@ -64,6 +64,14 @@ To write tests, refer to the [writing tests](docs/tests-development.md) guide.
 Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md). Participation in the Keycloak project is governed by the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md).
 
 
+## Community Meetings
+
+* OAuth SIG Monthly meeting 
+  * Time: Wed 12:00 PM - 01:00 PM London
+  * Zoom Link: https://zoom.us/j/93447076633
+  * For more details about the meeting check out [the GitHub repository](https://github.com/keycloak/kc-sig-fapi) and [Slack channel](https://cloud-native.slack.com/archives/C05KR0TL4P8).
+
+
 ## Other Keycloak Projects
 
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
