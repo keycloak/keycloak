@@ -927,7 +927,7 @@ public class UserTest extends AbstractAdminTest {
         createUsers();
 
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("attr", "common");
+        attributes.put("attr", "Common");
         for (int i = 1; i < 10; i++) {
             List<UserRepresentation> users = realm.users().searchByAttributes(i - 1, 1, null, false, mapToSearchQuery(attributes));
             assertEquals(1, users.size());
