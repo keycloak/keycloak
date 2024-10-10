@@ -9,7 +9,7 @@ public class TruststoreOptions {
 
     public static final Option<List<String>> TRUSTSTORE_PATHS = OptionBuilder.listOptionBuilder("truststore-paths", String.class)
             .category(OptionCategory.TRUSTSTORE)
-            .description("List of pkcs12 (p12 or pfx file extensions), PEM files, or directories containing those files that will be used as a system truststore.")
+            .description("List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or directories containing those files that will be used as a system truststore.")
             .build();
 
     public static final Option<HostnameVerificationPolicy> HOSTNAME_VERIFICATION_POLICY = new OptionBuilder<>("tls-hostname-verifier", HostnameVerificationPolicy.class)

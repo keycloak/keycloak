@@ -44,6 +44,9 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
         if (cause instanceof PropertyException) {
             PrintWriter writer = cmd.getErr();
             writer.println(cmd.getColorScheme().errorText(cause.getMessage()));
+            if (verbose && cause.getCause() != null) {
+                dumpException(writer, cause.getCause());
+            }
             return ShortErrorMessageHandler.getInvalidInputExitCode(cause, cmd);
         }
         error(cmd.getErr(), "Failed to run '" + parseResult.subcommands().stream()
