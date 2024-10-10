@@ -24,10 +24,14 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
 import io.quarkus.runtime.LaunchMode;
+
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
@@ -71,6 +75,18 @@ public final class Build extends AbstractCommand implements Runnable {
         exitWithErrorIfDevProfileIsSetAndNotStartDev();
 
         System.setProperty("quarkus.launch.rebuild", "true");
+        
+        if (Configuration.getNonPersistedConfigValue(
+                        MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey())
+                .getValue() == null) {
+            if (Environment.isParsedCommand(NAME)) {
+                // PropertyMapper validation currently only runs for values that exist, so this is a one of for
+                // checking if something doesn't exist
+                throw new PropertyException("The db option must be explicitly provided in the production profile.");
+            }
+            throw new AssertionError("The db option should have been present");
+        }
+        
         validateConfig();
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
@@ -94,7 +110,7 @@ public final class Build extends AbstractCommand implements Runnable {
 
     private static void configureBuildClassLoader() {
         // ignored artifacts must be set prior to starting re-augmentation
-        Optional.ofNullable(Configuration.getCurrentBuiltTimeProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
+        Optional.ofNullable(Configuration.getNonPersistedConfigValue(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
                 .map(ConfigValue::getValue)
                 .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
     }

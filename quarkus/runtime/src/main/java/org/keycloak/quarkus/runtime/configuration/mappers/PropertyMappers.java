@@ -13,7 +13,6 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
@@ -74,33 +73,6 @@ public final class PropertyMappers {
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         return getMapperOrDefault(name, PropertyMapper.IDENTITY).getConfigValue(name, context);
-    }
-
-    public static boolean isBuildTimeProperty(String name) {
-        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
-            return true;
-        }
-
-        final PropertyMapper<?> mapper = getMapperOrDefault(name, null);
-        boolean isBuildTimeProperty = mapper == null ? false : mapper.isBuildTime();
-
-        return isBuildTimeProperty
-                && !"kc.version".equals(name)
-                && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
-                && !"kc.home.dir".equals(name)
-                && !"kc.config.file".equals(name)
-                && !org.keycloak.common.util.Environment.PROFILE.equals(name)
-                && !"kc.show.config".equals(name)
-                && !"kc.show.config.runtime".equals(name)
-                && !"kc.config-file".equals(name);
-    }
-
-    private static boolean isSpiBuildTimeProperty(String name) {
-        return name.startsWith("kc.spi") && (name.endsWith("provider") || name.endsWith("enabled"));
-    }
-
-    private static boolean isFeaturesBuildTimeProperty(String name) {
-        return name.startsWith("kc.features");
     }
 
     public static Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {

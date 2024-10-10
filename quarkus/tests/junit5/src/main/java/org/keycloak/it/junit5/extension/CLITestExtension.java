@@ -98,7 +98,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
             onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
             onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
-
             configureEnvVars(context.getRequiredTestClass().getAnnotation(WithEnvVars.class));
             configureEnvVars(context.getRequiredTestMethod().getAnnotation(WithEnvVars.class));
 
@@ -290,6 +289,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         // this is basically reproducing the behavior when using kc.sh
         if (cliArgs.contains(Start.NAME)) {
             Environment.setProfile("prod");
+            
         } else if (cliArgs.contains(StartDev.NAME)) {
             Environment.forceDevProfile();
         }
@@ -321,6 +321,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist.run("build");
             }
         } else {
+            dist.setProperty("db", "dev-file"); // default to h2
             // This is for re-creating the H2 database instead of using the default in home
             setProperty("kc.db-url-path", new QuarkusPlatform().getTmpDirectory().getAbsolutePath());
         }
