@@ -1203,7 +1203,7 @@ public class LoginActionsService {
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
 
         event.error(Errors.REJECTED_BY_USER);
-        return protocol.sendError(authSession, error);
+        return protocol.sendError(authSession, error, context.getErrorMessage());
     }
 
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
