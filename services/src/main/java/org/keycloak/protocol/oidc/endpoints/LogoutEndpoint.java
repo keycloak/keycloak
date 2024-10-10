@@ -313,6 +313,8 @@ public class LogoutEndpoint {
         if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
             return logoutToken();
         } else {
+            Cors.builder().allowAllOrigins().add();
+
             return logout(
                     form.getFirst(OIDCLoginProtocol.ID_TOKEN_HINT),
                     form.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM),
