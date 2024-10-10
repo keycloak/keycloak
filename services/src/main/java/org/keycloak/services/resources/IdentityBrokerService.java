@@ -1060,14 +1060,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email));
-        setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
-        setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
+        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email), true);
+        setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName, false);
+        setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName, false);
     }
 
-    private void setDiffAttrToConsumer(String actualValue, String newValue, Consumer<String> consumer) {
+    private void setDiffAttrToConsumer(String actualValue, String newValue, Consumer<String> consumer, boolean ignoreCase) {
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
-        if (newValue != null && !newValue.equals(actualValueNotNull)) {
+        if (newValue != null && !(ignoreCase? newValue.equalsIgnoreCase(actualValueNotNull) : newValue.equals(actualValueNotNull))) {
             consumer.accept(newValue);
         }
     }
