@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,6 +27,7 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -36,15 +38,24 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,17 +65,32 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Drone
+    @JavascriptBrowser
+    private WebDriver jsDriver;
+
     @Page
+    @JavascriptBrowser
     protected AppPage appPage;
 
     @Page
+    @JavascriptBrowser
     protected LoginPage loginPage;
 
     @Page
+    @JavascriptBrowser
     protected TermsAndConditionsPage termsPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @Before
+    public void driver() {
+        appPage.setDriver(jsDriver);
+        termsPage.setDriver(jsDriver);
+        loginPage.setDriver(jsDriver);
+        DroneUtils.addWebDriver(jsDriver);
     }
 
     @Before
@@ -105,16 +131,18 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
         assertNotNull("expected non-null timestamp for terms acceptance in user attribute "
                 + TermsAndConditions.USER_ATTRIBUTE, timestamp);
         try {
-            Integer.parseInt(timestamp);
-        }
-        catch (NumberFormatException e) {
+            Integer.valueOf(timestamp);
+        } catch (NumberFormatException e) {
             fail("timestamp for terms acceptance is not a valid integer: '" + timestamp + "'");
         }
     }
 
     @Test
     public void termsDeclined() {
-        loginPage.open();
+        appPage.open();
+        appPage.openAccount();
+
+        loginPage.assertCurrent();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -126,6 +154,8 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
                 .error(Errors.REJECTED_BY_USER)
                 .removeDetail(Details.CONSENT)
                 .session(Matchers.nullValue(String.class))
+                .client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account")
                 .assertEvent();
 
 
@@ -136,6 +166,15 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
             assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));
         }
+        assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
+        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("You need to agree to Terms and Conditions"));
+        Assert.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
+
+        WebElement tryAgainButton = DroneUtils.getCurrentDriver().findElement(By.tagName("button"));
+        assertThat(tryAgainButton.getText(), equalTo("Try again"));
+        UIUtils.click(tryAgainButton);
+
+        loginPage.assertCurrent();
     }
 
 
