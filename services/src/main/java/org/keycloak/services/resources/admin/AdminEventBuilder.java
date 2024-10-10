@@ -134,7 +134,9 @@ public class AdminEventBuilder {
                 .filter(providerFactory -> ((EventListenerProviderFactory) providerFactory).isEnabled(session))
                 .forEach(providerFactory -> {
                     realmListeners.remove(providerFactory.getId());
-                    listeners.put(providerFactory.getId(), ((EventListenerProviderFactory) providerFactory).create(session));
+                    if (!listeners.containsKey(providerFactory.getId())) {
+                        listeners.put(providerFactory.getId(), ((EventListenerProviderFactory) providerFactory).create(session));
+                    }
                 });
         realmListeners.forEach(ServicesLogger.LOGGER::providerNotFound);
         return this;
