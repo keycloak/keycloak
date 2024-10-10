@@ -4,7 +4,7 @@
 IDP Initiated Login is a feature that allows you to set up an endpoint on the {project_name} server that will log you into a specific application/client.
 In the *Settings* tab for your client, you need to specify the *IDP Initiated SSO URL Name*.
 This is a simple string with no whitespace in it.
-After this you can reference your client at the following URL: `root{kc_realms_path}/{realm}/protocol/saml/clients/{url-name}`
+After this you can reference your client at the following URL: `root{kc_realms_path}/{realm-name}/protocol/saml/clients/{url-name}`
 
 The IDP initiated login implementation prefers _POST_ over _REDIRECT_ binding (check <<_saml, saml bindings>> for more information).
 Therefore the final binding and SP URL are selected in the following way:
@@ -17,7 +17,7 @@ of the client settings) _POST_ binding is used through that URL.
 
 If your client requires a special relay state, you can also configure this on the *Settings* tab in the *IDP Initiated SSO Relay State* field.
 Alternatively, browsers can specify the relay state in a *RelayState* query parameter, i.e.
-`root{kc_realms_path}/{realm}/protocol/saml/clients/{url-name}?RelayState=thestate`.
+`root{kc_realms_path}/{realm-name}/protocol/saml/clients/{url-name}?RelayState=thestate`.
 
 When using <<_identity_broker,identity brokering>>, it is possible to set up an IDP Initiated Login for a client from an
 external IDP. The actual client is set up for IDP Initiated Login at broker IDP as described above. The external IDP has

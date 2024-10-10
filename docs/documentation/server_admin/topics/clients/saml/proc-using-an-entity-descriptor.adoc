@@ -18,6 +18,6 @@ Some SAML client adapters, such as _mod-auth-mellon_, need the XML Entity Descri
 
 [source, subs="attributes"]
 ----
-root{kc_realms_path}/{realm}/protocol/saml/descriptor
+root{kc_realms_path}/{realm-name}/protocol/saml/descriptor
 ----
 where _realm_ is the realm of your client.

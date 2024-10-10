@@ -14,7 +14,7 @@ Resource servers can obtain a PAT from {project_name} like any other OAuth2 acce
 curl -X POST \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'grant_type=client_credentials&client_id=${client_id}&client_secret=${client_secret}' \
-    "http://${host}:${port}{kc_realms_path}/${realm_name}/protocol/openid-connect/token"
+    "http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token"
 ----
 
 The example above is using the *client_credentials* grant type to obtain a PAT from the server. As a result, the server returns a response similar to the following:

@@ -26,7 +26,7 @@ with an authorization request to the token endpoint:
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "ticket=${permission_ticket} \
