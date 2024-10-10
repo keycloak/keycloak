@@ -363,6 +363,7 @@ export const GroupTree = ({
               name="exact"
               isChecked={exact}
               onChange={(_event, value) => setExact(value)}
+              className="pf-v5-u-mr-xs"
             />
           </InputGroupItem>
           <InputGroupItem>
