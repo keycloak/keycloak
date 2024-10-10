@@ -86,6 +86,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-sssd-federation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-federation</artifactId>
+        </dependency>
 
         <!-- Built-in Authorization Policy Providers  -->
         <dependency>
