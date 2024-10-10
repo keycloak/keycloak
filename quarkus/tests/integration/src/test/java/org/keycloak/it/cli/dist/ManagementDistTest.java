@@ -48,7 +48,7 @@ public class ManagementDistTest {
     void testManagementNoHttps(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
-        cliResult.assertError("Key material not provided to setup HTTPS. Please configure your keys/certificates or start the server in development mode.");
+        cliResult.assertError("Key material not provided to setup HTTPS.");
     }
 
     @Test
