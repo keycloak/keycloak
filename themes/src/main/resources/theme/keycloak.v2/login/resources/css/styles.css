@@ -1,3 +1,10 @@
+:root {
+    --keycloak-logo-url: url('../img/keycloak-logo-text.png');
+    --keycloak-bg-logo-url: url("../img/keycloak-bg.png");
+    --keycloak-logo-height: 63px;
+    --keycloak-logo-width: 300px;
+}
+
 .pf-v5-c-login__container {
     grid-template-columns: 34rem;
     grid-template-areas: "header"
@@ -5,16 +12,17 @@
 }
 
 .login-pf body {
-    background: url("../img/keycloak-bg.png") no-repeat center center fixed;
+    background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
     background-size: cover;
     height: 100%;
 }
 
 div.kc-logo-text {
-    background-image: url(../img/keycloak-logo-text.png);
+    background-image: var(--keycloak-logo-url);
+    height: var(--keycloak-logo-height);
+    width: var(--keycloak-logo-width);
     background-repeat: no-repeat;
-    height: 63px;
-    width: 300px;
+    background-size: contain;
     margin: 0 auto;
 }
 

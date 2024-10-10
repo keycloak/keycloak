@@ -91,6 +91,30 @@
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <style>
+      :root {
+      <#assign styleString = realm.attributes.style!"{}">
+      <#assign style = styleString?eval>
+      <#if style.bgimage??>
+          --keycloak-bg-logo-url: url('${style.bgimage}');
+      </#if>
+      <#if style.logo??>
+          --keycloak-logo-url: url('${style.logo}');
+      </#if>
+      <#if style.light??>
+        <#list style.light as k, v>
+            --pf-v5-global--${k}: ${v?no_esc};
+        </#list>
+      </#if>
+      }
+      .pf-v5-theme-dark {
+      <#if style.dark??>
+        <#list style.dark as k, v>
+            --pf-v5-global--${k}: ${v?no_esc};
+        </#list>
+      </#if>
+      }
+    </style>
 </head>
 
 <body id="keycloak-bg" class="${properties.kcBodyClass!}">
