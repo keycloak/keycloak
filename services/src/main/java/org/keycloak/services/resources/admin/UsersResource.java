@@ -152,7 +152,13 @@ public class UsersResource {
 
             UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
-            RepresentationToModel.createGroups(session, rep, realm, user);
+            try{
+                RepresentationToModel.createGroups(session, rep, realm, user);
+            }catch (RuntimeException e){
+                if(e.getMessage().contains("Unable to find group specificed by path")){
+                    throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+                }
+            }
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
