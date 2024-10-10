@@ -324,4 +324,16 @@ While these metrics provide more insights into the latency distribution, collect
 
 For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
 
+== Disabling caching
+
+To support advanced use cases, it is possible to disable infinispan caching entirely by disabling the respective connection providers.
+
+<@kc.start parameters="--spi-connections-infinispan-default-enabled false --spi-connections-infinispan-quarkus-enabled false"/>
+
+Since caching is required by other parts of the server, this also requires custom implementations of at least
+
+* Authentication Sessions
+* Login Failures
+* Single Use Objects
+
 </@tmpl.guide>
