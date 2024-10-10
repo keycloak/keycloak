@@ -144,8 +144,11 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
             // like user with user-with-one-configured-otp. However OTP is preferred credential for him, so OTP mechanism will take preference
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
-            loginTotpPage.assertCurrent();
-            loginTotpPage.assertTryAnotherWayLinkAvailability(true);
+            passwordPage.assertCurrent();
+            passwordPage.assertTryAnotherWayLinkAvailability(true);
+            passwordPage.clickTryAnotherWayLink();
+            selectAuthenticatorPage.assertCurrent();
+            selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
 
             // More OTP credentials should be available for this user
             loginTotpPage.assertOtpCredentialSelectorAvailability(true);
@@ -153,7 +156,7 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
             loginTotpPage.clickTryAnotherWayLink();
 
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
             BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
         }
