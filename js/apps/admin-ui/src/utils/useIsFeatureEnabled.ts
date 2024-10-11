@@ -12,7 +12,7 @@ export enum Feature {
   DeclarativeUI = "DECLARATIVE_UI",
   Organizations = "ORGANIZATION",
   OpenId4VCI = "OID4VC_VCI",
-  ThemeConfig = "THEME_CONFIG",
+  QuickTheme = "QUICK_THEME",
 }
 
 export default function useIsFeatureEnabled() {
