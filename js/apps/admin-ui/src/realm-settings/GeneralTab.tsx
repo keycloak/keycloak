@@ -4,6 +4,13 @@ import {
   UserProfileConfig,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  FormErrorText,
+  HelpItem,
+  SelectControl,
+  TextControl,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   ClipboardCopy,
@@ -15,28 +22,21 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  FormErrorText,
-  HelpItem,
-  SelectControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
   convertAttributeNameToForm,
   convertToFormValues,
 } from "../util";
-import { useFetch } from "../utils/useFetch";
-import { UIRealmRepresentation } from "./RealmSettingsTabs";
-
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { UIRealmRepresentation } from "./RealmSettingsTabs";
+import { useFetch } from "../utils/useFetch";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
@@ -96,7 +96,9 @@ function RealmSettingsGeneralTabForm({
   save,
   userProfileConfig,
 }: RealmSettingsGeneralTabFormProps) {
-  const { adminClient } = useAdminClient();
+  const {
+    environment: { serverBaseUrl },
+  } = useEnvironment();
 
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
@@ -251,7 +253,7 @@ function RealmSettingsGeneralTabForm({
               <StackItem>
                 <FormattedLink
                   href={`${addTrailingSlash(
-                    adminClient.baseUrl,
+                    serverBaseUrl,
                   )}realms/${realmName}/.well-known/openid-configuration`}
                   title={t("openIDEndpointConfiguration")}
                 />
@@ -259,7 +261,7 @@ function RealmSettingsGeneralTabForm({
               <StackItem>
                 <FormattedLink
                   href={`${addTrailingSlash(
-                    adminClient.baseUrl,
+                    serverBaseUrl,
                   )}realms/${realmName}/protocol/saml/descriptor`}
                   title={t("samlIdentityProviderMetadata")}
                 />
