@@ -22,7 +22,7 @@ image:images/user-federation.png[User federation]
 
 {project_name} imports users from LDAP into the local {project_name} user database. This copy of the user database synchronizes on-demand or through a periodic background task. An exception exists for synchronizing passwords. {project_name} never imports passwords. Password validation always occurs on the LDAP server.
 
-The advantage of synchronization is that all {project_name} features work efficiently because any required extra per-user data is stored locally. The disadvantage is that each time {project_name} queries a specific user for the first time, {project_name} performs a corresponding database insert.
+The advantage of synchronization is that all {project_name} features work efficiently because any required extra per-user data is stored locally. The disadvantage is that each time {project_name} queries a specific user for the first time, {project_name} performs a corresponding database insert. Also, when imported users are returned as part of a search operation, a corresponding LDAP search is performed for each one to check if the user still exists in LDAP and do some basic validation.
 
 You can synchronize the import with your LDAP server. Import synchronization is unnecessary when LDAP mappers always read particular attributes from the LDAP rather than the database.
 
@@ -35,6 +35,13 @@ The *Import Users* switch on the LDAP configuration page controls this storage m
 If you disable *Import Users*, you cannot save user profile attributes into the {project_name} database. Also, you cannot save metadata except for user profile metadata mapped to the LDAP. This metadata can include role mappings, group mappings, and other metadata based on the LDAP mappers' configuration.
 
 When you attempt to change the non-LDAP mapped user data, the user update is not possible. For example, you cannot disable the LDAP mapped user unless the user's `enabled` flag maps to an LDAP attribute.
+====
+
+[NOTE]
+====
+When working with imported users, {project_name} performs a LDAP search when the user is queried to validate the user and decorate it so that the configured mappers work properly. This means that extra care must be taken when performing unfiltered user searches that may fetch a big number of users as a LDAP search will be issued for every imported user that is found, possibly affecting the performance in a negative way.
+
+Operations that fetch a single user (for example during login) are usually cached and should not be impacted by this extra LDAP search that is performed when the user is fetched for the first time.
 ====
 
 ==== Edit mode
