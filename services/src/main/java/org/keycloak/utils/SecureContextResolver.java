@@ -38,7 +38,7 @@ public class SecureContextResolver {
         }
 
         DeviceRepresentation deviceRepresentation = deviceRepresentationSupplier.get();
-        String browser = deviceRepresentation.getBrowser();
+        String browser = deviceRepresentation != null ? deviceRepresentation.getBrowser() : null;
 
         // Safari has a bug where even a secure context is not able to set cookies with the 'Secure' directive.
         // Hence, we need to assume the worst case scenario and downgrade to an insecure context.
