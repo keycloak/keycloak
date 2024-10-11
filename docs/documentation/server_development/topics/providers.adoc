@@ -462,4 +462,4 @@ Once you have a JAR file with a descriptor and the scripts you want to deploy, y
 
 === Available SPIs
 
-If you want to see list of all available SPIs at runtime, you can check `Server Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.
+If you want to see list of all available SPIs at runtime, you can check `Provider Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.
