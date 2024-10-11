@@ -5,7 +5,7 @@
     <base href="${resourceUrl}/">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
+    <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
     <meta name="description" content="${properties.description!'The Keycloak Administration Console is a web-based interface for managing Keycloak.'}">
     <title>${properties.title!'Keycloak Administration Console'}</title>
     <style>
@@ -58,7 +58,7 @@
         }
       }
     </script>
-    <#if properties.darkMode?boolean>
+    <#if darkMode>
       <script type="module" async blocking="render">
           const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
