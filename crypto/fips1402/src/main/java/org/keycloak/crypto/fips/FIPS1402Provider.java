@@ -111,6 +111,11 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
+    public int order() {
+        return 200;
+    }
+
+    @Override
     public <T> T getAlgorithmProvider(Class<T> clazz, String algorithm) {
         Object o = providers.get(algorithm);
         if (o == null) {
@@ -195,12 +200,12 @@ public class FIPS1402Provider implements CryptoProvider {
     public Cipher getAesGcmCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
         return Cipher.getInstance("AES/GCM/NoPadding", BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
         return SecretKeyFactory.getInstance(keyAlgorithm, BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException {
         return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
@@ -222,11 +227,11 @@ public class FIPS1402Provider implements CryptoProvider {
     public CertPathBuilder getCertPathBuilder() throws NoSuchAlgorithmException, NoSuchProviderException {
         return CertPathBuilder.getInstance("PKIX", BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
         return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
-            
+
     }
 
     @Override
