@@ -159,6 +159,8 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));
         map.put("properties", theme.getProperties());
+        map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
+                && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {
             try {
                 final InputStream resource = theme.getResourceAsStream(file);
