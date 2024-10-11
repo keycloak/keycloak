@@ -48,30 +48,6 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
         removeFromUserPermissionTickets(event, authorizationProvider);
         removeUserResources(event, authorizationProvider);
-        removeFromUserPolicies(event, authorizationProvider);
-    }
-
-    private void removeFromUserPolicies(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
-        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        UserModel userModel = event.getUser();
-        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
-
-        attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
-        attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
-        attributes.put(Policy.FilterOption.ANY_OWNER, new String[] {Boolean.TRUE.toString()});
-
-        List<Policy> search = policyStore.find(null, attributes, null, null);
-
-        for (Policy policy : search) {
-            PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
-            UserPolicyRepresentation representation = UserPolicyRepresentation.class.cast(policyFactory.toRepresentation(policy, authorizationProvider));
-            Set<String> users = representation.getUsers();
-
-            users.remove(userModel.getId());
-
-            policyFactory.onUpdate(policy, representation, authorizationProvider);
-        }
     }
 
     private void removeUserResources(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
@@ -106,7 +82,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         }
 
         attributes.clear();
-        
+
         attributes.put(PermissionTicket.FilterOption.REQUESTER, userModel.getId());
 
         for (PermissionTicket ticket : ticketStore.find(null, attributes, null, null)) {
