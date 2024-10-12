@@ -26,10 +26,12 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import java.util.Optional;
 
@@ -88,12 +90,14 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
+        IdentityProviderModel idpModel = context.getSession().identityProviders().getByAlias(serializedCtx.getIdentityProviderId());
+
         existingUser.ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
 
         LoginFormsProvider form = context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true)
-                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, serializedCtx.getIdentityProviderId());
+                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, Validation.isBlank(idpModel.getDisplayName()) ? idpModel.getAlias() : idpModel.getDisplayName());
 
         SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
         if (serializedCtx0 != null) {
