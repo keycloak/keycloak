@@ -580,7 +580,7 @@ public class RealmAdminResource {
      */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-         return new RoleByIdResource(session, auth, adminEvent);
+        return new RoleByIdResource(session, auth, adminEvent);
     }
 
     /**
@@ -613,7 +613,21 @@ public class RealmAdminResource {
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
-        session.sessions().removeUserSessions(realm);
+        Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
+        clientSessionStats.putAll(session.sessions().getActiveClientSessionStats(realm, true));
+
+        Stream<UserSessionModel> userSessions = clientSessionStats.entrySet().stream().flatMap((clientSessionStat) -> {
+            ClientModel clientModel = realm.getClientByClientId(clientSessionStat.getKey());
+            if (clientModel == null) {
+                return Stream.empty();
+            }
+            Stream<UserSessionModel> users = session.sessions().getUserSessionsStream(realm, clientModel);
+            return Stream.concat(users, session.sessions().getOfflineUserSessionsStream(realm, clientModel, null, null));
+        });
+        userSessions.distinct().forEach(userSession -> {
+            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
+        });
+
         GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;
@@ -658,7 +672,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( summary = "Get client session stats Returns a JSON map.",
-        description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
+            description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
     public Stream<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
@@ -860,11 +874,11 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
     public Stream<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-                                                    @Parameter(description = "user id") @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-                                                    @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-                                                    @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                    @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
-                                                    @QueryParam("resourceTypes") List<String> resourceTypes) {
+                                                      @Parameter(description = "user id") @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                      @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                      @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                      @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+                                                      @QueryParam("resourceTypes") List<String> resourceTypes) {
         auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -1163,7 +1177,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( summary = "Partial export of existing realm into a JSON file.")
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
-                                                     @QueryParam("exportClients") Boolean exportClients) {
+                                  @QueryParam("exportClients") Boolean exportClients) {
         auth.realm().requireManageRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
@@ -1236,3 +1250,4 @@ public class RealmAdminResource {
     }
 
 }
+
