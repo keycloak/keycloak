@@ -524,6 +524,41 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testRealm().update(realmRep);
     }
 
+    @Test
+    public void testClientMinimumAcrValueValidation() throws IOException {
+        // Setup realm acr-to-loa mapping
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, Integer> acrLoaMap = new HashMap<>();
+        acrLoaMap.put("realm:copper", 0);
+        acrLoaMap.put("realm:silver", 1);
+        realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+        testRealm().update(realmRep);
+
+        // Value "foo" not used in any ACR-To-Loa mapping
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("foo");
+        Assert.assertThrows(BadRequestException.class, () -> {
+            testClient.update(testClientRep);
+        });
+
+        // Realm value should not be considered either
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("realm:silver");
+        Assert.assertThrows(BadRequestException.class, () -> {
+            testClient.update(testClientRep);
+        });
+
+        // Value from client map should be OK
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("silver");
+        testClient.update(testClientRep);
+
+        // Cleanup
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+        realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+        testRealm().update(realmRep);
+    }
+
     // After initial authentication with "acr=2", there will be further re-authentication requests sent in different intervals
     // without "acr" parameter. User should be always re-authenticated due SSO, but with different acr levels due their gradual expirations
     @Test
@@ -891,6 +926,118 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         } finally {
             setOtpTimeOffset(0, totp);
         }
+    }
+
+    @Test
+    public void testLoginWithMinimumAcrWithoutAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with gold
+        oauth.openLoginForm();
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testLoginWithMinimumAcrWithLowerAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with gold, even if the client sends silver
+        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam("acr_values", "silver")
+                .build().toString());
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testLoginWithMinimumAcrWithHigherAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with gold, even if the client sends silver
+        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam("acr_values", "3")
+                .build().toString());
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        authenticateWithButton();
+        assertLoggedInWithAcr("3");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testEssentialAcrMinimumOk() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // username, password input and finally push button for gold
+        openLoginFormWithAcrClaim(true, "gold");
+
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testEssentialAcrMinimumTooLow() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // requesting a too low essential acr should fail
+        openLoginFormWithAcrClaim(true, "silver");
+        assertErrorPage("Invalid parameter: claims");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testNonEssentialAcrMinimumUpgrade() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
+        testClient.update(testClientRep);
+
+        // requesting a too low non-essential ACR should be upgraded
+        openLoginFormWithAcrClaim(false, "silver");
+        authenticateWithUsernamePassword();
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+
+        // Revert
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
+        testClient.update(testClientRep);
     }
 
     private String getCredentialIdByLabel(String credentialLabel) {

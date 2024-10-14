@@ -21,6 +21,7 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
@@ -106,7 +107,7 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public String getRequestObjectRequired() {
         return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED);
     }
-    
+
     public void setRequestObjectRequired(String requestObjectRequired) {
         setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED, requestObjectRequired);
     }
@@ -413,4 +414,11 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
+    public String getMinimumAcrValue() {
+        return getAttribute(Constants.MINIMUM_ACR_VALUE);
+    }
+
+    public void setMinimumAcrValue(String minimumAcrValue) {
+        setAttribute(Constants.MINIMUM_ACR_VALUE, minimumAcrValue);
+    }
 }
