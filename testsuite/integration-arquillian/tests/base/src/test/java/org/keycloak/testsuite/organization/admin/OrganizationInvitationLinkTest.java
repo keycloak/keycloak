@@ -196,7 +196,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         try (
-                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update(); 
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -299,7 +299,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
-        acceptInvitation(organization, user, "Account Management");
+        acceptInvitation(organization, user, "Sign in to");
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user, String pageTitle) throws MessagingException, IOException {
