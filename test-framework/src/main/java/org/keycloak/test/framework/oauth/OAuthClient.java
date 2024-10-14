@@ -110,6 +110,10 @@ public class OAuthClient {
         callbackServer.close();
     }
 
+    public String getRealmUrl() {
+        return realm.getBaseUrl();
+    }
+
     private ClientAuthentication getClientAuthentication() {
         ClientID clientID = new ClientID(client.getClientId());
         Secret clientSecret = new Secret(client.getSecret());
