@@ -215,7 +215,8 @@ public class AccountConsole implements AccountResourceProvider {
 
         var oauthRedirect = new AbstractSecuredLocalService.OAuthRedirect();
         oauthRedirect.setAuthUrl(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString());
-        oauthRedirect.setClientId(client.getClientId());
+        oauthRedirect.setClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        oauthRedirect.setPkceEnabled(true);
         oauthRedirect.setSecure(realm.getSslRequired().isRequired(session.getContext().getConnection()));
         return oauthRedirect.redirect(session.getContext().getUri(), targetUri.toString());
     }

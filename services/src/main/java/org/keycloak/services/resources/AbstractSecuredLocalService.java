@@ -28,6 +28,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.util.TokenUtil;
@@ -44,6 +45,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Helper class for securing local services.  Provides login basics as well as CSRF check basics
@@ -179,6 +181,20 @@ public abstract class AbstractSecuredLocalService {
                     .queryParam(OAuth2Constants.STATE, state)
                     .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                     .queryParam(OAuth2Constants.SCOPE, scopeParam);
+
+            if (isPkceEnabled()) {
+                String pkceChallenge;
+                try {
+                    // TODO generate PKCE challenge based on server value
+                    String codeVerifier = UUID.randomUUID().toString();
+                    pkceChallenge = PkceUtils.generateS256CodeChallenge(codeVerifier);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                uriBuilder
+                        .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
+                        .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
+            }
 
             URI url = uriBuilder.build();
 
