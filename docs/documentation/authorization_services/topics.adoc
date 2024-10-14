@@ -96,4 +96,6 @@ include::topics/service-rpt-overview.adoc[leveloffset=+2]
 
 include::topics/service-rpt-token-introspection.adoc[leveloffset=+3]
 
-include::topics/enforcer-js-adapter.adoc[leveloffset=+1]
+include::topics/enforcer-overview.adoc[leveloffset=+1]
+
+include::topics/enforcer-js-adapter.adoc[leveloffset=+2]
