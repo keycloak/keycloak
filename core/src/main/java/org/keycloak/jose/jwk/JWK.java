@@ -20,7 +20,9 @@ package org.keycloak.jose.jwk;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.util.PemUtils;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +38,12 @@ public class JWK {
     public static final String ALGORITHM = "alg";
 
     public static final String PUBLIC_KEY_USE = "use";
+
+    public static final String X5C = "x5c";
+
+    public static final String SHA1_509_THUMBPRINT = "x5t";
+
+    public static final String SHA256_509_THUMBPRINT = "x5t#S256";
 
     public enum Use {
         SIG("sig"),
@@ -63,6 +71,13 @@ public class JWK {
 
     @JsonProperty(PUBLIC_KEY_USE)
     private String publicKeyUse;
+
+    @JsonProperty(X5C)
+    private String[] x509CertificateChain;
+
+    private String sha1x509Thumbprint;
+
+    private String sha256x509Thumbprint;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -97,6 +112,32 @@ public class JWK {
 
     public void setPublicKeyUse(String publicKeyUse) {
         this.publicKeyUse = publicKeyUse;
+    }
+
+    public String[] getX509CertificateChain() {
+        return x509CertificateChain;
+    }
+
+    public void setX509CertificateChain(String[] x509CertificateChain) {
+        this.x509CertificateChain = x509CertificateChain;
+        if (x509CertificateChain != null && x509CertificateChain.length > 0) {
+            try {
+              sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
+              sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+              throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @JsonProperty(SHA1_509_THUMBPRINT)
+    public String getSha1x509Thumbprint() {
+        return sha1x509Thumbprint;
+    }
+
+    @JsonProperty(SHA256_509_THUMBPRINT)
+    public String getSha256x509Thumbprint() {
+        return sha256x509Thumbprint;
     }
 
     @JsonAnyGetter

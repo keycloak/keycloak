@@ -74,6 +74,7 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
 
             return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC, selfSignedCertificate);
         } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
             logger.warnf("Exception at decodeEcdhPublicKey. %s", e.toString());
             return null;
         }

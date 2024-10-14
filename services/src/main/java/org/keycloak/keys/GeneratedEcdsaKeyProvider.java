@@ -79,6 +79,7 @@ public class GeneratedEcdsaKeyProvider extends AbstractEcKeyProvider {
                                             ecInNistRep), KeyUse.SIG,
                                     selfSignedCertificate);
         } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
             logger.warnf("Exception at decodeEcdsaPublicKey. %s", e.toString());
             return null;
         }

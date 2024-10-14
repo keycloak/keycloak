@@ -59,7 +59,10 @@ public interface Attributes {
     ProviderConfigProperty EC_GENERATE_CERTIFICATE_PROPERTY = new ProviderConfigProperty(
             EC_GENERATE_CERTIFICATE_KEY,
             "Generate Certificate",
-            "If a certificate should be build on creation",
+            """
+            If a certificate should be build on creation. If the certificate is build, it will be available in the \
+            realm JWK for the key in the claim x5c and corresponding thumbprints may be available in the claims like \
+            x5t or x5t#S256.""",
             BOOLEAN_TYPE,
             false);
 
