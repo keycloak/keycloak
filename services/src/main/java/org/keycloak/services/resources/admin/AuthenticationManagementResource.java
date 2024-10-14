@@ -476,11 +476,15 @@ public class AuthenticationManagementResource {
     }
 
     /**
-     * Add new flow with new execution to existing flow
+     * Add new flow with new execution to existing flow.
+     *
+     * This method creates two entities under the covers. Firstly the new authentication flow entity, which will be a subflow of existing parent flow, which was referenced by the path of this endpoint.
+     * Secondly the authentication execution entity, which will be added under the parent flow. This execution entity provides the binding between the parent flow and the new subflow. The new execution
+     * contains the "parentFlow" with the ID of the parent flow and the "flowId" with the ID of the newly created flow
      *
      * @param flowAlias Alias of parent authentication flow
      * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes
-     * @return
+     * @return The response with the "Location" header pointing to the newly created flow (not the newly created execution!)
      */
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
