@@ -48,15 +48,22 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         MultivaluedMap<String, String> formParamsMap = authnFlowContext.getHttpRequest().getDecodedFormParameters();
         String recoveryAuthnCodeUserInput = formParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
 
+        UserModel authenticatedUser = authnFlowContext.getUser();
+        boolean disabledByBruteForce = isDisabledByBruteForce(authnFlowContext, authenticatedUser);
         if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)
                 || "true".equals(authnFlowContext.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
-            authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
-                    RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
-                    RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
-            return result;
+            // the brute force lock might be lifted in the meantime -> we need to clear the auth session note
+            if (!disabledByBruteForce) {
+                authnFlowContext.getAuthenticationSession().removeAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID);
+            } else {
+                authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
+                        RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
+                        RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
+                return result;
+            }
         }
-        UserModel authenticatedUser = authnFlowContext.getUser();
-        if (!isDisabledByBruteForce(authnFlowContext, authenticatedUser)) {
+
+        if (!disabledByBruteForce) {
             boolean isValid = authenticatedUser.credentialManager().isValid(
                     UserCredentialModel.buildFromBackupAuthnCode(recoveryAuthnCodeUserInput.replace("-", "")));
             if (!isValid) {

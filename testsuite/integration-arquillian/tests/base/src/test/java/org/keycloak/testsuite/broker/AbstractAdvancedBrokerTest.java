@@ -595,6 +595,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             loginTotpPage.login(totp.generateTOTP(totpSecret));
+            WaitUtils.waitForPageToLoad();
+            appPage.assertCurrent();
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         } finally {
             testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
