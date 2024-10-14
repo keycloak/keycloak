@@ -99,10 +99,10 @@ public class HotRodServerRule extends ExternalResource {
         sessionConfigBuilder2.clustering().cacheMode(async ? CacheMode.REPL_ASYNC: CacheMode.REPL_SYNC);
 
         sessionConfigBuilder1.sites().addBackup()
-                .site("site-2").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
+                .site("site-2").backupFailurePolicy(BackupFailurePolicy.FAIL).strategy(BackupConfiguration.BackupStrategy.SYNC)
                 .replicationTimeout(15000);
         sessionConfigBuilder2.sites().addBackup()
-                .site("site-1").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
+                .site("site-1").backupFailurePolicy(BackupFailurePolicy.FAIL).strategy(BackupConfiguration.BackupStrategy.SYNC)
                 .replicationTimeout(15000);
 
         sessionConfigBuilder1.locking().lockAcquisitionTimeout(1, TimeUnit.SECONDS);
