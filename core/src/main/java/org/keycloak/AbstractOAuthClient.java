@@ -42,6 +42,7 @@ public class AbstractOAuthClient {
     protected String stateCookiePath;
     protected boolean isSecure;
     protected boolean publicClient;
+    protected boolean pkceEnabled;
     protected String getStateCode() {
         return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
     }
@@ -124,6 +125,14 @@ public class AbstractOAuthClient {
 
     public void setRelativeUrlsUsed(RelativeUrlsUsed relativeUrlsUsed) {
         this.relativeUrlsUsed = relativeUrlsUsed;
+    }
+
+    public boolean isPkceEnabled() {
+        return pkceEnabled;
+    }
+
+    public void setPkceEnabled(boolean pkceEnabled) {
+        this.pkceEnabled = pkceEnabled;
     }
 
     protected String stripOauthParametersFromRedirect(String uri) {
