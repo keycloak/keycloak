@@ -542,7 +542,7 @@ declare class Keycloak {
 	* @param initOptions Initialization options.
 	* @returns A promise to set functions to be invoked on success or error.
 	*/
-	init(initOptions: KeycloakInitOptions): Promise<boolean>;
+	init(initOptions?: KeycloakInitOptions): Promise<boolean>;
 
 	/**
 	* Redirects to login form.

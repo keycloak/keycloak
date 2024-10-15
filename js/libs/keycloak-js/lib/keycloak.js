@@ -60,7 +60,7 @@ function Keycloak (config) {
         );
     }
 
-    kc.init = function (initOptions) {
+    kc.init = function (initOptions = {}) {
         if (kc.didInitialize) {
             throw new Error("A 'Keycloak' instance can only be initialized once.");
         }
@@ -72,9 +72,9 @@ function Keycloak (config) {
         callbackStorage = createCallbackStorage();
         var adapters = ['default', 'cordova', 'cordova-native'];
 
-        if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
+        if (adapters.indexOf(initOptions.adapter) > -1) {
             adapter = loadAdapter(initOptions.adapter);
-        } else if (initOptions && typeof initOptions.adapter === "object") {
+        } else if (typeof initOptions.adapter === "object") {
             adapter = initOptions.adapter;
         } else {
             if (window.Cordova || window.cordova) {
@@ -84,101 +84,99 @@ function Keycloak (config) {
             }
         }
 
-        if (initOptions) {
-            if (typeof initOptions.useNonce !== 'undefined') {
-                useNonce = initOptions.useNonce;
-            }
+        if (typeof initOptions.useNonce !== 'undefined') {
+            useNonce = initOptions.useNonce;
+        }
 
-            if (typeof initOptions.checkLoginIframe !== 'undefined') {
-                loginIframe.enable = initOptions.checkLoginIframe;
-            }
+        if (typeof initOptions.checkLoginIframe !== 'undefined') {
+            loginIframe.enable = initOptions.checkLoginIframe;
+        }
 
-            if (initOptions.checkLoginIframeInterval) {
-                loginIframe.interval = initOptions.checkLoginIframeInterval;
-            }
+        if (initOptions.checkLoginIframeInterval) {
+            loginIframe.interval = initOptions.checkLoginIframeInterval;
+        }
 
-            if (initOptions.onLoad === 'login-required') {
-                kc.loginRequired = true;
-            }
+        if (initOptions.onLoad === 'login-required') {
+            kc.loginRequired = true;
+        }
 
-            if (initOptions.responseMode) {
-                if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
-                    kc.responseMode = initOptions.responseMode;
-                } else {
-                    throw 'Invalid value for responseMode';
-                }
-            }
-
-            if (initOptions.flow) {
-                switch (initOptions.flow) {
-                    case 'standard':
-                        kc.responseType = 'code';
-                        break;
-                    case 'implicit':
-                        kc.responseType = 'id_token token';
-                        break;
-                    case 'hybrid':
-                        kc.responseType = 'code id_token token';
-                        break;
-                    default:
-                        throw 'Invalid value for flow';
-                }
-                kc.flow = initOptions.flow;
-            }
-
-            if (initOptions.timeSkew != null) {
-                kc.timeSkew = initOptions.timeSkew;
-            }
-
-            if(initOptions.redirectUri) {
-                kc.redirectUri = initOptions.redirectUri;
-            }
-
-            if (initOptions.silentCheckSsoRedirectUri) {
-                kc.silentCheckSsoRedirectUri = initOptions.silentCheckSsoRedirectUri;
-            }
-
-            if (typeof initOptions.silentCheckSsoFallback === 'boolean') {
-                kc.silentCheckSsoFallback = initOptions.silentCheckSsoFallback;
+        if (initOptions.responseMode) {
+            if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
+                kc.responseMode = initOptions.responseMode;
             } else {
-                kc.silentCheckSsoFallback = true;
+                throw 'Invalid value for responseMode';
+            }
+        }
+
+        if (initOptions.flow) {
+            switch (initOptions.flow) {
+                case 'standard':
+                    kc.responseType = 'code';
+                    break;
+                case 'implicit':
+                    kc.responseType = 'id_token token';
+                    break;
+                case 'hybrid':
+                    kc.responseType = 'code id_token token';
+                    break;
+                default:
+                    throw 'Invalid value for flow';
+            }
+            kc.flow = initOptions.flow;
+        }
+
+        if (initOptions.timeSkew != null) {
+            kc.timeSkew = initOptions.timeSkew;
+        }
+
+        if(initOptions.redirectUri) {
+            kc.redirectUri = initOptions.redirectUri;
+        }
+
+        if (initOptions.silentCheckSsoRedirectUri) {
+            kc.silentCheckSsoRedirectUri = initOptions.silentCheckSsoRedirectUri;
+        }
+
+        if (typeof initOptions.silentCheckSsoFallback === 'boolean') {
+            kc.silentCheckSsoFallback = initOptions.silentCheckSsoFallback;
+        } else {
+            kc.silentCheckSsoFallback = true;
+        }
+
+        if (typeof initOptions.pkceMethod !== "undefined") {
+            if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
+                throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
             }
 
-            if (typeof initOptions.pkceMethod !== "undefined") {
-                if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
-                    throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
-                }
+            kc.pkceMethod = initOptions.pkceMethod;
+        } else {
+            kc.pkceMethod = "S256";
+        }
 
-                kc.pkceMethod = initOptions.pkceMethod;
-            } else {
-                kc.pkceMethod = "S256";
-            }
+        if (typeof initOptions.enableLogging === 'boolean') {
+            kc.enableLogging = initOptions.enableLogging;
+        } else {
+            kc.enableLogging = false;
+        }
 
-            if (typeof initOptions.enableLogging === 'boolean') {
-                kc.enableLogging = initOptions.enableLogging;
-            } else {
-                kc.enableLogging = false;
-            }
+        if (initOptions.logoutMethod === 'POST') {
+            kc.logoutMethod = 'POST';
+        } else {
+            kc.logoutMethod = 'GET';
+        }
 
-            if (initOptions.logoutMethod === 'POST') {
-                kc.logoutMethod = 'POST';
-            } else {
-                kc.logoutMethod = 'GET';
-            }
+        if (typeof initOptions.scope === 'string') {
+            kc.scope = initOptions.scope;
+        }
 
-            if (typeof initOptions.scope === 'string') {
-                kc.scope = initOptions.scope;
-            }
+        if (typeof initOptions.acrValues === 'string') {
+            kc.acrValues = initOptions.acrValues;
+        }
 
-            if (typeof initOptions.acrValues === 'string') {
-                kc.acrValues = initOptions.acrValues;
-            }
-
-            if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
-                kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
-            } else {
-                kc.messageReceiveTimeout = 10000;
-            }
+        if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
+            kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
+        } else {
+            kc.messageReceiveTimeout = 10000;
         }
 
         if (!kc.responseMode) {
@@ -207,7 +205,7 @@ function Keycloak (config) {
                     options.prompt = 'none';
                 }
 
-                if (initOptions && initOptions.locale) {
+                if (initOptions.locale) {
                     options.locale = initOptions.locale;
                 }
                 kc.login(options).then(function () {
@@ -281,42 +279,40 @@ function Keycloak (config) {
                 }).catch(function (error) {
                     initPromise.setError(error);
                 });
-            } else if (initOptions) {
-                if (initOptions.token && initOptions.refreshToken) {
-                    setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+            }
 
-                    if (loginIframe.enable) {
-                        setupCheckLoginIframe().then(function() {
-                            checkLoginIframe().then(function (unchanged) {
-                                if (unchanged) {
-                                    kc.onAuthSuccess && kc.onAuthSuccess();
-                                    initPromise.setSuccess();
-                                    scheduleCheckIframe();
-                                } else {
-                                    initPromise.setSuccess();
-                                }
-                            }).catch(function (error) {
-                                initPromise.setError(error);
-                            });
-                        });
-                    } else {
-                        kc.updateToken(-1).then(function() {
-                            kc.onAuthSuccess && kc.onAuthSuccess();
-                            initPromise.setSuccess();
-                        }).catch(function(error) {
-                            kc.onAuthError && kc.onAuthError();
-                            if (initOptions.onLoad) {
-                                onLoad();
+            if (initOptions.token && initOptions.refreshToken) {
+                setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+
+                if (loginIframe.enable) {
+                    setupCheckLoginIframe().then(function() {
+                        checkLoginIframe().then(function (unchanged) {
+                            if (unchanged) {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                                scheduleCheckIframe();
                             } else {
-                                initPromise.setError(error);
+                                initPromise.setSuccess();
                             }
+                        }).catch(function (error) {
+                            initPromise.setError(error);
                         });
-                    }
-                } else if (initOptions.onLoad) {
-                    onLoad();
+                    });
                 } else {
-                    initPromise.setSuccess();
+                    kc.updateToken(-1).then(function() {
+                        kc.onAuthSuccess && kc.onAuthSuccess();
+                        initPromise.setSuccess();
+                    }).catch(function(error) {
+                        kc.onAuthError && kc.onAuthError();
+                        if (initOptions.onLoad) {
+                            onLoad();
+                        } else {
+                            initPromise.setError(error);
+                        }
+                    });
                 }
+            } else if (initOptions.onLoad) {
+                onLoad();
             } else {
                 initPromise.setSuccess();
             }
