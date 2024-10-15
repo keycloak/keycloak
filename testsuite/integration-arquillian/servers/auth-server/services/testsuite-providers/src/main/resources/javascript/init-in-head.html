@@ -51,7 +51,7 @@
         globalThis.output = output;
         globalThis.event = event;
 
-        keycloak.init({}).then((authenticated) => {
+        keycloak.init().then((authenticated) => {
             output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
         }).catch(function() {
             output('Init Error');
