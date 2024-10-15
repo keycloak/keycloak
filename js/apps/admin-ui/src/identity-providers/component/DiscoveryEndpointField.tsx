@@ -53,7 +53,6 @@ export const DiscoveryEndpointField = ({
   const discoverDebounced = useMemo(() => debouncePromise(discover, 1000), []);
 
   return (
-    <>
       <FormGroup
         label={t(
           id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor",
@@ -98,7 +97,7 @@ export const DiscoveryEndpointField = ({
           type="url"
           placeholder={
             id === "oidc"
-              ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
+              ? "https://hostname/realms/master/.well-known/openid-configuration"
               : ""
           }
           validated={
