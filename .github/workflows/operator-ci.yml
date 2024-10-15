@@ -19,7 +19,7 @@ defaults:
     shell: bash
 
 concurrency:
-  # Only cancel jobs for PR updates
+  # Only cancel jobs for PR updates (test)
   group: operator-ci-${{ github.ref }}
   cancel-in-progress: true
 
