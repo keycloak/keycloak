@@ -123,6 +123,6 @@
     "vite": "^5.4.9",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.2.4",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.3"
   }
 }
