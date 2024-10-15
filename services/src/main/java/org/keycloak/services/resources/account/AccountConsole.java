@@ -6,10 +6,12 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -48,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -213,12 +216,28 @@ public class AccountConsole implements AccountResourceProvider {
         }
         URI targetUri = consoleUriBuilder.build(realm.getName());
 
-        var oauthRedirect = new AbstractSecuredLocalService.OAuthRedirect();
-        oauthRedirect.setAuthUrl(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString());
-        oauthRedirect.setClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
-        oauthRedirect.setPkceEnabled(true);
-        oauthRedirect.setSecure(realm.getSslRequired().isRequired(session.getContext().getConnection()));
-        return oauthRedirect.redirect(session.getContext().getUri(), targetUri.toString());
+        String pkceChallenge;
+        try {
+            // Add PKCE parameters as it is required for the account-console client.
+            // Because the account console configuration requires PKCE, we need to send this with the redirect in order to not fail validations.
+            // The real PKCE challenge will be sent by the account-console OIDC client JavaScript integration.
+            String codeVerifier = UUID.randomUUID().toString();
+            pkceChallenge = PkceUtils.generateS256CodeChallenge(codeVerifier);
+        } catch (Exception e) {
+            // this should never happen
+            throw new RuntimeException(e);
+        }
+
+        UriBuilder uriBuilder = UriBuilder.fromUri(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString())
+                .queryParam(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .queryParam(OAuth2Constants.REDIRECT_URI, targetUri)
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
+                .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
+
+        URI url = uriBuilder.build();
+
+        return Response.status(302).location(url).build();
     }
 
     private Map<String, String> supportedLocales(Properties messages) {
