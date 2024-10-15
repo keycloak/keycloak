@@ -459,7 +459,10 @@ jobs:
           zip -u /tmp/keycloak.zip aws.pem
  
           cd .github/scripts/ansible
+          python3 -m venv .venv
+          source .venv/bin/activate
           ./aws_ec2.sh requirements
+          pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${AWS_REGION} ${EC2_CLUSTER_NAME}
           ./keycloak_ec2_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip
           ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution"
@@ -557,6 +560,7 @@ jobs:
         if: always()
         working-directory: .github/scripts/ansible
         run: |
+          source .venv/bin/activate
           ./aws_ec2.sh delete ${{ steps.aurora-init.outputs.region }} ${{ steps.ec2-create.outputs.ec2_cluster }}
 
       - name: Delete Aurora DB
