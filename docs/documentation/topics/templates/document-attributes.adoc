@@ -125,3 +125,5 @@
 :securing_apps_name: Securing applications Guides
 :securing_apps_name_short: Securing applications
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:securing_apps_java_policy_enforcer_link: https://www.keycloak.org/securing-apps/policy-enforcer
+:securing_apps_java_policy_enforcer_name: Java Policy enforcer
