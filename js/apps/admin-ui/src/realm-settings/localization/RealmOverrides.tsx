@@ -190,7 +190,7 @@ export const RealmOverrides = ({
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
       <SelectOption key={DEFAULT_LOCALE} value={DEFAULT_LOCALE}>
-        {localeToDisplayName(DEFAULT_LOCALE, whoAmI.getDisplayName())}
+        {localeToDisplayName(DEFAULT_LOCALE, whoAmI.getLocale())}
       </SelectOption>
     </SelectGroup>,
     <Divider key="divider" />,
