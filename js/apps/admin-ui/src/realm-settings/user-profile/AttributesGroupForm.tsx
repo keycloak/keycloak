@@ -112,11 +112,11 @@ export default function AttributesGroupForm() {
   const [translationsData, setTranslationsData] = useState({
     displayHeader: {
       key: "",
-      translations: [] as { locale: string; value: string }[],
+      translations: [] as TranslationForm[],
     },
     displayDescription: {
       key: "",
-      translations: [] as { locale: string; value: string }[],
+      translations: [] as TranslationForm[],
     },
   });
 
