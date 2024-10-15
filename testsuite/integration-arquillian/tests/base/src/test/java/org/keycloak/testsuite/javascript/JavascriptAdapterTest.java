@@ -239,6 +239,16 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    public void testInitNoOptions() {
+        testExecutor.init(null, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(null, this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl)
+                .init(null, this::assertInitNotAuth);
+    }
+
+    @Test
     public void testCheckSso() {
         JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
 
