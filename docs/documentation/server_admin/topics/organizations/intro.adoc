@@ -8,7 +8,7 @@ the entire lifecycle of its members and how they authenticate and authorize to a
 
 The organization is the entry point to start using the IAM capabilities of {project_name} to also address Business-to-Business (B2B) use cases.
 It enables multi-tenancy within a realm so that users can have access to protected resources from a realm but with a more restricted
-and controlled context. The organization they belong to.
+and controlled context, that context being the organization to which they belong.
 
 {project_name} Organizations is a feature that enables support for organizations in {project_name}. For now, it provides
 some of the core capabilities needed to manage organizations such as:
