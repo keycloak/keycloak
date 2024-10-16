@@ -17,6 +17,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
@@ -177,6 +178,13 @@ public class AuthenticationManager {
         if (userSession == null) {
             logger.debug("No user session");
             return false;
+        }
+        if (userSession.getNote(Details.IDENTITY_PROVIDER) != null) {
+            String brokerAlias = userSession.getNote(Details.IDENTITY_PROVIDER);
+            if (realm.getIdentityProviderByAlias(brokerAlias) == null) {
+                // associated idp was removed, invalidate the session.
+                return false;
+            }
         }
         long currentTime = Time.currentTimeMillis();
         long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
@@ -417,12 +425,19 @@ public class AuthenticationManager {
         if (logoutBroker) {
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
-                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+                IdentityProvider identityProvider = null;
                 try {
-                    identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
-                } catch (Exception e) {
-                    logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
-                    backchannelLogoutResponse.setLocalLogoutSucceeded(false);
+                    identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+                } catch (IdentityBrokerException e) {
+                    logger.warn("Skipping backchannel logout for broker " + brokerId + " - not found");
+                }
+                if (identityProvider != null) {
+                    try {
+                        identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
+                    } catch (Exception e) {
+                        logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
+                        backchannelLogoutResponse.setLocalLogoutSucceeded(false);
+                    }
                 }
             }
         }
@@ -1516,7 +1531,18 @@ public class AuthenticationManager {
                     }
                 }
 
-                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+
+                if (userSession != null) {
+                    String userSessionId = userSession.getId();
+                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), newSession -> {
+                        RealmModel realmModel = newSession.realms().getRealm(realm.getId());
+                        UserSessionModel userSessionModel = newSession.sessions().getUserSession(realmModel, userSessionId);
+                        backchannelLogout(newSession, realmModel, userSessionModel, uriInfo, connection, headers, true);
+                    });
+                    // remove the user session here so that the external persistent session tx becomes aware of the removal that happened
+                    // during the backchannel logout.
+                    session.sessions().removeUserSession(realm, userSession);
+                }
                 logger.debug("User session not active");
                 return null;
             }
