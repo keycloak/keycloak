@@ -26,7 +26,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import com.acme.provider.legacy.jpa.user.CustomUserProvider;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -129,4 +132,20 @@ public class StartAutoBuildDistTest {
         assertFalse(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
         cliResult.assertStartedDevMode();
     }
+    
+    @Test
+    @TestProvider(CustomUserProvider.class)
+    @Order(10)
+    void testSpiAutoBuild(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+        cliResult.assertMessage("Updating the configuration");
+        cliResult.assertStartedDevMode();
+        dist.stop();
+        
+        // we should persist the spi provider and know not to rebuild
+        cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+        cliResult.assertNoMessage("Updating the configuration");
+        cliResult.assertStartedDevMode();
+    }
+    
 }

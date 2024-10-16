@@ -22,7 +22,9 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
@@ -38,6 +40,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+// we need the unset test to run first
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ClientSearchTest extends AbstractClientTest {
     @ArquillianResource
     protected ContainerController controller;
