@@ -214,6 +214,18 @@ public class AccountConsole implements AccountResourceProvider {
         if (!StringUtil.isNullOrEmpty(path)) {
             consoleUriBuilder.path(path);
         }
+        var queryParameters = session.getContext().getUri().getQueryParameters();
+        if (!queryParameters.isEmpty()) {
+            String referrer = queryParameters.getFirst("referrer");
+            if (referrer != null) {
+                consoleUriBuilder.queryParam("referrer", referrer);
+            }
+
+            String referrerUri = queryParameters.getFirst("referrer_uri");
+            if (referrerUri != null) {
+                consoleUriBuilder.queryParam("referrer_uri", referrerUri);
+            }
+        }
         URI targetUri = consoleUriBuilder.build(realm.getName());
 
         String pkceChallenge;
