@@ -47,11 +47,13 @@ public abstract class LogoutSessionsPage extends LanguageComboboxAwarePage {
 
     public void checkLogoutSessions() {
         Assert.assertFalse("Logout sessions is checked", isLogoutSessionsChecked());
-        logoutSessionsCheckbox.click();
+        UIUtils.clickCheckbox(logoutSessionsCheckbox);
+        Assert.assertTrue("Logout sessions should be checked", isLogoutSessionsChecked());
     }
 
     public void uncheckLogoutSessions() {
         Assert.assertTrue("Logout sessions is not checked", isLogoutSessionsChecked());
-        logoutSessionsCheckbox.click();
+        UIUtils.clickCheckbox(logoutSessionsCheckbox);
+        Assert.assertFalse("Logout sessions should be unchecked", isLogoutSessionsChecked());
     }
 }
