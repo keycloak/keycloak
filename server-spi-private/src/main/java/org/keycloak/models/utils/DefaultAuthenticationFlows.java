@@ -480,6 +480,7 @@ public class DefaultAuthenticationFlows {
         reviewProfileConfig.setAlias(IDP_REVIEW_PROFILE_CONFIG_ALIAS);
         Map<String, String> config = new HashMap<>();
         config.put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_MISSING);
+        config.put("terms_and_conditions", "false");
         reviewProfileConfig.setConfig(config);
         reviewProfileConfig = realm.addAuthenticatorConfig(reviewProfileConfig);
 
