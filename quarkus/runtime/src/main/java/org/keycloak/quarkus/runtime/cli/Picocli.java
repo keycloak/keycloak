@@ -476,7 +476,7 @@ public class Picocli {
                         ignoredBuildTime.add(key);
                     }
                 }
-            } else if (!buildTimeOption) {
+            } else if (!options.includeRuntime && !buildTimeOption) {
                 ignoredRunTime.add(key);
             }
         }
