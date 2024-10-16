@@ -28,8 +28,13 @@
 
     <artifactId>keycloak-test-framework-showcase</artifactId>
     <name>Keycloak Test Framework Showcase</name>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <description>Showcase of new tests demonstrating the new testing framework usability</description>
+
+    <modules>
+        <module>testsuite</module>
+        <module>providers</module>
+    </modules>
 
     <dependencies>
         <dependency>

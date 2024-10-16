@@ -17,6 +17,8 @@
 
 package org.keycloak.it;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,11 +43,20 @@ public interface TestProvider {
     Class[] getClasses();
 
     /**
-     * A {@link Map} where the key is the name of a file at the package where this provider is located and the value is the
-     * name of the manifest resource that should be created in the provider JAR file.
+     * A {@link Map} where the key is the path of a file relative to the META-INF directory at the package where this provider
+     * is located and the value is the name of the manifest resource that should be created in the provider JAR file.
      * @return
      */
     default Map<String, String> getManifestResources() {
         return Map.of();
+    }
+
+    /**
+     * A {@link List} of Strings each a representation of a path to a file relative to the META-INF directory. This is used
+     * for configuration files you want to handle separately and do not wish to include in the resulting JAR.
+     * @return
+     */
+    default List<String> getAdditionalConfig() {
+        return Collections.emptyList();
     }
 }
