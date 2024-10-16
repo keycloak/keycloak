@@ -27,15 +27,9 @@ import java.util.function.Consumer;
 
 public class EventListenerTransaction extends AbstractKeycloakTransaction {
 
-    private static class AdminEventEntry {
-        private final AdminEvent event;
-        private final boolean includeRepresentation;
+  private record AdminEventEntry(AdminEvent event, boolean includeRepresentation) {
 
-        public AdminEventEntry(AdminEvent event, boolean includeRepresentation) {
-            this.event = event;
-            this.includeRepresentation = includeRepresentation;
-        }
-    }
+  }
 
     private final List<AdminEventEntry> adminEventsToSend = new LinkedList<>();
     private final List<Event> eventsToSend = new LinkedList<>();
@@ -48,25 +42,23 @@ public class EventListenerTransaction extends AbstractKeycloakTransaction {
     }
 
     public void addAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
-        adminEventsToSend.add(new AdminEventEntry(adminEvent, includeRepresentation));
+      if (adminEventConsumer != null) {
+          adminEventsToSend.add(new AdminEventEntry(adminEvent, includeRepresentation));
+      }
     }
 
     public void addEvent(Event event) {
-        eventsToSend.add(event);
+        if (eventConsumer != null) {
+            eventsToSend.add(event);
+        }
     }
 
     @Override
     protected void commitImpl() {
-        adminEventsToSend.forEach(this::consumeAdminEventEntry);
-        if (eventConsumer != null) {
-            eventsToSend.forEach(eventConsumer);
-        }
-    }
-    
-    private void consumeAdminEventEntry(AdminEventEntry entry) {
-        if (adminEventConsumer != null) {
-            adminEventConsumer.accept(entry.event, entry.includeRepresentation);
-        }
+        adminEventsToSend.forEach(entry ->
+            adminEventConsumer.accept(entry.event, entry.includeRepresentation));
+
+        eventsToSend.forEach(eventConsumer);
     }
 
     @Override
@@ -74,6 +66,5 @@ public class EventListenerTransaction extends AbstractKeycloakTransaction {
         adminEventsToSend.clear();
         eventsToSend.clear();
     }
-    
-    
+
 }
