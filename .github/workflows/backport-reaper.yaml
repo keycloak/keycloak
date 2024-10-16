@@ -1,0 +1,22 @@
+name: Backport branch reaper
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - 'release/*.*'
+
+jobs:
+  remove_backport_branch:
+    if: startsWith(github.event.pull_request.head.ref, 'backport/') && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete PR head branches
+        # language=bash
+        run: |
+          # safety switch that we only remove backport branches
+          BP=$(echo ${{ github.event.pull_request.head.ref }} | sed 's|backport/||' ) 
+          gh api --method DELETE /repos/${{ github.event.pull_request.base.repo.full_name }}/git/refs/heads/backport/${BP}
+        env:
+          GH_TOKEN: ${{ github.token }}
