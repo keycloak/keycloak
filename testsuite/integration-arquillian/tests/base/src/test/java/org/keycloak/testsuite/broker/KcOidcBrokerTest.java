@@ -20,10 +20,13 @@ import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -40,6 +43,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
@@ -49,6 +53,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +64,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -455,6 +461,45 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         errorPage.assertCurrent();
+    }
+
+    @Test
+    public void testIdpRemovedAfterLoginInvalidatesUserSession() {
+        loginUser();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        assertThat(loginPage.isSocialButtonPresent(bc.getIDPAlias()), is(true));
+        logInWithBroker(bc);
+
+        // remove the IDP while the user is logged in
+        adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).remove();
+
+        // user session should still be active, but checking if it is valid should fail as the associated IDP was removed
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
+            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            assertThat(userSessions, hasSize(1));
+            UserSessionModel userSession = userSessions.get(0);
+            assertThat(AuthenticationManager.isSessionValid(realm, userSession), is(false));
+        });
+
+        // logout should work even after the IDP was removed
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+
+        // session should have been removed now
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
+            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            assertThat(userSessions, hasSize(0));
+        });
+
+        loginPage.open(bc.consumerRealmName());
+        assertThat(loginPage.isSocialButtonPresent(bc.getIDPAlias()), is(false));
     }
 
     @Test
