@@ -12,7 +12,10 @@ export const convertClientToUrl = (
   }
 
   if (rootUrl === "${authAdminUrl}") {
-    return rootUrl.replace(/\$\{(authAdminUrl)\}/, environment.adminBaseUrl);
+    return joinPath(
+      rootUrl.replace(/\$\{(authAdminUrl)\}/, environment.adminBaseUrl),
+      baseUrl || "",
+    );
   }
 
   if (rootUrl === "${authBaseUrl}") {
