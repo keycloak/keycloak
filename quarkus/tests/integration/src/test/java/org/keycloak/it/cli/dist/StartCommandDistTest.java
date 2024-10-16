@@ -133,6 +133,7 @@ public class StartCommandDistTest {
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage("ignored during build");
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
