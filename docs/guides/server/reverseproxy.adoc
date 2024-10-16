@@ -10,6 +10,20 @@ includedOptions="proxy-* hostname hostname-admin http-relative-path">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
+== Endpoint URL to be proxyed
+
+{project_name} runs on the following ports by default:
+
+* `8443` (`8080` when you enable HTTP explicitly by `--http-enabled=true`)
+
+* `9000`
+
+`8443` (`8080`) is used for frontend, backend and administration. See also: <@links.server id="hostname"/>
+
+`9000` is used for management. See also: <@links.server id="management-interface"/>
+
+You only need to proxy `8443` (`8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configure-production"/>. You don't need to proxy `9000`.
+
 == Configure the reverse proxy headers
 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
