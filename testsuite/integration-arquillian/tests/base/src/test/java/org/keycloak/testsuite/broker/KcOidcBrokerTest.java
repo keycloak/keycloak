@@ -45,10 +45,13 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import jakarta.ws.rs.core.Response;
+import org.openqa.selenium.By;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -455,6 +458,26 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         errorPage.assertCurrent();
+    }
+
+    @Test
+    public void testIdpRemovedAfterLoginInvalidatesSession() {
+        loginUser();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        logInWithBroker(bc);
+
+        // remove the idp while th user is logged in
+        adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).remove();
+        // logout should work even after the IDP was removed
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+
+        loginPage.open(bc.consumerRealmName());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
     @Test
