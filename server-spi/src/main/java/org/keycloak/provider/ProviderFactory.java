@@ -76,6 +76,6 @@ public interface ProviderFactory<T extends Provider> {
      * before this ProviderFactory's {@link #postInit}.
      */
     default Set<Class<? extends Provider>> dependsOn() {
-        return Set.of();
+        return Collections.emptySet();
     }
 }
