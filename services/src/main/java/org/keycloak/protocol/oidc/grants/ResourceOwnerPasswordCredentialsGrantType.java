@@ -138,6 +138,10 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         boolean useRefreshToken = clientConfig.isUseRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
+                // for direct access grants the online session can be removed
+                session.sessions().removeUserSession(realm, userSession);
+            }
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);

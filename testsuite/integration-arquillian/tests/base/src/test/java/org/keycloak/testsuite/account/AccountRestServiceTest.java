@@ -1181,8 +1181,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
 
-        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, null, offlineClientAppUri);
-        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, true, true, null, null);
+        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, false, true, null, offlineClientAppUri);
+        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, false, true, null, null);
     }
 
     @Test
@@ -1709,9 +1709,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "direct-grant"));
 
-        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
+        assertNull(apps.get("offline-client"));
     }
 
     @Test

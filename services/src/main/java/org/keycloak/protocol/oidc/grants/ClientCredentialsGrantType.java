@@ -145,6 +145,10 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // Make refresh token generation optional, see KEYCLOAK-9551
         if (useRefreshToken) {
             responseBuilder = responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
+                // for client credentials the online session can be removed
+                session.sessions().removeUserSession(realm, userSession);
+            }
         } else {
             responseBuilder.getAccessToken().setSessionId(null);
         }
