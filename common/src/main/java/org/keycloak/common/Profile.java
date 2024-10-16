@@ -140,9 +140,6 @@ public class Profile {
             this(label, type, version, null, dependencies);
         }
 
-        /**
-         * allowNameKey should be false for new versioned features to disallow using a legacy name, like account2
-         */
         Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
             this.label = label;
             this.type = type;
@@ -161,8 +158,7 @@ public class Profile {
         }
 
         /**
-         * Get the key that uniquely identifies this feature, may be used by users if
-         * allowNameKey is true.
+         * Get the key that uniquely identifies this feature
          * <p>
          * {@link #getVersionedKey()} should instead be shown to users where possible.
          */
