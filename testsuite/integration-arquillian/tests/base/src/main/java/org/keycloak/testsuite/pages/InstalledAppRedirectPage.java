@@ -44,7 +44,7 @@ public class InstalledAppRedirectPage extends AbstractPage {
     @FindBy(id = "kc-page-title")
     private WebElement pageTitle;
 
-    @FindBy(className = "pf-v5-c-alert")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement errorBox;
 
     @Override
