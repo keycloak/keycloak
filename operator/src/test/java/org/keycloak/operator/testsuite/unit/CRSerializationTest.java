@@ -123,9 +123,7 @@ public class CRSerializationTest {
 
         assertThat(hostnameSpec.getHostname(), is("my-hostname"));
         assertThat(hostnameSpec.getAdmin(), is("my-admin-hostname"));
-        assertThat(hostnameSpec.getAdminUrl(), is("https://www.my-admin-hostname.org:8448/something"));
         assertThat(hostnameSpec.isStrict(), is(true));
-        assertThat(hostnameSpec.isStrictBackchannel(), is(true));
 
         keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/empty-podtemplate-keycloak.yml"), Keycloak.class);
 
@@ -133,9 +131,7 @@ public class CRSerializationTest {
         assertThat(hostnameSpec, notNullValue());
         assertThat(hostnameSpec.getHostname(), is("example.com"));
         assertThat(hostnameSpec.getAdmin(), nullValue());
-        assertThat(hostnameSpec.getAdminUrl(), nullValue());
         assertThat(hostnameSpec.isStrict(), nullValue());
-        assertThat(hostnameSpec.isStrictBackchannel(), nullValue());
     }
 
     @Test
