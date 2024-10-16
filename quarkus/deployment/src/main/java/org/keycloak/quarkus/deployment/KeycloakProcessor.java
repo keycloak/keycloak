@@ -623,6 +623,8 @@ class KeycloakProcessor {
                 if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
                     return;
                 }
+            } else if (PropertyMappers.isSpiBuildTimeProperty(name)) {
+                value = Configuration.getConfigValue(name);
             }
         } else if (mapper.isBuildTime()) {
             name = mapper.getFrom();
