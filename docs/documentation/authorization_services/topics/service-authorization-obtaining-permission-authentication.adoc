@@ -12,7 +12,7 @@ Clients should send an access token as a Bearer credential in an HTTP Authorizat
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket"
 ----
@@ -31,7 +31,7 @@ Clients can use any of the client authentication methods supported by {project_n
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Basic cGhvdGg6L7Jl13RmfWgtkk==pOnNlY3JldA==" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket"
 ----
