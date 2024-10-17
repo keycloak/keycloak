@@ -27,6 +27,16 @@ public class WelcomePage extends AbstractPage {
         super(driver);
     }
 
+    @Override
+    public void open() throws Exception {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCurrent() {
+        return false;
+    }
+
     public void navigateTo() {
         driver.get("http://localhost:8080");
     }
