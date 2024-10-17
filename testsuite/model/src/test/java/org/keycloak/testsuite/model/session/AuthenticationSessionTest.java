@@ -32,6 +32,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -221,6 +222,35 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
             Assert.assertEquals(4, rootAuthSession.getAuthenticationSessions().size());
             assertThat(rootAuthSession.getAuthenticationSessions().keySet(), Matchers.containsInAnyOrder(tabIds.toArray()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testConcurrentAuthenticationSessionsRemoval() throws InterruptedException {
+        ConcurrentLinkedQueue<String> tabIds = new ConcurrentLinkedQueue<>();
+        int concurrentTabs = 4;
+        final String rootId = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            for (int i = 0; i < concurrentTabs; i++) {
+                tabIds.add(rootAuthSession.createAuthenticationSession(client).getTabId());
+            }
+            return rootAuthSession.getId();
+        });
+        inIndependentFactories(concurrentTabs, 60, () -> {
+            withRealm(realmId, (session, realm) -> {
+                RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+                rootAuthSession.removeAuthenticationSessionByTabId(tabIds.remove());
+                return null;
+            });
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+            //TODO: rootAuthSession should be null not just empty check removeAuthenticationSessionByTabId
+            Assert.assertTrue(rootAuthSession.getAuthenticationSessions().isEmpty());
             return null;
         });
     }
