@@ -272,8 +272,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(axe-core@4.10.0)(cypress@13.15.0)
       cypress-split:
-        specifier: ^1.24.2
-        version: 1.24.2(@babel/core@7.25.2)
+        specifier: ^1.24.4
+        version: 1.24.4(@babel/core@7.25.2)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -2282,8 +2282,8 @@ packages:
       axe-core: ^3 || ^4
       cypress: ^10 || ^11 || ^12 || ^13
 
-  cypress-split@1.24.2:
-    resolution: {integrity: sha512-zNqIuEeuVSE2JT6Lhr9c5U0MLKPfGtoKdAKR6pZeBP9bkU/Y/YFUGHmEmsuoux6MF0UnljEwMVgviWlh/DFB2A==}
+  cypress-split@1.24.4:
+    resolution: {integrity: sha512-sKBFQB659Ss5B08GSESeMKXBEpPD2wKNGQR1HYbKT98rnM1x5E+MugzcicqEdsK4T2Ng0feuuZQkz8XniOA18A==}
     hasBin: true
 
   cypress@13.15.0:
@@ -2832,13 +2832,13 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  find-cypress-specs@1.43.4:
-    resolution: {integrity: sha512-GAdz6lfBndbOq9OOJ3psThQ56hqgL8tZUCOLnl60d/l56bvHkC0TNwyqlLfBObiscirSZWSgyGL86jJkrpFMrA==}
+  find-cypress-specs@1.45.2:
+    resolution: {integrity: sha512-D289NM0Dpqoz4+yl8oEtbioqm7zPKQo0hLcvwlg5Z9iBm7EioMIFiOYgluthDNPxUES/aJF+1xHRHAJpC3ejcA==}
     engines: {node: '>=18'}
     hasBin: true
 
-  find-test-names@1.28.18:
-    resolution: {integrity: sha512-hhnGdkWK+qEA5Z02Tu0OqGQIUjFZNyOCE4WaJpbhW4hAF1+NZ7OCr0Bss9RCaj7BBtjoIjkU93utobQ8pg2iVg==}
+  find-test-names@1.28.30:
+    resolution: {integrity: sha512-b5PLJ5WnskdaYHBf+38FN/4TKh5lqwrltITkqxuARsN2bW6civrhqOXbVA+4727YNowYLt/jtIC9Dsn7eJSP6A==}
     hasBin: true
 
   find-up@5.0.0:
@@ -6866,14 +6866,14 @@ snapshots:
       axe-core: 4.10.0
       cypress: 13.15.0
 
-  cypress-split@1.24.2(@babel/core@7.25.2):
+  cypress-split@1.24.4(@babel/core@7.25.2):
     dependencies:
       '@actions/core': 1.10.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.3.6(supports-color@8.1.1)
       fast-shuffle: 6.1.0
-      find-cypress-specs: 1.43.4(@babel/core@7.25.2)
+      find-cypress-specs: 1.45.2(@babel/core@7.25.2)
       globby: 11.1.0
       humanize-duration: 3.32.1
     transitivePeerDependencies:
@@ -7631,13 +7631,13 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  find-cypress-specs@1.43.4(@babel/core@7.25.2):
+  find-cypress-specs@1.45.2(@babel/core@7.25.2):
     dependencies:
       '@actions/core': 1.10.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.3.6(supports-color@8.1.1)
-      find-test-names: 1.28.18(@babel/core@7.25.2)
+      find-test-names: 1.28.30(@babel/core@7.25.2)
       globby: 11.1.0
       minimatch: 3.1.2
       pluralize: 8.0.0
@@ -7649,7 +7649,7 @@ snapshots:
       - '@babel/core'
       - supports-color
 
-  find-test-names@1.28.18(@babel/core@7.25.2):
+  find-test-names@1.28.30(@babel/core@7.25.2):
     dependencies:
       '@babel/parser': 7.25.6
       '@babel/plugin-syntax-jsx': 7.24.7(@babel/core@7.25.2)
