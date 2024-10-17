@@ -102,7 +102,17 @@ declare class KeycloakAuthorization {
 	rpt: any;
 	config: { rpt_endpoint: string };
 
+	/**
+	 * Initializes the `KeycloakAuthorization` instance.
+	 * @deprecated Initialization now happens automatically, calling this method is no longer required.
+	 */
 	init(): void;
+
+	/**
+	 * A promise that resolves when the `KeycloakAuthorization` instance is initialized.
+	 * @deprecated Initialization now happens automatically, using this property is no longer required.
+	 */
+	ready: Promise<void>;
 
 	/**
 	 * This method enables client applications to better integrate with resource servers protected by a Keycloak
