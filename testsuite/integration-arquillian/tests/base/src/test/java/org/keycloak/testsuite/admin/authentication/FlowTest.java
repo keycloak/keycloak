@@ -736,7 +736,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
             getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTH_EXECUTION);
+            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTHENTICATOR_CONFIG);
         }
 
         String newFlowName = "Duplicated of " + DefaultAuthenticationFlows.BROWSER_FLOW;
