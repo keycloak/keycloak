@@ -47,7 +47,7 @@
         </form>
 
         <template id="errorTemplate">
-            <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+            <div id="password-error-container" class="${properties.kcFormHelperTextClass}" aria-live="polite">
                 <div class="${properties.kcInputHelperTextClass}">
                     <div class="${properties.kcInputHelperTextItemClass} ${properties.kcError}">
                         <ul class="${properties.kcInputErrorMessageClass}">
@@ -63,8 +63,6 @@
         <script type="module">
             import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
 
-            const template = document.querySelector("#errorTemplate").content.cloneNode(true);
-
             const activePolicies = [
                 { name: "length", policy: { value: ${passwordPolicies.length!-1}, error: "${msg('invalidPasswordMinLengthMessage')}"} },
                 { name: "maxLength", policy: { value: ${passwordPolicies.maxLength!-1}, error: "${msg('invalidPasswordMaxLengthMessage')}"} },
@@ -76,9 +74,13 @@
 
             document.getElementById("password").addEventListener("change", (event) => {
                 const serverErrors = document.getElementById("input-error-password");
-                if (serverErrors) {
-                    serverErrors.remove();
-                }
+                if (serverErrors) serverErrors.remove();
+
+                const clientErrors = document.getElementById("password-error-container");
+                if (clientErrors) clientErrors.remove();
+
+                const template = document.querySelector("#errorTemplate").content.cloneNode(true);
+
                 const errors = validatePassword(event.target.value, activePolicies);
                 const errorList = template.querySelector("ul");
                 const htmlErrors = errors.forEach((e) => {
