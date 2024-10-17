@@ -22,7 +22,7 @@
         xmlns="urn:infinispan:config:15.0">
 
     <cache-container name="keycloak">
-        <transport lock-timeout="60000" stack="udp"/>
+        <transport lock-timeout="60000"/>
         <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>

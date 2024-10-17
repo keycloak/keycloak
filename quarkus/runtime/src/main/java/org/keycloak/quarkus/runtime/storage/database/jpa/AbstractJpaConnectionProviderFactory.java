@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.storage.database.jpa;
 import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Optional;
 import jakarta.enterprise.inject.Instance;
 import jakarta.persistence.EntityManager;
@@ -28,7 +29,9 @@ import jakarta.persistence.FlushModeType;
 import jakarta.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.JpaKeycloakTransaction;
 import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -80,6 +83,15 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void close() {
         if (entityManagerFactory != null) {
+            // TODO do we really need the SHUTDOWN command?
+//            String driver = Configuration.getRawValue("quarkus.datasource.jdbc.driver");
+//            if ("org.h2.Driver".equals(driver)) {
+//                try (EntityManager em = entityManagerFactory.createEntityManager()) {
+//                    em.getTransaction().begin();
+//                    em.createNativeQuery("SHUTDOWN").executeUpdate();
+//                    em.getTransaction().commit();
+//                }
+//            }
             entityManagerFactory.close();
         }
     }

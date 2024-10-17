@@ -117,15 +117,15 @@ public final class Database {
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
                 "org.hibernate.dialect.H2Dialect",
-                new Function<String, String>() {
+                new Function<>() {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
-                                    + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
-                                    + "keycloakdb${kc.db-url-properties:}");
+                            return amendH2("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
+                                  + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
+                                  + "keycloakdb${kc.db-url-properties:}");
                         }
-                        return addH2NonKeywords("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
+                        return amendH2("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
                     }
 
                     private String escapeReplacements(String snippet) {
@@ -154,6 +154,21 @@ public final class Database {
                             jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
                         }
                         return jdbcUrl;
+                    }
+
+                    /**
+                     * Required so that we can manually close the h2 db instance as part of Keycloak shutdown instead of relying on the
+                     * default ShutdownHook.
+                     */
+                    private String addH2CloseOnExit(String jdbcUrl) {
+                        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
+                            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
+                        }
+                        return jdbcUrl;
+                    }
+
+                    private String amendH2(String jdbcUrl) {
+                        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
                     }
                 },
                 asList("liquibase.database.core.H2Database"),
