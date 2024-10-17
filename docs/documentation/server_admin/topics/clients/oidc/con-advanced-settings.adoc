@@ -186,8 +186,11 @@ a `claims` parameter that has an `acr` claim attached. See https://openid.net/sp
 
 WARNING: Note that default ACR values are used as the default level, however it cannot be reliably used to enforce login with the particular level.
 For example, assume that you configure the `Default ACR Values` to level 2. Then by default, users will be required to authenticate with level 2.
-However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
+However, when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
 really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and double-check that it contains the requested level 2.
+To actually enforce the usage of a certain ACR on the {project_name} side, use the `Minimum ACR Value` setting.
+This allows administrators to enforce ACRs even on applications that are not able to validate the requested `acr` claim inside the token.
+
 
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
