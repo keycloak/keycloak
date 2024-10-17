@@ -72,6 +72,7 @@ import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { getProtocolName, isRealmClient } from "./utils";
+import { UserEvents } from "../events/UserEvents";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -244,6 +245,7 @@ export default function ClientDetails() {
   const sessionsTab = useTab("sessions");
   const permissionsTab = useTab("permissions");
   const advancedTab = useTab("advanced");
+  const userEventsTab = useTab("user-events");
 
   const useClientScopesTab = (tab: ClientScopesTab) =>
     useRoutableTab(
@@ -663,6 +665,15 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
+            {hasAccess("view-events") && (
+              <Tab
+                data-testid="user-events-tab"
+                title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                {...userEventsTab}
+              >
+                <UserEvents client={client.clientId} />
+              </Tab>
+            )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>
