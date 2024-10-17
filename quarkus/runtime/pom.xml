@@ -135,8 +135,8 @@
 
         <!-- CLI -->
         <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-picocli</artifactId>
         </dependency>
 
         <!-- Keycloak -->
