@@ -1,4 +1,5 @@
 <#import "field.ftl" as field>
+<#import "footer.ftl" as loginFooter>
 <#macro username>
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -213,6 +214,8 @@
         <#nested "socialProviders">
       </div>
     </main>
+
+    <@loginFooter.content/>
   </div>
 </div>
 </body>
