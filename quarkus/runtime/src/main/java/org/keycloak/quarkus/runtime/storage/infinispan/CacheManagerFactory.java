@@ -49,6 +49,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
+import org.infinispan.configuration.global.ShutdownHookBehavior;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
@@ -139,12 +140,6 @@ public class CacheManagerFactory {
         return join(remoteCacheManagerFuture);
     }
 
-    public void shutdown() {
-        logger.debug("Shutdown embedded and remote cache managers");
-        close(cacheManager);
-        remoteCacheManagerFuture.thenAccept(CacheManagerFactory::close);
-    }
-
     private static <T> T join(Future<T> future) {
         try {
             return future.get(getStartTimeout(), TimeUnit.SECONDS);
@@ -153,12 +148,6 @@ public class CacheManagerFactory {
             return null;
         } catch (ExecutionException | TimeoutException e) {
             throw new RuntimeException("Failed to start embedded or remote cache manager", e);
-        }
-    }
-
-    private static void close(Lifecycle lifecycle) {
-        if (lifecycle != null) {
-            lifecycle.stop();
         }
     }
 
@@ -303,6 +292,10 @@ public class CacheManagerFactory {
     private DefaultCacheManager startEmbeddedCacheManager(KeycloakSession keycloakSession) {
         logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
+
+        // We must disable the Infinispan default ShutdownHook as we manage the EmbeddedCacheManager lifecycle explicitly
+        // with #shutdown and multiple calls to EmbeddedCacheManager#stop can lead to Exceptions being thrown
+        builder.getGlobalConfigurationBuilder().shutdown().hookBehavior(ShutdownHookBehavior.DONT_REGISTER);
 
         if (Configuration.isTrue(MetricsOptions.METRICS_ENABLED)) {
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
