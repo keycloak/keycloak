@@ -9,3 +9,12 @@ Starting from this release, when `--cache-config-file` is not set, the default I
 The embedded `work` cache needs to be configured as a `replicated-cache` for cache invalidation to work as expected.
 
 Starting from this release, {project_name} check this at startup and will fail to start if it is not configured as such.
+
+= Deprecated APIs for JavaScript Authorization client
+
+The following APIs for the JavaScript Authorization client are deprecated and will be removed in the next major release:
+
+- The `ready` property on the `KeycloakAuthorization` instance.
+- The `init()` method on the `KeycloakAuthorization` instance.
+
+These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.

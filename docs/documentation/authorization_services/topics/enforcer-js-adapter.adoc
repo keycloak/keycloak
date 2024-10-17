@@ -25,6 +25,10 @@ const keycloak = new Keycloak({
 });
 
 const authorization = new KeycloakAuthorization(keycloak);
+
+await keycloak.init();
+
+// Now you can use the authorization object to interact with the server.
 ----
 
 The `keycloak-js/authz` library provides two main features:

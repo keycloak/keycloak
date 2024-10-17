@@ -20,35 +20,45 @@ var KeycloakAuthorization = function (keycloak, options) {
     var _instance = this;
     this.rpt = null;
 
-    var resolve = function () {};
-    var reject = function () {};
+    // Only here for backwards compatibility, as the configuration is now loaded on demand.
+    // See:
+    // - https://github.com/keycloak/keycloak/pull/6619
+    // - https://issues.redhat.com/browse/KEYCLOAK-10894
+    // TODO: Remove both `ready` property and `init` method in a future version
+    Object.defineProperty(this, 'ready', {
+        get() {
+            console.warn("The 'ready' property is deprecated and will be removed in a future version. Initialization now happens automatically, using this property is no longer required.");
+            return Promise.resolve();
+        },
+    });
+    
+    this.init = () => {
+        console.warn("The 'init()' method is deprecated and will be removed in a future version. Initialization now happens automatically, calling this method is no longer required.");
+    };
 
-    // detects if browser supports promises
-    if (typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1) {
-        this.ready = new Promise(function (res, rej) {
-            resolve = res;
-            reject = rej;
-        });
-    }
+    /** @type {Promise<unknown> | undefined} */
+    let configPromise;
 
-    this.init = function () {
-        var request = new XMLHttpRequest();
-
-        request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/.well-known/uma2-configuration');
-        request.onreadystatechange = function () {
-            if (request.readyState == 4) {
-                if (request.status == 200) {
-                    _instance.config = JSON.parse(request.responseText);
-                    resolve();
-                } else {
-                    console.error('Could not obtain configuration from server.');
-                    reject();
-                }
-            }
+    /**
+     * Initializes the configuration or re-uses the existing one if present.
+     * @returns {Promise<void>} A promise that resolves when the configuration is loaded.
+     */
+    async function initializeConfigIfNeeded() {
+        if (_instance.config) {
+            return _instance.config;
         }
 
-        request.send(null);
-    };
+        if (configPromise) {
+            return await configPromise;
+        }
+
+        if (!keycloak.didInitialize) {
+            throw new Error('The Keycloak instance has not been initialized yet.');
+        }
+        
+        configPromise = loadConfig(keycloak.authServerUrl, keycloak.realm);
+        _instance.config = await configPromise;
+    }
 
     /**
      * This method enables client applications to better integrate with resource servers protected by a Keycloak
@@ -57,7 +67,14 @@ var KeycloakAuthorization = function (keycloak, options) {
      * The authorization request must be provided with a ticket.
      */
     this.authorize = function (authorizationRequest) {
-        this.then = function (onGrant, onDeny, onError) {
+        this.then = async function (onGrant, onDeny, onError) {
+            try {
+                await initializeConfigIfNeeded();
+            } catch (error) {
+                handleError(error, onError);
+                return;
+            }
+
             if (authorizationRequest && authorizationRequest.ticket) {
                 var request = new XMLHttpRequest();
 
@@ -121,7 +138,14 @@ var KeycloakAuthorization = function (keycloak, options) {
      * Obtains all entitlements from a Keycloak Server based on a given resourceServerId.
      */
     this.entitlement = function (resourceServerId, authorizationRequest) {
-        this.then = function (onGrant, onDeny, onError) {
+        this.then = async function (onGrant, onDeny, onError) {
+            try {
+                await initializeConfigIfNeeded();
+            } catch (error) {
+                handleError(error, onError);
+                return;
+            }
+
             var request = new XMLHttpRequest();
 
             request.open('POST', _instance.config.token_endpoint, true);
@@ -213,9 +237,60 @@ var KeycloakAuthorization = function (keycloak, options) {
         return this;
     };
 
-    this.init(this);
-
     return this;
 };
+
+/**
+ * Obtains the configuration from the server.
+ * @param {string} serverUrl The URL of the Keycloak server.
+ * @param {string} realm The realm name.
+ * @returns {Promise<unknown>} A promise that resolves when the configuration is loaded.
+ */
+async function loadConfig(serverUrl, realm) {
+    const url = `${serverUrl}/realms/${encodeURIComponent(realm)}/.well-known/uma2-configuration`;
+
+    try {
+        return await fetchJSON(url);
+    } catch (error) {
+        throw new Error('Could not obtain configuration from server.', { cause: error });
+    }
+}
+
+/**
+ * Fetches the JSON data from the given URL.
+ * @param {string} url The URL to fetch the data from.
+ * @returns {Promise<unknown>} A promise that resolves when the data is loaded.
+ */
+async function fetchJSON(url) {
+    let response;
+
+    try {
+        response = await fetch(url);
+    } catch (error) {
+        throw new Error('Server did not respond.', { cause: error });
+    }
+
+    if (!response.ok) {
+        throw new Error('Server responded with an invalid status.');
+    }
+
+    try {
+        return await response.json();
+    } catch (error) {
+        throw new Error('Server responded with invalid JSON.', { cause: error });
+    }
+}
+
+/**
+ * @param {unknown} error 
+ * @param {((error: unknown) => void) | undefined} handler 
+ */
+function handleError(error, handler) {
+    if (handler) {
+        handler(error);
+    } else {
+        console.error(message, error);
+    }
+}
 
 export default KeycloakAuthorization;
