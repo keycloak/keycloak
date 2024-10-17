@@ -47,6 +47,7 @@ public class SecureContextResolverTest {
         assertSecureContext("http://[::2]", false);
         assertSecureContext("http://[2001:0000:130F:0000:0000:09C0:876A:130B]", false);
         assertSecureContext("http://::1", false);
+        assertSecureContext("http://[FE80:0000:130F:0000:0000:09C0:876A:130B]", false);
     }
 
     @Test
