@@ -34,14 +34,12 @@ if "%KEY%" == "" (
 )
 if "%KEY%" == "--debug" (
   set DEBUG_MODE=true
-  set DEBUG_PORT_VAR=%2
-  if "%DEBUG_PORT_VAR%" == "" (
+  if 1%2 EQU +1%2 (
+     set DEBUG_PORT_VAR=%2
+     shift
+  ) else (
      set DEBUG_PORT_VAR=8787
   )
-  if "%DEBUG_SUSPEND_VAR%" == "" (
-     set DEBUG_SUSPEND_VAR=n
-  )
-  shift
   shift
   goto READ-ARGS
 )
@@ -50,22 +48,35 @@ if "%KEY%" == "start-dev" (
   shift
   goto READ-ARGS
 )
-if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
-  set SERVER_OPTS=%SERVER_OPTS% %KEY%=%2
-  shift
+set "VALUE=%~2"
+set PROBABLY_VALUE=false
+if "%VALUE%" NEQ "" (
+    if "%VALUE:~0,1%" NEQ "-" (
+        if "%KEY:^==%"=="%KEY%" (
+            set PROBABLY_VALUE=true
+        )
+    )
 )
-if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
-  set CONFIG_ARGS=%CONFIG_ARGS% %1
-)
-if not "%KEY:~0,2%"=="-D" (
-  if "%KEY:~0,1%"=="-" (
-      if "%~2"=="" (
-        set CONFIG_ARGS=%CONFIG_ARGS% %1
-      ) else (
-        set CONFIG_ARGS=%CONFIG_ARGS% %1 %2
-      )
-      shift
+if "%KEY:~0,2%"=="-D" (
+  if %PROBABLY_VALUE%==true (
+    set SERVER_OPTS=%SERVER_OPTS% %KEY%^=%VALUE%
+    shift
+  ) else (
+    set SERVER_OPTS=%SERVER_OPTS% %KEY%
   )
+  shift
+  goto READ-ARGS
+)
+if not "%KEY:~0,1%"=="-" (
+  set CONFIG_ARGS=%CONFIG_ARGS% %1
+  shift
+  goto READ-ARGS
+)
+if %PROBABLY_VALUE%==true (
+  set CONFIG_ARGS=%CONFIG_ARGS% %1 %2
+  shift
+) else (
+  set CONFIG_ARGS=%CONFIG_ARGS% %1
 )
 shift
 goto READ-ARGS
@@ -92,10 +103,11 @@ if not "x%JAVA_OPTS%" == "x" (
       set "JAVA_OPTS_KC_HEAP=-Xms64m -Xmx512m"
     )
 
-    set "JAVA_OPTS=!JAVA_OPTS! !JAVA_OPTS_KC_HEAP!"
   ) else (
     echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings"
   )
+  
+  set "JAVA_OPTS=!JAVA_OPTS! !JAVA_OPTS_KC_HEAP!"
 )
 
 @REM See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
@@ -180,8 +192,8 @@ if not errorlevel == 1 (
 )
 
 if "%PRINT_ENV%" == "true" (
-  echo "Using JAVA_OPTS: !JAVA_OPTS!"
-  echo "Using JAVA_RUN_OPTS: !JAVA_RUN_OPTS!"
+  echo Using JAVA_OPTS: !JAVA_OPTS!
+  echo Using JAVA_RUN_OPTS: !JAVA_RUN_OPTS!
 )
 
 set START_SERVER=true

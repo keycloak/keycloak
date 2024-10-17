@@ -252,7 +252,7 @@ jobs:
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
-          PARAMS["win"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
+          PARAMS["win"]="-Dtest=JavaOptsScriptTest,StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest,ExternalInfinispanTest"

@@ -53,11 +53,12 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--debug" })
+    @Launch({ "start-dev", "--debug", "--features=passkeys:v1" })
     void testStartDevShouldStartTwoJVMs(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
+        cliResult.assertMessage("passkeys");
     }
 
     @Test
