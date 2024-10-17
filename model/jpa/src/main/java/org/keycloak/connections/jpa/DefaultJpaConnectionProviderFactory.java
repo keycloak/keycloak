@@ -21,6 +21,7 @@ import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
 import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 
+import org.hibernate.Session;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
@@ -127,6 +128,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     @Override
     public void close() {
         if (emf != null) {
+            if (config.get("driver").equals("org.h2.Driver")) {
+                try (EntityManager em = PersistenceExceptionConverter.create(emf.createEntityManager(SynchronizationType.SYNCHRONIZED))) {
+                    em.unwrap(Session.class).doReturningWork(connection -> connection.prepareStatement("SHUTDOWN").executeUpdate());
+                }
+            }
             emf.close();
         }
     }
@@ -179,7 +185,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             String url = config.get("url");
                             String driver = config.get("driver");
                             if (driver.equals("org.h2.Driver")) {
-                                url = addH2NonKeywords(url);
+                                url = amendH2(url);
                             }
                             properties.put(AvailableSettings.JAKARTA_JDBC_URL, url);
                             properties.put(AvailableSettings.JAKARTA_JDBC_DRIVER, driver);
@@ -374,7 +380,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 String url = config.get("url");
                 String driver = config.get("driver");
                 if (driver.equals("org.h2.Driver")) {
-                    url = addH2NonKeywords(url);
+                    url = amendH2(url);
                 }
                 Class.forName(driver);
                 return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()), config.get("user"), config.get("password"));
@@ -435,4 +441,21 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         return jdbcUrl;
     }
 
+    /**
+     * Required so that we can manually close the h2 db instance as part of Keycloak shutdown instead of relying on the
+     * default ShutdownHook.
+     */
+    private String addH2CloseOnExit(String jdbcUrl) {
+        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
+            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
+        }
+        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
+            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=-1";
+        }
+        return jdbcUrl;
+    }
+
+    private String amendH2(String jdbcUrl) {
+        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
+    }
 }

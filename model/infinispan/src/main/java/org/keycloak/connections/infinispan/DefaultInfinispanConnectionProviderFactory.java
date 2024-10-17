@@ -18,7 +18,6 @@
 package org.keycloak.connections.infinispan;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -164,14 +163,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void close() {
         logger.debug("Closing provider");
         runWithWriteLockOnCacheManager(() -> {
-            if (cacheManager != null && !containerManaged) {
+            if (cacheManager != null) {
                 cacheManager.stop();
             }
             if (remoteCacheProvider != null) {
                 remoteCacheProvider.stop();
-            }
-            if (remoteCacheManager != null && !containerManaged) {
-                remoteCacheManager.stop();
             }
         });
     }

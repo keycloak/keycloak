@@ -16,6 +16,7 @@
  */
 package org.keycloak.services;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -67,13 +68,6 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
-
-    /**
-     * Timeouts are used as time boundary for obtaining models from an external storage. Default value is set
-     * to 3000 milliseconds and it's configurable.
-     */
-    private Long clientStorageProviderTimeout;
-    private Long roleStorageProviderTimeout;
 
     protected ComponentFactoryProviderFactory componentFactoryPF;
 
@@ -448,30 +442,57 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     @Override
     public void close() {
         ProviderManagerRegistry.SINGLETON.setDeployer(null);
-        for (Map<String, ProviderFactory> factories : factoriesMap.values()) {
-            for (ProviderFactory factory : factories.values()) {
-                factory.close();
+
+        // Create a tree-structure to represent reverse relation of ProviderFactory#dependsOn to Providers
+        Map<Class<? extends Provider>, Node<Set<ProviderFactory>>> nodes = new HashMap<>();
+        for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>>  f : factoriesMap.entrySet()) {
+            Class<? extends Provider> provider = f.getKey();
+            for (Map.Entry<String, ProviderFactory> entry : f.getValue().entrySet()) {
+                ProviderFactory pf = entry.getValue();
+                Node<Set<ProviderFactory>> node = nodes.computeIfAbsent(provider, k -> new Node<>(new HashSet<>()));
+                // Add ProviderFactory to the associated Provider node
+                node.data.add(pf);
+                // If dependencies exist, make this node a child of the Provider dependencies node so that we can ensure
+                // that the leaves of the tree are closed first
+                pf.dependsOn().forEach(dep -> {
+                    node.parent = nodes.computeIfAbsent((Class<? extends Provider>) dep, k -> new Node<>(new HashSet<>()));
+                    node.parent.children.add(node);
+                });
             }
+        }
+        nodes.values().forEach(this::closeProvider);
+    }
+
+    private void closeProvider(Node<Set<ProviderFactory>> node) {
+        for (var it = node.children.iterator(); it.hasNext(); ) {
+            closeProvider(it.next());
+            it.remove();
+        }
+
+        // Provider has no other dependent ProviderFactories, it's ProviderFactories can safely be closed
+        for (var it = node.data.iterator(); it.hasNext(); ) {
+            ProviderFactory pf = it.next();
+            logger.debugf("Closing ProviderFactory: %s", pf.getClass().getName());
+            pf.close();
+            it.remove();
+        }
+    }
+
+    private static class Node<T> {
+        private final T data;
+        private Node<T> parent;
+        private List<Node<T>> children;
+
+        public Node(T data) {
+            this.data = data;
+            this.parent = null;
+            this.children = new ArrayList<>();
         }
     }
 
     public static boolean isInternal(ProviderFactory<?> factory) {
         String packageName = factory.getClass().getPackage().getName();
         return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
-    }
-
-    public long getClientStorageProviderTimeout() {
-        if (clientStorageProviderTimeout == null) {
-            clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
-        }
-        return clientStorageProviderTimeout;
-    }
-
-    public long getRoleStorageProviderTimeout() {
-        if (roleStorageProviderTimeout == null) {
-            roleStorageProviderTimeout = Config.scope("role").getLong("storageProviderTimeout", 3000L);
-        }
-        return roleStorageProviderTimeout;
     }
 
     /**

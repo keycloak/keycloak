@@ -26,6 +26,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.SynchronizationType;
+
+import org.hibernate.Session;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -80,6 +82,12 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void close() {
         if (entityManagerFactory != null) {
+            String driver = Configuration.getRawValue("quarkus.datasource.jdbc.driver");
+            if ("org.h2.Driver".equals(driver)) {
+                try (EntityManager em = PersistenceExceptionConverter.create(entityManagerFactory.createEntityManager(SynchronizationType.SYNCHRONIZED))) {
+                    em.unwrap(Session.class).doReturningWork(connection -> connection.prepareStatement("SHUTDOWN").executeUpdate());
+                }
+            }
             entityManagerFactory.close();
         }
     }
