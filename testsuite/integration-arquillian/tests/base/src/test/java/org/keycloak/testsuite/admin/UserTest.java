@@ -269,6 +269,21 @@ public class UserTest extends AbstractAdminTest {
         createUser();
     }
 
+    @Test
+    public void createUserWithId() {
+        String id = "01234567-89ab-cdef-0123-456789abcdef";
+        UserRepresentation user = createUserRepresentation(id,"user_with_id", null, null, null, null, true);
+        String createdId = createUser(user);
+        Assert.assertEquals(id, createdId);
+        user.setUsername("user2_with_id");
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username or email or id", error.getErrorMessage());
+        }
+    }
+
     /**
      * See KEYCLOAK-11003
      */
@@ -389,7 +404,7 @@ public class UserTest extends AbstractAdminTest {
         try (Response response = realm.users().create(user)) {
             assertEquals(409, response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
+            Assert.assertEquals("User exists with same username or email or id", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
     }
