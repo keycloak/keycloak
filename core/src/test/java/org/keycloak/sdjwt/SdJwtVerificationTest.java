@@ -23,14 +23,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.crypto.SignatureSignerContext;
 
-import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -57,38 +59,61 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void testSdJwtVerification_FlatSdJwt() throws VerificationException {
-        for (String hashAlg : Arrays.asList(new String[]{"sha-256", "sha-384", "sha-512"})) {
+        for (String hashAlg : Arrays.asList("sha-256", "sha-384", "sha-512")) {
             SdJwt sdJwt = exampleFlatSdJwtV1()
                     .withHashAlgorithm(hashAlg)
                     .build();
 
-            sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+            sdJwt.verify(
+                    defaultIssuerVerifyingKeys(),
+                    defaultIssuerSignedJwtVerificationOpts().build()
+            );
         }
     }
 
     @Test
     public void testSdJwtVerification_EnforceIdempotence() throws VerificationException {
-            SdJwt sdJwt = exampleFlatSdJwtV1().build();
-            sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
-            sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+        SdJwt sdJwt = exampleFlatSdJwtV1().build();
+
+        sdJwt.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build()
+        );
+
+        sdJwt.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build()
+        );
     }
 
     @Test
     public void testSdJwtVerification_SdJwtWithUndisclosedNestedFields() throws VerificationException {
         SdJwt sdJwt = exampleSdJwtWithUndisclosedNestedFieldsV1().build();
-        sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+
+        sdJwt.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build()
+        );
     }
 
     @Test
     public void testSdJwtVerification_SdJwtWithUndisclosedArrayElements() throws Exception {
         SdJwt sdJwt = exampleSdJwtWithUndisclosedArrayElementsV1().build();
-        sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+
+        sdJwt.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build()
+        );
     }
 
     @Test
     public void testSdJwtVerification_RecursiveSdJwt() throws Exception {
         SdJwt sdJwt = exampleRecursiveSdJwtV1().build();
-        sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build());
+
+        sdJwt.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build()
+        );
     }
 
     @Test
@@ -99,7 +124,10 @@ public abstract class SdJwtVerificationTest {
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
-                () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build())
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build()
+                )
         );
 
         assertEquals("Unexpected or insecure hash algorithm: sha-224", exception.getMessage());
@@ -110,13 +138,13 @@ public abstract class SdJwtVerificationTest {
         SdJwt sdJwt = exampleFlatSdJwtV1().build();
         VerificationException exception = assertThrows(
                 VerificationException.class,
-                () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                        .withVerifier(testSettings.holderVerifierContext) // wrong verifier
-                        .build())
+                () -> sdJwt.verify(
+                        Collections.singletonList(testSettings.holderVerifierContext), // wrong verifier
+                        defaultIssuerSignedJwtVerificationOpts().build()
+                )
         );
 
-        assertThat(exception.getMessage(), is("Invalid Issuer-Signed JWT"));
-        assertThat(exception.getCause().getMessage(), endsWith("Invalid jws signature"));
+        assertThat(exception.getMessage(), is("Invalid Issuer-Signed JWT: Signature could not be verified"));
     }
 
     @Test
@@ -135,12 +163,15 @@ public abstract class SdJwtVerificationTest {
                 .withUndisclosedClaim("exp", "eluV5Og3gSNII8EYnsxA_A")
                 .build()).build();
 
-        for (SdJwt sdJwt : Arrays.asList(new SdJwt[]{sdJwtV1, sdJwtV2})) {
+        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
-                    () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                            .withValidateExpirationClaim(true)
-                            .build())
+                    () -> sdJwt.verify(
+                            defaultIssuerVerifyingKeys(),
+                            defaultIssuerSignedJwtVerificationOpts()
+                                    .withValidateExpirationClaim(true)
+                                    .build()
+                    )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `exp` claim", exception.getMessage());
@@ -166,12 +197,15 @@ public abstract class SdJwtVerificationTest {
         SdJwt sdJwtV1 = exampleFlatSdJwtV2(claimSet1, disclosureSpec).build();
         SdJwt sdJwtV2 = exampleFlatSdJwtV2(claimSet2, disclosureSpec).build();
 
-        for (SdJwt sdJwt : Arrays.asList(new SdJwt[]{sdJwtV1, sdJwtV2})) {
+        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
-                    () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                            .withValidateExpirationClaim(true)
-                            .build())
+                    () -> sdJwt.verify(
+                            defaultIssuerVerifyingKeys(),
+                            defaultIssuerSignedJwtVerificationOpts()
+                                    .withValidateExpirationClaim(true)
+                                    .build()
+                    )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `exp` claim", exception.getMessage());
@@ -195,12 +229,15 @@ public abstract class SdJwtVerificationTest {
                 .withUndisclosedClaim("iat", "eluV5Og3gSNII8EYnsxA_A")
                 .build()).build();
 
-        for (SdJwt sdJwt : Arrays.asList(new SdJwt[]{sdJwtV1, sdJwtV2})) {
+        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
-                    () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                            .withValidateIssuedAtClaim(true)
-                            .build())
+                    () -> sdJwt.verify(
+                            defaultIssuerVerifyingKeys(),
+                            defaultIssuerSignedJwtVerificationOpts()
+                                    .withValidateIssuedAtClaim(true)
+                                    .build()
+                    )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `iat` claim", exception.getMessage());
@@ -224,12 +261,15 @@ public abstract class SdJwtVerificationTest {
                 .withUndisclosedClaim("iat", "eluV5Og3gSNII8EYnsxA_A")
                 .build()).build();
 
-        for (SdJwt sdJwt : Arrays.asList(new SdJwt[]{sdJwtV1, sdJwtV2})) {
+        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
-                    () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                            .withValidateNotBeforeClaim(true)
-                            .build())
+                    () -> sdJwt.verify(
+                            defaultIssuerVerifyingKeys(),
+                            defaultIssuerSignedJwtVerificationOpts()
+                                    .withValidateNotBeforeClaim(true)
+                                    .build()
+                    )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `nbf` claim", exception.getMessage());
@@ -247,8 +287,10 @@ public abstract class SdJwtVerificationTest {
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
-                () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts()
-                        .build())
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build()
+                )
         );
 
         assertEquals("Unexpected non-string element inside _sd array: 123", exception.getMessage());
@@ -256,7 +298,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfForbiddenClaimNames() {
-        for (String forbiddenClaimName : Arrays.asList(new String[]{"_sd", "..."})) {
+        for (String forbiddenClaimName : Arrays.asList("_sd", "...")) {
             ObjectNode claimSet = mapper.createObjectNode();
             claimSet.put(forbiddenClaimName, "Value");
 
@@ -266,7 +308,10 @@ public abstract class SdJwtVerificationTest {
 
             VerificationException exception = assertThrows(
                     VerificationException.class,
-                    () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build())
+                    () -> sdJwt.verify(
+                            defaultIssuerVerifyingKeys(),
+                            defaultIssuerSignedJwtVerificationOpts().build()
+                    )
             );
 
             assertEquals("Disclosure claim name must not be '_sd' or '...'", exception.getMessage());
@@ -286,7 +331,10 @@ public abstract class SdJwtVerificationTest {
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
-                () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build())
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build()
+                )
         );
 
         assertTrue(exception.getMessage().startsWith("A digest was encountered more than once:"));
@@ -307,15 +355,21 @@ public abstract class SdJwtVerificationTest {
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
-                () -> sdJwt.verify(defaultIssuerSignedJwtVerificationOpts().build())
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build()
+                )
         );
 
         assertEquals("A salt value was reused: " + salt, exception.getMessage());
     }
 
+    private List<SignatureVerifierContext> defaultIssuerVerifyingKeys() {
+        return Collections.singletonList(testSettings.issuerVerifierContext);
+    }
+
     private IssuerSignedJwtVerificationOpts.Builder defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withVerifier(testSettings.issuerVerifierContext)
                 .withValidateIssuedAtClaim(false)
                 .withValidateExpirationClaim(false)
                 .withValidateNotBeforeClaim(false);
