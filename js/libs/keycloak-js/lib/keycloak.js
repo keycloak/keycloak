@@ -1589,6 +1589,8 @@ function Keycloak (config) {
         throw 'invalid adapter type: ' + type;
     }
 
+    const STORAGE_KEY_PREFIX = 'kc-callback-';
+
     var LocalStorage = function() {
         if (!(this instanceof LocalStorage)) {
             return new LocalStorage();
@@ -1599,24 +1601,49 @@ function Keycloak (config) {
 
         var cs = this;
 
-        function clearExpired() {
-            var time = new Date().getTime();
-            for (var i = 0; i < localStorage.length; i++)  {
-                var key = localStorage.key(i);
-                if (key && key.indexOf('kc-callback-') == 0) {
-                    var value = localStorage.getItem(key);
-                    if (value) {
-                        try {
-                            var expires = JSON.parse(value).expires;
-                            if (!expires || expires < time) {
-                                localStorage.removeItem(key);
-                            }
-                        } catch (err) {
-                            localStorage.removeItem(key);
-                        }
-                    }
+        /**
+         * Clears all values from local storage that are no longer valid.
+         */
+        function clearInvalidValues() {
+            const currentTime = Date.now();
+
+            for (const [key, value] of Object.entries(localStorage)) {
+                // Ignore values not known to be stored by us.
+                if (!key.startsWith(STORAGE_KEY_PREFIX)) {
+                    continue;
+                }
+
+                // Attempt to parse the expiry time from the value.
+                const expiry = parseExpiry(value);
+
+                // Discard the value if it is malformed or expired.
+                if (expiry === null || expiry < currentTime) {
+                    localStorage.removeItem(key);
                 }
             }
+        }
+
+        /**
+         * Parses the expiry time from a value stored in local storage.
+         * @param {unknown} value
+         * @returns {number | null} The expiry time in milliseconds, or `null` if the value is malformed.
+         */
+        function parseExpiry(value) {
+            let parsedValue;
+
+            // Attempt to parse the value as JSON.
+            try {
+                parsedValue = JSON.parse(value);
+            } catch (error) {
+                return null;
+            }
+
+            // Attempt to extract the 'expires' property.
+            if (isObject(parsedValue) && 'expires' in parsedValue && typeof parsedValue.expires === 'number') {
+                return parsedValue.expires;
+            }
+
+            return null;
         }
 
         cs.get = function(state) {
@@ -1624,21 +1651,21 @@ function Keycloak (config) {
                 return;
             }
 
-            var key = 'kc-callback-' + state;
+            var key = STORAGE_KEY_PREFIX + state;
             var value = localStorage.getItem(key);
             if (value) {
                 localStorage.removeItem(key);
                 value = JSON.parse(value);
             }
 
-            clearExpired();
+            clearInvalidValues();
             return value;
         };
 
         cs.add = function(state) {
-            clearExpired();
+            clearInvalidValues();
 
-            var key = 'kc-callback-' + state.state;
+            var key = STORAGE_KEY_PREFIX + state.state;
             state.expires = new Date().getTime() + (60 * 60 * 1000);
             localStorage.setItem(key, JSON.stringify(state));
         };
@@ -1656,15 +1683,15 @@ function Keycloak (config) {
                 return;
             }
 
-            var value = getCookie('kc-callback-' + state);
-            setCookie('kc-callback-' + state, '', cookieExpiration(-100));
+            var value = getCookie(STORAGE_KEY_PREFIX + state);
+            setCookie(STORAGE_KEY_PREFIX + state, '', cookieExpiration(-100));
             if (value) {
                 return JSON.parse(value);
             }
         };
 
         cs.add = function(state) {
-            setCookie('kc-callback-' + state.state, JSON.stringify(state), cookieExpiration(60));
+            setCookie(STORAGE_KEY_PREFIX + state.state, JSON.stringify(state), cookieExpiration(60));
         };
 
         cs.removeItem = function(key) {
