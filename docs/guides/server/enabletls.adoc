@@ -22,11 +22,19 @@ When you use a pair of matching certificate and private key files in PEM format,
 
 {project_name} creates a keystore out of these files in memory and uses this keystore afterwards.
 
-== Providing a Java Keystore
+== Providing a Keystore
 When no keystore file is explicitly configured, but `http-enabled` is set to false, {project_name} looks for a `conf/server.keystore` file.
 
 As an alternative, you can use an existing keystore by running the following command:
 <@kc.start parameters="--https-key-store-file=/path/to/existing-keystore-file"/>
+
+Recognized file extensions for a keystore:
+
+* `.p12`, `.pkcs12`, and `.pfx` for a pkcs12 file
+* `.jks`, and `.keystore` for a jks file
+* `.key`, `.crt`, and `.pem` for a pem file
+
+If your keystore does not have an extension matching its file type, you will also need to set the `https-key-store-type` option.
 
 === Setting the Keystore password
 You can set a secure password for your keystore using the `https-key-store-password` option:
