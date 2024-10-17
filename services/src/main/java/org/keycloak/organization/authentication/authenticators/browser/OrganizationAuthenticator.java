@@ -111,7 +111,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         if (user == null) {
-            unknownUserChallenge(context, organization, realm);
+            unknownUserChallenge(context, organization, realm, domain != null);
             return;
         }
 
@@ -241,7 +241,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         return user;
     }
 
-    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
+    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm, boolean domainMatch) {
         // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
         LoginFormsProvider form = context.form()
@@ -267,7 +267,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                     return attributes;
                 });
 
-        form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+        if (domainMatch) {
+            form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+        }
+
         context.challenge(form.createLoginUsername());
     }
 
