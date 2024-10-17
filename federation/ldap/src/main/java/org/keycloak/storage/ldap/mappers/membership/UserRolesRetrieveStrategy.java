@@ -17,7 +17,7 @@
 
 package org.keycloak.storage.ldap.mappers.membership;
 
-
+import org.jboss.logging.Logger;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -52,8 +52,11 @@ public interface UserRolesRetrieveStrategy {
      */
     class LoadRolesByMember implements UserRolesRetrieveStrategy {
 
+        private static final Logger log = Logger.getLogger(LDAPUtils.class);
+
         @Override
         public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
+
             try (LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery()) {
                 String membershipAttr = roleOrGroupMapper.getConfig().getMembershipLdapAttribute();
 
@@ -62,7 +65,27 @@ public interface UserRolesRetrieveStrategy {
 
                 Condition membershipCondition = getMembershipCondition(membershipAttr, userMembership);
                 ldapQuery.addWhereCondition(membershipCondition);
-                return ldapQuery.getResultList();
+
+                boolean pagination = ldapConfig.isPagination();
+                if (pagination) {
+                    // For now reuse globally configured batch size in LDAP provider page
+                    int pageSize = ldapConfig.getBatchSizeForSync();
+
+                    List<LDAPObject> result = new LinkedList<>();
+                    boolean nextPage = true;
+
+                    while (nextPage) {
+                        ldapQuery.setLimit(pageSize);
+                        final List<LDAPObject> currentPageGroups = ldapQuery.getResultList();
+                        result.addAll(currentPageGroups);
+                        nextPage = ldapQuery.getPaginationContext().hasNextPage();
+                    }
+
+                    return result;
+                } else {
+                    // LDAP pagination not available. Do everything in single transaction
+                    return ldapQuery.getResultList();
+                }
             }
         }
 
