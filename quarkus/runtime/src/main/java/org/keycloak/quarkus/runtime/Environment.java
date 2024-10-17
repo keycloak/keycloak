@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -38,6 +36,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -134,7 +133,7 @@ public final class Environment {
             return true;
         }
 
-        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null));
+        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(Configuration.getNonPersistedConfigValue(org.keycloak.common.util.Environment.PROFILE).getValue());
     }
 
     public static boolean isDevProfile(){

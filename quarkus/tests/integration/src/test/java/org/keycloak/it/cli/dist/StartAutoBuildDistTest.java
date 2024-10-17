@@ -38,7 +38,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 public class StartAutoBuildDistTest {
 
     @Test
-    @Launch({ "--verbose", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
     void testStartAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -53,7 +53,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -88,7 +88,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -102,14 +102,6 @@ public class StartAutoBuildDistTest {
     void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-    }
-
-    @Test
-    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
-    @Order(8)
-    void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoBuild();
     }
 
     @Test

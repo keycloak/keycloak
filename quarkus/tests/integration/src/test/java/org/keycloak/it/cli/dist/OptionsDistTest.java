@@ -48,14 +48,14 @@ public class OptionsDistTest {
 
     @Test
     @Order(2)
-    @Launch({"start", "--test=invalid"})
+    @Launch({"start", "--db=dev-file", "--test=invalid"})
     public void testServerDoesNotStartIfValidationFailDuringReAugStart(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
     }
 
     @Test
     @Order(3)
-    @Launch({"start", "--log=console", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({"start", "--db=dev-file", "--log=console", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
     public void testServerDoesNotStartIfDisabledFileLogOption(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Possible solutions: --log, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-level")).count());
@@ -63,7 +63,7 @@ public class OptionsDistTest {
 
     @Test
     @Order(4)
-    @Launch({"start", "--log=file", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({"start", "--db=dev-file", "--log=file", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
     public void testServerStartIfEnabledFileLogOption(LaunchResult result) {
         assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
     }
@@ -71,7 +71,7 @@ public class OptionsDistTest {
     @Test
     @Order(5)
     @WithEnvVars({"KC_LOG", "console", "KC_LOG_CONSOLE_COLOR", "true", "KC_LOG_FILE", "something-env", "KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
-    @Launch({"start"})
+    @Launch({"start", "--db=dev-file"})
     public void testSettingEnvVars(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
@@ -86,7 +86,7 @@ public class OptionsDistTest {
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
     public void testExpressionsInConfigFile(KeycloakDistribution distribution) {
         distribution.setEnvVar("MY_LOG_LEVEL", "warn");
-        CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--http-enabled=true", "--hostname-strict=false");
+        CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         result.assertNoMessage("INFO [io.quarkus]");
         result.assertNoMessage("Listening on:");
 
