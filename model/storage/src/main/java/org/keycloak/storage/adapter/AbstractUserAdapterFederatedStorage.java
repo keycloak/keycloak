@@ -35,6 +35,7 @@ import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,6 +62,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ComponentModel storageProviderModel;
+    private MultivaluedHashMap<String, String> federatedAttributes;
 
     public AbstractUserAdapterFederatedStorage(KeycloakSession session, RealmModel realm, ComponentModel storageProviderModel) {
         this.session = session;
@@ -317,14 +319,16 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         if (UserModel.USERNAME.equals(name)) {
             setUsername(value);
         } else {
-            getFederatedStorage().setSingleAttribute(realm, this.getId(), mapAttribute(name), value);
+            setFederatedUserAttribute(name, List.of(value));
         }
     }
 
     @Override
     public void removeAttribute(String name) {
         getFederatedStorage().removeAttribute(realm, this.getId(), name);
-
+        if (federatedAttributes != null) {
+            federatedAttributes.remove(name);
+        }
     }
 
     @Override
@@ -332,7 +336,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         if (UserModel.USERNAME.equals(name)) {
             setUsername((values != null && !values.isEmpty()) ? values.get(0) : null);
         } else {
-            getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
+            setFederatedUserAttribute(name, values);
         }
     }
 
@@ -341,15 +345,12 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         if (UserModel.USERNAME.equals(name)) {
             return getUsername();
         }
-        return getFederatedStorage().getAttributes(realm, this.getId()).getFirst(mapAttribute(name));
+        return getFederatedUserAttributes().getFirst(mapAttribute(name));
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        MultivaluedHashMap<String, String> attributes = getFederatedStorage().getAttributes(realm, this.getId());
-        if (attributes == null) {
-            attributes = new MultivaluedHashMap<>();
-        }
+        MultivaluedHashMap<String, String> attributes = getFederatedUserAttributes();
         List<String> firstName = attributes.remove(FIRST_NAME_ATTRIBUTE);
         attributes.add(UserModel.FIRST_NAME, firstName != null && firstName.size() >= 1 ? firstName.get(0) : null);
         List<String> lastName = attributes.remove(LAST_NAME_ATTRIBUTE);
@@ -357,7 +358,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         List<String> email = attributes.remove(EMAIL_ATTRIBUTE);
         attributes.add(UserModel.EMAIL, email != null && email.size() >= 1 ? email.get(0) : null);
         attributes.add(UserModel.USERNAME, getUsername());
-        return attributes;
+        return Collections.unmodifiableMap(attributes);
     }
 
     @Override
@@ -365,7 +366,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         if (UserModel.USERNAME.equals(name)) {
             return Stream.of(getUsername());
         }
-        List<String> result = getFederatedStorage().getAttributes(realm, this.getId()).get(mapAttribute(name));
+        List<String> result = getFederatedUserAttributes().get(mapAttribute(name));
         return (result == null) ? Stream.empty() : result.stream();
     }
 
@@ -428,5 +429,20 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         public Streams(final KeycloakSession session, final RealmModel realm, final ComponentModel storageProviderModel) {
             super(session, realm, storageProviderModel);
         }
+    }
+
+    private MultivaluedHashMap<String, String> getFederatedUserAttributes() {
+        if (federatedAttributes == null) {
+            federatedAttributes = getFederatedStorage().getAttributes(realm, this.getId());
+        }
+        return Optional.ofNullable(federatedAttributes).map(MultivaluedHashMap::new).orElse(new MultivaluedHashMap<>());
+    }
+
+    private void setFederatedUserAttribute(String name, List<String> values) {
+        getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
+        if (federatedAttributes == null) {
+            federatedAttributes = new MultivaluedHashMap<>();
+        }
+        federatedAttributes.put(name, values);
     }
 }
