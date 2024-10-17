@@ -39,7 +39,7 @@ public class CacheBuildSteps {
     // See: https://issues.redhat.com/browse/JGRP-2130 for the JGroups discussion, and https://github.com/keycloak/keycloak/issues/29129 for the issue Keycloak had with this.
     @Consume(LoggingSetupBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
-    @BuildStep
+    @BuildStep(onlyIf = IsInfinispanEnabled.class)
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
         syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheManagerFactory.class)
                 .scope(ApplicationScoped.class)
