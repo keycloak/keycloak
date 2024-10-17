@@ -25,7 +25,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.models.utils.SessionExpirationUtils;
 
 /**
@@ -216,6 +218,14 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresMaxIdleMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
+        return IMMORTAL_FLAG;
+    }
+
+    public static long getAuthSessionLifespanMS(RealmModel realm, ClientModel client, RootAuthenticationSessionEntity entity) {
+        return (entity.getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm)) * 1000L;
+    }
+
+    public static long getAuthSessionMaxIdleMS(RealmModel realm, ClientModel client, RootAuthenticationSessionEntity entity) {
         return IMMORTAL_FLAG;
     }
 }
