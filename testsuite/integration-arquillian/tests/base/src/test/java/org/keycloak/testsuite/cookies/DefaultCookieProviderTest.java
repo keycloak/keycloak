@@ -81,7 +81,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         });
         Assert.assertEquals(9, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "Lax", true);
-        assertCookie(response, "KC_AUTH_SESSION", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Strict", true);
+        assertCookie(response, "KC_AUTH_SESSION_HASH", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Strict", true);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "Lax", false);
         assertCookie(response, "KC_STATE_CHECKER", "my-auth-detached", "/auth/realms/master/", 222, false, true, "Strict", false);
         assertCookie(response, "KEYCLOAK_IDENTITY", "my-identity", "/auth/realms/master/", 333, false, true, "Lax", true);
@@ -198,7 +198,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
         Assert.assertEquals(9, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "Lax", true);
-        assertCookie(response, "KC_AUTH_SESSION", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Strict", true);
+        assertCookie(response, "KC_AUTH_SESSION_HASH", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Strict", true);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "Lax", false);
         assertCookie(response, "KC_STATE_CHECKER", "my-auth-detached", "/auth/realms/master/", 222, false, true, "Strict", false);
         assertCookie(response, "KEYCLOAK_IDENTITY", "my-identity", "/auth/realms/master/", 333, false, true, "Lax", true);

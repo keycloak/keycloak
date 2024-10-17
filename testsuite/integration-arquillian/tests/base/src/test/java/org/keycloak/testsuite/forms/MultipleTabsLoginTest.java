@@ -255,10 +255,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(7200000);
 
         //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-        }
+        WaitUtils.pause(2000);
 
         // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
         loginPage.login("login-test", "password");
@@ -341,10 +338,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             // Wait until authentication session expires
             setTimeOffset(7200000);
 
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-            }
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
 
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
             loginPage.login("login-test", "password");
@@ -383,10 +378,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-            }
+            WaitUtils.pause(2000);
 
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
             loginPage.login("login-test", "password");
@@ -728,10 +720,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
            loginPage.assertCurrent();
 
            //wait for the refresh in the first tab
-           try {
-               Thread.sleep(2000);
-           } catch (InterruptedException e) {
-           }
+           WaitUtils.pause(2000);
 
            if (driver instanceof HtmlUnitDriver) {
                // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"

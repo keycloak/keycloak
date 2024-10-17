@@ -140,7 +140,7 @@ public class AuthenticationSessionManager {
 
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID_HASH, authSessionIdHash);
 
-        log.debugf("Set KC_AUTH_SESSION cookie with value %s", authSessionIdHash);
+        log.debugf("Set KC_AUTH_SESSION_HASH cookie with value %s", authSessionIdHash);
     }
 
 
