@@ -340,7 +340,7 @@ To use structured JSON log output instead, enter the following command:
 .Example Log Message
 [source, bash]
 ----
-2024-04-05T12:32:20.616+02:00 mabartos keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
+2024-04-05T12:32:20.616+02:00 host keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
 ----
 
 When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` will not apply.
@@ -352,7 +352,7 @@ To use unstructured logging, enter the following command:
 .Example Log Message
 [source, bash]
 ----
-2024-04-05T12:31:38.473+02:00 mabartos keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
+2024-04-05T12:31:38.473+02:00 host keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
 ----
 
 As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
