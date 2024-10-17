@@ -1,3 +1,20 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.sdjwt.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +30,6 @@ import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.io.IOException;
 import java.rmi.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +50,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
-    public void shouldResolveIssuerVerifyingKeys() throws VerificationException {
+    public void shouldResolveIssuerVerifyingKeys() throws Exception {
         String issuerUri = "https://issuer.example.com";
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
                 issuerUri, mockHttpDataFetcher());
@@ -48,7 +64,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
-    public void shouldResolveKeys_WhenIssuerTrustedOnRegexPattern() throws VerificationException {
+    public void shouldResolveKeys_WhenIssuerTrustedOnRegexPattern() throws Exception {
         Pattern issuerUriRegex = Pattern.compile("https://.*\\.example\\.com");
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
                 issuerUriRegex, mockHttpDataFetcher());
@@ -58,7 +74,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
-    public void shouldResolveKeys_WhenJwtSpecifiesKid() throws VerificationException {
+    public void shouldResolveKeys_WhenJwtSpecifiesKid() throws VerificationException, JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
                 issuerUri, mockHttpDataFetcher());
@@ -88,7 +104,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
-    public void shouldRejectNonHttpsIssuerURIs_EvenIfIssuerBuiltWithRegexPattern() {
+    public void shouldRejectNonHttpsIssuerURIs_EvenIfIssuerBuiltWithRegexPattern() throws JsonProcessingException {
         Pattern issuerUriRegex = Pattern.compile(".*\\.example\\.com");
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
                 issuerUriRegex, mockHttpDataFetcher());
@@ -103,7 +119,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
-    public void shouldRejectJwtsWithUnexpectedIssuerClaims() {
+    public void shouldRejectJwtsWithUnexpectedIssuerClaims() throws JsonProcessingException {
         String regex = "https://.*\\.example\\.com";
         Pattern issuerUriRegex = Pattern.compile(regex);
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
@@ -137,41 +153,49 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
                         "}"
         ));
 
-        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
-
-        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt();
-        VerificationException exception = assertThrows(VerificationException.class,
-                () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
+        genericTestShouldFail(
+                issuerUri,
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                "A potential JWK was retrieved but found invalid",
+                "Unsupported or invalid JWK"
         );
-
-        assertThat(exception.getMessage(),
-                endsWith("A potential JWK was retrieved but found invalid"));
     }
 
     @Test
-    public void shouldFailOnUnexpectedIssuerExposed() {
+    public void shouldFailOnUnexpectedIssuerExposed() throws JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
 
         ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
         metadata.put("issuer", "https://another-issuer.example.com");
 
-        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
-
-        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt();
-        VerificationException exception = assertThrows(VerificationException.class,
-                () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
+        genericTestShouldFail(
+                issuerUri,
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                "Unexpected metadata's issuer",
+                null
         );
-
-        assertTrue(exception.getMessage().contains("Unexpected metadata's issuer"));
     }
 
     @Test
-    public void shouldFailOnMissingOrMalformedJwksOnMetadataEndpoint() throws JsonProcessingException {
+    public void shouldFailOnMalformedJwtVcMetadataExposed() throws JsonProcessingException {
+        String issuerUri = "https://issuer.example.com";
+
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        // This is malformed because the issuer must be a string
+        metadata.set("issuer", SdJwtUtils.mapper.readTree("{}"));
+
+        genericTestShouldFail(
+                issuerUri,
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                "Failed to parse exposed JWT VC Metadata",
+                null
+        );
+    }
+
+    @Test
+    public void shouldFailOnMalformedJwksExposed() throws JsonProcessingException {
         List<JsonNode> malformedJwks = Arrays.asList(
-                null,
-                SdJwtUtils.mapper.readTree("{}"),
+                SdJwtUtils.mapper.readTree("[]"),
                 SdJwtUtils.mapper.readTree("{\"keys\": {}}")
         );
 
@@ -180,32 +204,63 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
 
             ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
             metadata.put("issuer", issuerUri);
-            metadata.set("jwks", jwks);
+            metadata.put("jwks_uri", "https://issuer.example.com/api/vci/jwks");
 
-            TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                    issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
-
-            IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt();
-            VerificationException exception = assertThrows(VerificationException.class,
-                    () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
+            genericTestShouldFail(
+                    issuerUri,
+                    mockHttpDataFetcherWithMetadataAndJwks(issuerUri, metadata, jwks),
+                    "Failed to parse exposed JWKS",
+                    null
             );
-
-            assertThat(exception.getMessage(),
-                    endsWith(String.format("Could not resolve issuer JWKs with URI: %s", issuerUri)));
         }
     }
 
     @Test
-    public void shouldFailOnIOErrorWhileFetchingMetadata() {
+    public void shouldFailOnMissingJwksOnMetadataEndpoint() throws JsonProcessingException {
+        String issuerUri = "https://issuer.example.com";
+
+        // There are no means to resolve JWKS with these metadata
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+
+        genericTestShouldFail(
+                issuerUri,
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                String.format("Could not resolve issuer JWKs with URI: %s", issuerUri),
+                null
+        );
+    }
+
+    @Test
+    public void shouldFailOnIOErrorWhileFetchingMetadata() throws JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
 
         ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
-        metadata.put("issuer", "https://issuer.example.com");
+        metadata.put("issuer", issuerUri);
 
+        HttpDataFetcher mockFetcher = mockHttpDataFetcherWithMetadata(
+                // HTTP can only mock an unrelated issuer
+                "https://another-issuer.example.com",
+                metadata
+        );
+
+        genericTestShouldFail(
+                issuerUri,
+                mockFetcher,
+                String.format("Could not fetch data from URI: %s", issuerUri),
+                null
+        );
+    }
+
+    private void genericTestShouldFail(
+            String issuerUri,
+            HttpDataFetcher mockFetcher,
+            String errorMessage,
+            String causeErrorMessage
+    ) {
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
                 issuerUri,
-                // HTTP can only mock an unrelated issuer
-                mockHttpDataFetcherWithMetadata("https://another-issuer.example.com", metadata)
+                mockFetcher
         );
 
         IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt();
@@ -213,8 +268,10 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
                 () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
         );
 
-        assertTrue(exception.getMessage()
-                .contains(String.format("Could not fetch data from URI: %s", issuerUri)));
+        assertTrue(exception.getMessage().contains(errorMessage));
+        if (causeErrorMessage != null) {
+            assertTrue(exception.getCause().getMessage().contains(causeErrorMessage));
+        }
     }
 
     private IssuerSignedJWT exampleIssuerSignedJwt() {
@@ -236,7 +293,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         return issuerSignedJWT;
     }
 
-    private HttpDataFetcher mockHttpDataFetcher() {
+    private HttpDataFetcher mockHttpDataFetcher() throws JsonProcessingException {
         ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
         metadata.put("issuer", "https://issuer.example.com");
         metadata.put("jwks_uri", "https://issuer.example.com/api/vci/jwks");
@@ -247,24 +304,31 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         );
     }
 
-    private HttpDataFetcher mockHttpDataFetcherWithMetadata(String issuer, JsonNode metadata) {
-        return new HttpDataFetcher() {
-            @Override
-            public JsonNode fetchJsonData(String uri) throws IOException {
-                if (!uri.startsWith(issuer)) {
-                    throw new UnknownHostException("Unavailable URI");
-                }
+    private HttpDataFetcher mockHttpDataFetcherWithMetadata(
+            String issuer, JsonNode metadata
+    ) throws JsonProcessingException {
+        JsonNode jwks = SdJwtUtils.mapper.readTree(
+                TestUtils.readFileAsString(getClass(),
+                        "sdjwt/s30.1-jwt-vc-metadata-jwks.json"
+                ));
 
-                if (uri.endsWith("/.well-known/jwt-vc-issuer")) {
-                    return metadata;
-                } else if (uri.endsWith("/api/vci/jwks")) {
-                    return SdJwtUtils.mapper.readTree(
-                            TestUtils.readFileAsString(getClass(),
-                                    "sdjwt/s30.1-jwt-vc-metadata-jwks.json")
-                    );
-                } else {
-                    throw new UnknownHostException("Unavailable URI");
-                }
+        return mockHttpDataFetcherWithMetadataAndJwks(issuer, metadata, jwks);
+    }
+
+    private HttpDataFetcher mockHttpDataFetcherWithMetadataAndJwks(
+            String issuer, JsonNode metadata, JsonNode jwks
+    ) {
+        return uri -> {
+            if (!uri.startsWith(issuer)) {
+                throw new UnknownHostException("Unavailable URI");
+            }
+
+            if (uri.endsWith("/.well-known/jwt-vc-issuer")) {
+                return metadata;
+            } else if (uri.endsWith("/api/vci/jwks")) {
+                return jwks;
+            } else {
+                throw new UnknownHostException("Unavailable URI");
             }
         };
     }

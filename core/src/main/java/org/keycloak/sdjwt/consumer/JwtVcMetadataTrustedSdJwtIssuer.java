@@ -17,14 +17,19 @@
 
 package org.keycloak.sdjwt.consumer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
+import org.keycloak.sdjwt.SdJws;
+import org.keycloak.sdjwt.SdJwtUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -80,7 +85,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
     public List<SignatureVerifierContext> resolveIssuerVerifyingKeys(IssuerSignedJWT issuerSignedJWT)
             throws VerificationException {
         // Read iss (claim) and kid (header)
-        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get("iss"))
+        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(SdJws.CLAIM_NAME_ISSUER))
                 .map(JsonNode::asText)
                 .orElse("");
         String kid = issuerSignedJWT.getHeader().getKeyId();
@@ -97,18 +102,15 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         // As per specs, only HTTPS URIs are supported
         validateHttpsIssuerUri(iss);
 
-        // Fetch and collect exposed JWKs
-        List<JsonNode> jwks = new ArrayList<>();
-        for (JsonNode jwk : fetchIssuerMetadata(iss)) {
-            jwks.add(jwk);
-        }
+        // Fetch exposed JWKs
+        List<JWK> jwks = fetchIssuerMetadataJwks(iss);
 
         // If kid specified, only consider the first matching key
         if (kid != null) {
             jwks = jwks.stream()
                     .filter(jwk -> {
-                        JsonNode jwkKid = jwk.get("kid");
-                        return jwkKid != null && jwkKid.asText().equals(kid);
+                        String jwkKid = jwk.getKeyId();
+                        return jwkKid != null && jwkKid.equals(kid);
                     })
                     .findFirst()
                     .map(Collections::singletonList)
@@ -117,11 +119,11 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
 
         // Build JWSVerifier's
         List<SignatureVerifierContext> verifiers = new ArrayList<>();
-        for (JsonNode jwk : jwks) {
+        for (JWK jwk : jwks) {
             try {
                 verifiers.add(JwkParsingUtils.convertJwkToVerifierContext(jwk));
             } catch (Exception e) {
-                throw new VerificationException("A potential JWK was retrieved but found invalid");
+                throw new VerificationException("A potential JWK was retrieved but found invalid", e);
             }
         }
 
@@ -136,17 +138,27 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         }
     }
 
-    private ArrayNode fetchIssuerMetadata(String issuerUri) throws VerificationException {
+    private List<JWK> fetchIssuerMetadataJwks(String issuerUri) throws VerificationException {
         // Build full URL to JWT VC metadata endpoint
 
         issuerUri = normalizeUri(issuerUri);
         String jwtVcIssuerUri = issuerUri
                 .concat(JWT_VC_ISSUER_END_POINT); // Append well-known path
 
-        // Fetch and validate metadata
+        // Fetch and parse metadata
 
-        JsonNode issuerMetadata = fetchData(jwtVcIssuerUri);
-        String exposedIssuerUri = normalizeUri(issuerMetadata.get("issuer").asText());
+        JwtVcMetadata issuerMetadata;
+        JsonNode issuerMetadataNode = fetchData(jwtVcIssuerUri);
+
+        try {
+            issuerMetadata = SdJwtUtils.mapper.treeToValue(issuerMetadataNode, JwtVcMetadata.class);
+        } catch (JsonProcessingException e) {
+            throw new VerificationException("Failed to parse exposed JWT VC Metadata", e);
+        }
+
+        // Validate metadata
+
+        String exposedIssuerUri = normalizeUri(issuerMetadata.getIssuer());
 
         if (!issuerUri.equals(exposedIssuerUri)) {
             throw new VerificationException(String.format(
@@ -155,21 +167,29 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
             ));
         }
 
-        // Parse metadata
+        // Extract exposed JWKS (including dereferencing if necessary)
 
-        JsonNode jwksUri = issuerMetadata.get("jwks_uri");
-        JsonNode jwks = issuerMetadata.get("jwks");
+        String jwksUri = issuerMetadata.getJwksUri();
+        JSONWebKeySet jwks = issuerMetadata.getJwks();
 
         if (jwks == null && jwksUri != null) {
-            jwks = fetchData(jwksUri.textValue());
+            // Dereference JWKS URI
+            JsonNode jwksNode = fetchData(jwksUri);
+
+            // Parse fetched JWKS
+            try {
+                jwks = SdJwtUtils.mapper.treeToValue(jwksNode, JSONWebKeySet.class);
+            } catch (JsonProcessingException e) {
+                throw new VerificationException("Failed to parse exposed JWKS", e);
+            }
         }
 
-        if (jwks == null || jwks.get("keys") == null || !jwks.get("keys").isArray()) {
+        if (jwks == null || jwks.getKeys() == null) {
             throw new VerificationException(
                     String.format("Could not resolve issuer JWKs with URI: %s", issuerUri));
         }
 
-        return (ArrayNode) jwks.get("keys");
+        return Arrays.asList(jwks.getKeys());
     }
 
     private JsonNode fetchData(String uri) throws VerificationException {

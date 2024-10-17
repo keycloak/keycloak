@@ -17,7 +17,6 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -67,14 +66,13 @@ public class SdJwtPresentationConsumer {
         }
 
         // Verify the SD-JWT token cryptographically
-        // Capture returned Issuer-signed JWT's payload with presented claims disclosed
-        JsonNode disclosedPayload = sdJwtVP.verify(
-                issuerVerifyingKeys,
-                issuerSignedJwtVerificationOpts,
-                keyBindingJwtVerificationOpts
-        );
-
-        // Check if presented token meets requirements
-        presentationRequirements.checkIfSatisfiedBy(disclosedPayload);
+        // Pass presentation requirements to enforce that the presented token meets them
+        sdJwtVP.getSdJwtVerificationContext()
+                .verifyPresentation(
+                        issuerVerifyingKeys,
+                        issuerSignedJwtVerificationOpts,
+                        keyBindingJwtVerificationOpts,
+                        presentationRequirements
+                );
     }
 }

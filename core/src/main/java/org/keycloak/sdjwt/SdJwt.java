@@ -45,6 +45,7 @@ public class SdJwt {
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
     private final List<String> disclosures = new ArrayList<>();
+    private final SdJwtVerificationContext sdJwtVerificationContext;
 
     private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts,
                   Optional<KeyBindingJWT> keyBindingJWT,
@@ -66,6 +67,12 @@ public class SdJwt {
 
         nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
         this.disclosures.addAll(getDisclosureStrings(claims));
+
+        // Instantiate context for verification
+        this.sdJwtVerificationContext = new SdJwtVerificationContext(
+                this.issuerSignedJWT,
+                this.disclosures
+        );
     }
 
     private Optional<String> sdJwtString = Optional.empty();
@@ -209,8 +216,11 @@ public class SdJwt {
             List<SignatureVerifierContext> issuerVerifyingKeys,
             IssuerSignedJwtVerificationOpts verificationOpts
     ) throws VerificationException {
-        new SdJwtVerificationContext(issuerSignedJWT, disclosures)
-                .verifyIssuance(issuerVerifyingKeys, verificationOpts);
+        sdJwtVerificationContext.verifyIssuance(
+                issuerVerifyingKeys,
+                verificationOpts,
+                null
+        );
     }
 
     // builder for SdJwt

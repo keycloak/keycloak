@@ -350,7 +350,7 @@ public abstract class SdJwtVPVerificationTest {
                 "sdjwt/s20.8-sdjwt+kb--cnf-jwk-is-malformed.txt",
                 defaultKeyBindingJwtVerificationOpts().build(),
                 "Could not process cnf/jwk",
-                "Malformed or unsupported JWK"
+                "Unsupported or invalid JWK"
         );
     }
 
@@ -361,7 +361,7 @@ public abstract class SdJwtVPVerificationTest {
                 "sdjwt/s20.8-sdjwt+kb--cnf-hmac.txt",
                 defaultKeyBindingJwtVerificationOpts().build(),
                 "Could not process cnf/jwk",
-                "Malformed or unsupported JWK"
+                "Unsupported or invalid JWK"
         );
     }
 

@@ -20,8 +20,10 @@ package org.keycloak.sdjwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.sdjwt.consumer.PresentationRequirements;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 
@@ -30,6 +32,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,6 +45,9 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class SdJwtVerificationContext {
+
+    private static final Logger logger = Logger.getLogger(SdJwtVerificationContext.class.getName());
+
     private String sdJwtVpString;
 
     private final IssuerSignedJWT issuerSignedJwt;
@@ -90,12 +96,14 @@ public class SdJwtVerificationContext {
      *                                        is responsible for establishing trust in that the keys belong
      *                                        to the intended issuer.
      * @param issuerSignedJwtVerificationOpts Options to parameterize the Issuer-Signed JWT verification.
-     * @return the fully disclosed Issuer-signed JWT's payload
+     * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
+     *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public JsonNode verifyIssuance(
+    public void verifyIssuance(
             List<SignatureVerifierContext> issuerVerifyingKeys,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts
+            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
+            PresentationRequirements presentationRequirements
     ) throws VerificationException {
         // Validate the Issuer-signed JWT.
         validateIssuerSignedJwt(issuerVerifyingKeys);
@@ -109,8 +117,10 @@ public class SdJwtVerificationContext {
         // depend on that and need to operate as though security-critical claims might be selectively disclosable.
         validateIssuerSignedJwtTimeClaims(disclosedPayload, issuerSignedJwtVerificationOpts);
 
-        // Return disclosed payload
-        return disclosedPayload;
+        // Enforce presentation requirements.
+        if (presentationRequirements != null) {
+            presentationRequirements.checkIfSatisfiedBy(disclosedPayload);
+        }
     }
 
     /**
@@ -128,13 +138,15 @@ public class SdJwtVerificationContext {
      * @param keyBindingJwtVerificationOpts   Options to parameterize the Key Binding JWT verification.
      *                                        Must, among others, specify the Verifier's policy whether
      *                                        to check Key Binding.
-     * @return the fully disclosed Issuer-signed JWT's payload
+     * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
+     *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public JsonNode verifyPresentation(
+    public void verifyPresentation(
             List<SignatureVerifierContext> issuerVerifyingKeys,
             IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
+            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
+            PresentationRequirements presentationRequirements
     ) throws VerificationException {
         // If Key Binding is required and a Key Binding JWT is not provided,
         // the Verifier MUST reject the Presentation.
@@ -143,15 +155,12 @@ public class SdJwtVerificationContext {
         }
 
         // Upon receiving a Presentation, in addition to the checks in {@link #verifyIssuance}...
-        JsonNode disclosedPayload = verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts);
+        verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
 
         // Validate Key Binding JWT if required
         if (keyBindingJwtVerificationOpts.isKeyBindingRequired()) {
             validateKeyBindingJwt(keyBindingJwtVerificationOpts);
         }
-
-        // Return Issuer-signed JWT's disclosed payload
-        return disclosedPayload;
     }
 
     /**
@@ -162,6 +171,7 @@ public class SdJwtVerificationContext {
      * - the Issuer-signed JWT is valid, i.e., it is signed by the Issuer and the signature is valid
      * </p>
      *
+     * @param verifiers Verifying keys for validating the Issuer-signed JWT.
      * @throws VerificationException if verification failed
      */
     private void validateIssuerSignedJwt(
@@ -171,11 +181,17 @@ public class SdJwtVerificationContext {
         issuerSignedJwt.verifySdHashAlgorithm();
 
         // Validate the signature over the Issuer-signed JWT
-        for (SignatureVerifierContext verifier : verifiers) {
+        Iterator<SignatureVerifierContext> iterator = verifiers.iterator();
+        while (iterator.hasNext()) {
             try {
+                SignatureVerifierContext verifier = iterator.next();
                 issuerSignedJwt.verifySignature(verifier);
                 return;
-            } catch (VerificationException ignored) {
+            } catch (VerificationException e) {
+                logger.debugf(e, "Issuer-signed JWT's signature verification failed against one potential verifying key");
+                if (iterator.hasNext()) {
+                    logger.debugf("Retrying Issuer-signed JWT's signature verification with next potential verifying key");
+                }
             }
         }
 
@@ -254,7 +270,7 @@ public class SdJwtVerificationContext {
 
         // Convert JWK
         try {
-            return JwkParsingUtils.convertJwkToVerifierContext(cnfJwk);
+            return JwkParsingUtils.convertJwkNodeToVerifierContext(cnfJwk);
         } catch (Exception e) {
             throw new VerificationException("Could not process cnf/jwk", e);
         }
