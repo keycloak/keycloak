@@ -17,11 +17,24 @@
 
 package org.keycloak.events;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface EventListenerProviderFactory extends ProviderFactory<EventListenerProvider> {
+
+    default boolean isEnabled(KeycloakSession session) {
+        if (isGlobal()) {
+            return true;
+        } else {
+            return session.getContext().getRealm().getEventsListenersStream().anyMatch(s -> s.equals(getId()));
+        }
+    }
+
+    default boolean isGlobal() {
+        return false;
+    }
 
 }
