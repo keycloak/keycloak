@@ -82,14 +82,34 @@ public final class UIUtils {
      * @param element The element to click
      */
     public static void clickLink(WebElement element) {
+        click(element, Keys.ENTER);
+    }
+
+    /**
+     * The method executes click or sendKeys(Keys.SPACE) in the element.
+     * In the chrome driver click is emulated by pressing the Space key. Since
+     * the upgrade to chrome 128 some clicks are missed and that triggers CI
+     * failures. The method is intended to be used for buttons and links which
+     * accept clicking by pressing the ENTER key. If the element passed does
+     * not allow clicking using keys use the {@link #click(WebElement) click}
+     * method.
+     *
+     * @param element The element to click
+     */
+    public static void clickCheckbox(WebElement element) {
+        click(element, Keys.SPACE);
+    }
+
+    private static void click(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
         waitUntilElement(element).is().clickable();
 
         performOperationWithPageReload(BrowserDriverUtil.isDriverChrome(driver)
-                ? () -> element.sendKeys(Keys.ENTER)
+                ? () -> element.sendKeys(key)
                 : element::click);
     }
+
 
     /**
      * The method executes click in the element. This method always uses click and
