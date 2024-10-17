@@ -25,12 +25,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.RootAuthenticationSessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.Comparator;
@@ -99,7 +96,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         for (Map.Entry<String, AuthenticationSessionEntity> entry : entity.getAuthenticationSessions().entrySet()) {
             String tabId = entry.getKey();
-            result.put(tabId , new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, entry.getValue()), tabId, entry.getValue()));
+            result.put(tabId , new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, entry.getValue()), tabId));
         }
 
         return result;
@@ -155,7 +152,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         update(task);
 
-        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, authSessionEntity), tabId, authSessionEntity);
+        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, authSessionEntity), tabId);
         session.getContext().setAuthenticationSession(authSession);
         return authSession;
 
@@ -167,10 +164,12 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
             if (entity.getAuthenticationSessions().isEmpty()) {
                 provider.removeRootAuthenticationSession(realm, this);
             } else {
+                int currentTime = Time.currentTime();
                 RootAuthenticationSessionUpdateTask task = new RootAuthenticationSessionUpdateTask() {
                     @Override
                     public void runUpdate(RootAuthenticationSessionEntity entity) {
-                        entity.setTimestamp(Time.currentTime());
+                        entity.getAuthenticationSessions().remove(tabId);
+                        entity.setTimestamp(currentTime);
                     }
                 };
                 update(task);
@@ -180,7 +179,6 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public void restartSession(RealmModel realm) {
-
         RootAuthenticationSessionUpdateTask task = new RootAuthenticationSessionUpdateTask() {
             @Override
             public void runUpdate(RootAuthenticationSessionEntity entity) {
@@ -189,8 +187,6 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
             }
         };
         update(task);
-
-
     }
 
     private record AuthenticationSessionUpdater(RootAuthenticationSessionAdapter adapter, String tabId, AuthenticationSessionEntity authenticationSession) implements SessionEntityUpdater<AuthenticationSessionEntity> {

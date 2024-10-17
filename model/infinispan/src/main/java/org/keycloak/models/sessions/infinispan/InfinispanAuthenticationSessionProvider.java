@@ -30,31 +30,19 @@ import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
-import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
-import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -75,7 +63,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         this.authSessionsLimit = authSessionsLimit;
 
         this.cache = cache;
-        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, remoteCacheInvoker, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionLifespanMS, serializer);
+        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, remoteCacheInvoker, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
@@ -96,10 +84,8 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
-        //tx.put(cache, id, entity, expirationSeconds, TimeUnit.SECONDS);
-        SessionUpdateTask<RootAuthenticationSessionEntity> createLoginFailureTask = Tasks.addIfAbsentSync();
-        sessionTx.addTask(entity.getId(), createLoginFailureTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        SessionUpdateTask<RootAuthenticationSessionEntity> createAuthSessionTask = Tasks.addIfAbsentSync();
+        sessionTx.addTask(entity.getId(), createAuthSessionTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
         return wrap(realm, entity);
     }
 
@@ -110,8 +96,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
-        // Chance created in this transaction
-        //RootAuthenticationSessionEntity entity = tx.get(cache, authSessionId);
         SessionEntityWrapper<RootAuthenticationSessionEntity> entityWrapper = sessionTx.get(authSessionId);
         return entityWrapper==null ? null : entityWrapper.getEntity();
     }
@@ -183,7 +167,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
-        //tx.remove(cache, authenticationSession.getId());
         SessionUpdateTask<RootAuthenticationSessionEntity> removeTask = Tasks.removeSync();
         sessionTx.addTask(authenticationSession.getId(), removeTask);
     }

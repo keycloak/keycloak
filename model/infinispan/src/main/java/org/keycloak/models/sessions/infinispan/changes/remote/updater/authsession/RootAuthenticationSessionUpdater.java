@@ -22,21 +22,13 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
-import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProvider;
-import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
 import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
-import org.keycloak.models.sessions.infinispan.changes.RootAuthenticationSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
-import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -46,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAuthenticationSessionEntity> implements RootAuthenticationSessionModel {
@@ -59,7 +50,6 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
     private RealmModel realm;
     private KeycloakSession session;
 
-    AuthenticationSessionChangeLogTransaction transaction;
 
     private int authSessionsLimit;
     private RootAuthenticationSessionUpdater(String key, RootAuthenticationSessionEntity entity, long version, UpdaterState initialState) {
@@ -72,11 +62,10 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
         changes = new ArrayList<>(4);
     }
 
-    public synchronized void initialize(AuthenticationSessionChangeLogTransaction transaction, KeycloakSession session, RealmModel realm, int authSessionsLimit) {
+    public synchronized void initialize(KeycloakSession session, RealmModel realm, int authSessionsLimit) {
         this.session = session;
         this.realm = realm;
         this.authSessionsLimit = authSessionsLimit;
-        this.transaction = transaction;
     }
 
     /**
@@ -89,7 +78,7 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
 
     @Override
     protected boolean isUnchanged() {
-        return false;
+        return changes.isEmpty();
     }
 
     public static RootAuthenticationSessionUpdater create(String key, RootAuthenticationSessionEntity entity) {
@@ -108,7 +97,7 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
     public Expiration computeExpiration() {
         return new Expiration(
                 SessionTimeouts.getAuthSessionLifespanMS(realm, null, getValue()),
-                SessionTimeouts.getAuthSessionLifespanMS(realm, null, getValue()));
+                SessionTimeouts.getAuthSessionMaxIdleMS(realm, null, getValue()));
     }
 
     @Override
@@ -150,7 +139,7 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
 
         for (Map.Entry<String, AuthenticationSessionEntity> entry : getValue().getAuthenticationSessions().entrySet()) {
             String tabId = entry.getKey();
-            result.put(tabId , new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, entry.getValue()), tabId, entry.getValue()));
+            result.put(tabId, new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, tabId, entry.getValue()), tabId));
         }
 
         return result;
@@ -182,13 +171,11 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
 
         addAndApplyChange(entity -> {
             Map<String, AuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
-            if (authenticationSessions.size() >= authSessionsLimit) {
-                String tabId = authenticationSessions.entrySet().stream().min(TIMESTAMP_COMPARATOR).map(Map.Entry::getKey).orElse(null);
-
-                if (tabId != null) {
-                    // remove the oldest authentication session
-                    authenticationSessions.remove(tabId);
-                }
+            if (authenticationSessions.size() >= authSessionsLimit && !authenticationSessions.containsKey(newTabId)) {
+                authenticationSessions.entrySet().stream()
+                        .min(TIMESTAMP_COMPARATOR)
+                        .map(Map.Entry::getKey)
+                        .ifPresent(authenticationSessions::remove);
             }
             authSessionEntity.setTimestamp(timestamp);
             authenticationSessions.put(newTabId, authSessionEntity);
@@ -197,7 +184,7 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
             entity.setTimestamp(timestamp);
         });
 
-        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, newTabId, authSessionEntity), newTabId, authSessionEntity);
+        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, new AuthenticationSessionUpdater(this, newTabId, authSessionEntity), newTabId);
         session.getContext().setAuthenticationSession(authSession);
         return authSession;
     }
@@ -206,9 +193,13 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
     public void removeAuthenticationSessionByTabId(String tabId) {
         if (getValue().getAuthenticationSessions().remove(tabId) != null) {
             if (getValue().getAuthenticationSessions().isEmpty()) {
-                transaction.remove(getKey());
+                markDeleted();
             } else {
-                setTimestamp(Time.currentTime());
+                int currentTime = Time.currentTime();
+                addAndApplyChange(entity -> {
+                    entity.getAuthenticationSessions().remove(tabId);
+                    entity.setTimestamp(currentTime);
+                });
             }
         }
     }

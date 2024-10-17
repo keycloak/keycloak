@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -28,13 +27,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
-import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -67,7 +62,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
         var updater = transaction.create(id, entity);
-        updater.initialize(transaction, session, realm, authSessionsLimit);
+        updater.initialize(session, realm, authSessionsLimit);
         return updater;
     }
 
@@ -75,7 +70,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         var updater = transaction.get(authenticationSessionId);
         if(updater != null) {
-            updater.initialize(transaction, session, realm, authSessionsLimit);
+            updater.initialize(session, realm, authSessionsLimit);
         }
         return updater;
     }

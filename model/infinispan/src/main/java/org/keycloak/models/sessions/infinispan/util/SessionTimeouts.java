@@ -224,4 +224,8 @@ public class SessionTimeouts {
     public static long getAuthSessionLifespanMS(RealmModel realm, ClientModel client, RootAuthenticationSessionEntity entity) {
         return (entity.getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm)) * 1000L;
     }
+
+    public static long getAuthSessionMaxIdleMS(RealmModel realm, ClientModel client, RootAuthenticationSessionEntity entity) {
+        return IMMORTAL_FLAG;
+    }
 }
