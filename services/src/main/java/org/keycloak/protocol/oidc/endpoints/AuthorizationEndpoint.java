@@ -62,6 +62,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -317,6 +318,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (acrValues.isEmpty()) {
             acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr(), authenticationSession.getClient());
         } else {
+            List<String> minimizedAcrValues = AcrUtils.enforceMinimumAcr(acrValues, client);
+            // If enforcing a minimum here changes the list, the client has an essential claim that is too low
+            if (!minimizedAcrValues.equals(acrValues)) {
+                logger.errorf("Requested essential acr value list contains values lower than the client minimum. Please doublecheck the client configuration or correct ACR passed in the 'claims' parameter.");
+                event.detail(Details.REASON, "Invalid requested essential acr value");
+                event.error(Errors.INVALID_REQUEST);
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+            }
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
