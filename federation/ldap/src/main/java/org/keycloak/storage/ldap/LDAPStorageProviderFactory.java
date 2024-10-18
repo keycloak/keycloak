@@ -231,6 +231,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
+                .property().name(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY)
+                .defaultValue("false")
+                .add()
                 .build();
     }
 
