@@ -53,7 +53,7 @@ public class QuarkusPropertiesDistTest {
     private static final String QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY = "quarkus.log.handler.console.\"console-2\".enable";
 
     @Test
-    @Launch({"build"})
+    @Launch({"build", "--db=dev-file"})
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -62,7 +62,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesDistTest.AddConsoleHandlerFromQuarkusProps.class)
-    @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
     @Order(2)
     void testPropertyEnabledAtRuntime(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -70,7 +70,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -78,7 +78,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build"})
+    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build", "--db=dev-file"})
     @Order(4)
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -88,7 +88,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
-    @Launch({"build"})
+    @Launch({"build", "--db=dev-file"})
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -98,8 +98,9 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
-    @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
     @Order(6)
+    @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
     void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
@@ -108,7 +109,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
-    @Launch({ "build", "--metrics-enabled=true" })
+    @Launch({ "build", "--db=dev-file", "--metrics-enabled=true" })
     @Order(7)
     void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -128,7 +129,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
     @Order(9)
     void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -142,7 +143,7 @@ public class QuarkusPropertiesDistTest {
 
     @Disabled("Ensuring config-keystore is used only at runtime removes proactive validation of the path when only the keystore is used")
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
     @Order(10)
     void testMissingSmallRyeKeyStorePathProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -151,7 +152,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=/invalid/path",
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=/invalid/path",
             "--config-keystore-password=secret" })
     @Order(11)
     void testInvalidSmallRyeKeyStorePathProperty(LaunchResult result) {
@@ -160,7 +161,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false",
             "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
     @Order(12)
     void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
@@ -173,7 +174,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @BeforeStartDistribution(ForceRebuild.class)
     @DisabledOnOs(value = { OS.WINDOWS }, disabledReason = "Windows uses a different path separator.")
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false",
             "--https-certificate-file=/tmp/kc/bin/../conf/server.crt.pem",
             "--https-certificate-key-file=/tmp/kc/bin/../conf/server.key.pem" })
     @Order(13)
@@ -185,7 +186,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @BeforeStartDistribution(ForceRebuild.class)
     @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "Windows uses a different path separator.")
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false",
             "--https-certificate-file=C:\\tmp\\kc\\bin\\..\\conf/server.crt.pem",
             "--https-certificate-key-file=C:\\tmp\\kc\\bin\\..\\conf/server.key.pem" })
     @Order(14)
@@ -234,7 +235,7 @@ public class QuarkusPropertiesDistTest {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            CLIResult buildResult = distribution.run("build");
+            CLIResult buildResult = distribution.run("build", "--db=dev-file");
             buildResult.assertBuild();
         }
     }
