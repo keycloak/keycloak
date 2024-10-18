@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,10 +61,6 @@ import io.quarkus.fs.util.ZipUtils;
 import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -109,7 +104,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
     }
-    
+
     public CLIResult kcadm(String... arguments) throws IOException {
     	return kcadm(Arrays.asList(arguments));
     }
@@ -669,31 +664,21 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return distPath;
     }
 
+    public Path getProvidersDirPath() {
+        return distPath.resolve("providers");
+    }
+
     public void copyProvider(TestProvider provider) {
-        URL pathUrl = provider.getClass().getResource(".");
-        File fileUri;
-        try {
-            fileUri = new File(pathUrl.toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid package provider path", e);
-        }
-        Path providerPackagePath = Paths.get(fileUri.getPath());
-        JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
-                .addClasses(provider.getClasses())
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        Map<String, String> manifestResources = provider.getManifestResources();
+        Path providersTargetPath = JarUtil.getProvidersTargetPath(provider);
 
-        for (Map.Entry<String, String> resource : manifestResources.entrySet()) {
-            try {
-                providerJar.addAsManifestResource(providerPackagePath.resolve(resource.getKey()).toFile(), resource.getValue());
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to add manifest resource: " + resource.getKey(), cause);
-            }
-        }
+        String quarkusProperties = provider.getAdditionalConfig().stream()
+                .filter(config -> config.contains("quarkus.properties"))
+                .findFirst()
+                .orElse("");
 
-        copyOrReplaceFile(providerPackagePath.resolve("quarkus.properties"), Path.of("conf", "quarkus.properties"));
+        copyOrReplaceFile(providersTargetPath.resolve("META-INF").resolve(quarkusProperties), Path.of("conf", "quarkus.properties"));
 
-        providerJar.as(ZipExporter.class).exportTo(getDistPath().resolve("providers").resolve(providerJar.getName()).toFile());
+        JarUtil.createProviderJar(provider, providersTargetPath, getProvidersDirPath());
     }
 
     @Override
