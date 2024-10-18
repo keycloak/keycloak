@@ -418,6 +418,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - id: node-cache
+        name: Node cache
+        uses: ./.github/actions/node-cache
+
       - id: aurora-init
         name: Initialize Aurora environment
         run: |
@@ -457,6 +461,7 @@ jobs:
           
           git archive --format=zip --output /tmp/keycloak.zip $GITHUB_REF
           zip -u /tmp/keycloak.zip aws.pem
+          tar -C ~/ -czvf m2.tar.gz .m2
  
           cd .github/scripts/ansible
           python3 -m venv .venv
@@ -464,7 +469,7 @@ jobs:
           ./aws_ec2.sh requirements
           pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${AWS_REGION} ${EC2_CLUSTER_NAME}
-          ./keycloak_ec2_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip
+          ./keycloak_ec2_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
           ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution"
           ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
 
