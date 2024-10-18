@@ -346,7 +346,7 @@ To be able to enable changing those attributes via UI and REST APIs,  perform th
 = The Admin send-verify-email API now uses the same email verification template
 
 ----
-PUT /admin/realms/{realm}/users/{id}/send-verify-email
+PUT /admin/realms/{realm-name}/users/{id}/send-verify-email
 ----
 
 In this release, the API will use the `email-verification.ftl` template instead of `executeActions.ftl`.
@@ -368,7 +368,7 @@ A new parameter called `lifespan` will be introduced to allow overriding of the 
 If you prefer the previous behavior, use the `execute-actions-email` API as follows.
 
 ----
-PUT /admin/realms/{realm}/users/{id}/execute-actions-email
+PUT /admin/realms/{realm-name}/users/{id}/execute-actions-email
 
 ["VERIFY_EMAIL"]
 ----

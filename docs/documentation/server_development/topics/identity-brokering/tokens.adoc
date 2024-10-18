@@ -10,7 +10,7 @@ To retrieve a token for a particular identity provider you need to send a reques
 
 [source,subs="attributes+"]
 ----
-GET {kc_realms_path}/{realm}/broker/{provider_alias}/token HTTP/1.1
+GET {kc_realms_path}/{realm-name}/broker/{provider_alias}/token HTTP/1.1
 Host: localhost:8080
 Authorization: Bearer <KEYCLOAK ACCESS TOKEN>
 ----

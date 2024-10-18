@@ -154,18 +154,18 @@ Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm,
 
 * new field `subGroupCount` added to inform client how many subgroups are on any given group
 * `subGroups` list is now only populated on queries that request hierarchy data
-  * This field is populated from the "bottom up" so cannot be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm}/groups/{group_id}/children`
+  * This field is populated from the "bottom up" so cannot be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm-name}/groups/{group_id}/children`
 
 = New endpoint for Group Admin API
 
-Endpoint `GET {keycloak server}/realms/{realm}/groups/{group_id}/children` added as a way to get subgroups of specific groups that support pagination
+Endpoint `GET {keycloak server}/realms/{realm-name}/groups/{group_id}/children` added as a way to get subgroups of specific groups that support pagination
 
 = RESTEeasy Reactive
 Relying on RESTEasy Classic is not longer an option because it is not available anymore. Migration will be needed for SPI's and code that is relying on RESTEasy Classic and related packages part of  `org.jboss.resteasy.spi.*`.
 
 = Partial export requires manage-realm permission
 
-The endpoint `POST {keycloak server}/realms/{realm}/partial-export` and the corresponding action in the admin console now require `manage-realm` permission for execution instead of `view-realm`. This endpoint exports the realm configuration into a JSON file and the new permission is more appropriate. The parameters `exportGroupsAndRoles` and `exportClients`, which include the realm groups/roles and clients in the export respectively, continue managing the same permissions (`query-groups` and `view-clients`).
+The endpoint `POST {keycloak server}/realms/{realm-name}/partial-export` and the corresponding action in the admin console now require `manage-realm` permission for execution instead of `view-realm`. This endpoint exports the realm configuration into a JSON file and the new permission is more appropriate. The parameters `exportGroupsAndRoles` and `exportClients`, which include the realm groups/roles and clients in the export respectively, continue managing the same permissions (`query-groups` and `view-clients`).
 
 = Removal of the options to trim the event's details length
 
