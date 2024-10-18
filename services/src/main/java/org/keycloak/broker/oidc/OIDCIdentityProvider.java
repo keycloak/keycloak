@@ -83,7 +83,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
+import java.util.Base64;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * @author Pedro Igor
  */
@@ -168,6 +170,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
         String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String loginHint = extractLoginHintFromIdToken(idToken);
         if (getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -177,6 +180,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     .queryParam("state", sessionId);
             if (getConfig().isSendIdTokenOnLogout() && idToken != null) {
                 logoutUri.queryParam("id_token_hint", idToken);
+            }
+            if (loginHint != null) {
+                logoutUri.queryParam("logout_hint", loginHint);
             }
             if (getConfig().isSendClientIdOnLogout()) {
                 logoutUri.queryParam("client_id", getConfig().getClientId());
@@ -191,6 +197,31 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    private String extractLoginHintFromIdToken(String idToken) {
+        if (idToken == null || idToken.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            String[] parts = idToken.split("\\.");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Invalid ID token format");
+            }
+            
+            // Decode the payload part of the token
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+            
+            // Parse the JSON payload
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(payload);
+            
+            // Extract the login_hint (or subject, if that's what you're using)
+            return jsonNode.path("login_hint").asText();  // "login_hint" is commonly used for the logout succ
+        } catch (Exception e) {
+            e.printStackTrace();  // Handle errors as appropriate
+            return null;
+        }
+    }
     @Override
     protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         FederatedIdentityModel model = session.users().getFederatedIdentity(authorizedClient.getRealm(), tokenSubject, getConfig().getAlias());
