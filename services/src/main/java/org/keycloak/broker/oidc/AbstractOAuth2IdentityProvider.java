@@ -511,7 +511,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                                      @QueryParam(OAuth2Constants.ERROR) String error,
                                      @QueryParam(OAuth2Constants.ERROR_DESCRIPTION) String errorDescription) {
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-            
+
             if (state == null) {
                 logErroneousRedirectUrlError("Redirection URL does not contain a state parameter", providerConfig);
                 return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
@@ -731,12 +731,50 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (subjectTokenType == null) {
             subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
-        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
+        String accessToken = null;
+        if (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
+            accessToken = subjectToken;
+        } else if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(subjectTokenType)) {
+            accessToken = exchangeRefreshTokenForAccessToken(event, subjectToken);
+        } else {
             event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN_TYPE + " invalid");
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
         }
-        return validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+        return validateExternalTokenThroughUserInfo(event, accessToken, subjectTokenType);
+    }
+
+    protected String exchangeRefreshTokenForAccessToken(EventBuilder event, String refreshToken) {
+        event.detail("validation_method", "refresh token");
+        SimpleHttp.Response response = null;
+        int status = 0;
+        try {
+            response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), getConfig().getClientSecret()).asResponse();
+            status = response.getStatus();
+        } catch (IOException e) {
+            logger.debug("Failed to invoke token endpoint for external exchange", e);
+        }
+        if (status != 200) {
+            logger.debug("Failed to invoke token endpoint status: " + status);
+            event.detail(Details.REASON, "token call failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+
+        JsonNode jsonResponse = null;
+        try {
+            jsonResponse = response.asJson();
+        } catch (IOException e) {
+            event.detail(Details.REASON, "token call failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+
+        return jsonResponse.get(OAUTH2_PARAMETER_ACCESS_TOKEN).asText();
+    }
+
+    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
     }
 
     @Override
