@@ -32,7 +32,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "button[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")

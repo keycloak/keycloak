@@ -41,10 +41,10 @@ public class VerifyProfilePage extends AbstractPage {
 
     @FindBy(name = "email")
     private WebElement emailInput;
-    
+
     @FindBy(name = "department")
     private WebElement departmentInput;
-    
+
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -66,7 +66,7 @@ public class VerifyProfilePage extends AbstractPage {
 
         submitButton.click();
     }
-    
+
     public void update(String firstName, String lastName, String department) {
         departmentInput.clear();
         if (department != null) {
@@ -103,9 +103,9 @@ public class VerifyProfilePage extends AbstractPage {
             return null;
         }
     }
-    
+
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
 
     public String getFirstName() {

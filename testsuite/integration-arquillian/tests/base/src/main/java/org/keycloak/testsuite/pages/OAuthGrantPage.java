@@ -41,9 +41,9 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
     public static final String OFFLINE_ACCESS_CONSENT_TEXT = "Offline Access";
     public static final String ROLES_CONSENT_TEXT = "User roles";
 
-    @FindBy(css = "button[name=\"accept\"]")
+    @FindBy(css = "[name=\"accept\"]")
     private WebElement acceptButton;
-    @FindBy(css = "button[name=\"cancel\"]")
+    @FindBy(css = "[name=\"cancel\"]")
     private WebElement cancelButton;
 
 
