@@ -22,6 +22,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.util.PolicyValidationException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -150,7 +151,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     private void updateRoles(Policy policy, AuthorizationProvider authorization, Set<RolePolicyRepresentation.RoleDefinition> roles) {
         Set<RolePolicyRepresentation.RoleDefinition> updatedRoles = new HashSet<>();
-
+        Set<String> processedRoles = new HashSet<>();
         if (roles != null) {
             RealmModel realm = authorization.getRealm();
             for (RolePolicyRepresentation.RoleDefinition definition : roles) {
@@ -159,8 +160,10 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
                     continue;
                 }
 
+                if (!processedRoles.add(role.getId())) {
+                    throw new PolicyValidationException("Role can't be specified multiple times - " + role.getName());
+                }
                 definition.setId(role.getId());
-
                 updatedRoles.add(definition);
             }
         }
