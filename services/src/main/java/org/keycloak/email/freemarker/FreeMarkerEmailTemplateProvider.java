@@ -199,7 +199,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
         try {
-            Locale locale = session.getContext().resolveLocale(user);
+            Locale locale = session.getContext().resolveLocale(user, getTheme().getType());
             attributes.put("linkExpirationFormatter", new LinkExpirationFormatterMethod(getTheme().getMessages(locale), locale));
         } catch (IOException e) {
             throw new EmailException("Failed to template email", e);
@@ -214,7 +214,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             Theme theme = getTheme();
-            Locale locale = session.getContext().resolveLocale(user);
+            Locale locale = session.getContext().resolveLocale(user, theme.getType());
             attributes.put("locale", locale);
 
             Properties messages = theme.getEnhancedMessages(realm, locale);
