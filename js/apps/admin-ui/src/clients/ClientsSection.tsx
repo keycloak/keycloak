@@ -92,7 +92,12 @@ const ClientHomeLink = (client: ClientRepresentation) => {
     return "—";
   }
 
-  return <FormattedLink href={href} />;
+  return (
+    <FormattedLink
+      href={href}
+      data-testid={`client-home-url-${client.clientId}`}
+    />
+  );
 };
 
 const ToolbarItems = () => {
