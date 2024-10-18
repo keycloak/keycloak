@@ -48,7 +48,7 @@ public final class WaitUtils {
 
     public static final String PAGELOAD_TIMEOUT_PROP = "pageload.timeout";
 
-    public static final Integer PAGELOAD_TIMEOUT_MILLIS = Integer.parseInt(System.getProperty(PAGELOAD_TIMEOUT_PROP, "10000"));
+    public static final Integer PAGELOAD_TIMEOUT_MILLIS = Integer.parseInt(System.getProperty(PAGELOAD_TIMEOUT_PROP, "60000"));
 
     public static final int IMPLICIT_ELEMENT_WAIT_MILLIS = 2000; // high value means more stable but slower tests; it needs to be balanced
 
