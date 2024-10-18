@@ -18,6 +18,7 @@
 package org.keycloak.exportimport;
 
 import java.io.Closeable;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -58,6 +59,10 @@ public class ExportImportConfig {
 
     public static String getAction() {
         return System.getProperty(ACTION);
+    }
+    
+    public static Optional<String> getDir() {
+        return Optional.ofNullable(System.getProperty(DIR));
     }
 
     public static Closeable setAction(String exportImportAction) {
