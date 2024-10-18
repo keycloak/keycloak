@@ -118,9 +118,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         String username = storageId.getExternalId();
-        if ("uppercase".equalsIgnoreCase(username)) {
-            username = username.toLowerCase();
-        }
         if (!userPasswords.containsKey(username)) return null;
 
         return createUser(realm, username);
@@ -131,9 +128,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return new AbstractUserAdapterFederatedStorage.Streams(session, realm,  model) {
                 @Override
                 public String getUsername() {
-                    if ("uppercase".equalsIgnoreCase(username)) {
-                        return username.toUpperCase();
-                    }
                     return username;
                 }
 
@@ -146,9 +140,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return new AbstractUserAdapter.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
-                    if ("uppercase".equalsIgnoreCase(username)) {
-                        return username.toUpperCase();
-                    }
                     return username;
                 }
 

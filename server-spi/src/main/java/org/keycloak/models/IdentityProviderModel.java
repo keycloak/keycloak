@@ -35,7 +35,6 @@ public class IdentityProviderModel implements Serializable {
     public static final String ALIAS_NOT_IN = "aliasNotIn";
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
     public static final String AUTHENTICATE_BY_DEFAULT = "authenticateByDefault";
-    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
     public static final String DISPLAY_NAME = "displayName";
@@ -334,14 +333,6 @@ public class IdentityProviderModel implements Serializable {
 
     public void setMetadataDescriptorUrl(String metadataDescriptorUrl) {
         getConfig().put(METADATA_DESCRIPTOR_URL, metadataDescriptorUrl);
-    }
-
-    public boolean isCaseSensitiveOriginalUsername() {
-        return Boolean.parseBoolean(getConfig().getOrDefault(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.FALSE.toString()));
-    }
-
-    public void setCaseSensitiveOriginalUsername(boolean caseSensitive) {
-        getConfig().put(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.valueOf(caseSensitive).toString());
     }
 
     @Override

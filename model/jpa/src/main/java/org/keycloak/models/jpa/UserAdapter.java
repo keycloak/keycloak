@@ -99,7 +99,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setUsername(String username) {
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         user.setUsername(username);
     }
 

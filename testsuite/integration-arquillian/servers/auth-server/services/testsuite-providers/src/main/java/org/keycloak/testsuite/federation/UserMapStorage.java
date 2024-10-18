@@ -61,7 +61,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
-    
+
     protected final Map<String, String> userPasswords;
     protected final ConcurrentMap<String, Set<String>> userGroups;
     protected ComponentModel model;
@@ -98,7 +98,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         final String username = storageId.getExternalId();
-        if (!userPasswords.containsKey(translateUserName(username))) {
+        if (!userPasswords.containsKey(username)) {
             return null;
         }
 
@@ -119,12 +119,12 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             user = new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
-                    return username.toLowerCase();
+                    return username;
                 }
 
                 @Override
                 public void setUsername(String innerUsername) {
-                    if (! Objects.equals(innerUsername, username.toLowerCase())) {
+                    if (!Objects.equals(innerUsername, username)) {
                         throw new RuntimeException("Unsupported");
                     }
                 }
@@ -163,7 +163,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             return false;
         }
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
-            userPasswords.put(translateUserName(user.getUsername()), input.getChallengeResponse());
+            userPasswords.put(user.getUsername(), input.getChallengeResponse());
             return true;
 
         } else {
@@ -193,7 +193,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             return false;
         }
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
-            String pw = userPasswords.get(translateUserName(user.getUsername()));
+            String pw = userPasswords.get(user.getUsername());
 
             // Using "getValue" on purpose here, to test that backwards compatibility works as expected
             return pw != null && pw.equals(((UserCredentialModel) input).getValue());
@@ -204,7 +204,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        if (!userPasswords.containsKey(translateUserName(username))) {
+        if (!userPasswords.containsKey(username)) {
             return null;
         }
 
@@ -222,7 +222,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             throw new ReadOnlyException("Federated storage is not writable");
         }
 
-        userPasswords.put(translateUserName(username), "");
+        userPasswords.put(username, "");
         return createUser(realm, username);
     }
 
@@ -230,21 +230,21 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public boolean removeUser(RealmModel realm, UserModel user) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", user.getUsername(), editMode.toString());
-            userPasswords.remove(translateUserName(user.getUsername()));
+            userPasswords.remove(user.getUsername());
             return true;
         }
 
-        return userPasswords.remove(translateUserName(user.getUsername())) != null;
+        return userPasswords.remove(user.getUsername()) != null;
     }
 
     public boolean removeUserByName(String userName) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", userName, editMode.toString());
-            userPasswords.remove(translateUserName(userName));
+            userPasswords.remove(userName);
             return true;
         }
 
-        return userPasswords.remove(translateUserName(userName)) != null;
+        return userPasswords.remove(userName) != null;
     }
 
     public boolean isImportEnabled() {
@@ -295,19 +295,17 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
-        String tSearch = translateUserName(search);
         return userPasswords.keySet().stream()
           .sorted()
-          .filter(userName -> translateUserName(userName).contains(tSearch))
+          .filter(userName -> userName.toLowerCase().contains(search.toLowerCase()))
           .map(userName -> createUser(realm, userName));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        String tSearch = translateUserName(search);
         Stream<String> userStream = userPasswords.keySet().stream()
                 .sorted()
-                .filter(userName -> translateUserName(userName).contains(search));
+                .filter(userName -> userName.toLowerCase().contains(search.toLowerCase()));
 
         return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
@@ -329,7 +327,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                 case UserModel.USERNAME:
                 case UserModel.SEARCH:
                     if (Boolean.valueOf(params.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
-                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));           
+                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));
                     } else {
                         userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
                     }
@@ -391,15 +389,10 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public UserModel validate(RealmModel realm, UserModel local) {
-        final boolean userExists = userPasswords.containsKey(translateUserName(local.getUsername()));
+        final boolean userExists = userPasswords.containsKey(local.getUsername());
         if (! userExists) {
             userGroups.remove(getUserIdInMap(realm, local.getUsername()));
         }
         return userExists ? local : null;
     }
-
-    private static String translateUserName(String userName) {
-        return userName == null ? null : userName.toLowerCase();
-    }
-
 }

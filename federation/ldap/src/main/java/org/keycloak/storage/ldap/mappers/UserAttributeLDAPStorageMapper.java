@@ -243,7 +243,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     String lowercaseUsername = KeycloakModelUtils.toLowerCaseSafe(username);
                     checkDuplicateUsername(userModelAttrName, lowercaseUsername, realm, ldapProvider.getSession(), this);
                     setLDAPAttribute(UserModel.USERNAME, lowercaseUsername);
-                    super.setUsername(lowercaseUsername);
+                    super.setUsername(username);
                 }
 
                 @Override

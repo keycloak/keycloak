@@ -89,11 +89,7 @@ public class BrokeredIdentityContext {
      * @return
      */
     public String getUsername() {
-        if (getIdpConfig().isCaseSensitiveOriginalUsername()) {
-            return username;
-        }
-
-        return username == null ? null : username.toLowerCase();
+        return username;
     }
 
     public void setUsername(String username) {

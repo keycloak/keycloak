@@ -113,7 +113,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity entity = new UserEntity();
         entity.setId(id);
         entity.setCreatedTimestamp(System.currentTimeMillis());
-        entity.setUsername(username.toLowerCase());
+        entity.setUsername(username);
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
@@ -139,7 +139,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username, true, true);
     }
 
     @Override
@@ -521,7 +521,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
-        query.setParameter("username", username.toLowerCase());
+        query.setParameter("username", username);
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.isEmpty()) return null;

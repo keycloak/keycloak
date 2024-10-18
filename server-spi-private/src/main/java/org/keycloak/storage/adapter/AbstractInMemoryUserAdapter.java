@@ -75,7 +75,6 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public void setUsername(String username) {
-        username = username==null ? null : username.toLowerCase();
         setSingleAttribute(UserModel.USERNAME, username);
     }
 
@@ -124,7 +123,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     @Override
     public void setSingleAttribute(String name, String value) {
         checkReadonly();
-        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+        if (UserModel.EMAIL.equals(name)) {
             value = KeycloakModelUtils.toLowerCaseSafe(value);
         }
         attributes.putSingle(name, value);
@@ -134,7 +133,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     @Override
     public void setAttribute(String name, List<String> values) {
         checkReadonly();
-        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+        if (UserModel.EMAIL.equals(name)) {
             String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
             if (lowerCasedFirstValue != null) values.set(0, lowerCasedFirstValue);
         }

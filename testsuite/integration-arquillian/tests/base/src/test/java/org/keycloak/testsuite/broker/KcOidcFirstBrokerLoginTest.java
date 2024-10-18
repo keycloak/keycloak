@@ -772,7 +772,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation representation = idp.toRepresentation();
         representation.getConfig().put(TestKeycloakOidcIdentityProviderFactory.PREFERRED_USERNAME, expectedBrokeredUserName);
-        representation.getConfig().put(IdentityProviderModel.CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.TRUE.toString());
         idp.update(representation);
         createUser(bc.providerRealmName(), expectedBrokeredUserName, BrokerTestConstants.USER_PASSWORD, "f", "l", "fl@example.org");
 
