@@ -282,7 +282,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(iframeInterval)
                 .wait(2000, (driver1, output, events) -> { // iframe is initialized after ~1 second, 2 seconds is just to be sure
                     assertAdapterIsLoggedIn(driver1, output, events);
-                    final String logMsg = "3rd party cookies aren't supported by this browser.";
+                    final String logMsg = "Your browser is blocking access to 3rd-party cookies, this means:";
                     if (SuiteContext.BROWSER_STRICT_COOKIES) {
                         // this is here not really to test the log but also to make sure the browser is configured properly
                         // and cookies were blocked
