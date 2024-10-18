@@ -29,6 +29,10 @@ export const LogoutPanel = ({
 
   const protocol = watch("protocol");
   const frontchannelLogout = watch("frontchannelLogout");
+  const frontchannelLogoutTooltip =
+    protocol === "openid-connect"
+      ? "frontchannelLogoutOIDCHelp"
+      : "frontchannelLogoutHelp";
 
   return (
     <FormAccess
@@ -40,7 +44,7 @@ export const LogoutPanel = ({
         label={t("frontchannelLogout")}
         labelIcon={
           <HelpItem
-            helpText={t("frontchannelLogoutHelp")}
+            helpText={t(frontchannelLogoutTooltip)}
             fieldLabelId="frontchannelLogout"
           />
         }
@@ -78,7 +82,38 @@ export const LogoutPanel = ({
           }}
         />
       )}
-      {protocol === "openid-connect" && (
+      {protocol === "openid-connect" && frontchannelLogout && (
+        <FormGroup
+          label={t("frontchannelLogoutSessionRequired")}
+          labelIcon={
+            <HelpItem
+              helpText={t("frontchannelLogoutSessionRequiredHelp")}
+              fieldLabelId="frontchannelLogoutSessionRequired"
+            />
+          }
+          fieldId="frontchannelLogoutSessionRequired"
+          hasNoPaddingTop
+        >
+          <Controller
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.frontchannel.logout.session.required",
+            )}
+            defaultValue="true"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="frontchannelLogoutSessionRequired"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={field.value === "true"}
+                onChange={(_event, value) => field.onChange(value.toString())}
+                aria-label={t("frontchannelLogoutSessionRequired")}
+              />
+            )}
+          />
+        </FormGroup>
+      )}
+      {protocol === "openid-connect" && !frontchannelLogout && (
         <>
           <TextControl
             data-testid="backchannelLogoutUrl"
