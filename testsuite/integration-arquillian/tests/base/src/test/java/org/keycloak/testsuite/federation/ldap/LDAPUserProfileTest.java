@@ -184,8 +184,8 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             updateProfilePage.assertCurrent();
             Assert.assertEquals("John", updateProfilePage.getFirstName());
             Assert.assertEquals("Doe", updateProfilePage.getLastName());
-            Assert.assertFalse(updateProfilePage.getElementById("firstName").isEnabled());
-            Assert.assertFalse(updateProfilePage.getElementById("lastName").isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("firstName").getAttribute("readOnly").equals("true"));
+            Assert.assertTrue(updateProfilePage.getElementById("lastName").getAttribute("readOnly").equals("true"));
             Assert.assertNull(updateProfilePage.getElementById("postal_code"));
             updateProfilePage.prepareUpdate().submit();
         } finally {

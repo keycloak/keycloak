@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
@@ -9,11 +10,13 @@ import com.google.common.collect.ImmutableMap;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
@@ -21,13 +24,16 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -633,6 +639,29 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForPage(driver, "we are sorry...", false);
         assertEquals("User with username consumer already exists. Please login to account management to link the account.", errorPage.getError());
+    }
+
+    @Test
+    public void testUserExistsFirstBrokerLoginFlowUpdateProfileOnAndTermsAccepted() {
+            createUser("consumer");
+
+            updateExecutionsAndEnableTermsAndCondition(AbstractBrokerTest::makeTermsAndCondionRequiredInLogin);
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            Assert.assertTrue(updateAccountInformationPage.isCurrent());
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.acceptTerms("consumer", "consumer-user@redhat.com", "FirstName", "LastName");
+
+            waitForPage(driver, "we are sorry...", false);
+            assertEquals("User with username consumer already exists. Please login to account management to link the account.", errorPage.getError());
+
     }
 
 
@@ -1574,5 +1603,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         consumerRealm.update(realmRepresentation);
 
         return () -> toggleRegistrationAllowed(realmName, genuineValue);
+    }
+
+    private void updateExecutionsAndEnableTermsAndCondition(BiConsumer<AuthenticationExecutionInfoRepresentation, AuthenticationManagementResource> action) {
+        updateExecutions(action);
+        changeRequiredAction(true);
     }
 }
