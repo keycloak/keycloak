@@ -109,7 +109,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
     }
-    
+
     public CLIResult kcadm(String... arguments) throws IOException {
     	return kcadm(Arrays.asList(arguments));
     }
@@ -299,6 +299,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         allArgs.add("-Dkc.home.dir=" + distPath + File.separator);
         allArgs.addAll(arguments);
+
+        if (!arguments.contains("--verbose")) {
+            allArgs.add("--verbose");
+        }
 
         return allArgs.toArray(String[]::new);
     }
