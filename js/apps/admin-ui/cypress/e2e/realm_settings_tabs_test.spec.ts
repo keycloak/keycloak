@@ -136,6 +136,17 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.saveThemes();
   });
 
+  it("Go to themes tab, Reset selected theme", () => {
+    sidebarPage.goToRealmSettings();
+    cy.findByTestId("rs-themes-tab").click();
+
+    realmSettingsPage.selectLoginThemeType("");
+    realmSettingsPage.selectAccountThemeType("");
+    realmSettingsPage.selectEmailThemeType("");
+
+    realmSettingsPage.saveThemes();
+  });
+
   describe("Go to security defenses tab", () => {
     it("Realm header settings- update single input", () => {
       sidebarPage.goToRealmSettings();
