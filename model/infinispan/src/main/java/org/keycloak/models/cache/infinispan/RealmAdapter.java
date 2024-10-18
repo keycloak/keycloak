@@ -260,6 +260,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isUserFriendlyMessage() {
+        if (isUpdated()) return updated.isUserFriendlyMessage();
+        return cached.isUserFriendlyMessage();
+    }
+
+    @Override
+    public void setUserFriendlyMessage(boolean value) {
+        getDelegateForUpdate();
+        updated.setUserFriendlyMessage(value);
+    }
+
+    @Override
     public boolean isPermanentLockout() {
         if(isUpdated()) return updated.isPermanentLockout();
         return cached.isPermanentLockout();
