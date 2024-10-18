@@ -42,6 +42,8 @@ While were in the transitioning process towards Weblate, the following translati
 - German
 - Dutch
 - French
+- Catalan
+- Japanese
 
 For all other translations, look for the `messages_*.properties` files in the main repository and create a pull request with your translations. 
 
@@ -52,7 +54,8 @@ If you have any questions or need assistance, feel free to reach out to the lang
 * German: [Robin Meese](https://github.com/robson90)
 * Dutch: [Jon Koops](https://github.com/jonkoops)
 * French: [Dimitri](https://github.com/DimitriDR) && [Gilbert Fernandes](https://github.com/gilbert-fernandes)
-
+* Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
+* Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro)
 
 ### Steps to Add a New Language
 
@@ -64,3 +67,6 @@ If you have any questions or need assistance, feel free to reach out to the lang
     - invite the two volunteers
     - comment on discussion thread, that the langauge has been enabled
 - Weblate synchronizes daily, so it may take up to 24 hours after enabling the language before you can start your first translations 
+
+### Translation status
+[![Translation status](https://hosted.weblate.org/widget/keycloak/multi-auto.svg)](https://hosted.weblate.org/engage/keycloak/)

@@ -1278,6 +1278,25 @@ describe("Clients test", () => {
     });
   });
 
+  describe("Generated home URLs for built-in clients", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
+      commonPage.sidebar().goToClients();
+    });
+
+    it("Check account-console Home URL", () => {
+      cy.findByTestId("client-home-url-account-console").contains("/account/");
+    });
+
+    it("Check security-admin-console Home URL", () => {
+      cy.findByTestId("client-home-url-security-admin-console").contains(
+        "/console/",
+      );
+    });
+  });
+
   describe("Accessibility tests for clients", () => {
     const clientId = "a11y-client";
 
