@@ -216,7 +216,7 @@ Please refer to the Android and iOS sections of the https://github.com/e-imaxina
 Different kinds of links exist for opening apps:
 
 * custom schemes, such as `myapp://login` or `android-app://com.example.myapp/https/example.com/login`.
-* https://developer.apple.com/ios/universal-links/[Universal Links (iOS)]) / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
+* https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content/[Universal Links (iOS)] / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
 
 While the former are easier to set up and tend to work more reliably, the latter offer extra security because they are unique and only the owner of a domain can register them. Custom-URLs are deprecated on iOS.  For best reliability, we recommend that you use universal links combined with a fallback site that uses a custom-url link.
 
