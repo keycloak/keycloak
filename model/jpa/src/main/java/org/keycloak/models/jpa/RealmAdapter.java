@@ -36,6 +36,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -266,6 +268,20 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public int getMaxTemporaryLockouts() {
         return getAttribute("maxTemporaryLockouts", 0);
+    }
+
+    @Override
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        String name = getAttribute("bruteForceStrategy");
+        if(name == null)
+            return RealmRepresentation.BruteForceStrategy.MULTIPLE;
+
+        return RealmRepresentation.BruteForceStrategy.valueOf(name);
+    }
+
+    @Override
+    public void setBruteForceStrategy(final RealmRepresentation.BruteForceStrategy val) {
+        setAttribute("bruteForceStrategy", val.toString());
     }
 
     @Override
