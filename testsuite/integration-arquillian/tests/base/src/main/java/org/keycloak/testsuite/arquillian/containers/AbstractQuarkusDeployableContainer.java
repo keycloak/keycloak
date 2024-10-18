@@ -195,6 +195,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         } else {
             commands.add("--cache=ispn");
             commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+
+            var stack = System.getProperty("auth.server.quarkus.cluster.stack");
+            if (stack != null)
+                commands.add("--cache-stack=" + stack);
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());

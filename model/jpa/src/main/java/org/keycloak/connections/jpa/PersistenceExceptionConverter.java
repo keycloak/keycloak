@@ -53,10 +53,18 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(session, em));
     }
 
-    private PersistenceExceptionConverter(KeycloakSession session, EntityManager em) {
-        batchEnabled = session.getAttributeOrDefault(Constants.STORAGE_BATCH_ENABLED, false);
-        batchSize = session.getAttributeOrDefault(Constants.STORAGE_BATCH_SIZE, 100);
+    public static EntityManager create(EntityManager em) {
+        return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(em, null, null));
+    }
+
+    private PersistenceExceptionConverter(EntityManager em, Boolean batchEnabled, Integer batchSize) {
         this.em = em;
+        this.batchEnabled = batchEnabled != null && batchEnabled;
+        this.batchSize = batchSize == null ? 100 : batchSize;
+    }
+
+    private PersistenceExceptionConverter(KeycloakSession session, EntityManager em) {
+        this(em, (Boolean) session.getAttribute(Constants.STORAGE_BATCH_ENABLED), (Integer) session.getAttribute(Constants.STORAGE_BATCH_SIZE));
     }
 
     @Override

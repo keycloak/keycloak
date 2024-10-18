@@ -19,6 +19,8 @@ package org.keycloak.provider;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -66,5 +68,16 @@ public interface ProviderFactory<T extends Provider> {
      */
     default List<ProviderConfigProperty> getConfigMetadata() {
         return Collections.emptyList();
+    }
+
+    /**
+     * Optional method used to declare that a ProviderFactory has a dependency on one or more Providers. If a Provider
+     * is declared here, it is guaranteed that the dependencies {@link #postInit} method will be executed
+     * before this ProviderFactory's {@link #postInit}. Similarly, it's guaranteed that {@link #close()} will be
+     * called on this {@link ProviderFactory} before {@link #close()} is called on any of the dependent ProviderFactory
+     * implementations.
+     */
+    default Set<Class<? extends Provider>> dependsOn() {
+        return Collections.emptySet();
     }
 }
