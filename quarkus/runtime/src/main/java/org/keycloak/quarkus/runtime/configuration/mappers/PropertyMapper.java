@@ -65,6 +65,10 @@ public class PropertyMapper<T> {
             null) {
         @Override
         public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
+            if ((isRebuild() || Environment.isRebuildCheck()) && name.startsWith(PropertyMappers.KC_SPI_PREFIX) && !PropertyMappers.isSpiBuildTimeProperty(name)) {
+                // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
+                return ConfigValue.builder().withName(name).build();
+            }
             return context.proceed(name);
         }
     };
