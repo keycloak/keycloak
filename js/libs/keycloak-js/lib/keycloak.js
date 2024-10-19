@@ -1607,12 +1607,7 @@ function Keycloak (config) {
         function clearInvalidValues() {
             const currentTime = Date.now();
 
-            for (const [key, value] of Object.entries(localStorage)) {
-                // Ignore values not known to be stored by us.
-                if (!key.startsWith(STORAGE_KEY_PREFIX)) {
-                    continue;
-                }
-
+            for (const [key, value] of getStoredEntries()) {
                 // Attempt to parse the expiry time from the value.
                 const expiry = parseExpiry(value);
 
@@ -1621,6 +1616,23 @@ function Keycloak (config) {
                     localStorage.removeItem(key);
                 }
             }
+        }
+
+        /**
+         * Clears all known values from local storage.
+         */
+        function clearAllValues() {
+            for (const [key] of getStoredEntries()) {
+                localStorage.removeItem(key);
+            }
+        }
+
+        /**
+         * Gets all entries stored in local storage that are known to be managed by this class.
+         * @returns {Array<[string, unknown]>} An array of key-value pairs.
+         */
+        function getStoredEntries() {
+            return Object.entries(localStorage).filter(([key]) => key.startsWith(STORAGE_KEY_PREFIX));
         }
 
         /**
@@ -1665,9 +1677,20 @@ function Keycloak (config) {
         cs.add = function(state) {
             clearInvalidValues();
 
-            var key = STORAGE_KEY_PREFIX + state.state;
-            state.expires = new Date().getTime() + (60 * 60 * 1000);
-            localStorage.setItem(key, JSON.stringify(state));
+            const key = STORAGE_KEY_PREFIX + state.state;
+            const value = JSON.stringify({
+                ...state,
+                // Set the expiry time to 1 hour from now.
+                expires: Date.now() + (60 * 60 * 1000)
+            });
+
+            try {
+                localStorage.setItem(key, value);
+            } catch (error) {
+                // If the storage is full, clear all known values and try again.
+                clearAllValues();
+                localStorage.setItem(key, value);
+            }
         };
     };
 
