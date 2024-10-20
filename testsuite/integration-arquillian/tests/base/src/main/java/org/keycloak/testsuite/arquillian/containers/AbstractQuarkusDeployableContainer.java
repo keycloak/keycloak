@@ -251,7 +251,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         } else if (configuration.getFipsMode() != FipsMode.DISABLED) {
             enabledFeatures = "fips" + (enabledFeatures.isEmpty() ? "" : ("," + enabledFeatures));
         }
-        
+
         if (!StringUtil.isBlank(enabledFeatures)) {
             appendOrAddCommand(commands, "--features=", enabledFeatures);
         }
