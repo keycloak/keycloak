@@ -83,8 +83,8 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return form.createLoginUsernamePassword();
     }
 
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_USER;
+    protected String disabledByBruteForceError(AuthenticationFlowContext context) {
+        return context.getRealm().isUserFriendlyMessage() ? Messages.ACCOUNT_TEMPORARILY_DISABLED :  Messages.INVALID_USER;
     }
 
     protected String disabledByBruteForceFieldError(){
@@ -240,7 +240,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
-            Response challengeResponse = challenge(context, disabledByBruteForceError(), disabledByBruteForceFieldError());
+            Response challengeResponse = challenge(context, disabledByBruteForceError(context), disabledByBruteForceFieldError());
             context.forceChallenge(challengeResponse);
             return true;
         }

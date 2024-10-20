@@ -82,6 +82,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("displayNameHtml");
         REALM_EXCLUDED_ATTRIBUTES.add("defaultSignatureAlgorithm");
         REALM_EXCLUDED_ATTRIBUTES.add("bruteForceProtected");
+        REALM_EXCLUDED_ATTRIBUTES.add("lockoutUserFriendlyMessage");
         REALM_EXCLUDED_ATTRIBUTES.add("permanentLockout");
         REALM_EXCLUDED_ATTRIBUTES.add("maxTemporaryLockouts");
         REALM_EXCLUDED_ATTRIBUTES.add("maxFailureWaitSeconds");
@@ -370,6 +371,7 @@ public class ModelToRepresentation {
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());
+        rep.setUserFriendlyMessage(realm.isUserFriendlyMessage());
         rep.setPermanentLockout(realm.isPermanentLockout());
         rep.setMaxTemporaryLockouts(realm.getMaxTemporaryLockouts());
         rep.setMaxFailureWaitSeconds(realm.getMaxFailureWaitSeconds());
