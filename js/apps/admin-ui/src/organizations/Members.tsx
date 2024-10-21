@@ -22,6 +22,12 @@ import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+import { capitalizeFirstLetterFormatter } from "../util";
+import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
+
+type MembershipTypeRepresentation = UserRepresentation & {
+  membershipType?: string;
+};
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -37,19 +43,71 @@ export const Members = () => {
   const { adminClient } = useAdminClient();
   const { id: orgId } = useParams<EditOrganizationParams>();
   const { addAlert, addError } = useAlerts();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-
   const [open, toggle] = useToggle();
   const [openAddMembers, toggleAddMembers] = useToggle();
   const [openInviteMembers, toggleInviteMembers] = useToggle();
   const [selectedMembers, setSelectedMembers] = useState<UserRepresentation[]>(
     [],
   );
+  const [filteredMembershipTypes, setFilteredMembershipTypes] = useState<
+    string[]
+  >([]);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const loader = (first?: number, max?: number, search?: string) =>
-    adminClient.organizations.listMembers({ orgId, first, max, search });
+  const membershipOptions = [
+    { value: "MANAGED", label: "Managed" },
+    { value: "UNMANAGED", label: "Unmanaged" },
+  ];
+
+  const onToggleClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const onSelect = (_event: any, value: string) => {
+    if (filteredMembershipTypes.includes(value)) {
+      handleFilterChange(
+        filteredMembershipTypes.filter((item) => item !== value),
+      );
+    } else {
+      handleFilterChange([...filteredMembershipTypes, value]);
+    }
+  };
+
+  const loader = async (first?: number, max?: number, search?: string) => {
+    try {
+      const memberships: MembershipTypeRepresentation[] =
+        await adminClient.organizations.listMembers({
+          orgId,
+          first,
+          max,
+          search,
+        });
+
+      if (filteredMembershipTypes.length === 0) {
+        return memberships;
+      }
+
+      const upperCaseSelectedItems = filteredMembershipTypes.map((item) =>
+        item.toUpperCase(),
+      );
+
+      return memberships.filter((membership) =>
+        upperCaseSelectedItems.includes(
+          membership.membershipType?.toUpperCase() || "",
+        ),
+      );
+    } catch (error) {
+      console.error("Error loading members:", error);
+      return [];
+    }
+  };
+
+  const handleFilterChange = (selectedItems: string[]) => {
+    setFilteredMembershipTypes(selectedItems);
+    refresh();
+  };
 
   const removeMember = async (selectedMembers: UserRepresentation[]) => {
     try {
@@ -68,6 +126,7 @@ export const Members = () => {
 
     refresh();
   };
+
   return (
     <PageSection variant="light">
       {openAddMembers && (
@@ -153,6 +212,18 @@ export const Members = () => {
                 {t("removeMember")}
               </Button>
             </ToolbarItem>
+            <ToolbarItem>
+              <CheckboxFilterComponent
+                filterPlaceholderText={t("filterByMembershipType")}
+                isOpen={isOpen}
+                options={membershipOptions}
+                onOpenChange={setIsOpen}
+                onToggleClick={onToggleClick}
+                onSelect={onSelect}
+                selectedItems={filteredMembershipTypes}
+                width={"280px"}
+              />
+            </ToolbarItem>
           </>
         }
         actions={[
@@ -176,6 +247,10 @@ export const Members = () => {
           },
           {
             name: "lastName",
+          },
+          {
+            name: "membershipType",
+            cellFormatters: [capitalizeFirstLetterFormatter()],
           },
         ]}
         emptyState={
