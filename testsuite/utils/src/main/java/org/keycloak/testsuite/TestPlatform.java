@@ -23,7 +23,6 @@ import java.nio.file.Files;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.platform.PlatformProvider;
 
