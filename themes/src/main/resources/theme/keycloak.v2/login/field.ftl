@@ -1,33 +1,32 @@
 <#macro group name label error="" required=false>
 
 <div class="${properties.kcFormGroupClass}">
-  <div class="${properties.kcFormGroupLabelClass}">
-    <label for="${name}" class="${properties.kcFormGroupLabelClass}">
+    <div class="${properties.kcFormGroupLabelClass}">
+        <label for="${name}" class="${properties.kcFormGroupLabelClass}">
         <span class="${properties.kcFormGroupLabelTextClass}">
-          ${label}
+            ${label}
         </span>
-        <#if required>
-          <span class="${properties.kcInputRequiredClass}" aria-hidden="true">&#42;</span>
-        </#if>
-    </label>
-  </div>
-
-  <#nested>
-
-  <div id="input-error-client-${name}"></div>
-  <#if error?has_content>
-    <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-      <div class="${properties.kcInputHelperTextClass}">
-        <div
-          class="${properties.kcInputHelperTextItemClass} ${properties.kcError}"
-          id="input-error-${name}">
-          <span class="${properties.kcInputErrorMessageClass}">
-              ${error}
-          </span>
-        </div>
-      </div>
+            <#if required>
+                <span class="${properties.kcInputRequiredClass}" aria-hidden="true">&#42;</span>
+            </#if>
+        </label>
     </div>
-  </#if>
+
+    <#nested>
+
+    <div id="input-error-container-${name}">
+        <#if error?has_content>
+            <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+                <div class="${properties.kcInputHelperTextClass}">
+                    <div class="${properties.kcInputHelperTextItemClass} ${properties.kcError}" id="input-error-${name}">
+                        <span class="${properties.kcInputErrorMessageClass}">
+                            ${error}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </#if>
+    </div>
 </div>
 
 </#macro>
