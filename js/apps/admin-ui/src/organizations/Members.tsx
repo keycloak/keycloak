@@ -57,8 +57,8 @@ export const Members = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const membershipOptions = [
-    { value: "MANAGED", label: "Managed" },
-    { value: "UNMANAGED", label: "Unmanaged" },
+    { value: "Managed", label: "Managed" },
+    { value: "Unmanaged", label: "Unmanaged" },
   ];
 
   const onToggleClick = () => {
@@ -67,12 +67,14 @@ export const Members = () => {
 
   const onSelect = (_event: any, value: string) => {
     if (filteredMembershipTypes.includes(value)) {
-      handleFilterChange(
+      setFilteredMembershipTypes(
         filteredMembershipTypes.filter((item) => item !== value),
       );
     } else {
-      handleFilterChange([...filteredMembershipTypes, value]);
+      setFilteredMembershipTypes([...filteredMembershipTypes, value]);
     }
+    setIsOpen(false);
+    refresh();
   };
 
   const loader = async (first?: number, max?: number, search?: string) => {
@@ -93,20 +95,16 @@ export const Members = () => {
         item.toUpperCase(),
       );
 
-      return memberships.filter((membership) =>
-        upperCaseSelectedItems.includes(
-          membership.membershipType?.toUpperCase() || "",
-        ),
-      );
+      const filteredMemberships = memberships.filter((membership) => {
+        const membershipType = membership.membershipType || "";
+        return upperCaseSelectedItems.includes(membershipType.toUpperCase());
+      });
+
+      return filteredMemberships;
     } catch (error) {
-      console.error("Error loading members:", error);
+      addError("organizationsMembersListError", error);
       return [];
     }
-  };
-
-  const handleFilterChange = (selectedItems: string[]) => {
-    setFilteredMembershipTypes(selectedItems);
-    refresh();
   };
 
   const removeMember = async (selectedMembers: UserRepresentation[]) => {
@@ -217,11 +215,11 @@ export const Members = () => {
                 filterPlaceholderText={t("filterByMembershipType")}
                 isOpen={isOpen}
                 options={membershipOptions}
-                onOpenChange={setIsOpen}
+                onOpenChange={(nextOpen) => setIsOpen(nextOpen)}
                 onToggleClick={onToggleClick}
                 onSelect={onSelect}
                 selectedItems={filteredMembershipTypes}
-                width={"280px"}
+                width={"290px"}
               />
             </ToolbarItem>
           </>
