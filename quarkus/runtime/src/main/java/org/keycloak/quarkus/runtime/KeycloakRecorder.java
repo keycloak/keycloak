@@ -121,14 +121,13 @@ public class KeycloakRecorder {
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
     }
 
-    public RuntimeValue<CacheManagerFactory> createCacheInitializer(ShutdownContext shutdownContext) {
+    public RuntimeValue<CacheManagerFactory> createCacheInitializer() {
         try {
             CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile());
-            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);
