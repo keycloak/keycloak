@@ -207,7 +207,7 @@ export const SigningIn = () => {
                               aria-label={t("updateCredAriaLabel")}
                               aria-labelledby={`cred-${meta.credential.id}`}
                             >
-                              {container.removeable ? (
+                              {container.removeable && (
                                 <Button
                                   variant="danger"
                                   data-testrole="remove"
@@ -221,12 +221,12 @@ export const SigningIn = () => {
                                 >
                                   {t("delete")}
                                 </Button>
-                              ) : (
+                              )}
+                              {container.updateAction && (
                                 <Button
                                   variant="secondary"
                                   onClick={() => {
-                                    if (container.updateAction)
-                                      login({ action: container.updateAction });
+                                    login({ action: container.updateAction });
                                   }}
                                   data-testrole="update"
                                 >

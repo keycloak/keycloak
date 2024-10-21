@@ -244,6 +244,9 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             if (instance.createAction != null && instance.updateAction != null) {
                 throw new IllegalStateException("Both createAction and updateAction are not null when building CredentialTypeMetadata for the credential type '" + instance.type);
             }
+            if (!verifyRequiredAction(session, "delete_credential")) {
+                instance.removeable = false;
+            }
 
             return instance;
         }
