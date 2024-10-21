@@ -80,6 +80,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
