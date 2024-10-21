@@ -47,6 +47,7 @@
     <properties>
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
         <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
+        <jboss.releases.repo.name>keycloak</jboss.releases.repo.name>
         <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
@@ -65,8 +66,19 @@
                     <version>1.6.13</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>jboss-releases-repository</serverId>
+                        <serverId>${jboss.releases.repo.id}</serverId>
                         <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nxrm3-maven-plugin</artifactId>
+                    <version>1.0.6</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <serverId>${jboss.releases.repo.id}</serverId>
+                        <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
+                        <repository>${jboss.releases.repo.name}</repository>
                     </configuration>
                 </plugin>
             </plugins>
