@@ -33,10 +33,19 @@ Low numbers ensure fast response times for all clients, even if there is an occa
 
 === JGroups connection pool
 
-NOTE: This currently applies to single-site setups only. In a multi-site setup with an external {jdgserver_name} this is no longer a restriction.
+[NOTE]
+====
+* This currently applies to single-site setups only.
+In a multi-site setup with an external {jdgserver_name} this is not a restriction.
+* This currently applies if virtual threads are disabled.
+Since {project_name} 26.1, virtual threads are enabled in both embedded Infinispan and JGroups if running on OpenJDK 21 or higher.
+====
 
-The combined number of executor threads in all {project_name} nodes in the cluster should not exceed the number of threads available in JGroups thread pool to avoid the error `org.jgroups.util.ThreadPool: thread pool is full`.
-To see the error the first time it happens, the system property `jgroups.thread_dumps_threshold` needs to be set to `1`, as otherwise the message appears only after 10000 requests have been rejected.
+
+The combined number of executor threads in all {project_name} nodes in the cluster should not exceed too much the number of threads available in JGroups thread pool to avoid the warning `thread pool is full (max=<value>, active=<value>)`.
+
+The warning includes a thread dump when the Java system property `-Djgroups.thread_dumps_enabled=true` is set.
+It may incur in a penalty in performance collecting those thread dumps.
 
 --
 include::partials/threads/executor-jgroups-thread-calculation.adoc[]
@@ -45,6 +54,8 @@ include::partials/threads/executor-jgroups-thread-calculation.adoc[]
 Use metrics to monitor the total JGroup threads in the pool and for the threads active in the pool.
 When using TCP as the JGroups transport protocol, the metrics `vendor_jgroups_tcp_get_thread_pool_size` and `vendor_jgroups_tcp_get_thread_pool_size_active` are available for monitoring. When using UDP, the metrics `vendor_jgroups_udp_get_thread_pool_size` and `vendor_jgroups_udp_get_thread_pool_size_active` are available.
 This is useful to monitor that limiting the Quarkus thread pool size keeps the number of active JGroup threads below the maximum JGroup thread pool size.
+
+WARNING: The metrics are not available when virtual threads are enabled in JGroups.
 
 [#load-shedding]
 === Load Shedding

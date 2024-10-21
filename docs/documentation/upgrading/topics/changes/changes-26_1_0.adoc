@@ -18,3 +18,13 @@ The following APIs for the JavaScript Authorization client are deprecated and wi
 - The `init()` method on the `KeycloakAuthorization` instance.
 
 These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.
+
+= Virtual Threads enabled for Infinispan and JGroups thread pools
+
+Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
+This removes the need to configure the thread pool and reduces overall memory footprint.
+To disable the virtual threads, add one of the Java system properties combinations to your deployment:
+
+* `-Dorg.infinispan.threads.virtual=false`: disables virtual thread in both Infinispan and JGroups.
+* `-Djgroups.thread.virtual=false`: disables virtual threads only in JGroups.
+* `-Dorg.infinispan.threads.virtual=false -Djgroups.thread.virtual=true`: disables virtual threads only in Infinispan.
