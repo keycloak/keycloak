@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.truststore;
+package org.keycloak.crls;
 
+import org.keycloak.crls.CrlStorageProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
-/**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
- */
-public class TruststoreSpi implements Spi {
-
-    public static final String NAME = "truststore";
+public class CrlStorageSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -35,16 +31,17 @@ public class TruststoreSpi implements Spi {
 
     @Override
     public String getName() {
-        return NAME;
+        return "crlStorage";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return TruststoreProvider.class;
+        return CrlStorageProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return TruststoreProviderFactory.class;
+        return CrlStorageProviderFactory.class;
     }
+
 }
