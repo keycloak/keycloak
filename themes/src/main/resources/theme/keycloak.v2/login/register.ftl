@@ -17,8 +17,8 @@
                 <#if callback = "afterField">
                 <#-- render password fields just under the username or email (if used as username) -->
                     <#if passwordRequired?? && (attribute.name == 'username' || (attribute.name == 'email' && realm.registrationEmailAsUsername))>
-                        <@field.password name="password" label=msg("password") autocomplete="new-password" />
-                        <@field.password name="password-confirm" label=msg("passwordConfirm") autocomplete="new-password" />
+                        <@field.password name="password" required=true label=msg("password") autocomplete="new-password" />
+                        <@field.password name="password-confirm" required=true label=msg("passwordConfirm") autocomplete="new-password" />
                     </#if>
                 </#if>
             </@userProfileCommons.userProfileFormFields>

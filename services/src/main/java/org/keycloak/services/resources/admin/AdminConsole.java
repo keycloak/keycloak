@@ -291,7 +291,11 @@ public class AdminConsole {
 
     private void addMasterRealmAccess(UserModel user, String currentRealm, Map<String, Set<String>> realmAdminAccess) {
         final RealmModel realm = session.realms().getRealmByName(currentRealm);
-        getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+        if (realm != null) {
+            getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+        } else {
+            throw new NotFoundException("Realm not found");
+        }
     }
 
     private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {

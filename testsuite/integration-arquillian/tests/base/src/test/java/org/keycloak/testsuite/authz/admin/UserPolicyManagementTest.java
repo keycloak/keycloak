@@ -107,6 +107,13 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
         permission.update(representation);
         assertRepresentation(representation, permission);
+
+        String userName = representation.getUsers().iterator().next();
+        UserRepresentation user = getRealm().users().search(userName).get(0);
+        getRealm().users().delete(user.getId()).close();
+
+        representation.getUsers().clear();
+        assertRepresentation(representation, permission);
     }
 
     @Test

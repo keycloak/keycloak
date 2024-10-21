@@ -48,7 +48,7 @@ public class JavascriptTestExecutor {
     public JavascriptTestExecutor login() {
         return login((String)null, null);
     }
-    
+
     public JavascriptTestExecutor login(JavascriptStateValidator validator) {
         return login((String)null, validator);
     }
@@ -81,10 +81,10 @@ public class JavascriptTestExecutor {
                 "" +
                 "    // Start observing the target node for configured mutations\n" +
                 "    observer.observe(targetNode, config);");
-        
+
         return this;
     }
-    
+
     public JavascriptTestExecutor login(JSObjectBuilder optionsBuilder, JavascriptStateValidator validator) {
         return login(optionsBuilder.build(), validator);
     }
@@ -203,7 +203,7 @@ public class JavascriptTestExecutor {
             configure();
         }
 
-        String arguments = argumentsBuilder.build();
+        String arguments = argumentsBuilder != null ? argumentsBuilder.build() : "";
 
         String script = "var callback = arguments[arguments.length - 1];" +
                 "   window.keycloak.init(" + arguments + ").then(function (authenticated) {" +

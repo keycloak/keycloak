@@ -30,6 +30,7 @@ import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
@@ -91,6 +92,7 @@ public class AuthzClient {
      * @return a new instance
      */
     public static AuthzClient create(Configuration configuration) {
+        CryptoIntegration.init(AuthzClient.class.getClassLoader());
         return new AuthzClient(configuration);
     }
 

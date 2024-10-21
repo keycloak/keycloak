@@ -10,6 +10,20 @@ includedOptions="proxy-* hostname hostname-admin http-relative-path">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
+== Port to be proxied
+
+{project_name} runs on the following ports by default:
+
+* `8443` (`8080` when you enable HTTP explicitly by `--http-enabled=true`)
+
+* `9000`
+
+The port `8443` (or `8080` if HTTP is enabled) is used for the Admin UI, Account Console, SAML and OIDC endpoints and the Admin REST API as described in the <@links.server id="hostname"/> {section}.
+
+The port `9000` is used for management, which includes endpoints for health checks and metrics as described in the  <@links.server id="management-interface"/> {section}.
+
+You only need to proxy port `8443` (or `8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configure-production"/>. You should not proxy port `9000` as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.
+
 == Configure the reverse proxy headers
 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
@@ -79,7 +93,8 @@ By default, the `spi-sticky-session-encoder-infinispan-should-attach-route` opti
 cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
 == Exposed path recommendations
-When using a reverse proxy, {project_name} only requires certain paths need to be exposed.
+
+When using a reverse proxy, {project_name} only requires certain paths to be exposed.
 The following table shows the recommended paths to expose.
 
 [%autowidth]
@@ -132,7 +147,7 @@ To ensure that proxy headers are used only from proxies you trust, set the `prox
 
 For example:
 
-<@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/> 
+<@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
 
 == PROXY Protocol
 
@@ -142,7 +157,7 @@ This is useful when running behind a compatible https passthrough proxy because 
 
 For example:
 
-<@kc.start parameters="--proxy-protocol-enabled true"/> 
+<@kc.start parameters="--proxy-protocol-enabled true"/>
 
 == Enabling client certificate lookup
 

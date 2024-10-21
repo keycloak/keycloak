@@ -49,12 +49,12 @@
     "@patternfly/react-icons": "^5.4.0",
     "@patternfly/react-styles": "^5.4.0",
     "@patternfly/react-table": "^5.4.1",
-    "i18next": "^23.16.0",
+    "i18next": "^23.16.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "7.53.0",
+    "react-hook-form": "7.53.1",
     "react-i18next": "^15.0.3"
   },
   "devDependencies": {
@@ -67,6 +67,6 @@
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.2.4",
     "vite-plugin-lib-inject-css": "^2.1.1",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.3"
   }
 }

@@ -84,7 +84,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^1.1.0",
     "flat": "^6.0.1",
-    "i18next": "^23.16.0",
+    "i18next": "^23.16.2",
     "i18next-http-backend": "^2.6.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -92,8 +92,8 @@
     "p-debounce": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-dropzone": "^14.2.9",
-    "react-hook-form": "^7.53.0",
+    "react-dropzone": "^14.2.10",
+    "react-hook-form": "^7.53.1",
     "react-i18next": "^15.0.3",
     "react-router-dom": "^6.27.0",
     "reactflow": "^11.11.4",
@@ -103,7 +103,7 @@
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/jest-dom": "^6.6.2",
     "@testing-library/react": "^16.0.1",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
@@ -114,7 +114,7 @@
     "@vitejs/plugin-react-swc": "^3.7.1",
     "cypress": "^13.15.0",
     "cypress-axe": "^1.5.0",
-    "cypress-split": "^1.24.0",
+    "cypress-split": "^1.24.4",
     "jsdom": "^25.0.1",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.27.0",
@@ -123,6 +123,6 @@
     "vite": "^5.4.9",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.2.4",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.3"
   }
 }
