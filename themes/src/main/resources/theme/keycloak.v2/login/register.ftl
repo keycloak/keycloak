@@ -73,14 +73,16 @@
             ].filter(p => p.policy.value !== -1);
 
             document.getElementById("password").addEventListener("change", (event) => {
-                const serverErrors = document.getElementById("input-error-password");
-                if (serverErrors) {
-                    serverErrors.remove();
+
+                const errorContainer = document.getElementById("input-error-container-password");
+                const template = document.querySelector("#errorTemplate").content.cloneNode(true);
+                const errors = validatePassword(event.target.value, activePolicies);
+
+                if (errors.length === 0) {
+                    errorContainer.replaceChildren();
+                    return;
                 }
 
-                const template = document.querySelector("#errorTemplate").content.cloneNode(true);
-
-                const errors = validatePassword(event.target.value, activePolicies);
                 const errorList = template.querySelector("ul");
                 const htmlErrors = errors.forEach((e) => {
                     const row = document.querySelector("#errorItemTemplate").content.cloneNode(true);
@@ -88,7 +90,7 @@
                     li.textContent = e;
                     errorList.appendChild(li);
                 });
-                document.getElementById("input-error-client-password").replaceChildren(template);
+                errorContainer.replaceChildren(template);
             });
         </script>
     </#if>
