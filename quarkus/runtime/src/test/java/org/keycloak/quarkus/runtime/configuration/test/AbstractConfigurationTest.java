@@ -26,6 +26,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.After;
 import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -111,6 +112,7 @@ public abstract class AbstractConfigurationTest {
 
         SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
         PropertyMappers.reset();
+        ConfigArgsConfigSource.setCliArgs();
     }
 
     protected Config.Scope initConfig(String... scope) {
