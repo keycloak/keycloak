@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ResourceLoaderTest {
 
@@ -48,6 +49,10 @@ public class ResourceLoaderTest {
         assertFileAsStream(parent, DOUBLE + "myresource.css", false, false);
 
         assertFileAsStream(new File(tempDirectory.toFile(), "test/../resources/"), "myresource.css", true, true);
+
+        // relativize tmp folder to the current working directory, something like ../../../tmp/path
+        Path relativeParent = Paths.get(".").toAbsolutePath().relativize(parent.toPath());
+        assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
     }
 
     private void assertResourceAsStream(String parent, String resource, boolean expectValid, boolean expectResourceToExist) throws IOException {
