@@ -1,5 +1,5 @@
 const CHECK_INTERVAL_MILLISECS = 2000;
-const AUTH_SESSION_INTERVAL_MILLISECS = 1000;
+const AUTH_SESSION_TIMEOUT_MILLISECS = 1000;
 const initialSession = getSession();
 const initialKcAuthSessionHash = getKcAuthSessionHash();
 
@@ -14,12 +14,12 @@ addEventListener("beforeunload", () => {
   }
 });
 
-setTimeout(function() {
+setTimeout(() => {
   const kcAuthSessionHash = getKcAuthSessionHash();
   if (kcAuthSessionHash !== initialKcAuthSessionHash) {
     location.reload();
   }
-}, AUTH_SESSION_INTERVAL_MILLISECS);
+}, AUTH_SESSION_TIMEOUT_MILLISECS);
 
 export function checkCookiesAndSetTimer(loginRestartUrl) {
   if (initialSession) {
