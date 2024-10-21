@@ -1,5 +1,5 @@
 name: Node Cache
-description: Caches Node and NPM artifacts
+description: Caches Node and PNPM binaries
 
 runs:
   using: composite
