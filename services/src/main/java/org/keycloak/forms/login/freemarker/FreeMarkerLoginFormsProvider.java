@@ -418,7 +418,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         try {
-            attributes.put("properties", theme.getProperties());
+            Properties properties = theme.getProperties();
+            attributes.put("properties", properties);
+            attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
+                    && (realm.getAttribute("darkMode") == null || "true".equals(realm.getAttribute("darkMode"))));
         } catch (IOException e) {
             logger.warn("Failed to load properties", e);
         }
