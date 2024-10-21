@@ -17,13 +17,17 @@
 
 package org.keycloak.services.managers;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Objects;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -36,6 +40,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
+import static org.keycloak.services.managers.AuthenticationManager.setKcActionStatus;
 
 
 /**
@@ -64,6 +69,7 @@ public class AuthenticationSessionManager {
 
         if (browserCookie) {
             setAuthSessionCookie(rootAuthSession.getId());
+            setAuthSessionIdHashCookie(rootAuthSession.getId());
         }
 
         return rootAuthSession;
@@ -124,6 +130,17 @@ public class AuthenticationSessionManager {
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID, encodedAuthSessionId);
 
         log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
+    }
+
+    /**
+     * @param authSessionId decoded authSessionId (without route info attached)
+     */
+    public void setAuthSessionIdHashCookie(String authSessionId) {
+        String authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
+
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID_HASH, authSessionIdHash);
+
+        log.debugf("Set KC_AUTH_SESSION_HASH cookie with value %s", authSessionIdHash);
     }
 
 
