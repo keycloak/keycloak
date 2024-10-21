@@ -1241,7 +1241,7 @@ function Keycloak (config) {
     function check3pCookiesSupported() {
         var promise = createPromise();
 
-        if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
+        if ((loginIframe.enable || kc.silentCheckSsoRedirectUri) && typeof kc.endpoints.thirdPartyCookiesIframe === 'function') {
             var iframe = document.createElement('iframe');
             iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
             iframe.setAttribute('sandbox', 'allow-storage-access-by-user-activation allow-scripts allow-same-origin');
