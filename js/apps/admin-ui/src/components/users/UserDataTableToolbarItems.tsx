@@ -16,9 +16,9 @@ import { useTranslation } from "react-i18next";
 
 import { useAccess } from "../../context/access/Access";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
-import { UserAttribute } from "./UserDataTable";
-import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 import DropdownPanel from "../dropdown-panel/DropdownPanel";
+import { UserFilter } from "./UserDataTable";
+import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 
 type UserDataTableToolbarItemsProps = {
   searchDropdownOpen: boolean;
@@ -32,8 +32,8 @@ type UserDataTableToolbarItemsProps = {
   setSearchType: (searchType: SearchType) => void;
   searchUser: string;
   setSearchUser: (searchUser: string) => void;
-  activeFilters: UserAttribute[];
-  setActiveFilters: (activeFilters: UserAttribute[]) => void;
+  activeFilters: UserFilter;
+  setActiveFilters: (activeFilters: UserFilter) => void;
   refresh: () => void;
   profile: UserProfileConfig;
   clearAllFilters: () => void;
