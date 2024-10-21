@@ -673,7 +673,7 @@ function Keycloak (config) {
 
                                 kc.onAuthRefreshError && kc.onAuthRefreshError();
                                 for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
-                                    p.setError(true);
+                                    p.setError("Failed to refresh token: An unexpected HTTP error occurred while attempting to refresh the token.");
                                 }
                             }
                         }
