@@ -21,16 +21,21 @@ import static org.junit.Assert.fail;
 
 import java.util.Collections;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.TimePoliciesResource;
 import org.keycloak.admin.client.resource.TimePolicyResource;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.Assert;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -118,6 +123,44 @@ public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
         }
     }
 
+    @Test
+    public void testInvalidDateFormat() {
+        AuthorizationResource authorization = getClient().authorization();
+        TimePolicyRepresentation representation = createRepresentation(KeycloakModelUtils.generateId());
+
+        representation.setNotBefore("invalid");
+        representation.setNotOnOrAfter("invalid");
+
+        try (
+            Response response = authorization.policies().time().create(representation)
+        ) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals("Unable not parse a date using format [" + representation.getNotOnOrAfter() + "]", response.readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        representation.setNotBefore("2017-01-01 00:00:00");
+
+        try (
+            Response response = authorization.policies().time().create(representation)
+        ) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals("Unable not parse a date using format [" + representation.getNotOnOrAfter() + "]", response.readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        representation.setNotOnOrAfter("2017-02-01 00:00:00");
+        representation = assertCreated(authorization, representation);
+
+        try {
+            representation.setNotOnOrAfter("2016-02-01 00:00:00");
+            authorization.policies().time().findById(representation.getId()).update(representation);
+            Assert.fail("should fail due to invalid dates");
+        } catch (BadRequestException bre) {
+            Response response = bre.getResponse();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals("Expire time can't be set to a date before start time", response.readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+    }
+
     private TimePolicyRepresentation createRepresentation(String name) {
         TimePolicyRepresentation representation = new TimePolicyRepresentation();
 
@@ -140,13 +183,14 @@ public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
         return representation;
     }
 
-    private void assertCreated(AuthorizationResource authorization, TimePolicyRepresentation representation) {
+    private TimePolicyRepresentation assertCreated(AuthorizationResource authorization, TimePolicyRepresentation representation) {
         TimePoliciesResource permissions = authorization.policies().time();
 
         try (Response response = permissions.create(representation)) {
             TimePolicyRepresentation created = response.readEntity(TimePolicyRepresentation.class);
             TimePolicyResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
+            return permission.toRepresentation();
         }
     }
 
