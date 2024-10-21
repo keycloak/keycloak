@@ -168,6 +168,9 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
+        
+        commands.add("--http-relative-path=/auth");
+        commands.add("--health-enabled=true"); // expose something to management interface to turn it on
 
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
@@ -315,11 +318,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
         HttpURLConnection connection;
         long startTime = System.currentTimeMillis();
+        Exception e = null;
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", e);
             }
 
             checkLiveness();
@@ -345,6 +349,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
                 connection.disconnect();
             } catch (Exception ignore) {
+                e = ignore;
             }
         }
 
