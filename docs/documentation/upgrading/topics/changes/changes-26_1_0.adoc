@@ -18,3 +18,7 @@ The following APIs for the JavaScript Authorization client are deprecated and wi
 - The `init()` method on the `KeycloakAuthorization` instance.
 
 These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.
+
+= Removal of robots.txt file
+
+The robots.txt file, previously included by default, is now removed. The desired default behaviour is for Keycloak login/signup pages to not show up in search engine results, and this is accomplished by the `<meta name="robots" content="noindex, nofollow">` tags included in the default Freemarker templates for all themes.
