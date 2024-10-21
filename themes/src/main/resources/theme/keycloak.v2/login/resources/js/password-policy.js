@@ -11,7 +11,7 @@ const policies = {
   },
   upperCase: (policy, value) => {
     if (
-      value.split("").filter((char) => char !== char.toUpperCase()).length >
+      value.split("").filter((char) => char === char.toUpperCase() && char !== char.toLowerCase()).length <
       policy.value
     ) {
       return templateError(policy);
@@ -19,7 +19,7 @@ const policies = {
   },
   lowerCase: (policy, value) => {
     if (
-      value.split("").filter((char) => char !== char.toLowerCase()).length >
+      value.split("").filter((char) => char === char.toLowerCase() && char !== char.toUpperCase()).length <
       policy.value
     ) {
       return templateError(policy);
