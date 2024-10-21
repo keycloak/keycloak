@@ -53,7 +53,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
     public static final String NAME = "show-config";
     private static final List<String> ignoredPropertyKeys = List.of(
-            "kc.config.args", "kc.show.config", "kc.profile", "kc.quarkus-properties-enabled", "kc.home.dir");
+            "kc.show.config", "kc.profile", "kc.quarkus-properties-enabled", "kc.home.dir");
 
     @Parameters(
             paramLabel = "filter",
