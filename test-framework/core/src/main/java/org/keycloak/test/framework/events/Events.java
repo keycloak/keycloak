@@ -18,6 +18,10 @@ public class Events implements SysLogListener {
         }
     }
 
+    public void clear() {
+        events.clear();
+    }
+
     @Override
     public void onLog(SysLog sysLog) {
         Event event = EventParser.parse(sysLog);
