@@ -38,6 +38,9 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  */
 public abstract class SdJws {
+
+    public static final String CLAIM_NAME_ISSUER = "iss";
+
     private final JWSInput jwsInput;
     private final JsonNode payload;
 
@@ -158,7 +161,7 @@ public abstract class SdJws {
      * @param issuers List of trusted issuers
      */
     public void verifyIssClaim(List<String> issuers) throws VerificationException {
-        verifyClaimAgainstTrustedValues(issuers, "iss");
+        verifyClaimAgainstTrustedValues(issuers, CLAIM_NAME_ISSUER);
     }
 
     /**
