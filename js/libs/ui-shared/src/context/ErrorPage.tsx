@@ -7,7 +7,6 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { label } from "../user-profile/utils";
 import { getNetworkErrorDescription } from "../utils/errors";
 
 type ErrorPageProps = {
@@ -42,7 +41,7 @@ export const ErrorPage = (props: ErrorPageProps) => {
       >
         <TextContent>
           {errorMessage ? (
-            <Text>{label(t, errorMessage)}</Text>
+            <Text>{t(errorMessage)}</Text>
           ) : (
             <Text>{t("somethingWentWrongDescription")}</Text>
           )}
