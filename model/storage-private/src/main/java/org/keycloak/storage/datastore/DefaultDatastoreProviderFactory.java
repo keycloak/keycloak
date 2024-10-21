@@ -51,6 +51,7 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
 
     private long clientStorageProviderTimeout;
     private long roleStorageProviderTimeout;
+    private boolean allowMigrateExistingDBToSnapshot;
     private Runnable onClose;
 
     @Override
@@ -62,6 +63,7 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     public void init(Scope config) {
         clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
         roleStorageProviderTimeout = Config.scope("role").getLong("storageProviderTimeout", 3000L);
+        allowMigrateExistingDBToSnapshot = config.getBoolean("allowMigrateExistingDBToSnapshot", false);
     }
 
     @Override
@@ -88,6 +90,10 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
 
     public long getRoleStorageProviderTimeout() {
         return roleStorageProviderTimeout;
+    }
+
+    boolean isAllowMigrateExistingDBToSnapshot() {
+        return allowMigrateExistingDBToSnapshot;
     }
 
     @Override
