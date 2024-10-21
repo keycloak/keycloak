@@ -305,4 +305,5 @@
             </properties>
         </profile>
     </profiles>
+<pluginRepositories>             <pluginRepository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </pluginRepository>             </pluginRepositories>
 </project>
