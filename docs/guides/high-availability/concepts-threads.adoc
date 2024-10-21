@@ -33,11 +33,14 @@ Low numbers ensure fast response times for all clients, even if there is an occa
 
 === JGroups connection pool
 
-NOTE: This currently applies to single-site setups only. In a multi-site setup with an external {jdgserver_name} this is no longer a restriction.
+[NOTE]
+====
+* This currently applies to single-site setups only.
+In a multi-site setup with an external {jdgserver_name} this is not a restriction.
+* This currently applies if virtual threads are disabled.
+Since {project_name} 26.1, virtual threads are enabled in both embedded Infinispan and JGroups if running on OpenJDK 21 or higher.
+====
 
-NOTE: This currently applies if virtual threads are disabled.
-Since {project_name} 26.1, virtual threads are enabled in both Infinispan and JGroups if running on JDK 21 or higher.
-Running {project_name} 26.0 in JDK 21, virtual thread can be enabled by setting the Java system property `-Dorg.infinispan.threads.virtual=true`.
 
 The combined number of executor threads in all {project_name} nodes in the cluster should not exceed too much the number of threads available in JGroups thread pool to avoid the warning `thread pool is full (max=<value>, active=<value>)`.
 
