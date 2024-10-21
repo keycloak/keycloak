@@ -24,4 +24,8 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface EventListenerProviderFactory extends ProviderFactory<EventListenerProvider> {
 
+    default boolean isGlobal() {
+        return false;
+    }
+
 }
