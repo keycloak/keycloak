@@ -72,6 +72,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "CollectionToStreamMapper",
+        "type_id" : 65609,
+        "fields" : [ ]
+      }, {
         "name" : "GroupListPredicate",
         "type_id" : 65568,
         "fields" : [ {
@@ -80,6 +84,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "AuthClientSessionSetMapper",
+        "type_id" : 65608,
+        "fields" : [ ]
       }, {
         "name" : "RemoveUserSessionsEvent",
         "type_id" : 65564,
@@ -924,6 +932,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "MapEntryToKeyMapper",
+        "type_id" : 65611,
+        "fields" : [ ]
+      }, {
         "name" : "ClientScopeRemovedEvent",
         "type_id" : 65579,
         "fields" : [ {
@@ -1103,6 +1115,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "GroupAndCountCollectorSupplier",
+        "type_id" : 65610,
+        "fields" : [ ]
+      }, {
         "name" : "ReplaceFunction",
         "type_id" : 65656,
         "fields" : [ {
@@ -1267,6 +1283,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "SessionUnwrapMapper",
+        "type_id" : 65612,
+        "fields" : [ ]
       }, {
         "name" : "InIdentityProviderPredicate",
         "type_id" : 65572,
