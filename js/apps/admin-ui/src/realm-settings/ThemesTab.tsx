@@ -45,6 +45,7 @@ export const RealmSettingsThemesTab = ({
         <FormProvider {...form}>
           <DefaultSwitchControl
             name="attributes.darkMode"
+            labelIcon={t("darkModeEnabledHelp")}
             label={t("darkModeEnabled")}
             defaultValue="true"
             stringify
