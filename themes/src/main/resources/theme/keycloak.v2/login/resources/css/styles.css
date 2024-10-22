@@ -88,6 +88,6 @@ hr {
 
 @media (min-width: 768px) {
     div.pf-v5-c-login__main-header {
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 70% 30%;
     }
 }
