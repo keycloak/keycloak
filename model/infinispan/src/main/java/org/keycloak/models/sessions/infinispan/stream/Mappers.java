@@ -22,7 +22,6 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -35,45 +34,20 @@ import java.util.stream.Stream;
 public class Mappers {
 
     public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, UserSessionEntity> userSessionEntity() {
-        return new UserSessionEntityMapper();
+        return SessionUnwrapMapper.getInstance();
     }
 
     public static Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> loginFailureId() {
-        return new LoginFailureIdMapper();
+        return MapEntryToKeyMapper.getInstance();
     }
 
-
-    private static class UserSessionEntityMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, UserSessionEntity>, Serializable {
-
-        @Override
-        public UserSessionEntity apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-            return entry.getValue().getEntity();
-        }
-
-    }
-
-    private static class LoginFailureIdMapper implements Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> {
-        @Override
-        public LoginFailureKey apply(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry) {
-            return entry.getKey();
-        }
-    }
-
-    private static class AuthClientSessionSetMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>> {
-
-        @Override
-        public Set<String> apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-            UserSessionEntity entity = entry.getValue().getEntity();
-            return entity.getAuthenticatedClientSessions().keySet();
-        }
-    }
-
+    @Deprecated(since = "26.0", forRemoval = true)
     public static <T> Stream<T> toStream(Collection<T> collection) {
         return collection.stream();
     }
 
     public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>> authClientSessionSetMapper() {
-        return new AuthClientSessionSetMapper();
+        return AuthClientSessionSetMapper.getInstance();
     }
 
 
