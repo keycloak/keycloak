@@ -13,7 +13,7 @@ runs:
 
     # Downloading Node.js often fails due to network issues, therefore we cache the artifacts downloaded by the frontend plugin.
     - uses: actions/cache@v4
-      name: Cache Node.js related artifacts
+      name: Cache Node.js and PNPM binaries
       with:
         path: |
           ~/.m2/repository/com/github/eirslett/node
