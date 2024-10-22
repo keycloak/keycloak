@@ -38,6 +38,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
@@ -105,6 +106,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -418,6 +420,19 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(dummyInt, rep.getWebAuthnPolicyPasswordlessCreateTimeout());
         assertTrue(rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister());
         assertEquals(Collections.singletonList("00000000-0000-0000-0000-000000000000"), rep.getWebAuthnPolicyPasswordlessAcceptableAaguids());
+
+        assertEquals(Stream.of(
+                        BrowserSecurityHeaders.X_FRAME_OPTIONS,
+                        BrowserSecurityHeaders.CONTENT_SECURITY_POLICY,
+                        BrowserSecurityHeaders.CONTENT_SECURITY_POLICY_REPORT_ONLY,
+                        BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS,
+                        BrowserSecurityHeaders.X_ROBOTS_TAG,
+                        BrowserSecurityHeaders.X_XSS_PROTECTION,
+                        BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY,
+                        BrowserSecurityHeaders.REFERRER_POLICY
+                ).collect(Collectors.toMap(BrowserSecurityHeaders::getKey, BrowserSecurityHeaders::getDefaultValue)),
+                rep.getBrowserSecurityHeaders()
+        );
     }
 
     @Test
