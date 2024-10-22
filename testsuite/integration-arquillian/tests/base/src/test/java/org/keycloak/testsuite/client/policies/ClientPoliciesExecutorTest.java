@@ -1541,4 +1541,48 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
 
     }
+
+    @Test
+    public void testExecutorsDuringRPLogout() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile((new ClientProfileBuilder())
+            .createProfile(PROFILE_NAME, "Test Profile")
+            .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                createSecureClientAuthenticatorExecutorConfig(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID,
+                    JWTClientSecretAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID), null))
+            .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policies
+        String roleAlphaName = "sample-client-role-alpha";
+        String roleZetaName = "sample-client-role-zeta";
+        json = (new ClientPoliciesBuilder())
+            .addPolicy((new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                    createClientRolesConditionConfig(Arrays.asList(roleAlphaName, roleZetaName)))
+                .addProfile(PROFILE_NAME).toRepresentation())
+            .toString();
+        updatePolicies(json);
+
+        // create a client without client role. It should be successful (policy not applied)
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("secret");
+        });
+
+        // login with clientIdAndSecret
+        OAuthClient.AccessTokenResponse res = successfulLogin(clientId, "secret");
+
+        // add role to the client
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        Assert.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
+        clientResource.roles().create(RoleBuilder.create().name(roleAlphaName).build());
+
+        // confirm RP-initiated logout failed
+        oauth.idTokenHint(res.getIdToken()).openLogout();
+        assertTrue(driver.getPageSource().contains("Configured client authentication method not allowed for client"));
+
+
+    }
 }
