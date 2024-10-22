@@ -232,7 +232,10 @@ export const GroupPickerDialog = ({
                   key={group.id}
                   group={group}
                   isRowDisabled={isRowDisabled}
-                  onSelect={setGroupId}
+                  onSelect={(groupId) => {
+                    setGroupId(groupId);
+                    setFirst(0);
+                  }}
                   type={type}
                   isSearching={isSearching}
                   setIsSearching={setIsSearching}
@@ -247,7 +250,10 @@ export const GroupPickerDialog = ({
                     key={g.id}
                     group={g}
                     isRowDisabled={isRowDisabled}
-                    onSelect={setGroupId}
+                    onSelect={(groupId) => {
+                      setGroupId(groupId);
+                      setFirst(0);
+                    }}
                     type={type}
                     isSearching={isSearching}
                     setIsSearching={setIsSearching}
