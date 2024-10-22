@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -491,7 +493,18 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
     }
+    
+    @Test
+    public void testHttpsPaths() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=\\some\\file");
 
+        String expected = "\\some\\file";
+        if (FileSystems.getDefault().getSeparator().equals("\\")) {
+            expected = "/some/file";
+        }
+        assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
+    }
+    
     @Test
     public void testCacheMaxCount() {
         int maxCount = 500;

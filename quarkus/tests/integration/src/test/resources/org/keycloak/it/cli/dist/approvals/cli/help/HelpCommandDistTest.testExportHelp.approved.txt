@@ -150,8 +150,8 @@ Truststore:
                        Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
                        DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
-                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
-                       containing those files that will be used as a system truststore.
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.
 
 Export:
 

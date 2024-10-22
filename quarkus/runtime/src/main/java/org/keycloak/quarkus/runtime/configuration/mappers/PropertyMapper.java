@@ -288,6 +288,8 @@ public class PropertyMapper<T> {
          * NOTE: This transformer will not apply to the mapFrom value. When using
          * {@link #mapFrom} you generally need a transformer specifically for the parent
          * value, see {@link #mapFrom(Option, BiFunction)}
+         * <p>
+         * The value passed into the transformer may be null if the property has no value set, and no default
          */
         public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
             this.mapper = mapper;
