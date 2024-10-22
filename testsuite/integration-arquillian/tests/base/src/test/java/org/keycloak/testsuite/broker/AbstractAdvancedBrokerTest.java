@@ -6,8 +6,6 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -22,7 +20,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -40,6 +37,7 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -567,7 +565,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             loginTotpPage.assertCurrent();
 
-            events.clear();
+            Map<String, Object> bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
+            assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
 
             // Login for 2 times with incorrect TOTP. This should temporarily disable the user
             loginTotpPage.login("bad-totp");
@@ -577,13 +576,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
             WaitUtils.waitForPageToLoad();
 
-            // wait for the disabled to come
-            events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)
-                    .realm(consumerRealmRep.getId())
-                    .user(user.getId())
-                    .client((String) null)
-                    .detail(Details.REASON, "brute_force_attack detected")
-                    .assertEvent(true, 5);
+            bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
+            assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
 
             // Login with valid TOTP. I should not be able to login
             loginTotpPage.login(totp.generateTOTP(totpSecret));
