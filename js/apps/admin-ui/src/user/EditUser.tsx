@@ -47,6 +47,7 @@ import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
+import { UserEvents } from "../events/UserEvents";
 import {
   UIUserRepresentation,
   UserFormFields,
@@ -112,6 +113,7 @@ export default function EditUser() {
   const consentsTab = useTab("consents");
   const identityProviderLinksTab = useTab("identity-provider-links");
   const sessionsTab = useTab("sessions");
+  const userEventsTab = useTab("user-events");
 
   useFetch(
     async () =>
@@ -424,6 +426,15 @@ export default function EditUser() {
               >
                 <UserSessions />
               </Tab>
+              {hasAccess("view-events") && (
+                <Tab
+                  data-testid="user-events-tab"
+                  title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                  {...userEventsTab}
+                >
+                  <UserEvents user={user.id} />
+                </Tab>
+              )}
             </RoutableTabs>
           </FormProvider>
         </UserProfileProvider>
