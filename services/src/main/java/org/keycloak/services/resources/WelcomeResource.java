@@ -43,6 +43,7 @@ import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
@@ -133,10 +134,16 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
-            expireCsrfCookie();
+            try {
+                ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
+                applianceBootstrap.createMasterRealmUser(username, password);
+            } catch (ModelException e) {
+                session.getTransactionManager().rollback();
+                logger.error("Error creating the administrative user", e);
+                return createWelcomePage(null, "Error creating the administrative user: " + e.getMessage());
+            }
 
-            ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-            applianceBootstrap.createMasterRealmUser(username, password);
+            expireCsrfCookie();
 
             shouldBootstrap.set(false);
             ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
