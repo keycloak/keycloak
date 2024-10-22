@@ -20,8 +20,7 @@ package org.keycloak.crypto;
 public enum ECCurve {
     P256,
     P384,
-    P521,
-    SECP256K1;
+    P521;
 
     /**
      * Convert standard EC curve names (and aliases) into this enum.
@@ -37,10 +36,8 @@ public enum ECCurve {
             case "P-521":
             case "secp521r1":
                 return P521;
-            case "secp256k1":
-                return SECP256K1;
             default:
-                throw new IllegalArgumentException("Unknown EC curve: " + crv);
+                throw new IllegalArgumentException("Unexpected EC curve: " + crv);
         }
     }
 }

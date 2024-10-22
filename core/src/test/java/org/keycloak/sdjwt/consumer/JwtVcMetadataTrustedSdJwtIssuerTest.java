@@ -93,6 +93,37 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
+    public void shouldResolveKeysToEmptyList_WhenJwtSpecifiesUnknownKid() throws Exception {
+        // Alter kid fields of all JWKs to publish, so as none is a match
+
+        JsonNode jwks = exampleJwks();
+        for (JsonNode jwk : jwks.get("keys")) {
+            ((ObjectNode) jwk).put("kid", jwk.get("kid").asText() + "-wont-match");
+        }
+
+        // JWT VC Metadata
+
+        String issuerUri = "https://issuer.example.com";
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.set("jwks", jwks);
+
+        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
+                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
+
+        // This JWT specifies a key ID in its header
+        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt("sdjwt/s20.1-sdjwt+kb--explicit-kid.txt");
+
+        // Act
+        List<SignatureVerifierContext> keys = trustedIssuer
+                .resolveIssuerVerifyingKeys(issuerSignedJWT);
+
+        // Despite three keys exposed on the metadata endpoint,
+        // none matches the kid constraint of the Issuer-signed JWT.
+        assertEquals(0, keys.size());
+    }
+
+    @Test
     public void shouldRejectNonHttpsIssuerURIs() {
         String issuerUri = "http://issuer.example.com"; // not https
 
@@ -232,6 +263,40 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
+    public void shouldFailOnPublishedJwksWithDuplicateKid() throws JsonProcessingException {
+        // This JWT specifies a key ID in its header
+
+        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt("sdjwt/s20.1-sdjwt+kb--explicit-kid.txt");
+
+        // Set the same kid to all JWKs to publish, which is problematic
+
+        String kid = issuerSignedJWT.getHeader().getKeyId();
+        JsonNode jwks = exampleJwks();
+        for (JsonNode jwk : jwks.get("keys")) {
+            ((ObjectNode) jwk).put("kid", kid);
+        }
+
+        // JWT VC Metadata
+
+        String issuerUri = "https://issuer.example.com";
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.set("jwks", jwks);
+
+        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
+                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
+
+        // Act and assert
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
+        );
+
+        assertThat(exception.getMessage(),
+                endsWith(String.format("Cannot choose between multiple exposed JWKs with same kid: %s", kid)));
+    }
+
+    @Test
     public void shouldFailOnIOErrorWhileFetchingMetadata() throws JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
 
@@ -293,6 +358,14 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         return issuerSignedJWT;
     }
 
+    private JsonNode exampleJwks() throws JsonProcessingException {
+        return SdJwtUtils.mapper.readTree(
+                TestUtils.readFileAsString(getClass(),
+                        "sdjwt/s30.1-jwt-vc-metadata-jwks.json"
+                )
+        );
+    }
+
     private HttpDataFetcher mockHttpDataFetcher() throws JsonProcessingException {
         ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
         metadata.put("issuer", "https://issuer.example.com");
@@ -307,12 +380,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     private HttpDataFetcher mockHttpDataFetcherWithMetadata(
             String issuer, JsonNode metadata
     ) throws JsonProcessingException {
-        JsonNode jwks = SdJwtUtils.mapper.readTree(
-                TestUtils.readFileAsString(getClass(),
-                        "sdjwt/s30.1-jwt-vc-metadata-jwks.json"
-                ));
-
-        return mockHttpDataFetcherWithMetadataAndJwks(issuer, metadata, jwks);
+        return mockHttpDataFetcherWithMetadataAndJwks(issuer, metadata, exampleJwks());
     }
 
     private HttpDataFetcher mockHttpDataFetcherWithMetadataAndJwks(

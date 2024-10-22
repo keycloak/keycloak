@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A trusted Issuer for running SD-JWT VP verification.
@@ -105,19 +106,27 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         // Fetch exposed JWKs
         List<JWK> jwks = fetchIssuerMetadataJwks(iss);
 
-        // If kid specified, only consider the first matching key
+        // If kid specified, only consider the (single) matching key
         if (kid != null) {
-            jwks = jwks.stream()
+            List<JWK> matchingJwks = jwks.stream()
                     .filter(jwk -> {
                         String jwkKid = jwk.getKeyId();
                         return jwkKid != null && jwkKid.equals(kid);
                     })
-                    .findFirst()
-                    .map(Collections::singletonList)
-                    .orElse(Collections.emptyList());
+                    .collect(Collectors.toList());
+
+            if (matchingJwks.size() > 1) {
+                throw new VerificationException(
+                        String.format("Cannot choose between multiple exposed JWKs with same kid: %s", kid)
+                );
+            }
+
+            jwks = matchingJwks.isEmpty()
+                    ? Collections.emptyList()
+                    : Collections.singletonList(matchingJwks.get(0));
         }
 
-        // Build JWSVerifier's
+        // Build SignatureVerifierContext's
         List<SignatureVerifierContext> verifiers = new ArrayList<>();
         for (JWK jwk : jwks) {
             try {
