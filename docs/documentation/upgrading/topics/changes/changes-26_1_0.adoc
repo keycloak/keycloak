@@ -28,3 +28,20 @@ To disable the virtual threads, add one of the Java system properties combinatio
 * `-Dorg.infinispan.threads.virtual=false`: disables virtual thread in both Infinispan and JGroups.
 * `-Djgroups.thread.virtual=false`: disables virtual threads only in JGroups.
 * `-Dorg.infinispan.threads.virtual=false -Djgroups.thread.virtual=true`: disables virtual threads only in Infinispan.
+
+= Default transport stack changed to JDBC_PING2 for distributed caches
+
+Previous versions of {project_name} used as a default UDP multicast to discover other nodes to form a cluster and to synchronize the replicated caches of {project_name}.
+This required multicast to be available and to be configured correctly, which is usually not the case in cloud environments.
+
+Starting with this version, the default changes to a configuration of JDBC_PING2 which uses {project_name}'s database to discover other nodes.
+As this removes the need for multicast network capabilities, this is a simplification and a drop-in replacement.
+
+To enable the previous behavior, choose the transport stack `udp`.
+
+The {project_name} Operator will continue to configure `kubernetes` as a transport stack.
+
+= Defining dependencies between provider factories
+
+When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
+See the Javadoc for a detailed description.
