@@ -85,3 +85,8 @@ hr {
     margin-top: var(--pf-v5-global--spacer--sm);
     margin-bottom: var(--pf-v5-global--spacer--md);
 }
+
+.kc-password-strength-bar {
+    --pf-v5-c-progress__bar--Height: var(--pf-v5-global--spacer--sm);
+    grid-gap: 0;
+}
