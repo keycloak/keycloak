@@ -32,7 +32,7 @@ public class ProviderConfigProperty {
     /**
      * Integral Value
      */
-    public static final String INT_TYPE="int";
+    public static final String INTEGER_TYPE="Integer";
 
     /**
      * Arbitrary number, e.g. integral, floating-point.
