@@ -1,9 +1,13 @@
-package org.keycloak.common.profile;
+package org.keycloak.testsuite;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+
 
 public class PropertiesFileProfileConfigResolver extends PropertiesProfileConfigResolver {
 
