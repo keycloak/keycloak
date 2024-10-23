@@ -85,3 +85,9 @@ hr {
     margin-top: var(--pf-v5-global--spacer--sm);
     margin-bottom: var(--pf-v5-global--spacer--md);
 }
+
+@media (min-width: 768px) {
+    div.pf-v5-c-login__main-header {
+        grid-template-columns: 70% 30%;
+    }
+}
