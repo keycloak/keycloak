@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import org.hamcrest.CoreMatchers;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -48,6 +49,11 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.test.ConfigurationTest.setSystemProperty;
 
 public class IgnoredArtifactsTest {
+    
+    @BeforeClass
+    public static void resetConfigruation() {
+        ConfigurationTest.createConfig(); // make sure we're dealing with a clean config
+    }
 
     @Test
     public void fipsDisabled() {
