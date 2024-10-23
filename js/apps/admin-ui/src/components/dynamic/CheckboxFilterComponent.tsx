@@ -6,14 +6,22 @@ import {
   SelectOption,
 } from "@patternfly/react-core";
 
+type CheckboxFilterOptions = {
+  value: string;
+  label: string;
+};
+
 type CheckboxFilterComponentProps = {
   filterPlaceholderText: string;
   isDisabled?: boolean;
   isOpen: boolean;
-  options: { value: string; label: string }[];
+  options: CheckboxFilterOptions[];
   onOpenChange: (isOpen: boolean) => void;
   onToggleClick: () => void;
-  onSelect: (event: any, selection: any) => void;
+  onSelect: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    selection: string,
+  ) => void;
   selectedItems: string[];
   width?: string;
 };
@@ -55,7 +63,7 @@ export const CheckboxFilterComponent = ({
       isOpen={isOpen}
       selected={selectedItems}
       onSelect={(event, value) => {
-        onSelect(event, value?.toString());
+        onSelect(event as React.MouseEvent<HTMLButtonElement>, value as string);
       }}
       onOpenChange={onOpenChange}
       toggle={toggle}
