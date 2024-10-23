@@ -306,7 +306,7 @@ public class AuthenticationManager {
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession =
-                createOrJoinLogoutSession(session, realm, asm, userSession, false);
+                createOrJoinLogoutSession(session, realm, asm, userSession, false, false);
 
         boolean userSessionOnlyHasLoggedOutClients = false;
         try {
@@ -341,7 +341,8 @@ public class AuthenticationManager {
         return backchannelLogoutResponse;
     }
 
-    public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm, final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie) {
+    public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
+            final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
         if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
             return logoutSession;
@@ -384,14 +385,24 @@ public class AuthenticationManager {
                 .filter( authSession -> AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSession.getAction()))
                 .findFirst();
 
-        AuthenticationSessionModel logoutAuthSession;
+        AuthenticationSessionModel logoutAuthSession = null, prevAuthSession = null;
         if (found.isPresent()) {
-            logoutAuthSession = found.get();
-            logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
-        } else {
+            prevAuthSession = found.get();
+            if (!initiateLogout || client.getId().equals(prevAuthSession.getClient().getId())) {
+                logoutAuthSession = prevAuthSession;
+                logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
+            }
+        }
+
+        if (logoutAuthSession == null) {
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
+            if (prevAuthSession != null) {
+                // remove previous logout session for the other client
+                rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
+                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+            }
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
         session.getContext().setClient(client);
@@ -658,7 +669,7 @@ public class AuthenticationManager {
         }
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
 
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
@@ -696,7 +707,7 @@ public class AuthenticationManager {
 
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
 
         Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
         if (response != null) {
