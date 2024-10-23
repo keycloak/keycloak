@@ -8,17 +8,19 @@ import {
 
 type CheckboxFilterComponentProps = {
   filterPlaceholderText: string;
+  isDisabled?: boolean;
   isOpen: boolean;
   options: { value: string; label: string }[];
   onOpenChange: (isOpen: boolean) => void;
   onToggleClick: () => void;
   onSelect: (event: any, selection: any) => void;
   selectedItems: string[];
-  width: string;
+  width?: string;
 };
 
 export const CheckboxFilterComponent = ({
   filterPlaceholderText,
+  isDisabled,
   isOpen,
   options,
   onOpenChange,
@@ -32,6 +34,7 @@ export const CheckboxFilterComponent = ({
       ref={toggleRef}
       onClick={onToggleClick}
       isExpanded={isOpen}
+      isDisabled={isDisabled}
       style={{
         width,
       }}

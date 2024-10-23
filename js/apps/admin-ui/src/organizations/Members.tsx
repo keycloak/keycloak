@@ -54,6 +54,7 @@ export const Members = () => {
   const [filteredMembershipTypes, setFilteredMembershipTypes] = useState<
     string[]
   >([]);
+  const [filterDisabled, setFilterDisabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const membershipOptions = [
@@ -87,18 +88,31 @@ export const Members = () => {
           search,
         });
 
-      if (filteredMembershipTypes.length === 0) {
-        return memberships;
-      }
+      const formattedMemberships = memberships.map((membership) => ({
+        ...membership,
+        membershipType: capitalizeFirstLetterFormatter()(
+          membership.membershipType,
+        ) as string,
+      }));
 
-      const upperCaseSelectedItems = filteredMembershipTypes.map((item) =>
-        item.toUpperCase(),
+      const hasManaged = formattedMemberships.some(
+        (membership) =>
+          membership.membershipType === membershipOptions[0].value,
+      );
+      const hasUnmanaged = formattedMemberships.some(
+        (membership) =>
+          membership.membershipType === membershipOptions[1].value,
       );
 
-      const filteredMemberships = memberships.filter((membership) => {
-        const membershipType = membership.membershipType || "";
-        return upperCaseSelectedItems.includes(membershipType.toUpperCase());
-      });
+      setFilterDisabled(!(hasManaged && hasUnmanaged));
+
+      if (filteredMembershipTypes.length === 0) {
+        return formattedMemberships;
+      }
+
+      const filteredMemberships = formattedMemberships.filter((membership) =>
+        filteredMembershipTypes.includes(membership.membershipType || ""),
+      );
 
       return filteredMemberships;
     } catch (error) {
@@ -213,6 +227,7 @@ export const Members = () => {
             <ToolbarItem>
               <CheckboxFilterComponent
                 filterPlaceholderText={t("filterByMembershipType")}
+                isDisabled={filterDisabled}
                 isOpen={isOpen}
                 options={membershipOptions}
                 onOpenChange={(nextOpen) => setIsOpen(nextOpen)}

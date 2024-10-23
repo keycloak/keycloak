@@ -27,6 +27,7 @@ import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { capitalizeFirstLetterFormatter } from "../util";
+import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
 
 type OrganizationProps = {
   user: UserRepresentation;
@@ -44,10 +45,8 @@ export const Organizations = ({ user }: OrganizationProps) => {
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-
   const [joinToggle, toggle, setJoinToggle] = useToggle();
   const [shouldJoin, setShouldJoin] = useState(true);
   const [openOrganizationPicker, setOpenOrganizationPicker] = useState(false);
@@ -55,6 +54,32 @@ export const Organizations = ({ user }: OrganizationProps) => {
   const [selectedOrgs, setSelectedOrgs] = useState<
     OrganizationRepresentation[]
   >([]);
+  const [filteredMembershipTypes, setFilteredMembershipTypes] = useState<
+    string[]
+  >([]);
+  const [filterDisabled, setFilterDisabled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const membershipOptions = [
+    { value: "Managed", label: "Managed" },
+    { value: "Unmanaged", label: "Unmanaged" },
+  ];
+
+  const onToggleClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const onSelect = (_event: any, value: string) => {
+    if (filteredMembershipTypes.includes(value)) {
+      setFilteredMembershipTypes(
+        filteredMembershipTypes.filter((item) => item !== value),
+      );
+    } else {
+      setFilteredMembershipTypes([...filteredMembershipTypes, value]);
+    }
+    setIsOpen(false);
+    refresh();
+  };
 
   useFetch(
     async () => {
@@ -85,13 +110,28 @@ export const Organizations = ({ user }: OrganizationProps) => {
         }),
       );
 
+      const hasManaged = userOrganizationsWithMembershipTypes.some((org) =>
+        org.membershipType?.includes(membershipOptions[0].value),
+      );
+      const hasUnmanaged = userOrganizationsWithMembershipTypes.some((org) =>
+        org.membershipType?.includes(membershipOptions[1].value),
+      );
+
+      setFilterDisabled(!(hasManaged && hasUnmanaged));
+
+      if (filteredMembershipTypes.length > 0) {
+        return userOrganizationsWithMembershipTypes.filter((org) =>
+          org.membershipType?.some((type) =>
+            filteredMembershipTypes.includes((type || "").toString()),
+          ),
+        );
+      }
+
       return userOrganizationsWithMembershipTypes;
     },
     setUserOrgs,
-    [key],
+    [key, filteredMembershipTypes],
   );
-
-  console.log("userOrgs: ", userOrgs);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "removeConfirmOrganizationTitle",
@@ -234,6 +274,19 @@ export const Organizations = ({ user }: OrganizationProps) => {
               >
                 {t("remove")}
               </Button>
+            </ToolbarItem>
+            <ToolbarItem>
+              <CheckboxFilterComponent
+                filterPlaceholderText={t("filterByMembershipType")}
+                isDisabled={filterDisabled}
+                isOpen={isOpen}
+                options={membershipOptions}
+                onOpenChange={(nextOpen) => setIsOpen(nextOpen)}
+                onToggleClick={onToggleClick}
+                onSelect={onSelect}
+                selectedItems={filteredMembershipTypes}
+                width={"290px"}
+              />
             </ToolbarItem>
           </>
         }
