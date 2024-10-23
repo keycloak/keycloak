@@ -170,8 +170,17 @@ public class ExportImportManager {
                 }
                 
                 return filesToImport.stream().map(file -> () -> {
-                    ExportImportConfig.setFile(file);
-                    return session.getProvider(ImportProvider.class, providerId);
+                    // we need a new session to pickup the static system property
+                    // file setting - it is picked up by the provider only at create time
+                    // this will eventually need to be consolidated with the master existance check
+                    // to prevent double parsing
+                    KeycloakSession newSession = session.getKeycloakSessionFactory().create();
+                    try {
+                        ExportImportConfig.setFile(file);
+                        return newSession.getProvider(ImportProvider.class, providerId);
+                    } finally {
+                        newSession.close();
+                    }
                 });
             }
             return Stream.empty();
