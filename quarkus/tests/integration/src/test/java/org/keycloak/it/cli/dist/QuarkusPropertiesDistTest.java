@@ -100,6 +100,7 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(6)
+    @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
     void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));

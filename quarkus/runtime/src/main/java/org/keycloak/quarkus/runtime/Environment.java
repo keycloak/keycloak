@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -36,6 +34,7 @@ import io.smallrye.config.SmallRyeConfig;
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -132,7 +131,7 @@ public final class Environment {
             return true;
         }
 
-        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null));
+        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(Configuration.getNonPersistedConfigValue(org.keycloak.common.util.Environment.PROFILE).getValue());
     }
 
     public static boolean isDevProfile(){
@@ -219,6 +218,10 @@ public final class Environment {
 
     public static boolean isRebuildCheck() {
         return Boolean.getBoolean("kc.config.build-and-exit");
+    }
+    
+    public static void setRebuildCheck() {
+        System.setProperty("kc.config.build-and-exit", "true");
     }
 
     public static boolean isRebuilt() {

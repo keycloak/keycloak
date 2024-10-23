@@ -26,10 +26,13 @@ import static org.junit.Assert.assertNull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -75,10 +78,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         protected void exitOnFailure(int exitCode, CommandLine cmd) {
             this.exitCode = exitCode;
         }
-
-        protected int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
-            throw new AssertionError("Should not reaugment");
-        };
 
         @Override
         public void parseAndRun(List<String> cliArgs) {
@@ -244,4 +243,22 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getOutString(), containsString("The following run time options were found, but will be ignored during build time: kc.spi-something-pass"));
     }
     
+    @Test
+    public void failIfOptimizedUsedForFirstStartupExport() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("The '--optimized' flag was used for first ever server start."));
+    }
+    
+    @Test
+    public void testOptimizedReaugmentationMessage() {
+        // setup the conditions to be a reaug
+        Environment.setRebuildCheck(); // we be reset by the system properties logic
+        addPersistedConfigValues(Map.of(Configuration.KC_OPTIMIZED, "true", "kc.db", "dev-file"));
+        
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--features=docker", "--hostname=name", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("features=<unset> > features=docker"));
+    }
+
 }
