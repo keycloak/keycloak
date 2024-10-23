@@ -76,6 +76,17 @@ public class StartCommandDistTest {
         result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
         result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
+    
+    @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
+        CLIResult result = dist.run("build");
+        result.assertBuild();
+
+        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        result.assertStarted();
+    }
 
     @Test
     @Launch({ "--profile=dev", "start" })
