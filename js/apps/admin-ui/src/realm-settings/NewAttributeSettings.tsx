@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-function */
+
 import type {
   UserProfileAttribute,
   UserProfileConfig,
@@ -32,6 +32,7 @@ import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotati
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
+import { add } from "lodash-es";
 
 type TranslationForm = {
   locale: string;
@@ -175,7 +176,7 @@ export default function NewAttributeSettings() {
 
   useFetch(
     async () => {
-      const translationsToSave: any[] = [];
+      const translationsToSave: Translations[] = [];
 
       await Promise.all(
         combinedLocales.map(async (selectedLocale) => {
@@ -202,48 +203,34 @@ export default function NewAttributeSettings() {
                 value,
               }));
 
-            const formTranslations = formData.translations || [];
-            const existingTranslation = formTranslations.find(
-              (t: any) => t.locale === selectedLocale,
-            );
-
-            if (existingTranslation) {
-              filteredTranslations.push({
-                locale: selectedLocale,
-                value: existingTranslation.value || "",
+            if (filteredTranslations.length > 0) {
+              translationsToSave.push({
+                key: formattedKey,
+                translations: filteredTranslations,
               });
             }
-
-            translationsToSave.push({
-              key: formattedKey,
-              translations:
-                filteredTranslations.length > 0
-                  ? filteredTranslations
-                  : [{ locale: selectedLocale, value: "" }],
-            });
           } catch (error) {
-            console.error(
-              `Error fetching translations for ${selectedLocale}:`,
-              error,
-            );
+            addError("errorSavingTranslations", error);
           }
         }),
       );
 
-      setTranslationsData({
-        key: translationsToSave[0].key,
-        translations: translationsToSave.flatMap(
-          (translationData: any) => translationData.translations,
-        ),
-      });
-      form.setValue(
-        "translations",
-        translationsToSave.flatMap(
-          (translationData: any) => translationData.translations,
-        ),
-      );
+      return translationsToSave;
     },
-    () => {},
+    (translationsToSave) => {
+      if (translationsToSave && translationsToSave.length > 0) {
+        const allTranslations = translationsToSave.flatMap(
+          (translation) => translation.translations,
+        );
+
+        setTranslationsData({
+          key: translationsToSave[0].key,
+          translations: allTranslations,
+        });
+
+        form.setValue("translations", allTranslations);
+      }
+    },
     [combinedLocales, realmName, form],
   );
 
@@ -308,9 +295,7 @@ export default function NewAttributeSettings() {
               translation.value,
             );
           } catch (error) {
-            console.error(
-              `Error saving translation for ${translation.locale}: ${error}`,
-            );
+            addError(t("errorSavingTranslations"), error);
           }
         });
 
