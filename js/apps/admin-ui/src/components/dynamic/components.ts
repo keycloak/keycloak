@@ -33,7 +33,7 @@ export type NumberComponentProps = ComponentProps & {
 type ComponentType =
   | "String"
   | "Text"
-  | "int"
+  | "Integer"
   | "Number"
   | "boolean"
   | "List"
@@ -55,7 +55,7 @@ export const COMPONENTS: {
   String: StringComponent,
   Text: TextComponent,
   boolean: BooleanComponent,
-  int: IntComponent,
+  Integer: IntComponent,
   Number: NumberComponent,
   List: ListComponent,
   Role: RoleComponent,
