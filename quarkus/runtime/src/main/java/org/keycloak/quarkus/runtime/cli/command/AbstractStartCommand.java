@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -50,7 +49,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
             executionError(spec.commandLine(), Messages.optimizedUsedForFirstStartup());
         }
         
-        picocli.start(cmd);
+        picocli.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
     }
 
     protected void doBeforeRun() {

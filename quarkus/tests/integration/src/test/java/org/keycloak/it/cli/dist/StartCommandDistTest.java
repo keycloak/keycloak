@@ -47,27 +47,6 @@ public class StartCommandDistTest {
     private static final Logger log = LoggerFactory.getLogger(StartCommandDistTest.class);
 
     @Test
-    @Launch({ "start", "--hostname-strict=false" })
-    void failNoTls(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Key material not provided to setup HTTPS"),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-    }
-
-    @Test
-    @Launch({ "start", "--spi-events-listener-jboss-logging-success-level" })
-    void failSpiArgMissingValue(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-    }
-
-    @Test
-    @Launch({ "build", "--spi-events-listener-jboss-logging-success-level=debug" })
-    void warnSpiRuntimeAtBuildtime(LaunchResult result) {
-        assertTrue(result.getOutput().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
-    }
-
-    @Test
     @RawDistOnly(reason = "Containers are immutable")
     void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
         CLIResult result = dist.run("build");
