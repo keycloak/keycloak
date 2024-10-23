@@ -14,6 +14,9 @@ import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
@@ -59,6 +62,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by st on 29/03/17.
@@ -184,6 +188,7 @@ public class AccountConsole implements AccountResourceProvider {
         });
 
         map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+        map.put("isLinkedAccountsEnabled", isLinkedAccountsEnabled(user));
 
         boolean deleteAccountAllowed = false;
         boolean isViewGroupsEnabled = false;
@@ -368,5 +373,21 @@ public class AccountConsole implements AccountResourceProvider {
         }
 
         return new String[]{referrer, referrerName, referrerUri};
+    }
+
+    private boolean isLinkedAccountsEnabled(UserModel user) {
+        if (user == null) {
+            return false;
+        }
+
+        IdentityProviderStorageProvider identityProviders = session.identityProviders();
+        Stream<IdentityProviderModel> realmBrokers = identityProviders.getAllStream(Map.of(
+                IdentityProviderModel.ENABLED, "true",
+                IdentityProviderModel.ORGANIZATION_ID, ""), 0, 1);
+        Stream<IdentityProviderModel> linkedBrokers = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(FederatedIdentityModel::getIdentityProvider)
+                .map(identityProviders::getByAlias);
+
+        return Stream.concat(realmBrokers, linkedBrokers).findAny().isPresent();
     }
 }
