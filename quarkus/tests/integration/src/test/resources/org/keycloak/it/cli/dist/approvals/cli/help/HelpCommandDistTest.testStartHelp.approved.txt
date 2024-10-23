@@ -72,9 +72,9 @@ Cache:
                        as well and the related configuration in XML file should not be present.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Possible values are: tcp, udp, kubernetes, ec2, azure, google, or a custom
-                       one.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default:
+                       'jgroups-ping-udp'. Possible values are: tcp, udp, jgroups-ping,
+                       jgroups-ping-udp, kubernetes, ec2, azure, google, or a custom one.
 
 Config:
 
