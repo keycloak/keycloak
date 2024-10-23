@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
@@ -131,9 +132,12 @@ public class PropertyMapper<T> {
         } 
 
         if (config != null && config.getValue() != null) {
-            config = transformValue(name, config.getValue(), context, config.getConfigSourceName(), parentValue);
+            config = transformValue(name, config, context, parentValue);
         } else {
-            config = transformValue(name, this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null), context, null, false);
+            String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
+            config = transformValue(name, new ConfigValueBuilder().withName(name)
+                    .withValue(defaultValue).withRawValue(defaultValue).build(),
+                    context, false);
         }
         
         if (config != null) {
@@ -232,24 +236,27 @@ public class PropertyMapper<T> {
         return option.getDeprecatedMetadata();
     }
 
-    private ConfigValue transformValue(String name, String value, ConfigSourceInterceptorContext context, String configSourceName, boolean parentValue) {
+    private ConfigValue transformValue(String name, ConfigValue configValue, ConfigSourceInterceptorContext context, boolean parentValue) {
+        String value = configValue.getValue();
         String mappedValue = value;
         
+        boolean mapped = false;
         var theMapper = parentValue ? this.parentMapper : this.mapper;
         if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
             mappedValue = theMapper.apply(value, context);
+            mapped = true;
         }
         
         if (value == null && mappedValue == null) {
             return null;
         }
+        
+        if (!mapped && name.equals(configValue.getName())) {
+            return configValue;
+        }
 
-        return ConfigValue.builder()
-                .withName(name)
-                .withValue(mappedValue)
-                .withRawValue(value)
-                .withConfigSourceName(configSourceName)
-                .build();
+        // by unsetting the ordinal this will not be seen as directly modified by the user
+        return configValue.from().withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {

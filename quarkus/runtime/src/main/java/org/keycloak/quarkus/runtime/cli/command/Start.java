@@ -17,17 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-
-import java.util.Optional;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -52,22 +48,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        devProfileNotAllowedError();
-    }
-
-    private void devProfileNotAllowedError() {
-        if (isDevProfileNotAllowed()) {
+        Environment.updateProfile(true);
+        if (Environment.isDevProfile()) {
             executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
         }
-    }
-
-    public static boolean isDevProfileNotAllowed() {
-        Optional<String> currentProfile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile());
-        Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
-
-        setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
-
-        return Environment.isDevProfile();
     }
 
     @Override

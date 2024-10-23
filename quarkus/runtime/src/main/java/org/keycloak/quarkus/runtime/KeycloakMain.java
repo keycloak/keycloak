@@ -19,12 +19,9 @@ package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.wasBuildEverRun;
-import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -76,19 +73,15 @@ public class KeycloakMain implements QuarkusApplication {
             handleUsageError(e.getMessage());
             return;
         }
-
+        
         if (cliArgs.isEmpty()) {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
         } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
 
-            if (!wasBuildEverRun()) {
-                handleUsageError(Messages.optimizedUsedForFirstStartup());
-                return;
-            }
-
-            if (isDevProfileNotAllowed()) {
+            Environment.updateProfile(true);
+            if (Environment.isDevProfile()) {
                 handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
                 return;
             }
@@ -156,7 +149,7 @@ public class KeycloakMain implements QuarkusApplication {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
-                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
+                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                             cause.getCause());
                 }
 
@@ -168,7 +161,7 @@ public class KeycloakMain implements QuarkusApplication {
             }, args);
         } catch (Throwable cause) {
             errorHandler.error(errStream,
-                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
+                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
             System.exit(1);
         }
