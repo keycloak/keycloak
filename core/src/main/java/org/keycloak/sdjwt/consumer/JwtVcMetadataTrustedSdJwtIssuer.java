@@ -105,6 +105,11 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
 
         // Fetch exposed JWKs
         List<JWK> jwks = fetchIssuerMetadataJwks(iss);
+        if (jwks.isEmpty()) {
+            throw new VerificationException(
+                    String.format("Issuer JWKs were unexpectedly resolved to an empty list. Issuer URI: %s", iss)
+            );
+        }
 
         // If kid specified, only consider the (single) matching key
         if (kid != null) {
@@ -115,15 +120,19 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
                     })
                     .collect(Collectors.toList());
 
+            if (matchingJwks.isEmpty()) {
+                throw new VerificationException(
+                        String.format("No published JWK was found to match kid: %s", kid)
+                );
+            }
+
             if (matchingJwks.size() > 1) {
                 throw new VerificationException(
                         String.format("Cannot choose between multiple exposed JWKs with same kid: %s", kid)
                 );
             }
 
-            jwks = matchingJwks.isEmpty()
-                    ? Collections.emptyList()
-                    : Collections.singletonList(matchingJwks.get(0));
+            jwks = Collections.singletonList(matchingJwks.get(0));
         }
 
         // Build SignatureVerifierContext's

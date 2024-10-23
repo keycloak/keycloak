@@ -26,6 +26,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.SdJws;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -93,37 +94,6 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
-    public void shouldResolveKeysToEmptyList_WhenJwtSpecifiesUnknownKid() throws Exception {
-        // Alter kid fields of all JWKs to publish, so as none is a match
-
-        JsonNode jwks = exampleJwks();
-        for (JsonNode jwk : jwks.get("keys")) {
-            ((ObjectNode) jwk).put("kid", jwk.get("kid").asText() + "-wont-match");
-        }
-
-        // JWT VC Metadata
-
-        String issuerUri = "https://issuer.example.com";
-        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
-        metadata.put("issuer", issuerUri);
-        metadata.set("jwks", jwks);
-
-        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
-
-        // This JWT specifies a key ID in its header
-        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt("sdjwt/s20.1-sdjwt+kb--explicit-kid.txt");
-
-        // Act
-        List<SignatureVerifierContext> keys = trustedIssuer
-                .resolveIssuerVerifyingKeys(issuerSignedJWT);
-
-        // Despite three keys exposed on the metadata endpoint,
-        // none matches the kid constraint of the Issuer-signed JWT.
-        assertEquals(0, keys.size());
-    }
-
-    @Test
     public void shouldRejectNonHttpsIssuerURIs() {
         String issuerUri = "http://issuer.example.com"; // not https
 
@@ -185,7 +155,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         ));
 
         genericTestShouldFail(
-                issuerUri,
+                exampleIssuerSignedJwt(),
                 mockHttpDataFetcherWithMetadata(issuerUri, metadata),
                 "A potential JWK was retrieved but found invalid",
                 "Unsupported or invalid JWK"
@@ -200,7 +170,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         metadata.put("issuer", "https://another-issuer.example.com");
 
         genericTestShouldFail(
-                issuerUri,
+                exampleIssuerSignedJwt(),
                 mockHttpDataFetcherWithMetadata(issuerUri, metadata),
                 "Unexpected metadata's issuer",
                 null
@@ -216,7 +186,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         metadata.set("issuer", SdJwtUtils.mapper.readTree("{}"));
 
         genericTestShouldFail(
-                issuerUri,
+                exampleIssuerSignedJwt(),
                 mockHttpDataFetcherWithMetadata(issuerUri, metadata),
                 "Failed to parse exposed JWT VC Metadata",
                 null
@@ -238,7 +208,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
             metadata.put("jwks_uri", "https://issuer.example.com/api/vci/jwks");
 
             genericTestShouldFail(
-                    issuerUri,
+                    exampleIssuerSignedJwt(),
                     mockHttpDataFetcherWithMetadataAndJwks(issuerUri, metadata, jwks),
                     "Failed to parse exposed JWKS",
                     null
@@ -255,9 +225,56 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         metadata.put("issuer", issuerUri);
 
         genericTestShouldFail(
-                issuerUri,
+                exampleIssuerSignedJwt(),
                 mockHttpDataFetcherWithMetadata(issuerUri, metadata),
                 String.format("Could not resolve issuer JWKs with URI: %s", issuerUri),
+                null
+        );
+    }
+
+    @Test
+    public void shouldFailOnEmptyPublishedJwkList() throws Exception {
+        // This JWKS to publish has an empty list of keys, which is unexpected.
+        JsonNode jwks = SdJwtUtils.mapper.readTree("{\"keys\": []}");
+
+        // JWT VC Metadata
+        String issuerUri = "https://issuer.example.com";
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.set("jwks", jwks);
+
+        // Act and assert
+        genericTestShouldFail(
+                exampleIssuerSignedJwt(),
+                mockHttpDataFetcherWithMetadataAndJwks(issuerUri, metadata, jwks),
+                String.format("Issuer JWKs were unexpectedly resolved to an empty list. Issuer URI: %s", issuerUri),
+                null
+        );
+    }
+
+    @Test
+    public void shouldFailOnNoPublishedJwkMatchingJwtKid() throws Exception {
+        // Alter kid fields of all JWKs to publish, so as none is a match
+        JsonNode jwks = exampleJwks();
+        for (JsonNode jwk : jwks.get("keys")) {
+            ((ObjectNode) jwk).put("kid", jwk.get("kid").asText() + "-wont-match");
+        }
+
+        // JWT VC Metadata
+        String issuerUri = "https://issuer.example.com";
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.set("jwks", jwks);
+
+        // This JWT specifies a key ID in its header
+        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt("sdjwt/s20.1-sdjwt+kb--explicit-kid.txt");
+        String kid = issuerSignedJWT.getHeader().getKeyId();
+
+        // Act and assert
+        genericTestShouldFail(
+                issuerSignedJWT,
+                mockHttpDataFetcherWithMetadataAndJwks(issuerUri, metadata, jwks),
+                String.format("No published JWK was found to match kid: %s", kid),
                 null
         );
     }
@@ -310,7 +327,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
         );
 
         genericTestShouldFail(
-                issuerUri,
+                exampleIssuerSignedJwt(),
                 mockFetcher,
                 String.format("Could not fetch data from URI: %s", issuerUri),
                 null
@@ -318,17 +335,16 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     private void genericTestShouldFail(
-            String issuerUri,
+            IssuerSignedJWT issuerSignedJWT,
             HttpDataFetcher mockFetcher,
             String errorMessage,
             String causeErrorMessage
     ) {
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                issuerUri,
+                issuerSignedJWT.getPayload().get(SdJws.CLAIM_NAME_ISSUER).asText(),
                 mockFetcher
         );
 
-        IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt();
         VerificationException exception = assertThrows(VerificationException.class,
                 () -> trustedIssuer.resolveIssuerVerifyingKeys(issuerSignedJWT)
         );
