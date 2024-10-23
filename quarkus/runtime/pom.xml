@@ -326,6 +326,16 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-federation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-config-api</artifactId>
             <exclusions>
                 <exclusion>
