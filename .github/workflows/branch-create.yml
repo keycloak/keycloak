@@ -1,0 +1,25 @@
+name: Release Branch Create
+
+on:
+  create:
+    branches:
+      - 'release/**'
+
+jobs:
+  commit-proto-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - name: Commit unstaged proto.lock files to branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add **/proto.lock
+          git commit -s -m "Committing **/proto.lock changes"
+          git push origin ${{ github.ref_name }}
