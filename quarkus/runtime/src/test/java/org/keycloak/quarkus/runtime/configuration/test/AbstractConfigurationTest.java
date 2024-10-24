@@ -22,6 +22,8 @@ import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.After;
@@ -30,6 +32,7 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.lang.reflect.Field;
@@ -113,6 +116,7 @@ public abstract class AbstractConfigurationTest {
         SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
+        PersistedConfigSource.getInstance().getConfigValueProperties().clear();
     }
 
     protected Config.Scope initConfig(String... scope) {
@@ -152,5 +156,10 @@ public abstract class AbstractConfigurationTest {
 
     protected void assertExternalConfig(Map<String, String> expectedValues) {
         expectedValues.forEach(this::assertExternalConfig);
+    }
+    
+    protected static void addPersistedConfigValues(Map<String, String> values) {
+        var configValueProps = PersistedConfigSource.getInstance().getConfigValueProperties();
+        values.forEach((k, v) -> configValueProps.put(k, new ConfigValueBuilder().withName(k).withValue(v).build()));
     }
 }
