@@ -271,6 +271,8 @@ public class Messages {
 
     public static final String CONSENT_DENIED="consentDenied";
 
+    public static final String TERMS_AND_CONDITIONS_DECLINED="termsAndConditionsDeclined";
+
     public static final String ALREADY_LOGGED_IN="alreadyLoggedIn";
 
     public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";

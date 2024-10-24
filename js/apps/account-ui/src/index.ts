@@ -1,5 +1,4 @@
 export { PersonalInfo } from "./personal-info/PersonalInfo";
-export { ErrorPage } from "./root/ErrorPage";
 export { Header } from "./root/Header";
 export { PageNav } from "./root/PageNav";
 export { DeviceActivity } from "./account-security/DeviceActivity";

@@ -46,6 +46,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected EventBuilder eventBuilder;
     protected KeycloakSession session;
     protected Status status;
+    protected String errorMessage;
     protected Response challenge;
     protected HttpRequest httpRequest;
     protected UserModel user;
@@ -66,6 +67,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.config = realm.getRequiredActionConfigByAlias(factory.getId());
     }
 
+    @Override
     public RequiredActionConfigModel getConfig() {
         return config;
     }
@@ -120,6 +122,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    @Override
     public void challenge(Response response) {
         status = Status.CHALLENGE;
         challenge = response;
@@ -127,7 +134,8 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
-    public void failure() {
+    public void failure(String errorMessage) {
+        this.errorMessage = errorMessage;
         status = Status.FAILURE;
     }
 
