@@ -27,6 +27,7 @@ export type TextControlProps<
     isDisabled?: boolean;
     helperText?: string;
     "data-testid"?: string;
+    type?: string;
   };
 
 export const TextControl = <
