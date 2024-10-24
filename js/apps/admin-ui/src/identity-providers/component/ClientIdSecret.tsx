@@ -17,7 +17,7 @@ export const ClientIdSecret = ({
         label={t("clientId")}
         labelIcon={t("clientIdHelp")}
         rules={{
-          required: true,
+          required: t("required"),
         }}
       />
       <PasswordControl
@@ -25,7 +25,7 @@ export const ClientIdSecret = ({
         label={t("clientSecret")}
         labelIcon={t("clientSecretHelp")}
         hasReveal={create}
-        rules={{ required: secretRequired }}
+        rules={{ required: { value: secretRequired, message: t("required") } }}
       />
     </>
   );
