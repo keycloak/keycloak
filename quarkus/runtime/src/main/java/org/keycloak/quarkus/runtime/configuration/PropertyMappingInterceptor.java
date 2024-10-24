@@ -23,7 +23,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import jakarta.annotation.Priority;
 import org.apache.commons.collections4.iterators.FilterIterator;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -82,29 +81,6 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         if (Boolean.TRUE.equals(disable.get())) {
             return context.proceed(name);
         }
-        ConfigValue value = PropertyMappers.getValue(context, name);
-
-        if (value == null || value.getValue() == null) {
-            return null;
-        }
-
-        if (!value.getValue().contains("${")) {
-            return value;
-        }
-
-        // Our mappers might have returned a value containing an expression ${...}.
-        // However, ExpressionConfigSourceInterceptor was already executed before (to expand e.g. env vars in config file).
-        // Hence, we need to manually resolve these expressions here. Not ideal, but there's no other way (at least I haven't found one).
-        return value.withValue(
-                StringPropertyReplacer.replaceProperties(value.getValue(),
-                        property -> {
-                            ConfigValue prop = context.proceed(property);
-
-                            if (prop == null) {
-                                return null;
-                            }
-
-                            return prop.getValue();
-                        }));
+        return PropertyMappers.getValue(context, name);
     }
 }

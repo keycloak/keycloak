@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +35,9 @@ import java.util.stream.Stream;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.ExpressionConfigSourceInterceptor;
+import io.smallrye.config.Expressions;
 
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
@@ -235,9 +239,18 @@ public class PropertyMapper<T> {
     private ConfigValue transformValue(String name, String value, ConfigSourceInterceptorContext context, String configSourceName, boolean parentValue) {
         String mappedValue = value;
         
+        boolean mapped = false;
         var theMapper = parentValue ? this.parentMapper : this.mapper;
         if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
             mappedValue = theMapper.apply(value, context);
+            mapped = true;
+        }
+        
+        // defaults and values from transformers may not have been subject to expansion
+        if ((mapped || configSourceName == null) && mappedValue != null && Expressions.isEnabled() && mappedValue.contains("$")) {
+            mappedValue = new ExpressionConfigSourceInterceptor().getValue(
+                    new ContextWrapper(context, new ConfigValueBuilder().withName(name).withValue(mappedValue).build()),
+                    name).getValue();
         }
         
         if (value == null && mappedValue == null) {
@@ -258,6 +271,34 @@ public class PropertyMapper<T> {
         }
 
         return configValue.withValue(ofNullable(configValue.getValue()).map(String::trim).orElse(null));
+    }
+
+    private final class ContextWrapper implements ConfigSourceInterceptorContext {
+        private final ConfigSourceInterceptorContext context;
+        private final ConfigValue value;
+
+        private ContextWrapper(ConfigSourceInterceptorContext context, ConfigValue value) {
+            this.context = context;
+            this.value = value;
+        }
+
+        @Override
+        public ConfigValue restart(String name) {
+            return context.restart(name);
+        }
+
+        @Override
+        public ConfigValue proceed(String name) {
+            if (name.equals(value.getName())) {
+                return value;
+            }
+            return context.proceed(name);
+        }
+
+        @Override
+        public Iterator<String> iterateNames() {
+            return context.iterateNames();
+        }
     }
 
     public static class Builder<T> {

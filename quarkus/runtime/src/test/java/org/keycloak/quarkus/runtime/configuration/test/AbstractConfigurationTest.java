@@ -25,6 +25,8 @@ import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -93,6 +95,11 @@ public abstract class AbstractConfigurationTest {
             System.clearProperty(key);
         }
     }
+    
+    @AfterClass
+    public static void resetConfigruation() {
+        ConfigurationTest.createConfig(); // onAfter doesn't actually reset the config
+    }
 
     @After
     public void onAfter() {
@@ -120,7 +127,7 @@ public abstract class AbstractConfigurationTest {
         return Config.scope(scope);
     }
 
-    protected SmallRyeConfig createConfig() {
+    static protected SmallRyeConfig createConfig() {
         KeycloakConfigSourceProvider.reload();
         // older versions of quarkus implicitly picked up this config, now we
         // must set it manually
