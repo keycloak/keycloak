@@ -46,8 +46,8 @@ public class CachingOptions {
     public enum Stack {
         tcp,
         udp,
-        jgroups_ping,
-        jgroups_ping_udp,
+        jdbc_ping,
+        jdbc_ping_udp,
         kubernetes,
         ec2,
         azure,
@@ -63,7 +63,7 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .expectedValues(false)
             .description("Define the default stack to use for cluster communication and node discovery.")
-            .defaultValue(Stack.jgroups_ping_udp)
+            .defaultValue(Stack.jdbc_ping_udp)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
