@@ -41,6 +41,11 @@ To enable the previous behavior, choose the transport stack `udp`.
 
 The {project_name} Operator will continue to configure `kubernetes` as a transport stack.
 
+= Deprecated transport stacks for distributed caches
+
+The `azure`, `ec2` and `google` transport stacks have been deprecated. Users should use the TCP based `jdbc-ping`
+stack as a direct replacement.
+
 = Defining dependencies between provider factories
 
 When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.

@@ -97,9 +97,9 @@ Cache:
                        host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       Possible values are: tcp, udp, jdbc-ping, jdbc-ping-udp, kubernetes, ec2,
-                       azure, google, or a custom one. Default: jdbc-ping-udp. Available only when
-                       'cache' type is set to 'ispn'.
+                       Possible values are: tcp, udp, jdbc-ping, jdbc-ping-udp, kubernetes, ec2
+                       (deprecated), azure (deprecated), google (deprecated), or a custom one.
+                       Default: jdbc-ping-udp. Available only when 'cache' type is set to 'ispn'.
 
 Config:
 

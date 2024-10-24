@@ -59,6 +59,12 @@ public class ClusterConfigDistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=azure" })
+    void warnDeprecatedCloudStack(LaunchResult result) {
+        assertTrue(result.getOutput().contains("Stack 'azure' is deprecated. We recommend to use 'jdbc-ping' instead"));
+    }
+
+    @Test
     @Launch({ "start-dev", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Could not load cluster configuration file"));
