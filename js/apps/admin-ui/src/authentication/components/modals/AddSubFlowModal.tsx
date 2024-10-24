@@ -90,7 +90,7 @@ export const AddSubFlowModal = ({
             name="name"
             label={t("name")}
             labelIcon={t("clientIdHelp")}
-            rules={{ required: { value: true, message: t("required") } }}
+            rules={{ required: t("required") }}
           />
           <TextControl
             name="description"

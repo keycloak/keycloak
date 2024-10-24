@@ -161,7 +161,7 @@ export const ExecutionConfigModal = ({
                 name="alias"
                 label={t("alias")}
                 labelIcon={t("authenticationAliasHelp")}
-                rules={{ required: { value: true, message: t("required") } }}
+                rules={{ required: t("required") }}
                 isDisabled={!!config}
               />
               <DynamicComponents
