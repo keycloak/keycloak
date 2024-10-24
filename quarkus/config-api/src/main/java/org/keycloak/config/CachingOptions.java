@@ -1,6 +1,9 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.base.CaseFormat;
 
@@ -62,6 +65,7 @@ public class CachingOptions {
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
             .expectedValues(false)
+            .deprecatedValues(Stream.of(Stack.azure, Stack.ec2, Stack.google).map(Object::toString).collect(Collectors.toSet()), "Use 'jgroups-ping' instead")
             .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect if 'cache' is set to 'ispn'. Default: 'jgroups-ping-udp'.")
             .build();
 

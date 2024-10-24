@@ -99,7 +99,8 @@ Cache:
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default:
                        'jgroups-ping-udp'. Possible values are: tcp, udp, jgroups-ping,
-                       jgroups-ping-udp, kubernetes, ec2, azure, google, or a custom one.
+                       jgroups-ping-udp, kubernetes, ec2 (deprecated), azure (deprecated), google
+                       (deprecated), or a custom one.
 
 Config:
 
