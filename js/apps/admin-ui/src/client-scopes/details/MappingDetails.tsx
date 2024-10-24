@@ -217,7 +217,7 @@ export default function MappingDetails() {
               label={t("name")}
               labelIcon={t("mapperNameHelp")}
               readOnlyVariant={isUpdating ? "default" : undefined}
-              rules={{ required: { value: true, message: t("required") } }}
+              rules={{ required: t("required") }}
             />
             <DynamicComponents
               properties={mapping?.properties || []}
