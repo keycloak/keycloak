@@ -34,6 +34,10 @@
                     <groupId>org.eclipse.sisu</groupId>
                     <artifactId>org.eclipse.sisu.inject</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.aesh</groupId>
+                    <artifactId>aesh</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -48,6 +52,10 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.mvnpm</groupId>
+                    <artifactId>importmap</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
