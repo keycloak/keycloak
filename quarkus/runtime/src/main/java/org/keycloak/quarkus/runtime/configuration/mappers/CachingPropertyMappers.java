@@ -7,6 +7,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 import org.keycloak.config.CachingOptions;
@@ -19,6 +20,8 @@ final class CachingPropertyMappers {
 
     private static final String REMOTE_HOST_SET = "remote host is set";
 
+    private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
+
     private CachingPropertyMappers() {
     }
 
@@ -28,6 +31,7 @@ final class CachingPropertyMappers {
                     .paramLabel("type")
                     .build(),
               fromOption(CachingOptions.CACHE_STACK)
+                    .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
                     .to("kc.spi-connections-infinispan-quarkus-stack")
                     .paramLabel("stack")
                     .build(),
@@ -99,6 +103,11 @@ final class CachingPropertyMappers {
 
     private static boolean remoteHostSet() {
         return getOptionalKcValue(CachingOptions.CACHE_REMOTE_HOST_PROPERTY).isPresent();
+    }
+
+    private static boolean cacheSetToInfinispan() {
+        Optional<String> cache = getOptionalKcValue(CachingOptions.CACHE);
+        return cache.isPresent() && cache.get().equals(CachingOptions.Mechanism.ispn.name());
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {

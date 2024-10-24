@@ -69,11 +69,6 @@ Cache:
                        specified via XML file (see 'cache-config-file' option.). If the option is
                        specified, 'cache-remote-username' and 'cache-remote-password' are required
                        as well and the related configuration in XML file should not be present.
---cache-stack <stack>
-                     Define the default stack to use for cluster communication and node discovery.
-                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Possible values are: tcp, udp, kubernetes, ec2, azure, google, or a custom
-                       one.
 
 Config:
 

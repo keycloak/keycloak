@@ -371,53 +371,65 @@ public class CacheManagerFactory {
     }
 
     private void configureTransportStack(ConfigurationBuilderHolder builder, KeycloakSession keycloakSession) {
-        String transportStack = Configuration.getRawValue("kc.cache-stack");
-
-        var jdbcStackName = "jdbc-ping";
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
-        var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
-        if (transportStack != null && !transportStack.isBlank() && !jdbcStackName.equals(transportStack)) {
-            transportConfig.defaultTransport().stack(transportStack);
-        } else if (!stackXmlAttribute.isModified() || jdbcStackName.equals(stackXmlAttribute.get())){
-            EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
-            var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-            var attributes = Map.of(
-                  // Leave initialize_sql blank as table is already created by Keycloak
-                  "initialize_sql", "",
-                  // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-                  // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                  "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                  "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                  "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-                  "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
-                  "remove_all_data_on_view_change", "true",
-                  "register_shutdown_hook", "false",
-                  "stack.combine", "REPLACE",
-                  "stack.position", "PING"
-            );
-            var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
-            builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(jdbcStackName, stack, null), "udp");
-
-            Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
-            transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
-            transportConfig.defaultTransport().stack(jdbcStackName);
-        }
-
         if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
             validateTlsAvailable(transportConfig.build());
             var tls = new TLS()
-                    .enabled(true)
-                    .setKeystorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY))
-                    .setKeystorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY))
-                    .setKeystoreType("pkcs12")
-                    .setTruststorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY))
-                    .setTruststorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY))
-                    .setTruststoreType("pkcs12")
-                    .setClientAuth(TLSClientAuth.NEED)
-                    .setProtocols(new String[]{"TLSv1.3"});
+                  .enabled(true)
+                  .setKeystorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY))
+                  .setKeystorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY))
+                  .setKeystoreType("pkcs12")
+                  .setTruststorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY))
+                  .setTruststorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY))
+                  .setTruststoreType("pkcs12")
+                  .setClientAuth(TLSClientAuth.NEED)
+                  .setProtocols(new String[]{"TLSv1.3"});
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
             logger.info("MTLS enabled for communications for embedded caches");
         }
+
+        String transportStack = Configuration.getRawValue("kc.cache-stack");
+        if (transportStack != null && !transportStack.isBlank() && !isJdbcPingStack(transportStack)) {
+            transportConfig.defaultTransport().stack(transportStack);
+            return;
+        }
+
+        var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
+        // If the user has explicitly defined a transport stack that is not jdbc-ping or jdbc-ping-udp, return
+        if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get()))
+            return;
+
+        var stackName = transportStack != null ?
+              transportStack :
+              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping-udp";
+        var udp = stackName.endsWith("udp");
+
+        EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
+        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
+        var attributes = Map.of(
+              // Leave initialize_sql blank as table is already created by Keycloak
+              "initialize_sql", "",
+              // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+              // "cluster" cannot be used with Oracle DB as it's a reserved word.
+              "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
+              "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
+              "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
+              "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+              "remove_all_data_on_view_change", "true",
+              "register_shutdown_hook", "false",
+              "stack.combine", "REPLACE",
+              "stack.position", udp ? "PING" : "MPING"
+        );
+        var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
+        builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), udp ? "udp" : "tcp");
+
+        Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
+        transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
+        transportConfig.defaultTransport().stack(stackName);
+    }
+
+    private boolean isJdbcPingStack(String stackName) {
+        return "jdbc-ping".equals(stackName) || "jdbc-ping-udp".equals(stackName);
     }
 
     private static void validateTlsAvailable(GlobalConfiguration config) {
