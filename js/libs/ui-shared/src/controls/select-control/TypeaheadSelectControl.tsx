@@ -160,7 +160,6 @@ export const TypeaheadSelectControl = <
         render={({ field }) => (
           <Select
             {...rest}
-            onClick={() => setOpen(!open)}
             onOpenChange={() => setOpen(false)}
             selected={
               isSelectBasedOptions(options)
@@ -173,12 +172,16 @@ export const TypeaheadSelectControl = <
                     .map((o) => o.value)
                 : field.value
             }
+            shouldFocusFirstItemOnOpen={false}
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}
                 id={id || name.slice(name.lastIndexOf(".") + 1)}
                 variant="typeahead"
-                onClick={() => setOpen(!open)}
+                onClick={() => {
+                  setOpen(!open);
+                  textInputRef.current?.focus();
+                }}
                 isExpanded={open}
                 isFullWidth
                 status={get(errors, name) ? MenuToggleStatus.danger : undefined}
