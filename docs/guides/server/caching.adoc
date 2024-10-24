@@ -247,6 +247,10 @@ The following table shows transport stacks that are available using the `--cache
 |===
 
 === Additional transport stacks
+
+IMPORTANT: The following stacks are deprecated. We recommend that you utilise the `jdbc-ping` stack in such environments
+as it does not require additional configuration or dependencies.
+
 The following table shows transport stacks that are supported by {project_name}, but need some extra steps to work.
 Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run {project_name} on top of the Google Kubernetes engine.
 In that case, use the `kubernetes` stack.

@@ -389,13 +389,16 @@ public class CacheManagerFactory {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
         if (transportStack != null && !transportStack.isBlank() && !isJdbcPingStack(transportStack)) {
             transportConfig.defaultTransport().stack(transportStack);
+            warnDeprecatedCloudStack(transportStack);
             return;
         }
 
         var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
         // If the user has explicitly defined a transport stack that is not jdbc-ping or jdbc-ping-udp, return
-        if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get()))
+        if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
+            warnDeprecatedCloudStack(stackXmlAttribute.get());
             return;
+        }
 
         var stackName = transportStack != null ?
               transportStack :
@@ -424,6 +427,15 @@ public class CacheManagerFactory {
         Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
         transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
         transportConfig.defaultTransport().stack(stackName);
+    }
+
+    private void warnDeprecatedCloudStack(String stackName) {
+        switch (stackName) {
+            case "azure":
+            case "ec2":
+            case "google":
+                logger.warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
+        }
     }
 
     private boolean isJdbcPingStack(String stackName) {
