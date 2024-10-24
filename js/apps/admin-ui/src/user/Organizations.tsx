@@ -86,8 +86,6 @@ export const Organizations = ({ user }: OrganizationProps) => {
       const userOrganizations =
         await adminClient.organizations.memberOrganizations({ userId: id! });
 
-      console.log(">>> userOrganizations ", userOrganizations);
-
       const userOrganizationsWithMembershipTypes = await Promise.all(
         userOrganizations.map(async (org) => {
           const orgId = org.id;
