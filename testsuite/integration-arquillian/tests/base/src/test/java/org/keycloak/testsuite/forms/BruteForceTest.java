@@ -28,7 +28,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -56,11 +55,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -418,11 +416,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         try {
             realm.setMaxDeltaTimeSeconds(5);
             testRealm().update(realm);
-            long numExecutors = getNumExecutors();
+            long numExecutors = WaitUtils.getNumExecutors(testingClient);
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            waitForExecutors(numExecutors + 1);
+            WaitUtils.waitForExecutors(testingClient, numExecutors + 1);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();
@@ -440,11 +438,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(5);
             realm.setPermanentLockout(true);
             testRealm().update(realm);
-            long numExecutors = getNumExecutors();
+            long numExecutors = WaitUtils.getNumExecutors(testingClient);
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            waitForExecutors(numExecutors + 1);
+            WaitUtils.waitForExecutors(testingClient, numExecutors + 1);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();
@@ -457,31 +455,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             user.setEnabled(true);
             updateUser(user);
         }
-    }
-
-    private long getNumExecutors() {
-        String numExecutors = testingClient.server().fetchString(session -> {
-            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-            ExecutorService executor = provider.getExecutor("bruteforce");
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            return threadPoolExecutor.getTaskCount();
-        });
-        return Long.valueOf(numExecutors);
-    }
-
-    private void waitForExecutors(long numExecutors) {
-        testingClient.server().run(session -> {
-            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-            ExecutorService executor = provider.getExecutor("bruteforce");
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            while (!threadPoolExecutor.getQueue().isEmpty()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                }
-            }
-            assertEquals(numExecutors, threadPoolExecutor.getCompletedTaskCount());
-        });
     }
 
     @Test
