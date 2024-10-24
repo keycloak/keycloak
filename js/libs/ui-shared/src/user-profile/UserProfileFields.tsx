@@ -187,11 +187,12 @@ const FormField = ({
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
+  const isMultiSelect = inputType.startsWith("multiselect");
 
   const Component =
     attribute.multivalued ||
     (isMultiValue(value) && attribute.annotations?.inputType === undefined)
-      ? FIELDS["multi-input"]
+      ? (isMultiSelect ? FIELDS[inputType] : FIELDS["multi-input"])
       : FIELDS[inputType];
 
   if (attribute.name === "locale")
