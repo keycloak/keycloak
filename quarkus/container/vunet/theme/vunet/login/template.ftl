@@ -71,6 +71,11 @@
   <html>
     <head>
       <@document.kw script=script />
+      <#if (scripts??)>
+        <#list scripts as script>
+            <script src="${script}"></script>
+        </#list>
+      </#if>
     </head>
     <@body.kw>
       <@container.kw>
