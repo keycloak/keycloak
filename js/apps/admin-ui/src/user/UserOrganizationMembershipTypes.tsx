@@ -21,12 +21,12 @@ export const getUserMembershipsWithTypes = ({
       membership.username === user.username,
   );
 
-  const membershipType = userMemberships.map((membership: any) => {
+  const membershipsTypes = userMemberships.map((membership: any) => {
     const formattedMembershipType = capitalizeFirstLetterFormatter()(
       membership.membershipType,
     );
     return formattedMembershipType;
   });
 
-  return membershipType;
+  return membershipsTypes;
 };

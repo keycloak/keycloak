@@ -27,7 +27,7 @@ import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
-import { getUserMembershipsWithTypes } from "./UserMembershipTypes";
+import { getUserMembershipsWithTypes } from "./UserOrganizationMembershipTypes";
 
 type OrganizationProps = {
   user: UserRepresentation;
@@ -86,6 +86,8 @@ export const Organizations = ({ user }: OrganizationProps) => {
       const userOrganizations =
         await adminClient.organizations.memberOrganizations({ userId: id! });
 
+      console.log(">>> userOrganizations ", userOrganizations);
+
       const userOrganizationsWithMembershipTypes = await Promise.all(
         userOrganizations.map(async (org) => {
           const orgId = org.id;
@@ -95,27 +97,27 @@ export const Organizations = ({ user }: OrganizationProps) => {
               orgId: orgId!,
             });
 
-          const membershipType = getUserMembershipsWithTypes({
+          const membershipsTypes = getUserMembershipsWithTypes({
             memberships,
             user,
           });
 
-          return { ...org, membershipType };
+          return { ...org, membershipsTypes };
         }),
       );
 
       const hasManaged = userOrganizationsWithMembershipTypes.some((org) =>
-        org.membershipType?.includes(membershipOptions[0].value),
+        org.membershipsTypes?.includes(membershipOptions[0].value),
       );
       const hasUnmanaged = userOrganizationsWithMembershipTypes.some((org) =>
-        org.membershipType?.includes(membershipOptions[1].value),
+        org.membershipsTypes?.includes(membershipOptions[1].value),
       );
 
       setFilterDisabled(!(hasManaged && hasUnmanaged));
 
       if (filteredMembershipTypes.length > 0) {
         return userOrganizationsWithMembershipTypes.filter((org) =>
-          org.membershipType?.some((type) =>
+          org.membershipsTypes?.some((type) =>
             filteredMembershipTypes.includes((type || "").toString()),
           ),
         );
