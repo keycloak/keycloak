@@ -62,7 +62,8 @@ public interface UserRolesRetrieveStrategy {
 
                 Condition membershipCondition = getMembershipCondition(membershipAttr, userMembership);
                 ldapQuery.addWhereCondition(membershipCondition);
-                return ldapQuery.getResultList();
+
+                return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
             }
         }
 
