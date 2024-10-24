@@ -63,8 +63,6 @@
         <script type="module">
             import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
 
-            const template = document.querySelector("#errorTemplate").content.cloneNode(true);
-
             const activePolicies = [
                 { name: "length", policy: { value: ${passwordPolicies.length!-1}, error: "${msg('invalidPasswordMinLengthMessage')}"} },
                 { name: "maxLength", policy: { value: ${passwordPolicies.maxLength!-1}, error: "${msg('invalidPasswordMaxLengthMessage')}"} },
@@ -79,6 +77,9 @@
                 if (serverErrors) {
                     serverErrors.remove();
                 }
+
+                const template = document.querySelector("#errorTemplate").content.cloneNode(true);
+
                 const errors = validatePassword(event.target.value, activePolicies);
                 const errorList = template.querySelector("ul");
                 const htmlErrors = errors.forEach((e) => {
@@ -87,7 +88,7 @@
                     li.textContent = e;
                     errorList.appendChild(li);
                 });
-                document.getElementById("input-error-client-password").appendChild(template);
+                document.getElementById("input-error-client-password").replaceChildren(template);
             });
         </script>
     </#if>
