@@ -100,10 +100,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
                 value: CIBA_EXPIRES_IN_MAX,
                 message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
               },
-              required: {
-                value: true,
-                message: t("required"),
-              },
+              required: t("required"),
             }}
           />
           <TextControl
@@ -124,10 +121,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
                 value: CIBA_INTERVAL_MAX,
                 message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
               },
-              required: {
-                value: true,
-                message: t("required"),
-              },
+              required: t("required"),
             }}
           />
           <SelectControl
