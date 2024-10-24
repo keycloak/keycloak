@@ -84,7 +84,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #jwksUrl = "config.jwksUrl";
   #pkceSwitch = "#config\\.pkceEnabled";
   #pkceMethod = "#pkceMethod";
-  #clientAuth = "#clientAuthentication";
+  #clientAuth = "#clientAuthMethod";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
   #clientAssertionAudienceInput = "#clientAssertionAudience";
   #jwtX509HeadersSwitch = "#jwtX509HeadersEnabled";
