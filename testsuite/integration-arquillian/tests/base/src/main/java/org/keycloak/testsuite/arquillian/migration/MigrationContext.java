@@ -36,6 +36,18 @@ public class MigrationContext {
 
     public static final Logger logger = Logger.getLogger(MigrationContext.class);
 
+    private boolean runningMigrationTest = false;
+
+    /**
+     * @return true if testsuite is running migration test. This returns true during whole lifecycle of migration test (Including running of the old container as well as running the new container)
+     */
+    public boolean isRunningMigrationTest() {
+        return runningMigrationTest;
+    }
+
+    public void setRunningMigrationTest(boolean runningMigrationTest) {
+        this.runningMigrationTest = runningMigrationTest;
+    }
 
     public String loadOfflineToken() throws Exception {
         String file = getOfflineTokenLocation();

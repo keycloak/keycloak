@@ -235,12 +235,12 @@ public class AuthServerTestEnricher {
                     .filter(c -> c.getQualifier().startsWith("cache-server-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
                     .forEach(containerInfo -> {
-                        
+
                         log.info(String.format("cache container: %s", containerInfo.getQualifier()));
-                        
+
                         int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
                         int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
-                        
+
                         suiteContext.addCacheServerInfo(dcIndex, containerInfo);
                     });
 
@@ -294,6 +294,8 @@ public class AuthServerTestEnricher {
         }
 
         if (START_MIGRATION_CONTAINER) {
+            suiteContext.getMigrationContext().setRunningMigrationTest(true);
+
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
@@ -375,7 +377,7 @@ public class AuthServerTestEnricher {
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         // this property can be used to skip start of auth-server before suite
-        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test
         if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
             log.debug("Skipping the start of auth server before suite");
             return;
