@@ -1,6 +1,7 @@
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   Button,
+  DropEvent,
   FileUpload,
   FileUploadProps,
   FormGroup,
@@ -16,7 +17,6 @@ import {
   MouseEvent as ReactMouseEvent,
   useState,
 } from "react";
-import { DropEvent } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 
 type FileUploadType = {
