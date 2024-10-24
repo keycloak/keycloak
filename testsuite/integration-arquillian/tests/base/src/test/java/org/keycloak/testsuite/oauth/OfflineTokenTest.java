@@ -973,7 +973,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
        if (accessToken != null) {
            header = new JWSInput(accessToken).getHeader();
            assertEquals(expectedAccessAlg, header.getAlgorithm().name());
-           assertEquals("JWT", header.getType());
+           assertEquals("at+jwt", header.getType());
            assertNull(header.getContentType());
        }
        if (refreshToken != null) {
@@ -1045,7 +1045,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         if (accessToken != null) {
             header = new JWSInput(accessToken).getHeader();
             assertEquals(expectedAccessAlg, header.getAlgorithm().name());
-            assertEquals("JWT", header.getType());
+            assertEquals("at+jwt", header.getType());
             assertNull(header.getContentType());
         }
         if (refreshToken != null) {

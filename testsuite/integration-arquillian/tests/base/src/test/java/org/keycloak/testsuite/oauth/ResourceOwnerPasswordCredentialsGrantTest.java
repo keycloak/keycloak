@@ -385,7 +385,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
 
         assertEquals(expectedAccessAlg, header.getAlgorithm().name());
-        assertEquals("JWT", header.getType());
+        assertEquals("at+jwt", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
@@ -553,7 +553,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
         Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
-    
+
     @Test
     public void grantAccessTokenVerifyEmailInvalidPassword() throws Exception {
 
@@ -617,7 +617,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }
     }
-    
+
     @Test
     public void grantAccessTokenExpiredPasswordInvalidPassword() throws Exception {
 
