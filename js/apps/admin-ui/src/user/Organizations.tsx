@@ -27,7 +27,7 @@ import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
-import { getUserMembershipsWithTypes } from "./UserOrganizationMembershipTypes";
+import { capitalizeFirstLetterFormatter } from "../util";
 
 type OrganizationProps = {
   user: UserRepresentation;
@@ -95,27 +95,33 @@ export const Organizations = ({ user }: OrganizationProps) => {
               orgId: orgId!,
             });
 
-          const membershipsTypes = getUserMembershipsWithTypes({
-            memberships,
-            user,
+          const userMemberships = memberships.filter(
+            (membership) => membership.username === user.username,
+          );
+
+          const membershipType = userMemberships.map((membership) => {
+            const formattedMembershipType = capitalizeFirstLetterFormatter()(
+              membership.membershipType,
+            );
+            return formattedMembershipType;
           });
 
-          return { ...org, membershipsTypes };
+          return { ...org, membershipType };
         }),
       );
 
       const hasManaged = userOrganizationsWithMembershipTypes.some((org) =>
-        org.membershipsTypes?.includes(membershipOptions[0].value),
+        org.membershipType?.includes(membershipOptions[0].value),
       );
       const hasUnmanaged = userOrganizationsWithMembershipTypes.some((org) =>
-        org.membershipsTypes?.includes(membershipOptions[1].value),
+        org.membershipType?.includes(membershipOptions[1].value),
       );
 
       setFilterDisabled(!(hasManaged && hasUnmanaged));
 
       if (filteredMembershipTypes.length > 0) {
         return userOrganizationsWithMembershipTypes.filter((org) =>
-          org.membershipsTypes?.some((type) =>
+          org.membershipType?.some((type) =>
             filteredMembershipTypes.includes((type || "").toString()),
           ),
         );
