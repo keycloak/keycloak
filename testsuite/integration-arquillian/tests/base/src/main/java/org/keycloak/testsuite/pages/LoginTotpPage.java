@@ -52,7 +52,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         otpInput.clear();
         if (totp != null) otpInput.sendKeys(totp);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getAlertError() {
