@@ -22,6 +22,12 @@ import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+import { capitalizeFirstLetterFormatter } from "../util";
+import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
+
+type MembershipTypeRepresentation = UserRepresentation & {
+  membershipType?: string;
+};
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -37,19 +43,83 @@ export const Members = () => {
   const { adminClient } = useAdminClient();
   const { id: orgId } = useParams<EditOrganizationParams>();
   const { addAlert, addError } = useAlerts();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-
   const [open, toggle] = useToggle();
   const [openAddMembers, toggleAddMembers] = useToggle();
   const [openInviteMembers, toggleInviteMembers] = useToggle();
   const [selectedMembers, setSelectedMembers] = useState<UserRepresentation[]>(
     [],
   );
+  const [filteredMembershipTypes, setFilteredMembershipTypes] = useState<
+    string[]
+  >([]);
+  const [filterDisabled, setFilterDisabled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const loader = (first?: number, max?: number, search?: string) =>
-    adminClient.organizations.listMembers({ orgId, first, max, search });
+  const membershipOptions = [
+    { value: "Managed", label: "Managed" },
+    { value: "Unmanaged", label: "Unmanaged" },
+  ];
+
+  const onToggleClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const onSelect = (_event: any, value: string) => {
+    if (filteredMembershipTypes.includes(value)) {
+      setFilteredMembershipTypes(
+        filteredMembershipTypes.filter((item) => item !== value),
+      );
+    } else {
+      setFilteredMembershipTypes([...filteredMembershipTypes, value]);
+    }
+    setIsOpen(false);
+    refresh();
+  };
+
+  const loader = async (first?: number, max?: number, search?: string) => {
+    try {
+      const memberships: MembershipTypeRepresentation[] =
+        await adminClient.organizations.listMembers({
+          orgId,
+          first,
+          max,
+          search,
+        });
+
+      const formattedMemberships = memberships.map((membership) => ({
+        ...membership,
+        membershipType: capitalizeFirstLetterFormatter()(
+          membership.membershipType,
+        ) as string,
+      }));
+
+      const hasManaged = formattedMemberships.some(
+        (membership) =>
+          membership.membershipType === membershipOptions[0].value,
+      );
+      const hasUnmanaged = formattedMemberships.some(
+        (membership) =>
+          membership.membershipType === membershipOptions[1].value,
+      );
+
+      setFilterDisabled(!(hasManaged && hasUnmanaged));
+
+      if (filteredMembershipTypes.length === 0) {
+        return formattedMemberships;
+      }
+
+      const filteredMemberships = formattedMemberships.filter((membership) =>
+        filteredMembershipTypes.includes(membership.membershipType || ""),
+      );
+
+      return filteredMemberships;
+    } catch (error) {
+      addError("organizationsMembersListError", error);
+      return [];
+    }
+  };
 
   const removeMember = async (selectedMembers: UserRepresentation[]) => {
     try {
@@ -68,6 +138,7 @@ export const Members = () => {
 
     refresh();
   };
+
   return (
     <PageSection variant="light">
       {openAddMembers && (
@@ -153,6 +224,19 @@ export const Members = () => {
                 {t("removeMember")}
               </Button>
             </ToolbarItem>
+            <ToolbarItem>
+              <CheckboxFilterComponent
+                filterPlaceholderText={t("filterByMembershipType")}
+                isDisabled={filterDisabled}
+                isOpen={isOpen}
+                options={membershipOptions}
+                onOpenChange={(nextOpen) => setIsOpen(nextOpen)}
+                onToggleClick={onToggleClick}
+                onSelect={onSelect}
+                selectedItems={filteredMembershipTypes}
+                width={"290px"}
+              />
+            </ToolbarItem>
           </>
         }
         actions={[
@@ -176,6 +260,10 @@ export const Members = () => {
           },
           {
             name: "lastName",
+          },
+          {
+            name: "membershipType",
+            cellFormatters: [capitalizeFirstLetterFormatter()],
           },
         ]}
         emptyState={
