@@ -69,11 +69,18 @@ public class KeycloakMain implements QuarkusApplication {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
 
         System.setProperty("kc.version", Version.VERSION);
+        
+        Picocli picocli = new Picocli();
+        
+        main(args, picocli);
+    }
+
+    public static void main(String[] args, Picocli picocli) {
         List<String> cliArgs = null;
         try {
             cliArgs = Picocli.parseArgs(args);
         } catch (PropertyException e) {
-            handleUsageError(e.getMessage());
+            handleUsageError(e.getMessage(), picocli);
             return;
         }
 
@@ -84,12 +91,12 @@ public class KeycloakMain implements QuarkusApplication {
         } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
 
             if (!wasBuildEverRun()) {
-                handleUsageError(Messages.optimizedUsedForFirstStartup());
+                handleUsageError(Messages.optimizedUsedForFirstStartup(), picocli);
                 return;
             }
 
             if (isDevProfileNotAllowed()) {
-                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
+                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME), picocli);
                 return;
             }
 
@@ -100,20 +107,20 @@ public class KeycloakMain implements QuarkusApplication {
                 PrintWriter outStream = new PrintWriter(System.out, true);
                 Picocli.validateConfig(cliArgs, new Start(), outStream);
             } catch (PropertyException | ProfileException e) {
-                handleUsageError(e.getMessage(), e.getCause());
+                handleUsageError(e.getMessage(), e.getCause(), picocli);
                 return;
             }
 
             ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
-
-            start(errorHandler, errStream, args);
+            PrintWriter errStream = picocli.getErrWriter();
+            
+            picocli.start(errorHandler, errStream, args);
 
             return;
         }
 
         // parse arguments and execute any of the configured commands
-        new Picocli().parseAndRun(cliArgs);
+        picocli.parseAndRun(cliArgs);
     }
 
     /**
@@ -135,15 +142,15 @@ public class KeycloakMain implements QuarkusApplication {
         }
     }
 
-    private static void handleUsageError(String message) {
-        handleUsageError(message, null);
+    private static void handleUsageError(String message, Picocli picocli) {
+        handleUsageError(message, null, picocli);
     }
 
-    private static void handleUsageError(String message, Throwable cause) {
+    private static void handleUsageError(String message, Throwable cause, Picocli picocli) {
         ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-        PrintWriter errStream = new PrintWriter(System.err, true);
+        PrintWriter errStream = picocli.getErrWriter();
         errorHandler.error(errStream, message, cause);
-        System.exit(ExitCode.USAGE);
+        picocli.exitOnFailure(ExitCode.USAGE, null);
     }
 
     private static boolean isFastStart(List<String> cliArgs) {

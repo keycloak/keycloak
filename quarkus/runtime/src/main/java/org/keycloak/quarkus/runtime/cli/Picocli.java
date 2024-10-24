@@ -200,8 +200,8 @@ public class Picocli {
         exitOnFailure(CommandLine.ExitCode.USAGE, cmd);
     }
 
-    protected void exitOnFailure(int exitCode, CommandLine cmd) {
-        if (exitCode != cmd.getCommandSpec().exitCodeOnSuccess() && !Environment.isTestLaunchMode() || isRebuildCheck()) {
+    public void exitOnFailure(int exitCode, CommandLine cmd) {
+        if (cmd == null || exitCode != cmd.getCommandSpec().exitCodeOnSuccess() && !Environment.isTestLaunchMode() || isRebuildCheck()) {
             // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
             System.exit(exitCode);
         }
@@ -702,11 +702,11 @@ public class Picocli {
         return cmd;
     }
 
-    protected PrintWriter getErrWriter() {
+    public PrintWriter getErrWriter() {
         return new PrintWriter(System.err, true);
     }
     
-    protected PrintWriter getOutWriter() {
+    public PrintWriter getOutWriter() {
         return new PrintWriter(System.out, true);
     }
 
@@ -983,8 +983,8 @@ public class Picocli {
         }
     }
 
-    public void start(CommandLine cmd) {
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
+    public void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
+        KeycloakMain.start(errorHandler, errStream, args);
     }
 
     public void build() throws Throwable {

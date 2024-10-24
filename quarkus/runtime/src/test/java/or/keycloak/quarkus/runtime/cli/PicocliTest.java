@@ -22,12 +22,15 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
 import org.junit.Test;
+import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
@@ -62,17 +65,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected PrintWriter getErrWriter() {
+        public PrintWriter getErrWriter() {
             return new PrintWriter(err, true);
         }
         
         @Override
-        protected PrintWriter getOutWriter() {
+        public PrintWriter getOutWriter() {
             return new PrintWriter(out, true);
         }
 
         @Override
-        protected void exitOnFailure(int exitCode, CommandLine cmd) {
+        public void exitOnFailure(int exitCode, CommandLine cmd) {
             this.exitCode = exitCode;
         }
 
@@ -81,13 +84,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         };
 
         @Override
-        public void parseAndRun(List<String> cliArgs) {
-            config = createConfig();
-            super.parseAndRun(cliArgs);
-        }
-        
-        @Override
-        public void start(CommandLine cmd) {
+        public void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
             // skip
         }
         
@@ -100,9 +97,9 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        ConfigArgsConfigSource.setCliArgs(args);
-        var cliArgs = Picocli.parseArgs(args);
-        nonRunningPicocli.parseAndRun(cliArgs);
+        // TODO: move to initProfile
+        nonRunningPicocli.config = createConfig();
+        KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
     }
 
@@ -244,4 +241,25 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getOutString(), containsString("The following run time options were found, but will be ignored during build time: kc.spi-something-pass"));
     }
     
+    @Test
+    public void failNoTls() {
+        NonRunningPicocli result = pseudoLaunch("start", "--hostname-strict=false");
+        assertTrue("The Output:\n" + result.getErrString() + "doesn't contains the expected string.",
+                result.getErrString().contains("Key material not provided to setup HTTPS"));
+    }
+
+    @Test
+    public void failSpiArgMissingValue() {
+        NonRunningPicocli result = pseudoLaunch("start", "--spi-events-listener-jboss-logging-success-level");
+        assertTrue("The Output:\n" + result.getErrString() + "doesn't contains the expected string.",
+                result.getErrString().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"));
+    }
+    
+    @Test
+    public void warnSpiRuntimeAtBuildtime() {
+        NonRunningPicocli result = pseudoLaunch("build", "--spi-events-listener-jboss-logging-success-level=debug");
+        assertTrue("The Output:\n" + result.getOutString() + "doesn't contains the expected string.",
+                result.getOutString().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"));
+    }
+
 }
