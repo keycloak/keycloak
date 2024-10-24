@@ -29,7 +29,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
-    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
+    <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
 
     <#if properties.meta?has_content>
         <#list properties.meta?split(' ') as meta>
@@ -55,7 +55,7 @@
             }
         }
     </script>
-    <#if properties.darkMode?boolean>
+    <#if darkMode>
       <script type="module" async blocking="render">
           const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
