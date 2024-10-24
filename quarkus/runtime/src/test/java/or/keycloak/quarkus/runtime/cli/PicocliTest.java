@@ -84,12 +84,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         };
 
         @Override
-        public void parseAndRun(List<String> cliArgs) {
-            config = createConfig();
-            super.parseAndRun(cliArgs);
-        }
-        
-        @Override
         public void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
             // skip
         }
@@ -103,7 +97,8 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        ConfigArgsConfigSource.setCliArgs(args);
+        // TODO: move to initProfile
+        nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
     }
