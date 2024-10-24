@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -28,12 +27,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
-import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -41,10 +37,10 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 public class RemoteInfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
     private final KeycloakSession session;
-    private final AuthenticationSessionTransaction transaction;
+    private final AuthenticationSessionChangeLogTransaction transaction;
     private final int authSessionsLimit;
 
-    public RemoteInfinispanAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit, AuthenticationSessionTransaction transaction) {
+    public RemoteInfinispanAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit, AuthenticationSessionChangeLogTransaction transaction) {
         this.session = Objects.requireNonNull(session);
         this.authSessionsLimit = authSessionsLimit;
         this.transaction = Objects.requireNonNull(transaction);
@@ -65,16 +61,18 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity(id);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
-
-        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
-        transaction.put(id, entity, expirationSeconds, TimeUnit.SECONDS);
-
-        return wrap(realm, entity);
+        var updater = transaction.create(id, entity);
+        updater.initialize(session, realm, authSessionsLimit);
+        return updater;
     }
 
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
-        return wrap(realm, transaction.get(authenticationSessionId));
+        var updater = transaction.get(authenticationSessionId);
+        if(updater != null) {
+            updater.initialize(session, realm, authSessionsLimit);
+        }
+        return updater;
     }
 
     @Override
@@ -114,30 +112,5 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
                 true,
                 ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );
-    }
-
-    private RootAuthenticationSessionAdapter wrap(RealmModel realm, RootAuthenticationSessionEntity entity) {
-        return entity == null ? null : new RootAuthenticationSessionAdapter(session, new RootAuthenticationSessionUpdater(realm, entity, transaction), realm, authSessionsLimit);
-    }
-
-    private record RootAuthenticationSessionUpdater(RealmModel realm, RootAuthenticationSessionEntity entity,
-                                                    AuthenticationSessionTransaction transaction
-    ) implements SessionEntityUpdater<RootAuthenticationSessionEntity> {
-
-        @Override
-        public RootAuthenticationSessionEntity getEntity() {
-            return entity;
-        }
-
-        @Override
-        public void onEntityUpdated() {
-            int expirationSeconds = entity.getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm);
-            transaction.replace(entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
-        }
-
-        @Override
-        public void onEntityRemoved() {
-            transaction.remove(entity.getId());
-        }
     }
 }
