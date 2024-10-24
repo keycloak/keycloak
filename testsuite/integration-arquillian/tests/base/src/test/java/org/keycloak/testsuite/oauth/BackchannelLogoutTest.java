@@ -510,8 +510,9 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
 
         String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
-        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
                 sessionIdConsumerRealm);
+        assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
 
         String sessionIdSubConsumerRealm =
                 assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
@@ -525,13 +526,11 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
-        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
-        assertLogoutEvent(sessionIdSubConsumerRealm, userIdSubConsumerRealm, nbc.subConsumerRealmName());
-
+        // no logout event as there is no online session now
         assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
                 sessionIdConsumerRealm);
         assertNoOfflineSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
-        assertNoSessionsInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
                 sessionIdSubConsumerRealm);
         assertActiveSessionInClient(nbc.providerRealmName(), brokerClientIdProviderRealm, userIdProviderRealm,
                 sessionIdProviderRealm);
@@ -550,8 +549,9 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
 
         String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
-        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
                 sessionIdConsumerRealm);
+        assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
 
         String sessionIdSubConsumerRealm =
                 assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
@@ -565,13 +565,11 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
-        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
-        assertLogoutEvent(sessionIdSubConsumerRealm, userIdSubConsumerRealm, nbc.subConsumerRealmName());
-
+        // no logout event as there is no online session now
         assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
                 sessionIdConsumerRealm);
         assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
-        assertNoSessionsInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
                 sessionIdSubConsumerRealm);
         assertActiveSessionInClient(nbc.providerRealmName(), brokerClientIdProviderRealm, userIdProviderRealm,
                 sessionIdProviderRealm);
@@ -589,8 +587,9 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm,
                 OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
-        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
                 sessionIdConsumerRealm);
+        assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
 
         executeLogoutFromRealm(getConsumerRoot(), nbc.consumerRealmName(), null, null, OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID, null);
         confirmLogout();
