@@ -1,14 +1,9 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
+  FileUpload,
   Form,
   FormGroup,
   Modal,
@@ -16,12 +11,16 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-
-import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
-import { StoreSettings } from "./StoreSettings";
-import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
+import { useState } from "react";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { StoreSettings } from "./StoreSettings";
 
 type GenerateKeyDialogProps = {
   clientId: string;
@@ -100,10 +99,10 @@ export const KeyForm = ({
                 value={field.value}
                 filename={filename}
                 browseButtonText={t("browse")}
-                onChange={(value, filename) => {
-                  setFilename(filename);
+                onTextChange={(value) => {
                   field.onChange(value);
                 }}
+                onFileInputChange={(_, file) => setFilename(file.name)}
               />
             )}
           />

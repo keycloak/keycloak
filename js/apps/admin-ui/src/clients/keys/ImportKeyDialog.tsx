@@ -1,6 +1,8 @@
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
+  FileUpload,
   Form,
   FormGroup,
   Modal,
@@ -10,8 +12,6 @@ import {
 } from "@patternfly/react-core";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
-import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
 
@@ -107,8 +107,11 @@ export const ImportKeyDialog = ({
                   id="importFile"
                   value={field.value.value}
                   filename={field.value.filename}
-                  onChange={(value, filename) =>
-                    field.onChange({ value, filename })
+                  onTextChange={(value) =>
+                    field.onChange({ ...field.value, value })
+                  }
+                  onFileInputChange={(_, file) =>
+                    field.onChange({ ...field.value, filename: file.name })
                   }
                 />
               )}
