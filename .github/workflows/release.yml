@@ -2,26 +2,29 @@ name: Build Keycloak, Create Release and Publish Docker Image
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "*"
 
 jobs:
   release_and_publish:
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Bump version and push tag
-        id: tag
-        uses: anothrNick/github-tag-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DEFAULT_BUMP: patch
+      - name: Extract semver
+        id: extract_semver
+        run: |
+          TAG_NAME=${GITHUB_REF##*/}
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+          if [[ "$TAG_NAME" =~ ^([0-9]+.[0-9]+.[0-9]+) ]]; then
+            echo "SEMVER=${BASH_REMATCH[1]}" >> $GITHUB_ENV
+          else
+            echo "SEMVER=$TAG_NAME" >> $GITHUB_ENV
+          fi
 
       - name: Set version
-        run: ./set-version.sh ${{ steps.tag.outputs.new_tag }}
+        run: ./set-version.sh ${{ env.SEMVER }}
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -30,7 +33,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: quarkus/dist/target/keycloak-*.tar.gz
-          tag_name: ${{ steps.tag.outputs.new_tag }}
+          tag_name: ${{ env.TAG_NAME }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -48,6 +51,6 @@ jobs:
           context: ./quarkus/container/
           file: ./quarkus/container/Dockerfile
           push: true
-          tags: ghcr.io/vunetsystems/keycloak:${{ steps.tag.outputs.new_tag }}
+          tags: ghcr.io/vunetsystems/keycloak:${{ env.TAG_NAME }}
           build-args: |
-            KEYCLOAK_VERSION=${{ steps.tag.outputs.new_tag }}
+            KEYCLOAK_VERSION=${{ env.SEMVER }}
