@@ -1,56 +1,6 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.services.resources.admin;
-
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import jakarta.ws.rs.NotFoundException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.storage.managers.UserStorageSyncManager;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.storage.user.SynchronizationResult;
-
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @resource User Storage Provider
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author
  * @version $Revision: 1 $
  */
 public class UserStorageProviderResource {
@@ -106,15 +56,16 @@ public class UserStorageProviderResource {
             throw new NotFoundException("Could not find component");
         }
         if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
-            throw new NotFoundException("found, but not a UserStorageProvider");
+            throw new NotFoundException("Found, but not a UserStorageProvider");
         }
+
+        // No log statement here regarding removing users since the method is fetching a name
 
         Map<String, String> data = new HashMap<>();
         data.put("id", model.getId());
         data.put("name", model.getName());
         return data;
     }
-
 
     /**
      * Trigger sync of users
@@ -138,12 +89,10 @@ public class UserStorageProviderResource {
             throw new NotFoundException("Could not find component");
         }
         if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
-            throw new NotFoundException("found, but not a UserStorageProvider");
+            throw new NotFoundException("Found, but not a UserStorageProvider");
         }
 
         UserStorageProviderModel providerModel = new UserStorageProviderModel(model);
-
-
 
         logger.debug("Syncing users");
 
@@ -182,9 +131,7 @@ public class UserStorageProviderResource {
     /**
      * Remove imported users
      *
-     *
      * @param id
-     * @return
      */
     @POST
     @Path("{id}/remove-imported-users")
@@ -197,17 +144,21 @@ public class UserStorageProviderResource {
             throw new NotFoundException("Could not find component");
         }
         if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
-            throw new NotFoundException("found, but not a UserStorageProvider");
+            throw new NotFoundException("Found, but not a UserStorageProvider");
         }
 
         session.users().removeImportedUsers(realm, id);
+        logger.infof("Successfully removed imported users for federation provider: '%s' with name: '%s', realm: '%s'", model.getProviderId(), model.getName(), realm.getId());
+
+        Map<String, String> eventRep = new HashMap<>();
+        eventRep.put("action", "remove-imported-users");
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
+
     /**
      * Unlink imported users from a storage provider
      *
-     *
      * @param id
-     * @return
      */
     @POST
     @Path("{id}/unlink-users")
@@ -220,7 +171,7 @@ public class UserStorageProviderResource {
             throw new NotFoundException("Could not find component");
         }
         if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
-            throw new NotFoundException("found, but not a UserStorageProvider");
+            throw new NotFoundException("Found, but not a UserStorageProvider");
         }
 
         session.users().unlinkUsers(realm, id);
