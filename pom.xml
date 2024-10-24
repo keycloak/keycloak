@@ -47,6 +47,7 @@
 
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
         <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
+        <jboss.releases.repo.name>keycloak</jboss.releases.repo.name>
         <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
@@ -188,6 +189,7 @@
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
+        <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
@@ -1662,6 +1664,25 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>nexus3-staging</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nxrm3-maven-plugin</artifactId>
+                        <version>${nexus3.staging.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>${jboss.releases.repo.id}</serverId>
+                            <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
+                            <repository>${jboss.releases.repo.name}</repository>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
