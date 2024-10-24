@@ -385,6 +385,7 @@ public class RealmAdminResource {
             rep.setDisplayName(realm.getDisplayName());
             rep.setDisplayNameHtml(realm.getDisplayNameHtml());
             rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+            rep.setBruteForceProtected(realm.isBruteForceProtected());
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
