@@ -39,7 +39,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "password-token")
     private WebElement passwordToken;
 
-    @FindBy(css = "button[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
@@ -47,6 +47,9 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
+
+    @FindBy(id = "input-error-otp-code")
+    private WebElement otpInputCodeError;
 
     public void login(String totp) {
         otpInput.clear();
@@ -67,7 +70,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         try {
             return UIUtils.getTextFromElement(totpInputCodeError);
         } catch (NoSuchElementException e) {
-            return null;
+            try {
+                return UIUtils.getTextFromElement(otpInputCodeError);
+            } catch (NoSuchElementException ex) {
+                return null;
+            }
         }
     }
 

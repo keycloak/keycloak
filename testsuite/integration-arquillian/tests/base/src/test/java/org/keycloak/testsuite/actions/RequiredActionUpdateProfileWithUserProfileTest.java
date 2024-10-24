@@ -148,11 +148,11 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         //assert field names
         // i18n replaced
-        Assert.assertEquals("First name *", updateProfilePage.getLabelForField("firstName"));
+        Assert.assertEquals("First name", updateProfilePage.getLabelForField("firstName"));
         // attribute name used if no display name set
         Assert.assertEquals("lastName", updateProfilePage.getLabelForField("lastName"));
         // direct value in display name
-        Assert.assertEquals("Department *", updateProfilePage.getLabelForField("department"));
+        Assert.assertEquals("Department", updateProfilePage.getLabelForField("department"));
 
     }
 
