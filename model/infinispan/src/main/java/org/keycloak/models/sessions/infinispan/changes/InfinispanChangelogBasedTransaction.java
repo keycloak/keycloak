@@ -240,9 +240,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                 if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
                     logger.debugf("Entity %s removed after evaluation", key);
-                    CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
-                            .withFlags(Flag.IGNORE_RETURN_VALUES)
-                            .remove(key);
+                    writeCache.withFlags(Flag.IGNORE_RETURN_VALUES).remove(key);
                     return;
                 }
 

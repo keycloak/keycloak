@@ -96,8 +96,8 @@ public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAu
     @Override
     public Expiration computeExpiration() {
         return new Expiration(
-                SessionTimeouts.getAuthSessionLifespanMS(realm, null, getValue()),
-                SessionTimeouts.getAuthSessionMaxIdleMS(realm, null, getValue()));
+                SessionTimeouts.getAuthSessionMaxIdleMS(realm, null, getValue()),
+                SessionTimeouts.getAuthSessionLifespanMS(realm, null, getValue()));
     }
 
     @Override

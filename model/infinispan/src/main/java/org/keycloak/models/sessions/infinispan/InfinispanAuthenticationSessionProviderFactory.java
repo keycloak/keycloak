@@ -103,17 +103,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 if (event instanceof PostMigrationEvent) {
                     KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
                         registerClusterListeners(session);
-                        loadAuthSessionsFromRemoteCaches(session);
                     });
                 }
             }
         });
-    }
-
-    private void loadAuthSessionsFromRemoteCaches(KeycloakSession session) {
-        for (String cacheName : remoteCacheInvoker.getRemoteCacheNames()) {
-            loadAuthSessionsFromRemoteCaches(session.getKeycloakSessionFactory(), cacheName, getSessionsPerSegment(), getMaxErrors());
-        }
     }
 
     private int getStalledTimeoutInSeconds(int defaultTimeout) {
