@@ -11,6 +11,8 @@ import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.models.AccountRoles;
@@ -178,6 +180,11 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("isViewGroupsEnabled", isViewGroupsEnabled);
         map.put("isViewOrganizationsEnabled", realm.isOrganizationsEnabled());
         map.put("isOid4VciEnabled", Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI));
+
+        Map<String, String> searchOptions = Map.of(
+                IdentityProviderModel.ENABLED, "true",
+                IdentityProviderModel.ORGANIZATION_ID, "");
+        map.put("isLinkedAccountsEnabled", session.identityProviders().getAllStream(searchOptions, 0, null).findAny().isPresent());
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
         RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
