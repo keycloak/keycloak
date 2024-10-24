@@ -34,6 +34,7 @@ public class TestRealmResourceTestProvider implements TestProvider {
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("org.keycloak.services.resource.RealmResourceProviderFactory", "services/org.keycloak.services.resource.RealmResourceProviderFactory");
+        String packagePath = "org/keycloak/it/resource/realm/";
+        return Map.of(packagePath + "services/org.keycloak.services.resource.RealmResourceProviderFactory", "services/org.keycloak.services.resource.RealmResourceProviderFactory");
     }
 }

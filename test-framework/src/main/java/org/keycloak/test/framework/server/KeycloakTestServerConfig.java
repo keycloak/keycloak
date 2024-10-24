@@ -1,8 +1,11 @@
 package org.keycloak.test.framework.server;
 
+import org.keycloak.it.TestProvider;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 public interface KeycloakTestServerConfig {
 
@@ -16,4 +19,7 @@ public interface KeycloakTestServerConfig {
 
     default boolean enableSysLog() { return false; }
 
+    default List<Class<? extends TestProvider>> customProviders() {
+        return Collections.emptyList();
+    }
 }

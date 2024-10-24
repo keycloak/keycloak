@@ -18,10 +18,13 @@
 package com.acme.provider.legacy.jpa.entity;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.keycloak.it.TestProvider;
 
 public class CustomJpaEntityProvider implements TestProvider {
+
+    final String packagePath = "com/acme/provider/legacy/jpa/entity/";
 
     @Override
     public Class[] getClasses() {
@@ -30,6 +33,11 @@ public class CustomJpaEntityProvider implements TestProvider {
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("persistence.xml", "persistence.xml");
+        return Collections.singletonMap(packagePath + "persistence.xml", "persistence.xml");
+    }
+
+    @Override
+    public List<String> getAdditionalConfig() {
+        return List.of(packagePath + "quarkus.properties");
     }
 }
