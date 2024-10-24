@@ -26,8 +26,8 @@ import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
 import { toUsers } from "./routes/Users";
-import { capitalizeFirstLetterFormatter } from "../util";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
+import { getUserMembershipsWithTypes } from "./UserMembershipTypes";
 
 type OrganizationProps = {
   user: UserRepresentation;
@@ -95,15 +95,9 @@ export const Organizations = ({ user }: OrganizationProps) => {
               orgId: orgId!,
             });
 
-          const userMemberships = memberships.filter(
-            (membership) => membership.username === user.username,
-          );
-
-          const membershipType = userMemberships.map((membership) => {
-            const formattedMembershipType = capitalizeFirstLetterFormatter()(
-              membership.membershipType,
-            );
-            return formattedMembershipType;
+          const membershipType = getUserMembershipsWithTypes({
+            memberships,
+            user,
           });
 
           return { ...org, membershipType };
