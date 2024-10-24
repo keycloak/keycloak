@@ -61,6 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -175,13 +176,25 @@ public class ResourceAdminManager {
     public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
             AuthenticatedClientSessionModel clientSession) {
         String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
+        if (backchannelLogoutUrl == null) {
+            return null;
+        }
         // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps -
         // KEYCLOAK-748)
         if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
             String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            if (StringUtil.isNullOrEmpty(host)) {
+                logger.warnf("Failed to generate backchannel-logout URL. Missing 'host' in client session notes. clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
+                        resource.getClientId(), clientSession.getId(), backchannelLogoutUrl);
+                return null;
+            }
+            logger.debugf("Attempting backchannel-logout for client with host from client session. clientId='%s' clientSessionId='%s' host='%s' backchannelLogoutUrl='%s'",
+                    resource.getClientId(), clientSession.getId(), host, backchannelLogoutUrl);
             String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
         } else {
+            logger.debugf("Attempting backchannel-logout for client. clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
+                    resource.getClientId(), clientSession.getId(), backchannelLogoutUrl);
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
         }
     }
@@ -205,7 +218,8 @@ public class ResourceAdminManager {
         LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
         String token = session.tokens().encode(logoutToken);
         if (logger.isDebugEnabled())
-            logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+            logger.debugf("Sending backchannel-logout request to client. clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
+                    resource.getClientId(), clientSessionModel.getId(), managementUrl);
         HttpPost post = null;
         try {
             post = new HttpPost(managementUrl);
@@ -222,7 +236,8 @@ public class ResourceAdminManager {
                     int status = response.getStatusLine().getStatusCode();
                     EntityUtils.consumeQuietly(response.getEntity());
                     boolean success = status == 204 || status == 200;
-                    logger.debugf("logout success for %s: %s", managementUrl, success);
+                    logger.debugf("Received response for backchannel-logout from client. clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s' status=%s success=%s",
+                            resource.getClientId(), clientSessionModel.getId(), managementUrl, status, success);
                     return Response.status(status).build();
                 } finally {
                     EntityUtils.consumeQuietly(response.getEntity());
