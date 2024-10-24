@@ -180,7 +180,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         return cache;
     }
 
-    public InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> getRoootAuthSessionTransaction() {
+    public InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> getRootAuthSessionTransaction() {
         return sessionTx;
     }
 }

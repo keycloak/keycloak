@@ -113,8 +113,4 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
                 ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );
     }
-    public void remove(RootAuthenticationSessionEntity entity) {
-        transaction.remove(entity.getId());
-    }
-
 }

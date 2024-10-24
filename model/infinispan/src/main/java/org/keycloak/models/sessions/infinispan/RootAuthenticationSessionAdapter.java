@@ -61,7 +61,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     void update(RootAuthenticationSessionUpdateTask task) {
-        provider.getRoootAuthSessionTransaction().addTask(entity.getId(), task);
+        provider.getRootAuthSessionTransaction().addTask(entity.getId(), task);
     }
 
     @Override
