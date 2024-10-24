@@ -75,15 +75,19 @@ wait time will never reach the value you have set to `Max wait`.
 .. If the time between this failure and the last failure is greater than _Failure Reset Time_
 ... Reset `count`
 .. Increment `count`
-.. Calculate `wait` using _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number
-.. If `wait` equals 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
+.. Calculate `wait` according the brute force strategy defined (see below Strategies to set Wait Time).
+.. If `wait` equals is less than 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
 ... Temporarily disable the user for the smallest of `wait` and _Max Wait_ seconds
 ... Increment the temporary lockout counter
 
 `count` does not increment when a temporarily disabled account commits a login failure.
 ====
 
-For instance, if you have set `Max Login Failures` to `5` and a `Wait Increment` of `30` seconds, the effective time an account will be disabled after several failed authentication attempts will be:
+*Strategies to set Wait Time*
+
+{project_name} provides two strategies to calculate wait time: By multiples or Linear. By multiples is the first strategy introduced by {project_name}, so that is the default one. 
+
+By multiples strategy, wait time is incremented when the number (or count) of failures are multiples of `Max Login Failure`. For instance, if you set `Max Login Failures` to `5` and a `Wait Increment` to `30` seconds, the effective time that an account is disabled after several failed authentication attempts will be:
 
 [cols="1,1,1,1"]
 |===
@@ -100,9 +104,30 @@ For instance, if you have set `Max Login Failures` to `5` and a `Wait Increment`
 |**10** |**30** | 5 | **60**
 |===
 
-Note that the `Effective Wait Time` at the 5th failed attempt will disable the account for `30` seconds. Only after reaching
-the next multiple of `Max Login Failures`, in this case `10`, will the time increase from `30` to `60`. The time the account will be disabled
-is only increased when reaching multiples of `Max Login Failures`.
+At the fifth failed attempt of the `Effective Wait Time`, the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds. 
+
+The By multiple strategy uses the following formula to calculate wait time: _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number.
+
+For linear strategy, wait time is incremented when the number (or count) of failures equals or is greater than `Max Login Failure`. For instance, if you have set `Max Login Failures` to `5` and a `Wait Increment` to`30` seconds, the effective time that an account is disabled after several failed authentication attempts will be:
+
+[cols="1,1,1,1"]
+|===
+|`Number of Failures` | `Wait Increment`  | `Max Login Failures` | `Effective Wait Time`
+|1 |30 | 5 | 0
+|2 |30 | 5 | 0
+|3 |30 | 5 | 0
+|4 |30 | 5 | 0
+|**5** |**30** | 5 | **30**
+|**6** |**30** | 5 | **60**
+|**7** |**30** | 5 | **90**
+|**8** |**30** | 5 | **120**
+|**9** |**30** | 5 | **150**
+|**10** |**30** | 5 | **180**
+|===
+
+At the fifth failed attempt for the `Effective Wait Time`, the account is disabled for `30` seconds. Each new failed attempt increases wait time.
+
+The linear strategy uses the following formula to calculate wait time: _Wait Increment_ * (1 + `count` - _Max Login Failures_).
 
 *Permanent Lockout Parameters*
 
