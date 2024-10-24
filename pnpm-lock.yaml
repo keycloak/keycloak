@@ -36,8 +36,8 @@ importers:
         specifier: ^10.5.0
         version: 10.5.0(eslint@9.13.0)
       eslint-plugin-playwright:
-        specifier: ^1.8.1
-        version: 1.8.1(eslint@9.13.0)
+        specifier: ^2.0.0
+        version: 2.0.0(eslint@9.13.0)
       eslint-plugin-prettier:
         specifier: ^5.2.1
         version: 5.2.1(eslint-config-prettier@9.1.0(eslint@9.13.0))(eslint@9.13.0)(prettier@3.3.3)
@@ -2638,15 +2638,11 @@ packages:
     peerDependencies:
       eslint: '>=7.0.0'
 
-  eslint-plugin-playwright@1.8.1:
-    resolution: {integrity: sha512-wzT8rUFOXN6ztRVHSAZI0QpQnxY7bbvcu2z+C/giy3zrkL8WlsFQCv7NillgLBhWnr7oZjC5Pax/GMAJmZlWHA==}
+  eslint-plugin-playwright@2.0.0:
+    resolution: {integrity: sha512-nPa44nSp48mp/U+GSneabrhlyIyGvrcv+Z14u6sgno+jX8N0bH+ooSLEC1L6dvMDSHs7tj+kMIbls3l8gCJJSg==}
     engines: {node: '>=16.6.0'}
     peerDependencies:
       eslint: '>=8.40.0'
-      eslint-plugin-jest: '>=25'
-    peerDependenciesMeta:
-      eslint-plugin-jest:
-        optional: true
 
   eslint-plugin-prettier@5.2.1:
     resolution: {integrity: sha512-gH3iR3g4JfF+yYPaJYkN7jEl9QbweL/YfkoRlNnuIEHEz1vHVlCmWOS+eGGiRuzHQXdJFCOTxRgvju9b8VUmrw==}
@@ -7363,7 +7359,7 @@ snapshots:
       globals: 13.24.0
       rambda: 7.5.0
 
-  eslint-plugin-playwright@1.8.1(eslint@9.13.0):
+  eslint-plugin-playwright@2.0.0(eslint@9.13.0):
     dependencies:
       eslint: 9.13.0
       globals: 13.24.0
