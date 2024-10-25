@@ -51,6 +51,12 @@ stack as a direct replacement.
 When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
 See the Javadoc for a detailed description.
 
+= Updated format of KEYCLOAK_SESSION cookie
+
+The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie
+contains user session ID, which is hashed by SHA-256 and URL encoded. This can affect you just in case when implementing your own providers and relying on the format of internal {project_name}
+cookies.
+
 = Removal of robots.txt file
 
 The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overidden per-realm if a different behaviour is needed.

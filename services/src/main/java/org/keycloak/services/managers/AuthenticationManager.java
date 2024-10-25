@@ -39,7 +39,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
@@ -49,6 +48,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -101,6 +101,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -803,20 +804,20 @@ public class AuthenticationManager {
     }
 
     public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
+        if (session == null) {
+            throw new IllegalArgumentException("User session cannot be null");
+        }
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
         IdentityCookieToken identityCookieToken = createIdentityToken(keycloakSession, realm, user, session, issuer);
         String encoded = keycloakSession.tokens().encode(identityCookieToken);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
-        if (session != null && session.isRememberMe()) {
+        if (session.isRememberMe()) {
             maxAge = realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
         }
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.IDENTITY, encoded, maxAge);
 
-        // With user-storage providers, user ID can contain special characters, which need to be encoded
-        String sessionCookieValue = realm.getName() + "/" + Encode.urlEncode(user.getId());
-        if (session != null) {
-            sessionCookieValue += "/" + session.getId();
-        }
+        String sessionCookieValue = sha256UrlEncodedHash(session.getId());
+
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
         int sessionCookieMaxAge = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
@@ -912,18 +913,13 @@ public class AuthenticationManager {
                                                        ClientSessionContext clientSessionCtx,
                                                        HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
                                                        EventBuilder event, AuthenticationSessionModel authSession, LoginProtocol protocol) {
-        String sessionCookie = session.getProvider(CookieProvider.class).get(CookieType.SESSION);
-        if (sessionCookie != null) {
-
-            String[] split = sessionCookie.split("/");
-            if (split.length >= 3) {
-                String oldSessionId = split[2];
-                if (!oldSessionId.equals(userSession.getId())) {
-                    UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
-                    if (oldSession != null) {
-                        logger.debugv("Removing old user session: session: {0}", oldSessionId);
-                        session.sessions().removeUserSession(realm, oldSession);
-                    }
+        if (!compareSessionIdWithSessionCookie(session, userSession.getId())) {
+            AuthResult result = authenticateIdentityCookie(session, realm, false);
+            if (result != null) {
+                UserSessionModel oldSession = result.getSession();
+                if (oldSession != null && !oldSession.getId().equals(userSession.getId())) {
+                    logger.debugv("Removing old user session: session: {0}", oldSession.getId());
+                    session.sessions().removeUserSession(realm, oldSession);
                 }
             }
         }
@@ -960,19 +956,31 @@ public class AuthenticationManager {
 
     }
 
-    public static String getSessionIdFromSessionCookie(KeycloakSession session) {
+    /**
+     * @param session keycloak session
+     * @param sessionId in plain-text
+     * @return true if sessionId matches with the session from KEYCLOAK_SESSION_COOKIE
+     */
+    public static boolean compareSessionIdWithSessionCookie(KeycloakSession session, String sessionId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("Not expected to provide null sessionId");
+        }
+
         String cookie = session.getProvider(CookieProvider.class).get(CookieType.SESSION);
         if (cookie == null || cookie.isEmpty()) {
             logger.debugv("Could not find cookie: {0}", KEYCLOAK_SESSION_COOKIE);
-            return null;
+            return false;
         }
 
-        String[] parts = cookie.split("/", 3);
-        if (parts.length != 3) {
-            logger.debugv("Cannot parse session value from: {0}", KEYCLOAK_SESSION_COOKIE);
-            return null;
+        if (cookie.equals(sha256UrlEncodedHash(sessionId))) return true;
+
+        // Backwards compatibility
+        String[] split = cookie.split("/");
+        if (split.length >= 3) {
+            String oldSessionId = split[2];
+            return !sessionId.equals(oldSessionId);
         }
-        return parts[2];
+        return false;
     }
 
     public static boolean isSSOAuthentication(AuthenticatedClientSessionModel clientSession) {
@@ -1668,6 +1676,10 @@ public class AuthenticationManager {
         }
 
         return null;
+    }
+
+    public static String sha256UrlEncodedHash(String input) {
+        return HashUtils.sha256UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
     }
 
 }

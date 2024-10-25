@@ -432,7 +432,7 @@ public class LogoutEndpoint {
             return initiateBrowserLogout(userSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout
-            if (userSessionIdFromIdToken.equals(AuthenticationManager.getSessionIdFromSessionCookie(session))) {
+            if (AuthenticationManager.compareSessionIdWithSessionCookie(session, userSessionIdFromIdToken)) {
                 return initiateBrowserLogout(userSession);
             }
             // check if the user session is not logging out or already logged out
