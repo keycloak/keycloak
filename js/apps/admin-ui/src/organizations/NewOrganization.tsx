@@ -22,7 +22,7 @@ export default function NewOrganization() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const form = useForm();
+  const form = useForm({ mode: "onChange" });
   const { handleSubmit, formState } = form;
 
   const save = async (org: OrganizationFormType) => {
