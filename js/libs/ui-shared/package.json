@@ -46,7 +46,7 @@
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@patternfly/react-core": "^5.4.2",
-    "@patternfly/react-icons": "^5.4.0",
+    "@patternfly/react-icons": "^6.0.0",
     "@patternfly/react-styles": "^5.4.0",
     "@patternfly/react-table": "^5.4.8",
     "i18next": "^23.16.2",
