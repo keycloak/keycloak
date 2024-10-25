@@ -151,9 +151,28 @@ public interface UserSessionProvider extends Provider {
      */
     void removeExpired(RealmModel realm);
 
+    /**
+     * Removes all user sessions (regular and offline) from the specified realm.
+     *
+     * @param realm the realm whose sessions are to be removed.
+     */
     void removeUserSessions(RealmModel realm);
 
+    /**
+     * Callback method invoked when a realm is removed. Implementations should clear any sessions associated with the removed
+     * realm.
+     *
+     * @param realm a reference to the realm being removed.
+     */
     void onRealmRemoved(RealmModel realm);
+
+    /**
+     * Callback method invoked when a client is removed. Implementations should clear any sessions associated with the
+     * removed client.
+     *
+     * @param realm a reference to the realm.
+     * @param client a reference to the client being removed.
+     */
     void onClientRemoved(RealmModel realm, ClientModel client);
 
     /** Newly created userSession won't contain attached AuthenticatedClientSessions **/

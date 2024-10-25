@@ -92,3 +92,9 @@ expect the database schema being updated to add a new column `DETAILS_JSON` to t
 The key providers that allow to import externally generated keys (`rsa` and `java-keystore` factories) now check the validity of the associated certificate if present. Therefore a key with a certificate that is expired cannot be imported in {project_name} anymore. If the certificate expires at runtime, the key is converted into a passive key (enabled but not active). A passive key is not used for new tokens, but it is still valid for validating previous issued tokens.
 
 The default `generated` key providers generate a certificate valid for 10 years (the types that have or can have an associated certificate). Because of the long validity and the recommendation to rotate keys frequently, the generated providers do not perform this check.
+
+= Sign out all active sessions in admin console now effectively removes all sessions
+
+In previous versions, clicking on `Sign out all active sessions` in the admin console resulted in the removal of regular sessions only. Offline sessions would still be displayed despite being effectively invalidated.
+
+This has been changed and now all sessions, regular and offline, are removed when signing out of all active sessions.
