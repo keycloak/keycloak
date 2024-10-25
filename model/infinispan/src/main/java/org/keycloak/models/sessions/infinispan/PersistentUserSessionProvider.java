@@ -485,7 +485,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
                 ClusterProvider.DCNotify.ALL_DCS);
 
-        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, false);
+        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {

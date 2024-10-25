@@ -147,4 +147,12 @@ public interface UserSessionPersisterProvider extends Provider {
         // TODO: remove default implementation
     }
 
+    /**
+     * Removes all user sessions from the specified realm.
+     */
+    default void removeUserSessions(RealmModel realm) {
+        removeUserSessions(realm, true);
+        removeUserSessions(realm, false);
+    }
+
 }
