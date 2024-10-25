@@ -42,7 +42,6 @@ function getIcon(icon: string) {
     case "linkedin-openid-connect":
       return LinkedinIcon;
 
-    case "openshift-v3":
     case "openshift-v4":
       return OpenshiftIcon;
     case "stackoverflow":

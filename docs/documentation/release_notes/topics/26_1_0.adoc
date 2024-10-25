@@ -21,7 +21,7 @@ endif::[]
 
 = Option to create certificates for generated EC keys
 
-A new option, `Generate certificate`, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a 
+A new option, `Generate certificate`, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a
 certificate might be generated for this key. The certificate information is available in the Admin Console and in the JWK representation of this key, which is available
 from JWKS endpoint with the realm keys.
 
@@ -53,4 +53,6 @@ by the LDAP provider.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}], and the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
 
+= OpenShift v3 identity brokering removed
 
+As OpenShift v3 reached end-of-life a while back, support for identity brokering with OpenShift v3 has been removed from Keycloak.
