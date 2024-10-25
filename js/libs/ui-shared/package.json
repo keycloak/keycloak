@@ -49,7 +49,7 @@
     "@patternfly/react-icons": "^5.4.0",
     "@patternfly/react-styles": "^5.4.0",
     "@patternfly/react-table": "^5.4.8",
-    "i18next": "^23.16.2",
+    "i18next": "^23.16.3",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
