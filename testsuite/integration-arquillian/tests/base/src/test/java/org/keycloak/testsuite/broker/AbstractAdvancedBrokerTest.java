@@ -532,7 +532,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
-        // Enable brute force protector in cosumer realm
+        // Enable brute force protector in consumer realm
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         RealmRepresentation consumerRealmRep = realm.toRepresentation();
         consumerRealmRep.setBruteForceProtected(true);
@@ -567,14 +567,14 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             Map<String, Object> bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
             assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
+            long numExecutors = WaitUtils.getNumExecutors(testingClient);
 
             // Login for 2 times with incorrect TOTP. This should temporarily disable the user
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-            WaitUtils.waitForPageToLoad();
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-            WaitUtils.waitForPageToLoad();
+            WaitUtils.waitForExecutors(testingClient, numExecutors+2);
 
             bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
             assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
