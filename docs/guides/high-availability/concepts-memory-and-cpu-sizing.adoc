@@ -40,6 +40,10 @@ To calculate the requested memory, use the calculation above. As memory limit, s
 * For each 200 client credential grants per second, 1 vCPU to the cluster (tested with up to 2000 per second).
 +
 Most CPU time goes into creating new TLS connections, as each client runs only a single request.
++
+The database may become a bottleneck when performing many concurrent client credential grant workflows.
+With this in mind, it is recommended to size the `users` and `realms` cache accordingly.
+Tests show this workflow may take up to 2 entries in the `users` cache and up to 4 entries in the `realms` cache per client, to perform the workflow without database accesses.
 
 * For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).
 
