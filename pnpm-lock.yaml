@@ -166,8 +166,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles':
-        specifier: ^5.4.0
-        version: 5.4.0
+        specifier: ^5.4.1
+        version: 5.4.1
       '@patternfly/react-table':
         specifier: ^5.4.8
         version: 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -392,8 +392,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles':
-        specifier: ^5.4.0
-        version: 5.4.0
+        specifier: ^5.4.1
+        version: 5.4.1
       '@patternfly/react-table':
         specifier: ^5.4.8
         version: 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1188,9 +1188,6 @@ packages:
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
-
-  '@patternfly/react-styles@5.4.0':
-    resolution: {integrity: sha512-4ZE0s6LkX/0KsN0FOeogrDoj18m+BPA73YKnabZGB4SDRzrBNeBh2a6bSt546ZseEjkoJ+S81kOG0G8YckPQYg==}
 
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
@@ -5458,7 +5455,7 @@ snapshots:
       '@patternfly/react-code-editor': 5.4.10(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-styles': 5.4.0
+      '@patternfly/react-styles': 5.4.1
       '@patternfly/react-table': 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
@@ -5662,8 +5659,6 @@ snapshots:
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-
-  '@patternfly/react-styles@5.4.0': {}
 
   '@patternfly/react-styles@5.4.1': {}
 
