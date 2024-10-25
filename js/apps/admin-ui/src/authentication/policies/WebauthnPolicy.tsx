@@ -161,7 +161,7 @@ export const WebauthnPolicy = ({
             name={`${namePrefix}RpEntityName`}
             label={t("webAuthnPolicyRpEntityName")}
             labelIcon={t("webAuthnPolicyRpEntityNameHelp")}
-            rules={{ required: { value: true, message: t("required") } }}
+            rules={{ required: t("required") }}
           />
           <WebauthnSelect
             name={`${namePrefix}SignatureAlgorithms`}

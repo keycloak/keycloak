@@ -17,6 +17,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
@@ -178,6 +179,13 @@ public class AuthenticationManager {
             logger.debug("No user session");
             return false;
         }
+        if (userSession.getNote(Details.IDENTITY_PROVIDER) != null) {
+            String brokerAlias = userSession.getNote(Details.IDENTITY_PROVIDER);
+            if (realm.getIdentityProviderByAlias(brokerAlias) == null) {
+                // associated idp was removed, invalidate the session.
+                return false;
+            }
+        }
         long currentTime = Time.currentTimeMillis();
         long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm);
@@ -298,7 +306,7 @@ public class AuthenticationManager {
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession =
-                createOrJoinLogoutSession(session, realm, asm, userSession, false);
+                createOrJoinLogoutSession(session, realm, asm, userSession, false, false);
 
         boolean userSessionOnlyHasLoggedOutClients = false;
         try {
@@ -333,7 +341,8 @@ public class AuthenticationManager {
         return backchannelLogoutResponse;
     }
 
-    public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm, final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie) {
+    public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
+            final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
         if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
             return logoutSession;
@@ -376,14 +385,24 @@ public class AuthenticationManager {
                 .filter( authSession -> AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSession.getAction()))
                 .findFirst();
 
-        AuthenticationSessionModel logoutAuthSession;
+        AuthenticationSessionModel logoutAuthSession = null, prevAuthSession = null;
         if (found.isPresent()) {
-            logoutAuthSession = found.get();
-            logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
-        } else {
+            prevAuthSession = found.get();
+            if (!initiateLogout || client.getId().equals(prevAuthSession.getClient().getId())) {
+                logoutAuthSession = prevAuthSession;
+                logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
+            }
+        }
+
+        if (logoutAuthSession == null) {
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
+            if (prevAuthSession != null) {
+                // remove previous logout session for the other client
+                rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
+                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+            }
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
         session.getContext().setClient(client);
@@ -417,12 +436,19 @@ public class AuthenticationManager {
         if (logoutBroker) {
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
-                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+                IdentityProvider identityProvider = null;
                 try {
-                    identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
-                } catch (Exception e) {
-                    logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
-                    backchannelLogoutResponse.setLocalLogoutSucceeded(false);
+                    identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+                } catch (IdentityBrokerException e) {
+                    logger.warn("Skipping backchannel logout for broker " + brokerId + " - not found");
+                }
+                if (identityProvider != null) {
+                    try {
+                        identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
+                    } catch (Exception e) {
+                        logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
+                        backchannelLogoutResponse.setLocalLogoutSucceeded(false);
+                    }
                 }
             }
         }
@@ -643,7 +669,7 @@ public class AuthenticationManager {
         }
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
 
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
@@ -681,7 +707,7 @@ public class AuthenticationManager {
 
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
 
         Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
         if (response != null) {
@@ -1516,7 +1542,18 @@ public class AuthenticationManager {
                     }
                 }
 
-                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+
+                if (userSession != null) {
+                    String userSessionId = userSession.getId();
+                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), newSession -> {
+                        RealmModel realmModel = newSession.realms().getRealm(realm.getId());
+                        UserSessionModel userSessionModel = newSession.sessions().getUserSession(realmModel, userSessionId);
+                        backchannelLogout(newSession, realmModel, userSessionModel, uriInfo, connection, headers, true);
+                    });
+                    // remove the user session here so that the external persistent session tx becomes aware of the removal that happened
+                    // during the backchannel logout.
+                    session.sessions().removeUserSession(realm, userSession);
+                }
                 logger.debug("User session not active");
                 return null;
             }

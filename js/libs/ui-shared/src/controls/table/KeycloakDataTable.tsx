@@ -1,4 +1,5 @@
 import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
+import { SyncAltIcon } from "@patternfly/react-icons";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
   ActionsColumn,
@@ -19,7 +20,7 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { cloneDeep, differenceBy, get } from "lodash-es";
+import { cloneDeep, get, intersectionBy } from "lodash-es";
 import {
   ComponentClass,
   ReactNode,
@@ -32,13 +33,11 @@ import {
   type JSX,
 } from "react";
 import { useTranslation } from "react-i18next";
-
-import { useStoredState } from "../../utils/useStoredState";
 import { useFetch } from "../../utils/useFetch";
+import { useStoredState } from "../../utils/useStoredState";
+import { KeycloakSpinner } from "../KeycloakSpinner";
 import { ListEmptyState } from "./ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
-import { SyncAltIcon } from "@patternfly/react-icons";
-import { KeycloakSpinner } from "../KeycloakSpinner";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -65,9 +64,11 @@ type DataTableProps<T> = {
   rows: (Row<T> | SubRow<T>)[];
   actions?: IActions;
   actionResolver?: IActionsResolver;
-  onSelect?: (isSelected: boolean, rowIndex: number) => void;
+  selected?: T[];
+  onSelect?: (value: T[]) => void;
   onCollapse?: (isOpen: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
+  canSelect: boolean;
   isNotCompact?: boolean;
   isRadio?: boolean;
 };
@@ -90,37 +91,68 @@ function DataTable<T>({
   actions,
   actionResolver,
   ariaLabelKey,
+  selected,
   onSelect,
   onCollapse,
   canSelectAll,
+  canSelect,
   isNotCompact,
   isRadio,
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
-
-  const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
+  const [selectedRows, setSelectedRows] = useState<T[]>(selected || []);
   const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
 
-  const updateState = (rowIndex: number, isSelected: boolean) => {
-    const items = [
-      ...(rowIndex === -1 ? Array(rows.length).fill(isSelected) : selectedRows),
-    ];
-    items[rowIndex] = isSelected;
-    setSelectedRows(items);
-  };
+  const rowsSelectedOnPage = useMemo(
+    () =>
+      intersectionBy(
+        selectedRows,
+        rows.map((row) => row.data),
+        "id",
+      ),
+    [selectedRows, rows],
+  );
 
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
-        const selected = selectedRows.filter((r) => r === true);
         checkbox.indeterminate =
-          selected.length < rows.length && selected.length > 0;
+          rowsSelectedOnPage.length < rows.length &&
+          rowsSelectedOnPage.length > 0;
       }
     }
-  }, [selectedRows]);
+  }, [selectedRows, canSelectAll, rows]);
+
+  const updateSelectedRows = (selected: T[]) => {
+    setSelectedRows(selected);
+    onSelect?.(selected);
+  };
+
+  const updateState = (rowIndex: number, isSelected: boolean) => {
+    if (rowIndex === -1) {
+      const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) => get(v, "id"));
+      updateSelectedRows(
+        isSelected
+          ? [...selectedRows, ...rows.map((row) => row.data)]
+          : selectedRows.filter(
+              (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
+            ),
+      );
+    } else {
+      if (isSelected) {
+        updateSelectedRows([...selectedRows, rows[rowIndex].data]);
+      } else {
+        updateSelectedRows(
+          selectedRows.filter(
+            (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
+          ),
+        );
+      }
+    }
+  };
 
   return (
     <Table
@@ -133,16 +165,14 @@ function DataTable<T>({
           {onCollapse && <Th />}
           {canSelectAll && (
             <Th
+              aria-label={t("selectAll")}
               select={
                 !isRadio
                   ? {
-                      onSelect: (_, isSelected, rowIndex) => {
-                        onSelect!(isSelected, rowIndex);
+                      onSelect: (_, isSelected) => {
                         updateState(-1, isSelected);
                       },
-                      isSelected:
-                        selectedRows.filter((r) => r === true).length ===
-                        rows.length,
+                      isSelected: rowsSelectedOnPage.length === rows.length,
                     }
                   : undefined
               }
@@ -150,7 +180,7 @@ function DataTable<T>({
           )}
           {columns.map((column) => (
             <Th
-              key={column.displayKey}
+              key={column.displayKey || column.name}
               className={column.transforms?.[0]().className}
             >
               {t(column.displayKey || column.name)}
@@ -162,15 +192,16 @@ function DataTable<T>({
         <Tbody>
           {(rows as IRow[]).map((row, index) => (
             <Tr key={index} isExpanded={expandedRows[index]}>
-              {onSelect && (
+              {canSelect && (
                 <Td
                   select={{
                     rowIndex: index,
                     onSelect: (_, isSelected, rowIndex) => {
-                      onSelect!(isSelected, rowIndex);
                       updateState(rowIndex, isSelected);
                     },
-                    isSelected: selectedRows[index],
+                    isSelected: !!selectedRows.find(
+                      (v) => get(v, "id") === row.data.id,
+                    ),
                     variant: isRadio ? "radio" : "checkbox",
                   }}
                 />
@@ -476,38 +507,6 @@ export function KeycloakDataTable<T>({
       return action;
     });
 
-  const _onSelect = (isSelected: boolean, rowIndex: number) => {
-    const data = filteredData || rows;
-    if (rowIndex === -1) {
-      setRows(
-        data!.map((row) => {
-          (row as Row<T>).selected = isSelected;
-          return row;
-        }),
-      );
-    } else {
-      (data![rowIndex] as Row<T>).selected = isSelected;
-
-      setRows([...rows!]);
-    }
-
-    // Keeps selected items when paginating
-    const difference = differenceBy(
-      selected,
-      data!.map((row) => row.data),
-      "id",
-    );
-
-    // Selected rows are any rows previously selected from a different page, plus current page selections
-    const selectedRows = [
-      ...difference,
-      ...data!.filter((row) => (row as Row<T>).selected).map((row) => row.data),
-    ];
-
-    setSelected(selectedRows);
-    onSelect!(selectedRows);
-  };
-
   const onCollapse = (isOpen: boolean, rowIndex: number) => {
     (data![rowIndex] as Row<T>).isOpen = isOpen;
     setRows([...data!]);
@@ -557,7 +556,12 @@ export function KeycloakDataTable<T>({
             <DataTable
               {...props}
               canSelectAll={canSelectAll}
-              onSelect={onSelect ? _onSelect : undefined}
+              canSelect={!!onSelect}
+              selected={selected}
+              onSelect={(selected) => {
+                setSelected(selected);
+                onSelect?.(selected);
+              }}
               onCollapse={detailColumns ? onCollapse : undefined}
               actions={convertAction()}
               actionResolver={actionResolver}

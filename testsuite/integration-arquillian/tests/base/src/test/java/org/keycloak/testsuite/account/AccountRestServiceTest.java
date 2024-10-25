@@ -31,6 +31,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -987,8 +988,31 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(204, response.getStatus());
         }
 
-        // Revert - re-enable requiredAction and remove OTP credential from the user
+        // Revert - re-enable requiredAction
         setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
+    }
+
+    // Issue 30204
+    @Test
+    public void testCredentialsGetWithDisabledDeleteCredentialAction() throws IOException {
+        // Assert OTP will be returned by default
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Assert OTP removeable
+        AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
+        assertTrue(otpCredential.isRemoveable());
+
+        // Disable "Delete credential" action
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, false);
+
+        // Assert OTP not removeable
+        credentials = getCredentials();
+        otpCredential = credentials.get(1);
+        assertFalse(otpCredential.isRemoveable());
+
+        // Revert - re-enable requiredAction
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, true);
     }
 
     private void setRequiredActionEnabledStatus(String requiredActionProviderId, boolean enabled) {
@@ -1181,8 +1205,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
 
-        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, null, offlineClientAppUri);
-        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, true, true, null, null);
+        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, false, true, null, offlineClientAppUri);
+        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, false, true, null, null);
     }
 
     @Test
@@ -1709,9 +1733,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "direct-grant"));
 
-        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
+        assertNull(apps.get("offline-client"));
     }
 
     @Test

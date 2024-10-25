@@ -76,6 +76,17 @@ public class StartCommandDistTest {
         result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
         result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
+    
+    @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
+        CLIResult result = dist.run("build");
+        result.assertBuild();
+
+        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        result.assertStarted();
+    }
 
     @Test
     @Launch({ "--profile=dev", "start" })
@@ -133,6 +144,7 @@ public class StartCommandDistTest {
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage("ignored during build");
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");

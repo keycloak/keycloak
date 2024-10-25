@@ -196,7 +196,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         try (
-                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update(); 
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -256,6 +256,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(text, Matchers.containsString(("You were invited to join the " + organizationName + " organization. Click the link below to join. </p>")));
         assertThat(text, Matchers.containsString(("<a href=\"" + link + "\" rel=\"nofollow\">Link to join the organization</a></p>")));
         assertThat(text, Matchers.containsString(("Link to join the organization")));
+        assertThat(text, Matchers.containsString(("This link will expire within 12 hours")));
         assertThat(text, Matchers.containsString(("<p>If you dont want to join the organization, just ignore this message.</p>")));
 
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
@@ -299,7 +300,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
-        acceptInvitation(organization, user, "Account Management");
+        acceptInvitation(organization, user, "Sign in to");
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user, String pageTitle) throws MessagingException, IOException {

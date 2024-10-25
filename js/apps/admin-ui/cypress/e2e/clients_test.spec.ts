@@ -1221,7 +1221,8 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Sessions, true)
         .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(5);
+        .checkTabExists(ClientsDetailsTab.UserEvents, true)
+        .checkNumberOfTabsIsEqual(6);
     });
 
     it("Hides the delete action", () => {
@@ -1275,6 +1276,25 @@ describe("Clients test", () => {
     it("Hides the capability config section", () => {
       cy.findByTestId("capability-config-form").should("not.exist");
       cy.findByTestId("jump-link-capability-config").should("not.exist");
+    });
+  });
+
+  describe("Generated home URLs for built-in clients", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
+      commonPage.sidebar().goToClients();
+    });
+
+    it("Check account-console Home URL", () => {
+      cy.findByTestId("client-home-url-account-console").contains("/account/");
+    });
+
+    it("Check security-admin-console Home URL", () => {
+      cy.findByTestId("client-home-url-security-admin-console").contains(
+        "/console/",
+      );
     });
   });
 

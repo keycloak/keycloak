@@ -8,7 +8,7 @@ runs:
       id: pnpm-version
       shell: bash
       run: |
-        echo "version=$(mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "version=$(./mvnw help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
 
     - uses: actions/cache@v4
       name: Cache PNPM store

@@ -1,10 +1,8 @@
-import { FormGroup } from "@patternfly/react-core";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { FileUpload, FormGroup } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
-import { FileUpload } from "../json-file-upload/patternfly/FileUpload";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
@@ -48,9 +46,8 @@ export const FileComponent = ({
             }}
             isLoading={isLoading}
             allowEditingUploadedText={false}
-            onChange={(value, filename) => {
+            onTextChange={(value) => {
               field.onChange(value);
-              setFilename(filename);
             }}
           />
         )}

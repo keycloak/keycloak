@@ -34,6 +34,7 @@ public abstract class AbstractCommand {
 
     @Spec
     protected CommandSpec spec;
+    protected Picocli picocli;
 
     protected void executionError(CommandLine cmd, String message) {
         executionError(cmd, message, null);
@@ -65,13 +66,17 @@ public abstract class AbstractCommand {
     }
 
     protected void validateConfig() {
-        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this);
+        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
     }
 
     public abstract String getName();
 
     public CommandLine getCommandLine() {
         return spec.commandLine();
+    }
+    
+    public void setPicocli(Picocli picocli) {
+        this.picocli = picocli;
     }
 
 }

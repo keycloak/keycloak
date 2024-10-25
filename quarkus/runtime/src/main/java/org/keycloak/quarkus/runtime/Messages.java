@@ -33,11 +33,10 @@ public final class Messages {
     }
 
     public static String httpsConfigurationNotSet() {
-        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
+        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates, or if HTTPS access is not needed see the `http-enabled` option.");
         if (!org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile())) {
-            builder.append(" or start the server in development mode");
+            builder.append(" If you meant to start the server in development mode, see the `start-dev` command.");
         }
-        builder.append(".");
         return builder.toString();
     }
 

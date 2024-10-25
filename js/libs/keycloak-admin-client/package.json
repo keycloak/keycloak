@@ -49,8 +49,8 @@
     "@types/chai": "^5.0.0",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.9",
-    "@types/node": "^22.7.5",
-    "chai": "^5.1.1",
+    "@types/node": "^22.7.9",
+    "chai": "^5.1.2",
     "lodash-es": "^4.17.21",
     "mocha": "^10.7.3",
     "ts-node": "^10.9.2"

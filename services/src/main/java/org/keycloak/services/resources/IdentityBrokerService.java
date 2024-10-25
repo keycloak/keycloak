@@ -404,6 +404,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 }
                 return response;
             }
+        } catch (WebApplicationException e) {
+            return e.getResponse();
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerAlias);
         } catch (Exception e) {

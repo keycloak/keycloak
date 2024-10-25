@@ -16,11 +16,14 @@ const realm = "user-profile";
 test.describe("Personal info page", () => {
   const user = "user-" + randomUUID();
 
-  test.beforeAll(() => createRandomUserWithPassword(user, "pwd"));
+  test.beforeAll(
+    async () =>
+      await inRealm(realm, () => createRandomUserWithPassword(user, "pwd")),
+  );
   test.afterAll(async () => await inRealm(realm, () => deleteUser(user)));
 
   test("sets basic information", async ({ page }) => {
-    await login(page, user, "pwd");
+    await login(page, user, "pwd", realm);
 
     await page.getByTestId("email").fill(`${user}@somewhere.com`);
     await page.getByTestId("firstName").fill("Erik");
@@ -117,14 +120,12 @@ test.describe("Personal info with userprofile enabled", () => {
 
 test.describe("Realm localization", () => {
   test.beforeAll(() => enableLocalization());
-
   test("change locale", async ({ page }) => {
-    const user = await createRandomUserWithPassword(
-      "user-" + randomUUID(),
-      "pwd",
+    const user = await inRealm(realm, () =>
+      createRandomUserWithPassword("user-" + randomUUID(), "pwd"),
     );
 
-    await login(page, user, "pwd");
+    await login(page, user, "pwd", realm);
     await page.locator("#locale").click();
     page.getByRole("option").filter({ hasText: "Deutsch" });
     await page.getByRole("option", { name: "English" }).click();

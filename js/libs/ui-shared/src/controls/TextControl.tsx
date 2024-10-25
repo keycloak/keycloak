@@ -14,7 +14,7 @@ import {
   UseControllerProps,
   useController,
 } from "react-hook-form";
-
+import { getRuleValue } from "../utils/getRuleValue";
 import { FormLabel } from "./FormLabel";
 
 export type TextControlProps<
@@ -36,7 +36,7 @@ export const TextControl = <
   props: TextControlProps<T, P>,
 ) => {
   const { labelIcon, helperText, ...rest } = props;
-  const required = !!props.rules?.required;
+  const required = !!getRuleValue(props.rules?.required);
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
   const { field, fieldState } = useController({

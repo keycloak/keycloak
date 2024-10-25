@@ -49,7 +49,7 @@ public class TracingPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
-                        .to("quarkus.otel.traces.enabled")
+                        .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
                         .build(),
                 fromOption(TRACING_ENDPOINT)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)

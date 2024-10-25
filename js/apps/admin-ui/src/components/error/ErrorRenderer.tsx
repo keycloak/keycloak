@@ -1,4 +1,8 @@
 import {
+  useErrorBoundary,
+  type FallbackProps,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Alert,
   AlertActionCloseButton,
   AlertActionLink,
@@ -7,10 +11,9 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
-import { type FallbackProps } from "@keycloak/keycloak-ui-shared";
-
 export const ErrorRenderer = ({ error }: FallbackProps) => {
   const { t } = useTranslation();
+  const { showBoundary } = useErrorBoundary();
 
   const reset = () => {
     window.location.href = window.location.origin + window.location.pathname;
@@ -26,7 +29,9 @@ export const ErrorRenderer = ({ error }: FallbackProps) => {
           <AlertActionCloseButton title={error.message} onClose={reset} />
         }
         actionLinks={
-          <AlertActionLink onClick={reset}>{t("retry")}</AlertActionLink>
+          <AlertActionLink onClick={() => showBoundary()}>
+            {t("retry")}
+          </AlertActionLink>
         }
       ></Alert>
     </PageSection>

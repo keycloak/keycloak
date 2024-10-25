@@ -1,4 +1,4 @@
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -249,6 +249,12 @@ export const AdvancedSettings = ({
               stringify
             />
           </FormGroup>
+          <TextControl
+            type="text"
+            name={convertAttributeNameToForm("attributes.minimum.acr.value")}
+            label={t("minimumACRValue")}
+            labelIcon={t("minimumACRValueHelp")}
+          />
         </>
       )}
       <ActionGroup>

@@ -467,10 +467,7 @@ export default function AttributesGroupForm() {
               labelIcon={t("nameHintHelp")}
               isDisabled={!!matchingGroup || editMode}
               rules={{
-                required: {
-                  value: true,
-                  message: t("required"),
-                },
+                required: t("required"),
                 onChange: (event) => {
                   handleAttributesGroupNameChange(event, event.target.value);
                 },

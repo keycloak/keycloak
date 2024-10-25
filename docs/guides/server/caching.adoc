@@ -219,7 +219,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping-udp` when distributed caches are enabled.
 
 === Available transport stacks
 
@@ -229,9 +229,12 @@ The following table shows transport stacks that are available without any furthe
 |===
 |Stack name|Transport protocol|Discovery
 
-|tcp|TCP|MPING (uses UDP multicast).
-|udp|UDP|UDP multicast
+|`tcp`|TCP|MPING (uses UDP multicast).
+|`udp`|UDP|UDP multicast
+|`jdbc-ping-udp`|UDP|JDBC_PING2
+|`jdbc-ping`|TCP|JDBC_PING2
 |===
+
 
 The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
@@ -239,7 +242,7 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|kubernetes|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
+|`kubernetes`|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
 |===
 
 === Additional transport stacks
@@ -252,9 +255,9 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 |===
 |Stack name|Transport protocol|Discovery
 
-|ec2|TCP|NATIVE_S3_PING
-|google|TCP|GOOGLE_PING2
-|azure|TCP|AZURE_PING
+|`ec2`|TCP|NATIVE_S3_PING
+|`google`|TCP|GOOGLE_PING2
+|`azure`|TCP|AZURE_PING
 |===
 
 Cloud vendor specific stacks have additional dependencies for {project_name}.

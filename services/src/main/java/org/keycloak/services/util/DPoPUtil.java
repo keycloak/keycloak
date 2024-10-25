@@ -154,7 +154,7 @@ public class DPoPUtil {
         }
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
-        final boolean isClientRequiresDpop = clientConfig.isUseDPoP();
+        final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
         final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
         if (!isClientRequiresDpop && !isDpopHeaderPresent) {
             return Optional.empty();

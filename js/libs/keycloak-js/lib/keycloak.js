@@ -60,7 +60,7 @@ function Keycloak (config) {
         );
     }
 
-    kc.init = function (initOptions) {
+    kc.init = function (initOptions = {}) {
         if (kc.didInitialize) {
             throw new Error("A 'Keycloak' instance can only be initialized once.");
         }
@@ -72,9 +72,9 @@ function Keycloak (config) {
         callbackStorage = createCallbackStorage();
         var adapters = ['default', 'cordova', 'cordova-native'];
 
-        if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
+        if (adapters.indexOf(initOptions.adapter) > -1) {
             adapter = loadAdapter(initOptions.adapter);
-        } else if (initOptions && typeof initOptions.adapter === "object") {
+        } else if (typeof initOptions.adapter === "object") {
             adapter = initOptions.adapter;
         } else {
             if (window.Cordova || window.cordova) {
@@ -84,101 +84,99 @@ function Keycloak (config) {
             }
         }
 
-        if (initOptions) {
-            if (typeof initOptions.useNonce !== 'undefined') {
-                useNonce = initOptions.useNonce;
-            }
+        if (typeof initOptions.useNonce !== 'undefined') {
+            useNonce = initOptions.useNonce;
+        }
 
-            if (typeof initOptions.checkLoginIframe !== 'undefined') {
-                loginIframe.enable = initOptions.checkLoginIframe;
-            }
+        if (typeof initOptions.checkLoginIframe !== 'undefined') {
+            loginIframe.enable = initOptions.checkLoginIframe;
+        }
 
-            if (initOptions.checkLoginIframeInterval) {
-                loginIframe.interval = initOptions.checkLoginIframeInterval;
-            }
+        if (initOptions.checkLoginIframeInterval) {
+            loginIframe.interval = initOptions.checkLoginIframeInterval;
+        }
 
-            if (initOptions.onLoad === 'login-required') {
-                kc.loginRequired = true;
-            }
+        if (initOptions.onLoad === 'login-required') {
+            kc.loginRequired = true;
+        }
 
-            if (initOptions.responseMode) {
-                if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
-                    kc.responseMode = initOptions.responseMode;
-                } else {
-                    throw 'Invalid value for responseMode';
-                }
-            }
-
-            if (initOptions.flow) {
-                switch (initOptions.flow) {
-                    case 'standard':
-                        kc.responseType = 'code';
-                        break;
-                    case 'implicit':
-                        kc.responseType = 'id_token token';
-                        break;
-                    case 'hybrid':
-                        kc.responseType = 'code id_token token';
-                        break;
-                    default:
-                        throw 'Invalid value for flow';
-                }
-                kc.flow = initOptions.flow;
-            }
-
-            if (initOptions.timeSkew != null) {
-                kc.timeSkew = initOptions.timeSkew;
-            }
-
-            if(initOptions.redirectUri) {
-                kc.redirectUri = initOptions.redirectUri;
-            }
-
-            if (initOptions.silentCheckSsoRedirectUri) {
-                kc.silentCheckSsoRedirectUri = initOptions.silentCheckSsoRedirectUri;
-            }
-
-            if (typeof initOptions.silentCheckSsoFallback === 'boolean') {
-                kc.silentCheckSsoFallback = initOptions.silentCheckSsoFallback;
+        if (initOptions.responseMode) {
+            if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
+                kc.responseMode = initOptions.responseMode;
             } else {
-                kc.silentCheckSsoFallback = true;
+                throw 'Invalid value for responseMode';
+            }
+        }
+
+        if (initOptions.flow) {
+            switch (initOptions.flow) {
+                case 'standard':
+                    kc.responseType = 'code';
+                    break;
+                case 'implicit':
+                    kc.responseType = 'id_token token';
+                    break;
+                case 'hybrid':
+                    kc.responseType = 'code id_token token';
+                    break;
+                default:
+                    throw 'Invalid value for flow';
+            }
+            kc.flow = initOptions.flow;
+        }
+
+        if (initOptions.timeSkew != null) {
+            kc.timeSkew = initOptions.timeSkew;
+        }
+
+        if(initOptions.redirectUri) {
+            kc.redirectUri = initOptions.redirectUri;
+        }
+
+        if (initOptions.silentCheckSsoRedirectUri) {
+            kc.silentCheckSsoRedirectUri = initOptions.silentCheckSsoRedirectUri;
+        }
+
+        if (typeof initOptions.silentCheckSsoFallback === 'boolean') {
+            kc.silentCheckSsoFallback = initOptions.silentCheckSsoFallback;
+        } else {
+            kc.silentCheckSsoFallback = true;
+        }
+
+        if (typeof initOptions.pkceMethod !== "undefined") {
+            if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
+                throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
             }
 
-            if (typeof initOptions.pkceMethod !== "undefined") {
-                if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
-                    throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
-                }
+            kc.pkceMethod = initOptions.pkceMethod;
+        } else {
+            kc.pkceMethod = "S256";
+        }
 
-                kc.pkceMethod = initOptions.pkceMethod;
-            } else {
-                kc.pkceMethod = "S256";
-            }
+        if (typeof initOptions.enableLogging === 'boolean') {
+            kc.enableLogging = initOptions.enableLogging;
+        } else {
+            kc.enableLogging = false;
+        }
 
-            if (typeof initOptions.enableLogging === 'boolean') {
-                kc.enableLogging = initOptions.enableLogging;
-            } else {
-                kc.enableLogging = false;
-            }
+        if (initOptions.logoutMethod === 'POST') {
+            kc.logoutMethod = 'POST';
+        } else {
+            kc.logoutMethod = 'GET';
+        }
 
-            if (initOptions.logoutMethod === 'POST') {
-                kc.logoutMethod = 'POST';
-            } else {
-                kc.logoutMethod = 'GET';
-            }
+        if (typeof initOptions.scope === 'string') {
+            kc.scope = initOptions.scope;
+        }
 
-            if (typeof initOptions.scope === 'string') {
-                kc.scope = initOptions.scope;
-            }
+        if (typeof initOptions.acrValues === 'string') {
+            kc.acrValues = initOptions.acrValues;
+        }
 
-            if (typeof initOptions.acrValues === 'string') {
-                kc.acrValues = initOptions.acrValues;
-            }
-
-            if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
-                kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
-            } else {
-                kc.messageReceiveTimeout = 10000;
-            }
+        if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
+            kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
+        } else {
+            kc.messageReceiveTimeout = 10000;
         }
 
         if (!kc.responseMode) {
@@ -207,7 +205,7 @@ function Keycloak (config) {
                     options.prompt = 'none';
                 }
 
-                if (initOptions && initOptions.locale) {
+                if (initOptions.locale) {
                     options.locale = initOptions.locale;
                 }
                 kc.login(options).then(function () {
@@ -281,42 +279,40 @@ function Keycloak (config) {
                 }).catch(function (error) {
                     initPromise.setError(error);
                 });
-            } else if (initOptions) {
-                if (initOptions.token && initOptions.refreshToken) {
-                    setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+            }
 
-                    if (loginIframe.enable) {
-                        setupCheckLoginIframe().then(function() {
-                            checkLoginIframe().then(function (unchanged) {
-                                if (unchanged) {
-                                    kc.onAuthSuccess && kc.onAuthSuccess();
-                                    initPromise.setSuccess();
-                                    scheduleCheckIframe();
-                                } else {
-                                    initPromise.setSuccess();
-                                }
-                            }).catch(function (error) {
-                                initPromise.setError(error);
-                            });
-                        });
-                    } else {
-                        kc.updateToken(-1).then(function() {
-                            kc.onAuthSuccess && kc.onAuthSuccess();
-                            initPromise.setSuccess();
-                        }).catch(function(error) {
-                            kc.onAuthError && kc.onAuthError();
-                            if (initOptions.onLoad) {
-                                onLoad();
+            if (initOptions.token && initOptions.refreshToken) {
+                setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+
+                if (loginIframe.enable) {
+                    setupCheckLoginIframe().then(function() {
+                        checkLoginIframe().then(function (unchanged) {
+                            if (unchanged) {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                                scheduleCheckIframe();
                             } else {
-                                initPromise.setError(error);
+                                initPromise.setSuccess();
                             }
+                        }).catch(function (error) {
+                            initPromise.setError(error);
                         });
-                    }
-                } else if (initOptions.onLoad) {
-                    onLoad();
+                    });
                 } else {
-                    initPromise.setSuccess();
+                    kc.updateToken(-1).then(function() {
+                        kc.onAuthSuccess && kc.onAuthSuccess();
+                        initPromise.setSuccess();
+                    }).catch(function(error) {
+                        kc.onAuthError && kc.onAuthError();
+                        if (initOptions.onLoad) {
+                            onLoad();
+                        } else {
+                            initPromise.setError(error);
+                        }
+                    });
                 }
+            } else if (initOptions.onLoad) {
+                onLoad();
             } else {
                 initPromise.setSuccess();
             }
@@ -677,7 +673,7 @@ function Keycloak (config) {
 
                                 kc.onAuthRefreshError && kc.onAuthRefreshError();
                                 for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
-                                    p.setError(true);
+                                    p.setError("Failed to refresh token: An unexpected HTTP error occurred while attempting to refresh the token.");
                                 }
                             }
                         }
@@ -1245,7 +1241,7 @@ function Keycloak (config) {
     function check3pCookiesSupported() {
         var promise = createPromise();
 
-        if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
+        if ((loginIframe.enable || kc.silentCheckSsoRedirectUri) && typeof kc.endpoints.thirdPartyCookiesIframe === 'function') {
             var iframe = document.createElement('iframe');
             iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
             iframe.setAttribute('sandbox', 'allow-storage-access-by-user-activation allow-scripts allow-same-origin');
@@ -1593,6 +1589,8 @@ function Keycloak (config) {
         throw 'invalid adapter type: ' + type;
     }
 
+    const STORAGE_KEY_PREFIX = 'kc-callback-';
+
     var LocalStorage = function() {
         if (!(this instanceof LocalStorage)) {
             return new LocalStorage();
@@ -1603,24 +1601,61 @@ function Keycloak (config) {
 
         var cs = this;
 
-        function clearExpired() {
-            var time = new Date().getTime();
-            for (var i = 0; i < localStorage.length; i++)  {
-                var key = localStorage.key(i);
-                if (key && key.indexOf('kc-callback-') == 0) {
-                    var value = localStorage.getItem(key);
-                    if (value) {
-                        try {
-                            var expires = JSON.parse(value).expires;
-                            if (!expires || expires < time) {
-                                localStorage.removeItem(key);
-                            }
-                        } catch (err) {
-                            localStorage.removeItem(key);
-                        }
-                    }
+        /**
+         * Clears all values from local storage that are no longer valid.
+         */
+        function clearInvalidValues() {
+            const currentTime = Date.now();
+
+            for (const [key, value] of getStoredEntries()) {
+                // Attempt to parse the expiry time from the value.
+                const expiry = parseExpiry(value);
+
+                // Discard the value if it is malformed or expired.
+                if (expiry === null || expiry < currentTime) {
+                    localStorage.removeItem(key);
                 }
             }
+        }
+
+        /**
+         * Clears all known values from local storage.
+         */
+        function clearAllValues() {
+            for (const [key] of getStoredEntries()) {
+                localStorage.removeItem(key);
+            }
+        }
+
+        /**
+         * Gets all entries stored in local storage that are known to be managed by this class.
+         * @returns {Array<[string, unknown]>} An array of key-value pairs.
+         */
+        function getStoredEntries() {
+            return Object.entries(localStorage).filter(([key]) => key.startsWith(STORAGE_KEY_PREFIX));
+        }
+
+        /**
+         * Parses the expiry time from a value stored in local storage.
+         * @param {unknown} value
+         * @returns {number | null} The expiry time in milliseconds, or `null` if the value is malformed.
+         */
+        function parseExpiry(value) {
+            let parsedValue;
+
+            // Attempt to parse the value as JSON.
+            try {
+                parsedValue = JSON.parse(value);
+            } catch (error) {
+                return null;
+            }
+
+            // Attempt to extract the 'expires' property.
+            if (isObject(parsedValue) && 'expires' in parsedValue && typeof parsedValue.expires === 'number') {
+                return parsedValue.expires;
+            }
+
+            return null;
         }
 
         cs.get = function(state) {
@@ -1628,23 +1663,34 @@ function Keycloak (config) {
                 return;
             }
 
-            var key = 'kc-callback-' + state;
+            var key = STORAGE_KEY_PREFIX + state;
             var value = localStorage.getItem(key);
             if (value) {
                 localStorage.removeItem(key);
                 value = JSON.parse(value);
             }
 
-            clearExpired();
+            clearInvalidValues();
             return value;
         };
 
         cs.add = function(state) {
-            clearExpired();
+            clearInvalidValues();
 
-            var key = 'kc-callback-' + state.state;
-            state.expires = new Date().getTime() + (60 * 60 * 1000);
-            localStorage.setItem(key, JSON.stringify(state));
+            const key = STORAGE_KEY_PREFIX + state.state;
+            const value = JSON.stringify({
+                ...state,
+                // Set the expiry time to 1 hour from now.
+                expires: Date.now() + (60 * 60 * 1000)
+            });
+
+            try {
+                localStorage.setItem(key, value);
+            } catch (error) {
+                // If the storage is full, clear all known values and try again.
+                clearAllValues();
+                localStorage.setItem(key, value);
+            }
         };
     };
 
@@ -1660,15 +1706,15 @@ function Keycloak (config) {
                 return;
             }
 
-            var value = getCookie('kc-callback-' + state);
-            setCookie('kc-callback-' + state, '', cookieExpiration(-100));
+            var value = getCookie(STORAGE_KEY_PREFIX + state);
+            setCookie(STORAGE_KEY_PREFIX + state, '', cookieExpiration(-100));
             if (value) {
                 return JSON.parse(value);
             }
         };
 
         cs.add = function(state) {
-            setCookie('kc-callback-' + state.state, JSON.stringify(state), cookieExpiration(60));
+            setCookie(STORAGE_KEY_PREFIX + state.state, JSON.stringify(state), cookieExpiration(60));
         };
 
         cs.removeItem = function(key) {

@@ -119,7 +119,7 @@ describe("Group test", () => {
         .assertNoSearchResultsMessageExist(true);
     });
 
-    it.skip("Duplicate group", () => {
+    it("Duplicate group", () => {
       groupPage
         .duplicateGroupItem(groupNames[0], true)
         .assertNotificationGroupDuplicated();

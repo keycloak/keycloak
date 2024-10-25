@@ -199,7 +199,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectRegister(String username, String email) {
         return expectRegister(username, email, DEFAULT_CLIENT_ID);
     }
-    
+
     public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)
@@ -399,13 +399,12 @@ public class AssertEvents implements TestRule {
                 List<String> presentedEventTypes = new LinkedList<>();
                 for (int i = 0 ; i < 25 ; i++) {
                     EventRepresentation event = fetchNextEvent(seconds);
-                    if (event == null) {
-                        Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
-                    }
-                    if (expected.getType().equals(event.getType())) {
-                        return assertEvent(event);
-                    } else {
-                        presentedEventTypes.add(event.getType());
+                    if (event != null) {
+                        if (expected.getType().equals(event.getType())) {
+                            return assertEvent(event);
+                        } else {
+                            presentedEventTypes.add(event.getType());
+                        }
                     }
                 }
                 Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);

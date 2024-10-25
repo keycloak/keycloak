@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,25 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.resources;
+package org.keycloak.sdjwt.consumer;
 
-import org.keycloak.utils.MediaType;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ext.Provider;
+import java.io.IOException;
 
-@Provider
-@Path("/robots.txt")
-public class RobotsResource {
+/**
+ * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
+ */
+public interface HttpDataFetcher {
 
-    private static final String robots = "User-agent: *\n" + "Disallow: /";
-
-    @GET
-    @Produces(MediaType.TEXT_PLAIN_UTF_8)
-    public String getRobots() {
-        return robots;
-    }
-
+    /**
+     * Performs an HTTP GET at the URI and parses the response as JSON
+     * @throws IOException if I/O error or HTTP status not OK (200)
+     */
+    JsonNode fetchJsonData(String uri) throws IOException;
 }

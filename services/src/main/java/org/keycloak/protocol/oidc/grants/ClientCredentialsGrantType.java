@@ -106,6 +106,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+        setAuthorizationDetailsNoteIfIncluded(authSession);
 
         // persisting of userSession by default
         UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
@@ -145,6 +146,10 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // Make refresh token generation optional, see KEYCLOAK-9551
         if (useRefreshToken) {
             responseBuilder = responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
+                // for client credentials the online session can be removed
+                session.sessions().removeUserSession(realm, userSession);
+            }
         } else {
             responseBuilder.getAccessToken().setSessionId(null);
         }
@@ -188,4 +193,14 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         return EventType.CLIENT_LOGIN;
     }
 
+    /**
+     * Setting a client note with authorization_details to support custom protocol mappers using RAR (Rich Authorization Request)
+     * until RAR is fully implemented.
+     */
+    private void setAuthorizationDetailsNoteIfIncluded(AuthenticationSessionModel authSession) {
+        String authorizationDetails = formParams.getFirst(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM);
+        if (authorizationDetails != null) {
+            authSession.setClientNote(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM, authorizationDetails);
+        }
+    }
 }

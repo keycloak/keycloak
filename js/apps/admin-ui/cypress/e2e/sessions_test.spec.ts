@@ -86,14 +86,6 @@ describe("Sessions test", () => {
 
       listingPage.searchItem(clientId, false);
       sidebarPage.waitForPageLoad();
-      // Log out the associated online session of the user
-      commonPage
-        .tableUtils()
-        .checkRowItemExists(username)
-        .selectRowItemAction(username, "Sign out");
-
-      listingPage.searchItem(clientId, false);
-      sidebarPage.waitForPageLoad();
 
       // Now check that offline session exists (online one has been logged off above)
       // and that it is possible to revoke it
