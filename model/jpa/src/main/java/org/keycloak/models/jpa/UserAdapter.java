@@ -407,7 +407,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
-    public Stream<GroupModel> getGroupsStream() {
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
         return getGroupsStream(null, null, null);
     }
 

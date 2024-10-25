@@ -162,7 +162,16 @@ public interface UserModel extends RoleMapperModel {
      *
      * @return a non-null {@link Stream} of groups.
      */
-    Stream<GroupModel> getGroupsStream();
+    default Stream<GroupModel> getGroupsStream() {
+        return getGroupsStream(true);
+    }
+
+    /**
+     * Obtains the groups associated with the user allowing to filter out Organization Groups.
+     *
+     * @return a non-null {@link Stream} of groups.
+     */
+    Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups);
 
     /**
      * Returns a paginated stream of groups within this realm with search in the name

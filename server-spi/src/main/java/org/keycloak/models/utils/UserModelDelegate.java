@@ -218,12 +218,12 @@ public class UserModelDelegate implements UserModel {
     public UserModel getDelegate() {
         return delegate;
     }
-    
+
     @Override
     public Long getCreatedTimestamp(){
         return delegate.getCreatedTimestamp();
     }
-    
+
     @Override
     public void setCreatedTimestamp(Long timestamp){
         delegate.setCreatedTimestamp(timestamp);
@@ -232,6 +232,11 @@ public class UserModelDelegate implements UserModel {
     @Override
     public Stream<GroupModel> getGroupsStream() {
         return delegate.getGroupsStream();
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
+        return delegate.getGroupsStream(withOrganizationGroups);
     }
 
     @Override

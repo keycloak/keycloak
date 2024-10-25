@@ -417,6 +417,20 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
+        return getGroupsStream(false);
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
+        Stream<GroupModel> result = getGroupModelStream();
+        if(withOrganizationGroups) {
+            return result.sorted(Comparator.comparing(GroupModel::getName));
+        } else {
+            return result.filter(g -> Type.REALM.equals(g.getType())).sorted(Comparator.comparing(GroupModel::getName));
+        }
+    }
+
+    private Stream<GroupModel> getGroupModelStream() {
         Stream<GroupModel> result = Stream.empty();
 
         if (updated != null) {
@@ -442,8 +456,7 @@ public class UserAdapter implements CachedUserModel {
                 result = groups.stream();
             }
         }
-
-        return result.filter(g -> Type.REALM.equals(g.getType())).sorted(Comparator.comparing(GroupModel::getName));
+        return result;
     }
 
     @Override

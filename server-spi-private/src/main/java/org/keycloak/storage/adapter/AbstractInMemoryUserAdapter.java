@@ -206,12 +206,15 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     public void setEmailVerified(boolean verified) {
         checkReadonly();
         this.emailVerified = verified;
-
     }
 
     @Override
-    public Stream<GroupModel> getGroupsStream() {
-        return groupIds.stream().map(realm::getGroupById);
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
+        if(withOrganizationGroups) {
+            return groupIds.stream().map(realm::getGroupById);
+        } else {
+            return groupIds.stream().map(realm::getGroupById).filter(g -> !g.getType().equals(GroupModel.Type.ORGANIZATION));
+        }
     }
 
     @Override

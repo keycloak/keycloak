@@ -701,6 +701,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
         @Override
+        public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroup) {
+            return getGroupsStream();
+        }
+
+        @Override
         public Stream<GroupModel> getGroupsStream() {
             Stream<GroupModel> ldapGroupMappings = getLDAPGroupMappingsConverted();
             if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
@@ -708,7 +713,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 return ldapGroupMappings;
             } else {
                 // Merge mappings from both DB and LDAP
-                return Stream.concat(ldapGroupMappings, super.getGroupsStream());
+                return Stream.concat(ldapGroupMappings, super.getGroupsStream(true));
             }
         }
 
