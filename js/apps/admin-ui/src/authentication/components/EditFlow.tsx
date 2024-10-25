@@ -84,7 +84,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                 name="displayName"
                 label={t("name")}
                 labelIcon={t("flowNameHelp")}
-                rules={{ required: { value: true, message: t("required") } }}
+                rules={{ required: t("required") }}
               />
               <TextAreaControl
                 name="description"
