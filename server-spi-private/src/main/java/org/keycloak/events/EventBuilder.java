@@ -22,7 +22,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -30,6 +29,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -80,17 +80,18 @@ public class EventBuilder {
     }
 
     private static List<EventListenerProvider> getEventListeners(KeycloakSession session, RealmModel realm) {
-        return realm.getEventsListenersStream().map(id -> {
-            EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-            if (listener != null) {
-                return listener;
-            } else {
-                log.error("Event listener '" + id + "' registered, but provider not found");
-                return null;
-            }
-        })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        List<EventListenerProvider> result = session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> realmListeners.contains(providerFactory.getId()) || ((EventListenerProviderFactory) providerFactory).isGlobal())
+                .map(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    return session.getProvider(EventListenerProvider.class, providerFactory.getId());
+                })
+                .toList();
+        if (!realmListeners.isEmpty()) {
+            log.error("Event listeners " + realmListeners + " registered, but provider not found");
+        }
+        return result;
     }
 
     private EventBuilder(KeycloakSession session, EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
@@ -159,10 +160,10 @@ public class EventBuilder {
         event.getDetails().put(key, value);
         return this;
     }
-    
+
     /**
-     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
-     * 
+     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character.
+     *
      * @param key of the detail
      * @param values, can be null
      * @return builder for chaining
@@ -173,10 +174,10 @@ public class EventBuilder {
         }
         return detail(key, values.stream().filter(Objects::nonNull).collect(Collectors.joining("::")));
     }
-    
+
     /**
-     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
-     * 
+     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character.
+     *
      * @param key of the detail
      * @param values, can be null
      * @return builder for chaining
