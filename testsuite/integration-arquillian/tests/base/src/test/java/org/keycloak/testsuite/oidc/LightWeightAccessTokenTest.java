@@ -19,8 +19,12 @@ package org.keycloak.testsuite.oidc;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
@@ -102,6 +106,7 @@ import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
@@ -520,6 +525,29 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             }
         } catch (Exception e) {
             Assert.fail(e.getMessage());
+        }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testAdminConsoleClientWithLightweightAccessTokenTransientSessionDynamicScopes() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), TEST_CLIENT)
+                .setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            String accessToken = response.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertBasicClaims(oauth.verifyToken(accessToken), false, false);
+
+            try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                HttpPost post = new HttpPost(OAuthClient.SERVER_ROOT + "/auth/admin/realms");
+                post.setHeader("Authorization", "Bearer " + accessToken);
+                post.setEntity(new StringEntity("{\"realm\":\"invalid\",\"enabled\":true}", ContentType.APPLICATION_JSON));
+                try (CloseableHttpResponse resp = client.execute(post)) {
+                    Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), resp.getStatusLine().getStatusCode());
+                }
+            }
         }
     }
 

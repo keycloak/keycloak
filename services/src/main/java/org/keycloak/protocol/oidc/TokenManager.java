@@ -621,6 +621,7 @@ public class TokenManager {
         Set<ClientScopeModel> clientScopes;
 
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            session.getContext().setClient(client);
             clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
                     .collect(Collectors.toSet());
         } else {
