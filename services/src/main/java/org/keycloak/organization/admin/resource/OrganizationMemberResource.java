@@ -90,7 +90,7 @@ public class OrganizationMemberResource {
         try {
             if (provider.addMember(organization, user)) {
                 adminEvent.operation(OperationType.CREATE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
-                        .representation(ModelToRepresentation.toRepresentation(organization))
+                        .representation(ModelToRepresentation.toRepresentation(organization, user))
                         .resourcePath(session.getContext().getUri())
                         .success();
                 return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
@@ -168,7 +168,7 @@ public class OrganizationMemberResource {
 
         if (provider.removeMember(organization, member)) {
             adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
-                    .representation(ModelToRepresentation.toRepresentation(organization))
+                    .representation(ModelToRepresentation.toRepresentation(organization, member))
                     .resourcePath(session.getContext().getUri())
                     .success();
             return Response.noContent().build();
