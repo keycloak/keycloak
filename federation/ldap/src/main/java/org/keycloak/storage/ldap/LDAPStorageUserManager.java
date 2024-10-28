@@ -45,7 +45,13 @@ public class LDAPStorageUserManager {
     }
 
     public LDAPObject getManagedLDAPObject(String userId) {
-        return managedLDAPObjects.get(userId);
+        ManagedUserEntry entry = managedUsers.get(userId);
+        if (entry != null) {
+            return entry.getLdapUser();
+        }
+        else {
+            return managedLDAPObjects.get(userId);
+        }
     }
 
     public void setManagedLDAPObject(String userId, LDAPObject ldapObject) {
@@ -74,7 +80,7 @@ public class LDAPStorageUserManager {
         }
 
         LDAPTransaction ldapTransaction = new LDAPTransaction(provider, ldapObject);
-        ManagedUserEntry newEntry = new ManagedUserEntry(proxiedUser, ldapTransaction);
+        ManagedUserEntry newEntry = new ManagedUserEntry(proxiedUser, ldapObject, ldapTransaction);
         managedUsers.put(userId, newEntry);
     }
 
@@ -87,15 +93,21 @@ public class LDAPStorageUserManager {
     private static class ManagedUserEntry {
 
         private final UserModel managedProxiedUser;
+        private final LDAPObject ldapUser;
         private final LDAPTransaction ldapTransaction;
 
-        public ManagedUserEntry(UserModel managedProxiedUser, LDAPTransaction ldapTransaction) {
+        public ManagedUserEntry(UserModel managedProxiedUser, LDAPObject ldapUser, LDAPTransaction ldapTransaction) {
             this.managedProxiedUser = managedProxiedUser;
+            this.ldapUser = ldapUser;
             this.ldapTransaction = ldapTransaction;
         }
 
         public UserModel getManagedProxiedUser() {
             return managedProxiedUser;
+        }
+
+        public LDAPObject getLdapUser() {
+            return ldapUser;
         }
 
         public LDAPTransaction getLdapTransaction() {
