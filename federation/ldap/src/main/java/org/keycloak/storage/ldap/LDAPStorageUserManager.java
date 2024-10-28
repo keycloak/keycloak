@@ -31,6 +31,7 @@ import org.keycloak.storage.ldap.mappers.LDAPTransaction;
  */
 public class LDAPStorageUserManager {
 
+    private final Map<String, LDAPObject> managedLDAPObjects = new HashMap<>();
     private final Map<String, ManagedUserEntry> managedUsers = new HashMap<>();
     private final LDAPStorageProvider provider;
 
@@ -43,9 +44,16 @@ public class LDAPStorageUserManager {
         return entry==null ? null : entry.getManagedProxiedUser();
     }
 
-    public LDAPObject getManagedLDAPUser(String userId) {
-        ManagedUserEntry entry = managedUsers.get(userId);
-        return entry==null ? null : entry.getLdapUser();
+    public LDAPObject getManagedLDAPObject(String userId) {
+        return managedLDAPObjects.get(userId);
+    }
+
+    public void setManagedLDAPObject(String userId, LDAPObject ldapObject) {
+        LDAPObject object = managedLDAPObjects.get(userId);
+        if (object != null) {
+            throw new IllegalStateException("Don't expect to have ldap object for user " + userId);
+        }
+        managedLDAPObjects.put(userId, ldapObject);
     }
 
     public LDAPTransaction getTransaction(String userId) {
@@ -66,7 +74,7 @@ public class LDAPStorageUserManager {
         }
 
         LDAPTransaction ldapTransaction = new LDAPTransaction(provider, ldapObject);
-        ManagedUserEntry newEntry = new ManagedUserEntry(proxiedUser, ldapObject, ldapTransaction);
+        ManagedUserEntry newEntry = new ManagedUserEntry(proxiedUser, ldapTransaction);
         managedUsers.put(userId, newEntry);
     }
 
@@ -79,21 +87,15 @@ public class LDAPStorageUserManager {
     private static class ManagedUserEntry {
 
         private final UserModel managedProxiedUser;
-        private final LDAPObject ldapUser;
         private final LDAPTransaction ldapTransaction;
 
-        public ManagedUserEntry(UserModel managedProxiedUser, LDAPObject ldapUser, LDAPTransaction ldapTransaction) {
+        public ManagedUserEntry(UserModel managedProxiedUser, LDAPTransaction ldapTransaction) {
             this.managedProxiedUser = managedProxiedUser;
-            this.ldapUser = ldapUser;
             this.ldapTransaction = ldapTransaction;
         }
 
         public UserModel getManagedProxiedUser() {
             return managedProxiedUser;
-        }
-
-        public LDAPObject getLdapUser() {
-            return ldapUser;
         }
 
         public LDAPTransaction getLdapTransaction() {
