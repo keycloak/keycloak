@@ -621,18 +621,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * @return ldapUser corresponding to local user or null if user is no longer in LDAP
      */
     protected LDAPObject loadAndValidateUser(RealmModel realm, UserModel local) {
-        LDAPObject existing = userManager.getManagedLDAPUser(local.getId());
+        // getFirstAttribute triggers validation and another call to this method, so we run it before checking the cache
+        String uuidLdapAttribute = local.getFirstAttribute(LDAPConstants.LDAP_ID);
+
+        LDAPObject existing = userManager.getManagedLDAPObject(local.getId());
         if (existing != null) {
             return existing;
         }
 
-        String uuidLdapAttribute = local.getFirstAttribute(LDAPConstants.LDAP_ID);
-
         LDAPObject ldapUser = loadLDAPUserByUuid(realm, uuidLdapAttribute);
-
         if(ldapUser == null){
             return null;
         }
+        userManager.setManagedLDAPObject(local.getId(), ldapUser);
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
 
         if (ldapUser.getUuid().equals(local.getFirstAttribute(LDAPConstants.LDAP_ID))) {
