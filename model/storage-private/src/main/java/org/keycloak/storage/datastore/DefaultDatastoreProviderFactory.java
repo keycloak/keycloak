@@ -95,7 +95,7 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
                 .name(ALLOW_MIGRATE_EXISTING_DB_TO_SNAPSHOT_OPTION)
                 .type("boolean")
                 .helpText("By default, it is not allowed to run the snapshot/development server against the database, which was previously migrated to some officially released server version. As an attempt of doing this " +
-                        "indicates that you are trying to run development server against production database, which can result in a loss or corruption of data. If it is really intended, you can use this option, which will allow to use " +
+                        "indicates that you are trying to run development server against production database, which can result in a loss or corruption of data, and also does not allow upgrading. If it is really intended, you can use this option, which will allow to use " +
                         "nightly/development server against production database when explicitly switch to true. This option is recommended just in the development environments and should be never used in the production!")
                 .defaultValue(false)
                 .add()

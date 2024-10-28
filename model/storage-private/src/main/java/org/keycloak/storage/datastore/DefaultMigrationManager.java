@@ -143,8 +143,8 @@ public class DefaultMigrationManager implements MigrationManager {
 
         if (SNAPSHOT_VERSION.equals(currentVersion) && databaseVersion != null && databaseVersion.lessThan(SNAPSHOT_VERSION) && !allowMigrateExistingDatabaseToSnapshot) {
             throw new ModelException("Incorrect state of migration. You are trying to run nightly server version '" + currentVersion + "' against a database, which was previously migrated to version '" + databaseVersion +
-                    ". This indicates that you are trying to run development server version against production database, which can result in a loss or corruption of data. If it is intended, " +
-                    "use the option allow-migrate-existing-database-to-snapshot of datastore provider when starting the server and explicitly set it to true.");
+                    "'. This indicates that you are trying to run development server version against production database, which can result in a loss or corruption of data, and also does not allow upgrading. If it is intended, " +
+                    "use the option spi-datastore-legacy-allow-migrate-existing-database-to-snapshot of the datastore provider when starting the server and explicitly set it to true.");
         }
         if (databaseVersion == null || databaseVersion.lessThan(latestUpdate)) {
             for (Migration m : migrations) {
