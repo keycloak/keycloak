@@ -27,6 +27,8 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.services.scheduled.ClearExpiredAdminEvents;
@@ -47,10 +49,13 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
 
     private static final String PROVIDER_ID = "legacy";
 
+    public static final String ALLOW_MIGRATE_EXISTING_DB_TO_SNAPSHOT_OPTION = "allowMigrateExistingDatabaseToSnapshot";
+
     private static final Logger logger = Logger.getLogger(DefaultDatastoreProviderFactory.class);
 
     private long clientStorageProviderTimeout;
     private long roleStorageProviderTimeout;
+    private boolean allowMigrateExistingDatabaseToSnapshot;
     private Runnable onClose;
 
     @Override
@@ -62,6 +67,7 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     public void init(Scope config) {
         clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
         roleStorageProviderTimeout = Config.scope("role").getLong("storageProviderTimeout", 3000L);
+        allowMigrateExistingDatabaseToSnapshot = config.getBoolean(ALLOW_MIGRATE_EXISTING_DB_TO_SNAPSHOT_OPTION, false);
     }
 
     @Override
@@ -82,12 +88,30 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         return PROVIDER_ID;
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(ALLOW_MIGRATE_EXISTING_DB_TO_SNAPSHOT_OPTION)
+                .type("boolean")
+                .helpText("By default, it is not allowed to run the snapshot/development server against the database, which was previously migrated to some officially released server version. As an attempt of doing this " +
+                        "indicates that you are trying to run development server against production database, which can result in a loss or corruption of data, and also does not allow upgrading. If it is really intended, you can use this option, which will allow to use " +
+                        "nightly/development server against production database when explicitly switch to true. This option is recommended just in the development environments and should be never used in the production!")
+                .defaultValue(false)
+                .add()
+                .build();
+    }
+
     public long getClientStorageProviderTimeout() {
         return clientStorageProviderTimeout;
     }
 
     public long getRoleStorageProviderTimeout() {
         return roleStorageProviderTimeout;
+    }
+
+    boolean isAllowMigrateExistingDatabaseToSnapshot() {
+        return allowMigrateExistingDatabaseToSnapshot;
     }
 
     @Override
