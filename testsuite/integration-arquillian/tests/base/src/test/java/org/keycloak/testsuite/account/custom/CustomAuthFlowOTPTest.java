@@ -439,6 +439,25 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
 
+    @Test
+    public void conditionalOTPEmptyConfiguration() {
+        // prepare config empty
+        setConditionalOTPForm(null);
+
+        // test OTP is required
+        driver.navigate().to(oauth.getLoginFormUrl());
+        testRealmLoginPage.form().login(testUser);
+
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        driver.navigate().to(oauth.getLoginFormUrl());
+        testRealmLoginPage.form().login(testUser);
+
+        // verify that the page is login page, not totp setup
+        assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+
     private RoleRepresentation getOrCreateOTPRole() {
         try {
             return testRealmResource().roles().get("otp_role").toRepresentation();
@@ -526,9 +545,9 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         flow.setTopLevel(true);
         flow.setBuiltIn(false);
         
-        Response response = getAuthMgmtResource().createFlow(flow);
-        assertEquals(flowAlias + " create success", 201, response.getStatus());
-        response.close();
+        try (Response response = getAuthMgmtResource().createFlow(flow)) {
+            assertEquals(flowAlias + " create success", 201, response.getStatus());
+        }
         
         //add execution - username-password form
         Map<String, Object> data = new HashMap<>();
@@ -550,20 +569,22 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setBrowserFlow(flowAlias);
         testRealmResource().update(realm);
-        
-        //get executionId
-        String executionId = getExecution(flowAlias, provider).getId();
 
-        //prepare auth config
-        AuthenticatorConfigRepresentation authConfig = new AuthenticatorConfigRepresentation();
-        authConfig.setAlias("Config alias");
-        authConfig.setConfig(config);
+        if (config != null) {
+            //get executionId
+            String executionId = getExecution(flowAlias, provider).getId();
 
-        //add auth config to the execution
-        response = getAuthMgmtResource().newExecutionConfig(executionId, authConfig);
-        assertEquals("new execution success", 201, response.getStatus());
-        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
-        response.close();
+            //prepare auth config
+            AuthenticatorConfigRepresentation authConfig = new AuthenticatorConfigRepresentation();
+            authConfig.setAlias("Config alias");
+            authConfig.setConfig(config);
+
+            //add auth config to the execution
+            try (Response response = getAuthMgmtResource().newExecutionConfig(executionId, authConfig)) {
+                assertEquals("new execution success", 201, response.getStatus());
+                getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
+            }
+        }
     }
 
 }
