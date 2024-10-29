@@ -139,24 +139,24 @@ public final class HttpPropertyMappers {
 
     public static void validateConfig() {
         boolean enabled = isHttpEnabled(Configuration.getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
-        Optional<String> certFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_CERTIFICATE_FILE.getKey());
-        Optional<String> keystoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_FILE.getKey());
+        Optional<String> certFile = Configuration.getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
+        Optional<String> keystoreFile = Configuration.getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
         if (!enabled && certFile.isEmpty() && keystoreFile.isEmpty()) {
             throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
 
         CertificateConfig config = new CertificateConfig();
 
-        config.trustStoreFile = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey()).map(Paths::get);
+        config.trustStoreFile = Configuration.getOptionalValue(QUARKUS_HTTPS_TRUST_STORE_FILE).map(Paths::get);
         config.trustStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_PASSWORD.getKey());
-        config.trustStoreFileType = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_TYPE.getKey());
+        config.trustStoreFileType = Configuration.getOptionalValue(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE);
         config.trustStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-provider");
         config.trustStoreCertAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-cert-alias");
         config.trustStoreFiles = Optional.empty();
 
         config.keyStoreFile = keystoreFile.map(Paths::get);
         config.keyStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_PASSWORD.getKey());
-        config.keyStoreFileType = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey());
+        config.keyStoreFileType = Configuration.getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE);
         config.keyStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-provider");
         config.keyStoreAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias");
         config.keyStoreAliasPassword = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password");
