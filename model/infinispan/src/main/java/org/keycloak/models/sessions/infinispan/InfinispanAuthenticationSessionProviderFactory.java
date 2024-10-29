@@ -77,13 +77,11 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     private RemoteCacheInvoker remoteCacheInvoker;
     SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
 
-    private Config.Scope config;
 
 
     @Override
     public void init(Config.Scope config) {
         authSessionsLimit = getAuthSessionsLimit(config);
-        this.config = config;
     }
 
     public static int getAuthSessionsLimit(Config.Scope config) {
@@ -107,42 +105,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 }
             }
         });
-    }
-
-    private int getStalledTimeoutInSeconds(int defaultTimeout) {
-        return config.getInt("stalledTimeoutInSeconds", defaultTimeout);
-    }
-
-    private void loadAuthSessionsFromRemoteCaches(final KeycloakSessionFactory sessionFactory, String cacheName, final int sessionsPerSegment, final int maxErrors) {
-        log.debugf("Check pre-loading sessions from remote cache '%s'", cacheName);
-
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                Cache<String, InitializerState> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-                int defaultStateTransferTimeout = (int) (connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME)
-                        .getCacheConfiguration().clustering().stateTransfer().timeout() / 1000);
-
-                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
-                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, maxErrors,
-                        getStalledTimeoutInSeconds(defaultStateTransferTimeout));
-                initializer.loadSessions();
-            }
-        });
-
-        log.debugf("Pre-loading auth sessions from remote cache '%s' finished", cacheName);
-    }
-
-    // Max count of worker errors. Initialization will end with exception when this number is reached
-    private int getMaxErrors() {
-        return config.getInt("maxErrors", 20);
-    }
-
-    // Count of sessions to be computed in each segment
-    private int getSessionsPerSegment() {
-        return config.getInt("sessionsPerSegment", 64);
     }
 
     @Override

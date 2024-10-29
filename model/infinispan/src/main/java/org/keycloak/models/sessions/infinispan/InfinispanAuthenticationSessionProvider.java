@@ -18,8 +18,11 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -182,5 +185,12 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     public InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> getRootAuthSessionTransaction() {
         return sessionTx;
+    }
+
+    @Override
+    public void migrate(String modelVersion) {
+        InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
+        Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+        ComponentRegistry.componentOf(authSessionsCache, PersistenceManager.class).clearAllStores(PersistenceManager.AccessMode.BOTH);
     }
 }

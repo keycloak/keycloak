@@ -35,6 +35,7 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
     private final V cacheValue;
     private final long versionRead;
     private UpdaterState state;
+    private boolean transientEntity = false;
 
     protected BaseUpdater(K cacheKey, V cacheValue, long versionRead, UpdaterState state) {
         this.cacheKey = Objects.requireNonNull(cacheKey);
@@ -75,7 +76,15 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
 
     @Override
     public final void markDeleted() {
+        if (isCreated()) {
+            transientEntity = true;
+        }
         state = UpdaterState.DELETED;
+    }
+
+    @Override
+    public boolean isTransient() {
+        return transientEntity;
     }
 
     @Override
