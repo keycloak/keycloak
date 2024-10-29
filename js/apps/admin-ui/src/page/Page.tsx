@@ -11,7 +11,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
-import { PAGE_PROVIDER } from "./PageList";
+import { PAGE_PROVIDER } from "./constants";
 import { PageParams, toPage } from "./routes";
 
 export default function Page() {
