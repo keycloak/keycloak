@@ -284,8 +284,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.7.36)(@types/node@22.8.2)(typescript@5.6.3)
       uuid:
-        specifier: ^11.0.1
-        version: 11.0.1
+        specifier: ^11.0.2
+        version: 11.0.2
       vite:
         specifier: ^5.4.10
         version: 5.4.10(@types/node@22.8.2)(lightningcss@1.27.0)(terser@5.36.0)
@@ -471,8 +471,8 @@ importers:
         specifier: ^1.5.3
         version: 1.5.3
       uuid:
-        specifier: ^11.0.1
-        version: 11.0.1
+        specifier: ^11.0.2
+        version: 11.0.2
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
@@ -4793,8 +4793,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@11.0.1:
-    resolution: {integrity: sha512-wt9UB5EcLhnboy1UvA1mvGPXkIIrHSu+3FmUksARfdVw9tuPf3CH/CohxO0Su1ApoKAeT6BVzAJIvjTuQVSmuQ==}
+  uuid@11.0.2:
+    resolution: {integrity: sha512-14FfcOJmqdjbBPdDjFQyk/SdT4NySW4eM0zcG+HqbHP5jzuH56xO3J1DGhgs/cEMCfwYi3HQI1gnTO62iaG+tQ==}
     hasBin: true
 
   uuid@8.3.2:
@@ -9770,7 +9770,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  uuid@11.0.1: {}
+  uuid@11.0.2: {}
 
   uuid@8.3.2: {}
 
