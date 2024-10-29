@@ -25,6 +25,7 @@ import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.UIUtils.getRawPageSource;
@@ -1964,8 +1965,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // go to the authenticate page and add all the returned cookies by the impersonation
         authenticate.setAuthRealm(SAMLSERVLETDEMO);
         authenticate.navigateTo();
-        waitForPageToLoad();
-        errorPage.assertCurrent();
+        waitForPage(driver, "Sign in to demo", true);
         cookies.stream().forEach(c -> driver.manage().addCookie(c));
         driver.navigate().refresh();
         waitForPageToLoad();

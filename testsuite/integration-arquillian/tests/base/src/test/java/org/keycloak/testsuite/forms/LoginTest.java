@@ -832,11 +832,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         // Cookies are expired including KC_RESTART. No way to continue login. Error page must be shown with the "back to application" link
         loginPage.login("login@test.com", "password");
-        errorPage.assertCurrent();
-        String link = errorPage.getBackToApplicationLink();
-
-        ClientRepresentation thirdParty = findClientByClientId(adminClient.realm("test"), "third-party").toRepresentation();
-        Assert.assertNotNull(link, thirdParty.getBaseUrl());
+        loginPage.assertCurrent();
     }
 
     @Test
@@ -856,7 +852,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 .error(Errors.COOKIE_NOT_FOUND)
                 .assertEvent();
 
-        errorPage.assertCurrent();
+        loginPage.assertCurrent();
     }
 
     @Test

@@ -200,7 +200,7 @@ public class SessionCodeChecks {
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
 
         // if restart from cookie was not found check if the user is already authenticated
-        if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
+        if (response == null || response.getStatus() != Response.Status.FOUND.getStatusCode()) {
             AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
             if (authResult != null && authResult.getSession() != null) {
@@ -229,6 +229,10 @@ public class SessionCodeChecks {
                 }
                 event.error(Errors.ALREADY_LOGGED_IN);
             } else {
+                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                        .setError(Messages.COOKIE_NOT_FOUND);
+                response = loginForm.createInfoPage();
+                event.detail(Details.REDIRECTED_TO_CLIENT, "true");
                 event.error(Errors.COOKIE_NOT_FOUND);
             }
         }
@@ -425,7 +429,8 @@ public class SessionCodeChecks {
 
         String cook = RestartLoginCookie.getRestartCookie(session);
         if (cook == null) {
-            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
+            return null;
+            //return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
         }
 
         try {

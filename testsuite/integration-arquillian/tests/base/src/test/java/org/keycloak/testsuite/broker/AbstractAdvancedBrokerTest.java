@@ -474,10 +474,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "sorry", false);
-        errorPage.assertCurrent();
-        String link = errorPage.getBackToApplicationLink();
-        Assert.assertTrue(link.contains("/auth/realms/" + bc.consumerRealmName() + "/app"));
+        waitForPage(driver, "sign in to consumer", true);
     }
 
     /**

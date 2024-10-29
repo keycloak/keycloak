@@ -47,13 +47,13 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
     public String getAiaAction() {
         return UserModel.RequiredAction.UPDATE_PROFILE.name();
     }
-    
+
     @Page
     protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Page
     protected ErrorPage errorPage;
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
@@ -78,13 +78,13 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
-  
+
     @Test
     public void updateProfile() {
         doAIA();
 
         loginPage.login("test-user@localhost", "password");
-        
+
         updateProfilePage.assertCurrent();
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
@@ -104,7 +104,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
     }
-    
+
     @Test
     // This tests verifies that AIA still works if you call it after you are
     // already logged in.  The other main difference between this and all other
@@ -112,7 +112,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
     public void updateProfileLoginFirst() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        
+
         doAIA();
 
         updateProfilePage.assertCurrent();
@@ -135,19 +135,19 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
     }
-    
+
     @Test
     public void cancelUpdateProfile() {
         doAIA();
 
         loginPage.login("test-user@localhost", "password");
-        
+
         updateProfilePage.assertCurrent();
         updateProfilePage.cancel();
 
         assertKcActionStatus(CANCELLED);
 
-        
+
         // assert nothing was updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("Tom", user.getFirstName());
@@ -155,12 +155,12 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assert.assertEquals("test-user@localhost", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
     }
-    
+
 
     @Test
     public void updateUsername() {
         doAIA();
-        
+
         loginPage.login("john-doh@localhost", "password");
 
         String userId = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost").getId();
@@ -363,12 +363,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         driver.manage().deleteAllCookies();
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("keycloak-user@localhost").submit();
-        errorPage.assertCurrent();
-
-        String backToAppLink = errorPage.getBackToApplicationLink();
-
-        ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
-        Assert.assertEquals(backToAppLink, client.getBaseUrl());
+        loginPage.assertCurrent();
     }
 
 }

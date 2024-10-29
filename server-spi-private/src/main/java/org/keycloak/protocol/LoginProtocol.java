@@ -62,6 +62,10 @@ public interface LoginProtocol extends Provider {
          */
         CONSENT_DENIED,
         /**
+         * No existing login cookie
+         */
+        COOKIE_NOT_FOUND,
+        /**
          * Passive authentication mode requested but nobody is logged in
          */
         PASSIVE_LOGIN_REQUIRED,

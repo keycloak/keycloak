@@ -464,11 +464,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         grantPage.accept();
 
-        // Assert link "back to application" present
-        errorPage.assertCurrent();
-        String backToAppLink = errorPage.getBackToApplicationLink();
-        ClientRepresentation thirdParty = findClientByClientId(adminClient.realm(REALM_NAME), THIRD_PARTY_APP).toRepresentation();
-        Assert.assertEquals(backToAppLink, thirdParty.getBaseUrl());
+        loginPage.assertCurrent();
     }
 
     // KEYCLOAK-7470
