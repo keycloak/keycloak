@@ -622,8 +622,21 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 
+    @Override
+    public void removeAllUserSessions(RealmModel realm) {
+        // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
+        clusterEventsSenderTx.addEvent(
+                RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_ALL_USER_SESSIONS_EVENT, session, realm.getId(), true),
+                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+    }
+
     protected void onRemoveUserSessionsEvent(String realmId) {
         removeLocalUserSessions(realmId, false);
+    }
+
+    protected void onRemoveAllUserSessionsEvent(String realmId) {
+        removeLocalUserSessions(realmId, false);
+        removeLocalUserSessions(realmId, true);
     }
 
     // public for usage in the testsuite

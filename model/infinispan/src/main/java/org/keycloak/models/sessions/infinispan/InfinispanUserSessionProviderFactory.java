@@ -84,6 +84,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
+    public static final String REMOVE_ALL_USER_SESSIONS_EVENT = "REMOVE_ALL_USER_SESSIONS_EVENT";
     public static final String CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineSessionCacheEntryLifespanOverride";
     public static final String CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineClientSessionCacheEntryLifespanOverride";
     public static final String CONFIG_MAX_BATCH_SIZE = "maxBatchSize";
@@ -306,6 +307,20 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             }
 
         });
+
+        cluster.registerListener(REMOVE_ALL_USER_SESSIONS_EVENT,
+                new AbstractUserSessionClusterListener<RemoveUserSessionsEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class) {
+
+                    @Override
+                    protected void eventReceived(UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {
+                        if (provider instanceof InfinispanUserSessionProvider) {
+                            ((InfinispanUserSessionProvider) provider).onRemoveAllUserSessionsEvent(sessionEvent.getRealmId());
+                        } else if (provider instanceof PersistentUserSessionProvider) {
+                            ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                        }
+                    }
+
+                });
 
         log.debug("Registered cluster listeners");
     }

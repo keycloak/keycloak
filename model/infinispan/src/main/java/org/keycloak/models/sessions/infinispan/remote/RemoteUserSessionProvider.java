@@ -199,6 +199,11 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeAllUserSessions(RealmModel realm) {
+        transaction.removeAllSessionsByRealmId(realm.getId());
+    }
+
+    @Override
     public void onRealmRemoved(RealmModel realm) {
         transaction.removeAllSessionsByRealmId(realm.getId());
         var database = session.getProvider(UserSessionPersisterProvider.class);

@@ -620,7 +620,7 @@ public class RealmAdminResource {
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
-        session.sessions().removeUserSessions(realm);
+        session.sessions().removeAllUserSessions(realm);
         GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;

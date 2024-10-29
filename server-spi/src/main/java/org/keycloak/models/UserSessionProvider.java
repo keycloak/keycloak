@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -152,6 +153,22 @@ public interface UserSessionProvider extends Provider {
     void removeExpired(RealmModel realm);
 
     void removeUserSessions(RealmModel realm);
+
+    default void removeAllUserSessions(RealmModel realm) {
+        // remove regular user sessions
+        removeUserSessions(realm);
+
+        // remove offline user sessions
+        getKeycloakSession().sessions().getActiveClientSessionStats(realm, true).keySet().stream()
+                .flatMap(clientId -> {
+                    ClientModel clientModel = realm.getClientById(clientId);
+                    if (clientModel == null) {
+                        // client has been removed in the meantime
+                        return Stream.empty();
+                    }
+                    return getKeycloakSession().sessions().getOfflineUserSessionsStream(realm, clientModel, null, null);
+                }).forEach(session -> removeOfflineUserSession(realm, session));
+    }
 
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
