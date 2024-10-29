@@ -488,6 +488,16 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, false);
     }
 
+    @Override
+    public void removeAllUserSessions(RealmModel realm) {
+        // Send message to all DCs as each site might have different entries in the cache
+        clusterEventsSenderTx.addEvent(
+                RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_ALL_USER_SESSIONS_EVENT, session, realm.getId(), true),
+                ClusterProvider.DCNotify.ALL_DCS);
+
+        session.getProvider(UserSessionPersisterProvider.class).removeAllUserSessions(realm);
+    }
+
     protected void onRemoveUserSessionsEvent(String realmId) {
         removeLocalUserSessions(realmId, false);
         removeLocalUserSessions(realmId, true);
