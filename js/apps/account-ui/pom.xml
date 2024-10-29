@@ -49,6 +49,31 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>jboss-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>lib-build</id>
+                            <goals>
+                                <goal>pnpm</goal>
+                            </goals>
+                            <configuration>
+                                <arguments>build</arguments>
+                                <environmentVariables>
+                                    <LIB>true</LIB>
+                                </environmentVariables>
+                            </configuration>
+                        </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -63,18 +88,6 @@
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>lib-build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>build</arguments>
-                            <environmentVariables>
-                                <LIB>true</LIB>
-                            </environmentVariables>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>pack</id>
                         <phase>package</phase>
