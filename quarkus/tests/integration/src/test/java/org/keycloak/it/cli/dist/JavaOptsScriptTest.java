@@ -120,4 +120,14 @@ public class JavaOptsScriptTest {
         assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
     }
 
+    @Test
+    @Launch({"start-dev", "--optimized"})
+    void testKcHomeDirPathFormat(LaunchResult result) {
+        if (OS.WINDOWS.isCurrentOs()) {
+            String output = result.getOutput();
+            assertThat(output, containsString("kc.home.dir="));
+            assertThat(output, matchesPattern("(?s).*kc\\.home\\.dir=\"[A-Z]:/.*?/keycloak/quarkus/tests/integration/target/kc-tests/keycloak-\\d+\\.\\d+\\.\\d+.*?/bin/\\.\\.\".*"));
+        }
+    }
+
 }
