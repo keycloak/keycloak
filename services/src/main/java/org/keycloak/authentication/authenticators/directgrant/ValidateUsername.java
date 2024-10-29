@@ -84,7 +84,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             AuthenticatorUtils.dummyHash(context);
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "User locked due to multiple failed login attempts");
             context.forceChallenge(challengeResponse);
             return;
         }
