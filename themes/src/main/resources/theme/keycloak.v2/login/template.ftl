@@ -92,10 +92,13 @@
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <script>
+      // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1404468
+      const isFirefox;
+    </script>
 </head>
 
 <body id="keycloak-bg" class="${properties.kcBodyClass!}">
-
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">
