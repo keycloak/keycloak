@@ -247,6 +247,18 @@ public class AccountConsole implements AccountResourceProvider {
                 .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
 
+        if (!queryParameters.isEmpty()) {
+            String error = queryParameters.getFirst(OAuth2Constants.ERROR);
+            if (error != null) {
+                uriBuilder.queryParam(OAuth2Constants.ERROR, error);
+
+                String errorDescription = queryParameters.getFirst(OAuth2Constants.ERROR_DESCRIPTION);
+                if (errorDescription != null) {
+                    uriBuilder.queryParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
+                }
+            }
+        }
+
         URI url = uriBuilder.build();
 
         return Response.status(302).location(url).build();
