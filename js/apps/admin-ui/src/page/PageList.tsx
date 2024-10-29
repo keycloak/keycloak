@@ -1,6 +1,10 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { ComponentQuery } from "@keycloak/keycloak-admin-client/lib/resources/components";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -14,15 +18,11 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { PAGE_PROVIDER } from "./constants";
 import { addDetailPage, PageListParams, toDetailPage } from "./routes";
-
-export const PAGE_PROVIDER = "org.keycloak.services.ui.extend.UiPageProvider";
-export const TAB_PROVIDER = "org.keycloak.services.ui.extend.UiTabProvider";
 
 type DetailLinkProps = {
   obj: ComponentRepresentation;
