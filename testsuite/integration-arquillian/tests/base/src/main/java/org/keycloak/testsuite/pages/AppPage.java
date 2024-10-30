@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -34,16 +35,16 @@ public class AppPage extends AbstractPage {
 
     @Override
     public void open() {
-        driver.navigate().to(OAuthClient.APP_AUTH_ROOT);
+        DroneUtils.getCurrentDriver().navigate().to(OAuthClient.APP_AUTH_ROOT);
     }
 
     @Override
     public boolean isCurrent() {
-        return removeDefaultPorts(driver.getCurrentUrl()).startsWith(OAuthClient.APP_AUTH_ROOT);
+        return removeDefaultPorts(DroneUtils.getCurrentDriver().getCurrentUrl()).startsWith(OAuthClient.APP_AUTH_ROOT);
     }
 
     public RequestType getRequestType() {
-        return RequestType.valueOf(driver.getTitle());
+        return RequestType.valueOf(DroneUtils.getCurrentDriver().getTitle());
     }
 
     public void openAccount() {

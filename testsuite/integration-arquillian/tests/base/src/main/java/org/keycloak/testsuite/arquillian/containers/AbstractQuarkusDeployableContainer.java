@@ -179,6 +179,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--http-management-port=" + configuration.getManagementPort());
         }
 
+        if (suiteContext.get().getMigrationContext().isRunningMigrationTest()) {
+            commands.add("--spi-datastore-legacy-allow-migrate-existing-database-to-snapshot=true");
+        }
+
         if (configuration.getRoute() != null) {
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }

@@ -288,6 +288,18 @@ public class LDAPUtils {
      */
     public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPStorageProvider ldapProvider) {
         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return loadAllLDAPObjects(ldapQuery, ldapConfig);
+    }
+
+    /**
+     * Load all LDAP objects corresponding to given query. We will load them paginated, so we allow to bypass the limitation of 1000
+     * maximum loaded objects in single query in MSAD
+     *
+     * @param ldapQuery LDAP query to be used. The caller should close it after calling this method
+     * @param ldapConfig
+     * @return
+     */
+    public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPConfig ldapConfig) {
         boolean pagination = ldapConfig.isPagination();
         if (pagination) {
             // For now reuse globally configured batch size in LDAP provider page
@@ -360,7 +372,7 @@ public class LDAPUtils {
      * Map key are the attributes names in lower case
      */
     public static Map<String, Property<Object>> getUserModelProperties(){
-        
+
         Map<String, Property<Object>> userModelProps = PropertyQueries.createQuery(UserModel.class)
                 .addCriteria(new PropertyCriteria() {
 

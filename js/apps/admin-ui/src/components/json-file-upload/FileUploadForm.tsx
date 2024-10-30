@@ -1,6 +1,9 @@
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   Button,
+  DropEvent,
+  FileUpload,
+  FileUploadProps,
   FormGroup,
   FormHelperText,
   HelperText,
@@ -14,9 +17,7 @@ import {
   MouseEvent as ReactMouseEvent,
   useState,
 } from "react";
-import { DropEvent } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { FileUpload, FileUploadProps } from "./patternfly/FileUpload";
 
 type FileUploadType = {
   value: string;
@@ -112,8 +113,8 @@ export const FileUploadForm = ({
           value={fileUpload.value}
           filename={fileUpload.filename}
           onFileInputChange={handleFileInputChange}
-          onDataChange={handleTextOrDataChange}
-          onTextChange={handleTextOrDataChange}
+          onDataChange={(_, value) => handleTextOrDataChange(value)}
+          onTextChange={(_, value) => handleTextOrDataChange(value)}
           onClearClick={handleClear}
           onReadStarted={() =>
             setFileUpload({ ...fileUpload, isLoading: true })
@@ -137,8 +138,8 @@ export const FileUploadForm = ({
             value={fileUpload.value}
             filename={fileUpload.filename}
             onFileInputChange={handleFileInputChange}
-            onDataChange={handleTextOrDataChange}
-            onTextChange={handleTextOrDataChange}
+            onDataChange={(_, value) => handleTextOrDataChange(value)}
+            onTextChange={(_, value) => handleTextOrDataChange(value)}
             onClearClick={handleClear}
             onReadStarted={() =>
               setFileUpload({ ...fileUpload, isLoading: true })

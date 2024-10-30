@@ -21,7 +21,7 @@ describe("Group user integration", () => {
   let currentPolicy: PolicyRepresentation;
 
   before(async () => {
-    const groupName = faker.internet.userName();
+    const groupName = faker.internet.username();
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
     // create group
@@ -31,7 +31,7 @@ describe("Group user integration", () => {
     currentGroup = (await kcAdminClient.groups.findOne({ id: group.id }))!;
 
     // create user
-    const username = faker.internet.userName();
+    const username = faker.internet.username();
     const user = await kcAdminClient.users.create({
       username,
       email: "test@keycloak.org",

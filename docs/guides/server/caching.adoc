@@ -14,7 +14,8 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches are using a UDP transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+By default, caches use the `jdbc-ping-udp` stack which is based upon a UDP transport and uses the configured database to track nodes joining the cluster.
+{project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
@@ -219,7 +220,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `jdbc-ping` when distributed caches are enabled.
+The default stack is set to `jdbc-ping-udp` when distributed caches are enabled.
 
 === Available transport stacks
 
@@ -231,7 +232,8 @@ The following table shows transport stacks that are available without any furthe
 
 |`tcp`|TCP|MPING (uses UDP multicast).
 |`udp`|UDP|UDP multicast
-|`jdbc-ping`|UDP|JDBC_PING2
+|`jdbc-ping-udp`|UDP|JDBC_PING2
+|`jdbc-ping`|TCP|JDBC_PING2
 |===
 
 

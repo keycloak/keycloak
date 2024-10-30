@@ -16,7 +16,7 @@ describe("Authentication management", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
-    const realmName = faker.internet.userName().toLowerCase();
+    const realmName = faker.internet.username().toLowerCase();
     await kcAdminClient.realms.create({
       id: realmName,
       realm: realmName,

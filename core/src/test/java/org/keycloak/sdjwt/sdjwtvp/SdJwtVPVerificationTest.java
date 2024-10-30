@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.SdJwt;
@@ -34,6 +35,7 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -63,6 +65,7 @@ public abstract class SdJwtVPVerificationTest {
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
 
         sdJwtVP.verify(
+                defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts().build()
         );
@@ -70,15 +73,17 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testVerif_s20_8_sdjwt_with_kb__AltCnfCurves() throws VerificationException {
-        List<String> entries = Arrays.asList(new String[]{
-            "sdjwt/s20.8-sdjwt+kb--es384.txt", "sdjwt/s20.8-sdjwt+kb--es512.txt"
-        });
+        List<String> entries = Arrays.asList(
+                "sdjwt/s20.8-sdjwt+kb--es384.txt",
+                "sdjwt/s20.8-sdjwt+kb--es512.txt"
+        );
 
         for (String entry : entries) {
             String sdJwtVPString = TestUtils.readFileAsString(getClass(), entry);
             SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
 
             sdJwtVP.verify(
+                    defaultIssuerVerifyingKeys(),
                     defaultIssuerSignedJwtVerificationOpts().build(),
                     defaultKeyBindingJwtVerificationOpts().build()
             );
@@ -87,18 +92,19 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testVerif_s20_8_sdjwt_with_kb__CnfRSA() throws VerificationException {
-        List<String> entries = Arrays.asList(new String[]{
+        List<String> entries = Arrays.asList(
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-rs256.txt",
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps256.txt",
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps384.txt",
                 "sdjwt/s20.8-sdjwt+kb--cnf-rsa-ps512.txt"
-        });
+        );
 
         for (String entry : entries) {
             String sdJwtVPString = TestUtils.readFileAsString(getClass(), entry);
             SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
 
             sdJwtVP.verify(
+                    defaultIssuerVerifyingKeys(),
                     defaultIssuerSignedJwtVerificationOpts().build(),
                     defaultKeyBindingJwtVerificationOpts().build()
             );
@@ -111,6 +117,7 @@ public abstract class SdJwtVPVerificationTest {
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
 
         sdJwtVP.verify(
+                defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
                         .withKeyBindingRequired(false)
@@ -327,6 +334,7 @@ public abstract class SdJwtVPVerificationTest {
         UnsupportedOperationException exception = assertThrows(
                 UnsupportedOperationException.class,
                 () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
                         defaultIssuerSignedJwtVerificationOpts().build(),
                         defaultKeyBindingJwtVerificationOpts().build()
                 )
@@ -341,8 +349,8 @@ public abstract class SdJwtVPVerificationTest {
                 // The cnf/jwk object has an unrecognized key type
                 "sdjwt/s20.8-sdjwt+kb--cnf-jwk-is-malformed.txt",
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Malformed or unsupported cnf/jwk claim",
-                null
+                "Could not process cnf/jwk",
+                "Unsupported or invalid JWK"
         );
     }
 
@@ -352,8 +360,8 @@ public abstract class SdJwtVPVerificationTest {
                 // HMAC cnf/jwk parsing is not supported
                 "sdjwt/s20.8-sdjwt+kb--cnf-hmac.txt",
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Malformed or unsupported cnf/jwk claim",
-                null
+                "Could not process cnf/jwk",
+                "Unsupported or invalid JWK"
         );
     }
 
@@ -369,6 +377,7 @@ public abstract class SdJwtVPVerificationTest {
         VerificationException exception = assertThrows(
                 VerificationException.class,
                 () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
                         defaultIssuerSignedJwtVerificationOpts().build(),
                         keyBindingJwtVerificationOpts
                 )
@@ -405,6 +414,7 @@ public abstract class SdJwtVPVerificationTest {
         VerificationException exception = assertThrows(
                 VerificationException.class,
                 () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
                         defaultIssuerSignedJwtVerificationOpts().build(),
                         keyBindingJwtVerificationOpts
                 )
@@ -416,9 +426,12 @@ public abstract class SdJwtVPVerificationTest {
         }
     }
 
+    private List<SignatureVerifierContext> defaultIssuerVerifyingKeys() {
+        return Collections.singletonList(testSettings.issuerVerifierContext);
+    }
+
     private IssuerSignedJwtVerificationOpts.Builder defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withVerifier(testSettings.issuerVerifierContext)
                 .withValidateIssuedAtClaim(false)
                 .withValidateNotBeforeClaim(false);
     }

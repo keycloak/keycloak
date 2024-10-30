@@ -332,10 +332,7 @@ export const AddTranslationsDialog = ({
                                     label={t("translationValue")}
                                     data-testid={`translation-value-${rowIndex}`}
                                     rules={{
-                                      required: {
-                                        value: true,
-                                        message: t("required"),
-                                      },
+                                      required: t("required"),
                                     }}
                                   />
                                 )}

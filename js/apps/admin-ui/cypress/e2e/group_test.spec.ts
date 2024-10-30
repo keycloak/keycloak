@@ -394,6 +394,16 @@ describe("Group test", () => {
         .assertNotificationUserLeftTheGroup(1)
         .assertNoUsersFoundEmptyStateMessageExist(true);
     });
+
+    it("Show memberships from item bar", () => {
+      sidebarPage.goToGroups();
+      groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
+      childGroupsTab.goToMembersTab();
+      membersTab
+        .showGroupMembershipsItem(users[3].username)
+        .assertGroupItemExist(predefinedGroups[0], true)
+        .cancelShowGroupMembershipsModal();
+    });
   });
 
   describe("Breadcrumbs", () => {

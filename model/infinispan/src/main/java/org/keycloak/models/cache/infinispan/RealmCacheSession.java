@@ -264,6 +264,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void registerClientScopeInvalidation(String id, String realmId) {
         invalidateClientScope(id);
         cache.clientScopeUpdated(realmId, invalidations);
+        invalidationEvents.add(new CacheKeyInvalidatedEvent(id));
     }
 
     private void invalidateClientScope(String id) {

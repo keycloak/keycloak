@@ -22,3 +22,6 @@ updates:
     labels:
       - area/dependencies
       - team/ui
+    ignore:
+      - dependency-name: "@patternfly/*"
+        update-types: ["version-update:semver-major"]
