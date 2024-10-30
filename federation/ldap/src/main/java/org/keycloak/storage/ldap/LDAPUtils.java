@@ -42,7 +42,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
-import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
@@ -373,7 +372,7 @@ public class LDAPUtils {
      * Map key are the attributes names in lower case
      */
     public static Map<String, Property<Object>> getUserModelProperties(){
-        
+
         Map<String, Property<Object>> userModelProps = PropertyQueries.createQuery(UserModel.class)
                 .addCriteria(new PropertyCriteria() {
 
