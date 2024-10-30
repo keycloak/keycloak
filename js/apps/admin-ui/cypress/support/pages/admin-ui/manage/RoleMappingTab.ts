@@ -74,7 +74,7 @@ export default class RoleMappingTab {
   selectRow(name: string, modal = false) {
     cy.get(modal ? ".pf-v5-c-modal-box " : "" + this.#namesColumn)
       .contains(name)
-      .parent()
+      .parents("tr")
       .within(() => {
         cy.get("input").click();
       });

@@ -45,14 +45,14 @@
     "url-template": "^3.1.1"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.0.3",
+    "@faker-js/faker": "^9.1.0",
     "@types/chai": "^5.0.1",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.9",
-    "@types/node": "^22.8.2",
+    "@types/node": "^22.8.4",
     "chai": "^5.1.2",
     "lodash-es": "^4.17.21",
-    "mocha": "^10.7.3",
+    "mocha": "^10.8.1",
     "ts-node": "^10.9.2"
   },
   "author": {

@@ -40,7 +40,7 @@ export default class UserRegistration {
   selectRow(name: string) {
     cy.get(this.#namesColumn)
       .contains(name)
-      .parent()
+      .parents("tr")
       .within(() => {
         cy.get("input").click();
       });

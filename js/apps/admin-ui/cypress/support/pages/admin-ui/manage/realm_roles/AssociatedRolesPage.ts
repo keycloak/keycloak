@@ -21,7 +21,7 @@ export default class AssociatedRolesPage {
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
-      .parent()
+      .parents("tr")
       .within(() => {
         cy.get("input").click();
       });
@@ -49,7 +49,7 @@ export default class AssociatedRolesPage {
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
-      .parent()
+      .parents("tr")
       .within(() => {
         cy.get("input").click();
       });
@@ -67,7 +67,7 @@ export default class AssociatedRolesPage {
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
-      .parent()
+      .parents("tr")
       .within(() => {
         cy.get("input").click();
       });
