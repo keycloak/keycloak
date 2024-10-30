@@ -156,8 +156,6 @@ public class CacheManagerFactory {
         Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
                 .map(Integer::parseInt)
                 .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
-        String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
-        String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
 
         org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
         builder.addServer().host(cacheRemoteHost).port(cacheRemotePort);
@@ -173,8 +171,8 @@ public class CacheManagerFactory {
         if (isRemoteAuthenticationEnabled()) {
             builder.security().authentication()
                     .enable()
-                    .username(cacheRemoteUsername)
-                    .password(cacheRemotePassword)
+                    .username(requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY))
+                    .password(requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY))
                     .realm("default")
                     .saslMechanism(SCRAM_SHA_512);
         }
