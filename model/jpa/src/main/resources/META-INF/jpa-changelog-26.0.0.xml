@@ -90,6 +90,9 @@
             <column name="ORGANIZATION_ID"/>
         </createIndex>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_IdentityProviderAttributesMigration"/>
+        <modifySql dbms="mssql">
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
     </changeSet>
 
     <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
