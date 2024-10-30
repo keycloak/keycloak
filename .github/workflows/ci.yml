@@ -33,7 +33,6 @@ jobs:
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
-      ci-test-poc: ${{ steps.conditional.outputs.ci-test-poc }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
 
     steps:
@@ -84,7 +83,7 @@ jobs:
         run: |
           SEP=""
           PROJECTS=""
-          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus|docs|test-poc|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
+          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus|docs|tests|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
             PROJECTS="$PROJECTS$SEP$i"
             SEP=","
           done
@@ -958,7 +957,7 @@ jobs:
           job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
   test-framework:
-    name: Keycloak Test Framework
+    name: Test Framework
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 30
@@ -972,12 +971,10 @@ jobs:
       - name: Run tests
         run: ./mvnw test -f test-framework/pom.xml
 
-  test-poc:
-    name: Test PoC
+  base-new-integration-tests:
+    name: Base IT (new)
     runs-on: ubuntu-latest
-    if: needs.conditional.outputs.ci-test-poc == 'true'
     needs:
-      - conditional
       - build
     timeout-minutes: 30
     steps:
@@ -988,9 +985,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        env:
-          KC_TEST_BROWSER: chrome-headless
-        run: ./mvnw clean install -f test-poc/pom.xml
+        run: ./mvnw test -f tests/pom.xml
 
   check:
     name: Status Check - Keycloak CI
@@ -1015,7 +1010,8 @@ jobs:
       - sssd-unit-tests
       - migration-tests
       - external-infinispan-tests
-      - test-poc
+      - test-framework
+      - base-new-integration-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
