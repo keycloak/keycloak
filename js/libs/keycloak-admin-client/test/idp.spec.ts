@@ -15,7 +15,7 @@ describe("Identity providers", () => {
     await kcAdminClient.auth(credentials);
 
     // create idp
-    const alias = faker.internet.userName();
+    const alias = faker.internet.username();
     const idp = await kcAdminClient.identityProviders.create({
       alias,
       providerId: "saml",
