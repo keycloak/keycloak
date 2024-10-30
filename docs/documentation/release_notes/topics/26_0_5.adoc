@@ -1,0 +1,7 @@
+= LDAP users are created as enabled by default when using Microsoft Active Directory
+
+If you are using Microsoft AD and creating users through the administrative interfaces, the user will created as enabled by default.
+
+In previous versions, it was only possible to update the user status after setting a (non-temporary) password to the user.
+This behavior was not consistent with other built-in user storages as well as not consistent with others LDAP vendors supported
+by the LDAP provider.
