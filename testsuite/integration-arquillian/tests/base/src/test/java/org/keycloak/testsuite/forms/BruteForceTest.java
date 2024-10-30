@@ -416,11 +416,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         try {
             realm.setMaxDeltaTimeSeconds(5);
             testRealm().update(realm);
-            long numExecutors = WaitUtils.getNumExecutors(testingClient);
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            WaitUtils.waitForExecutors(testingClient, numExecutors + 1);
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();
@@ -438,11 +437,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(5);
             realm.setPermanentLockout(true);
             testRealm().update(realm);
-            long numExecutors = WaitUtils.getNumExecutors(testingClient);
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            WaitUtils.waitForExecutors(testingClient, numExecutors + 1);
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();

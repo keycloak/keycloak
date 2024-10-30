@@ -29,13 +29,16 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
@@ -162,28 +165,28 @@ public final class WaitUtils {
         waitUntilElementIsNotPresent(By.className("modal-backdrop"));
     }
 
-    public static long getNumExecutors(KeycloakTestingClient testingClient) {
-        String numExecutors = testingClient.server().fetchString(session -> {
-            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-            ExecutorService executor = provider.getExecutor("bruteforce");
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            return threadPoolExecutor.getCompletedTaskCount();
-        });
-        return Long.valueOf(numExecutors);
-    }
-
-    public static void waitForExecutors(KeycloakTestingClient testingClient, long numExecutors) {
+    public static void waitForBruteForceExecutors(KeycloakTestingClient testingClient) {
         testingClient.server().run(session -> {
             ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
             ExecutorService executor = provider.getExecutor("bruteforce");
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            do {
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                }
-            } while (!threadPoolExecutor.getQueue().isEmpty());
-            assertEquals(numExecutors, threadPoolExecutor.getCompletedTaskCount());
+            try {
+                CompletableFuture.runAsync(() -> {
+                    do {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } while (!threadPoolExecutor.getQueue().isEmpty() || threadPoolExecutor.getActiveCount() > 0);
+                }).get(30, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException te) {
+                fail("Timeout while waiting for brute force executors!");
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail("Unexpected error while waiting for brute force executors!");
+            }
+            assertEquals(0, threadPoolExecutor.getActiveCount());
         });
     }
 }
