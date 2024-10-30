@@ -74,6 +74,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="26.0.0-idps-for-login">
+        <validCheckSum>9:51f5fffadf986983d4bd59582c6c1604</validCheckSum>
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="ORGANIZATION_ID" type="VARCHAR(255)"/>
             <column name="HIDE_ON_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
