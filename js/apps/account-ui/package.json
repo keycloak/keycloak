@@ -1,6 +1,6 @@
 {
   "name": "@keycloak/keycloak-account-ui",
-  "version": "999.0.0-SNAPSHOT",
+  "version": "26.0.3",
   "type": "module",
   "main": "lib/keycloak-account-ui.js",
   "types": "./lib/keycloak-account-ui.d.ts",

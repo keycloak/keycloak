@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.0.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

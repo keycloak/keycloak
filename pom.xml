@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>999.0.0-SNAPSHOT</version>
+    <version>26.0.3</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -41,7 +41,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
+        <project.version.npm>26.0.3</project.version.npm>
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 

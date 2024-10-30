@@ -1,6 +1,6 @@
 {
   "name": "@keycloak/keycloak-admin-client",
-  "version": "999.0.0-SNAPSHOT",
+  "version": "26.0.3",
   "description": "A client to interact with Keycloak's Administration API",
   "type": "module",
   "main": "lib/index.js",
