@@ -137,15 +137,7 @@ export const RealmSelector = () => {
 
   const sortedRealms = useMemo(
     () => [
-      ...(first === 0 && !search
-        ? recentRealms.reduce((acc, name) => {
-            const realm = realms.find((r) => r.name === name);
-            if (realm) {
-              acc.push(realm);
-            }
-            return acc;
-          }, [] as RealmNameRepresentation[])
-        : []),
+      ...(first === 0 && !search ? recentRealms.map((name) => ({ name })) : []),
       ...realms.filter((r) => !recentRealms.includes(r.name)),
     ],
     [recentRealms, realms, first, search],
