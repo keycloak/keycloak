@@ -10,8 +10,8 @@ import { credentials } from "./constants.js";
 const expect = chai.expect;
 
 const createRealm = async (kcAdminClient: KeycloakAdminClient) => {
-  const realmId = faker.internet.userName().toLowerCase();
-  const realmName = faker.internet.userName().toLowerCase();
+  const realmId = faker.internet.username().toLowerCase();
+  const realmName = faker.internet.username().toLowerCase();
   const realm = await kcAdminClient.realms.create({
     id: realmId,
     realm: realmName,
@@ -48,8 +48,8 @@ describe("Realms", () => {
   });
 
   it("create realm", async () => {
-    const realmId = faker.internet.userName().toLowerCase();
-    const realmName = faker.internet.userName().toLowerCase();
+    const realmId = faker.internet.username().toLowerCase();
+    const realmName = faker.internet.username().toLowerCase();
     const realm = await kcAdminClient.realms.create({
       id: realmId,
       realm: realmName,

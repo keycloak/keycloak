@@ -15,7 +15,7 @@ describe("Attack Detection", () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
-    const username = faker.internet.userName();
+    const username = faker.internet.username();
     currentUser = await kcAdminClient.users.create({
       username,
     });
