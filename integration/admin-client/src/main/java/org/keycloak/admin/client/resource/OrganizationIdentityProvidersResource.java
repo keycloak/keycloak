@@ -32,7 +32,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 public interface OrganizationIdentityProvidersResource {
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Consumes(MediaType.TEXT_PLAIN)
     Response addIdentityProvider(String id);
 
     @GET

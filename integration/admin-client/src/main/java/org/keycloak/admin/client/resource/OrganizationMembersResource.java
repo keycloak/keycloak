@@ -35,7 +35,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 public interface OrganizationMembersResource {
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Consumes(MediaType.TEXT_PLAIN)
     Response addMember(String userId);
 
     /**
