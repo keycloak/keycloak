@@ -76,14 +76,14 @@
     "@patternfly/patternfly": "^5.4.1",
     "@patternfly/react-code-editor": "^5.4.10",
     "@patternfly/react-core": "^5.4.8",
-    "@patternfly/react-icons": "^5.4.0",
+    "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.8",
     "admin-ui": "file:",
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
-    "i18next": "^23.16.3",
+    "i18next": "^23.16.4",
     "i18next-http-backend": "^2.6.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -117,10 +117,10 @@
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.27.0",
     "ts-node": "^10.9.2",
-    "uuid": "^11.0.1",
+    "uuid": "^11.0.2",
     "vite": "^5.4.10",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.3"
+    "vitest": "^2.1.4"
   }
 }
