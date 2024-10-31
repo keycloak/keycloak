@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.ui.page;
 
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -22,6 +23,9 @@ public class WelcomePage extends AbstractPage {
     @FindBy(css = ".pf-v5-c-alert")
     private WebElement pageAlert;
 
+    @FindBy(css = ".pf-v5-c-title")
+    private WebElement welcomeMessage;
+
     public WelcomePage(WebDriver driver) {
         super(driver);
     }
@@ -36,6 +40,12 @@ public class WelcomePage extends AbstractPage {
         passwordConfirmationInput.sendKeys(password);
     }
 
+    public void login(String username, String password) {
+        usernameInput.sendKeys(username);
+        passwordInput.sendKeys(password);
+        submitButton.click();
+    }
+
     public void submit() {
         submitButton.click();
     }
@@ -44,4 +54,17 @@ public class WelcomePage extends AbstractPage {
         Assertions.assertTrue(pageAlert.getText().contains("User created"));
     }
 
+    public boolean isPasswordSet() {
+        return !(driver.getPageSource().contains("Create a temporary administrative user") ||
+                driver.getPageSource().contains("You will need local access to create the temporary administrative user.") ||
+                driver.getPageSource().contains("you first create a temporary administrative user. Later, to harden security, create a new permanent administrative user"));
+    }
+
+    public void navigateToAdminConsole() {
+        driver.get("http://localhost:8080/admin/master/console");
+    }
+
+    public String getWelcomeMessage() {
+        return welcomeMessage.getText();
+    }
 }
