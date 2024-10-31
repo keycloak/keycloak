@@ -9,10 +9,10 @@ import { useRealm } from "./realm-context/RealmContext";
 
 const MAX_REALMS = 4;
 
-export const RecentRealmsContext = createNamedContext<string[] | undefined>(
-  "RecentRealmsContext",
-  undefined,
-);
+export const RecentRealmsContext = createNamedContext<{
+  recentRealms?: string[];
+  removeRealm?: (realmName: string) => void;
+}>("RecentRealmsContext", {});
 
 export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
   const { realm } = useRealm();
@@ -27,8 +27,13 @@ export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
     setStoredRealms(newRealms.slice(0, MAX_REALMS));
   }, [realm]);
 
+  const removeRealm = (realmName: string) =>
+    setStoredRealms(storedRealms.filter((r) => r !== realmName));
+
   return (
-    <RecentRealmsContext.Provider value={storedRealms}>
+    <RecentRealmsContext.Provider
+      value={{ recentRealms: storedRealms, removeRealm }}
+    >
       {children}
     </RecentRealmsContext.Provider>
   );

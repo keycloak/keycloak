@@ -1,7 +1,7 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -16,9 +16,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import {
@@ -26,6 +24,7 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useRecentRealms } from "../context/RecentRealms";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
@@ -76,6 +75,7 @@ const RealmSettingsHeader = ({
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment<Environment>();
+  const { removeRealm } = useRecentRealms();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -102,6 +102,7 @@ const RealmSettingsHeader = ({
     onConfirm: async () => {
       try {
         await adminClient.realms.del({ realm: realmName });
+        removeRealm?.(realmName);
         addAlert(t("deletedSuccessRealmSetting"), AlertVariant.success);
         navigate(toDashboard({ realm: environment.masterRealm }));
         refresh();
