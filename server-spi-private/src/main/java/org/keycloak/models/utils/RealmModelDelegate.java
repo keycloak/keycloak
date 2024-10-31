@@ -1160,4 +1160,14 @@ public class RealmModelDelegate implements RealmModel {
     public void setOrganizationsEnabled(boolean organizationsEnabled) {
         delegate.setOrganizationsEnabled(organizationsEnabled);
     }
+
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        return delegate.isVerifiableCredentialsEnabled();
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
 }

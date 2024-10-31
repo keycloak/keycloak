@@ -1821,8 +1821,25 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setOrganizationsEnabled(organizationsEnabled);
     }
 
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        if (isUpdated()) return featureVerifiableCredentialsEnabled(updated.isVerifiableCredentialsEnabled());
+        return featureVerifiableCredentialsEnabled(cached.isVerifiableCredentialsEnabled());
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        getDelegateForUpdate();
+        updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
     private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
         if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
         return isOrganizationsEnabled;
+    }
+
+    private boolean featureVerifiableCredentialsEnabled(boolean isVerifiableCredentialsEnabled) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) return false;
+        return isVerifiableCredentialsEnabled;
     }
 }
