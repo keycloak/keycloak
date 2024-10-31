@@ -87,8 +87,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.8
-        version: 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.9
+        version: 5.4.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.16.4
         version: 23.16.4
@@ -172,8 +172,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.8
-        version: 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.9
+        version: 5.4.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
         version: '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.12)'
@@ -392,8 +392,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.8
-        version: 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.9
+        version: 5.4.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.16.4
         version: 23.16.4
@@ -1220,8 +1220,8 @@ packages:
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
 
-  '@patternfly/react-table@5.4.8':
-    resolution: {integrity: sha512-YVRSP6luBHsDqWeblPLfg8tXasB409SbysDECsGPMR+y87vYTa6CHwpVhImhXOlIJW7KCRCgx4T1/siAxb3XkA==}
+  '@patternfly/react-table@5.4.9':
+    resolution: {integrity: sha512-fSbBZRihVCAaUOKRFzzqYhBrTSI/VGU6O9I0a21T+bXwHz071OsefBdE/ZQiJhqHpJTC+WAZWM76/1CEEnrBFw==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -5669,7 +5669,7 @@ snapshots:
       '@patternfly/react-core': 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-table': 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-table': 5.4.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
       flat: 6.0.1
@@ -5857,7 +5857,7 @@ snapshots:
 
   '@patternfly/react-styles@5.4.1': {}
 
-  '@patternfly/react-table@5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-table@5.4.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@patternfly/react-core': 5.4.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
