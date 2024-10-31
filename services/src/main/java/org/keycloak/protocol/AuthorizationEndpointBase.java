@@ -124,14 +124,14 @@ public abstract class AuthorizationEndpointBase {
                         return challenge;
                     }
                     else {
-                        return protocol.sendError(authSession, Error.PASSIVE_LOGIN_REQUIRED);
+                        return protocol.sendError(authSession, Error.PASSIVE_LOGIN_REQUIRED, null);
                     }
                 }
 
                 AuthenticationManager.setClientScopesInSession(session, authSession);
 
                 if (processor.nextRequiredAction() != null) {
-                    return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                    return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED, null);
                 }
 
             } catch (Exception e) {

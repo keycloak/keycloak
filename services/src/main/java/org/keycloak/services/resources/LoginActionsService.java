@@ -925,7 +925,7 @@ public class LoginActionsService {
                                 .setHttpHeaders(headers)
                                 .setUriInfo(session.getContext().getUri())
                                 .setEventBuilder(event);
-                        return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                        return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED, null);
                     }
                 }
                 return challenge;
@@ -1014,7 +1014,7 @@ public class LoginActionsService {
                     .setHttpHeaders(headers)
                     .setUriInfo(session.getContext().getUri())
                     .setEventBuilder(event);
-            Response response = protocol.sendError(authSession, Error.CONSENT_DENIED);
+            Response response = protocol.sendError(authSession, Error.CONSENT_DENIED, null);
             event.error(Errors.REJECTED_BY_USER);
             return response;
         }
