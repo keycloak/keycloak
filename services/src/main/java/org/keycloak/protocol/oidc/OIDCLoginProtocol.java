@@ -341,11 +341,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(AuthenticationSessionModel authSession, Error error) {
-        return sendError(authSession, error, null);
-    }
-
-    @Override
     public Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage) {
         if (isOAuth2DeviceVerificationFlow(authSession)) {
             return denyOAuth2DeviceAuthorization(authSession, error, session);
