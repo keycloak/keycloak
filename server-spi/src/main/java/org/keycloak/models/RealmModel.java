@@ -110,6 +110,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setOrganizationsEnabled(boolean organizationsEnabled);
 
+    boolean isVerifiableCredentialsEnabled();
+
+    void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());

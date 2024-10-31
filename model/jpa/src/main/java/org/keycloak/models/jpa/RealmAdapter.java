@@ -1200,6 +1200,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        return getAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
+    }
+
+    @Override
     public ClientModel getMasterAdminClient() {
         String masterAdminClientId = realm.getMasterAdminClient();
         if (masterAdminClientId == null) {

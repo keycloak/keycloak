@@ -1818,5 +1818,14 @@ public class IdentityBrokerStateTestHelpers {
         @Override
         public void setOrganizationsEnabled(boolean organizationsEnabled) {
         }
+
+        @Override
+        public boolean isVerifiableCredentialsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        }
     }
 }

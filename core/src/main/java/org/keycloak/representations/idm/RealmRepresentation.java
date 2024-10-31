@@ -218,6 +218,8 @@ public class RealmRepresentation {
     protected Boolean organizationsEnabled;
     private List<OrganizationRepresentation> organizations;
 
+    protected Boolean verifiableCredentialsEnabled;
+
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -1438,6 +1440,14 @@ public class RealmRepresentation {
 
     public void setOrganizationsEnabled(Boolean organizationsEnabled) {
         this.organizationsEnabled = organizationsEnabled;
+    }
+
+    public Boolean isVerifiableCredentialsEnabled() {
+        return verifiableCredentialsEnabled;
+    }
+
+    public void setVerifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
+        this.verifiableCredentialsEnabled = verifiableCredentialsEnabled;
     }
 
     @JsonIgnore
