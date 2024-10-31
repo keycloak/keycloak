@@ -40,6 +40,11 @@
             <artifactId>ojdbc11</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.mvnpm</groupId>
+            <artifactId>importmap</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <properties>
