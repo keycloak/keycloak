@@ -194,6 +194,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         String errorMessage = messagesBundle.getProperty(errorKey);
 
         attributes.put("message", new MessageBean(errorMessage, MessageType.ERROR));
+        // Default fallback in case an error occurs determining the dark mode later on.
+        attributes.put("darkMode", true);
 
         try {
             attributes.put("msg", new MessageFormatterMethod(locale, theme.getMessages(locale)));
@@ -202,7 +204,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         try {
-            attributes.put("properties", theme.getProperties());
+            Properties properties = theme.getProperties();
+            attributes.put("properties", properties);
+            attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
+                    && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
             e.printStackTrace();
         }
