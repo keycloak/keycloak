@@ -33,7 +33,13 @@
     <description>Keycloak Test Framework Parent</description>
 
     <modules>
+        <module>bom</module>
         <module>core</module>
+        <module>db-mariadb</module>
+        <module>db-mssql</module>
+        <module>db-mysql</module>
+        <module>db-oracle</module>
+        <module>db-postgres</module>
         <module>ui</module>
         <module>examples</module>
     </modules>
