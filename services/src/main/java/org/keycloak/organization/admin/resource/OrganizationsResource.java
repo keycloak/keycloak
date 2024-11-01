@@ -32,7 +32,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -60,7 +59,6 @@ import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
 
-@Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationsResource {
 
@@ -70,11 +68,6 @@ public class OrganizationsResource {
     private final AdminEventBuilder adminEvent;
 
     private static final Logger logger = Logger.getLogger(OrganizationsResource.class);
-
-    public OrganizationsResource() {
-        // needed for registering to the JAX-RS stack
-        this(null, null, null);
-    }
 
     public OrganizationsResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
