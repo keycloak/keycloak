@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import jakarta.ws.rs.NotFoundException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -45,12 +45,14 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -428,6 +430,7 @@ public class RoleContainerResource extends RoleResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
     @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions(final @PathParam("role-name") String roleName) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -456,6 +459,7 @@ public class RoleContainerResource extends RoleResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
     @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-name") String roleName, ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
