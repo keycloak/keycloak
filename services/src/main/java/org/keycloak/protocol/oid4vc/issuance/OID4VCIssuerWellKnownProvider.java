@@ -26,15 +26,17 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -85,7 +87,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .map(VCSigningServiceProviderFactory::supportedFormat)
                 .toList();
 
-        return keycloakSession.getContext()
+        // Retrieving attributes from client definition.
+        // THis will be remove when token production is migrated.
+        Map<String, SupportedCredentialConfiguration> clienAttr = keycloakSession.getContext()
                 .getRealm()
                 .getClientsStream()
                 .filter(cm -> cm.getProtocol() != null)
@@ -97,6 +101,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .distinct()
                 .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
 
+        // Retrieving attributes from the realm
+        Map<String, SupportedCredentialConfiguration> realmAttr = fromRealmAttributes(realm.getAttributes())
+                .stream()
+                .filter(sc -> supportedFormats.contains(sc.getFormat()))
+                .distinct()
+                .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
+
+        // Aggregating attributes. Having realm attributes take preference.
+        Map<String, SupportedCredentialConfiguration> aggregatedAttr = new HashMap<>(clienAttr);
+        aggregatedAttr.putAll(realmAttr);
+        return aggregatedAttr;
     }
 
     /**
@@ -114,5 +129,31 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static String getCredentialsEndpoint(KeycloakContext context) {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH;
+    }
+
+    private static final String VC_KEY = "vc";
+
+    public static List<SupportedCredentialConfiguration> fromRealmAttributes(Map<String, String> realmAttributes) {
+
+        Set<String> supportedCredentialIds = new HashSet<>();
+        Map<String, String> attributes = new HashMap<>();
+        realmAttributes
+                .entrySet()
+                .forEach(entry -> {
+                    if (!entry.getKey().startsWith(VC_KEY)) {
+                        return;
+                    }
+                    String key = entry.getKey().substring((VC_KEY + ".").length());
+                    supportedCredentialIds.add(key.split("\\.")[0]);
+                    attributes.put(key, entry.getValue());
+                });
+
+
+        List<SupportedCredentialConfiguration> supportedCredentialConfigurations = supportedCredentialIds
+                .stream()
+                .map(id -> SupportedCredentialConfiguration.fromDotNotation(id, attributes))
+                .toList();
+
+        return supportedCredentialConfigurations;
     }
 }
