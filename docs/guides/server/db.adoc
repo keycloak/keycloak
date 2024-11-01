@@ -128,11 +128,11 @@ Then continue configuring the database as described in the next section.
 
 For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
 
-The configuration can be set during a *build command* OR a *start command*:
+The configuration can be set during a `build` command OR a `start` command:
 
-. Using a *build command* followed by an optimzed start command (recommended)
+. Using a `build` command followed by an optimized `start` command (recommended)
 +
-First, the minimum settings needed to connect to the database can be specified in *conf/keycloak.conf*:
+First, the minimum settings needed to connect to the database can be specified in `conf/keycloak.conf`:
 +
 ----
 # The database vendor.
@@ -157,7 +157,7 @@ bin/kc.[sh|bat] start --optimized
 ----
 +
 
-. Using *only a start command* (without --optimized)
+. Using *only a `start`* command (without `--optimized`)
 +
 <@kc.start parameters="--db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me"/>
 +
