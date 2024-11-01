@@ -126,7 +126,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      *
      */
     @Override
-    public Stream<GroupModel> getGroupsStream() {
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
         Stream<GroupModel> groups = getFederatedStorage().getGroupsStream(realm, this.getId());
         if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
         return Stream.concat(groups, getGroupsInternal().stream());

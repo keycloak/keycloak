@@ -631,7 +631,7 @@ public final class KeycloakModelUtils {
             }
             aggrValues.addAll(values);
         }
-        Stream<Collection<String>> attributes = user.getGroupsStream()
+        Stream<Collection<String>> attributes = user.getGroupsStream(true)
                 .map(group -> resolveAttribute(group, name, aggregateAttrs))
                 .filter(attr -> !attr.isEmpty());
 

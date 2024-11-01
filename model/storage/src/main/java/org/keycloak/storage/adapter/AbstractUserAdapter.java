@@ -127,8 +127,12 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Stream<GroupModel> getGroupsStream() {
-        return getGroups().stream();
+    public Stream<GroupModel> getGroupsStream(boolean withOrganizationGroups) {
+        if(withOrganizationGroups) {
+            return getGroups().stream();
+        } else {
+            return getGroups().stream().filter(g -> !g.getType().equals(GroupModel.Type.ORGANIZATION));
+        }
     }
 
     @Override
