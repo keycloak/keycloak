@@ -47,6 +47,10 @@ Most CPU time goes into creating new TLS connections, as each client runs only a
 This ensures a fast startup of the node, and sufficient capacity to handle failover tasks.
 Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
 
+* When performing requests with more than 2500 different clients concurrently, not all client information will fit into {project_name}'s caches when those are using the standard cache sizes of 10000 entries each.
+Due to this, the database may become a bottleneck as client data is reloaded frequently from the database.
+To reduce the database usage, increase the `users` cache size by two times the number of concurrently used clients, and the `realms` cache size by four times the number of concurrently used clients.
+
 {project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
 
 For every 100 login/logout/refresh requests per second:
@@ -127,7 +131,7 @@ The benefit of this setup is that the number of Pods does not need to scale duri
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
 
 * OpenShift 4.16.x deployed on AWS via ROSA.
-* Machinepool with `m5.4xlarge` instances.
+* Machinepool with `m5.2xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
 * OpenShift's reverse proxy running in passthrough mode were the TLS connection of the client is terminated at the Pod.
 * Database Amazon Aurora PostgreSQL in a multi-AZ setup.

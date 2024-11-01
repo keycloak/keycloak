@@ -3,7 +3,9 @@ package org.keycloak.services.resources.account;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuth2Constants;
@@ -109,6 +111,10 @@ public class AccountConsole implements AccountResourceProvider {
             return redirectToLogin(path);
         }
 
+        return renderAccountConsole();
+    }
+
+    private Response renderAccountConsole() throws IOException, FreeMarkerException {
         final var serverUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var serverBaseUri = serverUriInfo.getBaseUri();
         // Strip any trailing slashes from the URL.
@@ -153,6 +159,8 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));
         map.put("properties", theme.getProperties());
+        map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
+                && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {
             try {
                 final InputStream resource = theme.getResourceAsStream(file);
@@ -246,6 +254,17 @@ public class AccountConsole implements AccountResourceProvider {
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
+
+        if (!queryParameters.isEmpty()) {
+            String error = queryParameters.getFirst(OAuth2Constants.ERROR);
+            if (error != null) {
+                try {
+                    return renderAccountConsole();
+                } catch (IOException | FreeMarkerException e) {
+                    throw new ServerErrorException(Status.INTERNAL_SERVER_ERROR);
+                }
+            }
+        }
 
         URI url = uriBuilder.build();
 

@@ -461,6 +461,10 @@ public class AuthenticationManagementResource {
 
                     if (config.getAlias() != null) {
                         config.setAlias(newName + " " + config.getAlias());
+                        if (configManager.getAuthenticatorConfigByAlias(realm, config.getAlias()) != null) {
+                            logger.warnf("Authentication execution configuration [%s] already exists", config.getAlias());
+                            throw new IllegalStateException("Authentication execution configuration " + config.getAlias() + " already exists.");
+                        }
                     }
 
                     AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
@@ -1025,24 +1029,41 @@ public class AuthenticationManagementResource {
     public Response newExecutionConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "JSON with new configuration") AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
 
+        if (json.getAlias() == null || json.getAlias().isEmpty()) {
+            throw ErrorResponse.exists("Failed to create authentication execution configuration with empty alias name");
+        }
+
         ReservedCharValidator.validate(json.getAlias());
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
+        }
 
+        // retrieve the previous configuration if assigned
+        AuthenticatorConfigModel prevConfig = null;
+        if (model.getAuthenticatorConfig() != null) {
+            prevConfig = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
         }
+
+        AuthenticatorConfigModel otherConfig = realm.getAuthenticatorConfigByAlias(json.getAlias());
+        if (otherConfig != null && (prevConfig == null || !prevConfig.getId().equals(otherConfig.getId()))) {
+            throw ErrorResponse.exists("Authentication execution configuration " + json.getAlias() + " already exists");
+        }
+
+        // remove the previous config
+        if (prevConfig != null) {
+            realm.removeAuthenticatorConfig(prevConfig);
+        }
+
         AuthenticatorConfigModel config = RepresentationToModel.toModel(json);
-        if (config.getAlias() == null) {
-            throw ErrorResponse.error("Alias missing", Response.Status.BAD_REQUEST);
-        }
         config = realm.addAuthenticatorConfig(config);
         model.setAuthenticatorConfig(config.getId());
         realm.updateAuthenticatorExecution(model);
 
         json.setId(config.getId());
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(json).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(json).success();
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(config.getId()).build()).build();
     }
 
@@ -1528,6 +1549,14 @@ public class AuthenticationManagementResource {
     @Deprecated
     public Response createAuthenticatorConfig(@Parameter(description = "JSON describing new authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
+
+        if (rep.getAlias() == null || rep.getAlias().isEmpty()) {
+            throw ErrorResponse.exists("Failed to create authentication execution configuration with empty alias name");
+        }
+
+        if (realm.getAuthenticatorConfigByAlias(rep.getAlias()) != null) {
+            throw ErrorResponse.exists("Authentication execution configuration " + rep.getAlias() + " already exists");
+        }
 
         ReservedCharValidator.validate(rep.getAlias());
 

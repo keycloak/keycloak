@@ -121,11 +121,6 @@ The following table shows the recommended paths to expose.
 |Yes
 |This path is needed to serve assets correctly. It may be served from a CDN instead of the {project_name} path.
 
-|/robots.txt
-|/robots.txt
-|Yes
-|Search engine rules
-
 |/metrics
 |-
 |No

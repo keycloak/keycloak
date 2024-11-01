@@ -37,7 +37,8 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
 
 public final class PropertyMappers {
-
+    
+    public static final String KC_SPI_PREFIX = "kc.spi";
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
@@ -86,7 +87,6 @@ public final class PropertyMappers {
 
         return isBuildTimeProperty
                 && !"kc.version".equals(name)
-                && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
                 && !org.keycloak.common.util.Environment.PROFILE.equals(name)
@@ -95,8 +95,8 @@ public final class PropertyMappers {
                 && !"kc.config-file".equals(name);
     }
 
-    private static boolean isSpiBuildTimeProperty(String name) {
-        return name.startsWith("kc.spi") && (name.endsWith("provider") || name.endsWith("enabled"));
+    public static boolean isSpiBuildTimeProperty(String name) {
+        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
     }
 
     private static boolean isFeaturesBuildTimeProperty(String name) {

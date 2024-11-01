@@ -56,6 +56,15 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
+    private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
+
+    static {
+        // enable Infinispan and JGroups virtual threads by default
+        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null) {
+            System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
+        }
+    }
+
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
 
@@ -88,7 +97,8 @@ public class KeycloakMain implements QuarkusApplication {
 
             try {
                 PropertyMappers.sanitizeDisabledMappers();
-                Picocli.validateConfig(cliArgs, new Start());
+                PrintWriter outStream = new PrintWriter(System.out, true);
+                Picocli.validateConfig(cliArgs, new Start(), outStream);
             } catch (PropertyException | ProfileException e) {
                 handleUsageError(e.getMessage(), e.getCause());
                 return;

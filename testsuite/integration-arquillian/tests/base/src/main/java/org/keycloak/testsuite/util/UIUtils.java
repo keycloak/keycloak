@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -82,14 +81,19 @@ public final class UIUtils {
      * @param element The element to click
      */
     public static void clickLink(WebElement element) {
+        clickElement(element, Keys.ENTER);
+    }
+
+    private static void clickElement(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
         waitUntilElement(element).is().clickable();
 
         performOperationWithPageReload(BrowserDriverUtil.isDriverChrome(driver)
-                ? () -> element.sendKeys(Keys.ENTER)
+                ? () -> element.sendKeys(key)
                 : element::click);
     }
+
 
     /**
      * The method executes click in the element. This method always uses click and
@@ -113,15 +117,11 @@ public final class UIUtils {
      * @param enable If true, the checkbox should be switched to enabled (checked). If false, the checkbox should be switched to disabled (unchecked)
      */
     public static void switchCheckbox(WebElement checkbox, boolean enable) {
-        int maxAttempts = 4;
-
-        Retry.execute(() -> {
-            boolean current = checkbox.isSelected();
-            if (current != enable) {
-                UIUtils.click(checkbox);
-                Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
-            }
-        }, maxAttempts, 0);
+        boolean current = checkbox.isSelected();
+        if (current != enable) {
+            clickElement(checkbox, Keys.SPACE);
+            Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
+        }
     }
 
     /**

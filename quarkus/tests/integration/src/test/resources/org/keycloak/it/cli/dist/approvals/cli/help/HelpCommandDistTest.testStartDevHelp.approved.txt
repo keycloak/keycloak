@@ -69,11 +69,6 @@ Cache:
                        specified via XML file (see 'cache-config-file' option.). If the option is
                        specified, 'cache-remote-username' and 'cache-remote-password' are required
                        as well and the related configuration in XML file should not be present.
---cache-stack <stack>
-                     Define the default stack to use for cluster communication and node discovery.
-                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Possible values are: tcp, udp, kubernetes, ec2, azure, google, or a custom
-                       one.
 
 Config:
 
@@ -159,8 +154,10 @@ Hostname v2:
 HTTP(S):
 
 --http-enabled <true|false>
-                     Enables the HTTP listener. Default: false.
---http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+                     Enables the HTTP listener. Enabled by default in development mode. Typically
+                       not enabled in production unless the server is fronted by a TLS termination
+                       proxy. Default: false.
+--http-host <host>   The HTTP Host. Default: 0.0.0.0.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -321,8 +318,8 @@ Truststore:
                        Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
                        DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
-                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
-                       containing those files that will be used as a system truststore.
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.
 
 Security:
 

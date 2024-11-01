@@ -66,6 +66,7 @@ const USER_VERIFY = [
 type WeauthnSelectProps = {
   name: string;
   label: string;
+  labelIcon?: string;
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
@@ -74,6 +75,7 @@ type WeauthnSelectProps = {
 const WebauthnSelect = ({
   name,
   label,
+  labelIcon,
   options,
   labelPrefix,
   isMultiSelect = false,
@@ -82,7 +84,8 @@ const WebauthnSelect = ({
   return (
     <SelectControl
       name={name}
-      label={t(label)}
+      label={label}
+      labelIcon={labelIcon}
       variant={isMultiSelect ? "typeaheadMulti" : "single"}
       controller={{ defaultValue: options[0] }}
       options={options.map((option) => ({
@@ -161,11 +164,12 @@ export const WebauthnPolicy = ({
             name={`${namePrefix}RpEntityName`}
             label={t("webAuthnPolicyRpEntityName")}
             labelIcon={t("webAuthnPolicyRpEntityNameHelp")}
-            rules={{ required: { value: true, message: t("required") } }}
+            rules={{ required: t("required") }}
           />
           <WebauthnSelect
             name={`${namePrefix}SignatureAlgorithms`}
-            label="webAuthnPolicySignatureAlgorithms"
+            label={t("webAuthnPolicySignatureAlgorithms")}
+            labelIcon={t("webAuthnPolicySignatureAlgorithmsHelp")}
             options={SIGNATURE_ALGORITHMS}
             isMultiSelect
           />
@@ -176,32 +180,36 @@ export const WebauthnPolicy = ({
           />
           <WebauthnSelect
             name={`${namePrefix}AttestationConveyancePreference`}
-            label="webAuthnPolicyAttestationConveyancePreference"
+            label={t("webAuthnPolicyAttestationConveyancePreference")}
+            labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
             labelPrefix="attestationPreference"
           />
           <WebauthnSelect
             name={`${namePrefix}AuthenticatorAttachment`}
-            label="webAuthnPolicyAuthenticatorAttachment"
+            label={t("webAuthnPolicyAuthenticatorAttachment")}
+            labelIcon={t("webAuthnPolicyAuthenticatorAttachmentHelp")}
             options={AUTHENTICATOR_ATTACHMENT}
             labelPrefix="authenticatorAttachment"
           />
           <WebauthnSelect
             name={`${namePrefix}RequireResidentKey`}
-            label="webAuthnPolicyRequireResidentKey"
+            label={t("webAuthnPolicyRequireResidentKey")}
+            labelIcon={t("webAuthnPolicyRequireResidentKeyHelp")}
             options={RESIDENT_KEY_OPTIONS}
             labelPrefix="residentKey"
           />
           <WebauthnSelect
             name={`${namePrefix}UserVerificationRequirement`}
-            label="webAuthnPolicyUserVerificationRequirement"
+            label={t("webAuthnPolicyUserVerificationRequirement")}
+            labelIcon={t("webAuthnPolicyUserVerificationRequirementHelp")}
             options={USER_VERIFY}
             labelPrefix="userVerify"
           />
           <TimeSelectorControl
             name={`${namePrefix}CreateTimeout`}
             label={t("webAuthnPolicyCreateTimeout")}
-            labelIcon={t("otpPolicyPeriodHelp")}
+            labelIcon={t("webAuthnPolicyCreateTimeoutHelp")}
             units={["second", "minute", "hour"]}
             controller={{
               defaultValue: 0,

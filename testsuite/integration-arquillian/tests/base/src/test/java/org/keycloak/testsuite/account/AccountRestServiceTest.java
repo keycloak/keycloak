@@ -31,6 +31,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -987,8 +988,31 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(204, response.getStatus());
         }
 
-        // Revert - re-enable requiredAction and remove OTP credential from the user
+        // Revert - re-enable requiredAction
         setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
+    }
+
+    // Issue 30204
+    @Test
+    public void testCredentialsGetWithDisabledDeleteCredentialAction() throws IOException {
+        // Assert OTP will be returned by default
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Assert OTP removeable
+        AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
+        assertTrue(otpCredential.isRemoveable());
+
+        // Disable "Delete credential" action
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, false);
+
+        // Assert OTP not removeable
+        credentials = getCredentials();
+        otpCredential = credentials.get(1);
+        assertFalse(otpCredential.isRemoveable());
+
+        // Revert - re-enable requiredAction
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, true);
     }
 
     private void setRequiredActionEnabledStatus(String requiredActionProviderId, boolean enabled) {

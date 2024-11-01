@@ -17,7 +17,9 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,9 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
@@ -44,6 +49,21 @@ public class ImportAtStartupDistTest {
     void testImport(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Realm 'quickstart-realm' imported");
+    }
+    
+    @Test
+    @BeforeStartDistribution(CreateRealmConfigurationFile.class)
+    void testMultipleImport(KeycloakDistribution dist) throws IOException {
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        Path dir = rawDist.getDistPath().resolve("data").resolve("import");
+        
+        // add another realm
+        Files.write(dir.resolve("realm2.json"), Files.readAllLines(dir.resolve("realm.json")).stream()
+                .map(s -> s.replace("quickstart-realm", "other-realm")).toList());
+        
+        CLIResult cliResult = dist.run("start-dev", "--import-realm");
+        cliResult.assertMessage("Realm 'quickstart-realm' imported");
+        cliResult.assertMessage("Realm 'other-realm' imported");
     }
 
     @Test
@@ -115,7 +135,7 @@ public class ImportAtStartupDistTest {
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertNoMessage("Not importing realm master from file");
     }
-
+    
     public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {
 
         @Override

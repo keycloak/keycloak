@@ -219,7 +219,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(AuthenticationSessionModel authSession, Error error) {
+    public Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage) {
         try {
             ClientModel client = authSession.getClient();
 
@@ -233,7 +233,7 @@ public class SamlProtocol implements LoginProtocol {
                     URI redirect = builder.buildFromMap(params);
                     return Response.status(302).location(redirect).build();
                 } else {
-                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, translateErrorToIdpInitiatedErrorMessage(error));
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, errorMessage != null ? errorMessage : translateErrorToIdpInitiatedErrorMessage(error));
                 }
             } else {
                 return samlErrorMessage(

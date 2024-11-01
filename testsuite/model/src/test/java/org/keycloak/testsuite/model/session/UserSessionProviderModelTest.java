@@ -16,11 +16,24 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -39,17 +52,12 @@ import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
@@ -277,6 +285,67 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
 
                 return null;
+            });
+        });
+    }
+
+    @Test
+    public void testStreamsMarshalling() throws InterruptedException {
+        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
+        closeKeycloakSessionFactory();
+        var clusterSize = 4;
+        var barrier = new CyclicBarrier(clusterSize);
+
+        inIndependentFactories(clusterSize, 30, () -> {
+            // populate the cache
+            withRealmConsumer(realmId, (keycloakSession, realm) -> {
+                var user = keycloakSession.users().getUserByUsername(realm, "user1");
+                var client = realm.getClientByClientId("test-app");
+                assertNotNull(user);
+                assertNotNull(client);
+                var userSession = keycloakSession.sessions().createUserSession(null, realm, user,  "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                assertNotNull(userSession);
+                var clientSession = keycloakSession.sessions().createClientSession(realm, client, userSession);
+                assertNotNull(clientSession);
+            });
+
+            try {
+                barrier.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (BrokenBarrierException | TimeoutException e) {
+                throw new RuntimeException(e);
+            }
+
+            withRealmConsumer(realmId, (keycloakSession, realm) -> {
+                var user = keycloakSession.users().getUserByUsername(realm, "user1");
+                assertNotNull(user);
+
+                var client = realm.getClientByClientId("test-app");
+                assertNotNull(client);
+
+                var activeClientSessionsStats = keycloakSession.sessions().getActiveClientSessionStats(realm, false);
+                assertNotNull(activeClientSessionsStats);
+                assertEquals(1, activeClientSessionsStats.size());
+                assertTrue(activeClientSessionsStats.containsKey(client.getId()));
+                assertEquals(4L, (long) activeClientSessionsStats.get(client.getId()));
+
+                var userSessions = keycloakSession.sessions().getUserSessionsStream(realm, user).toList();
+                assertNotNull(userSessions);
+                assertEquals(4, userSessions.size());
+
+                // sync everybody here since we are going to remove everything.
+                try {
+                    barrier.await(30, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (BrokenBarrierException | TimeoutException e) {
+                    throw new RuntimeException(e);
+                }
+
+                keycloakSession.sessions().removeUserSessions(realm, user);
             });
         });
     }

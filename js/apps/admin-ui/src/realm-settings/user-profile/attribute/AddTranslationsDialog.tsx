@@ -142,10 +142,13 @@ export const AddTranslationsDialog = ({
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
       setValue(`translations.${rowIndex}.locale`, locale);
+
+      const translationExists =
+        translations.translations[rowIndex] !== undefined;
       setValue(
         `translations.${rowIndex}.value`,
-        translations.translations.length > 0
-          ? translations.translations[rowIndex].value
+        translationExists
+          ? translations.translations[rowIndex]?.value
           : defaultTranslations[locale] || "",
       );
     });
@@ -332,10 +335,7 @@ export const AddTranslationsDialog = ({
                                     label={t("translationValue")}
                                     data-testid={`translation-value-${rowIndex}`}
                                     rules={{
-                                      required: {
-                                        value: true,
-                                        message: t("required"),
-                                      },
+                                      required: t("required"),
                                     }}
                                   />
                                 )}

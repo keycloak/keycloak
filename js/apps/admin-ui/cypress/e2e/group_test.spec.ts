@@ -119,7 +119,7 @@ describe("Group test", () => {
         .assertNoSearchResultsMessageExist(true);
     });
 
-    it.skip("Duplicate group", () => {
+    it("Duplicate group", () => {
       groupPage
         .duplicateGroupItem(groupNames[0], true)
         .assertNotificationGroupDuplicated();
@@ -393,6 +393,16 @@ describe("Group test", () => {
         .leaveGroupUserItem(users[1].username)
         .assertNotificationUserLeftTheGroup(1)
         .assertNoUsersFoundEmptyStateMessageExist(true);
+    });
+
+    it("Show memberships from item bar", () => {
+      sidebarPage.goToGroups();
+      groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
+      childGroupsTab.goToMembersTab();
+      membersTab
+        .showGroupMembershipsItem(users[3].username)
+        .assertGroupItemExist(predefinedGroups[0], true)
+        .cancelShowGroupMembershipsModal();
     });
   });
 

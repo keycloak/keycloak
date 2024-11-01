@@ -80,6 +80,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -340,7 +341,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(AuthenticationSessionModel authSession, Error error) {
+    public Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage) {
         if (isOAuth2DeviceVerificationFlow(authSession)) {
             return denyOAuth2DeviceAuthorization(authSession, error, session);
         }
@@ -351,7 +352,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String redirect = authSession.getRedirectUri();
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
 
-        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(redirect, state, error);
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(redirect, state, error, errorMessage);
 
         // Remove authenticationSession from current tab
         new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
@@ -359,10 +360,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return buildRedirectUri(redirectUri, authSession, null, null, null, error);
     }
 
-    private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error) {
+    private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error, String errorMessage) {
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode, session, null);
 
-        OAuth2ErrorRepresentation oauthError = translateError(error);
+        OAuth2ErrorRepresentation oauthError = translateError(error, errorMessage);
         if (oauthError.getError() != null) {
             redirectUri.addParam(OAuth2Constants.ERROR, oauthError.getError());
         }
@@ -410,19 +411,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
-        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error);
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error, null);
         return buildRedirectUri(redirectUri, null, null, null, null, error);
     }
 
-    private OAuth2ErrorRepresentation translateError(Error error) {
+    private OAuth2ErrorRepresentation translateError(Error error, String errorMessage) {
         switch (error) {
             case CANCELLED_AIA_SILENT:
                 return new OAuth2ErrorRepresentation(null, null);
             case CANCELLED_AIA:
-                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled aplication-initiated action.");
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled application-initiated action.");
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, null);
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, errorMessage);
             case PASSIVE_INTERACTION_REQUIRED:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);
             case PASSIVE_LOGIN_REQUIRED:

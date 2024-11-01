@@ -648,7 +648,7 @@ public class AuthenticationProcessor {
                     .setHttpHeaders(getHttpRequest().getHttpHeaders())
                     .setUriInfo(getUriInfo())
                     .setEventBuilder(event);
-            Response response = protocol.sendError(getAuthenticationSession(), Error.CANCELLED_BY_USER);
+            Response response = protocol.sendError(getAuthenticationSession(), Error.CANCELLED_BY_USER, null);
             forceChallenge(response);
         }
 

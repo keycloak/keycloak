@@ -69,6 +69,7 @@ final class DatabasePropertyMappers {
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MIN_SIZE)
                         .to("quarkus.datasource.jdbc.min-size")
+                        .transformer(DatabasePropertyMappers::transformMinPoolSize)
                         .paramLabel("size")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
@@ -118,4 +119,11 @@ final class DatabasePropertyMappers {
         return Database.getDialect(db).orElse(null);
     }
 
+    /**
+     * For H2 databases we must ensure that the min-pool size is at least one so that the DB is not shutdown until the
+     * Agroal connection pool is closed on Keycloak shutdown.
+     */
+    private static String transformMinPoolSize(String min, ConfigSourceInterceptorContext context) {
+        return isDevModeDatabase(context) && (min == null || "0".equals(min)) ? "1" : min;
+    }
 }

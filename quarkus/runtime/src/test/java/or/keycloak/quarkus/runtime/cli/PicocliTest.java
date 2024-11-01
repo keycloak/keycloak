@@ -19,17 +19,16 @@ package or.keycloak.quarkus.runtime.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
@@ -43,19 +42,33 @@ public class PicocliTest extends AbstractConfigurationTest {
     private class NonRunningPicocli extends Picocli {
 
         final StringWriter err = new StringWriter();
+        final StringWriter out = new StringWriter();
         SmallRyeConfig config;
         int exitCode = Integer.MAX_VALUE;
 
         String getErrString() {
-            // normalize line endings - TODO: could also normalize non-printable chars
-            // but for now those are part of the expected output
-            return System.lineSeparator().equals("\n") ? err.toString()
-                    : err.toString().replace(System.lineSeparator(), "\n");
+            return normalize(err);
+        }
+        
+        // normalize line endings - TODO: could also normalize non-printable chars
+        // but for now those are part of the expected output
+        String normalize(StringWriter writer) {
+            return System.lineSeparator().equals("\n") ? writer.toString()
+                    : writer.toString().replace(System.lineSeparator(), "\n");
+        }
+        
+        String getOutString() {
+            return normalize(out);
         }
 
         @Override
         protected PrintWriter getErrWriter() {
             return new PrintWriter(err, true);
+        }
+        
+        @Override
+        protected PrintWriter getOutWriter() {
+            return new PrintWriter(out, true);
         }
 
         @Override
@@ -68,32 +81,28 @@ public class PicocliTest extends AbstractConfigurationTest {
         };
 
         @Override
-        protected int run(CommandLine cmd, String[] argArray) {
-            skipStart(cmd);
-            return super.run(cmd, argArray);
-        }
-
-        private void skipStart(CommandLine cmd) {
-            for (CommandLine sub : cmd.getSubcommands().values()) {
-                if (sub.getCommand() instanceof AbstractStartCommand) {
-                    ((AbstractStartCommand) (sub.getCommand())).setSkipStart(true);
-                }
-                skipStart(sub);
-            }
-        }
-
-        @Override
         public void parseAndRun(List<String> cliArgs) {
-            ConfigArgsConfigSource.setCliArgs(cliArgs.toArray(String[]::new));
             config = createConfig();
             super.parseAndRun(cliArgs);
+        }
+        
+        @Override
+        public void start(CommandLine cmd) {
+            // skip
+        }
+        
+        @Override
+        public void build() throws Throwable {
+            // skip
         }
 
     };
 
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        nonRunningPicocli.parseAndRun(Arrays.asList(args));
+        ConfigArgsConfigSource.setCliArgs(args);
+        var cliArgs = Picocli.parseArgs(args);
+        nonRunningPicocli.parseAndRun(cliArgs);
         return nonRunningPicocli;
     }
 
@@ -197,6 +206,21 @@ public class PicocliTest extends AbstractConfigurationTest {
                 .errorText("Unknown option: '--db-pasword'")
                 + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
     }
+    
+    @Test
+    public void httpStoreTypeValidation() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property"));
+        
+        nonRunningPicocli = pseudoLaunch("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Failed to load 'https-key-' material: NoSuchFileException not-there.ks"));
+        
+        nonRunningPicocli = pseudoLaunch("start", "--https-trust-store-file=not-there.jks", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("No trust store password provided"));
+    }
 
     @Test
     public void failSingleParamWithSpace() {
@@ -205,5 +229,19 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString(
                 "Option: '--db postgres' is not expected to contain whitespace, please remove any unnecessary quoting/escaping"));
     }
-
+    
+    @Test
+    public void spiRuntimeAllowedWithStart() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--spi-something-pass=changeme");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.spi-something-pass")));
+    }
+    
+    @Test
+    public void spiRuntimeWarnWithBuild() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--spi-something-pass=changeme");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following run time options were found, but will be ignored during build time: kc.spi-something-pass"));
+    }
+    
 }

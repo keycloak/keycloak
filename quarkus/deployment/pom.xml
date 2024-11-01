@@ -49,6 +49,10 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.mvnpm</groupId>
+                    <artifactId>importmap</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

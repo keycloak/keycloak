@@ -485,7 +485,7 @@ class KeycloakProcessor {
             }
         }
 
-        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath(), Environment.isRebuild());
+        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath());
     }
 
     private List<ClasspathThemeProviderFactory.ThemesRepresentation> loadThemesFromClassPath() {
@@ -623,6 +623,8 @@ class KeycloakProcessor {
                 if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
                     return;
                 }
+            } else if (PropertyMappers.isSpiBuildTimeProperty(name)) {
+                value = Configuration.getConfigValue(name);
             }
         } else if (mapper.isBuildTime()) {
             name = mapper.getFrom();

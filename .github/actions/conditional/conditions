@@ -60,5 +60,3 @@ js/libs/keycloak-js/                        ci ci-quarkus
 *.tsx                                       codeql-typescript
 
 testsuite::database-suite                   ci-store
-
-test-poc/                                   ci ci-test-poc

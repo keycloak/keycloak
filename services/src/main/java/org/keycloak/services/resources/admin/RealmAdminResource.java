@@ -92,6 +92,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.organization.admin.resource.OrganizationsResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -384,6 +385,7 @@ public class RealmAdminResource {
             rep.setDisplayName(realm.getDisplayName());
             rep.setDisplayNameHtml(realm.getDisplayNameHtml());
             rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+            rep.setBruteForceProtected(realm.isBruteForceProtected());
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
@@ -553,6 +555,10 @@ public class RealmAdminResource {
         return ref;
     }
 
+    @Path("organizations")
+    public OrganizationsResource organizations() {
+        return new OrganizationsResource(session, auth, adminEvent);
+    }
 
     @Path("{extension}")
     public Object extension(@PathParam("extension") String extension) {

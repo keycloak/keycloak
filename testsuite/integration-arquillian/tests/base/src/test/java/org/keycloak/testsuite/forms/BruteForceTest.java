@@ -28,7 +28,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -56,11 +55,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -112,6 +110,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         UserBuilder.edit(user).totpSecret("totpSecret").emailVerified(true);
 
         testRealm.setBruteForceProtected(true);
+        testRealm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         testRealm.setFailureFactor(failureFactor);
         testRealm.setMaxDeltaTimeSeconds(60);
         testRealm.setMaxFailureWaitSeconds(100);
@@ -131,6 +130,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             clearUserFailures();
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
             realm.setFailureFactor(failureFactor);
             realm.setMaxDeltaTimeSeconds(60);
             realm.setMaxFailureWaitSeconds(100);
@@ -416,11 +416,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         try {
             realm.setMaxDeltaTimeSeconds(5);
             testRealm().update(realm);
-            long numExecutors = getNumExecutors();
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            waitForExecutors(numExecutors + 1);
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();
@@ -438,11 +437,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(5);
             realm.setPermanentLockout(true);
             testRealm().update(realm);
-            long numExecutors = getNumExecutors();
             loginInvalidPassword();
 
             //Wait for brute force executor to process the login and then wait for delta time
-            waitForExecutors(numExecutors + 1);
+            WaitUtils.waitForBruteForceExecutors(testingClient);
             testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
 
             loginInvalidPassword();
@@ -455,31 +453,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             user.setEnabled(true);
             updateUser(user);
         }
-    }
-
-    private long getNumExecutors() {
-        String numExecutors = testingClient.server().fetchString(session -> {
-            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-            ExecutorService executor = provider.getExecutor("bruteforce");
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            return threadPoolExecutor.getTaskCount();
-        });
-        return Long.valueOf(numExecutors);
-    }
-
-    private void waitForExecutors(long numExecutors) {
-        testingClient.server().run(session -> {
-            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
-            ExecutorService executor = provider.getExecutor("bruteforce");
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            while (!threadPoolExecutor.getQueue().isEmpty()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                }
-            }
-            assertEquals(numExecutors, threadPoolExecutor.getCompletedTaskCount());
-        });
     }
 
     @Test
@@ -499,6 +472,56 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         clearAllUserFailures();
         loginSuccess();
         testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
+    }
+
+    @Test
+    public void testByMultipleStrategy() throws Exception {
+
+        try {
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            loginSuccess();
+            loginInvalidPassword();
+            loginInvalidPassword();
+            expectTemporarilyDisabled();
+            assertUserNumberOfFailures(user.getId(), 2);
+            this.setTimeOffset(30);
+
+            loginInvalidPassword();
+            assertUserNumberOfFailures(user.getId(), 3);
+            this.setTimeOffset(60);
+            loginSuccess();
+        } finally {
+            this.resetTimeOffset();
+        }
+    }
+
+    @Test
+    public void testLinearStrategy() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+        try {
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.LINEAR);
+            testRealm().update(realm);
+
+            loginSuccess();
+
+            loginInvalidPassword();
+            loginInvalidPassword();
+            expectTemporarilyDisabled();
+            assertUserNumberOfFailures(user.getId(), 2);
+            this.setTimeOffset(30);
+
+            loginInvalidPassword();
+            assertUserNumberOfFailures(user.getId(), 3);
+            this.setTimeOffset(60);
+            expectTemporarilyDisabled();
+
+        } finally {
+            realm.setPermanentLockout(false);
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
+            testRealm().update(realm);
+            this.resetTimeOffset();
+        }
     }
 
     @Test

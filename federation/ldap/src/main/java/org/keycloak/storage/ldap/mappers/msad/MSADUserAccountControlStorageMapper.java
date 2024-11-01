@@ -248,7 +248,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
         @Override
         public void setEnabled(boolean enabled) {
-            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
+            if (UserStorageProvider.EditMode.WRITABLE.equals(ldapProvider.getEditMode())) {
                 MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
                 UserAccountControl control = getUserAccountControl(ldapUser);

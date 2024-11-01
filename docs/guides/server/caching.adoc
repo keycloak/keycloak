@@ -14,7 +14,8 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches are using a UDP transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+By default, caches use the `jdbc-ping-udp` stack which is based upon a UDP transport and uses the configured database to track nodes joining the cluster.
+{project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
@@ -219,7 +220,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping-udp` when distributed caches are enabled.
 
 === Available transport stacks
 
@@ -229,9 +230,12 @@ The following table shows transport stacks that are available without any furthe
 |===
 |Stack name|Transport protocol|Discovery
 
-|tcp|TCP|MPING (uses UDP multicast).
-|udp|UDP|UDP multicast
+|`tcp`|TCP|MPING (uses UDP multicast).
+|`udp`|UDP|UDP multicast
+|`jdbc-ping-udp`|UDP|JDBC_PING2
+|`jdbc-ping`|TCP|JDBC_PING2
 |===
+
 
 The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
@@ -239,10 +243,14 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|kubernetes|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
+|`kubernetes`|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
 |===
 
 === Additional transport stacks
+
+IMPORTANT: The following stacks are deprecated. We recommend that you utilise the `jdbc-ping` stack in such environments
+as it does not require additional configuration or dependencies.
+
 The following table shows transport stacks that are supported by {project_name}, but need some extra steps to work.
 Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run {project_name} on top of the Google Kubernetes engine.
 In that case, use the `kubernetes` stack.
@@ -252,9 +260,9 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 |===
 |Stack name|Transport protocol|Discovery
 
-|ec2|TCP|NATIVE_S3_PING
-|google|TCP|GOOGLE_PING2
-|azure|TCP|AZURE_PING
+|`ec2`|TCP|NATIVE_S3_PING
+|`google`|TCP|GOOGLE_PING2
+|`azure`|TCP|AZURE_PING
 |===
 
 Cloud vendor specific stacks have additional dependencies for {project_name}.

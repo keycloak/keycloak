@@ -154,6 +154,12 @@ public final class Marshalling {
     public static final int CLIENT_SESSION_KEY = 65606;
     public static final int REMOTE_CLIENT_SESSION_ENTITY = 65607;
 
+    public static final int AUTHENTICATION_CLIENT_SESSION_KEY_SET_MAPPER = 65608;
+    public static final int COLLECTION_TO_STREAM_MAPPER = 65609;
+    public static final int GROUP_AND_COUNT_COLLECTOR_SUPPLIER = 65610;
+    public static final int MAP_ENTRY_TO_KEY_FUNCTION = 65611;
+    public static final int SESSION_UNWRAP_MAPPER = 65612;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);

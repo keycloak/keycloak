@@ -58,7 +58,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.jboss.logging.Logger;
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
@@ -81,7 +80,9 @@ import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 
+import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.smallrye.config.ConfigValue;
 
 import picocli.CommandLine;
@@ -89,6 +90,9 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.DuplicateOptionAnnotationsException;
 import picocli.CommandLine.Help.Ansi;
+import picocli.CommandLine.Help.Ansi.Style;
+import picocli.CommandLine.Help.ColorScheme;
+import picocli.CommandLine.IFactory;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.ISetter;
 import picocli.CommandLine.Model.OptionSpec;
@@ -349,8 +353,9 @@ public class Picocli {
      *
      * @param cliArgs
      * @param abstractCommand
+     * @param outWriter 
      */
-    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
+    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter outWriter) {
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
         if (!options.includeBuildTime && !options.includeRuntime) {
@@ -427,24 +432,22 @@ public class Picocli {
                 }
             }
 
-            Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
-
             if (!ignoredBuildTime.isEmpty()) {
                 throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                logger.warn(format("The following run time options were found, but will be ignored during build time: %s\n",
-                        String.join(", ", ignoredRunTime)));
+                warn(format("The following run time options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)), outWriter);
             }
 
             if (!disabledBuildTime.isEmpty()) {
-                outputDisabledProperties(disabledBuildTime, true, logger);
+                outputDisabledProperties(disabledBuildTime, true, outWriter);
             } else if (!disabledRunTime.isEmpty()) {
-                outputDisabledProperties(disabledRunTime, false, logger);
+                outputDisabledProperties(disabledRunTime, false, outWriter);
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                logger.warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.");
+                warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", outWriter);
             }
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
@@ -543,11 +546,16 @@ public class Picocli {
         }
         disabledInUse.add(sb.toString());
     }
+    
+    private static void warn(String text, PrintWriter outwriter) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        outwriter.println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
+    }
 
-    private static void outputDisabledProperties(Set<String> properties, boolean build, Logger logger) {
-        logger.warn(format("The following used %s time options are UNAVAILABLE and will be ignored during %s time:\n %s",
+    private static void outputDisabledProperties(Set<String> properties, boolean build, PrintWriter outWriter) {
+        warn(format("The following used %s time options are UNAVAILABLE and will be ignored during %s time:\n %s",
                 build ? "build" : "run", build ? "run" : "build",
-                String.join("\n", properties)));
+                String.join("\n", properties)), outWriter);
     }
 
     private static boolean hasConfigChanges(CommandLine cmdCommand) {
@@ -671,7 +679,16 @@ public class Picocli {
     }
 
     public CommandLine createCommandLine(Consumer<CommandSpec> consumer) {
-        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main()).name(Environment.getCommand());
+        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main(), new IFactory() {
+            @Override
+            public <K> K create(Class<K> cls) throws Exception {
+                K result = CommandLine.defaultFactory().create(cls);
+                if (result instanceof AbstractCommand ac) {
+                    ac.setPicocli(Picocli.this);
+                }
+                return result;
+            }
+        }).name(Environment.getCommand());
         consumer.accept(spec);
 
         CommandLine cmd = new CommandLine(spec);
@@ -681,12 +698,16 @@ public class Picocli {
         cmd.setHelpFactory(new HelpFactory());
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
-
+        cmd.setOut(getOutWriter());
         return cmd;
     }
 
     protected PrintWriter getErrWriter() {
         return new PrintWriter(System.err, true);
+    }
+    
+    protected PrintWriter getOutWriter() {
+        return new PrintWriter(System.out, true);
     }
 
     private static void addHelp(CommandSpec currentSpec) {
@@ -961,4 +982,13 @@ public class Picocli {
             }
         }
     }
+
+    public void start(CommandLine cmd) {
+        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
+    }
+
+    public void build() throws Throwable {
+        QuarkusEntryPoint.main();
+    }
+
 }
