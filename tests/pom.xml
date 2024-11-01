@@ -26,16 +26,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-framework-parent</artifactId>
-    <groupId>org.keycloak.test</groupId>
+    <artifactId>keycloak-tests-parent</artifactId>
+    <groupId>org.keycloak.tests</groupId>
     <packaging>pom</packaging>
-    <name>Keycloak Test Framework Parent</name>
-    <description>Keycloak Test Framework Parent</description>
+    <name>Keycloak Tests Parent</name>
+    <description>Keycloak Tests Parent</description>
 
     <modules>
-        <module>core</module>
-        <module>ui</module>
-        <module>examples</module>
+        <module>base</module>
     </modules>
 
 </project>

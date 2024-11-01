@@ -307,6 +307,7 @@
         <module>authz</module>
         <module>js</module>
         <module>test-framework</module>
+        <module>tests</module>
         <module>quarkus</module>
     </modules>
 
@@ -1584,13 +1585,6 @@
             </activation>
             <modules>
                 <module>testsuite</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>test-poc</id>
-            <modules>
-                <module>test-poc</module>
             </modules>
         </profile>
 

@@ -22,9 +22,6 @@ outputs:
   ci-webauthn:
     description: Should "ci.yml" execute (WebAuthn)
     value: ${{ steps.changes.outputs.ci-webauthn }}
-  ci-test-poc:
-    description: Should "ci.yml" execute (Test PoC)
-    value: ${{ steps.changes.outputs.ci-test-poc }}
   operator:
     description: Should "operator-ci.yml" execute
     value: ${{ steps.changes.outputs.operator }}
