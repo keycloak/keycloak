@@ -1037,6 +1037,7 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
+        server.setAuthorizationSchema(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) ? FineGrainedAdminPermissionsAuthorizationSchema.INSTANCE : null);
 
         return server;
     }
