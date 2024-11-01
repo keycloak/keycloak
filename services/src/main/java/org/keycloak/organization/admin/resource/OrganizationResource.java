@@ -26,7 +26,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -46,7 +45,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
-@Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationResource {
 
@@ -54,11 +52,6 @@ public class OrganizationResource {
     private final OrganizationProvider provider;
     private final AdminEventBuilder adminEvent;
     private final OrganizationModel organization;
-
-    public OrganizationResource() {
-        // needed for registering to the JAX-RS stack
-        this(null, null, null);
-    }
 
     public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.session = session;

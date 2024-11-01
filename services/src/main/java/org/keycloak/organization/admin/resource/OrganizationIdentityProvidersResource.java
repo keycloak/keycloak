@@ -48,7 +48,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
-@Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationIdentityProvidersResource {
 
@@ -56,11 +55,6 @@ public class OrganizationIdentityProvidersResource {
     private final KeycloakSession session;
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
-
-    public OrganizationIdentityProvidersResource() {
-        // needed for registering to the JAX-RS stack
-        this(null, null, null);
-    }
 
     public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.realm = session == null ? null : session.getContext().getRealm();
