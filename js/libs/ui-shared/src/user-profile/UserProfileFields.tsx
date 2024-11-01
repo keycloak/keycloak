@@ -187,12 +187,11 @@ const FormField = ({
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
-  const isMultiSelect = inputType.startsWith("multiselect");
 
   const Component =
     attribute.multivalued ||
     (isMultiValue(value) && attribute.annotations?.inputType === undefined)
-      ? (isMultiSelect ? FIELDS[inputType] : FIELDS["multi-input"])
+      ? determineMultivaluedInputType(inputType)
       : FIELDS[inputType];
 
   if (attribute.name === "locale")
@@ -235,6 +234,15 @@ function determineInputType(
 
   // In all other cases use the default
   return DEFAULT_INPUT_TYPE;
+}
+
+function determineMultivaluedInputType(inputType: InputType) {
+  // If the attribute is multivalued and the input type is a multiselect field then use the selected field
+  if (inputType.startsWith("multiselect")) {
+    return FIELDS[inputType];
+  }
+  // Otherwise use the default multi-input field to handle multivalued attributes
+  return FIELDS["multi-input"];
 }
 
 const isValidInputType = (value: unknown): value is InputType =>
