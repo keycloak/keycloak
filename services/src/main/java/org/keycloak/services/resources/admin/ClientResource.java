@@ -20,7 +20,6 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -90,6 +89,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -702,6 +702,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions() {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireView(client);
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -711,7 +712,7 @@ public class ClientResource {
         return toMgmtRef(client, permissions);
     }
 
-    public static ManagementPermissionReference toMgmtRef(ClientModel client, AdminPermissionManagement permissions) {
+    private ManagementPermissionReference toMgmtRef(ClientModel client, AdminPermissionManagement permissions) {
         ManagementPermissionReference ref = new ManagementPermissionReference();
         ref.setEnabled(true);
         ref.setResource(permissions.clients().resource(client).getId());
@@ -734,6 +735,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.clients().requireManage(client);
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.clients().setPermissionsEnabled(client, ref.isEnabled());

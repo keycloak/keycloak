@@ -16,13 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
-import jakarta.ws.rs.DefaultValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import jakarta.ws.rs.NotFoundException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -42,10 +41,14 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.utils.GroupUtils;
+import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -60,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.keycloak.utils.GroupUtils;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -318,6 +320,7 @@ public class GroupResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions() {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.groups().requireView(group);
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -327,7 +330,7 @@ public class GroupResource {
         return toMgmtRef(group, permissions);
     }
 
-    public static ManagementPermissionReference toMgmtRef(GroupModel group, AdminPermissionManagement permissions) {
+    private ManagementPermissionReference toMgmtRef(GroupModel group, AdminPermissionManagement permissions) {
         ManagementPermissionReference ref = new ManagementPermissionReference();
         ref.setEnabled(true);
         ref.setResource(permissions.groups().resource(group).getId());
@@ -350,6 +353,7 @@ public class GroupResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.groups().requireManage(group);
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
