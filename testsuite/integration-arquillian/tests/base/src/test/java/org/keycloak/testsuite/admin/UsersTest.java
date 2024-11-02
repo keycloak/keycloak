@@ -86,7 +86,7 @@ public class UsersTest extends AbstractAdminTest {
 
         assertCaseInsensitiveSearch();
     }
-    
+
     @Test
     public void searchUserMatchUsersCount() {
         createUser(REALM_NAME, "john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
@@ -172,7 +172,7 @@ public class UsersTest extends AbstractAdminTest {
         assertSearchMatchesCount(realm, "*LastName*", 3);
         assertSearchMatchesCount(realm, "*FirstName*", 3);
         assertSearchMatchesCount(realm, "*@example.com*", 3);
- 
+
         // Exact search count
         assertSearchMatchesCount(realm, "\"user1\"", 1);
         assertSearchMatchesCount(realm, "\"1\"", 0);
@@ -441,5 +441,17 @@ public class UsersTest extends AbstractAdminTest {
         assertThat(realm.users().search("User", true), hasSize(1));
         assertThat(realm.users().search("USER", true), hasSize(1));
         assertThat(realm.users().search("Use", true), hasSize(0));
+    }
+
+    @Test
+    public void searchUserByIds() {
+        String userId = createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
+        String secondUserId = createUser(REALM_NAME, "User2", "password2", "firstName2", "lastName2", "user2@example.com");
+        List<UserRepresentation> searchByIds = adminClient.realm(REALM_NAME).users().searchByIds(userId);
+        assertThat(searchByIds, hasSize(1));
+        assertThat(searchByIds.get(0).getId(), is(userId));
+        assertThat(adminClient.realm(REALM_NAME).users().searchByIds(userId + "," + secondUserId), hasSize(2));
+        assertThat(adminClient.realm(REALM_NAME).users().searchByIds(userId + "," + userId), hasSize(1));
+        assertThat(adminClient.realm(REALM_NAME).users().searchByIds("randomValue"), hasSize(0));
     }
 }
