@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
@@ -40,12 +41,14 @@ import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
+
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -57,7 +60,20 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        context.challenge(createResponse(context, null, null));
+        UserProfileProvider userProfileProvider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile userProfile = userProfileProvider.create(UserProfileContext.UPDATE_PROFILE, context.getUser());
+        Attributes profileAttributes = userProfile.getAttributes();
+
+        boolean editableAttributeExists = profileAttributes.getReadable().keySet().stream()
+                .map(profileAttributes::getMetadata)
+                .filter(Objects::nonNull)
+                .anyMatch(am -> !profileAttributes.isReadOnly(am.getName()));
+
+        if (editableAttributeExists) {
+            context.challenge(createResponse(context, null, null));
+        } else {
+            context.ignore();
+        }
     }
 
     @Override
