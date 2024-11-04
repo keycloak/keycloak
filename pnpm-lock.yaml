@@ -348,8 +348,8 @@ importers:
         version: 3.1.1
     devDependencies:
       '@faker-js/faker':
-        specifier: ^9.1.0
-        version: 9.1.0
+        specifier: ^9.2.0
+        version: 9.2.0
       '@types/chai':
         specifier: ^5.0.1
         version: 5.0.1
@@ -1043,8 +1043,8 @@ packages:
     resolution: {integrity: sha512-HFZ4Mp26nbWk9d/BpvP0YNL6W4UoZF0VFcTw/aPPA8RpOxeFQgK+ClABGgAUXs9Y/RGX/l1vOmrqz1MQt9MNuw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@faker-js/faker@9.1.0':
-    resolution: {integrity: sha512-GJvX9iM9PBtKScJVlXQ0tWpihK3i0pha/XAhzQa1hPK/ILLa1Wq3I63Ij7lRtqTwmdTxRCyrUhLC5Sly9SLbug==}
+  '@faker-js/faker@9.2.0':
+    resolution: {integrity: sha512-ulqQu4KMr1/sTFIYvqSdegHT8NIkt66tFAkugGnHA+1WAfEn6hMzNR+svjXGFRVLnapxvej67Z/LwchFrnLBUg==}
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@fastify/busboy@2.1.1':
@@ -5618,7 +5618,7 @@ snapshots:
     dependencies:
       levn: 0.4.1
 
-  '@faker-js/faker@9.1.0': {}
+  '@faker-js/faker@9.2.0': {}
 
   '@fastify/busboy@2.1.1': {}
 
