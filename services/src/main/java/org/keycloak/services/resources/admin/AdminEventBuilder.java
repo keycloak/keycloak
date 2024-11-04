@@ -37,6 +37,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.StringUtil;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -261,6 +263,20 @@ public class AdminEventBuilder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return this;
+    }
+
+    public AdminEventBuilder detail(String key, String value) {
+        if (StringUtil.isBlank(value)) {
+            return this;
+        }
+
+        if (adminEvent.getDetails() == null) {
+            adminEvent.setDetails(new HashMap<>());
+        }
+
+        adminEvent.getDetails().put(key, value);
+
         return this;
     }
 
