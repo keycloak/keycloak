@@ -165,6 +165,15 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 sanitize(sb, adminEvent.getError());
             }
 
+            if (adminEvent.getDetails() != null) {
+                for (Map.Entry<String, String> e : adminEvent.getDetails().entrySet()) {
+                    sb.append(", ");
+                    sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getKey(), null));
+                    sb.append("=");
+                    sanitize(sb, e.getValue());
+                }
+            }
+
             if(logger.isTraceEnabled()) {
                 setKeycloakContext(sb);
             }
