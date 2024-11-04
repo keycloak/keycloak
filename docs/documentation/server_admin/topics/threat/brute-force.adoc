@@ -151,7 +151,7 @@ By multiples strategy, wait time is incremented when the number (or count) of fa
 |**10** |**30** | 5 | **60**
 |===
 
-At the fifth failed attempt the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds. 
+At the fifth failed attempt, the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds. 
 
 The By multiple strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number.
 
