@@ -221,6 +221,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("No trust store password provided"));
     }
+    
+    @Test
+    public void testShowConfigHidesSystemProperties() {
+        setSystemProperty("kc.something", "password", () -> {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
+            // the command line should now show up within the output
+            assertThat(nonRunningPicocli.getOutString(), not(containsString("show-config")));
+            // arbitrary kc system properties should not show up either
+            assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.something")));
+        });
+    }
 
     @Test
     public void failSingleParamWithSpace() {
