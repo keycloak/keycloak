@@ -66,3 +66,8 @@ Starting with this version, {project_name} removes the initial online session if
 {project_name} introduces a new client scope at the realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
 
 Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
+
+= Admin events might include now additional details about the context when the event is fired
+
+In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
+expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.

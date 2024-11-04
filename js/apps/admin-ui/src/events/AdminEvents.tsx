@@ -11,6 +11,10 @@ import {
   Chip,
   ChipGroup,
   DatePicker,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
   Flex,
   FlexItem,
   Form,
@@ -91,6 +95,24 @@ const DisplayDialog = ({
     </Modal>
   );
 };
+
+const DetailCell = (event: AdminEventRepresentation) => (
+  <DescriptionList isHorizontal className="keycloak_eventsection_details">
+    {event.details &&
+      Object.entries(event.details).map(([key, value]) => (
+        <DescriptionListGroup key={key}>
+          <DescriptionListTerm>{key}</DescriptionListTerm>
+          <DescriptionListDescription>{value}</DescriptionListDescription>
+        </DescriptionListGroup>
+      ))}
+    {event.error && (
+      <DescriptionListGroup key="error">
+        <DescriptionListTerm>error</DescriptionListTerm>
+        <DescriptionListDescription>{event.error}</DescriptionListDescription>
+      </DescriptionListGroup>
+    )}
+  </DescriptionList>
+);
 
 export const AdminEvents = () => {
   const { adminClient } = useAdminClient();
@@ -250,8 +272,16 @@ export const AdminEvents = () => {
         </DisplayDialog>
       )}
       <KeycloakDataTable
+        className="keycloak__events_table"
         key={key}
         loader={loader}
+        detailColumns={[
+          {
+            name: "details",
+            enabled: (event) => event.details !== undefined,
+            cellRenderer: DetailCell,
+          },
+        ]}
         isPaginated
         ariaLabelKey="adminEvents"
         toolbarItem={

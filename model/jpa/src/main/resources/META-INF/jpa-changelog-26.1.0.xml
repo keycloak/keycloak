@@ -34,4 +34,10 @@
         <addPrimaryKey columnNames="address" constraintName="CONSTRAINT_JGROUPS_PING" tableName="JGROUPS_PING"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.1.0-34013">
+        <addColumn tableName="ADMIN_EVENT_ENTITY">
+            <column name="DETAILS_JSON" type="NCLOB" />
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

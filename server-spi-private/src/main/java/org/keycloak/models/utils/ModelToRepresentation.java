@@ -308,6 +308,7 @@ public class ModelToRepresentation {
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());
         rep.setError(adminEvent.getError());
+        rep.setDetails(adminEvent.getDetails());
 
         return rep;
     }
@@ -1325,19 +1326,5 @@ public class ModelToRepresentation {
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
         return representation;
-    }
-
-    public static OrganizationUserRepresentation toRepresentation(OrganizationModel model, UserModel user) {
-        return toBriefRepresentation(model, user);
-    }
-
-    private static OrganizationUserRepresentation toBriefRepresentation(OrganizationModel model, UserModel user) {
-        if (model == null || user == null) {
-            return null;
-        }
-        OrganizationRepresentation organizationRepresentation = toRepresentation(model);
-        UserRepresentation userRepresentation = toBriefRepresentation(user);
-
-        return new OrganizationUserRepresentation(organizationRepresentation, userRepresentation);
     }
 }
