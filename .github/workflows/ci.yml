@@ -336,12 +336,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - id: login-v1-test-setup
+      - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-        with:
-          jdk-dist: ${{ matrix.dist }}
-          jdk-version: ${{ matrix.version }}
 
       - name: Prepare Quarkus distribution with current JDK
         run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
