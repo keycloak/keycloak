@@ -9,7 +9,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.2",
     "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.13.0",
+    "@eslint/js": "^9.14.0",
     "@types/node": "^22.8.4",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
