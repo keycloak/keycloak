@@ -340,9 +340,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
-
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh login`
