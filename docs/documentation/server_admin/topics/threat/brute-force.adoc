@@ -172,7 +172,7 @@ For linear strategy, wait time is incremented when the `count` (or number) of fa
 |**10** |**30** | 5 | **180**
 |===
 
-At the fifth failed attempt the account is disabled for `30` seconds. Each new failure increases wait time according value specified at `wait increment`.
+At the fifth failed attempt, the account is disabled for `30` seconds. Each new failure increases wait time according value specified at `wait increment`.
 
 The linear strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (1 + `count` - _Max Login Failures_).
 
