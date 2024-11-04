@@ -31,7 +31,6 @@ import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthent
 import org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.PrioritizedComponentModel;
@@ -438,6 +437,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testLightweightClientAndFullScopeAllowed(masterRealm, Constants.ADMIN_CLI_CLIENT_ID);
         testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    protected void testMigrationTo26_1_0(boolean testIdentityProviderConfigMigration) {
+        testRealmDefaultClientScopes(migrationRealm);
     }
 
     private void testClientContainsExpectedClientScopes() {

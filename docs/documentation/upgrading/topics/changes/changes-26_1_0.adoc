@@ -60,3 +60,9 @@ The `robots.txt` file, previously included by default, is now removed. The defau
 Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, with two sessions, one online and one offline.
 
 Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
+
+= New client scope `service_account` for `client_credentials` grant mappers
+
+{project_name} introduces a new client scope at realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
+
+Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
