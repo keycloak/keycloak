@@ -81,6 +81,8 @@ public class OrganizationMemberResource {
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
     public Response addMember(String id) {
+        id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {

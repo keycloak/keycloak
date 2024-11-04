@@ -70,6 +70,8 @@ public class OrganizationIdentityProvidersResource {
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
                 "or if it is already associated with the organization, an error response is returned")
     public Response addIdentityProvider(String id) {
+        id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        
         try {
             IdentityProviderModel identityProvider = session.identityProviders().getByIdOrAlias(id);
 
