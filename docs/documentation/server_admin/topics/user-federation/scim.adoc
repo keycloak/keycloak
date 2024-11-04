@@ -1,0 +1,74 @@
+[[_scim]]
+
+=== SCIM client capabilities
+
+{project_name} includes a http://www.simplecloud.info[SCIM2] client allowing to :
+
+* Declare SCIM endpoints (through the identity federation UI). Any tool implementing SCIM protocol can be wired to the
+{project_name} instance through this declaration.
+* Propagate users and groups from {project_name} to SCIM endpoints : when a user/group gets created or modified in {project_name},
+the modification is forwarded to all declared SCIM endpoints through SCIM calls within the transaction scope. If
+propagation fails, changes can be rolled back or not according to a configurable rollback strategy.
+* Synchronize users and groups from SCIM endpoints (through the {project_name} synchronization mechanism).
+
+See https://datatracker.ietf.org/doc/html/rfc7643[RFC7643]
+and https://datatracker.ietf.org/doc/html/rfc7644[RFC7644] for further details
+
+==== Enabling SCIM extension
+
+[NOTE]
+====
+This extension is currently in experimental mode, and requires the ```SCIM``` experimental Profile to be enabled
+====
+
+.Procedure
+. Click on *Admin Console > Realm Settings > Events* in the menu.
+. Add `scim` to the list of event listeners
+image:images/scim-event-listener-page.png[Enable SCIM Event listeners]
+. Save
+
+==== Registering SCIM Service Providers
+
+.Procedure
+. Click on *User federation > Add Scim Providers*
+image:images/scim-federation-provider-page.png[Configure SCIM service provider]
+. Fill required fields according to the SCIM endpoint you are wiring
+. If you enable import during sync then you can choose between to following import actions:
+
+- Create Local - adds users to keycloak
+- Nothing
+- Delete Remote - deletes users from the remote application
+
+==== Sync
+
+You can set up a periodic sync for all users or just changed users - it's not mandatory. You can either do:
+
+- Periodic Full Sync
+- Periodic Changed User Sync
+
+
+==== Technical notes
+
+===== Motivation
+
+We want to build a unified collaborative platform based on multiple applications. To do that, we need a way to propagate
+immediately changes made in Keycloak to all these applications. And we want to keep using OIDC or SAML as the
+authentication protocol.
+
+This will allow users to collaborate seamlessly across the platform without requiring every user to have connected once
+to each application. This will also ease GDRP compliance because deleting a user in Keycloak will delete the user from
+every app. The SCIM protocol is standard, comprehensible and easy to implement. It's a perfect fit for our goal.
+
+We chose to build application extensions/plugins because it's easier to deploy and thus will benefit to a larger portion
+of the FOSS community.
+
+===== Keycloak specific
+
+This extension uses 3 concepts in KeyCloak :
+
+- Event Listener : used to listen for changes within Keycloak (e.g. User creation, Group deletion...) and propagate
+them to registered SCIM service providers through SCIM requests.
+- Federation Provider : used to set up all the SCIM service providers endpoint without creating our own UI.
+- JPA Entity Provider : used to save the mapping between the local IDs and the service providers IDs.
+
+It is based on https://github.com/Captain-P-Goldfish/SCIM-SDK[Scim SDK].
