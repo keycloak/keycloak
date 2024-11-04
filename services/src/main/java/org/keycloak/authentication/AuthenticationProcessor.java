@@ -792,7 +792,7 @@ public class AuthenticationProcessor {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 if (e.getResponse() != null) return e.getResponse();
-                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
+                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 ServicesLogger.LOGGER.failedAuthentication(e);

@@ -125,8 +125,11 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_TOTP;
+    protected String disabledByBruteForceError(String error) {
+        if(Errors.USER_TEMPORARILY_DISABLED.equals(error)) {
+            return Messages.ACCOUNT_TEMPORARILY_DISABLED_TOTP;
+        }
+        return Messages.ACCOUNT_PERMANENTLY_DISABLED_TOTP;
     }
 
     @Override
