@@ -346,10 +346,6 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Build with JDK
-        run:
-          ./mvnw install -e -DskipTests -DskipExamples
-
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
