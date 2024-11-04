@@ -6,7 +6,7 @@ title="Secure applications and services with OpenID Connect"
 priority=20
 summary="Using OpenID Connect with Keycloak to secure applications and services">
 
-<#include "partials/oidc/available-endpoints.adoc" />
+include::partials/oidc/available-endpoints.adoc[]
 
 include::partials/oidc/supported-grant-types.adoc[]
 
