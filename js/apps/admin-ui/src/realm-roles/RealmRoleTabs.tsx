@@ -42,6 +42,7 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -70,6 +71,14 @@ export default function RealmRoleTabs() {
   const refresh = () => setKey(key + 1);
 
   const { addAlert, addError } = useAlerts();
+
+  const { hasAccess } = useAccess();
+  const canViewPermissionsTab = hasAccess(
+    "query-clients",
+    "manage-authorization",
+  );
+
+  const [canManageClientRole, setCanManageClientRole] = useState(false);
 
   const [open, setOpen] = useState(false);
   const convert = (role: RoleRepresentation) => {
@@ -115,6 +124,14 @@ export default function RealmRoleTabs() {
       setRealm(realm);
     },
     [key],
+  );
+
+  useFetch(
+    async () => adminClient.clients.findOne({ id: clientId }),
+    (client) => {
+      if (clientId) setCanManageClientRole(client?.access?.manage as boolean);
+    },
+    [],
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
@@ -375,6 +392,7 @@ export default function RealmRoleTabs() {
               <AttributesForm
                 form={form}
                 save={onSubmit}
+                fineGrainedAccess={canManageClientRole}
                 reset={() =>
                   setValue("attributes", attributes, { shouldDirty: false })
                 }
@@ -389,14 +407,15 @@ export default function RealmRoleTabs() {
               <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
           )}
-          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
-            <Tab
-              title={<TabTitleText>{t("permissions")}</TabTitleText>}
-              {...permissionsTab}
-            >
-              <PermissionsTab id={id} type="roles" />
-            </Tab>
-          )}
+          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+            canViewPermissionsTab && (
+              <Tab
+                title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                {...permissionsTab}
+              >
+                <PermissionsTab id={id} type="roles" />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </>
