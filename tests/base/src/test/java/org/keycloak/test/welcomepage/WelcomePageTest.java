@@ -1,25 +1,28 @@
 package org.keycloak.test.welcomepage;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
-import org.keycloak.test.framework.ui.annotations.InjectPage;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.ui.annotations.InjectPage;
+import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
+import org.keycloak.test.framework.ui.page.LoginPage;
 import org.keycloak.test.framework.ui.page.WelcomePage;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.List;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.net.URL;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.URL;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 @KeycloakIntegrationTest
 @TestMethodOrder(OrderAnnotation.class)
@@ -34,18 +37,27 @@ public class WelcomePageTest {
     @InjectPage
     WelcomePage welcomePage;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @Test
     @Order(1)
-    public void localAccessNoAdmin() throws Exception {
+    public void localAccessNoAdmin() {
         welcomePage.navigateTo();
-        Assertions.assertFalse(welcomePage.isPasswordSet(), "Welcome page did not ask to create a new admin user.");
+
+        Assertions.assertEquals("Create a temporary administrative user", welcomePage.getWelcomeMessage());
+        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("To get started with Keycloak, you first create a temporary administrative user"));
+        Assertions.assertTrue(driver.getPageSource().contains("form"));
     }
 
     @Test
     @Order(2)
     public void remoteAccessNoAdmin() throws Exception {
         driver.get(getPublicServerUrl().toString());
-        Assertions.assertFalse(welcomePage.isPasswordSet(), "Welcome page did not ask to create a new admin user.");
+
+        Assertions.assertEquals("Local access required", welcomePage.getWelcomeMessage());
+        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("You will need local access to create the temporary administrative user."));
+        Assertions.assertFalse(driver.getPageSource().contains("form"));
     }
 
     @Test
@@ -54,7 +66,8 @@ public class WelcomePageTest {
         welcomePage.navigateTo();
         welcomePage.fillRegistration("admin", "admin");
         welcomePage.submit();
-        welcomePage.assertUserCreated();
+
+        Assertions.assertEquals("Success alert:\nUser created", welcomePage.getPageAlert());
 
         List<UserRepresentation> users = adminClient.realm("master").users().search("admin", true);
         Assertions.assertEquals(1, users.size());
@@ -62,34 +75,31 @@ public class WelcomePageTest {
 
     @Test
     @Order(4)
-    public void localAccessWithAdmin() throws Exception {
+    public void localAccessWithAdmin() {
         welcomePage.navigateTo();
-        Assertions.assertTrue(welcomePage.isPasswordSet(), "Welcome page asked to set admin password.");
+
+        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Sign in to Keycloak"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("client_id=security-admin-console"));
     }
 
     @Test
     @Order(5)
     public void remoteAccessWithAdmin() throws Exception {
         driver.get(getPublicServerUrl().toString());
-        Assertions.assertTrue(welcomePage.isPasswordSet(), "Welcome page asked to set admin password.");
+
+        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Sign in to Keycloak"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("client_id=security-admin-console"));
     }
 
     @Test
     @Order(6)
-    public void accessCreatedAdminAccount() throws Exception {
+    public void accessCreatedAdminAccount() {
         welcomePage.navigateTo();
-        welcomePage.navigateToAdminConsole();
+
+        loginPage.fillLogin("admin", "admin");
+        loginPage.submit();
+
         Assertions.assertEquals(driver.getTitle(), "Keycloak Administration Console");
-    }
-
-    @Test
-    @Order(7)
-    public void checkProductNameOnWelcomePage() {
-        welcomePage.navigateTo();
-//        welcomePage.login("admin", "admin");
-
-        String actualMessage = welcomePage.getWelcomeMessage();
-        Assertions.assertEquals("Welcome to Keycloak", actualMessage);
     }
 
     /**
