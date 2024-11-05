@@ -363,7 +363,7 @@ public class CacheManagerFactory {
             transportConfig.defaultTransport().stack(transportStack);
         }
 
-        if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
+        if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)) {
             validateTlsAvailable(transportConfig.build());
             var tls = new TLS()
                     .enabled(true)
