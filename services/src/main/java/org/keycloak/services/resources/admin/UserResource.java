@@ -233,7 +233,7 @@ public class UserResource {
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
-            throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+            throw ErrorResponse.error(re.getMessage() == null ? "User is read only!" : re.getMessage(), Status.BAD_REQUEST);
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();

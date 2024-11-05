@@ -30,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -275,7 +276,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 try {
                     mary.joinGroup(group12);
                     Assert.fail("Not expected to successfully add group12 in no-import mode and READ_ONLY mode of the group mapper");
-                } catch (ModelException me) {
+                } catch (ReadOnlyException me) {
                     // Ignore
                 }
             });

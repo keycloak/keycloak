@@ -115,12 +115,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     protected UserModel importValidation(RealmModel realm, UserModel user) {
 
         if (isReadOnlyOrganizationMember(user)) {
-            return new ReadOnlyUserModelDelegate(user) {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-            };
+            return new ReadOnlyUserModelDelegate(user, false);
         }
 
         if (user == null || user.getFederationLink() == null) return user;
@@ -134,12 +129,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         if (!model.isEnabled()) {
-            return new ReadOnlyUserModelDelegate(user) {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-            };
+            return new ReadOnlyUserModelDelegate(user, false);
         }
 
         ImportedUserValidation importedUserValidation = getStorageProviderInstance(model, ImportedUserValidation.class, true);
