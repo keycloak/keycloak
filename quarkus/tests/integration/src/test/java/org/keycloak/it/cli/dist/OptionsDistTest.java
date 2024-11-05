@@ -33,6 +33,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 @DistributionTest
@@ -96,17 +97,24 @@ public class OptionsDistTest {
         result.assertMessage("- log-syslog-app-name: Available only when Syslog is activated.");
     }
 
+    @Test
+    @Order(7)
+    @Launch({"start", "--cache-embedded-mtls-enabled=true", "--http-enabled=true", "--hostname-strict=false", "--cache-stack=tcp"})
+    public void testCacheEmbeddedMtlsEnabled(LaunchResult result) {
+        assertTrue(result.getErrorStream().stream().anyMatch(s -> s.contains("Property cache-embedded-mtls-key-store-file required but not specified")));
+    }
+
     // Start-dev should be executed as last tests - build is done for development mode
 
     @Test
-    @Order(7)
+    @Order(8)
     @Launch({"start-dev", "--test=invalid"})
     public void testServerDoesNotStartIfValidationFailDuringReAugStartDev(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     @Launch({"start-dev", "--log=console", "--log-file-output=json"})
     public void testServerDoesNotStartDevIfDisabledFileLogOption(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
@@ -114,7 +122,7 @@ public class OptionsDistTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     @Launch({"start-dev", "--log=file", "--log-file-output=json", "--log-console-color=true"})
     public void testServerStartDevIfEnabledFileLogOption(LaunchResult result) {
         assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
