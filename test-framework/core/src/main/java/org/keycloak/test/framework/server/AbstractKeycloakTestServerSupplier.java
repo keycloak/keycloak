@@ -1,8 +1,8 @@
 package org.keycloak.test.framework.server;
 
+import io.quarkus.maven.dependency.Dependency;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.config.Config;
-import org.keycloak.test.framework.database.AbstractContainerTestDatabase;
 import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.events.SysLogServer;
 import org.keycloak.test.framework.injection.InstanceContext;
@@ -11,8 +11,10 @@ import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public abstract class AbstractKeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
 
@@ -52,13 +54,20 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
 
         serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
 
+        Set<Dependency> dependencies = new HashSet<>(serverConfig.dependencies());
+
         if (requiresDatabase()) {
             TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
             testDatabase.serverConfig().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+
+            Dependency jdbcDriver = testDatabase.jdbcDriver();
+            if (jdbcDriver != null) {
+                dependencies.add(jdbcDriver);
+            }
         }
 
         KeycloakTestServer server = getServer();
-        server.start(rawOptions, serverConfig.dependencies());
+        server.start(rawOptions, dependencies);
         return server;
     }
 

@@ -605,6 +605,10 @@ jobs:
             -Ddocker.keepRunning \
             -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
+      - name: Run new base tests
+        run: |
+          KC_TEST_DATABASE=${{ matrix.db }} ./mvnw test -f tests/pom.xml -Dtest=DatabaseTestSuite
+
       - name: Run cluster JDBC_PING2 UDP smoke test
         run: |
           ./mvnw test ${{ env.SUREFIRE_RETRY }} \

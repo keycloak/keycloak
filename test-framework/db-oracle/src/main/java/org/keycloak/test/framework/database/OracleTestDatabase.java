@@ -1,5 +1,6 @@
 package org.keycloak.test.framework.database;
 
+import io.quarkus.maven.dependency.Dependency;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.oracle.OracleContainer;
 
@@ -16,5 +17,10 @@ class OracleTestDatabase extends AbstractContainerTestDatabase {
     @Override
     public String getKeycloakDatabaseName() {
         return "oracle";
+    }
+
+    @Override
+    public Dependency jdbcDriver() {
+        return Dependency.of("com.oracle.database.jdbc", "ojdbc11");
     }
 }
