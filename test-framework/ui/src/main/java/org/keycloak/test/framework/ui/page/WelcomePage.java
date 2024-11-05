@@ -1,6 +1,5 @@
 package org.keycloak.test.framework.ui.page;
 
-import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -16,11 +15,17 @@ public class WelcomePage extends AbstractPage {
     @FindBy(id = "password-confirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(css = "[type=submit]")
+    @FindBy(xpath = "//button")
     private WebElement submitButton;
 
     @FindBy(css = ".pf-v5-c-alert")
     private WebElement pageAlert;
+
+    @FindBy(css = ".pf-v5-c-title")
+    private WebElement welcomeMessage;
+
+    @FindBy(css = ".pf-v5-c-login__main-header-desc")
+    private WebElement welcomeDescription;
 
     public WelcomePage(WebDriver driver) {
         super(driver);
@@ -40,8 +45,16 @@ public class WelcomePage extends AbstractPage {
         submitButton.click();
     }
 
-    public void assertUserCreated() {
-        Assertions.assertTrue(pageAlert.getText().contains("User created"));
+    public String getWelcomeMessage() {
+        return welcomeMessage.getText();
+    }
+
+    public String getWelcomeDescription() {
+        return welcomeDescription.getText();
+    }
+
+    public String getPageAlert() {
+        return pageAlert.getText();
     }
 
 }
