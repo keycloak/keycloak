@@ -101,7 +101,7 @@ export const RealmSelector = () => {
   const [open, setOpen] = useState(false);
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const { t } = useTranslation();
-  const { recentRealms, removeRealm } = useRecentRealms();
+  const recentRealms = useRecentRealms();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
@@ -114,15 +114,6 @@ export const RealmSelector = () => {
     }, 1000),
     [],
   );
-
-  const onSelect = async (realmName: string) => {
-    const realm = await adminClient.realms.findOne({ realm: realmName });
-    if (realm) {
-      navigate(toDashboard({ realm: realmName }));
-    } else {
-      removeRealm?.(realmName);
-    }
-  };
 
   useFetch(
     async () => {
@@ -218,7 +209,7 @@ export const RealmSelector = () => {
                 <DropdownItem
                   key={realm.name}
                   onClick={() => {
-                    onSelect(realm.name);
+                    navigate(toDashboard({ realm: realm.name }));
                     setOpen(false);
                     setSearch("");
                   }}
