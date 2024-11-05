@@ -17,17 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.getCurrentOrPersistedProfile;
-import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -60,23 +56,18 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
-        System.setProperty("kc.show.config", filter);
-        String configArgs = System.getProperty("kc.show.config");
-        String profile = Optional.ofNullable(getCurrentOrPersistedProfile()).orElse(Environment.PROD_PROFILE_VALUE);
-        setProfile(profile);
+        String profile = Environment.updateProfile(true);
 
         Map<String, Set<String>> properties = getPropertiesByGroup();
         printRunTimeConfig(properties, profile);
 
-        if (configArgs.equalsIgnoreCase("all")) {
+        if (filter.equalsIgnoreCase("all")) {
             spec.commandLine().getOut().println("Quarkus Configuration:");
             properties.get(MicroProfileConfigProvider.NS_QUARKUS).stream().sorted()
                     .forEachOrdered(this::printProperty);
         }
 
-        if (!Boolean.getBoolean("kc.show.config.runtime")) {
-            Quarkus.asyncExit(0);
-        }
+        Quarkus.asyncExit(0);
     }
 
     private void printRunTimeConfig(Map<String, Set<String>> properties, String profile) {
@@ -119,12 +110,8 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
         PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
 
-        if (mapper == null) {
-            if (configValue.getSourceName().equals("SysPropConfigSource") && !allowedSystemPropertyKeys.contains(property)) {
-                return; // most system properties are internally used, and not relevant during show-config
-            }
-        } else if (mapper.isRunTime()) {
-            value = getRuntimeProperty(property).orElse(value);
+        if (mapper == null && configValue.getSourceName().equals("SysPropConfigSource") && !allowedSystemPropertyKeys.contains(property)) {
+            return; // most system properties are internally used, and not relevant during show-config
         }
 
         value = maskValue(configValue.getName(), value, configValue.getConfigSourceName());

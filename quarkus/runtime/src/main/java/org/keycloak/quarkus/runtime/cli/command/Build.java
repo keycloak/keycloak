@@ -21,15 +21,14 @@ import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_P
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
 import io.quarkus.runtime.LaunchMode;
+
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.smallrye.config.ConfigValue;
@@ -68,7 +67,10 @@ public final class Build extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
-        exitWithErrorIfDevProfileIsSetAndNotStartDev();
+        if (org.keycloak.common.util.Environment.getProfile() == null) {
+            Environment.setProfile(Environment.PROD_PROFILE_VALUE);
+        }
+        exitWithErrorIfDevProfileIsSet();
 
         System.setProperty("quarkus.launch.rebuild", "true");
         validateConfig();
@@ -94,7 +96,7 @@ public final class Build extends AbstractCommand implements Runnable {
 
     private static void configureBuildClassLoader() {
         // ignored artifacts must be set prior to starting re-augmentation
-        Optional.ofNullable(Configuration.getCurrentBuiltTimeProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
+        Optional.ofNullable(Configuration.getNonPersistedConfigValue(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
                 .map(ConfigValue::getValue)
                 .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
     }
@@ -110,9 +112,14 @@ public final class Build extends AbstractCommand implements Runnable {
         return super.getOptionCategories();
     }
 
-    private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
-        if (Environment.isDevProfile() && !getAllCliArgs().contains(StartDev.NAME)) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+    private void exitWithErrorIfDevProfileIsSet() {
+        if (Environment.isDevProfile()) {
+            String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            // we allow start-dev, and import|export|bootstrap-admin --profile=dev
+            // but not start --profile=dev, nor build --profile=dev
+            if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
+                executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
+            }
         }
     }
 

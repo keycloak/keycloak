@@ -19,10 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 
@@ -46,10 +42,6 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
         HostnameV2PropertyMappers.validateConfig();
         validateConfig();
 
-        if (ConfigArgsConfigSource.getAllCliArgs().contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
-            executionError(spec.commandLine(), Messages.optimizedUsedForFirstStartup());
-        }
-        
         picocli.start(cmd);
     }
 

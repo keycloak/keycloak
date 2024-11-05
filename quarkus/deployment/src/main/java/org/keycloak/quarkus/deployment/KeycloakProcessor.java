@@ -45,12 +45,11 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
-import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.smallrye.config.ConfigValue;
+
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
@@ -97,11 +96,11 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
@@ -130,7 +129,6 @@ import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 import jakarta.persistence.Entity;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -153,14 +151,10 @@ import java.util.logging.Handler;
 
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
-import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
@@ -578,71 +572,13 @@ class KeycloakProcessor {
      */
     @BuildStep(onlyIf = IsReAugmentation.class)
     void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
-        Properties properties = new Properties();
-
-        putPersistedProperty(properties, "kc.db");
-
-        for (String name : getPropertyNames()) {
-            putPersistedProperty(properties, name);
-        }
-
-        for (File jar : getProviderFiles().values()) {
-            properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
-        }
-
-        if (!Environment.isRebuildCheck()) {
-            // not auto-build (e.g.: start without optimized option) but a regular build to create an optimized server image
-            Configuration.markAsOptimized(properties);
-        }
-
-        String profile = org.keycloak.common.util.Environment.getProfile();
-
-        if (profile != null) {
-            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
-            properties.put(LaunchMode.current().getProfileKey(), profile);
-        }
-
-        properties.put(QUARKUS_PROPERTY_ENABLED, String.valueOf(QuarkusPropertiesConfigSource.getConfigurationFile() != null));
+        Properties properties = Picocli.getNonPersistedBuildTimeOptions();
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             properties.store(outputStream, " Auto-generated, DO NOT change this file");
             resources.produce(new GeneratedResourceBuildItem(PersistedConfigSource.PERSISTED_PROPERTIES, outputStream.toByteArray()));
         } catch (Exception cause) {
             throw new RuntimeException("Failed to persist configuration", cause);
-        }
-    }
-
-    private void putPersistedProperty(Properties properties, String name) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-        ConfigValue value = null;
-
-        if (mapper == null) {
-            if (name.startsWith(NS_QUARKUS)) {
-                value = Configuration.getConfigValue(name);
-
-                if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
-                    return;
-                }
-            } else if (PropertyMappers.isSpiBuildTimeProperty(name)) {
-                value = Configuration.getConfigValue(name);
-            }
-        } else if (mapper.isBuildTime()) {
-            name = mapper.getFrom();
-            value = Configuration.getConfigValue(name);
-        }
-
-        if (value != null && value.getValue() != null) {
-            if (value.getConfigSourceName() == null) {
-                // only persist build options resolved from config sources and not default values
-                return;
-            }
-            String rawValue = value.getRawValue();
-
-            if (rawValue == null) {
-                rawValue = value.getValue();
-            }
-
-            properties.put(name, rawValue);
         }
     }
 
