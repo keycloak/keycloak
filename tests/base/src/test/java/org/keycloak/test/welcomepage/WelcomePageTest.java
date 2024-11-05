@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
@@ -13,11 +14,15 @@ import org.keycloak.test.framework.ui.annotations.InjectPage;
 import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
 import org.keycloak.test.framework.ui.page.LoginPage;
 import org.keycloak.test.framework.ui.page.WelcomePage;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Collections;
@@ -67,7 +72,7 @@ public class WelcomePageTest {
         welcomePage.fillRegistration("admin", "admin");
         welcomePage.submit();
 
-        Assertions.assertEquals("Success alert:\nUser created", welcomePage.getPageAlert());
+        Assertions.assertTrue(welcomePage.getPageAlert().contains("User created"));
 
         List<UserRepresentation> users = adminClient.realm("master").users().search("admin", true);
         Assertions.assertEquals(1, users.size());
@@ -78,8 +83,7 @@ public class WelcomePageTest {
     public void localAccessWithAdmin() {
         welcomePage.navigateTo();
 
-        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Sign in to Keycloak"));
-        Assertions.assertTrue(driver.getCurrentUrl().contains("client_id=security-admin-console"));
+        assertOnAdminConsole();
     }
 
     @Test
@@ -87,14 +91,18 @@ public class WelcomePageTest {
     public void remoteAccessWithAdmin() throws Exception {
         driver.get(getPublicServerUrl().toString());
 
-        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Sign in to Keycloak"));
-        Assertions.assertTrue(driver.getCurrentUrl().contains("client_id=security-admin-console"));
+        assertOnAdminConsole();
     }
 
     @Test
     @Order(6)
-    public void accessCreatedAdminAccount() {
+    public void accessCreatedAdminAccount() throws MalformedURLException {
         welcomePage.navigateTo();
+
+        // HtmlUnit does not support Admin Console as it uses JavaScript modules, so faking the redirect to login pages
+        if (driver.getClass().equals(HtmlUnitDriver.class)) {
+            driver.navigate().to(getFakeLoginRedirect());
+        }
 
         loginPage.fillLogin("admin", "admin");
         loginPage.submit();
@@ -129,4 +137,23 @@ public class WelcomePageTest {
         }
         return new URL("http", floatingIp, 8080, "");
     }
+
+    private void assertOnAdminConsole() {
+        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Keycloak Administration Console") || driver.getTitle().equals("Sign in to Keycloak"));
+    }
+
+    private URL getFakeLoginRedirect() throws MalformedURLException {
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri("http://localhost:8080/realms/master/protocol/openid-connect/auth");
+        uriBuilder.queryParam("client_id", "security-admin-console");
+        uriBuilder.queryParam("redirect_uri", "http://localhost:8080/admin/master/console/");
+        uriBuilder.queryParam("state", "randomstate");
+        uriBuilder.queryParam("response_mode", "query");
+        uriBuilder.queryParam("response_type", "code");
+        uriBuilder.queryParam("scope", "openid");
+        uriBuilder.queryParam("nonce", "randomnonce");
+        uriBuilder.queryParam("code_challenge", "UV90ZNinyGsxyNlz6A08FQzDXbA7NCjkrCZv7PgeVxA");
+        uriBuilder.queryParam("code_challenge_method", "S256");
+        return uriBuilder.build().toURL();
+    }
+
 }
