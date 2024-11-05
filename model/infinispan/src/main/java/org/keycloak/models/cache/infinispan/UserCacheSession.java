@@ -340,12 +340,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
         if (isReadOnlyOrganizationMember(delegate)) {
-            return new ReadOnlyUserModelDelegate(delegate) {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-            };
+            return new ReadOnlyUserModelDelegate(delegate, false);
         }
 
         CachedUser cached;
@@ -355,12 +350,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             ComponentModel component = realm.getComponent(delegate.getFederationLink());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {
-                return new ReadOnlyUserModelDelegate(delegate) {
-                    @Override
-                    public boolean isEnabled() {
-                        return false;
-                    }
-                };
+                return new ReadOnlyUserModelDelegate(delegate, false);
             }
             UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
             if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
