@@ -1,3 +1,4 @@
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   Divider,
   Dropdown,
@@ -7,14 +8,12 @@ import {
   Split,
   SplitItem,
   Switch,
-  TextContent,
 } from "@patternfly/react-core";
-import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
+import { HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import helpUrls from "../../help-urls";
-import { useHelp } from "@keycloak/keycloak-ui-shared";
+import { FormattedLink } from "../external-link/FormattedLink";
 
 import "./help-header.css";
 
@@ -24,21 +23,14 @@ export const HelpHeader = () => {
   const { t } = useTranslation();
 
   const dropdownItems = [
-    <DropdownItem
-      key="link"
-      id="link"
-      href={helpUrls.documentationUrl}
-      target="_blank"
-    >
-      <Split>
-        <SplitItem isFilled>{t("documentation")}</SplitItem>
-        <SplitItem>
-          <ExternalLinkAltIcon />
-        </SplitItem>
-      </Split>
+    <DropdownItem key="link" id="link">
+      <FormattedLink
+        href={helpUrls.documentationUrl}
+        title={t("documentation")}
+      />
     </DropdownItem>,
     <Divider key="divide" />,
-    <DropdownItem key="enable" id="enable">
+    <DropdownItem key="enable" id="enable" description={t("helpToggleInfo")}>
       <Split>
         <SplitItem isFilled>{t("enableHelpMode")}</SplitItem>
         <SplitItem>
@@ -52,9 +44,6 @@ export const HelpHeader = () => {
           />
         </SplitItem>
       </Split>
-      <TextContent className="keycloak_help-header-description">
-        {t("helpToggleInfo")}
-      </TextContent>
     </DropdownItem>,
   ];
   return (
