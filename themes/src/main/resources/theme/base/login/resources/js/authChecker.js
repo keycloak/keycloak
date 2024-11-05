@@ -36,7 +36,7 @@ export function checkCookiesAndSetTimer(loginRestartUrl) {
 export function checkAuthSession(pageAuthSessionHash) {
   setTimeout(() => {
     const cookieAuthSessionHash = getKcAuthSessionHash();
-    if (cookieAuthSessionHash !== pageAuthSessionHash) {
+    if (cookieAuthSessionHash && cookieAuthSessionHash !== pageAuthSessionHash) {
       location.reload();
     }
   }, AUTH_SESSION_TIMEOUT_MILLISECS);
