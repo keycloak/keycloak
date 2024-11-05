@@ -1,17 +1,33 @@
 package org.keycloak.test.framework.database;
 
+import java.util.Map;
+
 public class DevMemDatabaseSupplier extends AbstractDatabaseSupplier {
-
-    public static final String VENDOR = "dev-mem";
-
-    @Override
-    TestDatabase getTestDatabase() {
-        DatabaseConfig databaseConfig = new DatabaseConfig().vendor(VENDOR);
-        return new TestDatabase(databaseConfig);
-    }
 
     @Override
     public String getAlias() {
-        return VENDOR;
+        return "dev-mem";
     }
+
+    @Override
+    TestDatabase getTestDatabase() {
+        return new DevMemTestDatabase();
+    }
+
+    private static class DevMemTestDatabase implements TestDatabase {
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void stop() {
+        }
+
+        @Override
+        public Map<String, String> serverConfig() {
+            return Map.of("db", "dev-mem");
+        }
+    }
+
 }

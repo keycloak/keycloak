@@ -26,29 +26,20 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-framework-core</artifactId>
-    <name>Keycloak Test Framework</name>
+    <artifactId>keycloak-test-framework-db-mysql</artifactId>
+    <name>Keycloak Test Framework - MySQL support</name>
     <packaging>jar</packaging>
-    <description>Preview Keycloak testing framework based on JUnit 5</description>
+    <description>MySQL support for Keycloak Test Framework</description>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
+            <groupId>org.keycloak.test</groupId>
+            <artifactId>keycloak-test-framework-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-junit5</artifactId>
-        </dependency>
-        <!-- Temporary dependency until we figure out how we want to support OAuth -->
-        <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.13</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
         </dependency>
     </dependencies>
 </project>
