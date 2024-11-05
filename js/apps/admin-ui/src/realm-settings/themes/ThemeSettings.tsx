@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../../util";
 
