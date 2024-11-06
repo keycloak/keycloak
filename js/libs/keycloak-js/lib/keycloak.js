@@ -1299,30 +1299,33 @@ function Keycloak (config) {
                         return;
                     }
 
-                    const logoutUrl = kc.createLogoutUrl(options);
-                    const response = await fetch(logoutUrl, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: new URLSearchParams({
-                            id_token_hint: kc.idToken,
-                            client_id: kc.clientId,
-                            post_logout_redirect_uri: adapter.redirectUri(options, false)
-                        })
-                    });
+                    // Create form to send POST request.
+                    const form = document.createElement("form");
 
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
+                    form.setAttribute("method", "POST");
+                    form.setAttribute("action", kc.createLogoutUrl(options));
+                    form.style.display = "none";
+
+                    // Add data to form as hidden input fields.
+                    const data = {
+                        id_token_hint: kc.idToken,
+                        client_id: kc.clientId,
+                        post_logout_redirect_uri: adapter.redirectUri(options, false)
+                    };
+
+                    for (const [name, value] of Object.entries(data)) {
+                        const input = document.createElement("input");
+
+                        input.setAttribute("type", "hidden");
+                        input.setAttribute("name", name);
+                        input.setAttribute("value", value);
+
+                        form.appendChild(input);
                     }
 
-                    if (response.ok) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    throw new Error("Logout failed, request returned an error code.");
+                    // Append form to page and submit it to perform logout and redirect.
+                    document.body.appendChild(form);
+                    form.submit();
                 },
 
                 register: async function(options) {
