@@ -1,15 +1,20 @@
 const CHECK_INTERVAL_MILLISECS = 2000;
+const DELAY_REDIRECT_MILLISECS = 2000;
 const AUTH_SESSION_TIMEOUT_MILLISECS = 1000;
 const initialSession = getSession();
 
 let timeout;
-
-// Remove the timeout when unloading to avoid execution of the
+let redirect;
+// Remove the timeout and redirect when unloading to avoid execution of the
 // checkCookiesAndSetTimer when the page is already submitted
 addEventListener("beforeunload", () => {
   if (timeout) {
     clearTimeout(timeout);
     timeout = undefined;
+  }
+  if (redirect) {
+    clearTimeout(redirect);
+    redirect = undefined;
   }
 });
 
@@ -29,7 +34,11 @@ export function checkCookiesAndSetTimer(loginRestartUrl) {
     );
   } else {
     // Redirect to the login restart URL. This can typically automatically login user due the SSO
-    location.href = loginRestartUrl;
+    redirect = setTimeout(
+      () => {
+        location.href = loginRestartUrl;
+      }, DELAY_REDIRECT_MILLISECS
+    );
   }
 }
 
