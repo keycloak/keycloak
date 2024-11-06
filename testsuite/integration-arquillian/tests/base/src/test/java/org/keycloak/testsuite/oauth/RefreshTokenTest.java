@@ -309,7 +309,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenWithDifferentIssuer() throws Exception {
-        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final String proxyHost = "localhost";
         final int httpPort = 8666;
         final int httpsPort = 8667;
 
@@ -330,16 +330,19 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
         proxy.start();
 
-        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+        try {
+            oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
 
-        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
 
-        Assert.assertEquals(400, response.getStatusCode());
-        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
-
-        proxy.stop();
-
-        oauth.baseUrl(AUTH_SERVER_ROOT);
+            Assert.assertEquals(400, response.getStatusCode());
+            Assert.assertEquals("invalid_grant", response.getError());
+            assertThat(response.getErrorDescription(), Matchers.startsWith("Invalid token issuer."));
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+        } finally {
+            proxy.stop();
+            oauth.baseUrl(AUTH_SERVER_ROOT);
+        }
     }
 
     @Test
@@ -352,7 +355,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String accessTokenString = tokenResponse.getAccessToken();
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(accessTokenString, "password");
-
         Assert.assertNotEquals(200, response.getStatusCode());
     }
 
