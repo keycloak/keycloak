@@ -48,7 +48,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
-@Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationIdentityProvidersResource {
 
@@ -56,11 +55,6 @@ public class OrganizationIdentityProvidersResource {
     private final KeycloakSession session;
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
-
-    public OrganizationIdentityProvidersResource() {
-        // needed for registering to the JAX-RS stack
-        this(null, null, null);
-    }
 
     public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.realm = session == null ? null : session.getContext().getRealm();
@@ -76,6 +70,8 @@ public class OrganizationIdentityProvidersResource {
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
                 "or if it is already associated with the organization, an error response is returned")
     public Response addIdentityProvider(String id) {
+        id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        
         try {
             IdentityProviderModel identityProvider = session.identityProviders().getByIdOrAlias(id);
 

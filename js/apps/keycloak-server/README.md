@@ -35,7 +35,7 @@ Or if you just want to clear the data so you can start fresh without downloading
 pnpm delete-data
 ```
 
-If you want to run with a local Quarkus distribution of Keycloak for development purposes, you can do so by running this command instead: 
+If you want to run with a local Quarkus distribution of Keycloak for development purposes, you can do so by running this command instead:
 
 ```sh
 pnpm start --local

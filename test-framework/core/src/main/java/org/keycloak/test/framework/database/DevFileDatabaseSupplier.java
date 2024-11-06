@@ -1,17 +1,34 @@
 package org.keycloak.test.framework.database;
 
+import java.util.Map;
+
 public class DevFileDatabaseSupplier extends AbstractDatabaseSupplier {
-
-    public static final String VENDOR = "dev-file";
-
-    @Override
-    TestDatabase getTestDatabase() {
-        DatabaseConfig databaseConfig = new DatabaseConfig().vendor(VENDOR);
-        return new TestDatabase(databaseConfig);
-    }
 
     @Override
     public String getAlias() {
-        return VENDOR;
+        return "dev-file";
     }
+
+    @Override
+    TestDatabase getTestDatabase() {
+        return new DevFileTestDatabase();
+    }
+
+    private static class DevFileTestDatabase implements TestDatabase {
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void stop() {
+            // TODO Should we clean-up H2 database here?
+        }
+
+        @Override
+        public Map<String, String> serverConfig() {
+            return Map.of("db", "dev-file");
+        }
+    }
+
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -78,6 +79,40 @@ public class MetricsDistTest {
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005592405\"}"));
 
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true" })
+    void testMetricsEndpointWithUserEventMetrics(KeycloakDistribution distribution) {
+        runClientCredentialGrantWithUnknownClientId(distribution);
+
+        distribution.setRequestPort(9000);
+        when().get("/metrics").then()
+                .statusCode(200)
+                .body(containsString("keycloak_user_events_total{error=\"client_not_found\",event=\"client_login\",realm=\"master\"}"));
+
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=false" })
+    void testMetricsEndpointWithoutUserEventMetrics(KeycloakDistribution distribution) {
+        runClientCredentialGrantWithUnknownClientId(distribution);
+
+        distribution.setRequestPort(9000);
+        when().get("/metrics").then()
+                .statusCode(200)
+                .body(not(containsString("keycloak_user_events_total{error=\"client_not_found\",event=\"client_login\",realm=\"master\"}")));
+
+    }
+
+    private static void runClientCredentialGrantWithUnknownClientId(KeycloakDistribution distribution) {
+        distribution.setRequestPort(8080);
+        given().formParam("grant_type", "client_credentials")
+                .formParam("client_id", "unknown")
+                .formParam("client_secret", "unknown").
+                when().post("/realms/master/protocol/openid-connect/token")
+                .then()
+                .statusCode(401);
     }
 
     @Test

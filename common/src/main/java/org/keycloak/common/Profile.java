@@ -121,6 +121,8 @@ public class Profile {
         PASSKEYS("Passkeys", Type.PREVIEW),
 
         CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
+
+        USER_EVENT_METRICS("Collect metrics based on user events", Type.PREVIEW),
         ;
 
         private final Type type;

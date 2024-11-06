@@ -401,7 +401,7 @@ public class CacheManagerFactory {
 
     private static void configureTransportStack(ConfigurationBuilderHolder builder, EntityManager em) {
         var transportConfig = builder.getGlobalConfigurationBuilder().transport();
-        if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
+        if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)) {
             validateTlsAvailable(transportConfig.build());
             var tls = new TLS()
                   .enabled(true)

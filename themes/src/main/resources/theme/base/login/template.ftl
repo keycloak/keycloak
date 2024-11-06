@@ -50,6 +50,15 @@
           "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <#if authenticationSession??>
+        <script type="module">
+            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+
+            checkAuthSession(
+                "${authenticationSession.authSessionIdHash}"
+            );
+        </script>
+    </#if>
 </head>
 
 <body class="${properties.kcBodyClass!}">

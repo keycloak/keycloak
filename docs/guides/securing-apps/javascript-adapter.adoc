@@ -7,6 +7,7 @@ priority=30
 summary="Client-side JavaScript library that can be used to secure web applications.">
 
 {project_name} comes with a client-side JavaScript library called `keycloak-js` that can be used to secure web applications. The adapter also comes with built-in support for Cordova applications.
+The adapter uses OpenID Connect protocol under the covers. You can take a look at the <@links.securingapps id="oidc-layers" anchor="_oidc_available_endpoints"/> {section} for the more generic information about OpenID Connect endpoints and capabilities.
 
 == Installation
 

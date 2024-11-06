@@ -20,7 +20,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 import picocli.AutoComplete;
 import picocli.CommandLine.Command;
 
-@Command(name = "completion",
+@Command(name = Completion.NAME,
         header = "Generate bash/zsh completion script for ${ROOT-COMMAND-NAME:-the root command of this command}.",
         description = {
                 "",
@@ -29,4 +29,6 @@ import picocli.CommandLine.Command;
                 "",
                 "  source <(${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME})"})
 public class Completion extends AutoComplete.GenerateCompletion {
+    
+    public static final String NAME = "completion";
 }

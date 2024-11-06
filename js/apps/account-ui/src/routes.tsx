@@ -84,7 +84,7 @@ export const RootRoute: RouteObject = {
     PersonalInfoRoute,
     ResourcesRoute,
     ContentRoute,
-    Oid4VciRoute,
+    ...(environment.features.isOid4VciEnabled ? [Oid4VciRoute] : []),
   ],
 };
 

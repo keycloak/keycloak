@@ -227,6 +227,13 @@ function RealmSettingsGeneralTabForm({
               labelIcon={t("organizationsEnabledHelp")}
             />
           )}
+          {isOpenid4vciEnabled && (
+            <DefaultSwitchControl
+              name="verifiableCredentialsEnabled"
+              label={t("verifiableCredentialsEnabled")}
+              labelIcon={t("verifiableCredentialsEnabledHelp")}
+            />
+          )}
           <SelectControl
             name="unmanagedAttributePolicy"
             label={t("unmanagedAttributes")}
@@ -266,7 +273,7 @@ function RealmSettingsGeneralTabForm({
                   title={t("samlIdentityProviderMetadata")}
                 />
               </StackItem>
-              {isOpenid4vciEnabled && (
+              {isOpenid4vciEnabled && realm.verifiableCredentialsEnabled && (
                 <StackItem>
                   <FormattedLink
                     href={`${addTrailingSlash(

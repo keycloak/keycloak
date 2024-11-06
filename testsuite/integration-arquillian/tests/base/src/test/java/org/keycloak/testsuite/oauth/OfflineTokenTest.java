@@ -262,6 +262,9 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
+        // check only offline session is created
+        checkNumberOfSessions(userId, "offline-client", offlineToken.getSessionId(), 0, 1);
+
         String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
 
         // Change offset to very big value to ensure offline session expires
@@ -280,6 +283,67 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         setTimeOffset(0);
+    }
+
+    @Test
+    public void onlineOfflineTokenBrowserFlow() throws Exception {
+        // request an online token for the client
+        oauth.scope(null);
+        oauth.clientId("offline-client");
+        oauth.redirectUri(offlineClientAppUri);
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+        final String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret1");
+        RefreshToken onlineToken = assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        events.expectCodeToToken(codeId, sessionId)
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .assertEvent();
+        assertEquals(TokenUtil.TOKEN_TYPE_REFRESH, onlineToken.getType());
+        Assert.assertNotNull(onlineToken.getExp());
+        // request an offline token for the same client
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.doSilentLogin();
+        events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+        OAuthClient.AccessTokenResponse tokenOfflineResponse = oauth.doAccessTokenRequest(
+                oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret1");
+        RefreshToken offlineToken = assertRefreshToken(tokenOfflineResponse, TokenUtil.TOKEN_TYPE_OFFLINE);
+        events.expectCodeToToken(codeId, sessionId)
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertNull(offlineToken.getExp());
+        assertTrue(tokenOfflineResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
+        // check both sessions are created
+        checkNumberOfSessions(userId, "offline-client", onlineToken.getSessionId(), 1, 1);
+        // check online token can be refreshed
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
+        assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
+        events.expectRefresh(token.getId(), sessionId)
+                .client("offline-client")
+                .user(userId)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.REFRESH_TOKEN_ID, onlineToken.getId())
+                .assertEvent();
+        // check offline token can be refreshed
+        tokenOfflineResponse = oauth.doRefreshTokenRequest(tokenOfflineResponse.getRefreshToken(), "secret1");
+        assertRefreshToken(tokenOfflineResponse, TokenUtil.TOKEN_TYPE_OFFLINE);
+        events.expectRefresh(token.getId(), sessionId)
+                .client("offline-client")
+                .user(userId)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .assertEvent();
     }
 
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
@@ -795,19 +859,28 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         int prev[] = null;
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(adminClient.realm("test")).setSsoSessionIdleTimeout(900).update()) {
-            // Step 1 - offline login with "offline-client"
             prev = changeOfflineSessionSettings(true, MAX_LIFESPAN, IDLE_LIFESPAN, 0, 0);
 
+            // Step 1 - online login with "tets-app"
+            oauth.scope(null);
+            oauth.clientId("test-app");
+            oauth.redirectUri(APP_ROOT + "/auth");
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
+
+            // Step 2 - offline login with "offline-client"
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.clientId("offline-client");
             oauth.redirectUri(offlineClientAppUri);
 
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+            oauth.doSilentLogin();
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
             assertOfflineToken(tokenResponse);
 
-            // Step 2 - set some offset to refresh SSO session and offline user session. But use different client, so that we don't refresh offlineClientSession of client "offline-client"
+            // Step 3 - set some offset to refresh SSO session and offline user session. But use different client, so that we don't refresh offlineClientSession of client "offline-client"
             setTimeOffset(800);
             oauth.clientId("test-app");
             oauth.redirectUri(APP_ROOT + "/auth");
@@ -817,7 +890,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             tokenResponse = oauth.doAccessTokenRequest(code, "password");
             assertOfflineToken(tokenResponse);
 
-            // Step 3 - set bigger time offset and login with the original client "offline-token". Login should be successful and offline client session for "offline-client" should be re-created now
+            // Step 4 - set bigger time offset and login with the original client "offline-token". Login should be successful and offline client session for "offline-client" should be re-created now
             setTimeOffset(900 + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 20);
             oauth.clientId("offline-client");
             oauth.redirectUri(offlineClientAppUri);
@@ -833,13 +906,17 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         }
     }
 
-    // Asserts that refresh token in the tokenResponse is offlineToken. Return parsed offline token
     private RefreshToken assertOfflineToken(OAuthClient.AccessTokenResponse tokenResponse) {
+        return assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_OFFLINE);
+    }
+
+    // Asserts that refresh token in the tokenResponse is of the given type. Return parsed token
+    private RefreshToken assertRefreshToken(OAuthClient.AccessTokenResponse tokenResponse, String tokenType) {
         Assert.assertEquals(200, tokenResponse.getStatusCode());
         String offlineTokenString = tokenResponse.getRefreshToken();
-        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
-        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        return offlineToken;
+        RefreshToken refreshToken = oauth.parseRefreshToken(offlineTokenString);
+        assertEquals(tokenType, refreshToken.getType());
+        return refreshToken;
     }
 
     @Test

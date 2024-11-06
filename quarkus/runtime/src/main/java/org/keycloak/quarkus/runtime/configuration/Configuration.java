@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.Map;
@@ -28,7 +27,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -43,7 +41,7 @@ public final class Configuration {
 
     public static final char OPTION_PART_SEPARATOR_CHAR = '-';
     public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
-    private static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
+    public static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
 
     private Configuration() {
 
@@ -79,34 +77,9 @@ public final class Configuration {
         return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
     }
 
-    public static Optional<String> getBuildTimeProperty(String name) {
-        Optional<String> value = getRawPersistedProperty(name);
-
-        if (value.isEmpty()) {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-
-            if (mapper != null) {
-                value = getRawPersistedProperty(mapper.getFrom());
-
-                if (value.isEmpty() && mapper.getTo() != null) {
-                    value = getRawPersistedProperty(mapper.getTo());
-                }
-            }
-        }
-
-        if (value.isEmpty()) {
-            String profile = org.keycloak.common.util.Environment.getProfile();
-
-            if (profile == null) {
-                profile = getConfig().getRawValue(org.keycloak.common.util.Environment.PROFILE);
-            }
-
-            value = getRawPersistedProperty("%" + profile + "." + name);
-        }
-
-        return value;
-    }
-
+    /**
+     * Raw persisted keycloak properties will match the resolved value of what was originally specified by the user
+     */
     public static Optional<String> getRawPersistedProperty(String name) {
         return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
     }
@@ -170,26 +143,6 @@ public final class Configuration {
         return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
     }
 
-    public static Optional<String> getRuntimeProperty(String name) {
-        for (ConfigSource configSource : getConfig().getConfigSources()) {
-            if (PersistedConfigSource.NAME.equals(configSource.getName())) {
-                continue;
-            }
-
-            String value = getValue(configSource, name);
-
-            if (value == null) {
-                value = getValue(configSource, getMappedPropertyName(name));
-            }
-
-            if (value != null) {
-                return Optional.of(value);
-            }
-        }
-
-        return Optional.empty();
-    }
-
     public static String toEnvVarFormat(String key) {
         return replaceNonAlphanumericByUnderscores(key).toUpperCase();
     }
@@ -233,16 +186,6 @@ public final class Configuration {
         return sb.toString();
     }
 
-    private static String getValue(ConfigSource configSource, String name) {
-        String value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
-
-        if (value == null) {
-            value = configSource.getValue(name);
-        }
-
-        return value;
-    }
-
     public static boolean isOptimized() {
         return Configuration.getRawPersistedProperty(KC_OPTIMIZED).isPresent();
     }
@@ -251,7 +194,7 @@ public final class Configuration {
         properties.put(Configuration.KC_OPTIMIZED, Boolean.TRUE.toString());
     }
 
-    public static ConfigValue getCurrentBuiltTimeProperty(String name) {
+    public static ConfigValue getNonPersistedConfigValue(String name) {
         return PersistedConfigSource.getInstance().runWithDisabled(() -> getConfigValue(name));
     }
 }

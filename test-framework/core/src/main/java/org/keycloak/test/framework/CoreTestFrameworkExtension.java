@@ -3,11 +3,6 @@ package org.keycloak.test.framework;
 import org.keycloak.test.framework.admin.KeycloakAdminClientSupplier;
 import org.keycloak.test.framework.database.DevFileDatabaseSupplier;
 import org.keycloak.test.framework.database.DevMemDatabaseSupplier;
-import org.keycloak.test.framework.database.MSSQLServerDatabaseSupplier;
-import org.keycloak.test.framework.database.MariaDBDatabaseSupplier;
-import org.keycloak.test.framework.database.MySQLDatabaseSupplier;
-import org.keycloak.test.framework.database.OracleDatabaseSupplier;
-import org.keycloak.test.framework.database.PostgresDatabaseSupplier;
 import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.events.EventsSupplier;
 import org.keycloak.test.framework.events.SysLogServerSupplier;
@@ -38,11 +33,6 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new RemoteKeycloakTestServerSupplier(),
                 new DevMemDatabaseSupplier(),
                 new DevFileDatabaseSupplier(),
-                new MySQLDatabaseSupplier(),
-                new PostgresDatabaseSupplier(),
-                new MariaDBDatabaseSupplier(),
-                new MSSQLServerDatabaseSupplier(),
-                new OracleDatabaseSupplier(),
                 new OAuthClientSupplier(),
                 new SysLogServerSupplier(),
                 new EventsSupplier()

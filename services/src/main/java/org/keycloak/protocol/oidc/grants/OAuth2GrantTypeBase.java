@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
@@ -111,6 +112,11 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         boolean useRefreshToken = clientConfig.isUseRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())
+                    && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
+                // the online session can be removed if first created for offline access
+                session.sessions().removeUserSession(realm, userSession);
+            }
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);

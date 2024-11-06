@@ -47,6 +47,12 @@ public class Messages {
 
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
 
+    public static final String ACCOUNT_PERMANENTLY_DISABLED = "accountPermanentlyDisabledMessage";
+
+    public static final String ACCOUNT_TEMPORARILY_DISABLED_TOTP = "accountTemporarilyDisabledMessageTotp";
+
+    public static final String ACCOUNT_PERMANENTLY_DISABLED_TOTP = "accountPermanentlyDisabledMessageTotp";
+
     public static final String EXPIRED_CODE = "expiredCodeMessage";
 
     public static final String EXPIRED_ACTION = "expiredActionMessage";
