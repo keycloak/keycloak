@@ -203,7 +203,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertTrue(pageSource.contains("Google Authenticator"));
         assertTrue(pageSource.contains("Microsoft Authenticator"));
 
-        assertTrue(pageSource.contains("Open the application and scan the barcode"));
+        assertTrue(pageSource.contains("Open the application and scan this QR-Code"));
         assertFalse(pageSource.contains("Open the application and enter the key"));
 
         assertTrue(pageSource.contains("Unable to scan?"));
@@ -222,7 +222,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertTrue(pageSource.contains("Open the application and enter the key"));
 
         assertFalse(pageSource.contains("Unable to scan?"));
-        assertTrue(pageSource.contains("Scan barcode?"));
+        assertTrue(pageSource.contains("Scan QR-Code?"));
 
         assertTrue(driver.findElement(By.id("kc-totp-secret-key")).getText().matches("[\\w]{4}( [\\w]{4}){7}"));
 
@@ -240,11 +240,11 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertTrue(pageSource.contains("Google Authenticator"));
         assertTrue(pageSource.contains("Microsoft Authenticator"));
 
-        assertTrue(pageSource.contains("Open the application and scan the barcode"));
+        assertTrue(pageSource.contains("Open the application and scan this QR-Code"));
         assertFalse(pageSource.contains("Open the application and enter the key"));
 
         assertTrue(pageSource.contains("Unable to scan?"));
-        assertFalse(pageSource.contains("Scan barcode?"));
+        assertFalse(pageSource.contains("Scan QR-Code?"));
 
         // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
         driver.findElement(By.id("userLabel"));
@@ -267,14 +267,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         pageSource = driver.getPageSource();
 
         assertFalse(pageSource.contains("Unable to scan?"));
-        assertTrue(pageSource.contains("Scan barcode?"));
+        assertTrue(pageSource.contains("Scan QR-Code?"));
 
         totpPage.submit();
 
         pageSource = driver.getPageSource();
 
         assertFalse(pageSource.contains("Unable to scan?"));
-        assertTrue(pageSource.contains("Scan barcode?"));
+        assertTrue(pageSource.contains("Scan QR-Code?"));
 
         assertEquals("Please specify authenticator code.", totpPage.getInputCodeError());
     }
@@ -305,7 +305,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         pageSource = driver.getPageSource();
 
         assertFalse(pageSource.contains("Unable to scan?"));
-        assertTrue(pageSource.contains("Scan barcode?"));
+        assertTrue(pageSource.contains("Scan QR-Code?"));
     }
 
     @Test
