@@ -29,7 +29,9 @@ export function checkCookiesAndSetTimer(loginRestartUrl) {
     );
   } else {
     // Redirect to the login restart URL. This can typically automatically login user due the SSO
-    location.href = loginRestartUrl;
+    if (getCookieByName("KC_RESTART")) {
+      location.href = loginRestartUrl;
+    }
   }
 }
 
