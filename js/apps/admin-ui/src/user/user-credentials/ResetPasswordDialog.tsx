@@ -1,22 +1,17 @@
 import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import {
-  AlertVariant,
-  ButtonVariant,
-  Form,
-  FormGroup,
-} from "@patternfly/react-core";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { AlertVariant, ButtonVariant, Form } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, PasswordInput } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import useToggle from "../../utils/useToggle";
+import { ResetPasswordForm } from "./ResetPasswordForm";
 
 type ResetPasswordDialogProps = {
   user: UserRepresentation;
@@ -53,17 +48,11 @@ export const ResetPasswordDialog = ({
     mode: "onChange",
   });
   const {
-    register,
-    formState: { isValid, errors },
-    watch,
+    formState: { isValid },
     handleSubmit,
-    clearErrors,
-    setError,
   } = form;
 
   const [confirm, toggle] = useToggle(true);
-  const password = watch("password", "");
-  const passwordConfirmation = watch("passwordConfirmation", "");
 
   const { addAlert, addError } = useAlerts();
 
@@ -123,7 +112,6 @@ export const ResetPasswordDialog = ({
     onClose();
   };
 
-  const { onChange, ...rest } = register("password", { required: true });
   return (
     <>
       <ConfirmSaveModal />
@@ -145,56 +133,8 @@ export const ResetPasswordDialog = ({
           isHorizontal
           className="keycloak__user-credentials__reset-form"
         >
-          <FormGroup
-            name="password"
-            label={t("password")}
-            fieldId="password"
-            isRequired
-          >
-            <PasswordInput
-              data-testid="passwordField"
-              id="password"
-              onChange={(e) => {
-                onChange(e);
-                if (passwordConfirmation !== e.currentTarget.value) {
-                  setError("passwordConfirmation", {
-                    message: t("confirmPasswordDoesNotMatch").toString(),
-                  });
-                } else {
-                  clearErrors("passwordConfirmation");
-                }
-              }}
-              {...rest}
-            />
-            {errors.password && <FormErrorText message={t("required")} />}
-          </FormGroup>
-          <FormGroup
-            name="passwordConfirmation"
-            label={
-              isResetPassword
-                ? t("resetPasswordConfirmation")
-                : t("passwordConfirmation")
-            }
-            fieldId="passwordConfirmation"
-            isRequired
-          >
-            <PasswordInput
-              data-testid="passwordConfirmationField"
-              id="passwordConfirmation"
-              {...register("passwordConfirmation", {
-                required: true,
-                validate: (value) =>
-                  value === password ||
-                  t("confirmPasswordDoesNotMatch").toString(),
-              })}
-            />
-            {errors.passwordConfirmation && (
-              <FormErrorText
-                message={errors.passwordConfirmation.message as string}
-              />
-            )}
-          </FormGroup>
           <FormProvider {...form}>
+            <ResetPasswordForm isResetPassword={isResetPassword} />
             <DefaultSwitchControl
               name="temporaryPassword"
               label={t("temporaryPassword")}

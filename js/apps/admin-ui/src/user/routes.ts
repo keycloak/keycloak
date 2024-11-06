@@ -1,10 +1,11 @@
 import type { AppRouteObject } from "../routes";
-import { AddUserRoute } from "./routes/AddUser";
+import { AddAdminUserRoute, AddUserRoute } from "./routes/AddUser";
 import { UserRoute } from "./routes/User";
 import { UsersRoute, UsersRouteWithTab } from "./routes/Users";
 
 const routes: AppRouteObject[] = [
   AddUserRoute,
+  AddAdminUserRoute,
   UsersRoute,
   UsersRouteWithTab,
   UserRoute,

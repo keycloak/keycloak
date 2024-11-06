@@ -3,6 +3,7 @@ import type {
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  KeycloakSpinner,
   isUserProfileError,
   setUserProfileServerError,
   useAlerts,
@@ -27,7 +28,6 @@ import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -35,10 +35,20 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { UserEvents } from "../events/UserEvents";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
+import {
+  UIUserRepresentation,
+  UserFormFields,
+  filterManagedAttributes,
+  toUserFormFields,
+  toUserRepresentation,
+} from "./form-state";
 import { Organizations } from "./Organizations";
+import { UserParams, UserTab, toUser } from "./routes/User";
+import { toUsers } from "./routes/Users";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
 import { UserCredentials } from "./UserCredentials";
@@ -47,16 +57,6 @@ import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
-import { UserEvents } from "../events/UserEvents";
-import {
-  UIUserRepresentation,
-  UserFormFields,
-  filterManagedAttributes,
-  toUserFormFields,
-  toUserRepresentation,
-} from "./form-state";
-import { UserParams, UserTab, toUser } from "./routes/User";
-import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
 
 import "./user-section.css";
@@ -142,17 +142,19 @@ export default function EditUser() {
 
       const { userProfileMetadata, ...user } = userData;
       setUserProfileMetadata(userProfileMetadata);
-      user.unmanagedAttributes = unmanagedAttributes;
-      user.attributes = filterManagedAttributes(
-        user.attributes,
+      setUser({
+        ...user,
         unmanagedAttributes,
-      );
+        attributes: filterManagedAttributes(
+          user.attributes,
+          unmanagedAttributes,
+        ),
+      });
 
       if (upConfig.unmanagedAttributePolicy !== undefined) {
         setUnmanagedAttributesEnabled(true);
       }
 
-      setUser(user);
       setUpConfig(upConfig);
 
       const isBruteForceProtected = realm.bruteForceProtected;
