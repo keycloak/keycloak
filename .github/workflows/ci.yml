@@ -607,6 +607,9 @@ jobs:
 
       - name: Run new base tests
         run: |
+          du -hs .
+          du -hs ~/.m2
+          rm -rf ~/.m2/repository
           KC_TEST_DATABASE=${{ matrix.db }} ./mvnw test -f tests/pom.xml -Dtest=DatabaseTestSuite
 
       - name: Run cluster JDBC_PING2 UDP smoke test
