@@ -24,9 +24,9 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: frontend-plugin-cache
-      name: Frontend Plugin Cache
-      uses: ./.github/actions/frontend-plugin-cache
+    - id: pnpm-store-cache
+      name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
 
     - id: build-keycloak
       name: Build Keycloak
