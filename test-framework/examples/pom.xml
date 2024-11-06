@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-test-framework-examples</artifactId>
-    <name>Keycloak Test Framework Examples</name>
+    <name>Keycloak Test Framework Examples Parent</name>
     <packaging>pom</packaging>
     <description>Example tests to demonstrate the new testing framework</description>
 
