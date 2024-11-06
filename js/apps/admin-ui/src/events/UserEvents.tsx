@@ -231,7 +231,9 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
         >
           <FlexItem>
             <DropdownPanel
-              buttonText={t("searchForUserEvent")}
+              buttonText={
+                client ? t("searchForClientEvent") : t("searchForUserEvent")
+              }
               setSearchDropdownOpen={setSearchDropdownOpen}
               searchDropdownOpen={searchDropdownOpen}
               marginRight="2.5rem"
@@ -243,12 +245,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                 onSubmit={handleSubmit(onSubmit)}
                 isHorizontal
               >
-                <TextControl
-                  name="user"
-                  label={t("userId")}
-                  data-testid="userId-searchField"
-                  isDisabled={!!user}
-                />
+                {!user && (
+                  <TextControl
+                    name="user"
+                    label={t("userId")}
+                    data-testid="userId-searchField"
+                  />
+                )}
                 <FormGroup
                   label={t("eventType")}
                   fieldId="kc-eventType"
@@ -310,12 +313,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     )}
                   />
                 </FormGroup>
-                <TextControl
-                  name="client"
-                  label={t("client")}
-                  data-testid="client-searchField"
-                  isDisabled={!!client}
-                />
+                {!client && (
+                  <TextControl
+                    name="client"
+                    label={t("client")}
+                    data-testid="client-searchField"
+                  />
+                )}
                 <FormGroup
                   label={t("dateFrom")}
                   fieldId="kc-dateFrom"
@@ -386,16 +390,15 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     string | EventType[],
                   ];
 
-                  const disableClose =
-                    (key === "user" && !!user) ||
-                    (key === "client" && !!client);
+                  if (client && key === "client") return null;
+                  if (user && key === "user") return null;
 
                   return (
                     <ChipGroup
                       className="pf-v5-u-mt-md pf-v5-u-mr-md"
                       key={key}
                       categoryName={filterLabels[key]}
-                      isClosable={!disableClose}
+                      isClosable
                       onClick={() => removeFilter(key)}
                     >
                       {typeof value === "string" ? (

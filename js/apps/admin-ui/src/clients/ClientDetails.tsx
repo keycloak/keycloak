@@ -667,8 +667,8 @@ export default function ClientDetails() {
             </Tab>
             {hasAccess("view-events") && (
               <Tab
-                data-testid="user-events-tab"
-                title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                data-testid="client-events-tab"
+                title={<TabTitleText>{t("clientEvents")}</TabTitleText>}
                 {...userEventsTab}
               >
                 <UserEvents client={client.clientId} />
