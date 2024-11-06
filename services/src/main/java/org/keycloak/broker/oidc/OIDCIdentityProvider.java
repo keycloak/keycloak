@@ -892,7 +892,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
-    protected static boolean isTokenTypeSupported(JsonWebToken parsedToken) {
+    protected boolean isTokenTypeSupported(JsonWebToken parsedToken) {
         return SUPPORTED_TOKEN_TYPES.contains(parsedToken.getType());
     }
 
