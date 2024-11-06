@@ -54,3 +54,9 @@ See the Javadoc for a detailed description.
 = Removal of robots.txt file
 
 The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overidden per-realm if a different behaviour is needed.
+
+= Offline access removes the associated online session if the `offline_scope` is requested in the initial exchange
+
+Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, with two sessions, one online and one offline.
+
+Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.

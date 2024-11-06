@@ -18,6 +18,7 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
@@ -61,6 +62,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
@@ -92,6 +94,9 @@ public class AuthenticationProcessor {
 
     // Boolean flag, which is true when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
     public static final String AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED = "auth.selector.screen.rendered";
+
+    // Boolean note in the client session indicating it was first created for offline session
+    public static final String FIRST_OFFLINE_ACCESS = "first.offline.access";
 
     protected static final Logger logger = Logger.getLogger(AuthenticationProcessor.class);
     protected RealmModel realm;
@@ -1141,7 +1146,15 @@ public class AuthenticationProcessor {
             event.detail(Details.REMEMBER_ME, "true");
         }
 
+        final int clientSessions = userSession.getAuthenticatedClientSessions().size();
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        if (clientSessions == 0 && userSession.getStarted() == userSession.getLastSessionRefresh()
+                && TokenUtil.hasScope(clientSessionCtx.getScopeString(), OAuth2Constants.OFFLINE_ACCESS)) {
+            // user session is just created, empty and the first access was for offline token, set the note
+            clientSessionCtx.getClientSession().setNote(FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+        } else {
+            clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
+        }
 
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)
