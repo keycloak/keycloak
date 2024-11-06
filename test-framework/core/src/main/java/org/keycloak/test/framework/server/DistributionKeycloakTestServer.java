@@ -1,8 +1,10 @@
 package org.keycloak.test.framework.server;
 
+import io.quarkus.maven.dependency.Dependency;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import java.util.List;
+import java.util.Set;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
 
@@ -16,8 +18,13 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(List<String> rawOptions) {
+    public void start(List<String> rawOptions, Set<Dependency> dependencies) {
         keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT);
+
+        for (Dependency dependency : dependencies) {
+            keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
+        }
+
         keycloak.run(rawOptions).assertStartedDevMode();
     }
 

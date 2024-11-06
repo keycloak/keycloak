@@ -969,7 +969,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        run: ./mvnw test -f test-framework/pom.xml
+        run: ./mvnw package -f test-framework/pom.xml
 
   base-new-integration-tests:
     name: Base IT (new)

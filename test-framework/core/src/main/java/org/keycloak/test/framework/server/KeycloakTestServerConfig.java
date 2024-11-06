@@ -1,5 +1,7 @@
 package org.keycloak.test.framework.server;
 
+import io.quarkus.maven.dependency.Dependency;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -15,5 +17,9 @@ public interface KeycloakTestServerConfig {
     }
 
     default boolean enableSysLog() { return false; }
+
+    default Set<Dependency> dependencies() {
+        return Collections.emptySet();
+    }
 
 }
