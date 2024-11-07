@@ -12,6 +12,15 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 
 == Concepts
 
+=== JGroups communications
+
+// remove this paragraph once OpenJDK 17 is no longer supported on the server side.
+// https://github.com/keycloak/keycloak/issues/31101
+
+JGroups communications, which is used in single-site setups for the communication between {project_name} nodes, benefits from the use of virtual threads which are available in OpenJDK 21.
+This reduces the memory usage and removes the need to configure thread pool sizes.
+Therefore, the use of OpenJDK 21 is recommended.
+
 === Quarkus executor pool
 
 {project_name} requests, as well as blocking probes, are handled by an executor pool. Depending on the available CPU cores, it has a maximum size of 50 or more threads.

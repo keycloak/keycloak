@@ -22,7 +22,7 @@ These APIs are no longer needed as initialization is done automatically on deman
 = Virtual Threads enabled for Infinispan and JGroups thread pools
 
 Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
-This removes the need to configure the thread pool and reduces overall memory footprint.
+This removes the need to configure the JGroups thread pool, the need to align the JGroups thread pool with the HTTP worker thread pool, and reduces the overall memory footprint.
 To disable the virtual threads, add one of the Java system properties combinations to your deployment:
 
 * `-Dorg.infinispan.threads.virtual=false`: disables virtual thread in both Infinispan and JGroups.
