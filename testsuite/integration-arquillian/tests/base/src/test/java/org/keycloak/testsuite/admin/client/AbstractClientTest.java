@@ -134,6 +134,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         Response resp = testRealmResource().clients().create(clientRep);
         resp.close();
         String id = ApiUtil.getCreatedId(resp);
+        clientRep.setSecret(null);
 
         assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
 

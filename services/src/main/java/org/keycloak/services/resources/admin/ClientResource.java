@@ -26,12 +26,9 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
-import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -45,7 +42,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -98,8 +94,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-
-import static java.lang.Boolean.TRUE;
 
 
 /**
@@ -810,14 +804,13 @@ public class ClientResource {
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
-        if (TRUE.equals(rep.isServiceAccountsEnabled())) {
+        if (Boolean.TRUE.equals(rep.isServiceAccountsEnabled())) {
             if (serviceAccount == null) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
             }
-        }
-        else {
+        } else if (Boolean.FALSE.equals(rep.isServiceAccountsEnabled()) || !client.isServiceAccountsEnabled()) {
             if (serviceAccount != null) {
-                new UserManager(session).removeUser(realm, serviceAccount);
+                new ClientManager(new RealmManager(session)).disableServiceAccount(client);
             }
         }
 
@@ -840,7 +833,7 @@ public class ClientResource {
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            if (Boolean.TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 authorization().enable(false);
             } else {
                 authorization().disable();

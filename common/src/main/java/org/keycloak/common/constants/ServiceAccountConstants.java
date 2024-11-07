@@ -35,4 +35,6 @@ public interface ServiceAccountConstants {
     String CLIENT_HOST = "clientHost";
     String CLIENT_ADDRESS = "clientAddress";
 
+    String SERVICE_ACCOUNT_SCOPE = "service_account";
+
 }

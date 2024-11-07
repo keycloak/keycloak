@@ -28,9 +28,11 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
@@ -79,8 +81,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         UserModel clientUser = session.users().getServiceAccount(client);
+        ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
 
-        if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
+        if (clientUser == null || (serviceAccountScope != null && !client.getClientScopes(true).containsKey(serviceAccountScope.getId()))) {
             // May need to handle bootstrap here as well
             logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
