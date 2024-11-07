@@ -63,9 +63,6 @@ public class AdminEventsParser {
                 case "resourcePath":
                     adminEvent.setResourcePath(e.getValue());
                     break;
-                case "representation":
-                    adminEvent.setRepresentation(e.getValue());
-                    break;
                 case "error":
                     adminEvent.setError(e.getValue());
                     break;
