@@ -35,6 +35,11 @@ public final class AdminExtResource {
         return new AvailableRoleMappingResource(session, realm, auth);
     }
 
+    @Path("/available-event-listeners")
+    public AvailableEventListenersResource availableEventListeners() {
+        return new AvailableEventListenersResource(session, auth);
+    }
+
     @Path("/effective-roles")
     public EffectiveRoleMappingResource effectiveRoles() {
         return new EffectiveRoleMappingResource(session, realm, auth);

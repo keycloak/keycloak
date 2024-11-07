@@ -16,10 +16,14 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
@@ -296,6 +300,15 @@ public class RealmManager {
         realm.setEventsEnabled(rep.isEventsEnabled());
         realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
         if (rep.getEventsListeners() != null) {
+            for (String el : rep.getEventsListeners()) {
+                EventListenerProviderFactory elpf = (EventListenerProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(EventListenerProvider.class, el);
+                if (elpf == null) {
+                    throw new ClientErrorException("Unknown event listener", Response.Status.BAD_REQUEST);
+                }
+                if (elpf.isGlobal()) {
+                    throw new ClientErrorException("Global event listeners not allowed in realm specific configuration", Response.Status.BAD_REQUEST);
+                }
+            }
             realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         }
         if(rep.getEnabledEventTypes() != null) {
