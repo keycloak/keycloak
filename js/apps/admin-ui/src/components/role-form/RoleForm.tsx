@@ -52,6 +52,7 @@ export const RoleForm = ({
           onSubmit={handleSubmit(onSubmit)}
           role={role}
           className="pf-u-mt-lg"
+          fineGrainedAccess={true} // We would never want to show this form in read-only mode
         >
           <FormGroup
             label={t("roleName")}
