@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -78,6 +79,7 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
     protected void createLDAPProvider() {
         Map<String, String> cfg = getLDAPRule().getConfig();
         ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        Assert.assertEquals("Short ID not used for ldap id", 22, ldapModelId.length());
         log.infof("LDAP Provider created");
     }
 
