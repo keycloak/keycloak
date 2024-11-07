@@ -53,6 +53,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -289,6 +290,24 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
     }
 
+    @Test
+    public void testRenameRealm() throws IOException {
+        RealmRepresentation rep = testRealm().toRepresentation();
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
+        String originalRealmName = rep.getRealm();
+        String updatedName = originalRealmName + "changed";
+
+        try {
+            rep.setRealm(updatedName);
+            updateRealmExt(toUIRealmRepresentation(rep, upConfig), originalRealmName);
+        } finally {
+            rep.setRealm(originalRealmName);
+            updateRealmExt(toUIRealmRepresentation(rep, upConfig), updatedName);
+            assertAdminEvents.clear();
+        }
+    }
+
     private static String getKeycloakServerUrl() {
         return getAuthServerContextRoot() + "/auth";
     }
@@ -311,7 +330,10 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void updateRealmExt(UIRealmRepresentation rep) {
-        final var realmName = rep.getRealm();
+        updateRealmExt(rep, rep.getRealm());
+    }
+
+    private void updateRealmExt(UIRealmRepresentation rep, String realmName) {
         final var request = prepareHttpRequest(realmName, "ui-ext", adminClient.tokenManager());
 
         final var response = request
