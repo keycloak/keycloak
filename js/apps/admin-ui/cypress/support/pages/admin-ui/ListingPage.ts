@@ -33,7 +33,7 @@ export default class ListingPage extends CommonElements {
   #deleteUserButton = "delete-user-btn";
   #emptyListImg = '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
   #emptyState = "empty-state";
-  #itemRowDrpDwn = ".pf-v5-c-table__action button";
+  #itemRowDrpDwn = ".pf-v5-c-menu-toggle";
   #itemRowSelect = "[data-testid='cell-dropdown']";
   #itemRowSelectItem = ".pf-v5-c-menu__item";
   #itemCheckbox = ".pf-v5-c-table__check";
