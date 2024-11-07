@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.ArrayList;
@@ -73,8 +74,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
             container.setAdditionalBuildArgs(args);
         }
         else {
-            setConfigProperty("keycloak.metrics-enabled", "true");
-            setConfigProperty("keycloak.event-metrics-user-enabled", "true");
+            throw new RuntimeException("This test will only work on Quarkus as it uses Micrometer");
         }
     }
 
@@ -95,6 +95,8 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void shouldCountSingleEventWithTagsAndFilter() {
+        ContainerAssume.assumeAuthServerQuarkus();
+
         enableUserEventMetrics(null, null);
 
         testingClient.server().run(session -> {
@@ -157,8 +159,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
             AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.resetConfiguration();
         } else {
-            setConfigProperty("keycloak.metrics-enabled", null);
-            setConfigProperty("keycloak.event-metrics-user-enabled", null);
+            throw new RuntimeException("This test will only work on Quarkus as it uses Micrometer");
         }
     }
 
