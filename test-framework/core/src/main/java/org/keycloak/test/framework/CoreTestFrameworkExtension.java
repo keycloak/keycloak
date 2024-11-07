@@ -4,6 +4,7 @@ import org.keycloak.test.framework.admin.KeycloakAdminClientSupplier;
 import org.keycloak.test.framework.database.DevFileDatabaseSupplier;
 import org.keycloak.test.framework.database.DevMemDatabaseSupplier;
 import org.keycloak.test.framework.database.TestDatabase;
+import org.keycloak.test.framework.events.AdminEventsSupplier;
 import org.keycloak.test.framework.events.EventsSupplier;
 import org.keycloak.test.framework.events.SysLogServerSupplier;
 import org.keycloak.test.framework.injection.Supplier;
@@ -35,7 +36,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new DevFileDatabaseSupplier(),
                 new OAuthClientSupplier(),
                 new SysLogServerSupplier(),
-                new EventsSupplier()
+                new EventsSupplier(),
+                new AdminEventsSupplier()
         );
     }
 
