@@ -326,13 +326,7 @@ jobs:
     name: Login Theme v1 tests
     needs: build
     timeout-minutes: 100
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        dist: [temurin]
-        version: [17]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
