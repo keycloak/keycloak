@@ -2,12 +2,14 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
+import java.util.Optional;
 
 final class DatabasePropertyMappers {
 
@@ -84,8 +86,8 @@ final class DatabasePropertyMappers {
     }
 
     private static String getXaOrNonXaDriver(String value, ConfigSourceInterceptorContext context) {
-        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        boolean isXaEnabled = xaEnabledConfigValue != null && Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        Optional<String> xaEnabledConfigValue = Configuration.getOptionalKcValue(TransactionOptions.TRANSACTION_XA_ENABLED);
+        boolean isXaEnabled = xaEnabledConfigValue.map(Boolean::parseBoolean).orElse(false);
 
         return Database.getDriver(value, isXaEnabled).orElse(null);
     }
