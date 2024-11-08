@@ -43,6 +43,14 @@ kc.operator.keycloak.image-pull-policy
 
 ### Quick start on Minikube
 
+Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
+Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
+Another CNI implementation may work too.
+
+```bash
+minikube start --addons ingress --cni cilium
+```
+
 Enable the Minikube Docker daemon:
 
 ```bash

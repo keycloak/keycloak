@@ -299,10 +299,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
-        var port = Optional.ofNullable(keycloakCR.getSpec())
-                .map(KeycloakSpec::getHttpManagementSpec)
-                .map(HttpManagementSpec::getPort)
-                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
+        var port = HttpManagementSpec.managementPort(keycloakCR);
         var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
                 .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)

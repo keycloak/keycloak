@@ -17,10 +17,15 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -71,4 +76,23 @@ public class HttpSpec {
     public void setHttpsPort(Integer httpsPort) {
         this.httpsPort = httpsPort;
     }
+
+
+    public static int httpPort(Keycloak keycloak) {
+        return httpSpec(keycloak)
+                .map(HttpSpec::getHttpPort)
+                .orElse(Constants.KEYCLOAK_HTTP_PORT);
+    }
+
+    public static int httpsPort(Keycloak keycloak) {
+        return httpSpec(keycloak)
+                .map(HttpSpec::getHttpsPort)
+                .orElse(Constants.KEYCLOAK_HTTPS_PORT);
+    }
+
+    private static Optional<HttpSpec> httpSpec(Keycloak keycloak) {
+        return CRDUtils.keycloakSpecOf(keycloak)
+                .map(KeycloakSpec::getHttpSpec);
+    }
+
 }

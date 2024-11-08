@@ -18,7 +18,6 @@
 package org.keycloak.operator.testsuite.utils;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -116,15 +115,10 @@ public final class K8sUtils {
     public static String inClusterCurl(KubernetesClient k8sclient, String namespace, String... args) {
         var podName = "curl-pod";
         try {
-            Pod curlPod = new PodBuilder().withNewMetadata().withName(podName).endMetadata().withNewSpec()
-                    .addNewContainer()
-                    .withImage("curlimages/curl:8.1.2")
-                    .withCommand("sh")
-                    .withName("curl")
-                    .withStdin()
-                    .endContainer()
-                    .endSpec()
-                    .build();
+            var builder = new PodBuilder();
+            builder.withNewMetadata().withName(podName).endMetadata();
+            createCurlContainer(builder);
+            var curlPod = builder.build();
 
             try {
                 k8sclient.resource(curlPod).create();
@@ -146,5 +140,16 @@ public final class K8sUtils {
         } catch (Exception ex) {
             throw KubernetesClientException.launderThrowable(ex);
         }
+    }
+
+    private static void createCurlContainer(PodBuilder builder) {
+        builder.withNewSpec()
+                .addNewContainer()
+                .withImage("curlimages/curl:8.1.2")
+                .withCommand("sh")
+                .withName("curl")
+                .withStdin()
+                .endContainer()
+                .endSpec();
     }
 }

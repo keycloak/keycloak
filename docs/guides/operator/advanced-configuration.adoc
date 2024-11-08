@@ -316,4 +316,27 @@ If a master realm has already been created for you cluster, then the spec.boostr
 
 For more information on how to bootstrap a temporary admin user or service account and recover lost admin access, refer to the <@links.server id="bootstrap-admin-recovery"/> guide.
 
+=== Network Policies (Experimental)
+
+NetworkPolicies allow you to specify rules for traffic flow within your cluster, and also between Pods and the outside world.
+Your cluster must use a network plugin that supports NetworkPolicy enforcement.
+
+The operator can automatically create a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
+The HTTP(S) endpoint is open to traffic from any namespace and the outside world.
+To enable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak CR, as shown in the example below.
+
+.Keycloak CR with Network Policies enabled
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  networkPolicy:
+    enabled: true
+----
+
+Check the https://kubernetes.io/docs/concepts/services-networking/network-policies/[Kubernetes Network Policies documentation] for more information about NetworkPolicies.
+
 </@tmpl.guide>
