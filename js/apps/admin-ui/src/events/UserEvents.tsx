@@ -32,14 +32,14 @@ import { cellWidth } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
-
+import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import "./events.css";
 
 type UserEventSearchForm = {
@@ -431,6 +431,22 @@ export const UserEvents = ({
     );
   };
 
+  const getEventSearchInstructions = (eventSearch: string) => (
+    <Trans
+      i18nKey={
+        eventSearch === "client"
+          ? "emptyClientEventsTabInstructions"
+          : "emptyUserEventsTabInstructions"
+      }
+    >
+      If you want to configure events, please enter
+      <Link to={toRealmSettings({ realm, tab: "events" })}>
+        {t("eventConfig")}
+      </Link>
+      page realm settings to configure.
+    </Trans>
+  );
+
   if (isClientEventsSearchPerformed || isUserEventsSearchPerformed) {
     return (
       <ListEmptyState
@@ -441,8 +457,8 @@ export const UserEvents = ({
         }
         instructions={
           isClientEventsSearchPerformed
-            ? t("emptyClientEventsTabInstructions")
-            : t("emptyUserEventsTabInstructions")
+            ? getEventSearchInstructions("client")
+            : getEventSearchInstructions("user")
         }
         isSearchVariant
       />
