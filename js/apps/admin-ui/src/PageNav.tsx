@@ -67,6 +67,7 @@ export const PageNav = () => {
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
   const { realmRepresentation } = useRealm();
+  const { realm } = useRealm();
 
   type SelectedItem = {
     groupId: number | string;
@@ -128,6 +129,9 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
+              {realm !== "master" && (
+                <LeftNav title="permissions" path="/permissions" />
+              )}
               {isFeatureEnabled(Feature.DeclarativeUI) &&
                 pages?.map((p) => (
                   <LeftNav
