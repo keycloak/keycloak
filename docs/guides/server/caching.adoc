@@ -318,11 +318,11 @@ m|jgroups.bind.address
 |Unicast data transmission.
 
 m|46655
-|`tcp` and `udp`
+|`tcp`, `udp` and `jdbc-ping-udp`
 m|jgroups.mcast_port
 |Multicast data transmission and initial discovery.
 By default, {project_name} uses `239.6.7.8` multicast address and can be modified with property `jgroups.mcast_addr`.
-Each cluster must use a different address so that their nodes form distinct clusters.
+Each cluster must use a different address and/or multicast port so that their nodes form distinct clusters.
 
 m|57800
 |All
