@@ -243,8 +243,8 @@ The following table shows transport stacks that are available using the `--cache
 |Stack name|Transport protocol|Discovery
 
 |`kubernetes`|TCP|Dns resolution - `DNS_PING` protocol. It requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to your `JAVA_OPTS_APPEND` environment variable.
-|`tcp` (deprecated)|TCP|IP multicast - `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` for each cluster.
-|`udp` (deprecated)|UDP|IP multicast - `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` for each cluster.
+|`tcp` (deprecated)|TCP|IP multicast - `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
+|`udp` (deprecated)|UDP|IP multicast - `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |===
 
 ====
@@ -307,17 +307,21 @@ For more information about securing cache communication, see the {infinispan_emb
 == Network Ports
 
 To ensure a healthy {project_name} clustering, some network ports need to be open.
-The table below shows the ports that need to be open for your {project_name} server and describe what it is used for.
+The table below shows the ports that need to be open, the protocol used, and a description of the traffic that goes through it.
 
 |===
-|Port |Stack |Property | Description
+|Port |Protocol |Stack |Property | Description
 
-m|7800
-|All
-m|jgroups.bind.address
-|Unicast data transmission.
+.2+.^m|7800
+| TCP
+|TCP based stacks
+.2+m|jgroups.bind.address
+.2+|Unicast data transmission.
+|UDP
+|UDP based stacks
 
 m|46655
+|UDP
 |`tcp`, `udp` and `jdbc-ping-udp`
 m|jgroups.mcast_port
 |Multicast data transmission and initial discovery.
@@ -325,6 +329,7 @@ By default, {project_name} uses `239.6.7.8` multicast address and can be modifie
 Each cluster must use a different address and/or multicast port so that their nodes form distinct clusters.
 
 m|57800
+|TCP
 |All
 m|jgroups.fd.port-offset
 |Failure detection by protocol `FD_SOCK2`.
