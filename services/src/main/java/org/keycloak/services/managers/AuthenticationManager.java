@@ -804,9 +804,7 @@ public class AuthenticationManager {
     }
 
     public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
-        if (session == null) {
-            throw new IllegalArgumentException("User session cannot be null");
-        }
+        assert session != null : "User session cannot be null";
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
         IdentityCookieToken identityCookieToken = createIdentityToken(keycloakSession, realm, user, session, issuer);
         String encoded = keycloakSession.tokens().encode(identityCookieToken);

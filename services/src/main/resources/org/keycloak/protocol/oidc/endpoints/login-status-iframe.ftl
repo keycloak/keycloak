@@ -4,6 +4,9 @@
     <meta charset="utf-8">
   </head>
   <body>
+    <#if !isSecureContext>
+      <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
+    </#if>
     <script type="module">
       window.addEventListener("message", onMessage);
 
@@ -49,7 +52,7 @@
             preventAdditionalRequests = true;
           }
 
-          const url = new URL(`${location.origin}${location.pathname}/init`);
+          const url = new URL(window.location.origin + window.location.pathname + "/init");
 
           url.searchParams.set("client_id", clientId);
           url.searchParams.set("origin", origin);
