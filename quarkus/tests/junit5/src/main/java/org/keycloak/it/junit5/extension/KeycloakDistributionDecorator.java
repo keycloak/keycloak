@@ -143,4 +143,9 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
         throw new IllegalArgumentException("Not a " + type + " type");
     }
+
+    @Override
+    public void clearEnv() {
+        delegate.clearEnv();
+    }
 }

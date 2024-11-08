@@ -27,22 +27,34 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
 
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperties;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
     
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin = new DryRunMixin();
+
     @Override
     public void run() {
         Environment.setParsedCommand(this);
         doBeforeRun();
-        CommandLine cmd = spec.commandLine();
         HttpPropertyMappers.validateConfig();
         HostnameV2PropertyMappers.validateConfig();
         validateConfig();
 
-        picocli.start(cmd);
+        if (isDevProfile()) {
+            picocli.getOutWriter()
+                    .println(Ansi.AUTO.string(new StringBuilder("@|bold,red").append(
+                            "Running the server in development mode. DO NOT use this configuration in production.")
+                            .toString()));
+        }
+        if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+            picocli.start();
+        }
     }
 
     protected void doBeforeRun() {

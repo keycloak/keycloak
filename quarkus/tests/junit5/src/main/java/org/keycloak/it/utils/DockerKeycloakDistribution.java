@@ -121,7 +121,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         } finally {
             if (!manualStop) {
                 stop();
-                envVars.clear();
             }
         }
 
@@ -267,6 +266,11 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
     }
 
 }

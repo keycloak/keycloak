@@ -32,6 +32,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -101,6 +102,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
             configureEnvVars(context.getRequiredTestClass().getAnnotation(WithEnvVars.class));
             configureEnvVars(context.getRequiredTestMethod().getAnnotation(WithEnvVars.class));
+            boolean dryRun = context.getRequiredTestMethod().getAnnotation(DryRun.class) != null;
+            if (dryRun && isRaw()) {
+                dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
+                dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+            }
 
             if (launch != null) {
                 result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
@@ -125,13 +131,17 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             return;
         }
 
-        if (RAW.equals(DistributionType.getCurrent().orElse(RAW))) {
+        if (isRaw()) {
             try {
                 dist.unwrap(RawKeycloakDistribution.class).copyProvider(provider.value().getDeclaredConstructor().newInstance());
             } catch (Exception cause) {
                 throw new RuntimeException("Failed to instantiate test provider: " + provider.getClass(), cause);
             }
         }
+    }
+
+    private boolean isRaw() {
+        return RAW.equals(DistributionType.getCurrent().orElse(RAW));
     }
 
     @Override
@@ -171,6 +181,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (dist != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
             dist.stop();
+            dist.clearEnv();
 
             if (distConfig != null && DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
                 dist = null;
@@ -195,7 +206,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             infinispanContainer.stop();
         }
         result = null;
-        if (RAW.equals(DistributionType.getCurrent().orElse(RAW))) {
+        if (isRaw()) {
             if (distConfig != null && !DistributionTest.ReInstall.NEVER.equals(distConfig.reInstall()) && dist != null) {
                 try {
                     FileUtil.deleteDirectory(getDistPath().getDistRootPath().resolve("conf"));

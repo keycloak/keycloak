@@ -187,7 +187,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             }
             if (!manualStop) {
                 stop();
-                envVars.clear();
             }
         }
 
@@ -707,5 +706,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
     }
 }

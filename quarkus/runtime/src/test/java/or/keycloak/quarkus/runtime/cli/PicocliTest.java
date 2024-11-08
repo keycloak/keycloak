@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
@@ -70,28 +71,22 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected PrintWriter getErrWriter() {
+        public PrintWriter getErrWriter() {
             return new PrintWriter(err, true);
         }
         
         @Override
-        protected PrintWriter getOutWriter() {
+        public PrintWriter getOutWriter() {
             return new PrintWriter(out, true);
         }
 
         @Override
-        protected void exitOnFailure(int exitCode, CommandLine cmd) {
+        public void exitOnFailure(int exitCode) {
             this.exitCode = exitCode;
         }
 
         @Override
-        public void parseAndRun(List<String> cliArgs) {
-            config = createConfig();
-            super.parseAndRun(cliArgs);
-        }
-        
-        @Override
-        public void start(CommandLine cmd) {
+        public void start() {
             // skip
         }
         
@@ -106,8 +101,9 @@ public class PicocliTest extends AbstractConfigurationTest {
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
         ConfigArgsConfigSource.setCliArgs(args);
-        var cliArgs = Picocli.parseArgs(args);
-        nonRunningPicocli.parseAndRun(cliArgs);
+        // TODO: this needs refined, otherwise profile handling will not be correct   
+        nonRunningPicocli.config = createConfig();
+        KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
     }
 
@@ -271,7 +267,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void failStartBuildDev() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "start");
         assertThat(nonRunningPicocli.getErrString(), containsString("You can not 'start' the server in development mode."));
-        assertEquals(CommandLine.ExitCode.SOFTWARE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
     
     @Test

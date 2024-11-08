@@ -31,22 +31,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 public class StartCommandDistTest {
 
-    private static final Logger log = LoggerFactory.getLogger(StartCommandDistTest.class);
-
+    @DryRun
     @Test
     @Launch({ "start", "--hostname-strict=false" })
     void failNoTls(LaunchResult result) {
@@ -54,6 +52,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--spi-events-listener-jboss-logging-success-level" })
     void failSpiArgMissingValue(LaunchResult result) {
@@ -61,6 +60,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
+    @DryRun
     @Test
     @Launch({ "build", "--spi-events-listener-jboss-logging-success-level=debug" })
     void warnSpiRuntimeAtBuildtime(LaunchResult result) {
@@ -68,6 +68,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
 
+    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
@@ -78,6 +79,7 @@ public class StartCommandDistTest {
         result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
 
+    @DryRun
     @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
@@ -86,9 +88,10 @@ public class StartCommandDistTest {
         result.assertBuild();
 
         result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
-        result.assertStarted();
+        result.assertNoError("The following build time options");
     }
 
+    @DryRun
     @Test
     @Launch({ "--profile=dev", "start" })
     void failUsingDevProfile(LaunchResult result) {
@@ -103,6 +106,7 @@ public class StartCommandDistTest {
         cliResult.assertStarted();
     }
 
+    @DryRun
     @Test
     @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
     void failBuildPropertyNotAvailable(LaunchResult result) {
@@ -110,6 +114,7 @@ public class StartCommandDistTest {
         cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
+    @DryRun
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
@@ -118,6 +123,8 @@ public class StartCommandDistTest {
         assertEquals(4, cliResult.getErrorStream().size());
     }
 
+    @DryRun
+    @WithEnvVars({"KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
     @Test
     @Launch({ "start", "--optimized" })
     @Order(1)
@@ -126,6 +133,7 @@ public class StartCommandDistTest {
         cliResult.assertError("The '--optimized' flag was used for first ever server start.");
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
@@ -141,6 +149,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     void testStartUsingAutoBuild(LaunchResult result) {
@@ -153,9 +162,10 @@ public class StartCommandDistTest {
         cliResult.assertMessage("Next time you run the server, just run:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--db=postgres" })
     void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
@@ -163,6 +173,7 @@ public class StartCommandDistTest {
         cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--cache-remote-host=localhost", "--hostname-strict=false", "--cache-remote-tls-enabled=false", "--transaction-xa-enabled=true" })
     void testStartNoWarningOnDisabledRuntimeOption(LaunchResult result) {
@@ -170,14 +181,16 @@ public class StartCommandDistTest {
         cliResult.assertNoMessage("cache-remote-tls-enabled: Available only when remote host is set");
     }
 
+    @DryRun
     @Test
     @WithEnvVars({"KC_LOG", "invalid"})
-    @Launch({ "start" })
+    @Launch({ "start", "--http-enabled=false", "--hostname-strict=false" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog");
     }
 
+    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistribution dist) {
@@ -188,30 +201,31 @@ public class StartCommandDistTest {
         cliResult.assertMessage("- db=postgres > db=dev-file"); // back to the default value
         cliResult.assertMessage("- features=preview > features=<unset>"); // no default value, the <unset> is shown
         cliResult.assertMessage("To avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.");
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
         // should not show warning if the re-augmentation did not happen through the build command
         // an optimized server image should ideally be created by running a build
         cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:");
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
         dist.run("build", "--db=postgres");
         cliResult = dist.run("start", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertMessage("- db=postgres > db=dev-file");
         cliResult.assertNoMessage("- features=preview > features=<unset>");
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
         dist.run("build", "--db=postgres");
         cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertMessage("- db=postgres > db=dev-mem"); // option overridden during the start
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
         dist.run("build", "--db=dev-mem");
         cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("- db=postgres > db=postgres"); // option did not change not need to show
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
         dist.run("build", "--db=dev-mem");
         cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
     }
 
+    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testStartAfterStartDev(KeycloakDistribution dist) {
@@ -219,9 +233,11 @@ public class StartCommandDistTest {
         cliResult.assertStartedDevMode();
 
         cliResult = dist.run("start", "--http-enabled", "true", "--hostname-strict", "false");
-        cliResult.assertStarted();
+        cliResult.assertNotDevMode();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
@@ -232,6 +248,7 @@ public class StartCommandDistTest {
         cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
+    @DryRun
     @Test
     @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/non-existing.conf", "start"})
     void testInvalidConfigFileOption(LaunchResult result) {

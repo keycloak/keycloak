@@ -21,10 +21,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@Target(ElementType.TYPE)
-@ExtendWith({ CLITestExtension.class })
+/**
+ * {@link DryRun} is used to configure a non-running, non-augmenting distribution
+ */
+@Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CLITest {
+public @interface DryRun {
+
 }

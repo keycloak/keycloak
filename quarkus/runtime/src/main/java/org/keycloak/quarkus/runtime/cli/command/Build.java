@@ -28,6 +28,7 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
@@ -65,6 +66,9 @@ public final class Build extends AbstractCommand implements Runnable {
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin;
+
     @Override
     public void run() {
         if (org.keycloak.common.util.Environment.getProfile() == null) {
@@ -81,7 +85,11 @@ public final class Build extends AbstractCommand implements Runnable {
             configureBuildClassLoader();
 
             beforeReaugmentationOnWindows();
-            picocli.build();
+            if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+                picocli.build();
+            } else if (DryRunMixin.isDryRunBuild()) {
+                PersistedConfigSource.getInstance().saveDryRunProperties();
+            }
 
             if (!isDevProfile()) {
                 println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
