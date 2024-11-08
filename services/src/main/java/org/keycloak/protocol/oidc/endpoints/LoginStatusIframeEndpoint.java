@@ -57,9 +57,9 @@ public class LoginStatusIframeEndpoint {
     public Response getLoginStatusIframe(@QueryParam("version") String version) {
         final var map = new HashMap<String, Object>();
         final var isSecureContext = SecureContextResolver.isSecureContext(session);
-        final var adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
+        final var serverBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
         map.put("isSecureContext", isSecureContext);
-        map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
+        map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
 
         return IframeUtil.returnIframe(version, session, () -> {
             try {
