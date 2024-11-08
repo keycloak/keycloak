@@ -220,22 +220,21 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `jdbc-ping-udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping-udp` when distributed caches are enabled, which is backwards compatible with the 26.x release stream of {project_name}.
+
+Starting with the 27.x release stream, {project_name}'s new default will change to `jdbc-ping` as it is considered simpler to configure and as it works also environments that do not support the UDP protocol.
 
 === Available transport stacks
 
-The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` build option:
+The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` runtime option:
 
 [%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
 
-|`tcp`|TCP|IP multicast - `MPING` protocol.
-|`udp`|UDP|IP multicast - `PING` protocol.
-|`jdbc-ping-udp`|UDP|Database registry - `JDBC_PING2` protocol.
 |`jdbc-ping`|TCP|Database registry - `JDBC_PING2` protocol.
+|`jdbc-ping-udp` (deprecated)|UDP|Database registry - `JDBC_PING2` protocol.
 |===
-
 
 The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
@@ -243,7 +242,9 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|`kubernetes`|TCP|Dns resolution - `DNS_PING` protocol. It requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable.
+|`kubernetes`|TCP|Dns resolution - `DNS_PING` protocol. It requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to your `JAVA_OPTS_APPEND` environment variable.
+|`tcp` (deprecated)|TCP|IP multicast - `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` for each cluster.
+|`udp` (deprecated)|UDP|IP multicast - `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` for each cluster.
 |===
 
 ====
@@ -321,6 +322,7 @@ m|46655
 m|jgroups.mcast_port
 |Multicast data transmission and initial discovery.
 By default, {project_name} uses `239.6.7.8` multicast address and can be modified with property `jgroups.mcast_addr`.
+Each cluster must use a different address so that their nodes form distinct clusters.
 
 m|57800
 |All
@@ -331,33 +333,7 @@ The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.
 
 |===
 
-NOTE: Use `-D<property>=<value` to modify the ports above in your `JAVA_OPTS_APPEND` or in your CLI command.
-
-=== Removing `FD_SOCK2`
-
-As well as `FD_SOCK2`, the default JGroups stack has another failure detection protocol, `FD_ALL`.
-`FD_ALL` uses heartbeats and can be used standalone; however, it may take more time to detect a {project_name} server fail.
-
-If it is desired to reduce the number of ports open in your Firewall, `FD_SOCK2` can be safely removed from the stack.
-The example below, shows how to remove it from the `tcp` stack.
-
-[source,xml]
-----
-<infinispan>
-    <jgroups>
-        <stack name="my-custom-stack" extends="tcp">
-            <FD_SOCK2 stack.combine="REMOVE"/>
-        </stack>
-    </jgroups>
-    <!-- configuration omitted -->
-</infinispan>
-----
-
-Then, start {project_name} with the following CLI option:
-
-<@kc.start parameters="--cache-stack=my-custom-stack"/>
-
-WARNING: It is not possible to remove `FD_SOCK2` from the `jdbc-ping` or `jdbc-ping-udp` stacks.
+NOTE: Use `-D<property>=<value` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
 == Exposing metrics from caches
 

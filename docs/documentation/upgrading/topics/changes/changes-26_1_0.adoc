@@ -34,8 +34,9 @@ To disable the virtual threads, add one of the Java system properties combinatio
 Previous versions of {project_name} used as a default UDP multicast to discover other nodes to form a cluster and to synchronize the replicated caches of {project_name}.
 This required multicast to be available and to be configured correctly, which is usually not the case in cloud environments.
 
-Starting with this version, the default changes to a configuration of JDBC_PING2 which uses {project_name}'s database to discover other nodes.
+Starting with version {project_name} 26.1, the default changes to `jdbc-ping-udp` configuration of JDBC_PING2 which uses {project_name}'s database to discover other nodes.
 As this removes the need for multicast network capabilities, this is a simplification and a drop-in replacement.
+In the next major version `jdbc-ping` is planned to be the new default, therefore `jdbc-ping-udp` is now deprecated.
 
 To enable the previous behavior, choose the transport stack `udp`.
 
@@ -43,8 +44,11 @@ The {project_name} Operator will continue to configure `kubernetes` as a transpo
 
 = Deprecated transport stacks for distributed caches
 
-The `azure`, `ec2` and `google` transport stacks have been deprecated. Users should use the TCP based `jdbc-ping`
-stack as a direct replacement.
+The `tcp`, `azure`, `ec2` and `google` transport stacks have been deprecated.
+Users should use the TCP based `jdbc-ping` stack as a direct replacement.
+
+The `udp` and `jdbc-ping-udp` transport stacks have been deprecated.
+Users should use the TCP based `jdbc-ping` stack.
 
 = Defining dependencies between provider factories
 
