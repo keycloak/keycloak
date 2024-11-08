@@ -8,14 +8,12 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -84,12 +82,12 @@ final class CachingPropertyMappers {
                     .build(),
               fromOption(CachingOptions.CACHE_REMOTE_USERNAME)
                     .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
-                    .addValidator((mapper, value) -> validateCachingOptionIsPresent(mapper, value, CachingOptions.CACHE_REMOTE_PASSWORD))
+                    .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_USERNAME, CachingOptions.CACHE_REMOTE_PASSWORD))
                     .paramLabel("username")
                     .build(),
               fromOption(CachingOptions.CACHE_REMOTE_PASSWORD)
                     .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
-                    .addValidator((mapper, value) -> validateCachingOptionIsPresent(mapper, value, CachingOptions.CACHE_REMOTE_USERNAME))
+                    .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_PASSWORD, CachingOptions.CACHE_REMOTE_USERNAME))
                     .paramLabel("password")
                     .isMasked(true)
                     .build(),
@@ -167,12 +165,9 @@ final class CachingPropertyMappers {
         return InfinispanUtils.isRemoteInfinispan() || Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE);
     }
 
-    private static  <T> void validateCachingOptionIsPresent(PropertyMapper<T> mapper, ConfigValue value, Option<?> other) {
-        if (StringUtil.isNullOrEmpty(value.getValue())) {
-            return;
+    private static void validateCachingOptionIsPresent(Option<?> optionSet, Option<?> optionRequired) {
+        if (getOptionalKcValue(optionRequired).isEmpty()) {
+            throw new PropertyException("The option '%s' is required when '%s' is set.".formatted(optionRequired.getKey(), optionSet.getKey()));
         }
-        if (getOptionalKcValue(other).isEmpty()) {
-            throw new PropertyException(other.getKey() + " required when " + mapper.getOption().getKey() + " is set.");
-        };
     }
 }

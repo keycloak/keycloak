@@ -46,6 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.config.DeprecatedMetadata;
@@ -521,42 +522,19 @@ public class Picocli {
     }
 
     private static void handleDisabled(Set<String> disabledInUse, PropertyMapper<?> mapper) {
-        String optionName = mapper.getFrom();
-        if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
-            optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
-        }
-
-        final StringBuilder sb = new StringBuilder("\t- ");
-        sb.append(optionName);
-
-        if (mapper.getEnabledWhen().isPresent()) {
-            final String enabledWhen = mapper.getEnabledWhen().get();
-            sb.append(": ");
-            sb.append(enabledWhen);
-            if (!enabledWhen.endsWith(".")) {
-                sb.append(".");
-            }
-        }
-        disabledInUse.add(sb.toString());
+        handleMessage(disabledInUse, mapper, PropertyMapper::getEnabledWhen);
     }
 
     private static void handleRequired(Set<String> requiredOptions, PropertyMapper<?> mapper) {
-        String optionName = mapper.getFrom();
-        if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
-            optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
-        }
+        handleMessage(requiredOptions, mapper, PropertyMapper::getRequiredWhen);
+    }
 
+    private static void handleMessage(Set<String> messages, PropertyMapper<?> mapper, Function<PropertyMapper<?>, Optional<String>> retrieveMessage) {
+        var optionName = mapper.getOption().getKey();
         final StringBuilder sb = new StringBuilder("\t- ");
         sb.append(optionName);
-        mapper.getRequiredWhen().ifPresent(msg -> {
-            sb.append(": ");
-            sb.append(msg);
-            if (!msg.endsWith(".")) {
-                sb.append(".");
-            }
-        });
-
-        requiredOptions.add(sb.toString());
+        retrieveMessage.apply(mapper).ifPresent(msg -> sb.append(": ").append(msg).append("."));
+        messages.add(sb.toString());
     }
 
     private static void warn(String text, PrintWriter outwriter) {

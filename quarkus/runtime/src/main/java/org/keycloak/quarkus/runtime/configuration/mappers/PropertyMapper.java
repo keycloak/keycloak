@@ -398,8 +398,9 @@ public class PropertyMapper<T> {
          * <p>
          * This check is only run in runtime mode.
          */
-        public Builder<T> isRequired(BooleanSupplier isRequired, String enabledWhen) {
-            this.requiredWhen = Objects.requireNonNull(enabledWhen);
+        public Builder<T> isRequired(BooleanSupplier isRequired, String requiredWhen) {
+            this.requiredWhen = Objects.requireNonNull(requiredWhen);
+            assert !requiredWhen.endsWith(".");
             return isRequired(isRequired);
         }
 

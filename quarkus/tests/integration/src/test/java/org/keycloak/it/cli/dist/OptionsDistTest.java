@@ -176,14 +176,14 @@ public class OptionsDistTest {
     @Order(16)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-username=user"})
     public void testCacheRemoteUsernameWithoutCacheRemotePassword(LaunchResult result) {
-        assertErrorStreamContains(result, "cache-remote-password required when cache-remote-username is set.");
+        assertErrorStreamContains(result, "The option 'cache-remote-password' is required when 'cache-remote-username' is set.");
     }
 
     @Test
     @Order(17)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-password=secret"})
     public void testCacheRemotePasswordWithoutCacheRemoteUsername(LaunchResult result) {
-        assertErrorStreamContains(result, "cache-remote-username required when cache-remote-password is set.");
+        assertErrorStreamContains(result, "The option 'cache-remote-username' is required when 'cache-remote-password' is set.");
     }
 
     private static void assertDisabledDueToMissingRemoteHost(LaunchResult result, String option) {
