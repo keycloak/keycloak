@@ -1,4 +1,4 @@
-package org.keycloak.test.showcase;
+package org.keycloak.test.tmp;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
