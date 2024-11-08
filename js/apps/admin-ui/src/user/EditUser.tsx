@@ -94,6 +94,8 @@ export default function EditUser() {
   const isFeatureEnabled = useIsFeatureEnabled();
   const showOrganizations =
     isFeatureEnabled(Feature.Organizations) && realm?.organizationsEnabled;
+  const [isUserEventsSearchPerformed, setIsUserEventsSearchPerformed] =
+    useState(true);
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -118,16 +120,19 @@ export default function EditUser() {
   useFetch(
     async () =>
       Promise.all([
-        adminClient.users.findOne({
-          id: id!,
-          userProfileMetadata: true,
-        }) as UIUserRepresentation | undefined,
+        adminClient.users.findOne({ id: id!, userProfileMetadata: true }) as
+          | UIUserRepresentation
+          | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
         adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
         showOrganizations
           ? adminClient.organizations.find({ first: 0, max: 1 })
           : [],
+        adminClient.realms.findEvents({
+          realm: realmName,
+          user: id!,
+        }),
       ]),
     ([
       userData,
@@ -135,6 +140,7 @@ export default function EditUser() {
       unmanagedAttributes,
       upConfig,
       organizations,
+      events,
     ]) => {
       if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
@@ -157,10 +163,13 @@ export default function EditUser() {
 
       const isBruteForceProtected = realm.bruteForceProtected;
       const isLocked = isBruteForceProtected && attackDetection.disabled;
-
       setBruteForced({ isBruteForceProtected, isLocked });
-      setRealmHasOrganizations(organizations.length === 1);
 
+      if (events && events.length > 0) {
+        setIsUserEventsSearchPerformed(false);
+      }
+
+      setRealmHasOrganizations(organizations.length === 1);
       form.reset(toUserFormFields(user));
     },
     [refreshCount],
@@ -432,7 +441,10 @@ export default function EditUser() {
                   title={<TabTitleText>{t("userEvents")}</TabTitleText>}
                   {...userEventsTab}
                 >
-                  <UserEvents user={user.id} />
+                  <UserEvents
+                    isUserEventsSearchPerformed={isUserEventsSearchPerformed}
+                    user={user.id}
+                  />
                 </Tab>
               )}
             </RoutableTabs>

@@ -114,9 +114,16 @@ const UserDetailLink = (event: EventRepresentation) => {
 type UserEventsProps = {
   user?: string;
   client?: string;
+  isClientEventsSearchPerformed?: boolean;
+  isUserEventsSearchPerformed?: boolean;
 };
 
-export const UserEvents = ({ user, client }: UserEventsProps) => {
+export const UserEvents = ({
+  user,
+  client,
+  isClientEventsSearchPerformed,
+  isUserEventsSearchPerformed,
+}: UserEventsProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -423,6 +430,24 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
       </FormProvider>
     );
   };
+
+  if (isClientEventsSearchPerformed || isUserEventsSearchPerformed) {
+    return (
+      <ListEmptyState
+        message={
+          isClientEventsSearchPerformed
+            ? t("emptyClientEvents")
+            : t("emptyUserEvents")
+        }
+        instructions={
+          isClientEventsSearchPerformed
+            ? t("emptyClientEventsTabInstructions")
+            : t("emptyUserEventsTabInstructions")
+        }
+        isSearchVariant
+      />
+    );
+  }
 
   return (
     <div className="keycloak__events_table">

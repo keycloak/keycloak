@@ -220,6 +220,8 @@ export default function ClientDetails() {
   });
 
   const [client, setClient] = useState<ClientRepresentation>();
+  const [isClientEventsSearchPerformed, setIsClientEventsSearchPerformed] =
+    useState(true);
 
   const loader = async () => {
     const roles = await adminClient.clients.listRoles({ id: clientId });
@@ -307,13 +309,26 @@ export default function ClientDetails() {
   };
 
   useFetch(
-    () => adminClient.clients.findOne({ id: clientId }),
-    (fetchedClient) => {
+    async () => {
+      const fetchedClient = await adminClient.clients.findOne({ id: clientId });
+      const events = await adminClient.realms.findEvents({
+        realm,
+        client: fetchedClient?.clientId,
+      });
+
+      return { fetchedClient, events };
+    },
+    ({ fetchedClient, events }) => {
       if (!fetchedClient) {
         throw new Error(t("notFound"));
       }
+
       setClient(cloneDeep(fetchedClient));
       setupForm(fetchedClient);
+
+      if (events && events.length > 0) {
+        setIsClientEventsSearchPerformed(false);
+      }
     },
     [clientId, key],
   );
@@ -671,7 +686,10 @@ export default function ClientDetails() {
                 title={<TabTitleText>{t("clientEvents")}</TabTitleText>}
                 {...userEventsTab}
               >
-                <UserEvents client={client.clientId} />
+                <UserEvents
+                  isClientEventsSearchPerformed={isClientEventsSearchPerformed}
+                  client={client.clientId}
+                />
               </Tab>
             )}
           </RoutableTabs>
