@@ -47,9 +47,9 @@ import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getRsaKe
 @RunWith(Enclosed.class)
 public class OID4VCIssuerWellKnownProviderTest {
 
-    public static class TestConfigs extends OID4VCTest {
+    public static class TestAttributesOverride extends OID4VCTest {
         @Test
-        public void testCredentialConfig() {
+        public void testRealmAttributesOverrideClientAttributes() {
             OID4VCIssuerWellKnownProviderTest
                     .testCredentialConfig(suiteContext, testingClient);
         }
@@ -59,8 +59,10 @@ public class OID4VCIssuerWellKnownProviderTest {
             ClientRepresentation testClient = getTestClient("did:web:test.org");
             Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
             Map<String, String> realmAttributes = new HashMap<>();
-            clientAttributes.put("issuerDid", TEST_DID.toString());
-            realmAttributes.put("issuerDid", TEST_DID.toString());
+            // We'll change the client attributes and put the correct value in the realm
+            // attributes and expect the test to work.
+            clientAttributes.put("vc.test-credential.expiry_in_s", "20");
+            realmAttributes.put("vc.test-credential.expiry_in_s", "100");
             OID4VCIssuerWellKnownProviderTest
                     .configureTestRealm(testClient, testRealm, clientAttributes, realmAttributes);
         }
@@ -77,12 +79,14 @@ public class OID4VCIssuerWellKnownProviderTest {
 
         @Override
         public void configureTestRealm(RealmRepresentation testRealm) {
+            Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
+            Map<String, String> realmAttributes = new HashMap<>();
             OID4VCIssuerWellKnownProviderTest
                     .configureTestRealm(
                             getTestClient("did:web:test.org"),
                             testRealm,
-                            getTestCredentialDefinitionAttributes(),
-                            new HashMap<>()
+                            clientAttributes,
+                            realmAttributes
                     );
         }
     }
@@ -97,12 +101,13 @@ public class OID4VCIssuerWellKnownProviderTest {
 
         @Override
         public void configureTestRealm(RealmRepresentation testRealm) {
-            Map<String, String> clientAttributes = getTestCredentialDefinitionAttributes();
+            Map<String, String> realmAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
+            Map<String, String> clientAttributes = new HashMap<>();
             OID4VCIssuerWellKnownProviderTest.configureTestRealm(
                     getTestClient("did:web:test.org"),
                     testRealm,
                     clientAttributes,
-                    new HashMap<>()
+                    realmAttributes
             );
         }
     }
