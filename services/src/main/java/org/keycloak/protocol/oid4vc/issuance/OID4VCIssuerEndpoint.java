@@ -37,17 +37,20 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
+import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -65,6 +68,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
@@ -103,6 +107,10 @@ public class OID4VCIssuerEndpoint {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
     private Cors cors;
+
+    private static final String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
+    private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
+    private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
@@ -162,6 +170,39 @@ public class OID4VCIssuerEndpoint {
         this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
         this.isIgnoreScopeCheck = isIgnoreScopeCheck;
+    }
+
+     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession, EventBuilder event){
+        this.session = keycloakSession;
+        this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
+        this.objectMapper = new ObjectMapper();
+        this.timeProvider = new OffsetTimeProvider();
+
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        this.signingServices = new HashMap<>();
+        realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
+                .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
+
+        RealmModel realmModel = keycloakSession.getContext().getRealm();
+        this.issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
+                .orElseThrow(() -> new VCIssuerException("No issuer-did  configured."));
+        this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
+                .map(Integer::valueOf)
+                .orElse(DEFAULT_CODE_LIFESPAN_S);
+        this.isIgnoreScopeCheck = false;
+     }
+
+    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
+        ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
+                .getKeycloakSessionFactory()
+                .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
+        if (factory instanceof VCSigningServiceProviderFactory sspf) {
+            VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
+            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
+        } else {
+            throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
+        }
+
     }
 
     /**
