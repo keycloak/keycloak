@@ -464,16 +464,16 @@ spec:
     - name: http-metrics-slos
       value: '5,10,25,50,250,500'
     # tag::keycloak[]
+    # end::keycloak[]
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
     # end::keycloak-queue-size[]
+    # tag::keycloak[]
     - name: log-console-output
       value: json
     - name: metrics-enabled # <5>
       value: 'true'
-    - name: http-pool-max-threads # <6>
-      value: "200"
     # tag::keycloak-ispn[]
     - name: cache-remote-host # <1>
       value: "infinispan.keycloak.svc"

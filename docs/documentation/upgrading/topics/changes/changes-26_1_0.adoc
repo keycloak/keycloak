@@ -22,7 +22,7 @@ These APIs are no longer needed as initialization is done automatically on deman
 = Virtual Threads enabled for Infinispan and JGroups thread pools
 
 Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
-This removes the need to configure the thread pool and reduces overall memory footprint.
+This removes the need to configure the JGroups thread pool, the need to align the JGroups thread pool with the HTTP worker thread pool, and reduces the overall memory footprint.
 To disable the virtual threads, add one of the Java system properties combinations to your deployment:
 
 * `-Dorg.infinispan.threads.virtual=false`: disables virtual thread in both Infinispan and JGroups.
@@ -60,3 +60,14 @@ The `robots.txt` file, previously included by default, is now removed. The defau
 Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, with two sessions, one online and one offline.
 
 Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
+
+= New client scope `service_account` for `client_credentials` grant mappers
+
+{project_name} introduces a new client scope at the realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
+
+Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
+
+= Admin events might include now additional details about the context when the event is fired
+
+In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
+expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.

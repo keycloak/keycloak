@@ -89,7 +89,7 @@ public class FeaturesDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=token-exchange,admin-fine-grained-authz"})
+    @Launch({StartDev.NAME, "--features=token-exchange,admin-fine-grained-authz:v1"})
     public void testEnableMultipleFeatures(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
@@ -100,7 +100,7 @@ public class FeaturesDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=\"token-exchange,admin-fine-grained-authz\""})
+    @Launch({StartDev.NAME, "--features=\"token-exchange,admin-fine-grained-authz:v1\""})
     public void testWinEnableMultipleFeatures(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();

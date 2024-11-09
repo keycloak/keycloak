@@ -191,6 +191,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             user.joinGroup(group, metadata);
+            OrganizationModel.OrganizationMemberJoinEvent.fire(organization, user, session);
         } finally {
             if (current == null) {
                 session.getContext().setOrganization(null);
@@ -429,6 +430,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 }
             }
         }
+
+        OrganizationModel.OrganizationMemberLeaveEvent.fire(organization, member, session);
 
         return true;
     }

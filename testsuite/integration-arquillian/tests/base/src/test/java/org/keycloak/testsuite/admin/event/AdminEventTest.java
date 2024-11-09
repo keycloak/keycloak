@@ -23,8 +23,12 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -35,6 +39,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -110,6 +115,30 @@ public class AdminEventTest extends AbstractEventTest {
         assertThat(details.getClientId(), is(notNullValue()));
         assertThat(details.getUserId(), is(notNullValue()));
         assertThat(details.getIpAddress(), is(notNullValue()));
+    }
+
+    @Test
+    public void testEventDetails() {
+        String userId = createUser("user5");
+        UserRepresentation userRep = testRealmResource().users().get(userId).toRepresentation();
+        RealmRepresentation realmRep = testRealmResource().toRepresentation();
+        realmRep.setOrganizationsEnabled(true);
+        testRealmResource().update(realmRep);
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        orgRep.setName("test-org");
+        orgRep.setAlias(orgRep.getName());
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgRep.getName()));
+        testRealmResource().organizations().create(orgRep).close();
+        orgRep = testRealmResource().organizations().getAll().get(0);
+        testRealmResource().organizations().get(orgRep.getId()).members().addMember(userId).close();
+        List<AdminEventRepresentation> events = events();
+        assertThat(events().size(), is(equalTo(4)));
+
+        AdminEventRepresentation event = events.get(0);
+        assertThat(event.getRealmId(), is(equalTo(realmName())));
+        assertThat(event.getOperationType(), is(equalTo("CREATE")));
+        assertThat(event.getResourceType(), is(equalTo(ResourceType.ORGANIZATION_MEMBERSHIP.name())));
+        assertThat(event.getDetails(), is(equalTo(Map.of(UserModel.USERNAME, userRep.getUsername(), UserModel.EMAIL, userRep.getEmail()))));
     }
 
     @Test

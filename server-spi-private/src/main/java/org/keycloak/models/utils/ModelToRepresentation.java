@@ -308,6 +308,7 @@ public class ModelToRepresentation {
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());
         rep.setError(adminEvent.getError());
+        rep.setDetails(adminEvent.getDetails());
 
         return rep;
     }

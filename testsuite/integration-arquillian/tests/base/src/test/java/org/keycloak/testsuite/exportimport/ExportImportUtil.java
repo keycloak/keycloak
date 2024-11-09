@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -731,6 +732,7 @@ public class ExportImportUtil {
           OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE,
           OIDCLoginProtocolFactory.ACR_SCOPE,
           OIDCLoginProtocolFactory.BASIC_SCOPE,
+          ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE,
           SamlProtocolFactory.SCOPE_ROLE_LIST
         ));
 

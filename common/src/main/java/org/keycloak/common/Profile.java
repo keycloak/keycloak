@@ -53,7 +53,9 @@ public class Profile {
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
 
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
+
+        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.EXPERIMENTAL, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
@@ -337,13 +339,13 @@ public class Profile {
      */
     private static Map<String, TreeSet<Feature>> getOrderedFeatures() {
         if (FEATURES == null) {
-            // "natural" ordering low to high between two features
-            Comparator<Feature> comparator = Comparator.comparing(Feature::getType).thenComparingInt(Feature::getVersion);
+            // "natural" ordering low to high between two features (type has precedence and then reversed version is used)
+            Comparator<Feature> comparator = Comparator.comparing(Feature::getType).thenComparing(Comparator.comparingInt(Feature::getVersion).reversed());
             // aggregate the features by unversioned key
             HashMap<String, TreeSet<Feature>> features = new HashMap<>();
             Stream.of(Feature.values()).forEach(f -> features.compute(f.getUnversionedKey(), (k, v) -> {
                 if (v == null) {
-                    v = new TreeSet<>(comparator.reversed()); // we want the highest priority first
+                    v = new TreeSet<>(comparator);
                 }
                 v.add(f);
                 return v;

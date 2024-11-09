@@ -233,7 +233,7 @@ public class UserResource {
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
-            throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+            throw ErrorResponse.error(re.getMessage() == null ? "User is read only!" : re.getMessage(), Status.BAD_REQUEST);
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();
@@ -1030,7 +1030,13 @@ public class UserResource {
         try {
             if (user.isMemberOf(group)){
                 user.leaveGroup(group);
-                adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
+                adminEvent.operation(OperationType.DELETE)
+                        .resource(ResourceType.GROUP_MEMBERSHIP)
+                        .representation(ModelToRepresentation.toRepresentation(group, true))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, user.getUsername())
+                        .detail(UserModel.EMAIL, user.getEmail())
+                        .success();
             }
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -1057,7 +1063,13 @@ public class UserResource {
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
-            adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
+            adminEvent.operation(OperationType.CREATE)
+                    .resource(ResourceType.GROUP_MEMBERSHIP)
+                    .representation(ModelToRepresentation.toRepresentation(group, true))
+                    .resourcePath(session.getContext().getUri())
+                    .detail(UserModel.USERNAME, user.getUsername())
+                    .detail(UserModel.EMAIL, user.getEmail())
+                    .success();
         }
     }
 

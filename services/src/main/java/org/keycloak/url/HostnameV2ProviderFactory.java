@@ -53,7 +53,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
         } else if (hostnameRaw != null && !strictMode) {
             // We might not need this validation as it doesn't matter in this case if strict is true or false. It's just for consistency – hostname XOR !strict.
 //            throw new IllegalArgumentException("hostname is configured, hostname-strict must be set to true");
-            LOGGER.info("If hostanme is specified, hostname-strict is effectively ignored");
+            LOGGER.info("If hostname is specified, hostname-strict is effectively ignored");
         }
 
         // Set hostname, can be either a full URL, or just hostname

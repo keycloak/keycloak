@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.actions;
 
+import jakarta.mail.internet.MimeMessage;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -26,6 +29,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -35,7 +39,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.Cookie;
@@ -81,48 +88,66 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void resetPassword() throws Exception {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm())
+                .addEventsListener(EmailEventListenerProviderFactory.ID)
+                .update();
+             UserAttributeUpdater userUpdater = new UserAttributeUpdater(ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost"))
+                .setEmailVerified(true)
+                .update()) {
 
-        events.expectLogin().assertEvent();
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
 
-        doAIA();
+            events.expectLogin().assertEvent();
 
-        changePasswordPage.assertCurrent();
-        assertTrue(changePasswordPage.isCancelDisplayed());
+            doAIA();
 
-        Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-        String authSessionId = authSessionCookie.getValue().split("\\.")[0];
-        testingClient.server().run(session -> {
-            // ensure that our logic to detect the authentication session works as expected
-            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
-        });
+            changePasswordPage.assertCurrent();
+            assertTrue(changePasswordPage.isCancelDisplayed());
 
-        changePasswordPage.changePassword("new-password", "new-password");
+            Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+            String authSessionId = authSessionCookie.getValue().split("\\.")[0];
+            testingClient.server().run(session -> {
+                // ensure that our logic to detect the authentication session works as expected
+                RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+                assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+            });
 
-        testingClient.server().run(session -> {
-            // ensure that the authentication session has been terminated
-            RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-            assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
-        });
+            changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+            testingClient.server().run(session -> {
+                // ensure that the authentication session has been terminated
+                RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+                assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+            });
 
-        assertKcActionStatus(SUCCESS);
+            events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+            Assert.assertEquals(2, receivedMessages.length);
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            Assert.assertEquals("Update password", receivedMessages[0].getSubject());
+            Assert.assertEquals("Update credential", receivedMessages[1].getSubject());
+            MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getText(),
+                    Matchers.startsWith("Your password credential was changed"));
+            MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getHtml(),
+                    Matchers.containsString("Your password credential was changed"));
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+            assertKcActionStatus(SUCCESS);
 
-        loginPage.open();
-        loginPage.login("test-user@localhost", "new-password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        events.expectLogin().assertEvent();
+            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+
+            events.expectLogout(loginEvent.getSessionId()).assertEvent();
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", "new-password");
+
+            events.expectLogin().assertEvent();
+        }
     }
 
     @Test
