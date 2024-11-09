@@ -129,9 +129,10 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
-              {realm !== "master" && (
-                <LeftNav title="permissions" path="/permissions" />
-              )}
+              {isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+                realm !== "master" && (
+                  <LeftNav title="permissions" path="/permissions" />
+                )}
               {isFeatureEnabled(Feature.DeclarativeUI) &&
                 pages?.map((p) => (
                   <LeftNav
