@@ -259,7 +259,7 @@ public class AuthzClient {
     }
 
     public TokenCallable createPatSupplier(String userName, String password) {
-        if (patSupplier == null) {
+                if (patSupplier == null) {
             patSupplier = createRefreshableAccessTokenSupplier(userName, password);
         }
         return patSupplier;
