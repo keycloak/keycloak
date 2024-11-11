@@ -86,7 +86,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
-        return new OID4VCIssuerEndpoint(keycloakSession,event);
+        return new OID4VCIssuerEndpoint(keycloakSession);
     }
 
     @Override

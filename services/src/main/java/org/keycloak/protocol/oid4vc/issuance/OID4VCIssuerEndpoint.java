@@ -172,7 +172,7 @@ public class OID4VCIssuerEndpoint {
         this.isIgnoreScopeCheck = isIgnoreScopeCheck;
     }
 
-     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession, EventBuilder event){
+     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession){
         this.session = keycloakSession;
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
         this.objectMapper = new ObjectMapper();
