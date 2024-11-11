@@ -216,10 +216,15 @@ public final class ClientPoliciesUtil {
     }
 
     public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired) {
+        return createSecureRequestObjectExecutorConfig(availablePeriod, verifyNbf, encryptionRequired, null);
+    }
+
+    public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired, Integer allowedClockSkew) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
         if (encryptionRequired != null) config.setEncryptionRequired(encryptionRequired);
+        if (allowedClockSkew != null) config.setAllowedClockSkew(allowedClockSkew);
         return config;
     }
 
