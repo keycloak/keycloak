@@ -19,7 +19,6 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -41,16 +40,24 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
             "claim and this claim will be validated", ProviderConfigProperty.BOOLEAN_TYPE, true);
 
     public static final String AVAILABLE_PERIOD = "available-period";
-    public static final String ENCRYPTION_REQUIRED = "encryption-required";
 
     private static final ProviderConfigProperty AVAILABLE_PERIOD_PROPERTY = new ProviderConfigProperty(
             AVAILABLE_PERIOD, "Available Period", "The maximum period in seconds for which the 'request' object used in OIDC authorization request is considered valid. " +
             "It is used if 'Verify Not-Before' is ON.", ProviderConfigProperty.STRING_TYPE, "3600");
 
+    public static final String ENCRYPTION_REQUIRED = "encryption-required";
+
     private static final ProviderConfigProperty ENCRYPTION_REQUIRED_PROPERTY = new ProviderConfigProperty(
             ENCRYPTION_REQUIRED, "Encryption Required", "Whether request object encryption is required. If enabled, request objects must be encrypted. Otherwise, encryption is optional.",
             ProviderConfigProperty.BOOLEAN_TYPE, Boolean.FALSE);
 
+    public static final String ALLOWED_CLOCK_SKEW = "allowed-clock-skew";
+
+    private static final ProviderConfigProperty ALLOWED_CLOCK_SKEW_PROPERTY = new ProviderConfigProperty(
+             ALLOWED_CLOCK_SKEW, "Allowed Clock Skew", "The allowed clock skew (sec) between a client and Keycloak. " +
+            "For example, if nbf claim values of 'request' object is ahead from Keycloak's clock within the clock skew, Keycloak accept the object even if its nbf claim value indicates the future.",
+            ProviderConfigProperty.STRING_TYPE, "15");
+    
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
         return new SecureRequestObjectExecutor(session);
@@ -80,7 +87,7 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY, AVAILABLE_PERIOD_PROPERTY, ENCRYPTION_REQUIRED_PROPERTY));
+        return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY, AVAILABLE_PERIOD_PROPERTY, ENCRYPTION_REQUIRED_PROPERTY, ALLOWED_CLOCK_SKEW_PROPERTY));
     }
 
 }
