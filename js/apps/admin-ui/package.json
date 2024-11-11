@@ -83,7 +83,7 @@
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
-    "i18next": "^23.16.4",
+    "i18next": "^23.16.5",
     "i18next-http-backend": "^2.6.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
