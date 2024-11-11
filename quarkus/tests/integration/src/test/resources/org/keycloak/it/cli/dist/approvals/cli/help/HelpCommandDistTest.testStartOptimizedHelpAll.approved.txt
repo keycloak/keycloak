@@ -73,6 +73,9 @@ Cache:
                        specified via XML file (see 'cache-config-file' option.). If the option is
                        specified, 'cache-remote-username' and 'cache-remote-password' are required
                        as well and the related configuration in XML file should not be present.
+                       Available only when feature 'multi-site', 'clusterless' or
+                       'cache-embedded-remote-store' is set. Required when feature 'multi-site' or
+                       'clusterless' is set.
 --cache-remote-password <password>
                      The password for the authentication to the remote server for the remote store.
                        It replaces the 'password' attribute of 'digest' tag of the configuration
