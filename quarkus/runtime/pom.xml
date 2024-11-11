@@ -586,6 +586,12 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
         </dependency>
+        <dependency>
+            <!-- adding to avoid warning during compilation about "unknown enum constant org.infinispan.jmx.annotations.DataType.TRAIT" and others -->
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- required for query/search in the external Infinispan server -->
         <dependency>
             <groupId>org.infinispan</groupId>
