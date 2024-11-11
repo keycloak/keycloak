@@ -30,6 +30,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -52,6 +53,7 @@ public class QuarkusPropertiesDistTest {
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY = "quarkus.log.handler.console.\"console-2\".enable";
 
+    @DryRun
     @Test
     @Launch({"build"})
     @Order(1)
@@ -86,6 +88,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
+    @DryRun
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
     @Launch({"build"})
@@ -96,6 +99,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
+    @DryRun
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})

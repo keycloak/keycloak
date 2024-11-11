@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -40,6 +41,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StartAutoBuildDistTest {
 
+    @DryRun
     @Test
     @Launch({ "--verbose", "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
@@ -52,36 +54,40 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Next time you run the server, just run:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " --verbose start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
         assertFalse(cliResult.getOutput().contains("--cache"));
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
     void testShouldReAugIfConfigChanged(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(4)
     void testShouldNotReAugIfSameDatabase(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @Launch({ "build", "--db=postgres" })
     @Order(5)
@@ -90,15 +96,17 @@ public class StartAutoBuildDistTest {
         cliResult.assertBuild();
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-        cliResult.assertStarted();
+        assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false" })
     @Order(7)
@@ -107,6 +115,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertBuild();
     }
 
+    @DryRun
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
@@ -115,6 +124,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertNoBuild();
     }
 
+    @DryRun
     @Test
     @Launch({ "start-dev" })
     @Order(8)
@@ -124,6 +134,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    @DryRun
     @Test
     @Launch({ "start-dev" })
     @Order(9)
@@ -132,7 +143,8 @@ public class StartAutoBuildDistTest {
         assertFalse(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
         cliResult.assertStartedDevMode();
     }
-    
+
+    @DryRun
     @Test
     @TestProvider(CustomUserProvider.class)
     @Order(10)
@@ -141,11 +153,11 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
         dist.stop();
-        
+
         // we should persist the spi provider and know not to rebuild
         cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertNoMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
     }
-    
+
 }

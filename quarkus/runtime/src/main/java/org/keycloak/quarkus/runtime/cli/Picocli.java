@@ -99,7 +99,7 @@ public class Picocli {
         boolean includeRuntime;
         boolean includeBuildTime;
     }
-    
+
     private ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
 
     public void parseAndRun(List<String> cliArgs) {
@@ -129,19 +129,15 @@ public class Picocli {
                 exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
             } else {
                 PropertyMappers.sanitizeDisabledMappers();
-                exitCode = run(cmd, argArray);
+                exitCode = cmd.execute(argArray);
             }
 
-            exitOnFailure(exitCode);
+            exit(exitCode);
         } catch (ParameterException parEx) {
             catchParameterException(parEx, cmd, argArray);
         } catch (ProfileException | PropertyException proEx) {
             usageException(proEx.getMessage(), proEx.getCause());
         }
-    }
-
-    protected int run(CommandLine cmd, String[] argArray) {
-        return cmd.execute(argArray);
     }
 
     private CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
@@ -189,15 +185,15 @@ public class Picocli {
             errorHandler.error(cmd.getErr(), e.getMessage(), null);
             exitCode = parEx.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
         }
-        exitOnFailure(exitCode);
+        exit(exitCode);
     }
 
     public void usageException(String message, Throwable cause) {
         errorHandler.error(getErrWriter(), message, cause);
-        exitOnFailure(CommandLine.ExitCode.USAGE);
+        exit(CommandLine.ExitCode.USAGE);
     }
 
-    public void exitOnFailure(int exitCode) {
+    public void exit(int exitCode) {
         // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
         System.exit(exitCode);
     }
@@ -560,7 +556,7 @@ public class Picocli {
                     return;
                 }
             } else if (name.startsWith(MicroProfileConfigProvider.NS_QUARKUS)) {
-                // TODO: this is not correct - we are including runtime properties here, but at least they 
+                // TODO: this is not correct - we are including runtime properties here, but at least they
                 // are already coming from a file
                 quarkus = true;
             } else if (!PropertyMappers.isSpiBuildTimeProperty(name)) {
@@ -627,7 +623,7 @@ public class Picocli {
     public PrintWriter getErrWriter() {
         return new PrintWriter(System.err, true);
     }
-    
+
     public PrintWriter getOutWriter() {
         return new PrintWriter(System.out, true);
     }

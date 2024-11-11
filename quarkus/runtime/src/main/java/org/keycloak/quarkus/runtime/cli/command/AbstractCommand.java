@@ -75,7 +75,7 @@ public abstract class AbstractCommand {
     public Optional<CommandLine> getCommandLine() {
         return Optional.ofNullable(spec).map(CommandSpec::commandLine);
     }
-    
+
     public void setPicocli(Picocli picocli) {
         this.picocli = picocli;
     }

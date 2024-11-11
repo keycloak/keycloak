@@ -30,6 +30,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -98,7 +99,7 @@ public abstract class AbstractConfigurationTest {
             System.clearProperty(key);
         }
     }
-    
+
     @AfterClass
     public static void resetConfigruation() {
         ConfigurationTest.createConfig(); // onAfter doesn't actually reset the config
@@ -124,6 +125,7 @@ public abstract class AbstractConfigurationTest {
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
+        Profile.reset();
     }
 
     protected Config.Scope initConfig(String... scope) {
@@ -164,7 +166,7 @@ public abstract class AbstractConfigurationTest {
     protected void assertExternalConfig(Map<String, String> expectedValues) {
         expectedValues.forEach(this::assertExternalConfig);
     }
-    
+
     protected static void addPersistedConfigValues(Map<String, String> values) {
         var configValueProps = PersistedConfigSource.getInstance().getConfigValueProperties();
         values.forEach((k, v) -> configValueProps.put(k, new ConfigValueBuilder().withName(k).withValue(v).build()));

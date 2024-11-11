@@ -26,6 +26,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StartDevCommandDistTest {
 
+    @DryRun
     @Test
     @Launch({ "start-dev" })
     void testDevModeWarning(LaunchResult result) {
@@ -47,6 +49,7 @@ public class StartDevCommandDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    @DryRun
     @Test
     @Launch({ "start-dev", "--db=dev-mem" })
     void testBuildPropertyAvailable(LaunchResult result) {
@@ -63,6 +66,7 @@ public class StartDevCommandDistTest {
         cliResult.assertMessage("passkeys");
     }
 
+    @DryRun
     @Test
     @Launch({ "build", "--debug" })
     void testBuildMustNotRunTwoJVMs(LaunchResult result) {
@@ -71,6 +75,7 @@ public class StartDevCommandDistTest {
         cliResult.assertBuild();
     }
 
+    @DryRun
     @Test
     @Launch({ "start-dev", "--verbose" })
     void testVerboseAfterCommand(LaunchResult result) {
@@ -88,7 +93,8 @@ public class StartDevCommandDistTest {
         assertTrue(cliResult.getOutput().contains("Listening on:"));
         cliResult.assertStartedDevMode();
     }
-    
+
+    @DryRun
     @Test
     void testStartDevThenImportRebuild(KeycloakDistribution dist) throws Exception {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
