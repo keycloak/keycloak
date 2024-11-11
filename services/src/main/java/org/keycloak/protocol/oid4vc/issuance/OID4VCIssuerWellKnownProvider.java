@@ -88,8 +88,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .toList();
 
         // Retrieving attributes from client definition.
-        // THis will be remove when token production is migrated.
-        Map<String, SupportedCredentialConfiguration> clienAttr = keycloakSession.getContext()
+        // This will be removed when token production is migrated.
+        Map<String, SupportedCredentialConfiguration> clientAttributes = keycloakSession.getContext()
                 .getRealm()
                 .getClientsStream()
                 .filter(cm -> cm.getProtocol() != null)
@@ -109,7 +109,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
 
         // Aggregating attributes. Having realm attributes take preference.
-        Map<String, SupportedCredentialConfiguration> aggregatedAttr = new HashMap<>(clienAttr);
+        Map<String, SupportedCredentialConfiguration> aggregatedAttr = new HashMap<>(clientAttributes);
         aggregatedAttr.putAll(realmAttr);
         return aggregatedAttr;
     }
@@ -131,29 +131,25 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH;
     }
 
-    private static final String VC_KEY = "vc";
+    public static final String VC_KEY = "vc";
 
     public static List<SupportedCredentialConfiguration> fromRealmAttributes(Map<String, String> realmAttributes) {
 
         Set<String> supportedCredentialIds = new HashSet<>();
         Map<String, String> attributes = new HashMap<>();
-        realmAttributes
-                .entrySet()
-                .forEach(entry -> {
-                    if (!entry.getKey().startsWith(VC_KEY)) {
-                        return;
-                    }
-                    String key = entry.getKey().substring((VC_KEY + ".").length());
-                    supportedCredentialIds.add(key.split("\\.")[0]);
-                    attributes.put(key, entry.getValue());
-                });
+        realmAttributes.forEach((entryKey, value) -> {
+            if (!entryKey.startsWith(VC_KEY)) {
+                return;
+            }
+            String key = entryKey.substring((VC_KEY + ".").length());
+            supportedCredentialIds.add(key.split("\\.")[0]);
+            attributes.put(key, value);
+        });
 
-
-        List<SupportedCredentialConfiguration> supportedCredentialConfigurations = supportedCredentialIds
+        return supportedCredentialIds
                 .stream()
                 .map(id -> SupportedCredentialConfiguration.fromDotNotation(id, attributes))
                 .toList();
-
-        return supportedCredentialConfigurations;
     }
 }
+Refactor and optimize OID4VCIssuerWellKnownProvider based on review feedback
