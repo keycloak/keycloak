@@ -1,58 +1,90 @@
 package org.keycloak.test.framework.database;
 
 import org.jboss.logging.Logger;
-import org.slf4j.LoggerFactory;
+import org.keycloak.test.framework.config.Config;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractContainerTestDatabase.class);
+    protected boolean reuse;
 
-    private JdbcDatabaseContainer<?> container;
+    protected JdbcDatabaseContainer<?> container;
 
-    @SuppressWarnings("resource")
+    public AbstractContainerTestDatabase() {
+        reuse = Config.get("kc.test.database.reuse", false, Boolean.class);
+    }
+
     public void start() {
         container = createContainer();
-        container.withStartupTimeout(Duration.ofMinutes(30))
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(AbstractContainerTestDatabase.class)))
-                .start();
+        container = container.withStartupTimeout(Duration.ofMinutes(10))
+                .withLogConsumer(new JBossLogConsumer(getLogger()))
+                .withReuse(reuse);
+        withDatabaseAndUser(getDatabase(), getUsername(), getPassword());
+        container.start();
+
         try {
-            String postStartCommand = getPostStartCommand();
+            List<String> postStartCommand = getPostStartCommand();
             if (postStartCommand != null) {
-                LOGGER.tracev("Running post start command: {0}", postStartCommand);
-                String result = container.execInContainer("bash", "-c", postStartCommand).getStdout();
-                LOGGER.tracev(result);
+                getLogger().tracev("Running post start command: {0}", String.join(" ", postStartCommand));
+                String result = container.execInContainer(postStartCommand.toArray(new String[0])).getStdout();
+                getLogger().tracev(result);
             }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public void withDatabaseAndUser(String database, String username, String password) {
+        container.withDatabaseName(database);
+        container.withUsername(username);
+        container.withPassword(password);
+    }
+
     public void stop() {
-        container.stop();
+        if (!reuse) {
+            container.stop();
+        }
     }
 
     @Override
     public Map<String, String> serverConfig() {
         return Map.of(
-                "db", getKeycloakDatabaseName(),
-                "db-url", container.getJdbcUrl(),
-                "db-username", container.getUsername(),
-                "db-password", container.getPassword()
+                "db", getDatabaseVendor(),
+                "db-url", getJdbcUrl(),
+                "db-username", getUsername(),
+                "db-password", getPassword()
         );
     }
 
     public abstract JdbcDatabaseContainer<?> createContainer();
 
-    public String getPostStartCommand() {
+    public List<String> getPostStartCommand() {
         return null;
     }
 
-    public abstract String getKeycloakDatabaseName();
+    public String getDatabase() {
+        return "keycloak";
+    }
+
+    public String getUsername() {
+        return "keycloak";
+    }
+
+    public String getPassword() {
+        return "keycloak";
+    }
+
+    public String getJdbcUrl() {
+        return container.getJdbcUrl();
+    }
+
+    public abstract String getDatabaseVendor();
+
+    public abstract Logger getLogger();
 
 }

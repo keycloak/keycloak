@@ -4,7 +4,7 @@ public class MSSQLServerDatabaseSupplier extends AbstractDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "mssql";
+        return MSSQLServerTestDatabase.NAME;
     }
 
     @Override

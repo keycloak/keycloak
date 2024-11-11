@@ -20,7 +20,7 @@ The server has built-in support for different databases. You can query the avail
 |Database | Option value | Tested Version
 
 |MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]?replace("-latest","")}
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]}
 |MySQL | `mysql` | ${properties["mysql.version"]}
 |Oracle Database | `oracle` | ${properties["oracledb.version"]}
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]}
