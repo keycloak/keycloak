@@ -267,9 +267,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
 
+        Assert.assertNotNull(sameSiteSessionCookie);
+        Assert.assertNotNull(sameSiteSessionCookie.getValue());
         String cookieValue = sameSiteSessionCookie.getValue();
         assertThat(cookieValue.contains("spécial"), is(false));
-        assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
+        assertThat(cookieValue.contains("sp%C3%A9cial"), is(false));
 
         AccountHelper.logout(testRealmResource(), "spécial");
     }

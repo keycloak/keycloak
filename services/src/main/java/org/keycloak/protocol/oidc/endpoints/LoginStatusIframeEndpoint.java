@@ -23,6 +23,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
+import org.keycloak.services.Urls;
+import org.keycloak.urls.UrlType;
+import org.keycloak.utils.FreemarkerUtils;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.GET;
@@ -31,9 +34,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.Set;
+import org.keycloak.utils.SecureContextResolver;
 
-import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -51,7 +55,20 @@ public class LoginStatusIframeEndpoint {
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getLoginStatusIframe(@QueryParam("version") String version) {
-        return returnIframeFromResources("login-status-iframe.html", version, session);
+        final var map = new HashMap<String, Object>();
+        final var isSecureContext = SecureContextResolver.isSecureContext(session);
+        final var serverBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+        map.put("isSecureContext", isSecureContext);
+        map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
+
+        return IframeUtil.returnIframe(version, session, () -> {
+            try {
+                return FreemarkerUtils.loadTemplateFromClasspath(map, "login-status-iframe.ftl", getClass());
+            } catch (Exception e) {
+                logger.error("Failure when loading login-status-iframe.ftl", e);
+                return null;
+            }
+        });
     }
 
     @GET
