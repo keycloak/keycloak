@@ -17,6 +17,10 @@ public class Config {
         return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
+    public static <T> T get(String name, T defaultValue, Class<T> clazz) {
+        return config.getOptionalValue(name, clazz).orElse(defaultValue);
+    }
+
     public static String getAdminClientId() {
         return "temp-admin";
     }

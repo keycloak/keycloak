@@ -4,7 +4,7 @@ public class MariaDBDatabaseSupplier extends AbstractDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "mariadb";
+        return MariaDBTestDatabase.NAME;
     }
 
     @Override

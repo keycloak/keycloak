@@ -68,39 +68,32 @@ Cache:
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
 --cache-remote-host <hostname>
-                     The hostname of the remote server for the remote store configuration. It
-                       replaces the 'host' attribute of 'remote-server' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' and 'cache-remote-password' are required
-                       as well and the related configuration in XML file should not be present.
+                     The hostname of the external Infinispan cluster. Available only when feature
+                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
+                       Required when feature 'multi-site' or 'clusterless' is set.
 --cache-remote-password <password>
-                     The password for the authentication to the remote server for the remote store.
-                       It replaces the 'password' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
---cache-remote-port <port>
-                     The port of the remote server for the remote store configuration. It replaces
-                       the 'port' attribute of 'remote-server' tag of the configuration specified
-                       via XML file (see 'cache-config-file' option.). Default: 11222. Available
+                     The password for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-username' is required as well. Available
                        only when remote host is set.
+--cache-remote-port <port>
+                     The port of the external Infinispan cluster. Default: 11222. Available only
+                       when remote host is set.
 --cache-remote-tls-enabled <true|false>
                      Enable TLS support to communicate with a secured remote Infinispan server.
                        Recommended to be enabled in production. Default: true. Available only when
                        remote host is set.
 --cache-remote-username <username>
-                     The username for the authentication to the remote server for the remote store.
-                       It replaces the 'username' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-password' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
+                     The username for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-password' is required as well. Available
+                       only when remote host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       Possible values are: tcp, udp, jdbc-ping, jdbc-ping-udp, kubernetes, ec2
-                       (deprecated), azure (deprecated), google (deprecated), or a custom one.
-                       Default: jdbc-ping-udp. Available only when 'cache' type is set to 'ispn'.
+                       Possible values are: tcp (deprecated), udp (deprecated), jdbc-ping,
+                       jdbc-ping-udp (deprecated), kubernetes, ec2 (deprecated), azure
+                       (deprecated), google (deprecated), or a custom one. Default: jdbc-ping.
+                       Available only when 'cache' type is set to 'ispn'.
 
 Config:
 

@@ -4,7 +4,7 @@ public class OracleDatabaseSupplier extends AbstractDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "oracle";
+        return OracleTestDatabase.NAME;
     }
 
     @Override

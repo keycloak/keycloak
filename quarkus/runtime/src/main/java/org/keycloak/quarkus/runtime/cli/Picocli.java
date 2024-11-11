@@ -46,6 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.config.DeprecatedMetadata;
@@ -164,7 +165,7 @@ public class Picocli {
             if (currentSpec != null) {
                 CommandLine commandLine = currentSpec.commandLine();
                 addCommandOptions(cliArgs, commandLine);
-                
+
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
                     // set current parsed command
                     Environment.setParsedCommand(ac);
@@ -219,7 +220,7 @@ public class Picocli {
         // TODO: ensure that the config has not yet been initialized
         // - there's currently no good way to do that directly on ConfigProviderResolver
         initProfile(cliArgs, currentCommandName);
-        
+
         if (requiresReAugmentation(currentCommand)) {
             PropertyMappers.sanitizeDisabledMappers();
             exitCode = runReAugmentation(cliArgs, cmd);
@@ -238,7 +239,7 @@ public class Picocli {
             // override from the cli if specified
             parseConfigArgs(cliArgs, (k, v) -> {
                 if (k.equals(Main.PROFILE_SHORT_NAME) || k.equals(Main.PROFILE_LONG_NAME)) {
-                    Environment.setProfile(v);        
+                    Environment.setProfile(v);
                 }
             }, ignored -> {});
         }
@@ -259,7 +260,7 @@ public class Picocli {
             return true; // no build yet
         }
         var current = getNonPersistedBuildTimeOptions();
-        
+
         // everything but the optimized value must match
         String key = Configuration.KC_OPTIMIZED;
         Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
@@ -327,13 +328,13 @@ public class Picocli {
      *
      * @param cliArgs
      * @param abstractCommand
-     * @param outWriter 
+     * @param outWriter
      */
     public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter outWriter) {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
-        
+
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
         if (!options.includeBuildTime && !options.includeRuntime) {
@@ -350,6 +351,7 @@ public class Picocli {
             final Set<String> disabledBuildTime = new HashSet<>();
             final Set<String> disabledRunTime = new HashSet<>();
             final Set<String> deprecatedInUse = new HashSet<>();
+            final Set<String> missingOption = new HashSet<>();
 
             final Set<PropertyMapper<?>> disabledMappers = new HashSet<>();
             if (options.includeBuildTime) {
@@ -369,7 +371,14 @@ public class Picocli {
                     ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
                     String configValueStr = configValue.getValue();
 
-                    if (configValueStr == null || !isUserModifiable(configValue)) {
+                    // don't consider missing or anything below standard env properties
+                    if (configValueStr == null) {
+                        if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
+                            handleRequired(missingOption, mapper);
+                        }
+                        continue;
+                    }
+                    if (!isUserModifiable(configValue)) {
                         continue;
                     }
 
@@ -409,6 +418,9 @@ public class Picocli {
                 }
             }
 
+            if (!missingOption.isEmpty()) {
+                throw new PropertyException("The following options are required: \n%s".formatted(String.join("\n", missingOption)));
+            }
             if (!ignoredBuildTime.isEmpty()) {
                 throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
@@ -510,25 +522,21 @@ public class Picocli {
     }
 
     private static void handleDisabled(Set<String> disabledInUse, PropertyMapper<?> mapper) {
-        String optionName = mapper.getFrom();
-        if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
-            optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
-        }
+        handleMessage(disabledInUse, mapper, PropertyMapper::getEnabledWhen);
+    }
 
+    private static void handleRequired(Set<String> requiredOptions, PropertyMapper<?> mapper) {
+        handleMessage(requiredOptions, mapper, PropertyMapper::getRequiredWhen);
+    }
+
+    private static void handleMessage(Set<String> messages, PropertyMapper<?> mapper, Function<PropertyMapper<?>, Optional<String>> retrieveMessage) {
+        var optionName = mapper.getOption().getKey();
         final StringBuilder sb = new StringBuilder("\t- ");
         sb.append(optionName);
-
-        if (mapper.getEnabledWhen().isPresent()) {
-            final String enabledWhen = mapper.getEnabledWhen().get();
-            sb.append(": ");
-            sb.append(enabledWhen);
-            if (!enabledWhen.endsWith(".")) {
-                sb.append(".");
-            }
-        }
-        disabledInUse.add(sb.toString());
+        retrieveMessage.apply(mapper).ifPresent(msg -> sb.append(": ").append(msg).append("."));
+        messages.add(sb.toString());
     }
-    
+
     private static void warn(String text, PrintWriter outwriter) {
         ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
         outwriter.println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
@@ -622,7 +630,7 @@ public class Picocli {
     protected PrintWriter getErrWriter() {
         return new PrintWriter(System.err, true);
     }
-    
+
     protected PrintWriter getOutWriter() {
         return new PrintWriter(System.out, true);
     }
@@ -749,7 +757,7 @@ public class Picocli {
                     } else if (mapper.getType().isEnum()) {
                         // prevent the auto-conversion that picocli does
                         // we validate the expected values later
-                        optBuilder.type(String.class); 
+                        optBuilder.type(String.class);
                     }
                 } else {
                     optBuilder.type(String.class);
@@ -791,6 +799,7 @@ public class Picocli {
                 .ifPresent(transformedDesc::append);
 
         mapper.getEnabledWhen().map(e -> format(" %s.", e)).ifPresent(transformedDesc::append);
+        mapper.getRequiredWhen().map(e -> format(" %s.", e)).ifPresent(transformedDesc::append);
 
         // only fully deprecated options, not just deprecated values
         mapper.getDeprecatedMetadata()
@@ -854,19 +863,19 @@ public class Picocli {
 
     private static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
-        
+
         var current = getNonPersistedBuildTimeOptions();
         var persisted = Configuration.getRawPersistedProperties();
-        
+
         // TODO: order is not well defined here
-        
+
         current.forEach((key, value) -> {
             String persistedValue = persisted.get(key);
             if (!value.equals(persistedValue)) {
                 optionChanged(options, (String)key, persistedValue, (String)value);
             }
         });
-        
+
         persisted.forEach((key, value) -> {
             if (current.get(key) == null) {
                 optionChanged(options, key, value, null);
@@ -885,7 +894,7 @@ public class Picocli {
             );
         }
     }
-    
+
     private static void optionChanged(StringBuilder options, String key, String oldValue, String newValue) {
         // the assumption here is that no build time options need mask handling
         boolean isIgnored = !key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)

@@ -409,8 +409,11 @@
                                             <MSSQL_SA_PASSWORD>${keycloak.connectionsJpa.password}</MSSQL_SA_PASSWORD>
 
                                             <!-- Oracle -->
-                                            <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PWD>sa</ORACLE_PWD>
+<!--                                        <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>-->
+                                            <ORACLE_DATABASE>${keycloak.connectionsJpa.database}</ORACLE_DATABASE>
+                                            <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
+                                            <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
+                                            <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>

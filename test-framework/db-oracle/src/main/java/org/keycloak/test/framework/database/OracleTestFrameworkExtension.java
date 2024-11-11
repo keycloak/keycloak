@@ -9,6 +9,6 @@ public class OracleTestFrameworkExtension implements TestFrameworkExtension {
 
     @Override
     public List<Supplier<?, ?>> suppliers() {
-        return List.of(new OracleDatabaseSupplier(), new Oracle19DatabaseSupplier());
+        return List.of(new OracleDatabaseSupplier());
     }
 }

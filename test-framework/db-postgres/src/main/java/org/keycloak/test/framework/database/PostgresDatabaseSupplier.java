@@ -4,7 +4,7 @@ public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "postgres";
+        return PostgresTestDatabase.NAME;
     }
 
     @Override

@@ -14,7 +14,7 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches use the `jdbc-ping-udp` stack which is based upon a UDP transport and uses the configured database to track nodes joining the cluster.
+By default, caches use the `jdbc-ping` stack which is based upon a TCP transport and uses the configured database to track nodes joining the cluster.
 {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
@@ -27,7 +27,7 @@ The `local` cache mode is intended only for development and testing purposes.
 == Configuring caches
 {project_name} provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
 
-The cache configuration is a regular https://infinispan.org/docs/stable/titles/configuring/configuring.html[Infinispan configuration file].
+The cache configuration is a regular {infinispan_configuring_docs}[Infinispan configuration file].
 
 The following table gives an overview of the specific caches {project_name} uses.
 You configure these caches in `conf/cache-ispn.xml`:
@@ -197,7 +197,7 @@ The configuration file is relative to the `conf/` directory.
 === CLI options for remote server
 
 For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
-Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+Once any of the declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
 
 ==== Connecting to an insecure Infinispan server
 
@@ -220,22 +220,19 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `jdbc-ping-udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping` when distributed caches are enabled, which is backwards compatible with the 26.x release stream of {project_name}.
 
 === Available transport stacks
 
-The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` build option:
+The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` runtime option:
 
 [%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
 
-|`tcp`|TCP|MPING (uses UDP multicast).
-|`udp`|UDP|UDP multicast
-|`jdbc-ping-udp`|UDP|JDBC_PING2
-|`jdbc-ping`|TCP|JDBC_PING2
+|`jdbc-ping`|TCP|Database registry - `JDBC_PING2` protocol.
+|`jdbc-ping-udp` (deprecated)|UDP|Database registry - `JDBC_PING2` protocol.
 |===
-
 
 The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
@@ -243,40 +240,24 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|`kubernetes`|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
+|`kubernetes`|TCP|Dns resolution - `DNS_PING` protocol. It requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to your `JAVA_OPTS_APPEND` environment variable.
+|`tcp` (deprecated)|TCP|IP multicast - `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
+|`udp` (deprecated)|UDP|IP multicast - `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |===
 
-=== Additional transport stacks
+====
+*Additional Stacks*
 
-IMPORTANT: The following stacks are deprecated. We recommend that you utilise the `jdbc-ping` stack in such environments
-as it does not require additional configuration or dependencies.
-
-The following table shows transport stacks that are supported by {project_name}, but need some extra steps to work.
-Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run {project_name} on top of the Google Kubernetes engine.
-In that case, use the `kubernetes` stack.
-Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as UDP.
-
-[%autowidth]
-|===
-|Stack name|Transport protocol|Discovery
-
-|`ec2`|TCP|NATIVE_S3_PING
-|`google`|TCP|GOOGLE_PING2
-|`azure`|TCP|AZURE_PING
-|===
-
-Cloud vendor specific stacks have additional dependencies for {project_name}.
-For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
-
-To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build {project_name} by entering this command:
-
-<@kc.start parameters="--cache-stack=<ec2|google|azure>"/>
+It is recommended to use one of the stacks available above.
+Additional stacks are provided by Infinispan, but it is outside the scope of this guide how to configure them.
+Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] for further documentation.
+====
 
 === Custom transport stacks
 If none of the available transport stacks are enough for your deployment, you are able to change your cache configuration file
 and define your own transport stack.
 
-For more details, see https://infinispan.org/docs/stable/titles/server/server.html#using-inline-jgroups-stacks_cluster-transport[Using inline JGroups stacks].
+For more details, see {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks].
 
 .defining a custom transport stack
 [source]
@@ -319,7 +300,29 @@ To restrict unauthorized access, use a self-signed certificate for each {project
 
 For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
 
-For more information about securing cache communication, see the https://infinispan.org/docs/stable/titles/security/security.html#[Infinispan security guide].
+For more information about securing cache communication, see the {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport] documentation.
+
+== Network Ports
+
+To ensure a healthy {project_name} clustering, some network ports need to be open.
+The table below shows the TCP ports that need to be open for the `jdbc-ping` stack, and a description of the traffic that goes through it.
+
+|===
+|Port |Property | Description
+
+m|7800
+m|jgroups.bind.address
+|Unicast data transmission.
+
+m|57800
+m|jgroups.fd.port-offset
+|Failure detection by protocol `FD_SOCK2`.
+It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
+The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.address`.
+
+|===
+
+NOTE: Use `-D<property>=<value` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
 == Exposing metrics from caches
 
