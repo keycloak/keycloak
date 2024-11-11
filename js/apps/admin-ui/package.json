@@ -117,7 +117,7 @@
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.28.1",
     "ts-node": "^10.9.2",
-    "uuid": "^11.0.2",
+    "uuid": "^11.0.3",
     "vite": "^5.4.10",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.3.0",
