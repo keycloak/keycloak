@@ -16,6 +16,8 @@
 :jdgserver_name: Infinispan
 :infinispan-operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
 :infinispan-xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
+:infinispan_embedding_docs: https://infinispan.org/docs/stable/titles/embedding/embedding.html
+:infinispan_configuring_docs: https://infinispan.org/docs/stable/titles/configuring/configuring.html
 :containerlabel: latest
 :project_product: false
 :project_community: true

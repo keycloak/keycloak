@@ -419,21 +419,23 @@ public class CacheManagerFactory {
 
         String transportStack = Configuration.getRawValue("kc.cache-stack");
         if (transportStack != null && !transportStack.isBlank() && !isJdbcPingStack(transportStack)) {
+            warnDeprecatedStack(transportStack);
             transportConfig.defaultTransport().stack(transportStack);
-            warnDeprecatedCloudStack(transportStack);
             return;
         }
 
         var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
         // If the user has explicitly defined a transport stack that is not jdbc-ping or jdbc-ping-udp, return
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
-            warnDeprecatedCloudStack(stackXmlAttribute.get());
+            warnDeprecatedStack(stackXmlAttribute.get());
             return;
         }
 
         var stackName = transportStack != null ?
               transportStack :
-              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping-udp";
+              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping";
+        warnDeprecatedStack(stackName);
+
         var udp = stackName.endsWith("udp");
 
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
@@ -459,8 +461,11 @@ public class CacheManagerFactory {
         transportConfig.defaultTransport().stack(stackName);
     }
 
-    private static void warnDeprecatedCloudStack(String stackName) {
+    private static void warnDeprecatedStack(String stackName) {
         switch (stackName) {
+            case "jdbc-ping-udp":
+            case "tcp":
+            case "udp":
             case "azure":
             case "ec2":
             case "google":

@@ -348,6 +348,12 @@ Valid values:
 | mysql    | MySQL test container                    |
 | postgres | PostgreSQL test container               |
 
+Configuration:
+
+| Value                                               | Description                                                                                                                                                                 |
+|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kc.test.database.reuse` / `KC_TEST_DATABASE_REUSE` | Set to true to enable reuse of database. Requires [enabling reuse for Testcontainers](https://java.testcontainers.org/features/reuse/) (`TESTCONTAINERS_REUSE_ENABLE=true`) |
+
 ### Browser
 
 Option: `kc.test.broser` / `KC_TEST_BROWSER`

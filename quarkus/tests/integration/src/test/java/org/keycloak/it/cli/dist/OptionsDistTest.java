@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Paths;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Assertions;
@@ -29,8 +31,6 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
-
-import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -128,5 +128,69 @@ public class OptionsDistTest {
         assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-console-color'. Available only when Console log handler is activated")).count());
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Possible solutions: --log, --log-file, --log-file-level, --log-file-format, --log-file-output, --log-level")).count());
+    }
+
+    @Test
+    @Order(10)
+    @Launch({"start-dev", "--cache-remote-host=localhost"})
+    public void testCacheRemoteHostWithoutMultiSite(LaunchResult result) {
+        assertErrorStreamContains(result, "cache-remote-host available only when feature 'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set");
+    }
+
+    @Test
+    @Order(11)
+    @Launch({"start-dev", "--cache-remote-port=11222"})
+    public void testCacheRemotePortWithoutCacheRemoteHost(LaunchResult result) {
+        assertDisabledDueToMissingRemoteHost(result, "--cache-remote-port");
+    }
+
+    @Test
+    @Order(12)
+    @Launch({"start-dev", "--cache-remote-username=user"})
+    public void testCacheRemoteUsernameWithoutCacheRemoteHost(LaunchResult result) {
+        assertDisabledDueToMissingRemoteHost(result, "--cache-remote-username");
+    }
+
+    @Test
+    @Order(13)
+    @Launch({"start-dev", "--cache-remote-password=pass"})
+    public void testCacheRemotePasswordWithoutCacheRemoteHost(LaunchResult result) {
+        assertDisabledDueToMissingRemoteHost(result, "--cache-remote-password");
+    }
+
+    @Test
+    @Order(14)
+    @Launch({"start-dev", "--cache-remote-tls-enabled=false"})
+    public void testCacheRemoteTlsEnabledWithoutCacheRemoteHost(LaunchResult result) {
+        assertDisabledDueToMissingRemoteHost(result, "--cache-remote-tls-enabled");
+    }
+
+    @Test
+    @Order(15)
+    @Launch({"start-dev", "--features=multi-site"})
+    public void testMultiSiteWithoutCacheRemoteHost(LaunchResult result) {
+        assertErrorStreamContains(result, "- cache-remote-host: Required when feature 'multi-site' or 'clusterless' is set.");
+    }
+
+    @Test
+    @Order(16)
+    @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-username=user"})
+    public void testCacheRemoteUsernameWithoutCacheRemotePassword(LaunchResult result) {
+        assertErrorStreamContains(result, "The option 'cache-remote-password' is required when 'cache-remote-username' is set.");
+    }
+
+    @Test
+    @Order(17)
+    @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-password=secret"})
+    public void testCacheRemotePasswordWithoutCacheRemoteUsername(LaunchResult result) {
+        assertErrorStreamContains(result, "The option 'cache-remote-username' is required when 'cache-remote-password' is set.");
+    }
+
+    private static void assertDisabledDueToMissingRemoteHost(LaunchResult result, String option) {
+        assertErrorStreamContains(result, "Disabled option: '%s'. Available only when remote host is set".formatted(option));
+    }
+
+    private static void assertErrorStreamContains(LaunchResult result, String msg) {
+        assertTrue(result.getErrorStream().stream().anyMatch(s -> s.contains(msg)));
     }
 }

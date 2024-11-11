@@ -47,15 +47,15 @@ public class ClusterConfigDistTest {
     void changeClusterSetting(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertClusteredCache();
-        assertThat(cliResult.getOutput(), Matchers.containsString("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping-udp`"));
+        assertThat(cliResult.getOutput(), Matchers.containsString("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`"));
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping"})
+    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp"})
     void testJdbcPingTCP(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertClusteredCache();
-        assertThat(cliResult.getOutput(), Matchers.containsString("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`"));
+        assertThat(cliResult.getOutput(), Matchers.containsString("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping-udp`"));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class ClusterConfigDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
         cliResult.assertClusteredCache();
-        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: UDP"));
+        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: TCP"));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class ClusterConfigDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
         cliResult.assertClusteredCache();
-        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: UDP"));
+        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: TCP"));
     }
 
     @Test
