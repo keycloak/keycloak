@@ -196,7 +196,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./mvnw test -f quarkus/pom.xml -Dlogin.theme.default=keycloak -pl '!tests,!tests/junit5,!tests/integration,!dist'
+          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
 
       - name: Upload JVM Heapdumps
         if: always()
