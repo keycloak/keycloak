@@ -433,7 +433,7 @@ public class CacheManagerFactory {
 
         var stackName = transportStack != null ?
               transportStack :
-              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping-udp";
+              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping";
         warnDeprecatedStack(stackName);
 
         var udp = stackName.endsWith("udp");

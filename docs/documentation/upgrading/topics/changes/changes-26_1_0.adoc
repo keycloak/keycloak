@@ -29,26 +29,23 @@ To disable the virtual threads, add one of the Java system properties combinatio
 * `-Djgroups.thread.virtual=false`: disables virtual threads only in JGroups.
 * `-Dorg.infinispan.threads.virtual=false -Djgroups.thread.virtual=true`: disables virtual threads only in Infinispan.
 
-= Default transport stack changed to JDBC_PING2 for distributed caches
+= Default transport stack changed to `jdbc-ping` for distributed caches
 
 Previous versions of {project_name} used as a default UDP multicast to discover other nodes to form a cluster and to synchronize the replicated caches of {project_name}.
 This required multicast to be available and to be configured correctly, which is usually not the case in cloud environments.
 
-Starting with version {project_name} 26.1, the default changes to `jdbc-ping-udp` configuration of JDBC_PING2 which uses {project_name}'s database to discover other nodes.
-As this removes the need for multicast network capabilities, this is a simplification and a drop-in replacement.
-In the next major version `jdbc-ping` is planned to be the new default, therefore `jdbc-ping-udp` is now deprecated.
-
-To enable the previous behavior, choose the transport stack `udp`.
+Starting with this version, the default changes to the `jdbc-ping` configuration which uses {project_name}'s database to discover other nodes.
+As this removes the need for multicast network capabilities and UDP and no longer using dynamic ports for the TCP-based failure detection, this is a simplification and a drop-in replacement for environments which used the previous default.
+To enable the previous behavior, choose the transport stack `udp` which is now deprecated.
 
 The {project_name} Operator will continue to configure `kubernetes` as a transport stack.
 
+See the https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more information.
+
 = Deprecated transport stacks for distributed caches
 
-The `tcp`, `azure`, `ec2` and `google` transport stacks have been deprecated.
+The `udp`, `jdbc-ping-udp`, `tcp`, `azure`, `ec2` and `google` transport stacks have been deprecated.
 Users should use the TCP based `jdbc-ping` stack as a direct replacement.
-
-The `udp` and `jdbc-ping-udp` transport stacks have been deprecated.
-Users should use the TCP based `jdbc-ping` stack.
 
 = Defining dependencies between provider factories
 

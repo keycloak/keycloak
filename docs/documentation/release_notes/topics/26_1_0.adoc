@@ -18,3 +18,11 @@ If you are using Microsoft AD and creating users through the administrative inte
 In previous versions, it was only possible to update the user status after setting a (non-temporary) password to the user.
 This behavior was not consistent with other built-in user storages as well as not consistent with others LDAP vendors supported
 by the LDAP provider.
+
+= Transport stack `jdbc-ping` as new default, and recommended for cloud setups
+
+{project_name} now uses by default its database to discover other nodes of the same cluster, which removes the need of additional network related configurations. It is also a default that will work out-of-the-box in cloud environments.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}], and the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
+
+

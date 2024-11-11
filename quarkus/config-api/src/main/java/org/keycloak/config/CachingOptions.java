@@ -66,7 +66,7 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .expectedValues(false)
             .description("Define the default stack to use for cluster communication and node discovery.")
-            .defaultValue(Stack.jdbc_ping_udp)
+            .defaultValue(Stack.jdbc_ping)
             .deprecatedValues(Stream.of(Stack.azure, Stack.ec2, Stack.google, Stack.tcp, Stack.udp, Stack.jdbc_ping_udp).map(Object::toString).collect(Collectors.toSet()), "Use 'jdbc-ping' instead")
             .build();
 

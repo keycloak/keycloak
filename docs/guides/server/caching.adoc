@@ -14,7 +14,7 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches use the `jdbc-ping-udp` stack which is based upon a UDP transport and uses the configured database to track nodes joining the cluster.
+By default, caches use the `jdbc-ping` stack which is based upon a TCP transport and uses the configured database to track nodes joining the cluster.
 {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
@@ -197,7 +197,7 @@ The configuration file is relative to the `conf/` directory.
 === CLI options for remote server
 
 For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
-Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+Once any of the declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
 
 ==== Connecting to an insecure Infinispan server
 
@@ -220,9 +220,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `jdbc-ping-udp` when distributed caches are enabled, which is backwards compatible with the 26.x release stream of {project_name}.
-
-Starting with the 27.x release stream, {project_name}'s new default will change to `jdbc-ping` as it is considered simpler to configure and as it works also environments that do not support the UDP protocol.
+The default stack is set to `jdbc-ping` when distributed caches are enabled, which is backwards compatible with the 26.x release stream of {project_name}.
 
 === Available transport stacks
 
@@ -307,7 +305,7 @@ For more information about securing cache communication, see the {infinispan_emb
 == Network Ports
 
 To ensure a healthy {project_name} clustering, some network ports need to be open.
-The table below shows the TCP ports that need to be open, and a description of the traffic that goes through it.
+The table below shows the TCP ports that need to be open for the `jdbc-ping` stack, and a description of the traffic that goes through it.
 
 |===
 |Port |Property | Description
