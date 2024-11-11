@@ -960,9 +960,7 @@ public class AuthenticationManager {
      * @return true if sessionId matches with the session from KEYCLOAK_SESSION_COOKIE
      */
     public static boolean compareSessionIdWithSessionCookie(KeycloakSession session, String sessionId) {
-        if (sessionId == null) {
-            throw new IllegalArgumentException("Not expected to provide null sessionId");
-        }
+        Objects.requireNonNull(sessionId, "Session id cannot be null");
 
         String cookie = session.getProvider(CookieProvider.class).get(CookieType.SESSION);
         if (cookie == null || cookie.isEmpty()) {
