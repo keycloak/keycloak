@@ -42,6 +42,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -149,6 +150,8 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(termsPage.isCurrent());
 
         termsPage.declineTerms();
+
+        WaitUtils.waitForPageToLoad();
 
         events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)

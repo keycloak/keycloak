@@ -4,6 +4,9 @@
     <meta charset="utf-8">
   </head>
   <body>
+    <#if !isSecureContext>
+      <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
+    </#if>
     <script type="module">
       window.addEventListener("message", onMessage);
 
@@ -49,7 +52,7 @@
             preventAdditionalRequests = true;
           }
 
-          const url = new URL(`${location.origin}${location.pathname}/init`);
+          const url = new URL(location.origin + location.pathname + "/init");
 
           url.searchParams.set("client_id", clientId);
           url.searchParams.set("origin", origin);
@@ -72,6 +75,10 @@
 
         // If the client and origin from the event match the verified ones from the server, signal if the cookie has changed.
         if (clientId === init.clientId && origin === init.origin) {
+          const hashedSessionId = await hashString(sessionState);
+          if (hashedSessionId === cookie) return "unchanged";
+
+          // Backwards compatibility with versions older than 26.1
           const [, , cookieSessionState] = cookie.split("/");
           return sessionState === cookieSessionState ? "unchanged" : "changed";
         }
@@ -120,6 +127,42 @@
         }
         return null;
       }
+
+      /**
+       * @param {ArrayBuffer} bytes
+       * @see https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+       */
+      function bytesToBase64(bytes) {
+        const binString = String.fromCodePoint(...bytes);
+        return btoa(binString);
+      }
+
+      /**
+        * @param {string} message
+        * @see https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#basic_example
+        */
+      async function sha256Digest(message) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(message);
+
+        if (typeof crypto === "undefined" || typeof crypto.subtle === "undefined") {
+          throw new Error("Web Crypto API is not available.");
+        }
+
+        return await crypto.subtle.digest("SHA-256", data);
+      }
+
+      async function hashString(str) {
+        // hash codeVerifier, then encode as url-safe base64 without padding
+        const hashBytes = new Uint8Array(await sha256Digest(str));
+        const encodedHash = bytesToBase64(hashBytes)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/\=/g, '');
+
+        return encodedHash;
+      }
+
     </script>
   </body>
 </html>
