@@ -14,7 +14,7 @@ endif::[]
 image:images/policy/create-aggregated.png[alt="Add aggregated policy"]
 
 Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and from a certain range of IP addresses.
-You can create a single policy with both conditions. However, you want to reuse the domain part of this policy to apply to permissions that operates regardless of the originating network.
+You can create a single policy with both conditions. However, you want to reuse the domain part of this policy to apply to permissions that operate regardless of the originating network.
 
 You can create separate policies for both domain and network conditions and create a third policy based on the combination of these two policies. With an aggregated policy, you can freely combine other policies and then apply the new aggregated policy to any permission you want.
 

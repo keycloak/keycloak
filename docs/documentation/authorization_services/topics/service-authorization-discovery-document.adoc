@@ -37,7 +37,7 @@ Each of these endpoints expose a specific set of capabilities:
 * **token_endpoint**
 +
 A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. Through this
-endpoint clients can send authorization requests and obtain an RPT with all permissions granted by {project_name}.
+endpoint, clients can send authorization requests and obtain an RPT with all permissions granted by {project_name}.
 +
 * **token_introspection_endpoint**
 +
