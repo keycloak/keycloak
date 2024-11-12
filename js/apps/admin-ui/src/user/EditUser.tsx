@@ -102,18 +102,18 @@ export default function EditUser() {
       tab,
     });
 
-  const useTab = (tab: UserTab) => useRoutableTab(toTab(tab));
-
-  const settingsTab = useTab("settings");
-  const attributesTab = useTab("attributes");
-  const credentialsTab = useTab("credentials");
-  const roleMappingTab = useTab("role-mapping");
-  const groupsTab = useTab("groups");
-  const organizationsTab = useTab("organizations");
-  const consentsTab = useTab("consents");
-  const identityProviderLinksTab = useTab("identity-provider-links");
-  const sessionsTab = useTab("sessions");
-  const userEventsTab = useTab("user-events");
+  const settingsTab = useRoutableTab(toTab("settings"));
+  const attributesTab = useRoutableTab(toTab("attributes"));
+  const credentialsTab = useRoutableTab(toTab("credentials"));
+  const roleMappingTab = useRoutableTab(toTab("role-mapping"));
+  const groupsTab = useRoutableTab(toTab("groups"));
+  const organizationsTab = useRoutableTab(toTab("organizations"));
+  const consentsTab = useRoutableTab(toTab("consents"));
+  const identityProviderLinksTab = useRoutableTab(
+    toTab("identity-provider-links"),
+  );
+  const sessionsTab = useRoutableTab(toTab("sessions"));
+  const userEventsTab = useRoutableTab(toTab("user-events"));
 
   useFetch(
     async () =>
@@ -426,10 +426,10 @@ export default function EditUser() {
               >
                 <UserSessions />
               </Tab>
-              {hasAccess("view-events") && (
+              {hasAccess("view-events") && realm?.eventsEnabled && (
                 <Tab
                   data-testid="user-events-tab"
-                  title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                  title={<TabTitleText>{t("events")}</TabTitleText>}
                   {...userEventsTab}
                 >
                   <UserEvents user={user.id} />
