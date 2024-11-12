@@ -76,13 +76,18 @@ type CellRendererProps = {
   row: IRow;
 };
 
-const CellRenderer = ({ row }: CellRendererProps) => {
-  const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
-    !!c && (c as IRowCell).title !== undefined;
-  return row.cells!.map((c, i) => (
+const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
+  !!c && (c as IRowCell).title !== undefined;
+
+const CellRenderer = ({ row }: CellRendererProps) =>
+  row.cells!.map((c, i) => (
     <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
   ));
-};
+
+const ExpandableRowRenderer = ({ row }: CellRendererProps) =>
+  row.cells!.map((c, i) => (
+    <div key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</div>
+  ));
 
 function DataTable<T>({
   columns,
@@ -130,9 +135,10 @@ function DataTable<T>({
     >
       <Thead>
         <Tr>
-          {onCollapse && <Th />}
+          {onCollapse && <Th screenReaderText={t("expandRow")} />}
           {canSelectAll && (
             <Th
+              screenReaderText={t("selectAll")}
               select={
                 !isRadio
                   ? {
@@ -151,6 +157,7 @@ function DataTable<T>({
           {columns.map((column) => (
             <Th
               key={column.displayKey}
+              screenReaderText={t("expandRow")}
               className={column.transforms?.[0]().className}
             >
               {t(column.displayKey || column.name)}
@@ -212,7 +219,7 @@ function DataTable<T>({
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
-                    <CellRenderer row={row} />
+                    <ExpandableRowRenderer row={row} />
                   </ExpandableRowContent>
                 </Td>
               </Tr>
