@@ -113,11 +113,11 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  duplicateGroupItem(groupName: string, confirmModal = true) {
+  duplicateGroupItem(groupName: string) {
+    cy.intercept("/admin/realms/master/groups/*").as("fetchGroup");
     listingPage.duplicateItem(groupName);
-    if (confirmModal) {
-      groupModal.confirmDuplicateModal();
-    }
+    cy.wait("@fetchGroup");
+    groupModal.confirmDuplicateModal();
     return this;
   }
 

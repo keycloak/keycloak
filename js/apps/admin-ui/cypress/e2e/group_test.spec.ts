@@ -121,7 +121,7 @@ describe("Group test", () => {
 
     it.skip("Duplicate group", () => {
       groupPage
-        .duplicateGroupItem(groupNames[0], true)
+        .duplicateGroupItem(groupNames[0])
         .assertNotificationGroupDuplicated();
     });
 
