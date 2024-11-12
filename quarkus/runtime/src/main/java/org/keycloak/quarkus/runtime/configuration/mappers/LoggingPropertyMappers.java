@@ -8,7 +8,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logmanager.LogContext;
@@ -45,7 +47,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.level")
-                        .validator(LoggingPropertyMappers::validateLogParameters)
+                        .validator(param -> validateLogParameters(LoggingOptions.LOG_CONSOLE_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
@@ -80,7 +82,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.level")
-                        .validator(LoggingPropertyMappers::validateLogParameters)
+                        .validator(param -> validateLogParameters(LoggingOptions.LOG_FILE_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
@@ -119,7 +121,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.level")
-                        .validator(LoggingPropertyMappers::validateLogParameters)
+                        .validator(param -> validateLogParameters(LoggingOptions.LOG_SYSLOG_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
@@ -197,12 +199,12 @@ public final class LoggingPropertyMappers {
 
     record CategoryLevel(String category, String levelName) {}
 
-    private static void validateLogParameters(String level) {
+    private static void validateLogParameters(Option<LoggingOptions.Level> option, String level) {
         try {
             toLevel(level);
         } catch (IllegalArgumentException iae) {
-            throw new PropertyException(
-                    String.format("Invalid parameter: %s", level));
+            String expectedValues = Stream.of(option.getExpectedValues()).map(Object::toString).collect(Collectors.joining(", ")).replace("[","").replace("]","");
+            throw new PropertyException(String.format("Invalid value for option '--%s': %s. Expected values are: %s", option.getKey(), level, expectedValues));
         }
     }
 
