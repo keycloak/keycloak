@@ -17,9 +17,10 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
@@ -56,7 +57,6 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -339,7 +339,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
-        if (isReadOnlyOrganizationMember(delegate)) {
+        if (isReadOnlyOrganizationMember(session, delegate)) {
             return new ReadOnlyUserModelDelegate(delegate, false);
         }
 
@@ -965,27 +965,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
         return List.of();
-    }
-
-    private boolean isReadOnlyOrganizationMember(UserModel delegate) {
-        if (delegate == null) {
-            return false;
-        }
-
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            return false;
-        }
-
-        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
-
-        if (organizationProvider.count() == 0) {
-            return false;
-        }
-
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 
     public UserCacheManager getCache() {

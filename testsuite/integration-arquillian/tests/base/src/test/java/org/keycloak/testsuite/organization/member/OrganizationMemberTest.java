@@ -53,6 +53,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -403,6 +404,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existing, hasSize(2));
         assertThat(existing.get(0).getUsername(), is(equalTo("marthaw@neworg.org")));
         assertThat(existing.get(1).getUsername(), is(equalTo("thejoker@neworg.org")));
+
+        existing = organization.members().search(null, null, MembershipType.MANAGED, -1, -1);
+        assertTrue(existing.isEmpty());
+        existing = organization.members().search(null, null, MembershipType.UNMANAGED, -1, -1);
+        assertThat(existing, hasSize(5));
     }
 
     @Test
