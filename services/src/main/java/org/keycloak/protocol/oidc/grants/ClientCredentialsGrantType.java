@@ -24,6 +24,7 @@ import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -83,7 +84,8 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         UserModel clientUser = session.users().getServiceAccount(client);
         ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
 
-        if (clientUser == null || (serviceAccountScope != null && !client.getClientScopes(true).containsKey(serviceAccountScope.getId()))) {
+        if (clientUser == null || (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && serviceAccountScope != null
+                && !client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE))) {
             // May need to handle bootstrap here as well
             logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
