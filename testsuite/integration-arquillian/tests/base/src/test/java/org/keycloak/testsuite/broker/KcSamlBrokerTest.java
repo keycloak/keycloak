@@ -63,6 +63,7 @@ import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
 import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
 import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -370,7 +371,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     public void loginWithIdpEntityIdCorrect() throws Exception {
       // Set the expected IDP Entity ID to the correct value
       try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
-          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "https://localhost:8543/auth/realms/provider")
+          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "https://" + AUTH_SERVER_HOST2 + ":8543/auth/realms/provider")
           .update())
       {
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
