@@ -201,11 +201,12 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  assertNotificationCouldNotCreateGroupWithDuplicatedName(groupName: string) {
+  assertNotificationCouldNotCreateGroupWithDuplicatedName(
+    groupName: string,
+    errorMessage: string,
+  ) {
     masthead.checkNotificationMessage(
-      "Could not create group Top level group named '" +
-        groupName +
-        "' already exists.",
+      errorMessage + groupName + "' already exists.",
     );
     return this;
   }
