@@ -157,12 +157,15 @@ export function UserDataTable() {
       first: first!,
       max: max!,
       q: query!,
-      exact: activeFilters.exact,
     };
 
     const searchParam = search || searchUser || "";
     if (searchParam) {
       params.search = searchParam;
+    }
+
+    if (activeFilters.exact) {
+      params.exact = true;
     }
 
     if (!listUsers && !(params.search || params.q)) {
