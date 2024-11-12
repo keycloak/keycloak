@@ -94,6 +94,8 @@ public class OrganizationMemberResource {
                 adminEvent.operation(OperationType.CREATE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
                         .representation(ModelToRepresentation.toRepresentation(organization))
                         .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, user.getUsername())
+                        .detail(UserModel.EMAIL, user.getEmail())
                         .success();
                 return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
             }
@@ -172,6 +174,8 @@ public class OrganizationMemberResource {
             adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
                     .representation(ModelToRepresentation.toRepresentation(organization))
                     .resourcePath(session.getContext().getUri())
+                    .detail(UserModel.USERNAME, member.getUsername())
+                    .detail(UserModel.EMAIL, member.getEmail())
                     .success();
             return Response.noContent().build();
         }

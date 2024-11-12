@@ -1,0 +1,4 @@
+= Admin events might include now additional details about the context when the event is fired
+
+In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
+expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.

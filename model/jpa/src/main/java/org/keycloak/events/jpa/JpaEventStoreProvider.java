@@ -174,7 +174,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         }
         return event;
     }
-    
+
     private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
@@ -189,10 +189,17 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
         adminEventEntity.setError(adminEvent.getError());
-        
+
         if (includeRepresentation) {
             adminEventEntity.setRepresentation(adminEvent.getRepresentation());
         }
+
+        try {
+            adminEventEntity.setDetailsJson(mapper.writeValueAsString(adminEvent.getDetails()));
+        } catch (IOException ex) {
+            logger.error("Failed to write log details", ex);
+        }
+
         return adminEventEntity;
     }
 
@@ -210,20 +217,28 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
-        
+
         if (adminEventEntity.getRepresentation() != null) {
             adminEvent.setRepresentation(adminEventEntity.getRepresentation());
         }
+
+        try {
+            Map<String, String> details = mapper.readValue(adminEventEntity.getDetailsJson(), mapType);
+            adminEvent.setDetails(details);
+        } catch (IOException ex) {
+            logger.error("Failed to read log details", ex);
+        }
+
         return adminEvent;
     }
-    
+
     private static void setAuthDetails(AdminEventEntity adminEventEntity, AuthDetails authDetails) {
         adminEventEntity.setAuthRealmId(authDetails.getRealmId());
         adminEventEntity.setAuthClientId(authDetails.getClientId());
         adminEventEntity.setAuthUserId(authDetails.getUserId());
         adminEventEntity.setAuthIpAddress(authDetails.getIpAddress());
     }
-    
+
     private static void setAuthDetails(AdminEvent adminEvent, AdminEventEntity adminEventEntity) {
         AuthDetails authDetails = new AuthDetails();
         authDetails.setRealmId(adminEventEntity.getAuthRealmId());

@@ -1030,7 +1030,13 @@ public class UserResource {
         try {
             if (user.isMemberOf(group)){
                 user.leaveGroup(group);
-                adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
+                adminEvent.operation(OperationType.DELETE)
+                        .resource(ResourceType.GROUP_MEMBERSHIP)
+                        .representation(ModelToRepresentation.toRepresentation(group, true))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, user.getUsername())
+                        .detail(UserModel.EMAIL, user.getEmail())
+                        .success();
             }
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -1057,7 +1063,13 @@ public class UserResource {
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
-            adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
+            adminEvent.operation(OperationType.CREATE)
+                    .resource(ResourceType.GROUP_MEMBERSHIP)
+                    .representation(ModelToRepresentation.toRepresentation(group, true))
+                    .resourcePath(session.getContext().getUri())
+                    .detail(UserModel.USERNAME, user.getUsername())
+                    .detail(UserModel.EMAIL, user.getEmail())
+                    .success();
         }
     }
 
