@@ -21,7 +21,7 @@ image:images/service/account-my-resource.png[alt="My Resources"]
 +
 This section contains a list of all resources owned by the user. Users can click on a resource for more details
 and share the resource with others.
-When there is a permission requests awaiting approval an icon is put next to the name of the resource.
+When permission requests are awaiting approval, an icon is put next to the name of the resource.
 These requests are connected to the parties (users) requesting access to a particular resource.
 Users are allowed to approve or deny these requests. You can do so by clicking the icon
 +
