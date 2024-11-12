@@ -525,6 +525,7 @@ public class PropertyMapper<T> {
     }
 
     void validateExpectedValues(ConfigValue configValue, String v) {
+        v = v.toLowerCase();
         List<String> expectedValues = getExpectedValues();
         if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
             throw new PropertyException(
