@@ -49,4 +49,4 @@ The default resource is created with a **URI** that maps to any resource or path
 sure the default configuration doesn't conflict with your own settings.
 
 [NOTE]
-The default configuration defines a resource that maps to all paths in your application. If you are about to write permissions to your own resources, be sure to remove the *Default Resource* or change its ```URIS``` fields to a more specific paths in your application. Otherwise, the policy associated with the default resource (which by default always grants access) will allow {project_name} to grant access to any protected resource.
+The default configuration defines a resource that maps to all paths in your application. If you are about to write permissions to your own resources, be sure to remove the *Default Resource* or change its ```URIS``` fields to more specific paths in your application. Otherwise, the policy associated with the default resource (which by default always grants access) will allow {project_name} to grant access to any protected resource.
