@@ -131,7 +131,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Invalid value for option '--log-console-level': wrong. Expected values are: off, fatal, error, warn, info, debug, trace, all"));
+                "Invalid log category format: wrong. The format is 'category:level' such as 'org.keycloak:debug"));
+    }
+
+    @Test
+    public void passUpperCaseLogValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=INFO");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test
