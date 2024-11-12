@@ -128,10 +128,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   const [events, setEvents] = useState<RealmEventsConfigRepresentation>();
   const [activeFilters, setActiveFilters] = useState<
     Partial<UserEventSearchForm>
-  >({
-    ...(user && { user }),
-    ...(client && { client }),
-  });
+  >({});
 
   const defaultValues: UserEventSearchForm = {
     client: client ? client : "",
@@ -174,6 +171,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
     return adminClient.realms.findEvents({
       // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
       ...(activeFilters as any),
+      client,
+      user,
       realm,
       first,
       max,
@@ -231,7 +230,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
         >
           <FlexItem>
             <DropdownPanel
-              buttonText={t("searchForUserEvent")}
+              buttonText={t("searchUserEventsBtn")}
               setSearchDropdownOpen={setSearchDropdownOpen}
               searchDropdownOpen={searchDropdownOpen}
               marginRight="2.5rem"
@@ -243,12 +242,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                 onSubmit={handleSubmit(onSubmit)}
                 isHorizontal
               >
-                <TextControl
-                  name="user"
-                  label={t("userId")}
-                  data-testid="userId-searchField"
-                  isDisabled={!!user}
-                />
+                {!user && (
+                  <TextControl
+                    name="user"
+                    label={t("userId")}
+                    data-testid="userId-searchField"
+                  />
+                )}
                 <FormGroup
                   label={t("eventType")}
                   fieldId="kc-eventType"
@@ -310,12 +310,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     )}
                   />
                 </FormGroup>
-                <TextControl
-                  name="client"
-                  label={t("client")}
-                  data-testid="client-searchField"
-                  isDisabled={!!client}
-                />
+                {!client && (
+                  <TextControl
+                    name="client"
+                    label={t("client")}
+                    data-testid="client-searchField"
+                  />
+                )}
                 <FormGroup
                   label={t("dateFrom")}
                   fieldId="kc-dateFrom"
@@ -386,16 +387,11 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     string | EventType[],
                   ];
 
-                  const disableClose =
-                    (key === "user" && !!user) ||
-                    (key === "client" && !!client);
-
                   return (
                     <ChipGroup
                       className="pf-v5-u-mt-md pf-v5-u-mr-md"
                       key={key}
                       categoryName={filterLabels[key]}
-                      isClosable={!disableClose}
                       onClick={() => removeFilter(key)}
                     >
                       {typeof value === "string" ? (
@@ -443,11 +439,14 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
             cellRenderer: (row) =>
               formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
           },
-          {
-            name: "userId",
-            displayKey: "user",
-            cellRenderer: UserDetailLink,
-          },
+          ...(!user
+            ? [
+                {
+                  name: "userId",
+                  cellRenderer: UserDetailLink,
+                },
+              ]
+            : []),
           {
             name: "type",
             displayKey: "eventType",
@@ -458,10 +457,14 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
             displayKey: "ipAddress",
             transforms: [cellWidth(10)],
           },
-          {
-            name: "clientId",
-            displayKey: "client",
-          },
+          ...(!client
+            ? [
+                {
+                  name: "clientId",
+                  displayKey: "client",
+                },
+              ]
+            : []),
         ]}
         emptyState={
           <ListEmptyState
