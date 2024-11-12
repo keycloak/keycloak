@@ -152,4 +152,3 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .toList();
     }
 }
-Refactor and optimize OID4VCIssuerWellKnownProvider based on review feedback
