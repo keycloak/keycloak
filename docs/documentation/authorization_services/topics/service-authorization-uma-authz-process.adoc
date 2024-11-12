@@ -12,7 +12,7 @@ curl -X GET \
   http://${host}:${port}/my-resource-server/resource/1bfdfe78-a4e1-4c2d-b142-fc92b75b986f
 ```
 
-The resource server sends a response back to the client with a permission `ticket` and a `as_uri` parameter with the location
+The resource server sends a response back to the client with a permission `ticket` and an `as_uri` parameter with the location
 of a {project_name} server to where the ticket should be sent in order to obtain an RPT.
 
 .Resource server responds with a permission ticket
