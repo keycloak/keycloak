@@ -43,7 +43,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.level")
-                        .validator(LoggingPropertyMappers::validateLogLevel)
+                        .validator(LoggingPropertyMappers::validateLogParameters)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
@@ -78,7 +78,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.level")
-                        .validator(LoggingPropertyMappers::validateLogLevel)
+                        .validator(LoggingPropertyMappers::validateLogParameters)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
@@ -117,7 +117,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.level")
-                        .validator(LoggingPropertyMappers::validateLogLevel)
+                        .validator(LoggingPropertyMappers::validateLogParameters)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
@@ -194,6 +194,14 @@ public final class LoggingPropertyMappers {
     }
 
     record CategoryLevel(String category, String levelName) {}
+
+    private static void validateLogParameters(String level) {
+        try {
+            toLevel(level);
+        } catch (IllegalArgumentException iae) {
+            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
+        }
+    }
 
     private static CategoryLevel validateLogLevel(String level) {
         String[] parts = level.split(":");
