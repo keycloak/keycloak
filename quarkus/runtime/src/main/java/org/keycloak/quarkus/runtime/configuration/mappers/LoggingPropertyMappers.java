@@ -115,6 +115,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.level")
+                        .validator(LoggingPropertyMappers::validateLogLevel)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)

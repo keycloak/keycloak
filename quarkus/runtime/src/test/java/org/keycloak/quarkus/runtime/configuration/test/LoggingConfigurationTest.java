@@ -184,17 +184,4 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.file.level", "debug"
         ));
     }
-
-    @Test
-    public void testSyslogLevelsHandlers() {
-        putEnvVars(Map.of(
-                "KC_LOG_SYSLOG_LEVEL", "INFO"
-        ));
-
-        initConfig();
-
-        assertConfig(Map.of(
-                "log-syslog-level", "INFO"
-        ));
-    }
 }
