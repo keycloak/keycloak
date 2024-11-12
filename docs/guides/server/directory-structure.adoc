@@ -10,9 +10,15 @@ includedOptions="">
 
 If you are installing from a zip file then by default there will be an install root directory of `{archivebasename}-{version}`, which can be created anywhere you choose on your filesystem.
 
+<@profile.ifCommunity>
 `/opt/keycloak` is the root install location for the server in all containerized usage shown for {project_name} including <@links.server id="containers"/>, <@links.gettingstarted id="getting-started-docker"/>, <@links.gettingstarted id="getting-started-podman"/>, <@links.gettingstarted id="getting-started-kubernetes"/>, and <@links.gettingstarted id="getting-started-openshift"/>.
+</@profile.ifCommunity>
 
-NOTE: in the rest of documentation relative paths are understood to be relative to the install root - e.g. `conf/file.xml` means `<install root>/conf/file.xml`
+<@profile.ifProduct>
+`/opt/keycloak` is the root install location for the server in all containerized usage shown for {project_name}.
+</@profile.ifProduct>
+
+NOTE: In the rest of the documentation, relative paths are understood to be relative to the install root - for example, `conf/file.xml` means `<install root>/conf/file.xml`
 
 == Directory Structure
 
