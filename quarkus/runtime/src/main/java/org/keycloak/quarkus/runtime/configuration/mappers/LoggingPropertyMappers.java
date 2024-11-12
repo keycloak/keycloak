@@ -5,6 +5,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
@@ -15,6 +16,7 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -199,7 +201,8 @@ public final class LoggingPropertyMappers {
         try {
             toLevel(level);
         } catch (IllegalArgumentException iae) {
-            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
+            throw new PropertyException(
+                    String.format("Invalid parameter: %s", level));
         }
     }
 
