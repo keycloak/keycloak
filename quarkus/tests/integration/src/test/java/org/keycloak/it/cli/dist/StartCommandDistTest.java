@@ -40,6 +40,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 public class StartCommandDistTest {
@@ -76,7 +77,7 @@ public class StartCommandDistTest {
         result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
         result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
-    
+
     @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
