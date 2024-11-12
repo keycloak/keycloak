@@ -133,7 +133,7 @@ const GroupTreeContextMenu = ({
           <DropdownItem key="create" onClick={toggleCreateOpen}>
             {t("createChildGroup")}
           </DropdownItem>
-          <Divider key="separator" />,
+          <Divider key="separator" />
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
             {t("delete")}
           </DropdownItem>

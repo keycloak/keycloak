@@ -119,9 +119,9 @@ describe("Group test", () => {
         .assertNoSearchResultsMessageExist(true);
     });
 
-    it.skip("Duplicate group from item bar", () => {
+    it("Duplicate group from item bar", () => {
       groupPage
-        .duplicateGroupItem(groupNames[0], true)
+        .duplicateGroupItem(groupNames[0])
         .assertNotificationGroupDuplicated();
     });
 
