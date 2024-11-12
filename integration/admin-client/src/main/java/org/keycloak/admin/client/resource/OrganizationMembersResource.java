@@ -30,6 +30,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationMembersResource {
@@ -63,6 +64,28 @@ public interface OrganizationMembersResource {
     List<MemberRepresentation> search(
             @QueryParam("search") String search,
             @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max
+    );
+
+    /**
+     * Return all organization members that match the specified filters.
+     *
+     * @param search a {@code String} representing either a member's username, e-mail, first name, or last name.
+     * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
+     *              at least one of the username main attributes must match exactly the {@code search} param. If false,
+     *              the method returns all members with at least one main attribute partially matching the {@code search} param.
+     * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @return a list containing the matched organization members.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<MemberRepresentation> search(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("membershipType") MembershipType membershipType,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
