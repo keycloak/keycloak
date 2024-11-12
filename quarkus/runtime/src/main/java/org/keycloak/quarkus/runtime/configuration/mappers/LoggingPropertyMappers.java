@@ -43,6 +43,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.level")
+                        .validator(LoggingPropertyMappers::validateLogLevel)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
@@ -77,6 +78,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.level")
+                        .validator(LoggingPropertyMappers::validateLogLevel)
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
