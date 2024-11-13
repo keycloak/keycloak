@@ -80,23 +80,6 @@
     <#if !isSecureContext>
       <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
     </#if>
-    <style>
-      :root {
-      <#assign style = style?eval>
-      <#if style.light??>
-        <#list style.light as k, v>
-            --pf-v5-global--${k}: ${v?no_esc};
-        </#list>
-      </#if>
-      }
-      .pf-v5-theme-dark {
-      <#if style.dark??>
-        <#list style.dark as k, v>
-            --pf-v5-global--${k}: ${v?no_esc};
-        </#list>
-      </#if>
-      }
-    </style>
     <#if devServerUrl?has_content>
       <script type="module">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";

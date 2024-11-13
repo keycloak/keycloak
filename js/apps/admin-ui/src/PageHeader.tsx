@@ -1,3 +1,4 @@
+import { useEnvironment, useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   Avatar,
   Divider,
@@ -18,15 +19,14 @@ import { BarsIcon, EllipsisVIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
-import { useEnvironment, useHelp } from "@keycloak/keycloak-ui-shared";
+import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
+import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
 import { joinPath } from "./utils/joinPath";
 import useToggle from "./utils/useToggle";
-import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
-import { useAccess } from "./context/access/Access";
 
 const ManageAccountDropdownItem = () => {
   const { keycloak } = useEnvironment();

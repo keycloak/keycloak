@@ -5,6 +5,7 @@ import {
   Button,
   Flex,
   FlexItem,
+  FormGroup,
   InputGroup,
   InputGroupItem,
   PageSection,
@@ -20,8 +21,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
+import { ImageUpload } from "./ImageUpload";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
+import { ThemeRealmRepresentation } from "./ThemesTab";
 
 type ThemeType = "light" | "dark";
 
@@ -54,6 +57,9 @@ const ColorControl = ({ name, color, label, ...props }: ColorControlProps) => {
 
 const switchTheme = (theme: ThemeType) => {
   if (theme === "light") {
+    document
+      .querySelector('meta[name="color-scheme"]')!
+      .setAttribute("content", "light");
     document.documentElement.classList.remove("pf-v5-theme-dark");
   } else {
     document.documentElement.classList.add("pf-v5-theme-dark");
@@ -62,7 +68,7 @@ const switchTheme = (theme: ThemeType) => {
 
 type ThemeColorsProps = {
   realm: RealmRepresentation;
-  save: (realm: RealmRepresentation) => void;
+  save: (realm: ThemeRealmRepresentation) => void;
   theme: "light" | "dark";
 };
 
@@ -99,10 +105,12 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     }
   };
 
-  const convert = (values: Record<string, string>) => {
+  const convert = (values: Record<string, File | string>) => {
     const styles = JSON.parse(realm.attributes?.style || "{}");
     save({
       ...realm,
+      logo: values.logo as File,
+      bgimage: values.bgimage as File,
       attributes: {
         ...realm.attributes,
         style: JSON.stringify({
@@ -130,8 +138,12 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
         <FlexItem>
           <FormAccess isHorizontal role="manage-realm">
             <FormProvider {...form}>
-              <TextControl name="logo" label={t("logo")} />
-              <TextControl name="bgimage" label={t("backgroundImage")} />
+              <FormGroup label={t("logo")}>
+                <ImageUpload name="logo" />
+              </FormGroup>
+              <FormGroup label={t("backgroundImage")}>
+                <ImageUpload name="bgimage" />
+              </FormGroup>
               {mapping.map((m) => (
                 <ColorControl
                   key={m.name}
