@@ -159,6 +159,23 @@ For example:
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
 clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
 
+[WARNING]
+====
+Client certificate lookup via a proxy header for X.509 authentication is considered security-sensitive. If misconfigured, a forged client certificate header can be used for authentication.
+*Extra precautions need to be taken to ensure that the client certificate information can be trusted when passed via a proxy header.*
+
+* Double check your use case needs reencrypt or edge TLS termination which implies using a proxy header for client certificate lookup. TLS passthrough is recommended as a more secure option
+  when X.509 authentication is desired as it does not require passing the certificate via a proxy header. Client certificate lookup from a proxy header is applicable only to reencrypt
+  and edge TLS termination.
+* If passthrough is not an option, implement the following security measures:
+** Configure your network so that {project_name} is isolated and can accept connections only from the proxy.
+** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup-<provider>-ssl-client-cert` option.
+** Keep in mind that any of the `spi-x509cert-*` options don't reflect the `proxy-trusted-addresses` option.
+** Pay extra attention to the `spi-x509cert-lookup-<provider>-trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
+   Setting `spi-x509cert-lookup-<provider>-trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
+   when a forged client certificate can be used for authentication.
+====
+
 The server supports some of the most commons TLS termination proxies such as:
 
 [%autowidth]
