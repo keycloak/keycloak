@@ -224,7 +224,7 @@ It will throw an error that allows the transaction to be safely rolled back.
 When this occurs, {project_name} will attempt a retry.
 
 The `transaction.locking: PESSIMISTIC` is the only supported locking mode; `OPTIMISTIC` is not recommended due to its network costs.
-The same settings also prevent that one site it updated while the other site is unreachable.
+The same settings also prevent that one site is updated while the other site is unreachable.
 
 The `backup.strategy: SYNC` ensures the data is visible and stored in the other site when the {project_name} request is completed.
 
@@ -259,7 +259,7 @@ kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infi
 [#connecting-infinispan-to-keycloak]
 == Connecting {jdgserver_name} with {project_name}
 
-Now that an {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
+Now that the {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
 
 . Create a Secret with the username and password to connect to the external {jdgserver_name} deployment:
 +
@@ -272,7 +272,7 @@ include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
 +
 [NOTE]
 ====
-All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
+All the memory, resource and database configurations are skipped from the CR below as they have been described in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
 Administrators should leave those configurations untouched.
 ====
 +
@@ -282,7 +282,7 @@ include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 ----
 <1> The hostname of the remote {jdgserver_name} cluster.
 <2> The port of the remote {jdgserver_name} cluster.
-This is optional and it default to `11222`.
+This is optional and it defaults to `11222`.
 <3> The Secret `name` and `key` with the {jdgserver_name} username credential.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
 <5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its Infinispan caches deployment when a remote store is used.
