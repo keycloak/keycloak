@@ -209,7 +209,7 @@ jobs:
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: quarkus-unit-tests
+          job-id: quarkus-unit-tests-${{ matrix.os }}
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -268,7 +268,7 @@ jobs:
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.server }}
+          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.suite }}
 
   jdk-integration-tests:
     name: Java Distribution IT
