@@ -190,11 +190,7 @@ public class ClientsResource {
             ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
-                UserModel serviceAccount = session.users().getServiceAccount(clientModel);
-
-                if (serviceAccount == null) {
-                    new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
-                }
+                new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
             }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
