@@ -23,6 +23,7 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -46,7 +47,7 @@ public class JwtSigningService extends SigningService<String> {
     private static final Logger LOGGER = Logger.getLogger(JwtSigningService.class);
 
     private static final String ID_TEMPLATE = "urn:uuid:%s";
-    private static final String VC_CLAIM_KEY = "vc";
+    private static final String VC_CLAIM_KEY = OID4VCIssuerWellKnownProvider.VC_KEY;
     private static final String ID_CLAIM_KEY = "id";
 
 
