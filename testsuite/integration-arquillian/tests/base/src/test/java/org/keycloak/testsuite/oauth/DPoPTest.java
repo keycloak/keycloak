@@ -143,11 +143,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPByPublicClient() throws Exception {
+        int clockSkew = 10; // acceptable clock skew is +-10sec
 
         oauth.clientId(TEST_PUBLIC_CLIENT_ID);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
-        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime() + clockSkew), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofEcEncoded);
@@ -187,6 +188,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofByConfidentialClient() throws Exception {
+        int clockSkew = -10; // acceptable clock skew is +-10sec
 
         oauth.clientId(TEST_CONFIDENTIAL_CLIENT_ID);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -195,7 +197,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
-        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
+        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime() + clockSkew), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofRsaEncoded);
