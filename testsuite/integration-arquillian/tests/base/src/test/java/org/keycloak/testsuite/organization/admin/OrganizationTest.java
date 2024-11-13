@@ -117,7 +117,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
         assertFalse(existing.isEmpty());
         assertThat(expected, containsInAnyOrder(existing.toArray()));
-        Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).anyMatch(Objects::nonNull));
+        Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("wayneind.com"), not(nullValue()));
         assertThat(orgRep.getDomain("wayneind-gotham.com"), not(nullValue()));
-        assertThat(orgRep.getAttributes(), hasEntry("key", List.of("value1", "value2")));
+        assertThat(orgRep.getAttributes(), nullValue());
 
         existing = testRealm().organizations().search("gtbank.net", true, 0, 10);
         assertThat(existing, hasSize(1));
@@ -147,6 +147,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("gtbank.com"), not(nullValue()));
         assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));
+        assertThat(orgRep.getAttributes(), nullValue());
 
 
         existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
