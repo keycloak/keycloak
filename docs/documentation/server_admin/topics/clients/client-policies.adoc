@@ -16,7 +16,7 @@ Client Policies realize the following points mentioned as follows.
 
 Setting policies on what configuration a client can have::
     Configuration settings on the client can be enforced by client policies during client creation/update, but also during OpenID Connect requests to {project_name} server, which are related to particular client.
-    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
+    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* in the link:{securing_apps_link}[Securing applications and Services guide].
     However, Client Registration Policies can only cover OIDC Dynamic Client Registration. Client Policies cover not only what Client Registration Policies can do, but other client
     registration and configuration ways. The current plans are for Client Registration to be replaced by Client Policies.
 

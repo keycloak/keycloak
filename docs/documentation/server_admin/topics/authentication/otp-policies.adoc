@@ -34,7 +34,7 @@ The default algorithm is SHA1. The other, more secure options are SHA256 and SHA
 
 ===== Number of digits
 
-The length of the OTP.  Short OTP's are user-friendly, easier to type, and easier to remember. Longer OTP's are more secure than shorter OTP's.
+The length of the OTP.  Short OTPs are user-friendly, easier to type, and easier to remember. Longer OTPs are more secure than shorter OTPs.
 
 ===== Look around window
 
