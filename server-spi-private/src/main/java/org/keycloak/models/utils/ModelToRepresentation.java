@@ -1297,7 +1297,7 @@ public class ModelToRepresentation {
     }
 
     public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
-        OrganizationRepresentation rep = toBriefRepresentation(model);
+        OrganizationRepresentation rep = toBriefRepresentation(model,false);
         if (rep == null) {
             return null;
         }
@@ -1305,7 +1305,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
+    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model, Boolean briefRepresentation) {
         if (model == null) {
             return null;
         }
@@ -1313,8 +1313,10 @@ public class ModelToRepresentation {
         rep.setId(model.getId());
         rep.setName(model.getName());
         rep.setAlias(model.getAlias());
+        if (briefRepresentation) {
+            rep.setAttributes(model.getAttributes());
+        }
         rep.setEnabled(model.isEnabled());
-        rep.setAttributes(model.getAttributes());
         rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());
         model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
