@@ -70,14 +70,14 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public void validate() {
-        ValidationException validationException = new ValidationException();
+        ValidationException.ValidationExceptionBuilder validationExceptionBuilder = new ValidationException.ValidationExceptionBuilder();
 
         for (String attributeName : attributes.nameSet()) {
-            this.attributes.validate(attributeName, validationException);
+            this.attributes.validate(attributeName, validationExceptionBuilder);
         }
 
-        if (validationException.hasError()) {
-            throw validationException;
+        if (validationExceptionBuilder.hasError()) {
+            throw validationExceptionBuilder.build();
         }
 
         validated = true;
