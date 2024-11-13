@@ -27,6 +27,7 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -97,5 +98,11 @@ public class ServiceAccountClientTest extends AbstractClientTest {
         Assert.assertEquals("service-account-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_HOST));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ADDRESS));
+
+        // remove the service account and client credentials should fail
+        UserRepresentation serviceAccountUser = client.getServiceAccountUser();
+        testRealmResource().users().delete(serviceAccountUser.getId());
+        response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        Assert.assertEquals("invalid_request", response.getError());
     }
 }
