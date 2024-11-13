@@ -149,6 +149,14 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));
         assertThat(orgRep.getAttributes(), nullValue());
 
+        orgRep.singleAttribute("foo", "bar");
+        orgRep.singleAttribute("bar", "foo");
+        testRealm().organizations().get(orgRep.getId()).update(orgRep).close();
+        existing = testRealm().organizations().search("gtbank.net", true, 0, 10, true);
+        assertThat(existing, hasSize(1));
+        orgRep = existing.get(0);
+        assertThat(orgRep.getAttributes(), notNullValue());
+        assertThat(2, is(orgRep.getAttributes().size()));
 
         existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
         assertThat(existing, is(empty()));

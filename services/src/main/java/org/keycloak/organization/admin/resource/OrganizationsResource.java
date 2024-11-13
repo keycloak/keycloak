@@ -134,7 +134,7 @@ public class OrganizationsResource {
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
-            @Parameter(description = "if true, return with their attributes") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
+            @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
     ) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
