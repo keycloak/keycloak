@@ -45,6 +45,7 @@ public class SamlUtils {
                 .map(ClientRepresentation::getId)
                 .map(res::get)
                 .map(clientResource -> clientResource.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR))
+                .map(response -> response.readEntity(String.class))
                 .orElseThrow(() -> new RuntimeException("Missing descriptor"));
 
         SAMLParser parser = SAMLParser.getInstance();
