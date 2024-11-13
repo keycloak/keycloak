@@ -190,6 +190,10 @@ public class ClientManager {
         ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
 
         if (serviceAccountScope != null) {
+            if (client.getClientScopes(false).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE)) {
+                // if it's assigned as optional just remove it to assign it as default
+                client.removeClientScope(serviceAccountScope);
+            }
             client.addClientScope(serviceAccountScope, true);
         } else {
             logger.tracef("Service account scope not added to client %s because it does not exist", client.getClientId());

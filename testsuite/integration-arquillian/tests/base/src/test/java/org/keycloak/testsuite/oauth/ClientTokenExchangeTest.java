@@ -45,6 +45,8 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -54,8 +56,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
@@ -76,9 +80,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.util.JsonSerialization;
-
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -230,6 +231,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         serviceAccount.setSecret("secret");
         serviceAccount.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         serviceAccount.setFullScopeAllowed(false);
+        new ClientManager(new RealmManager(session)).enableServiceAccount(serviceAccount);
 
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
