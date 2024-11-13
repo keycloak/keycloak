@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.keycloak.cluster.ClusterProvider;
@@ -189,8 +190,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void migrate(String modelVersion) {
-        InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
-        ComponentRegistry.componentOf(authSessionsCache, PersistenceManager.class).clearAllStores(PersistenceManager.AccessMode.BOTH);
+        if ("26.1.0".equals(modelVersion)) {
+            InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
+            Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+            CompletionStages.join(ComponentRegistry.componentOf(authSessionsCache, PersistenceManager.class).clearAllStores(PersistenceManager.AccessMode.BOTH));
+        }
     }
 }

@@ -76,9 +76,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private RemoteCacheInvoker remoteCacheInvoker;
     SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
-
-
-
+    
     @Override
     public void init(Config.Scope config) {
         authSessionsLimit = getAuthSessionsLimit(config);
