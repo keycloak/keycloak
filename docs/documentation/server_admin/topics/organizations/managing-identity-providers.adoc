@@ -51,6 +51,7 @@ Once linked to an organization, the identity provider can be managed just like a
 == Editing a linked identity provider
 
 You can edit any of the organization-related settings of a linked identity provider at any time. 
+
 .Procedure
 
 . In the menu, click *Organizations* and go to the *Identity providers* tab.
