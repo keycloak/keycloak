@@ -2271,7 +2271,53 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
             assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
         }
-     }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            upConfig = UPConfigUtils.parseSystemDefaultConfig();
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            provider.setConfiguration(upConfig);
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.put(UserModel.EMAIL, "new@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.USERNAME));
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            attributes.put(UserModel.EMAIL, "other@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals("new@email.com", profile.getAttributes().getFirst(UserModel.USERNAME));
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
+            assertTrue(ve.hasError(Messages.READ_ONLY_USERNAME));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+        }
+
+        try {
+            upConfig = UPConfigUtils.parseSystemDefaultConfig();
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            provider.setConfiguration(upConfig);
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.put(UserModel.EMAIL, "other@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.USERNAME));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
 
     @Test
     public void testMultivalued() {
