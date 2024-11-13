@@ -17,13 +17,18 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import jakarta.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,9 +49,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import jakarta.ws.rs.NotFoundException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -103,27 +110,31 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testOidcJBossXml() {
-        String xml = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem");
+        Response response = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem");
+        String xml = response.readEntity(String.class);
         assertOidcInstallationConfig(xml);
         assertThat(xml, containsString("<secure-deployment"));
     }
 
     @Test
     public void testOidcJson() {
-        String json = oidcClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        Response response = oidcClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        String json = response.readEntity(String.class);
         assertOidcInstallationConfig(json);
     }
 
     @Test
     public void testOidcJBossCli() {
-        String cli = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem-cli");
+        Response response = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem-cli");
+        String cli = response.readEntity(String.class);
         assertOidcInstallationConfig(cli);
         assertThat(cli, containsString("/subsystem=keycloak/secure-deployment=\"WAR MODULE NAME.war\""));
     }
 
     @Test
     public void testOidcBearerOnlyJson() {
-        String json = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        Response response = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        String json = response.readEntity(String.class);
         assertOidcInstallationConfig(json);
         assertThat(json, containsString("bearer-only"));
         assertThat(json, not(containsString("public-client")));
@@ -136,7 +147,8 @@ public class InstallationTest extends AbstractClientTest {
         // Generate audience client scope
         String clientScopeId = testingClient.testing().generateAudienceClientScope("test", OIDC_NAME_BEARER_ONLY_NAME);
 
-        String json = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        Response response = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        String json = response.readEntity(String.class);
         assertOidcInstallationConfig(json);
         assertThat(json, containsString("bearer-only"));
         assertThat(json, not(containsString("public-client")));
@@ -155,7 +167,8 @@ public class InstallationTest extends AbstractClientTest {
         oidcBearerOnlyClientWithAuthzId = createOidcConfidentialClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
         oidcBearerOnlyClientWithAuthz = findClientResource(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
 
-        String json = oidcBearerOnlyClientWithAuthz.getInstallationProvider("keycloak-oidc-keycloak-json");
+        Response response = oidcBearerOnlyClientWithAuthz.getInstallationProvider("keycloak-oidc-keycloak-json");
+        String json = response.readEntity(String.class);
         assertOidcInstallationConfig(json);
         assertThat(json, not(containsString("bearer-only")));
         assertThat(json, not(containsString("public-client")));
@@ -172,14 +185,16 @@ public class InstallationTest extends AbstractClientTest {
         assertThat(config, containsString(authServerUrl()));
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testSamlMetadataIdpDescriptor() {
-        samlClient.getInstallationProvider("saml-idp-descriptor");
+        Response response = samlClient.getInstallationProvider("saml-idp-descriptor");
+        assertEquals(404, response.getStatus());
     }
 
     @Test
     public void testSamlAdapterXml() {
-        String xml = samlClient.getInstallationProvider("keycloak-saml");
+        Response response = samlClient.getInstallationProvider("keycloak-saml");
+        String xml = response.readEntity(String.class);
         assertThat(xml, containsString("<keycloak-saml-adapter>"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
         assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
@@ -188,7 +203,8 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlAdapterCli() {
-        String cli = samlClient.getInstallationProvider("keycloak-saml-subsystem-cli");
+        Response response = samlClient.getInstallationProvider("keycloak-saml-subsystem-cli");
+        String cli = response.readEntity(String.class);
         assertThat(cli, containsString("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/"));
         assertThat(cli, containsString("SPECIFY YOUR entityID!"));
         assertThat(cli, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
@@ -197,7 +213,8 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlMetadataSpDescriptor() throws Exception {
-        String xml = samlClient.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+        Response response = samlClient.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+        String xml = response.readEntity(String.class);
         Document doc = getDocumentFromXmlString(xml);
         assertElements(doc, METADATA_NSURI.get(), "EntityDescriptor", null);
         assertElements(doc, METADATA_NSURI.get(), "SPSSODescriptor", null);
@@ -206,7 +223,8 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlJBossXml() {
-        String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
+        Response response = samlClient.getInstallationProvider("keycloak-saml-subsystem");
+        String xml = response.readEntity(String.class);
         assertThat(xml, containsString("<secure-deployment"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
         assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
@@ -220,7 +238,8 @@ public class InstallationTest extends AbstractClientTest {
             assertThat(updater.getResource().toRepresentation().getAttributes().get(SamlConfigAttributes.SAML_FORCE_POST_BINDING), equalTo("true"));
 
             //error fallback
-            Document doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            Response response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            Document doc = getDocumentFromXmlString(response.readEntity(String.class));
             Map<String, String> attrNamesAndValues = new HashMap<>();
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
             attrNamesAndValues.put("Location", "ERROR:ENDPOINT_NOT_SET");
@@ -231,7 +250,8 @@ public class InstallationTest extends AbstractClientTest {
             //fallback to adminUrl
             updater.setAdminUrl("https://admin-url").update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
-            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            doc = getDocumentFromXmlString(response.readEntity(String.class));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
             attrNamesAndValues.put("Location", "https://admin-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
@@ -246,7 +266,8 @@ public class InstallationTest extends AbstractClientTest {
                    .update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
 
-            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            doc = getDocumentFromXmlString(response.readEntity(String.class));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
             attrNamesAndValues.put("Location", "https://saml-logout-post-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
@@ -268,7 +289,8 @@ public class InstallationTest extends AbstractClientTest {
             assertThat(updater.getResource().toRepresentation().getAttributes().get(SamlConfigAttributes.SAML_FORCE_POST_BINDING), equalTo("false"));
 
             //error fallback
-            Document doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            Response response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            Document doc = getDocumentFromXmlString(response.readEntity(String.class));
             Map<String, String> attrNamesAndValues = new HashMap<>();
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
             attrNamesAndValues.put("Location", "ERROR:ENDPOINT_NOT_SET");
@@ -279,7 +301,8 @@ public class InstallationTest extends AbstractClientTest {
             //fallback to adminUrl
             updater.setAdminUrl("https://admin-url").update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
-            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            doc = getDocumentFromXmlString(response.readEntity(String.class));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
             attrNamesAndValues.put("Location", "https://admin-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
@@ -293,7 +316,8 @@ public class InstallationTest extends AbstractClientTest {
                    .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "https://saml-logout-redirect-url")
                    .update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
-            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            response = updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
+            doc = getDocumentFromXmlString(response.readEntity(String.class));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
             attrNamesAndValues.put("Location", "https://saml-logout-redirect-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
@@ -303,6 +327,43 @@ public class InstallationTest extends AbstractClientTest {
             assertElements(doc, METADATA_NSURI.get(), "AssertionConsumerService", attrNamesAndValues);
         }
         assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+    }
+
+    @Test
+    public void testPemsInModAuthMellonExportShouldBeFormattedInRfc7468() throws IOException {
+        Response response = samlClient.getInstallationProvider("mod-auth-mellon");
+        byte[] result = response.readEntity(byte[].class);
+
+        String clientPrivateKey = null;
+        String clientCert = null;
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(result))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().endsWith("client-private-key.pem")) {
+                    clientPrivateKey = new String(zis.readAllBytes(), StandardCharsets.US_ASCII);
+                }
+                else if (entry.getName().endsWith("client-cert.pem")) {
+                    clientCert = new String(zis.readAllBytes(), StandardCharsets.US_ASCII);
+                }
+            }
+        }
+
+        assertNotNull(clientPrivateKey);
+        assertNotNull(clientCert);
+        assertRfc7468PrivateKey(clientPrivateKey);
+        assertRfc7468Cert(clientCert);
+    }
+
+    private void assertRfc7468PrivateKey(String result) {
+        assertTrue(result.startsWith("-----BEGIN PRIVATE KEY-----"));
+        assertTrue(result.endsWith("-----END PRIVATE KEY-----"));
+        result.lines().forEach(line -> assertTrue(line.length() <= 64));
+    }
+
+    private void assertRfc7468Cert(String result) {
+        assertTrue(result.startsWith("-----BEGIN CERTIFICATE-----"));
+        assertTrue(result.endsWith("-----END CERTIFICATE-----"));
+        result.lines().forEach(line -> assertTrue(line.length() <= 64));
     }
 
     private Document getDocumentFromXmlString(String xml) throws SAXException, ParserConfigurationException, IOException {
