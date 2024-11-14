@@ -19,36 +19,86 @@ package org.keycloak.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SearchQueryUtils {
-    public static final Pattern queryPattern = Pattern.compile("\\s*(?:(?<name>[^\"][^: ]+|.)|\"(?<nameEsc>(?:\\\\.|[^\\\\\"])+)\"):(?:(?<value>[^\"][^ ]*)|\"(?<valueEsc>(?:\\\\.|[^\\\\\"])+)\")\\s*");
-    public static final Pattern escapedCharsPattern = Pattern.compile("\\\\(.)");
 
     public static Map<String, String> getFields(final String query) {
-        Matcher matcher = queryPattern.matcher(query);
         Map<String, String> ret = new HashMap<>();
-        while (matcher.find()) {
-            String name = matcher.group("name");
-            if (name == null) {
-                name = unescape(matcher.group("nameEsc"));
+        char[] chars = query.trim().toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            boolean inQuotes = false;
+            boolean internal = false;
+            String name = "";
+            while (i < chars.length && chars[i] != ':') {
+                if (chars[i] == '\\') {
+                    if (chars[i+1] == '\"') {
+                        i++;
+                    }
+                    else if (chars[i+1] == '\\') {
+                        i+=2;
+                        continue;
+                    }
+                }
+                else if (chars[i] == '\"') {
+                        if(!inQuotes && name.length() > 0) {
+                            internal = true;
+                        }
+                        else if(internal) {
+                            internal = false;
+                        }
+                        else {
+                            inQuotes = !inQuotes;
+                            i++;
+                            continue;
+                        }
+                }
+                else if(chars[i] == ' ' && !inQuotes) {
+                    break;
+                }
+                name += chars[i];
+                i++;
             }
-
-            String value = matcher.group("value");
-            if (value == null) {
-                value = unescape(matcher.group("valueEsc"));
+            if(i == chars.length || chars[i] == ' ') {
+                continue;
             }
-
+            i++;
+            inQuotes = false;
+            internal = false;
+            String value = "";
+            while (i < chars.length) {
+                if (chars[i] == '\\') {
+                    if (chars[i+1] == '\"') {
+                        i++;
+                    }
+                    else if (chars[i+1] == '\\') {
+                        i+=2;
+                        continue;
+                    }
+                }
+                else if (chars[i] == '\"') {
+                    if(!inQuotes && value.length() > 0) {
+                        internal = true;
+                    }
+                    else if(internal) {
+                        internal = false;
+                    }
+                    else {
+                        inQuotes = !inQuotes;
+                        i++;
+                        continue;
+                    }
+                }
+                else if(chars[i] == ' ' && !inQuotes) {
+                    break;
+                }
+                value += chars[i];
+                i++;
+            }
             ret.put(name, value);
         }
         return ret;
-    }
-
-    public static String unescape(final String escaped) {
-        return escapedCharsPattern.matcher(escaped).replaceAll("$1");
     }
 }
