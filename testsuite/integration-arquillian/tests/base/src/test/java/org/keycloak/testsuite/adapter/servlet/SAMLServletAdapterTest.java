@@ -106,6 +106,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import org.keycloak.admin.client.Keycloak;
@@ -167,6 +168,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserDriverUtil;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SamlClient;
@@ -1952,6 +1954,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void testImpersonationForSaml() throws IOException {
+        Assume.assumeFalse("The firefox driver does not allow to set the cookies", BrowserDriverUtil.isDriverFirefox(driver));
+
         RealmResource realm = adminClient.realm(SAMLSERVLETDEMO);
         List<UserRepresentation> users = realm.users().search("bburke", true);
         Assert.assertNotNull(users);
@@ -1987,12 +1991,21 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
     }
 
+    private String getCookieValue(String name, String path) {
+        return driver.manage().getCookies()
+                .stream()
+                .filter(c -> name.equals(c.getName()) && path.equals(c.getPath()))
+                .findAny()
+                .map(Cookie::getValue)
+                .orElse(null);
+    }
+
     @Test
     public void testChangeSessionID() throws Exception {
         // login in the employeeDom application
         assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
         assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
-        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
+        String sessionId = getCookieValue("JSESSIONID", "/employee-dom");
 
         // retrieve the saml document
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
@@ -2003,7 +2016,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // change the session id
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
         waitForPageToLoad();
-        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, getCookieValue("JSESSIONID", "/employee-dom"));
 
         // retrieve again the saml document and should be the same as login should be maintained
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
