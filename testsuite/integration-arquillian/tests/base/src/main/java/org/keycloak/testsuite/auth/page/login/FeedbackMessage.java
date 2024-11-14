@@ -75,12 +75,16 @@ public class FeedbackMessage {
         }
     }
 
-    public String getType() {
+    private String getType() {
         try {
             String cssClass = alertRoot.getAttribute("class");
             Matcher classMatcher = ALERT_TYPE_CLASS_PATTERN.matcher(cssClass);
             if (!classMatcher.find()) {
-                throw new RuntimeException("Failed to identify feedback message type");
+                classMatcher = Pattern.compile("alert-(.+)").matcher(cssClass);
+                if (!classMatcher.find())
+                    throw new RuntimeException("Failed to identify feedback message type");
+
+                return classMatcher.group(1);
             }
             return classMatcher.group(1);
         } catch (NoSuchElementException e) {

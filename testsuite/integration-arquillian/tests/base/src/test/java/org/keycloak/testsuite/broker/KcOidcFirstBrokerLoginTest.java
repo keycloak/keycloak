@@ -465,11 +465,11 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         //assert field names
         // i18n replaced
-        org.junit.Assert.assertEquals("First name *", updateAccountInformationPage.getLabelForField("firstName"));
+        org.junit.Assert.assertEquals("First name", updateAccountInformationPage.getLabelForField("firstName"));
         // attribute name used if no display name set
         org.junit.Assert.assertEquals("lastName", updateAccountInformationPage.getLabelForField("lastName"));
         // direct value in display name
-        org.junit.Assert.assertEquals("Department *", updateAccountInformationPage.getLabelForField("department"));
+        org.junit.Assert.assertEquals("Department", updateAccountInformationPage.getLabelForField("department"));
     }
 
     @Test
