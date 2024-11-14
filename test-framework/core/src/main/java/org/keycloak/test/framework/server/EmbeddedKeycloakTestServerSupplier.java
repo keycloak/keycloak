@@ -1,6 +1,10 @@
 package org.keycloak.test.framework.server;
 
+import org.jboss.logging.Logger;
+
 public class EmbeddedKeycloakTestServerSupplier extends AbstractKeycloakTestServerSupplier {
+
+    private static final Logger LOGGER = Logger.getLogger(EmbeddedKeycloakTestServerSupplier.class);
 
     @Override
     public KeycloakTestServer getServer() {
@@ -15,5 +19,10 @@ public class EmbeddedKeycloakTestServerSupplier extends AbstractKeycloakTestServ
     @Override
     public String getAlias() {
         return "embedded";
+    }
+
+    @Override
+    public Logger getLogger() {
+        return LOGGER;
     }
 }

@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface KeycloakTestServer {
 
-    void start(List<String> rawOptions, Set<Dependency> dependencies);
+    void start(CommandBuilder commandBuilder, Set<Dependency> dependencies);
 
     void stop();
 

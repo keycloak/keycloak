@@ -2,31 +2,77 @@ package org.keycloak.test.framework;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.injection.Registry;
 
-public class KeycloakIntegrationTestExtension implements BeforeEachCallback, AfterEachCallback, AfterAllCallback {
+import java.util.Optional;
+
+public class KeycloakIntegrationTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, TestWatcher {
+
+    private static final LogHandler logHandler = new LogHandler();
 
     @Override
-    public void beforeEach(ExtensionContext context) {
+    public void beforeAll(ExtensionContext context) {
         if (isExtensionEnabled(context)) {
-            getRegistry(context).beforeEach(context.getRequiredTestInstance());
+            logHandler.beforeAll(context);
         }
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         if (isExtensionEnabled(context)) {
+            logHandler.beforeEachStarting(context);
+            getRegistry(context).beforeEach(context.getRequiredTestInstance());
+            logHandler.beforeEachCompleted(context);
+        }
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) {
+        if (isExtensionEnabled(context)) {
+            logHandler.afterEachStarting(context);
             getRegistry(context).afterEach();
+            logHandler.afterEachCompleted(context);
         }
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
         if (isExtensionEnabled(context)) {
+            logHandler.afterAll(context);
             getRegistry(context).afterAll();
+        }
+    }
+
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+        if (isExtensionEnabled(context)) {
+            logHandler.testFailed(context);
+        }
+    }
+
+    @Override
+    public void testDisabled(ExtensionContext context, Optional<String> reason) {
+        if (isExtensionEnabled(context)) {
+            logHandler.testDisabled(context);
+        }
+    }
+
+    @Override
+    public void testSuccessful(ExtensionContext context) {
+        if (isExtensionEnabled(context)) {
+            logHandler.testSuccessful(context);
+        }
+    }
+
+    @Override
+    public void testAborted(ExtensionContext context, Throwable cause) {
+        if (isExtensionEnabled(context)) {
+            logHandler.testAborted(context);
         }
     }
 

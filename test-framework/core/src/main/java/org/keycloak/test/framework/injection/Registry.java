@@ -65,8 +65,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Injecting existing dependency {0} into {1}",
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugv("Injecting existing dependency {0} into {1}",
                         dependency.getSupplier().getClass().getSimpleName(),
                         dependent.getSupplier().getClass().getSimpleName());
             }
@@ -86,8 +86,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
             requestedInstances.remove(requestedDependency);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Injecting requested dependency {0} into {1}",
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugv("Injecting requested dependency {0} into {1}",
                         dependency.getSupplier().getClass().getSimpleName(),
                         dependent.getSupplier().getClass().getSimpleName());
             }
@@ -110,8 +110,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
             deployedInstances.add(dependency);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Injecting un-configured dependency {0} into {1}",
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugv("Injecting un-configured dependency {0} into {1}",
                         dependency.getSupplier().getClass().getSimpleName(),
                         dependent.getSupplier().getClass().getSimpleName());
             }
@@ -143,8 +143,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracev("Requested suppliers: {0}",
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugv("Requested suppliers: {0}",
                     requestedInstances.stream().map(r -> r.getSupplier().getClass().getSimpleName()).collect(Collectors.joining(", ")));
         }
     }
@@ -156,15 +156,15 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             InstanceContext deployedInstance = getDeployedInstance(requestedInstance);
             if (deployedInstance != null) {
                 if (requestedInstance.getLifeCycle().equals(deployedInstance.getLifeCycle()) && deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.tracev("Reusing compatible: {0}",
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debugv("Reusing compatible: {0}",
                                 deployedInstance.getSupplier().getClass().getSimpleName());
                     }
 
                     itr.remove();
                 } else {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.tracev("Destroying non-compatible: {0}",
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debugv("Destroying non-compatible: {0}",
                                 deployedInstance.getSupplier().getClass().getSimpleName());
                     }
 
@@ -183,8 +183,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.tracev("Created instance: {0}",
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugv("Created instance: {0}",
                             requestedInstance.getSupplier().getClass().getSimpleName());
                 }
             }
@@ -207,19 +207,19 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     public void afterAll() {
-        LOGGER.trace("Closing instances with class lifecycle");
+        LOGGER.debug("Closing instances with class lifecycle");
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
-        LOGGER.trace("Closing instances with method lifecycle");
+        LOGGER.debug("Closing instances with method lifecycle");
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void close() {
-        LOGGER.trace("Closing all instances");
+        LOGGER.debug("Closing all instances");
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().toList();
         destroy.forEach(this::destroy);
     }
@@ -260,8 +260,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             dependencies.forEach(this::destroy);
             instanceContext.getSupplier().close(instanceContext);
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracev("Closed instance: {0}",
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugv("Closed instance: {0}",
                         instanceContext.getSupplier().getClass().getSimpleName());
             }
         }
@@ -322,20 +322,20 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
-        if (LOGGER.isTraceEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder loaded = new StringBuilder();
             loaded.append("Loaded suppliers:");
             for (Supplier s : suppliers) {
                 loaded.append("\n - " + valueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
             }
-            LOGGER.trace(loaded.toString());
+            LOGGER.debug(loaded.toString());
 
             StringBuilder skipped = new StringBuilder();
             skipped.append("Skipped suppliers:");
             for (Supplier s : skippedSuppliers) {
                 skipped.append("\n - " + valueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
             }
-            LOGGER.trace(skipped.toString());
+            LOGGER.debug(skipped.toString());
         }
     }
 

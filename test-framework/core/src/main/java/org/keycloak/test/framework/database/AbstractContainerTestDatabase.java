@@ -22,7 +22,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     public void start() {
         container = createContainer();
         container = container.withStartupTimeout(Duration.ofMinutes(10))
-                .withLogConsumer(new JBossLogConsumer(getLogger()))
+                .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
                 .withReuse(reuse);
         withDatabaseAndUser(getDatabase(), getUsername(), getPassword());
         container.start();
