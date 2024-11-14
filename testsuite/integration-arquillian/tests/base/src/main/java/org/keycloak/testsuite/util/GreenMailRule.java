@@ -17,7 +17,9 @@
 
 package org.keycloak.testsuite.util;
 
+import com.icegreen.greenmail.user.GreenMailUser;
 import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.user.TokenValidator;
 import com.icegreen.greenmail.util.ServerSetup;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.RealmModel;
@@ -56,6 +58,13 @@ public class GreenMailRule extends ExternalResource {
 
     public void credentials(String username, String password) {
         greenMail.setUser(username, password);
+    }
+
+    public void credentials(String username, TokenValidator validator) {
+        greenMail.setUser(username, null);
+        GreenMailUser user = greenMail.getUserManager().getUser(username);
+        // greenmail refactoring required, see https://github.com/greenmail-mail-test/greenmail/pull/838
+        ((com.icegreen.greenmail.user.UserImpl)user).setTokenValidator(validator);
     }
 
     @Override
