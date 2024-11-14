@@ -170,6 +170,31 @@ public class DPoPUtil {
         }
     }
 
+    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
+                                                             EventBuilder event,
+                                                             Cors cors) {
+        boolean isDPoPSupported = Profile.isFeatureEnabled(Profile.Feature.DPOP);
+        if (!isDPoPSupported) {
+            return Optional.empty();
+        }
+
+        HttpRequest request = keycloakSession.getContext().getHttpRequest();
+        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
+        if (!isDpopHeaderPresent) {
+            return Optional.empty();
+        }
+
+        try {
+            DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
+            keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
+            return Optional.of(dPoP);
+        } catch (VerificationException ex) {
+            event.detail(Details.REASON, ex.getMessage());
+            event.error(Errors.INVALID_DPOP_PROOF);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
+    
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
         if (token == null || token.trim().equals("")) {
@@ -261,6 +286,28 @@ public class DPoPUtil {
 
     public static void bindToken(AccessToken token, DPoP dPoP) {
         bindToken(token, dPoP.getThumbprint());
+    }
+
+    public static void validateDPoPJkt(String dpopJkt, KeycloakSession session, EventBuilder event, Cors cors) {
+        if (dpopJkt == null) {
+            // if Keycloak did not receive dpop_jkt in an authorization request, Keycloak needs not to verify whether DPoP Proof public key thumbprint matches dpop_jkt.
+            return;
+        }
+        // if Keycloak received dpop_jkt in an authorization request, Keycloak needs to verify whether DPoP Proof public key thumbprint matches dpop_jkt.
+        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dPoP == null) {
+            String errorMessage = "DPoP Proof missing";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!dpopJkt.equals(dPoP.getThumbprint())){
+            String errorMessage = "DPoP Proof public key thumbprint does not match dpop_jkt";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
+
     }
 
     private static class DPoPClaimsCheck implements TokenVerifier.Predicate<DPoP> {

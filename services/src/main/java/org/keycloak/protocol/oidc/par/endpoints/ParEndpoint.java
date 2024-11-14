@@ -26,14 +26,18 @@ import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.Consumes;
@@ -57,6 +61,7 @@ import java.util.UUID;
 public class ParEndpoint extends AbstractParEndpoint {
 
     public static final String PAR_CREATED_TIME = "par.created.time";
+    public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
 
@@ -95,6 +100,11 @@ public class ParEndpoint extends AbstractParEndpoint {
         if (decodedFormParameters.containsKey(REQUEST_URI_PARAM)) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "It is not allowed to include request_uri to PAR.", Response.Status.BAD_REQUEST);
         }
+
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-10.1
+        DPoPUtil.retrieveDPoPHeaderIfPresent(session, event, cors).ifPresent(dPoP -> {
+            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
+        });
 
         try {
             authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, decodedFormParameters);
@@ -137,6 +147,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkOIDCRequest();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
+            checker.checkParDPoPParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             ex.throwAsCorsErrorResponseException(cors);
         }
@@ -157,6 +168,11 @@ public class ParEndpoint extends AbstractParEndpoint {
         flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
         params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
+        // If DPoP Proof exists, its public key needs to be matched with the one with Token Request afterward
+        DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dpop != null) {
+            params.put(PAR_DPOP_PROOF_JKT, dpop.getThumbprint());
+        }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         singleUseStore.put(key, expiresIn, params);
