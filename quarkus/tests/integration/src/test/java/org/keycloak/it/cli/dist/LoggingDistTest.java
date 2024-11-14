@@ -25,25 +25,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.jupiter.api.Test;
-import org.keycloak.config.LoggingOptions;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.it.utils.RawDistRootPath;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.junit.jupiter.api.Test;
+import org.keycloak.config.LoggingOptions;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+
+import io.quarkus.deployment.util.FileUtil;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
@@ -95,21 +95,24 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-console-output=json" })
-    void testJsonFormatApplied(LaunchResult result) throws JsonProcessingException {
-        CLIResult cliResult = (CLIResult) result;
-
+    void testJsonFormatApplied(KeycloakDistribution dist) throws IOException {
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        CLIResult cliResult = dist.run("start-dev", "--log-console-output=json");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
+        assertFalse(cliResult.getOutput().contains("UPDATE SUMMARY"));
     }
 
     @Test
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json" })
-    void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakDistribution dist) throws IOException {
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        CLIResult cliResult = dist.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
+        assertTrue(cliResult.getOutput().contains("UPDATE SUMMARY"));
     }
 
     @Test
