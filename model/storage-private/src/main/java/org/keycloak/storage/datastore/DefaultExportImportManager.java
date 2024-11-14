@@ -860,11 +860,28 @@ public class DefaultExportImportManager implements ExportImportManager {
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
-            Map<String, String> config = new HashMap(rep.getSmtpServer());
-            if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
-                String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
-                config.put("password", passwordValue);
+
+            Map<String, String> config = new HashMap<>(rep.getSmtpServer());
+
+            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+                    String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
+                    config.put("password", passwordValue);
+                }
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
             }
+
+            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+                    String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
+                    config.put("authTokenClientSecret", authTokenClientSecretValue);
+                }
+                config.remove("password");
+            }
+
             realm.setSmtpConfig(config);
         }
 
