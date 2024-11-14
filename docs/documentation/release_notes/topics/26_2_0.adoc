@@ -96,3 +96,9 @@ using Microsoft AD, based on the `pwdLastSet` attribute.
 In order to check if a credential is local - managed by {project_name} - or federated, you can check the `federationLink` property available from both
 `CredentialRepresentation` and `CredentialModel` types. If set, the `federationLink` property holds the UUID of the component model associated with a given
 user storage provider.
+
+= Token based authentication for SMTP (XOAUTH2)
+
+The Keycloak outgoing link:{adminguide_email_name}[SMTP mail configuration] now supports token authentication (XOAUTH2).
+Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
+The token is gathered using Client Credentials Grant.

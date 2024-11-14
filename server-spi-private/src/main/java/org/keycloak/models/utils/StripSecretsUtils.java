@@ -134,6 +134,7 @@ public class StripSecretsUtils {
 
     private static RealmRepresentation stripRealm(RealmRepresentation rep) {
         stripFromMap(rep.getSmtpServer(), "password");
+        stripFromMap(rep.getSmtpServer(), "authTokenClientSecret");
         return rep;
     }
 
