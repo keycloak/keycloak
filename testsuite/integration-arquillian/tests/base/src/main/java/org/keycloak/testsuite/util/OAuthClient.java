@@ -200,6 +200,7 @@ public class OAuthClient {
     private String codeChallengeMethod;
     private String origin;
     private String dpopProof;
+    private String dpopJkt;
 
     private Map<String, String> customParameters;
 
@@ -296,6 +297,7 @@ public class OAuthClient {
         codeChallengeMethod = null;
         origin = null;
         dpopProof = null;
+        dpopJkt = null;
         customParameters = null;
         openid = true;
     }
@@ -1190,6 +1192,12 @@ public class OAuthClient {
             if (customParameters != null) {
                 customParameters.keySet().stream().forEach(i -> parameters.add(new BasicNameValuePair(i, customParameters.get(i))));
             }
+            if (dpopJkt != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.DPOP_JKT, dpopJkt));
+            }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+            }
 
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
@@ -1498,6 +1506,9 @@ public class OAuthClient {
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
+        if (dpopJkt != null) {
+            b.queryParam(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
+        }
         if (customParameters != null) {
             customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
         }
@@ -1771,6 +1782,11 @@ public class OAuthClient {
 
     public OAuthClient dpopProof(String dpopProof) {
         this.dpopProof = dpopProof;
+        return this;
+    }
+
+    public OAuthClient dpopJkt(String dpopJkt) {
+        this.dpopJkt = dpopJkt;
         return this;
     }
 

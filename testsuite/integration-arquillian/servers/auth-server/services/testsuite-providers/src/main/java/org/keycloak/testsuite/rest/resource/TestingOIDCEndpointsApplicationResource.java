@@ -474,6 +474,9 @@ public class TestingOIDCEndpointsApplicationResource {
         @JsonProperty(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM)
         String codeChallengeMethod;
 
+        @JsonProperty(OIDCLoginProtocol.DPOP_JKT)
+        String dpopJkt;
+
         @JsonProperty(AdapterConstants.KC_IDP_HINT)
         String idpHint;
 
@@ -609,6 +612,14 @@ public class TestingOIDCEndpointsApplicationResource {
 
         public void setCodeChallengeMethod(String codeChallengeMethod) {
             this.codeChallengeMethod = codeChallengeMethod;
+        }
+
+        public String getDpopJkt() {
+            return dpopJkt;
+        }
+
+        public void setDpopJkt(String dpopJkt) {
+            this.dpopJkt = dpopJkt;
         }
 
         public String getDisplay() {
