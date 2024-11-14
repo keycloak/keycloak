@@ -112,7 +112,8 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         AccessToken accessToken = auth.getToken();
         ClientModel client = adminsRealm.getClientByClientId(issuedFor);
         //support for lightweight access token and transient session
-        if (accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
+        boolean isAlwaysUseLightweightAccessToken = Boolean.parseBoolean(client.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED));
+        if (isAlwaysUseLightweightAccessToken || accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
             //get user session
             EventBuilder event = new EventBuilder(adminsRealm, session);
             event.event(EventType.INTROSPECT_TOKEN);
