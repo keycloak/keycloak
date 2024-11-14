@@ -360,4 +360,7 @@ public interface UsersResource {
     @Path("profile")
     UserProfileResource userProfile();
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByIds(@QueryParam("ids") String ids);
 }
