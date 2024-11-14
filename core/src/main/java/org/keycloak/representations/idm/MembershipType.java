@@ -27,4 +27,6 @@ public enum MembershipType {
      * Indicates that member cannot exist without group/organization.
      */
     MANAGED;
+
+    public static final String NAME = "membershipType";
 }
