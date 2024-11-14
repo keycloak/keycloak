@@ -73,6 +73,12 @@
             <artifactId>keycloak-test-framework-db-postgres</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
             <scope>test</scope>
