@@ -35,6 +35,6 @@ public class CustomDefaultEmailSenderProviderFactory2 extends DefaultEmailSender
 
     @Override
     public EmailSenderProvider create(KeycloakSession session) {
-        return new CustomDefaultEmailSenderProvider2(session);
+        return new CustomDefaultEmailSenderProvider2(session, getEmailAuthenticators());
     }
 }
