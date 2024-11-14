@@ -135,6 +135,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PKCE_METHOD_PLAIN = "plain";
     public static final String PKCE_METHOD_S256 = "S256";
 
+    // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
+    public static final String DPOP_JKT = "dpop_jkt";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
@@ -248,6 +251,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.DPOP_JKT),
                 userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);

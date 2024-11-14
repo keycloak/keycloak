@@ -120,7 +120,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     public static String getPreAuthorizedCode(KeycloakSession session, AuthenticatedClientSessionModel authenticatedClientSession, int expirationTime) {
         String codeId = UUID.randomUUID().toString();
         String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null,
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null, null,
                 authenticatedClientSession.getUserSession().getId());
         return OAuth2CodeParser.persistCode(session, authenticatedClientSession, oAuth2Code);
     }

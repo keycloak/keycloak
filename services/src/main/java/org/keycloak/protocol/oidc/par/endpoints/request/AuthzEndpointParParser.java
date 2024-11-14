@@ -32,6 +32,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_CREATED_TIME;
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
  * Parse the parameters from PAR
@@ -69,6 +70,11 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
             requestParams = retrievedRequest;
         } else {
             throw new RuntimeException("PAR expired.");
+        }
+        // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
+        String dpopJkt = retrievedRequest.get(PAR_DPOP_PROOF_JKT);
+        if (dpopJkt != null) {
+            session.setAttribute(PAR_DPOP_PROOF_JKT, dpopJkt);
         }
     }
 
