@@ -41,4 +41,30 @@ Encryption::
   Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
 
 Authentication::
-  Set this switch to *ON* if your SMTP server requires authentication. When prompted, supply the *Username* and *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
+  Set this switch to *ON* if your SMTP server requires authentication.
+
+Username::
+  All authentication-mechanisms require a username.
+
+Authentication Type::
+  Choose the kind of authentication: 'password' or 'token'.
+
+Password::
+  Only needed when *Authentication Type* 'password' is selected.
+  Supply the *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
+
+Auth Token URL::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
+
+Auth Token Scope::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
+
+Auth Token ClientId::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
+
+Auth Token Client Secret::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
