@@ -241,4 +241,25 @@ public class Organizations {
         if (session.getContext().getOrganization() != null) return true;
         return realm.isRegistrationAllowed();
     }
+
+    public static boolean isReadOnlyOrganizationMember(KeycloakSession session, UserModel delegate) {
+        if (delegate == null) {
+            return false;
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        var organizationProvider = getProvider(session);
+
+        if (organizationProvider.count() == 0) {
+            return false;
+        }
+
+        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+        return organizationProvider.getByMember(delegate)
+                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+    }
 }
