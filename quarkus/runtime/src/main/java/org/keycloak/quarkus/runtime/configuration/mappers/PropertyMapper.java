@@ -526,10 +526,13 @@ public class PropertyMapper<T> {
 
     void validateExpectedValues(ConfigValue configValue, String v) {
         List<String> expectedValues = getExpectedValues();
-        if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
+        if (!expectedValues.isEmpty() && getOption().isStrictExpectedValues() && !expectedValues.contains(v)
+                && (!getOption().isCaseInsensitiveExpectedValues()
+                        || !expectedValues.stream().anyMatch(v::equalsIgnoreCase))) {
             throw new PropertyException(
-                    String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
-                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues)));
+                    String.format("Invalid value for option %s: %s.%s%s", getOptionAndSourceMessage(configValue), v,
+                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues),
+                            getOption().isCaseInsensitiveExpectedValues() ? " (case insensitive)" : ""));
         }
     }
 

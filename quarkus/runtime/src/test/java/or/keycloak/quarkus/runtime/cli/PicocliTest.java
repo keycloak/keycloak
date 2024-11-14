@@ -141,6 +141,12 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void failInvalidUpperCaseLogValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=INFO!");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+    }
+
+    @Test
     public void failMissingOptionValue() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);

@@ -5,12 +5,9 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
-import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logmanager.LogContext;
@@ -18,7 +15,6 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -47,7 +43,6 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.level")
-                        .validator(param -> validateLogParameters(LoggingOptions.LOG_CONSOLE_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
@@ -82,7 +77,6 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.level")
-                        .validator(param -> validateLogParameters(LoggingOptions.LOG_FILE_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
@@ -121,7 +115,6 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.level")
-                        .validator(param -> validateLogParameters(LoggingOptions.LOG_SYSLOG_LEVEL,param))
                         .paramLabel("level")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
@@ -198,15 +191,6 @@ public final class LoggingPropertyMappers {
     }
 
     record CategoryLevel(String category, String levelName) {}
-
-    private static void validateLogParameters(Option<LoggingOptions.Level> option, String level) {
-        try {
-            toLevel(level);
-        } catch (IllegalArgumentException iae) {
-            String expectedValues = Stream.of(option.getExpectedValues()).map(Object::toString).collect(Collectors.joining(", ")).replace("[","").replace("]","");
-            throw new PropertyException(String.format("Invalid value for option '--%s': %s. Expected values are: %s", option.getKey(), level, expectedValues));
-        }
-    }
 
     private static CategoryLevel validateLogLevel(String level) {
         String[] parts = level.split(":");

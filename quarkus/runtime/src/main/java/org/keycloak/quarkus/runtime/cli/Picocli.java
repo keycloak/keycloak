@@ -781,7 +781,8 @@ public class Picocli {
             }).toList();
 
             var isStrictExpectedValues = mapper.getOption().isStrictExpectedValues();
-            var printableValues = String.join(", ", decoratedExpectedValues) + (!isStrictExpectedValues ? ", or a custom one" : "");
+            var isCaseSensitiveExpectedValues = mapper.getOption().isCaseInsensitiveExpectedValues();
+            var printableValues = String.join(", ", decoratedExpectedValues) + (!isStrictExpectedValues ? ", or a custom one" : (isCaseSensitiveExpectedValues ? " (case insensitive)" : ""));
 
             transformedDesc.append(String.format(" Possible values are: %s.", printableValues));
         }
