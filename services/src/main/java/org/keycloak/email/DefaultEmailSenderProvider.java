@@ -24,7 +24,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
-import org.keycloak.vault.VaultStringSecret;
 
 import jakarta.mail.Address;
 import jakarta.mail.MessagingException;
@@ -55,9 +54,12 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
     private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
 
+    private final Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> authenticators;
+
     private final KeycloakSession session;
 
-    public DefaultEmailSenderProvider(KeycloakSession session) {
+    public DefaultEmailSenderProvider(KeycloakSession session, Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> authenticators) {
+        this.authenticators = authenticators;
         this.session = session;
     }
 
@@ -72,58 +74,110 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException {
-        Transport transport = null;
+        Session session = Session.getInstance(buildEmailProperties(config));
+
+        Message message = buildMessage(session, address, subject, config, buildMultipartBody(textBody, htmlBody));
+
+        try(Transport transport = session.getTransport("smtp")) {
+
+            EmailAuthenticator selectedAuthenticator = selectAuthenticatorBasedOnConfig(config);
+            selectedAuthenticator.connect(this.session, config, transport);
+
+            transport.sendMessage(message, new InternetAddress[]{new InternetAddress(address)});
+
+        } catch (Exception e) {
+            ServicesLogger.LOGGER.failedToSendEmail(e);
+            throw new EmailException("Error when attempting to send the email to the server. More information is available in the server log.", e);
+        }
+    }
+
+    private Properties buildEmailProperties(Map<String, String> config) {
+        Properties props = new Properties();
+
+        if (config.containsKey("host")) {
+            props.setProperty("mail.smtp.host", config.get("host"));
+        }
+
+        if (config.containsKey("port") && config.get("port") != null) {
+            props.setProperty("mail.smtp.port", config.get("port"));
+        }
+
+        if (isAuthConfigured(config)) {
+            props.setProperty("mail.smtp.auth", "true");
+        }
+
+        if (isAuthTypeTokenConfigured(config)) {
+            props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
+        }
+
+        if (isDebugEnabled(config)) {
+            props.put("mail.debug", "true");
+        }
+
+        if (isSslConfigured(config)) {
+            props.setProperty("mail.smtp.ssl.enable", "true");
+        }
+
+        if (isStarttlsConfigured(config)) {
+            props.setProperty("mail.smtp.starttls.enable", "true");
+        }
+
+        if (isSslConfigured(config) || isStarttlsConfigured(config) || isAuthConfigured(config)) {
+            props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
+
+            setupTruststore(props);
+        }
+
+        props.setProperty("mail.smtp.timeout", "10000");
+        props.setProperty("mail.smtp.connectiontimeout", "10000");
+        props.setProperty("mail.smtp.writetimeout", "10000");
+
+        String envelopeFrom = config.get("envelopeFrom");
+        if (isNotBlank(envelopeFrom)) {
+            props.setProperty("mail.smtp.from", envelopeFrom);
+        }
+        return props;
+    }
+
+    private Message buildMessage(Session session, String address, String subject, Map<String, String> config, Multipart multipart) throws EmailException {
+
+        String from = config.get("from");
+        if (from == null) {
+            throw new EmailException("No sender address configured in the realm settings for emails");
+        }
+        String fromDisplayName = config.get("fromDisplayName");
+        String replyTo = config.get("replyTo");
+        String replyToDisplayName = config.get("replyToDisplayName");
+
         try {
+            Message msg = new MimeMessage(session);
+            msg.setFrom(toInternetAddress(from, fromDisplayName));
+            msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
 
-            Properties props = new Properties();
-
-            if (config.containsKey("host")) {
-                props.setProperty("mail.smtp.host", config.get("host"));
+            if (isNotBlank(replyTo)) {
+                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
             }
 
-            boolean auth = "true".equals(config.get("auth"));
-            boolean ssl = "true".equals(config.get("ssl"));
-            boolean starttls = "true".equals(config.get("starttls"));
+            msg.setHeader("To", address);
+            msg.setSubject(MimeUtility.encodeText(subject, StandardCharsets.UTF_8.name(), null));
+            msg.setContent(multipart);
+            msg.saveChanges();
+            msg.setSentDate(new Date());
 
-            if (config.containsKey("port") && config.get("port") != null) {
-                props.setProperty("mail.smtp.port", config.get("port"));
-            }
+            return msg;
+        } catch (UnsupportedEncodingException e) {
+            throw new EmailException("Failed to encode email address", e);
+        } catch (AddressException e) {
+            throw new EmailException("Invalid email address format", e);
+        } catch (MessagingException e) {
+            throw new EmailException("MessagingException occurred", e);
+        }
+    }
 
-            if (auth) {
-                props.setProperty("mail.smtp.auth", "true");
-            }
+    private Multipart buildMultipartBody(String textBody, String htmlBody) throws EmailException {
+        Multipart multipart = new MimeMultipart("alternative");
 
-            if (ssl) {
-                props.setProperty("mail.smtp.ssl.enable", "true");
-            }
-
-            if (starttls) {
-                props.setProperty("mail.smtp.starttls.enable", "true");
-            }
-
-            if (ssl || starttls || auth){
-                props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
-
-                setupTruststore(props);
-            }
-
-            props.setProperty("mail.smtp.timeout", "10000");
-            props.setProperty("mail.smtp.connectiontimeout", "10000");
-
-            String from = config.get("from");
-            if (from == null) {
-                throw new EmailException("No sender address configured in the realm settings for emails");
-            }
-
-            String fromDisplayName = config.get("fromDisplayName");
-            String replyTo = config.get("replyTo");
-            String replyToDisplayName = config.get("replyToDisplayName");
-            String envelopeFrom = config.get("envelopeFrom");
-
-            Session session = Session.getInstance(props);
-
-            Multipart multipart = new MimeMultipart("alternative");
-
+        try {
             if (textBody != null) {
                 MimeBodyPart textPart = new MimeBodyPart();
                 textPart.setText(textBody, "UTF-8");
@@ -135,50 +189,42 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
                 multipart.addBodyPart(htmlPart);
             }
-
-            Message msg = new MimeMessage(session);
-            msg.setFrom(toInternetAddress(from, fromDisplayName));
-
-            msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
-
-            if (isNotBlank(replyTo)) {
-                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
-            }
-
-            if (isNotBlank(envelopeFrom)) {
-                props.setProperty("mail.smtp.from", envelopeFrom);
-            }
-
-            msg.setHeader("To", address);
-            msg.setSubject(MimeUtility.encodeText(subject, StandardCharsets.UTF_8.name(), null));
-            msg.setContent(multipart);
-            msg.saveChanges();
-            msg.setSentDate(new Date());
-
-            transport = session.getTransport("smtp");
-            if (auth) {
-                try (VaultStringSecret vaultStringSecret = this.session.vault().getStringSecret(config.get("password"))) {
-                    transport.connect(config.get("user"), vaultStringSecret.get().orElse(config.get("password")));
-                }
-            } else {
-                transport.connect();
-            }
-            transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
-        } catch (EmailException e) {
-            throw e;
-        } catch (Exception e) {
-            ServicesLogger.LOGGER.failedToSendEmail(e);
-            throw new EmailException("Error when attempting to send the email to the server. More information is available in the server log.", e);
-        } finally {
-            if (transport != null) {
-                try {
-                    transport.close();
-                } catch (MessagingException e) {
-                    logger.warn("Failed to close transport", e);
-                }
-            }
+        } catch (MessagingException e) {
+            throw new EmailException("Error encoding email body parts", e);
         }
+
+        return multipart;
     }
+
+    private EmailAuthenticator selectAuthenticatorBasedOnConfig(Map<String, String> config) {
+        if(isAuthConfigured(config)) {
+            String authType = config.getOrDefault("authType", "basic");
+            return authenticators.get(EmailAuthenticator.AuthenticatorType.valueOf(authType.toUpperCase()));
+        }
+
+        return authenticators.get(EmailAuthenticator.AuthenticatorType.NONE);
+    }
+
+    private static boolean isStarttlsConfigured(Map<String, String> config) {
+        return "true".equals(config.get("starttls"));
+    }
+
+    private static boolean isSslConfigured(Map<String, String> config) {
+        return "true".equals(config.get("ssl"));
+    }
+
+    private static boolean isDebugEnabled(Map<String, String> config) {
+        return "true".equals(config.get("debug"));
+    }
+
+    private boolean isAuthConfigured(Map<String, String> config) {
+        return "true".equals(config.get("auth"));
+    }
+
+    private boolean isAuthTypeTokenConfigured(Map<String, String> config) {
+        return "token".equals(config.get("authType"));
+    }
+
 
     protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException, EmailException {
         if (email == null || "".equals(email.trim())) {
@@ -203,8 +249,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
                 props.setProperty("mail.smtp.ssl.trust", "*");
                 props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString()); // this should be the default but seems to be impl specific, so set it explicitly just to be sure
-            }
-            else {
+            } else {
                 props.put("mail.smtp.ssl.checkserveridentity", Boolean.TRUE.toString());
             }
         }
