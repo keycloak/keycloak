@@ -501,6 +501,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     @Test
     public void testAdminConsoleClientWithLightweightAccessToken() {
 
+        oauth.getDriver().manage().deleteAllCookies();
         oauth.realm("master");
         oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
@@ -584,6 +585,40 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         } catch (Exception e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testAdminApiWithLightweightAccessAndSubClaim() {
+        setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, true);
+
+        oauth.getDriver().manage().deleteAllCookies();
+        oauth.realm("master");
+        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
+        PkceGenerator pkce = new PkceGenerator();
+        oauth.codeChallenge(pkce.getCodeChallenge());
+        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        oauth.codeVerifier(pkce.getCodeVerifier());
+
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        String accessToken = tokenResponse.getAccessToken();
+        logger.debug("access token:" + accessToken);
+        assertBasicClaims(oauth.verifyToken(accessToken), false, false);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
+            get.setHeader("Authorization", "Bearer " + accessToken);
+            try (CloseableHttpResponse response = client.execute(get)) {
+                Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+                RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
+                Assert.assertEquals("master", realmRepresentation.getRealm());
+            }
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+
+        setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, false);
     }
 
     private void removeSession(final String sessionId) {
@@ -725,8 +760,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setScopeProtocolMapper(ADDRESS, ADDRESS, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
     }
 
-    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
-        ClientScopeResource scope = ApiUtil.findClientScopeByName(testRealm(), scopeName);
+    private void setScopeProtocolMapper(String realmName, String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
+        ClientScopeResource scope = ApiUtil.findClientScopeByName(realmsResouce().realm(realmName), scopeName);
         ProtocolMapperRepresentation protocolMapper = ApiUtil.findProtocolMapperByName(scope, mapperName);
         Map<String, String> config = protocolMapper.getConfig();
         if (isIncludeAccessToken) {
@@ -745,6 +780,10 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             config.put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "false");
         }
         scope.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
+    }
+
+    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
+        setScopeProtocolMapper(testRealm().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
     }
 
     private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {
