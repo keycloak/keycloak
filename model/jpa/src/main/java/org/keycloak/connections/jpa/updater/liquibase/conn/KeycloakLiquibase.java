@@ -18,6 +18,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
+import liquibase.UpdateSummaryOutputEnum;
 import liquibase.database.Database;
 import liquibase.resource.ResourceAccessor;
 
@@ -28,6 +29,7 @@ public class KeycloakLiquibase extends Liquibase {
 
     public KeycloakLiquibase(String changeLogFile, ResourceAccessor resourceAccessor, Database database) {
         super(changeLogFile, resourceAccessor, database);
+        this.setShowSummaryOutput(UpdateSummaryOutputEnum.LOG);
     }
 
     @Override
