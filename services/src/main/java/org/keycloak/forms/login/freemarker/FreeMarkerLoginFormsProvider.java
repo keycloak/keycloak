@@ -577,6 +577,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             Map<String, Object> attributes = Optional.ofNullable(attributeMapper).orElse(Function.identity()).apply(this.attributes);
+            if (!attributes.containsKey("templateName")) {
+                attributes.put("templateName", templateName);
+            }
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
