@@ -28,7 +28,7 @@ the user is a member of. If not defined, user's groups are obtained from your re
 * *Groups*
 +
 Allows you to select the groups that should be enforced by this policy when evaluating permissions. After adding a group, you can extend access to children of the group
-by marking the checkbox *Extend to Children*. If left unmarked, access restrictions only applies to the selected group.
+by marking the checkbox *Extend to Children*. If left unmarked, access restrictions only apply to the selected group.
 +
 * *Logic*
 +

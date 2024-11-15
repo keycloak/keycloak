@@ -257,7 +257,7 @@ public class ExportUtils {
             orgProvider.getAllStream().map(model -> {
                 OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model);
 
-                orgProvider.getMembersStream(model, null, null, null, null)
+                orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
                         .forEach(user -> {
                             MemberRepresentation member = new MemberRepresentation();
                             member.setUsername(user.getUsername());

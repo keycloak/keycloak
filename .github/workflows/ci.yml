@@ -209,7 +209,7 @@ jobs:
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: quarkus-unit-tests
+          job-id: quarkus-unit-tests-${{ matrix.os }}
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -268,7 +268,7 @@ jobs:
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.server }}
+          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.suite }}
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -307,6 +307,41 @@ jobs:
       - name: Build with JDK
         run:
           ./mvnw install -e -DskipTests -DskipExamples
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Java Distribution IT
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
+
+  login-v1-tests:
+    name: Login Theme v1 tests
+    needs: build
+    timeout-minutes: 100
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh login`
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()

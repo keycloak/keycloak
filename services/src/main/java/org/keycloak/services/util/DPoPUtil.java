@@ -33,7 +33,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.commons.codec.binary.Hex;
-
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -52,7 +52,6 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -84,7 +83,7 @@ import static org.keycloak.utils.StringUtil.isNotBlank;
 public class DPoPUtil {
 
     public static final int DEFAULT_PROOF_LIFETIME = 10;
-    public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 2;
+    public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 15; // sec;
     public static final String DPOP_TOKEN_TYPE = "DPoP";
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
@@ -167,7 +166,7 @@ public class DPoPUtil {
         } catch (VerificationException ex) {
             event.detail(Details.REASON, ex.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_DPOP_PROOF, ex.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -352,7 +351,26 @@ public class DPoPUtil {
             long time = Time.currentTime();
             Long iat = t.getIat();
 
-            if (!(iat <= time + clockSkew && iat > time - lifetime)) {
+            // Considering a clock skew, there are two cases about it:
+            //   case 1: a client's clock is ahead Keycloak's clock
+            //   case 2: a client's clock is behind Keycloak's clock
+            //
+            // To remedy case 1, the valid time slot is as follows:
+            //   current keycloak clock => "iat" - clock skew
+            //   current keycloak clock => "nbf" - clock skew
+            // To remedy case 2, the valid time slot is as follows:
+            //   current keycloak clock <= "exp" + clock skew
+            //     or
+            //   current keycloak clock <= "iat" + life time + clock skew
+            //
+            // Therefore, the valid time slot is as follows:
+            //    "iat" - clock skew <= keycloak's clock <= "exp" + clock skew
+            //      or
+            //    "iat" - clock skew <= keycloak's clock <= iat" + life time + clock skew
+            //
+            // Considering that these claim values are in seconds, the valid time slot uses <=, >=, instead of <, >.
+
+            if (!(iat <= time + clockSkew && iat >= time - lifetime - clockSkew)) {
                 throw new DPoPVerificationException(t, "DPoP proof is not active");
             }
             return true;

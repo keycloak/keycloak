@@ -143,11 +143,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPByPublicClient() throws Exception {
+        int clockSkew = 10; // acceptable clock skew is +-10sec
 
         oauth.clientId(TEST_PUBLIC_CLIENT_ID);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
-        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime() + clockSkew), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofEcEncoded);
@@ -187,6 +188,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofByConfidentialClient() throws Exception {
+        int clockSkew = -10; // acceptable clock skew is +-10sec
 
         oauth.clientId(TEST_CONFIDENTIAL_CLIENT_ID);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -195,7 +197,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
-        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
+        String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime() + clockSkew), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.dpopProof(dpopProofRsaEncoded);
@@ -305,7 +307,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
         assertNull(response.getTokenType());
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("DPoP proof has already been used", response.getErrorDescription());
 
         oauth.idTokenHint(response.getIdToken()).openLogout();
@@ -329,7 +331,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
         assertNull(response.getTokenType());
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("DPoP proof is missing", response.getErrorDescription());
 
         oauth.doLogout(response.getRefreshToken(), TEST_CONFIDENTIAL_CLIENT_SECRET);
@@ -417,7 +419,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_USER_PASSWORD);
 
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("DPoP proof is missing", response.getErrorDescription());
     }
 
@@ -592,7 +594,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
         assertEquals(400, response.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("DPoP proof is missing", response.getErrorDescription());
         oauth.idTokenHint(response.getIdToken()).openLogout();
 
@@ -636,7 +638,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         oauth.dpopProof(null);
         response = oauth.doRefreshTokenRequest(encodedRefreshToken, null);
         assertEquals(400, response.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("DPoP proof is missing", response.getErrorDescription());
 
         // token refresh with a valid DPoP Proof - success
@@ -778,7 +780,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, TEST_CONFIDENTIAL_CLIENT_SECRET);
 
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_DPOP_PROOF, response.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(errorDescription, response.getErrorDescription());
     }
 

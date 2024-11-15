@@ -449,8 +449,6 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     ServiceAccountConstants.CLIENT_ADDRESS, "String",
                     true, true, true));
 
-            newRealm.addDefaultClientScope(serviceAccountScope, true);
-
             logger.debugf("Client scope '%s' created in the realm '%s'.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());
         } else {
             logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());

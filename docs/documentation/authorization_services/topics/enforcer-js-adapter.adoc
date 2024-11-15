@@ -76,7 +76,7 @@ authorization.authorize(authorizationRequest).then((rpt) => {
 
 The `authorize` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
@@ -115,7 +115,7 @@ When using the `entitlement` function, you must provide the _client_id_ of the r
 
 The `entitlement` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 

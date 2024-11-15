@@ -713,7 +713,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
 
         // Test expired lifespan
-        response = testMissingClaim(-11, "expiration");
+        response = testMissingClaim(- 11 - 15, "expiration"); // 15 sec clock skew
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
         // Missing exp and issuedAt should return error
@@ -758,5 +758,17 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testDirectGrantRequestFailureES256() throws Exception {
         testDirectGrantRequestFailure(Algorithm.ES256);
+    }
+
+    @Test
+    public void testClockSkew() throws Exception {
+        OAuthClient.AccessTokenResponse response = testMissingClaim(15, "issuedAt", "notBefore"); // allowable clock skew is 15 sec
+        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+
+        // excess allowable clock skew
+        response = testMissingClaim(15 + 15, "issuedAt");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        response = testMissingClaim(15 + 15, "notBefore");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 }

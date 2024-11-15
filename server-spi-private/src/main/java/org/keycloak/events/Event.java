@@ -107,7 +107,7 @@ public class Event {
     }
 
     public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+        this.sessionId = maxLength(sessionId, 255);
     }
 
     public String getIpAddress() {

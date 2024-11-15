@@ -32,6 +32,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
@@ -67,7 +68,7 @@ public class BuildAndStartDistTest {
         cliResult.assertBuild();
         cliResult.assertStarted();
     }
-    
+
     @Test
     @WithEnvVars({"KEYCLOAK_ADMIN", "oldadmin123", "KEYCLOAK_ADMIN_PASSWORD", "oldadmin123"})
     @Launch({"start-dev"})

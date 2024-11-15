@@ -127,23 +127,24 @@ public class OrganizationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Returns a paginated list of organizations filtered according to the specified parameters")
+    @Operation(summary = "Returns a paginated list of organizations filtered according to the specified parameters")
     public Stream<OrganizationRepresentation> search(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
-            ) {
+            @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
+    ) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
 
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(ModelToRepresentation::toBriefRepresentation);
+            return provider.getAllStream(attributes, first, max).map(model -> ModelToRepresentation.toBriefRepresentation(model, briefRepresentation));
         } else {
-            return provider.getAllStream(search, exact, first, max).map(ModelToRepresentation::toBriefRepresentation);
+            return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toBriefRepresentation(model, briefRepresentation));
         }
     }
 

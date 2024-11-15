@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -136,9 +138,20 @@ public class OrganizationMemberResource {
             @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
+            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
     ) {
-        return provider.getMembersStream(organization, search, exact, first, max).map(this::toRepresentation);
+        Map<String, String> filters = new HashMap<>();
+
+        if (search != null) {
+            filters.put(UserModel.SEARCH, search);
+        }
+
+        if (membershipType != null) {
+            filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
+        }
+
+        return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
     }
 
     @Path("{id}")
