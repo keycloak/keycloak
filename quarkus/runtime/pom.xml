@@ -573,6 +573,13 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
+            <exclusions>
+                <exclusion>
+                    <!-- compile-only dependency -->
+                    <groupId>org.infinispan.protostream</groupId>
+                    <artifactId>protostream-processor</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
