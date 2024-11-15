@@ -19,9 +19,11 @@ package org.keycloak.it.storage.database;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 import io.quarkus.test.junit.main.Launch;
@@ -30,9 +32,10 @@ import io.quarkus.test.junit.main.LaunchResult;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public abstract class BasicDatabaseTest {
 
+    @Tag(DistributionTest.STORAGE)
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
-    void testSuccessful(LaunchResult result) {
+    protected void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
     }

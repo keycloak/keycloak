@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -37,6 +38,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
+@Tag(DistributionTest.WIN)
 public class BuildAndStartDistTest {
 
     @DryRun

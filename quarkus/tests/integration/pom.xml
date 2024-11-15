@@ -34,6 +34,7 @@
 
     <properties>
         <kc.quarkus.tests.dist>raw</kc.quarkus.tests.dist>
+        <kc.quarkus.tests.groups>!invalid</kc.quarkus.tests.groups>
         <approvaltests.version>14.0.0</approvaltests.version>
         <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
     </properties>
@@ -124,6 +125,7 @@
                         <kc.quarkus.tests.dist>${kc.quarkus.tests.dist}</kc.quarkus.tests.dist>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
+                    <groups>${kc.quarkus.tests.groups}</groups>
                 </configuration>
             </plugin>
             <plugin>

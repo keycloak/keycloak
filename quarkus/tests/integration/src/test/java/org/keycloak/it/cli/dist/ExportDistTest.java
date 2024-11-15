@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -25,6 +26,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 @RawDistOnly(reason = "Containers are immutable")
 @DistributionTest
+@Tag(DistributionTest.SMOKE)
 public class ExportDistTest {
 
     @Test

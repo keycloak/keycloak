@@ -292,11 +292,11 @@ jobs:
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
-          PARAMS["win"]="-Dtest=JavaOptsScriptTest,StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
+          PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
-          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest,ExternalInfinispanTest"
-          PARAMS["smoke"]="-Dtest=ClusterConfigDistTest,CustomJpaEntityProviderDistTest,ExportDistTest,FeaturesDistTest,ImportAtStartupDistTest,ImportDistTest,JaxRsDistTest,TruststoreDistTest"
+          PARAMS["storage"]="-Ptest-database -Dkc.quarkus.tests.groups=storage"
+          PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
           ./mvnw install -pl quarkus/tests/integration -am -DskipTests
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
