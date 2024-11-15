@@ -60,7 +60,7 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
 
     @Override
     public final boolean isDeleted() {
-        return state == UpdaterState.DELETED;
+        return state == UpdaterState.DELETED || state == UpdaterState.DELETED_TRANSIENT;
     }
 
     @Override
@@ -75,7 +75,12 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
 
     @Override
     public final void markDeleted() {
-        state = UpdaterState.DELETED;
+        state = isCreated() ? UpdaterState.DELETED_TRANSIENT : UpdaterState.DELETED;
+    }
+
+    @Override
+    public boolean isTransient() {
+        return state == UpdaterState.DELETED_TRANSIENT;
     }
 
     @Override
@@ -120,5 +125,9 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
          * The cache value was read from the Infinispan cache.
          */
         READ,
+        /**
+         * The entity is transient (it won't be updated in the external infinispan cluster) and deleted.
+         */
+        DELETED_TRANSIENT,
     }
 }

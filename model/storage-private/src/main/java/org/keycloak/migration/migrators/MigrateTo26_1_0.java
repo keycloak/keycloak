@@ -53,5 +53,7 @@ public static final ModelVersion VERSION = new ModelVersion("26.1.0");
         // add the new service_account scope to the realm
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
         migrationProvider.addOIDCServiceAccountClientScope(realm);
+
+        session.authenticationSessions().migrate(VERSION.toString());
     }
 }

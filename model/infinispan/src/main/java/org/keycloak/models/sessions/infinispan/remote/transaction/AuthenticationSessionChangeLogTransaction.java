@@ -17,8 +17,9 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.ByRealmIdQueryConditionalRemover;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.authsession.RootAuthenticationSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 
 /**
@@ -26,10 +27,10 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
  * {@code RemoteInfinispanKeycloakTransaction<String, RootAuthenticationSessionEntity,
  * ByRealmIdQueryConditionalRemover<String, RootAuthenticationSessionEntity>>
  */
-public class AuthenticationSessionTransaction extends RemoteInfinispanKeycloakTransaction<String, RootAuthenticationSessionEntity, ByRealmIdQueryConditionalRemover<String, RootAuthenticationSessionEntity>> {
+public class AuthenticationSessionChangeLogTransaction extends RemoteChangeLogTransaction<String, RootAuthenticationSessionEntity, RootAuthenticationSessionUpdater, ByRealmIdQueryConditionalRemover<String, RootAuthenticationSessionEntity>> {
 
-    public AuthenticationSessionTransaction(RemoteCache<String, RootAuthenticationSessionEntity> cache, ByRealmIdQueryConditionalRemover<String, RootAuthenticationSessionEntity> conditionalRemover) {
-        super(cache, conditionalRemover);
+    public AuthenticationSessionChangeLogTransaction(UpdaterFactory<String, RootAuthenticationSessionEntity, RootAuthenticationSessionUpdater> factory, SharedState<String, RootAuthenticationSessionEntity> sharedState, ByRealmIdQueryConditionalRemover<String, RootAuthenticationSessionEntity> conditionalRemover) {
+        super(factory, sharedState, conditionalRemover);
     }
 
     public void removeByRealmId(String realmId) {

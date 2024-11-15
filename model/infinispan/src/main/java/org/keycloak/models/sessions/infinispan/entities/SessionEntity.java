@@ -83,4 +83,8 @@ public abstract class SessionEntity {
         }
         isOffline = offline;
     }
+
+    public boolean shouldEvaluateRemoval() {
+        return false;
+    }
 }
