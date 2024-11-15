@@ -100,6 +100,8 @@ public class Picocli {
         boolean includeBuildTime;
     }
 
+    private ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
         CommandLine cmd = createCommandLine(spec -> spec
@@ -127,19 +129,15 @@ public class Picocli {
                 exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
             } else {
                 PropertyMappers.sanitizeDisabledMappers();
-                exitCode = run(cmd, argArray);
+                exitCode = cmd.execute(argArray);
             }
 
-            exitOnFailure(exitCode, cmd);
+            exit(exitCode);
         } catch (ParameterException parEx) {
             catchParameterException(parEx, cmd, argArray);
         } catch (ProfileException | PropertyException proEx) {
-            catchProfileException(proEx.getMessage(), proEx.getCause(), cmd);
+            usageException(proEx.getMessage(), proEx.getCause());
         }
-    }
-
-    protected int run(CommandLine cmd, String[] argArray) {
-        return cmd.execute(argArray);
     }
 
     private CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
@@ -184,24 +182,20 @@ public class Picocli {
         try {
             exitCode = cmd.getParameterExceptionHandler().handleParseException(parEx, args);
         } catch (Exception e) {
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
             errorHandler.error(cmd.getErr(), e.getMessage(), null);
             exitCode = parEx.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
         }
-        exitOnFailure(exitCode, cmd);
+        exit(exitCode);
     }
 
-    private void catchProfileException(String message, Throwable cause, CommandLine cmd) {
-        ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-        errorHandler.error(cmd.getErr(), message, cause);
-        exitOnFailure(CommandLine.ExitCode.USAGE, cmd);
+    public void usageException(String message, Throwable cause) {
+        errorHandler.error(getErrWriter(), message, cause);
+        exit(CommandLine.ExitCode.USAGE);
     }
 
-    protected void exitOnFailure(int exitCode, CommandLine cmd) {
-        if (exitCode != cmd.getCommandSpec().exitCodeOnSuccess() && !Environment.isTestLaunchMode() || isRebuildCheck()) {
-            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
-            System.exit(exitCode);
-        }
+    public void exit(int exitCode) {
+        // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
+        System.exit(exitCode);
     }
 
     private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
@@ -328,9 +322,8 @@ public class Picocli {
      *
      * @param cliArgs
      * @param abstractCommand
-     * @param outWriter
      */
-    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter outWriter) {
+    public void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
@@ -390,7 +383,7 @@ public class Picocli {
                         // only check build-time for a rebuild, we'll check the runtime later
                         if (!mapper.isRunTime() || !isRebuild()) {
                             if (PropertyMapper.isCliOption(configValue)) {
-                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine(), List.of(mapper.getCliFormat()));
+                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
                             } else {
                                 handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
                             }
@@ -426,17 +419,17 @@ public class Picocli {
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
                 warn(format("The following run time options were found, but will be ignored during build time: %s\n",
-                        String.join(", ", ignoredRunTime)), outWriter);
+                        String.join(", ", ignoredRunTime)), getOutWriter());
             }
 
             if (!disabledBuildTime.isEmpty()) {
-                outputDisabledProperties(disabledBuildTime, true, outWriter);
+                outputDisabledProperties(disabledBuildTime, true, getOutWriter());
             } else if (!disabledRunTime.isEmpty()) {
-                outputDisabledProperties(disabledRunTime, false, outWriter);
+                outputDisabledProperties(disabledRunTime, false, getOutWriter());
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", outWriter);
+                warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", getOutWriter());
             }
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
@@ -563,7 +556,7 @@ public class Picocli {
                     return;
                 }
             } else if (name.startsWith(MicroProfileConfigProvider.NS_QUARKUS)) {
-                // TODO: this is not correct - we are including runtime properties here, but at least they 
+                // TODO: this is not correct - we are including runtime properties here, but at least they
                 // are already coming from a file
                 quarkus = true;
             } else if (!PropertyMappers.isSpiBuildTimeProperty(name)) {
@@ -618,7 +611,7 @@ public class Picocli {
 
         CommandLine cmd = new CommandLine(spec);
 
-        cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
+        cmd.setExecutionExceptionHandler(this.errorHandler);
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
@@ -627,11 +620,11 @@ public class Picocli {
         return cmd;
     }
 
-    protected PrintWriter getErrWriter() {
+    public PrintWriter getErrWriter() {
         return new PrintWriter(System.err, true);
     }
 
-    protected PrintWriter getOutWriter() {
+    public PrintWriter getOutWriter() {
         return new PrintWriter(System.out, true);
     }
 
@@ -909,8 +902,8 @@ public class Picocli {
         }
     }
 
-    public void start(CommandLine cmd) {
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
+    public void start() {
+        KeycloakMain.start(errorHandler, getErrWriter());
     }
 
     public void build() throws Throwable {

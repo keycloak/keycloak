@@ -9,6 +9,7 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.output.OutputFrame.OutputType;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.RemoteDockerImage;
@@ -23,9 +24,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 public final class DockerKeycloakDistribution implements KeycloakDistribution {
+
+    private static class BackupConsumer implements Consumer<OutputFrame> {
+
+        final ToStringConsumer stdOut = new ToStringConsumer();
+        final ToStringConsumer stdErr = new ToStringConsumer();
+
+        @Override
+        public void accept(OutputFrame t) {
+            if (t.getType() == OutputType.STDERR) {
+                stdErr.accept(t);
+            } else if (t.getType() == OutputType.STDOUT) {
+                stdOut.accept(t);
+            }
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
@@ -38,7 +55,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private String stdout = "";
     private String stderr = "";
-    private ToStringConsumer backupConsumer = new ToStringConsumer();
+    private BackupConsumer backupConsumer = new BackupConsumer();
     private final File dockerScriptFile = new File("../../container/ubi-null.sh");
 
     private GenericContainer<?> keycloakContainer = null;
@@ -100,7 +117,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             this.stdout = "";
             this.stderr = "";
             this.containerId = null;
-            this.backupConsumer = new ToStringConsumer();
+            this.backupConsumer = new BackupConsumer();
 
             keycloakContainer = getKeycloakContainer();
 
@@ -113,15 +130,14 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             waitForStableOutput();
         } catch (Exception cause) {
             this.exitCode = -1;
-            this.stdout = backupConsumer.toUtf8String();
-            this.stderr = backupConsumer.toUtf8String();
+            this.stdout = backupConsumer.stdOut.toUtf8String();
+            this.stderr = backupConsumer.stdErr.toUtf8String();
             cleanupContainer();
             keycloakContainer = null;
             LOGGER.warn("Failed to start Keycloak container", cause);
         } finally {
             if (!manualStop) {
                 stop();
-                envVars.clear();
             }
         }
 
@@ -193,7 +209,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                     @Override
                     public void run() {
                         try {
-                            if (containerId == null) return;
+                            if (containerId == null) {
+                                return;
+                            }
                             DockerClient dockerClient = DockerClientFactory.lazyClient();
                             dockerClient.killContainerCmd(containerId).exec();
                             dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).withForce(true).exec();
@@ -215,7 +233,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null && keycloakContainer.isRunning()) {
             return keycloakContainer.getLogs(OutputFrame.OutputType.STDOUT);
         } else if (this.stdout.isEmpty()) {
-            return backupConsumer.toUtf8String();
+            return backupConsumer.stdOut.toUtf8String();
         } else {
             return this.stdout;
         }
@@ -230,7 +248,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null && keycloakContainer.isRunning()) {
             return keycloakContainer.getLogs(OutputFrame.OutputType.STDERR);
         } else if (this.stderr.isEmpty()) {
-            return backupConsumer.toUtf8String();
+            return backupConsumer.stdErr.toUtf8String();
         } else {
             return this.stderr;
         }
@@ -267,6 +285,11 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
     }
 
 }

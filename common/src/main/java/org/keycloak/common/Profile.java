@@ -392,6 +392,10 @@ public class Profile {
         return CURRENT;
     }
 
+    public static void reset() {
+        CURRENT = null;
+    }
+
     public static boolean isFeatureEnabled(Feature feature) {
         return getInstance().features.get(feature);
     }
