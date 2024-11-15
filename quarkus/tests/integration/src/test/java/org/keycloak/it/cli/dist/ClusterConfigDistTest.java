@@ -42,6 +42,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @RawDistOnly(reason = "Not possible to mount files using docker.")
 @Storage(defaultLocalCache = false)
 @Tag(DistributionTest.SMOKE)
+@Tag(DistributionTest.SLOW)
 public class ClusterConfigDistTest {
 
     @Test

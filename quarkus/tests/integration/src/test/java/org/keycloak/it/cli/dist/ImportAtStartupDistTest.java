@@ -41,6 +41,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @Tag(DistributionTest.SMOKE)
+@Tag(DistributionTest.SLOW)
 public class ImportAtStartupDistTest {
 
     @Test

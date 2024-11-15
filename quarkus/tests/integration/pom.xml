@@ -170,6 +170,9 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <kc.quarkus.tests.groups>storage</kc.quarkus.tests.groups>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
