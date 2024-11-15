@@ -122,7 +122,6 @@ public class TracingPropertyMappers {
     }
 
     private static boolean isFeatureEnabled() {
-        Environment.getCurrentOrCreateFeatureProfile();
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
     }
 

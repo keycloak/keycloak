@@ -82,7 +82,7 @@ public class LoggingDistTest {
         assertFalse(cliResult.getOutput().contains("INFO"));
         assertFalse(cliResult.getOutput().contains("DEBUG"));
         assertFalse(cliResult.getOutput().contains("Listening on:"));
-        assertTrue(cliResult.getOutput().contains("WARN  [org.keycloak"));
+        assertTrue(cliResult.getOutput().contains("Running the server in development mode."));
         cliResult.assertStartedDevMode();
     }
 

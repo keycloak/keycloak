@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -22,6 +23,7 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAM
 @DistributionTest
 public class ShowConfigCommandDistTest {
 
+    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistribution distribution) {
