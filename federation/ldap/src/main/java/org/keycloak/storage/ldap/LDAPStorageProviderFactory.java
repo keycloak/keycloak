@@ -304,6 +304,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
+
+        if (config.getId() == null) {
+            // the ldap component is being created, use short id for ldap components
+            config.setId(KeycloakModelUtils.generateShortId());
+        }
     }
 
     @Override
