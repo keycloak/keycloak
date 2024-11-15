@@ -1,7 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 
-set -euo pipefail
-#set -x
+set -uo pipefail
 
 dir="/tmp/null"
 rm -rf "$dir"

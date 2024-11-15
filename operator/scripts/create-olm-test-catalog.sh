@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euxo pipefail
+#!/bin/bash -e
+set -uxo pipefail
 
 VERSION=$1
 BUNDLE_IMAGE=$2

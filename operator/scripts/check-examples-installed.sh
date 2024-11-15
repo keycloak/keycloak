@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euo pipefail
+#!/bin/bash -e
+set -uo pipefail
 
 NAMESPACE=${1:-default}
 

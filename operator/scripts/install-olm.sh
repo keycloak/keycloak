@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euxo pipefail
+#!/bin/bash -e
+set -uxo pipefail
 
 mkdir -p /tmp/olm/
 curl -f -L https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.26.0/install.sh -o /tmp/olm/install.sh

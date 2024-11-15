@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 echo "JBOSS_HOME=$JBOSS_HOME"
 
 if [ ! -d "$JBOSS_HOME/bin" ] ; then

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 MODULES=`readlink -f $1`
 LICENSES=`readlink -f $2`

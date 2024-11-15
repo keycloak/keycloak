@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 ##
 ## To include test coverage data, use -Djacoco.skip=false parameter.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 dnf install -y java-21-openjdk-devel crypto-policies-scripts
 fips-mode-setup --enable --no-bootcfg

@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euo pipefail
+#!/bin/bash -e
+set -uo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 

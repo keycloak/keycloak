@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 
-set -eEu
+set -Eu
 
 # Dependencies: xmlstarlet, dos2unix, curl.
 # Written on Fedora Linux, untested on other unixes.

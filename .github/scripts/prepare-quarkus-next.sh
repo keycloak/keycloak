@@ -1,5 +1,5 @@
-#!/bin/bash
-set -xeuo pipefail
+#!/bin/bash -e
+set -xuo pipefail
 
 add_repository() {
   local file=$1

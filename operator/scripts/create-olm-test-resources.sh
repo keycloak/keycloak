@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euxo pipefail
+#!/bin/bash -e
+set -uxo pipefail
 
 VERSION=$1
 DOCKER_REGISTRY=$2

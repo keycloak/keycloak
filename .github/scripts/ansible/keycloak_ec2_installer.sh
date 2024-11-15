@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash -e
 cd $(dirname "${BASH_SOURCE[0]}")
 
 if [[ "$RUNNER_DEBUG" == "1" ]]; then

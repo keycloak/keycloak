@@ -1,5 +1,5 @@
-#!/bin/bash
-set -euxo pipefail
+#!/bin/bash -e
+set -uxo pipefail
 
 # Ex: 21.0.0
 VERSION=$1

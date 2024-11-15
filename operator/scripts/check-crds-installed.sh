@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euo pipefail
+#!/bin/bash -e
+set -uo pipefail
 
 max_retries=240
 c=0

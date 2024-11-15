@@ -1,5 +1,5 @@
-#! /bin/bash
-set -euxo pipefail
+#!/bin/bash -e
+set -uxo pipefail
 
 UUID=${1:-$(git rev-parse --short HEAD)}
 
