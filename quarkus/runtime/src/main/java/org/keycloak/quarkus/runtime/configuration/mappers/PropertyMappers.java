@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,7 +84,7 @@ public final class PropertyMappers {
         if (mapper == null) {
             return context.proceed(name);
         }
-        return mapper.getConfigValue(name, context);
+        return mapper.forKey(name).getConfigValue(name, context);
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
@@ -178,6 +179,10 @@ public final class PropertyMappers {
         return MAPPERS.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
+    public static Set<WildcardPropertyMapper<?>> getWildcardMappers() {
+        return MAPPERS.getWildcardMappers();
+    }
+
     public static boolean isSupported(PropertyMapper<?> mapper) {
         ConfigSupportLevel supportLevel = mapper.getCategory().getSupportLevel();
         return supportLevel.equals(ConfigSupportLevel.SUPPORTED) || supportLevel.equals(ConfigSupportLevel.DEPRECATED);
@@ -220,6 +225,7 @@ public final class PropertyMappers {
 
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
+        private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
@@ -238,10 +244,14 @@ public final class PropertyMappers {
         }
 
         public void addMapper(PropertyMapper<?> mapper) {
+            if (mapper.hasWildcard()) {
+                wildcardMappers.add((WildcardPropertyMapper<?>)mapper);
+            }
             handleMapper(mapper, this::add);
         }
 
         public void removeMapper(PropertyMapper<?> mapper) {
+            wildcardMappers.remove(mapper);
             handleMapper(mapper, this::remove);
         }
 
@@ -250,6 +260,30 @@ public final class PropertyMappers {
             if (CollectionUtil.isNotEmpty(list)) {
                 list.remove(mapper);
             }
+        }
+
+        @Override
+        public List<PropertyMapper<?>> get(Object key) {
+            // First check if the requested option matches any wildcard mappers
+            String strKey = (String) key;
+            List ret = wildcardMappers.stream()
+                    .filter(m -> m.matchesWildcardOptionName(strKey))
+                    .toList();
+            if (!ret.isEmpty()) {
+                return ret;
+            }
+
+            // If no wildcard mappers match, check for exact matches
+            return super.get(key);
+        }
+
+        @Override
+        public List<PropertyMapper<?>> remove(Object mapper) {
+            return super.remove(mapper);
+        }
+
+        public Set<WildcardPropertyMapper<?>> getWildcardMappers() {
+            return Collections.unmodifiableSet(wildcardMappers);
         }
 
         public void sanitizeDisabledMappers() {
