@@ -98,8 +98,8 @@ User and client sessions are automatically destroyed whenever the user performs 
 
 The session data are stored in the database by default and loaded on-demand to the following caches:
 
-* sessions
-* clientSessions
+* `sessions`
+* `clientSessions`
 
 By relying on a distributable cache, cached user and client sessions are available to any node in the cluster so that users can be redirected
 to any node without the need to load session data from the database. However, production-ready deployments should always consider session affinity and favor redirecting users
@@ -116,8 +116,9 @@ By default, user sessions are stored in the database and loaded on-demand to the
 It is possible to configure {project_name} to store user sessions in the cache only and minimize the database utilization.
 
 Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
-* Losing sessions on all Keycloak nodes restart
-* Increased memory consumption
+
+* Losing sessions on when all {project_name} nodes restart.
+* Increased memory consumption.
 
 Follow these steps to enable this setup:
 
