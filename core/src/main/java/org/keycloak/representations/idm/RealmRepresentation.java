@@ -220,6 +220,8 @@ public class RealmRepresentation {
 
     protected Boolean verifiableCredentialsEnabled;
 
+    protected Boolean adminPermissionsEnabled;
+
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -1440,6 +1442,14 @@ public class RealmRepresentation {
 
     public void setOrganizationsEnabled(Boolean organizationsEnabled) {
         this.organizationsEnabled = organizationsEnabled;
+    }
+
+    public Boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public void setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        this.adminPermissionsEnabled = adminPermissionsEnabled;
     }
 
     public Boolean isVerifiableCredentialsEnabled() {

@@ -16,6 +16,8 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -25,7 +27,8 @@ public class AuthorizationSchema {
 
     private final Set<ResourceType> resourceTypes;
 
-    public AuthorizationSchema(ResourceType... resourceTypes) {
+    @JsonCreator
+    public AuthorizationSchema(@JsonProperty("resourceTypes") ResourceType... resourceTypes) {
         this.resourceTypes = Arrays.stream(resourceTypes).collect(Collectors.toSet());
     }
 

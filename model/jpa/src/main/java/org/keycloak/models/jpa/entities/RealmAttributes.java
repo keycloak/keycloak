@@ -59,4 +59,5 @@ public interface RealmAttributes {
     String VERIFIABLE_CREDENTIALS_ENABLED = "verifiableCredentialsEnabled";
 
     String ORGANIZATIONS_ENABLED = "organizationsEnabled";
+    String ADMIN_PERMISSIONS_ENABLED = "adminPermissionsEnabled";
 }
