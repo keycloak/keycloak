@@ -19,11 +19,11 @@ package org.keycloak.representations.idm.authorization;
 import java.util.Arrays;
 import java.util.HashSet;
 
-public class FineGrainedAdminPermissionsAuthorizationSchema extends AuthorizationSchema {
+public class AdminPermissionsAuthorizationSchema extends AuthorizationSchema {
 
-    public static final FineGrainedAdminPermissionsAuthorizationSchema INSTANCE = new FineGrainedAdminPermissionsAuthorizationSchema();
+    public static final AdminPermissionsAuthorizationSchema INSTANCE = new AdminPermissionsAuthorizationSchema();
 
-    private FineGrainedAdminPermissionsAuthorizationSchema() {
+    private AdminPermissionsAuthorizationSchema() {
         super(new ResourceType("Users", new HashSet<>(Arrays.asList("manage"))));
     }
 

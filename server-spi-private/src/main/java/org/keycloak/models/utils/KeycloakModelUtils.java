@@ -85,6 +85,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -1167,4 +1168,7 @@ public final class KeycloakModelUtils {
         });
     }
 
+    public static boolean isAdminPermissionsEnabled(RealmModel realm) {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) && realm.isAdminPermissionsEnabled();
+    }
 }
