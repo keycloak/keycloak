@@ -110,6 +110,9 @@ function RealmSettingsGeneralTabForm({
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
+  const isAdminPermissionsV2Enabled = isFeatureEnabled(
+    Feature.AdminFineGrainedAuthzV2,
+  );
   const isOpenid4vciEnabled = isFeatureEnabled(Feature.OpenId4VCI);
 
   const setupForm = () => {
@@ -225,6 +228,13 @@ function RealmSettingsGeneralTabForm({
               name="organizationsEnabled"
               label={t("organizationsEnabled")}
               labelIcon={t("organizationsEnabledHelp")}
+            />
+          )}
+          {isAdminPermissionsV2Enabled && (
+            <DefaultSwitchControl
+              name="adminPermissionsEnabled"
+              label={t("adminPermissionsEnabled")}
+              labelIcon={t("adminPermissionsEnabledHelp")}
             />
           )}
           {isOpenid4vciEnabled && (

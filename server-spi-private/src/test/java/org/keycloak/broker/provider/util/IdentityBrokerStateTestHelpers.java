@@ -1820,6 +1820,15 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public boolean isAdminPermissionsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        }
+
+        @Override
         public boolean isVerifiableCredentialsEnabled() {
             return false;
         }

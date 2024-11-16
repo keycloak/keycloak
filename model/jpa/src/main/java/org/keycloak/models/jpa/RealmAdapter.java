@@ -1200,6 +1200,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean isAdminPermissionsEnabled() {
+        return getAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+    }
+
+    @Override
     public boolean isVerifiableCredentialsEnabled() {
         return getAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, Boolean.FALSE);
     }

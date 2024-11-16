@@ -75,6 +75,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     protected boolean organizationsEnabled;
+    protected boolean adminPermissionsEnabled;
     protected boolean verifiableCredentialsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
@@ -192,6 +193,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetPasswordAllowed = model.isResetPasswordAllowed();
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
+        adminPermissionsEnabled = model.isAdminPermissionsEnabled();
         verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
@@ -431,6 +433,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isOrganizationsEnabled() {
         return organizationsEnabled;
+    }
+
+    public boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
     }
 
     public boolean isVerifiableCredentialsEnabled() {

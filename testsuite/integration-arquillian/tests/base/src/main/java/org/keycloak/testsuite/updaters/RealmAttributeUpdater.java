@@ -207,4 +207,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setRegistrationAllowed(registrationAllowed);
         return this;
     }
+
+    public RealmAttributeUpdater setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
+        return this;
+    }
 }

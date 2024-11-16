@@ -16,11 +16,12 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
-import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+
+import java.util.List;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -28,9 +29,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
 
-public class FineGrainedAdminPermissionsTest extends AbstractTestRealmKeycloakTest {
+public class AdminPermissionsTest extends AbstractTestRealmKeycloakTest {
 
     private final String CLIENT_ID = "fgap-client";
 
@@ -71,6 +73,13 @@ public class FineGrainedAdminPermissionsTest extends AbstractTestRealmKeycloakTe
         assertThat(clients, hasSize(1));
         ResourceServerRepresentation authorizationSettings = testRealm().clients().get(clients.get(0).getId()).authorization().getSettings();
         assertThat(authorizationSettings, notNullValue());
-        assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
+        //admin permissions not enabled for the realm
+        assertThat(authorizationSettings.getAuthorizationSchema(), nullValue());
+
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setAdminPermissionsEnabled(Boolean.TRUE).update()) {
+            authorizationSettings = testRealm().clients().get(clients.get(0).getId()).authorization().getSettings();
+            assertThat(authorizationSettings, notNullValue());
+            assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
+        }
     }
 }
