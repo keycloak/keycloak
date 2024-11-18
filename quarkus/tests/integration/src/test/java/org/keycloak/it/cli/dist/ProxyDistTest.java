@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
 import io.restassured.config.RestAssuredConfig;
@@ -25,6 +26,7 @@ import org.apache.http.HttpHeaders;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
@@ -38,6 +40,9 @@ import static org.hamcrest.Matchers.containsString;
 @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
 @RawDistOnly(reason = "Containers are immutable")
 public class ProxyDistTest {
+    
+    private static final String ADDRESS = "12.23.45.67";
+    private static final String NOT_ADDRESS = "notaddress";
 
     @BeforeAll
     public static void onBeforeAll() {
@@ -82,10 +87,13 @@ public class ProxyDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=forwarded" })
-    public void testForwardedProxyHeaders() {
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge", "--spi-event-listener-provider=jboss-logging" })
+    public void testForwardedProxyHeaders(LaunchResult result) {
         assertForwardedHeader();
-        assertXForwardedHeadersAreIgnored();
+
+        CLIResult cliResult = (CLIResult)result;
+        cliResult.assertNoMessage(NOT_ADDRESS);
+        cliResult.assertMessage(ADDRESS);
     }
 
     @Test
@@ -117,10 +125,16 @@ public class ProxyDistTest {
     }
 
     private void assertForwardedHeader() {
+        // trigger a login error
+        assertForwardedHeader("http://mykeycloak.org:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console", "https://test:1234/admin", ADDRESS);
+        assertForwardedHeader("http://mykeycloak.org:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console", "https://test:1234/admin", NOT_ADDRESS);
+    }
+
+    private void assertForwardedHeader(String url, String expectedUrl, String forAddress) {
         given()
-                .header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89")
-                .when().get("http://mykeycloak.org:8080")
-                .then().header(HttpHeaders.LOCATION, containsString("https://test:1234/admin"));
+                .header("Forwarded", "for="+forAddress+";host=test:1234;proto=https, for=23.45.67.89")
+                .when().get(url)
+                .then().header(HttpHeaders.LOCATION, containsString(expectedUrl));
     }
 
     private void assertForwardedHeaderIsIgnored() {
