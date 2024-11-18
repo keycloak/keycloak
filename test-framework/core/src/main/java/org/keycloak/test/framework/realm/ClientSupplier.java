@@ -27,7 +27,7 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
         ClientConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
-        ClientRepresentation clientRepresentation = config.getRepresentation();
+        ClientRepresentation clientRepresentation = config.configure(ClientConfigBuilder.create()).build();
 
         if (clientRepresentation.getClientId() == null) {
             String clientId = SupplierHelpers.createName(instanceContext);

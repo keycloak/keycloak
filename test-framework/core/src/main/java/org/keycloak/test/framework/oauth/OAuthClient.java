@@ -24,6 +24,7 @@ import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.test.framework.realm.ClientConfig;
+import org.keycloak.test.framework.realm.ClientConfigBuilder;
 import org.keycloak.test.framework.realm.ManagedClient;
 import org.keycloak.test.framework.realm.ManagedRealm;
 import org.keycloak.test.framework.util.ApiUtil;
@@ -47,7 +48,7 @@ public class OAuthClient {
     }
 
     private ManagedClient registerClient(ClientConfig clientConfig) {
-        ClientRepresentation clientRepresentation = clientConfig.getRepresentation();
+        ClientRepresentation clientRepresentation = clientConfig.configure(ClientConfigBuilder.create()).build();
         Response response = realm.admin().clients().create(clientRepresentation);
         String id = ApiUtil.handleCreatedResponse(response);
         clientRepresentation.setId(id);
