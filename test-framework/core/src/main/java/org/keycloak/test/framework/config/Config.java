@@ -1,13 +1,17 @@
 package org.keycloak.test.framework.config;
 
-import io.smallrye.config.DotEnvConfigSourceProvider;
+import io.quarkus.runtime.configuration.CharsetConverter;
+import io.quarkus.runtime.configuration.InetSocketAddressConverter;
+import io.quarkus.runtime.configuration.MemorySizeConverter;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 import org.keycloak.test.framework.injection.ValueTypeAlias;
 
 import java.io.File;
+import java.net.URL;
 
 public class Config {
 
@@ -19,6 +23,10 @@ public class Config {
 
     public static <T> T get(String name, T defaultValue, Class<T> clazz) {
         return config.getOptionalValue(name, clazz).orElse(defaultValue);
+    }
+
+    public static SmallRyeConfig getConfig() {
+        return config;
     }
 
     public static String getAdminClientId() {
@@ -33,7 +41,8 @@ public class Config {
         SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDefaultInterceptors()
-                .withSources(new DotEnvConfigSourceProvider());
+                .withConverters(new Converter[]{ new CharsetConverter(), new MemorySizeConverter(), new InetSocketAddressConverter() })
+                .withInterceptors(new LogConfigInterceptor());
 
         ConfigSource testConfigSource = initTestConfigSource();
         if (testConfigSource != null) {
@@ -45,8 +54,14 @@ public class Config {
 
     private static ConfigSource initTestConfigSource() {
         try {
+            URL testConfig;
             String testConfigFile = System.getProperty("kc.test.config", System.getenv("KC_TEST_CONFIG"));
-            return testConfigFile != null ? new PropertiesConfigSource(new File(testConfigFile).toURI().toURL()) : null;
+            if (testConfigFile != null) {
+                testConfig = new File(testConfigFile).toURI().toURL();
+            } else {
+                testConfig = Thread.currentThread().getContextClassLoader().getResource("keycloak-test.properties");
+            }
+            return testConfig != null ? new PropertiesConfigSource(testConfig, "KeycloakTestConfig", 280) : null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

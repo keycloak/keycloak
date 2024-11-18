@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.server;
 
 import io.quarkus.maven.dependency.Dependency;
+import org.jboss.logging.Logger;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.database.TestDatabase;
@@ -12,8 +13,6 @@ import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 public abstract class AbstractKeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
@@ -33,32 +32,28 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-        List<String> rawOptions = new LinkedList<>();
-        rawOptions.add("start-dev");
-        rawOptions.add("--cache=local");
-
-        rawOptions.add("--bootstrap-admin-client-id=" + Config.getAdminClientId());
-        rawOptions.add("--bootstrap-admin-client-secret=" + Config.getAdminClientSecret());
+        CommandBuilder command = CommandBuilder.startDev()
+                .cache("local")
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
 
         if (serverConfig.enableSysLog()) {
             SysLogServer sysLogServer = instanceContext.getDependency(SysLogServer.class);
-
-            rawOptions.add("--log=console,syslog");
-            rawOptions.add("--log-syslog-endpoint=" + sysLogServer.getEndpoint());
-            rawOptions.add("--spi-events-listener-jboss-logging-success-level=INFO");
+            command.log().enableSyslog(sysLogServer.getEndpoint());
         }
+
+        command.log().fromConfig(Config.getConfig());
 
         if (!serverConfig.features().isEmpty()) {
-            rawOptions.add("--features=" + String.join(",", serverConfig.features()));
+            command.features(serverConfig.features());
         }
 
-        serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+        command.options(serverConfig.options());
 
         Set<Dependency> dependencies = new HashSet<>(serverConfig.dependencies());
 
         if (requiresDatabase()) {
             TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
-            testDatabase.serverConfig().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+            command.databaseConfig(testDatabase.serverConfig());
 
             Dependency jdbcDriver = testDatabase.jdbcDriver();
             if (jdbcDriver != null) {
@@ -66,8 +61,18 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
             }
         }
 
+        getLogger().info("Starting Keycloak test server");
+        if (getLogger().isDebugEnabled()) {
+            getLogger().debugv("Startup command and options: \n\t{0}", String.join("\n\t", command.toArgs()));
+        }
+
+        long start = System.currentTimeMillis();
+
         KeycloakTestServer server = getServer();
-        server.start(rawOptions, dependencies);
+        server.start(command, dependencies);
+
+        getLogger().infov("Keycloak test server started in {0} ms", System.currentTimeMillis() - start);
+
         return server;
     }
 
@@ -89,5 +94,7 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
     public abstract KeycloakTestServer getServer();
 
     public abstract boolean requiresDatabase();
+
+    public abstract Logger getLogger();
 
 }

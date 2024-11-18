@@ -13,14 +13,14 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
     private Keycloak keycloak;
 
     @Override
-    public void start(List<String> rawOptions, Set<Dependency> dependencies) {
+    public void start(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
 
         for(Dependency dependency : dependencies) {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
         }
 
-        keycloak = builder.start(rawOptions);
+        keycloak = builder.start(commandBuilder.toArgs());
     }
 
     @Override

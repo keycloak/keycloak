@@ -21,7 +21,7 @@ public class JBossLogConsumer implements Consumer<OutputFrame> {
                 logger.debug(outputFrame.getUtf8StringWithoutLineEnding());
                 break;
             case STDERR:
-                logger.error(outputFrame.getUtf8StringWithoutLineEnding());
+                logger.warn(outputFrame.getUtf8StringWithoutLineEnding());
                 break;
         }
     }
