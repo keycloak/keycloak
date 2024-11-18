@@ -7,6 +7,7 @@ import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.events.AdminEventsSupplier;
 import org.keycloak.test.framework.events.EventsSupplier;
 import org.keycloak.test.framework.events.SysLogServerSupplier;
+import org.keycloak.test.framework.http.HttpClientSupplier;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.oauth.OAuthClientSupplier;
 import org.keycloak.test.framework.realm.ClientSupplier;
@@ -16,6 +17,7 @@ import org.keycloak.test.framework.server.DistributionKeycloakTestServerSupplier
 import org.keycloak.test.framework.server.EmbeddedKeycloakTestServerSupplier;
 import org.keycloak.test.framework.server.KeycloakTestServer;
 import org.keycloak.test.framework.server.RemoteKeycloakTestServerSupplier;
+import org.keycloak.test.framework.server.KeycloakUrlsSupplier;
 
 import java.util.List;
 import java.util.Map;
@@ -32,12 +34,14 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new DistributionKeycloakTestServerSupplier(),
                 new EmbeddedKeycloakTestServerSupplier(),
                 new RemoteKeycloakTestServerSupplier(),
+                new KeycloakUrlsSupplier(),
                 new DevMemDatabaseSupplier(),
                 new DevFileDatabaseSupplier(),
                 new OAuthClientSupplier(),
                 new SysLogServerSupplier(),
                 new EventsSupplier(),
-                new AdminEventsSupplier()
+                new AdminEventsSupplier(),
+                new HttpClientSupplier()
         );
     }
 
