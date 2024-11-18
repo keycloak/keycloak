@@ -28,6 +28,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
+        rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+        return this;
+    }
+
     public RealmConfigBuilder roles(String... roleNames) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
