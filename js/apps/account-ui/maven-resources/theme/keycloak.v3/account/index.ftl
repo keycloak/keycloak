@@ -165,7 +165,8 @@
           "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
           "isViewGroupsEnabled": ${isViewGroupsEnabled?c},
           "isOid4VciEnabled": ${isOid4VciEnabled?c}
-        }
+        },
+        "scope": "${scope!""}"
       }
     </script>
   </body>
