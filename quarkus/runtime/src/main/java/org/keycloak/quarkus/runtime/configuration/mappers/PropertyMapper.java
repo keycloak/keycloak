@@ -37,7 +37,6 @@ import io.smallrye.config.ConfigValue;
 
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
-import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
@@ -49,23 +48,6 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.utils.StringUtil;
 
 public class PropertyMapper<T> {
-
-    static PropertyMapper<?> IDENTITY = new PropertyMapper<>(
-            new OptionBuilder<>(null, String.class).build(),
-            null,
-            () -> false,
-            "",
-            null,
-            null,
-            null,
-            false,
-            null,
-            null) {
-        @Override
-        public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
-            return context.proceed(name);
-        }
-    };
 
     private final Option<T> option;
     private final String to;

@@ -238,4 +238,24 @@ public class StartCommandDistTest {
         cliResult.assertError("File specified via '--config-file' or '-cf' option does not exist.");
         cliResult.assertError(String.format("Try '%s --help' for more information on the available options.", KeycloakDistribution.SCRIPT_CMD));
     }
+    
+    @RawDistOnly(reason = "Containers are immutable")
+    @Test
+    void testRuntimeValuesAreNotCaptured(KeycloakDistribution dist) {
+        // confirm that the invalid value prevents startup - if this passes, then we need to use a different
+        // spi provider 
+        CLIResult cliResult = dist.run("start", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertError("Failed to start quarkus");
+        
+        // if there was no auto-build use an explicit build to potentially capture the runtime default
+        if (!cliResult.getOutput().contains("Server configuration updated and persisted")) {
+            cliResult = dist.run("build", "--spi-events-listener-jboss-logging-success-level=invalid");
+            cliResult.assertBuild();
+        }
+        
+        // the invalid value should not be the default
+        cliResult = dist.run("start", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertNoBuild();
+        cliResult.assertStarted();
+    }
 }

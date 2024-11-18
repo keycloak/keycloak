@@ -21,7 +21,6 @@ import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_P
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
 import io.quarkus.runtime.LaunchMode;
 import org.keycloak.config.OptionCategory;
@@ -111,8 +110,13 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
-        if (Environment.isDevProfile() && !getAllCliArgs().contains(StartDev.NAME)) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+        if (Environment.isDevProfile()) {
+            String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            // we allow start-dev, and import|export|bootstrap-admin --profile=dev
+            // but not start --profile=dev, nor build --profile=dev
+            if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
+                executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
+            }
         }
     }
 

@@ -168,7 +168,13 @@ public class Picocli {
             }
 
             if (currentSpec != null) {
+                CommandLine commandLine = currentSpec.commandLine();
                 addCommandOptions(cliArgs, currentSpec.commandLine());
+                
+                if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
+                    // set current parsed command
+                    Environment.setParsedCommand(ac);
+                }
             }
 
             if (isRebuildCheck()) {
@@ -719,11 +725,8 @@ public class Picocli {
     }
 
     private static void addCommandOptions(List<String> cliArgs, CommandLine command) {
-        if (command != null && command.getCommand() instanceof AbstractCommand ac) {
+        if (command != null && command.getCommand() instanceof AbstractCommand) {
             IncludeOptions options = getIncludeOptions(cliArgs, command.getCommand(), command.getCommandName());
-
-            // set current parsed command
-            Environment.setParsedCommand(ac);
 
             if (!options.includeBuildTime && !options.includeRuntime) {
                 return;
