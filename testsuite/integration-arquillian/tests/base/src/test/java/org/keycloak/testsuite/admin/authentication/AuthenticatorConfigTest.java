@@ -22,6 +22,9 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
@@ -42,12 +45,13 @@ import jakarta.ws.rs.BadRequestException;
  */
 public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
+    private String flowId;
     private String executionId;
 
     @Before
     public void beforeConfigTest() {
         AuthenticationFlowRepresentation flowRep = newFlow("firstBrokerLogin2", "firstBrokerLogin2", "basic-flow", true, false);
-        createFlow(flowRep);
+        flowId = createFlow(flowRep);
 
         HashMap<String, Object> params = new HashMap<>();
         params.put("provider", IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
@@ -176,6 +180,36 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         Assert.assertEquals(providerName, description.getName());
         Assert.assertTrue(description.getProperties().isEmpty());
+    }
+
+    @Test
+    public void testMissingConfig() {
+        AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
+        final String cfgId = createConfig(executionId, cfg);
+        final String realmId = testRealmId;
+        AuthenticatorConfigRepresentation cfgRep = authMgmtResource.getAuthenticatorConfig(cfgId);
+        Assert.assertNotNull(cfgRep);
+
+        testingClient.server().run(session -> {
+            // emulating a broken config id, remove the config but do not remove the link in the authenticator
+            RealmModel realm = session.realms().getRealm(realmId);
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(cfgId);
+            realm.removeAuthenticatorConfig(config);
+        });
+
+        // check the flow can be read and execution has no config
+        AuthenticationFlowRepresentation flow = authMgmtResource.getFlow(flowId);
+        AuthenticationExecutionExportRepresentation execExport = flow.getAuthenticationExecutions().stream()
+                .filter(ae -> IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(ae.getAuthenticator()))
+                .findAny()
+                .orElse(null);
+        Assert.assertNotNull(execExport);
+        Assert.assertNull(execExport.getAuthenticatorConfig());
+
+        // check the execution can be read with no configuration assigned
+        AuthenticationExecutionInfoRepresentation execInfo = findExecutionByProvider(
+                IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, authMgmtResource.getExecutions("firstBrokerLogin2"));
+        Assert.assertNull(execInfo.getAuthenticationConfig());
     }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
