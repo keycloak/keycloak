@@ -4,3 +4,9 @@ Potential vulnerable configurations have been identified in the X.509 client cer
 Additional configuration steps might be required depending on your current configuration. Make sure to review the updated
 link:{client_certificate_lookup_link}[reverse proxy guide] if you have configured
 the client certificate lookup via a proxy header.
+
+= Security improvements for the key resolvers
+
+While using the `REALM_FILESEPARATOR_KEY` key resolver, {project_name} now restricts access to FileVault secrets outside of its realm. Characters that could cause path traversal when specifying the expression placeholder in the Administration Console are now prohibited.
+
+Additionally, the `KEY_ONLY` key resolver now escapes the `+_+` character to prevent reading secrets that would otherwise be linked to another realm when the `REALM_UNDERSCORE_KEY` resolver is used. The escaping simply replaces `+_+` with `+__+`, so, for example, `${vault.my_secret}` now looks for a file named `my++__++secret`. We recognize that this is a breaking change; therefore, a warning is logged to ease the transition.

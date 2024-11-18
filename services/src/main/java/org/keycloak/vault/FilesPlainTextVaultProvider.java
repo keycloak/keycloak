@@ -64,6 +64,24 @@ public class FilesPlainTextVaultProvider extends AbstractVaultProvider {
     }
 
     @Override
+    protected boolean validate(VaultKeyResolver resolver, String key, String resolvedKey) {
+        if (!super.validate(resolver, key, resolvedKey)) {
+            return false;
+        }
+        Path secretPath = vaultPath.resolve(resolvedKey);
+
+        Path expectedPath = vaultPath;
+        if (resolver == AbstractVaultProviderFactory.AvailableResolvers.REALM_FILESEPARATOR_KEY.getVaultKeyResolver()) {
+            expectedPath = expectedPath.resolve(realm);
+        }
+        if (!secretPath.getParent().equals(expectedPath)) {
+            logger.warnf("Path traversal attempt detected in secret %s.", key);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public void close() {
 
     }
