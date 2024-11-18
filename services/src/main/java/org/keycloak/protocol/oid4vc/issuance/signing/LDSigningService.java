@@ -24,6 +24,9 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.LDCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.signing.vcdm.Ed255192018Suite;
 import org.keycloak.protocol.oid4vc.issuance.signing.vcdm.LinkedDataCryptographicSuite;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -74,7 +77,12 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
 
     @Override
     public VerifiableCredential signCredential(VCIssuanceContext vcIssuanceContext) {
-        return addProof(vcIssuanceContext.getVerifiableCredential());
+        CredentialBody credentialBody = vcIssuanceContext.getCredentialBody();
+        if (!(credentialBody instanceof LDCredentialBody ldCredentialBody)) {
+            throw new VCIssuerException("Credential body unexpectedly not of type LDCredentialBody");
+        }
+
+        return addProof(ldCredentialBody.getVerifiableCredential());
     }
 
     // add the signed proof to the credential.

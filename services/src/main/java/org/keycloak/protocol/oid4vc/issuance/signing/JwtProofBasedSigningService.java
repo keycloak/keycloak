@@ -51,8 +51,11 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
     private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     public static final String PROOF_JWT_TYP="openid4vci-proof+jwt";
 
-    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, String format, String type) {
+    protected final String issuerDid;
+
+    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, String format, String type, String issuerDid) {
         super(keycloakSession, keyId, format, type);
+        this.issuerDid = issuerDid;
     }
 
     /*
@@ -175,7 +178,7 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
         //                .orElseThrow(() -> new VCIssuerException("Issuer claim must be null for preauthorized code else the clientId of the client making the request: " + azp));
 
         // The issuer is the token / credential is the audience of the proof
-        String credentialIssuer = vcIssuanceContext.getVerifiableCredential().getIssuer().toString();
+        String credentialIssuer = issuerDid;
         Optional.ofNullable(proofPayload.getAudience()) // Ensure null-safety with Optional
                 .map(Arrays::asList) // Convert to List<String>
                 .filter(audiences -> audiences.contains(credentialIssuer)) // Check if the issuer is in the audience list

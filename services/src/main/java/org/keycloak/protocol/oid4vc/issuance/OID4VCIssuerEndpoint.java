@@ -37,20 +37,25 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.LocatableProvider;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.AbstractCredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -89,6 +94,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.protocol.oid4vc.model.Format.JWT_VC;
 import static org.keycloak.protocol.oid4vc.model.Format.LDP_VC;
@@ -126,6 +132,11 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     /**
+     * Locatable credential builder map
+     */
+    private final Map<String, CredentialBuilder> credentialBuilders;
+
+    /**
      * Key shall be strings, as configured credential of the same format can
      * have different configs. Like decoy, visible claims,
      * time requirements (iat, exp, nbf, ...).
@@ -143,6 +154,7 @@ public class OID4VCIssuerEndpoint {
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
+                                Map<String, CredentialBuilder> credentialBuilders,
                                 Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan) {
@@ -151,6 +163,7 @@ public class OID4VCIssuerEndpoint {
         this.objectMapper = objectMapper;
         this.timeProvider = timeProvider;
         this.issuerDid = issuerDid;
+        this.credentialBuilders = credentialBuilders;
         this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
         this.isIgnoreScopeCheck = false;
@@ -158,6 +171,7 @@ public class OID4VCIssuerEndpoint {
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
+                                Map<String, CredentialBuilder> credentialBuilders,
                                 Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
@@ -167,21 +181,20 @@ public class OID4VCIssuerEndpoint {
         this.objectMapper = objectMapper;
         this.timeProvider = timeProvider;
         this.issuerDid = issuerDid;
+        this.credentialBuilders = credentialBuilders;
         this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
         this.isIgnoreScopeCheck = isIgnoreScopeCheck;
     }
 
-     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession){
+    public OID4VCIssuerEndpoint(KeycloakSession keycloakSession) {
         this.session = keycloakSession;
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
         this.objectMapper = new ObjectMapper();
         this.timeProvider = new OffsetTimeProvider();
 
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        this.signingServices = new HashMap<>();
-        realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
-                .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
+        this.credentialBuilders = initSpiComponents(keycloakSession, CredentialBuilder.class);
+        this.signingServices = initSpiComponents(keycloakSession, VerifiableCredentialsSigningService.class);
 
         RealmModel realmModel = keycloakSession.getContext().getRealm();
         this.issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
@@ -190,19 +203,37 @@ public class OID4VCIssuerEndpoint {
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
         this.isIgnoreScopeCheck = false;
-     }
+    }
 
-    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
-        ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
-                .getKeycloakSessionFactory()
-                .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
-        if (factory instanceof VCSigningServiceProviderFactory sspf) {
-            VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
-            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
-        } else {
-            throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
-        }
+    /**
+     * Create components of the given class from the associated SPI factories in Keycloak's session.
+     * This enables the components to be locatable by their `locator` implementation.
+     *
+     * @return a map of the created components with their locator strings as keys
+     */
+    private <T extends LocatableProvider> Map<String, T> initSpiComponents(
+            KeycloakSession keycloakSession,
+            Class<T> clazz
+    ) {
+        KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        Stream<ComponentModel> componentModels = realm.getComponentsStream(realm.getId(), clazz.getName());
 
+        return componentModels.map(componentModel -> {
+                    ProviderFactory<T> providerFactory = keycloakSessionFactory
+                            .getProviderFactory(clazz, componentModel.getProviderId());
+
+                    if (!(providerFactory instanceof ComponentFactory<?, ?>)) {
+                        throw new IllegalArgumentException(String.format(
+                                "Component %s is unexpectedly not a ComponentFactory",
+                                componentModel.getProviderId()
+                        ));
+                    }
+
+                    ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
+                    return componentFactory.create(keycloakSession, componentModel);
+                })
+                .collect(Collectors.toMap(LocatableProvider::locator, component -> component));
     }
 
     /**
@@ -561,12 +592,9 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException("No VerifiableCredential-Scope was provided in the request.");
         }
 
-        return getOID4VCClientsFromSession()
-                .stream()
-                .filter(oid4VCClient -> oid4VCClient.getSupportedVCTypes()
-                        .stream()
-                        .anyMatch(supportedCredential -> supportedCredential.getScope().equals(vcScope)))
-                .toList();
+        // Since clients are not bound to specific VC definitions, they can all
+        // potentially define protocol mappers to source data.
+        return getOID4VCClientsFromSession();
     }
 
     private ClientModel getClient(String clientId) {
@@ -606,9 +634,26 @@ public class OID4VCIssuerEndpoint {
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
-        return new VCIssuanceContext().setAuthResult(authResult)
-                .setVerifiableCredential(vc)
+        // Build format-specific credential
+        CredentialBody credentialBody = locateCredentialBuilder(credentialConfig)
+                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+
+        return new VCIssuanceContext()
+                .setAuthResult(authResult)
+                .setCredentialBody(credentialBody)
                 .setCredentialConfig(credentialConfig)
                 .setCredentialRequest(credentialRequestVO);
+    }
+
+    private CredentialBuilder locateCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
+        String format = credentialConfig.getFormat();
+        String locator = AbstractCredentialBuilder.computeLocator(format);
+        CredentialBuilder credentialBuilder = credentialBuilders.get(locator);
+
+        if (credentialBuilder == null) {
+            throw new IllegalArgumentException(String.format("No credential builder found for format %s", format));
+        }
+
+        return credentialBuilder;
     }
 }
