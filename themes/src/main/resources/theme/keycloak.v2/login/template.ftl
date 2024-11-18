@@ -103,7 +103,7 @@
     </#if>
     <script>
       // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1404468
-      const isFirefox;
+      const isFirefox = true;
     </script>
 </head>
 
