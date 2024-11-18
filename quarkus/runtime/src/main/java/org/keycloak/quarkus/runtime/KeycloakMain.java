@@ -74,6 +74,8 @@ public class KeycloakMain implements QuarkusApplication {
             // fast path for starting the server without bootstrapping CLI
             ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
             PrintWriter errStream = new PrintWriter(System.err, true);
+            
+            Environment.setParsedCommand(new Start());
 
             if (isDevProfileNotAllowed()) {
                 errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);

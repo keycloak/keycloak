@@ -7,6 +7,7 @@ import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,8 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+
 public final class PropertyMappers {
 
+    public static final String KC_SPI_PREFIX = "kc.spi";
     public static String VALUE_MASK = "*******";
     private static final MappersConfig MAPPERS = new MappersConfig();
 
@@ -44,8 +48,22 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        PropertyMapper<?> mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
+        PropertyMapper<?> mapper = getMapper(name);
+        // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
+        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper)) {
+            return ConfigValue.builder().withName(name).build();
+        }
+        if (mapper == null) {
+            return context.proceed(name);
+        }
         return mapper.getConfigValue(name, context);
+    }
+
+    private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
+        if (mapper == null) {
+            return name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK) && !isSpiBuildTimeProperty(name);            
+        }
+        return mapper.isRunTime();
     }
 
     public static boolean isBuildTimeProperty(String name) {

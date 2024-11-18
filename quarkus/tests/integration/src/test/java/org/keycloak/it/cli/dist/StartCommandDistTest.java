@@ -152,4 +152,24 @@ public class StartCommandDistTest {
         cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
     }
+    
+    @RawDistOnly(reason = "Containers are immutable")
+    @Test
+    void testRuntimeValuesAreNotCaptured(KeycloakDistribution dist) {
+        // confirm that the invalid value prevents startup - if this passes, then we need to use a different
+        // spi provider 
+        CLIResult cliResult = dist.run("start", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertError("Failed to start quarkus");
+        
+        // if there was no auto-build use an explicit build to potentially capture the runtime default
+        if (!cliResult.getOutput().contains("Server configuration updated and persisted")) {
+            cliResult = dist.run("build", "--spi-events-listener-jboss-logging-success-level=invalid");
+            cliResult.assertBuild();
+        }
+        
+        // the invalid value should not be the default
+        cliResult = dist.run("start", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertNoBuild();
+        cliResult.assertStarted();
+    }
 }

@@ -512,7 +512,12 @@ public final class Picocli {
                     .build());
         }
 
-        addCommandOptions(cliArgs, getCurrentCommandSpec(cliArgs, spec));
+        CommandLine commandLine = getCurrentCommandSpec(cliArgs, spec);
+        if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
+            // set current parsed command
+            Environment.setParsedCommand(ac);
+        }
+        addCommandOptions(cliArgs, commandLine);
 
         if (isRebuildCheck()) {
             // build command should be available when running re-aug
