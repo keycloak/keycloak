@@ -1,6 +1,10 @@
 package org.keycloak.test.framework.server;
 
+import org.jboss.logging.Logger;
+
 public class RemoteKeycloakTestServerSupplier extends AbstractKeycloakTestServerSupplier {
+
+    private static final Logger LOGGER = Logger.getLogger(RemoteKeycloakTestServerSupplier.class);
 
     @Override
     public KeycloakTestServer getServer() {
@@ -15,5 +19,10 @@ public class RemoteKeycloakTestServerSupplier extends AbstractKeycloakTestServer
     @Override
     public String getAlias() {
         return "remote";
+    }
+
+    @Override
+    public Logger getLogger() {
+        return LOGGER;
     }
 }

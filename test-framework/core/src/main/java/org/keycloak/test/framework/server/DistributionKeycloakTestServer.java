@@ -1,10 +1,15 @@
 package org.keycloak.test.framework.server;
 
 import io.quarkus.maven.dependency.Dependency;
+import org.jboss.logging.Logger;
+import org.keycloak.it.utils.OutputConsumer;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DistributionKeycloakTestServer implements KeycloakTestServer {
 
@@ -18,14 +23,14 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(List<String> rawOptions, Set<Dependency> dependencies) {
-        keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT);
+    public void start(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
+        keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
 
         for (Dependency dependency : dependencies) {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
         }
 
-        keycloak.run(rawOptions).assertStartedDevMode();
+        keycloak.run(commandBuilder.toArgs());
     }
 
     @Override
@@ -36,6 +41,54 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     @Override
     public String getBaseUrl() {
         return "http://localhost:8080";
+    }
+
+    private static final class LoggingOutputConsumer implements OutputConsumer {
+
+        private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
+        private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
+
+        @Override
+        public void onStdOut(String line) {
+            onLine(line, Logger.Level.INFO);
+        }
+
+        @Override
+        public void onErrOut(String line) {
+            onLine(line, Logger.Level.ERROR);
+        }
+
+        @Override
+        public List<String> getStdOut() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<String> getErrOut() {
+            return Collections.emptyList();
+        }
+
+        private void onLine(String line, Logger.Level defaultLevel) {
+            Matcher matcher = LOG_PATTERN.matcher(line);
+            if (matcher.matches()) {
+                String levelString = matcher.group(3);
+                String message = matcher.group(5);
+                if (levelString != null && message != null) {
+                    for (Logger.Level l : Logger.Level.values()) {
+                        if (l.name().equals(levelString)) {
+                            LOGGER.log(l, message);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            LOGGER.log(defaultLevel, line);
+        }
+
+        @Override
+        public void reset() {
+        }
     }
 
 }
