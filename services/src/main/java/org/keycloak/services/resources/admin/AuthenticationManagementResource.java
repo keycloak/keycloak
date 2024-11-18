@@ -663,6 +663,19 @@ public class AuthenticationManagementResource {
         return result;
     }
 
+    private String getAuthenticationConfig(String flowAlias, AuthenticationExecutionModel model) {
+        if (model.getAuthenticatorConfig() == null) {
+            return null;
+        }
+        AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
+        if (config == null) {
+            logger.warnf("Authenticator configuration '%s' is missing for execution '%s' (%s) in flow '%s'",
+                    model.getAuthenticatorConfig(), model.getId(), model.getAuthenticator(), flowAlias);
+            return null;
+        }
+        return config.getId();
+    }
+
     public void recurseExecutions(AuthenticationFlowModel flow, List<AuthenticationExecutionInfoRepresentation> result, int level) {
         AtomicInteger index = new AtomicInteger(0);
         realm.getAuthenticationExecutionsStream(flow.getId()).forEachOrdered(execution -> {
@@ -682,7 +695,7 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                     rep.setProviderId(execution.getAuthenticator());
-                    rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                    rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 } else if (AuthenticationFlow.CLIENT_FLOW.equals(flowRef.getProviderId())) {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
@@ -732,7 +745,7 @@ public class AuthenticationManagementResource {
                 }
 
                 rep.setProviderId(providerId);
-                rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 result.add(rep);
             }
         });
