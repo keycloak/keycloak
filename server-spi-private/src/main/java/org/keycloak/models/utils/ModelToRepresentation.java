@@ -123,6 +123,8 @@ public class ModelToRepresentation {
 
         REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
 
+        REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
     }
 
