@@ -47,6 +47,10 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
             command.features(serverConfig.features());
         }
 
+        if (!serverConfig.featuresDisabled().isEmpty()) {
+            command.featuresDisabled(serverConfig.featuresDisabled());
+        }
+
         command.options(serverConfig.options());
 
         Set<Dependency> dependencies = new HashSet<>(serverConfig.dependencies());
