@@ -108,15 +108,26 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
     private String[] getUnmatchedPartsByOptionSeparator(UnmatchedArgumentException uae, String separator) {
         return uae.getUnmatched().get(0).split(separator);
     }
-    
+
     private String getExpectedMessage(OptionSpec option) {
         return String.format("Option '%s' (%s) expects %s.%s", String.join(", ", option.names()), option.paramLabel(),
                 option.typeInfo().isMultiValue() ? "one or more comma separated values without whitespace": "a single value",
-                getExpectedValuesMessage(option.completionCandidates()));
+                getExpectedValuesMessage(option.completionCandidates(), isCaseInsensitive(option)));
     }
-    
-    public static String getExpectedValuesMessage(Iterable<String> specCandidates) {
-        return specCandidates.iterator().hasNext() ? " Expected values are: " + String.join(", ", specCandidates) : "";
+
+    private boolean isCaseInsensitive(OptionSpec option) {
+        if (option.longestName().startsWith("--")) {
+            var mapper = PropertyMappers.getMapper(option.longestName().substring(2));
+            if (mapper != null) {
+                return mapper.getOption().isCaseInsensitiveExpectedValues();
+            }
+        }
+        return false;
+    }
+
+    public static String getExpectedValuesMessage(Iterable<String> specCandidates, boolean caseInsensitive) {
+        return specCandidates.iterator().hasNext() ? String.format(" Expected values are%s: %s",
+                caseInsensitive ? " (case insensitive)" : "", String.join(", ", specCandidates)) : "";
     }
 
 }

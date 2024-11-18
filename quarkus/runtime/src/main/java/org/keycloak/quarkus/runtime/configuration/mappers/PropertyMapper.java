@@ -530,9 +530,8 @@ public class PropertyMapper<T> {
                 && (!getOption().isCaseInsensitiveExpectedValues()
                         || !expectedValues.stream().anyMatch(v::equalsIgnoreCase))) {
             throw new PropertyException(
-                    String.format("Invalid value for option %s: %s.%s%s", getOptionAndSourceMessage(configValue), v,
-                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues),
-                            getOption().isCaseInsensitiveExpectedValues() ? " (case insensitive)" : ""));
+                    String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
+                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues, getOption().isCaseInsensitiveExpectedValues())));
         }
     }
 
