@@ -4,6 +4,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.account.DeviceRepresentation;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Supplier;
@@ -47,6 +50,7 @@ public class SecureContextResolverTest {
         assertSecureContext("http://[::2]", false);
         assertSecureContext("http://[2001:0000:130F:0000:0000:09C0:876A:130B]", false);
         assertSecureContext("http://::1", false);
+        assertSecureContext("http://[FE80:0000:130F:0000:0000:09C0:876A:130B]", false);
     }
 
     @Test
@@ -58,6 +62,14 @@ public class SecureContextResolverTest {
         assertSecureContext("http://test.localhost.", true);
         assertSecureContext("http://test.localhostn", false);
         assertSecureContext("http://test.localhost.not", false);
+    }
+    
+    @Test
+    public void testIsLocalhost() {
+        assertTrue(SecureContextResolver.isLocalAddress("127.0.0.1"));
+        assertFalse(SecureContextResolver.isLocalAddress("not.an.ip"));
+        assertFalse(SecureContextResolver.isLocalAddress(null));
+        assertFalse(SecureContextResolver.isLocalAddress(""));
     }
 
     @Test

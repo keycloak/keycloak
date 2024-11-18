@@ -57,13 +57,7 @@ public class SecureContextResolver {
             return false;
         }
 
-        // The host matches a CIDR notation of ::1/128
-        if (host.equals("[::1]") || host.equals("[0000:0000:0000:0000:0000:0000:0000:0001]")) {
-            return true;
-        }
-
-        // The host matches a CIDR notation of 127.0.0.0/8
-        if (LOCALHOST_IPV4.matcher(host).matches()) {
+        if (isLocalAddress(host)) {
             return true;
         }
 
@@ -72,5 +66,27 @@ public class SecureContextResolver {
         }
 
         return host.endsWith(".localhost") || host.endsWith(".localhost.");
+    }
+
+    /**
+     * Test whether the given address is the localhost
+     * @param address
+     * @return false if the address is not localhost or not an address value
+     */
+    public static boolean isLocalAddress(String address) {
+        if (address == null) {
+            return false;
+        }
+        // The host matches a CIDR notation of ::1/128
+        if (address.equals("[::1]") || address.equals("[0000:0000:0000:0000:0000:0000:0000:0001]")) {
+            return true;
+        }
+
+        // The host matches a CIDR notation of 127.0.0.0/8
+        if (LOCALHOST_IPV4.matcher(address).matches()) {
+            return true;
+        }
+        
+        return false;
     }
 }
