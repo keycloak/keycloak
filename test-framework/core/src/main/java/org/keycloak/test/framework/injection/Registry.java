@@ -216,6 +216,18 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         LOGGER.debug("Closing instances with method lifecycle");
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
         destroy.forEach(this::destroy);
+
+        List<InstanceContext<?, ?>> cleanup = deployedInstances.stream().filter(i -> i.getValue() instanceof ManagedTestResource).toList();
+        for (InstanceContext<?, ?> c : cleanup) {
+            ManagedTestResource managedTestResource = (ManagedTestResource) c.getValue();
+            if (managedTestResource.isDirty()) {
+                LOGGER.debugv("Destroying dirty instance {0}", c.getValue());
+                destroy(c);
+            } else {
+                LOGGER.debugv("Cleanup instance {0}", c.getValue());
+                managedTestResource.runCleanup();
+            }
+        }
     }
 
     public void close() {
