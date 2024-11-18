@@ -430,7 +430,7 @@ describe("Client Scopes test", () => {
       cy.injectAxe();
     });
 
-    const scopeName = "a11y";
+    const scopeName = "a11y_" + uuid();
 
     after(async () => {
       await adminClient.deleteClientScope(scopeName);
@@ -445,7 +445,7 @@ describe("Client Scopes test", () => {
       cy.checkA11y();
     });
 
-    it.skip("Check a11y violations on client scope details", () => {
+    it("Check a11y violations on client scope details", () => {
       const clientScopeDetailsPage = new ClientScopeDetailsPage();
       const mappersTab = new MappersTab();
       const predefinedMapperName = "Predefined Mapper test";
