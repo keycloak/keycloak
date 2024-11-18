@@ -7,15 +7,16 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.InjectOAuthClient;
-import org.keycloak.test.framework.ui.annotations.InjectPage;
 import org.keycloak.test.framework.annotations.InjectUser;
-import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.oauth.OAuthClient;
-import org.keycloak.test.framework.ui.page.LoginPage;
 import org.keycloak.test.framework.realm.ManagedUser;
+import org.keycloak.test.framework.realm.UserConfig;
+import org.keycloak.test.framework.realm.UserConfigBuilder;
+import org.keycloak.test.framework.ui.annotations.InjectPage;
+import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
+import org.keycloak.test.framework.ui.page.LoginPage;
 import org.openqa.selenium.WebDriver;
 
 import java.net.URI;
@@ -24,7 +25,7 @@ import java.net.URL;
 @KeycloakIntegrationTest
 public class OAuthClientTest {
 
-    @InjectUser(config = UserConfig.class)
+    @InjectUser(config = OAuthUserConfig.class)
     ManagedUser user;
 
     @InjectOAuthClient
@@ -89,15 +90,13 @@ public class OAuthClientTest {
         Assertions.assertNull(introspectionResponse.toSuccessResponse().getScope());
     }
 
-    public static class UserConfig implements org.keycloak.test.framework.realm.UserConfig {
+    public static class OAuthUserConfig implements UserConfig {
 
         @Override
-        public UserRepresentation getRepresentation() {
-            return builder()
-                    .name("First", "Last")
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.name("First", "Last")
                     .email("test@local")
-                    .password("password")
-                    .build();
+                    .password("password");
         }
     }
 

@@ -4,35 +4,44 @@ import org.keycloak.representations.idm.ClientRepresentation;
 
 public class ClientConfigBuilder {
 
-    private final ClientRepresentation representation;
+    private final ClientRepresentation rep;
 
-    public ClientConfigBuilder() {
-        this.representation = new ClientRepresentation();
-        this.representation.setEnabled(true);
+    private ClientConfigBuilder(ClientRepresentation rep) {
+        this.rep = rep;
+    }
+
+    public static ClientConfigBuilder create() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setEnabled(true);
+        return new ClientConfigBuilder(rep);
+    }
+
+    public static ClientConfigBuilder update(ClientRepresentation rep) {
+        return new ClientConfigBuilder(rep);
     }
 
     public ClientConfigBuilder clientId(String clientId) {
-        representation.setClientId(clientId);
+        rep.setClientId(clientId);
         return this;
     }
 
     public ClientConfigBuilder secret(String secret) {
-        representation.setSecret(secret);
+        rep.setSecret(secret);
         return this;
     }
 
     public ClientConfigBuilder redirectUris(String... redirectUris) {
-        representation.setRedirectUris(Collections.combine(representation.getRedirectUris(), redirectUris));
+        rep.setRedirectUris(Collections.combine(rep.getRedirectUris(), redirectUris));
         return this;
     }
 
     public ClientConfigBuilder serviceAccount() {
-        representation.setServiceAccountsEnabled(true);
+        rep.setServiceAccountsEnabled(true);
         return this;
     }
 
     public ClientRepresentation build() {
-        return representation;
+        return rep;
     }
 
 }
