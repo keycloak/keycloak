@@ -19,6 +19,8 @@ export type BaseEnvironment = {
   logo: string;
   /** The URL to be followed when the logo is clicked. */
   logoUrl: string;
+  /** The scopes to be requested when sending authorization requests*/
+  scope?: string;
 };
 
 /**
