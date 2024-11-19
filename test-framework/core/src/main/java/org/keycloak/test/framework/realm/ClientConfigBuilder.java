@@ -40,6 +40,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder directAccessGrants() {
+        rep.setDirectAccessGrantsEnabled(true);
+        return this;
+    }
+
     public ClientRepresentation build() {
         return rep;
     }
