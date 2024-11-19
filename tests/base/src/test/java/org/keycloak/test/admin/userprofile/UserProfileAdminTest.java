@@ -1,13 +1,10 @@
 package org.keycloak.test.admin.userprofile;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -24,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 @KeycloakIntegrationTest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserProfileAdminTest {
 
     @InjectRealm(lifecycle = LifeCycle.CLASS)
@@ -38,25 +34,19 @@ public class UserProfileAdminTest {
 
     @Test
     public void testSetDefaultConfig() {
+        realm.cleanup().add(r -> r.users().userProfile().update(null));
+
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
         UserProfileResource userProfile = realm.admin().users().userProfile();
         userProfile.update(config);
-        // TODO
-        /*getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));*/
 
         JsonTestUtils.assertJsonEquals(config, userProfile.getConfiguration());
     }
 
     @Test
     public void testEmailRequiredIfEmailAsUsernameEnabled() {
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        realmRep.setRegistrationEmailAsUsername(true);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-            realm.update(realmRep);
-        });*/
+        realm.updateWithCleanup(r -> r.registrationEmailAsUsername(true));
+
         UserProfileResource userProfile = realm.admin().users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         Assertions.assertTrue(metadata.getAttributeMetadata(UserModel.EMAIL).isRequired());
@@ -64,14 +54,6 @@ public class UserProfileAdminTest {
 
     @Test
     public void testEmailNotRequiredIfEmailAsUsernameDisabled() {
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        realmRep.setRegistrationEmailAsUsername(false);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-            realm.update(realmRep);
-        });*/
         UserProfileResource userProfile = realm.admin().users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         Assertions.assertFalse(metadata.getAttributeMetadata(UserModel.EMAIL).isRequired());
@@ -79,21 +61,8 @@ public class UserProfileAdminTest {
 
     @Test
     public void testUsernameRequiredAndWritableIfEmailAsUsernameDisabledAndEditUsernameAllowed() {
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        realmRep.setRegistrationEmailAsUsername(false);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-            realm.update(realmRep);
-        });*/
-        realmRep.setEditUsernameAllowed(true);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setEditUsernameAllowed(editUsernameAllowed);
-            realm.update(realmRep);
-        });*/
+        realm.updateWithCleanup(r -> r.editUsernameAllowed(true));
+
         UserProfileResource userProfile = realm.admin().users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         Assertions.assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
@@ -102,21 +71,6 @@ public class UserProfileAdminTest {
 
     @Test
     public void testUsernameRequiredAndWritableIfEmailAsUsernameDisabledAndEditUsernameDisabled() {
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        realmRep.setRegistrationEmailAsUsername(false);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-            realm.update(realmRep);
-        });*/
-        realmRep.setEditUsernameAllowed(false);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setEditUsernameAllowed(editUsernameAllowed);
-            realm.update(realmRep);
-        });*/
         UserProfileResource userProfile = realm.admin().users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         Assertions.assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
@@ -125,14 +79,8 @@ public class UserProfileAdminTest {
 
     @Test
     public void testUsernameNotRequiredIfEmailAsUsernameEnabled() {
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        realmRep.setRegistrationEmailAsUsername(true);
-        realm.admin().update(realmRep);
-        // TODO
-        /*getCleanup().addCleanup(() -> {
-            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-            realm.update(realmRep);
-        });*/
+        realm.updateWithCleanup(r -> r.registrationEmailAsUsername(true));
+
         UserProfileResource userProfile = realm.admin().users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         Assertions.assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
@@ -141,6 +89,8 @@ public class UserProfileAdminTest {
 
     @Test
     public void testGroupsMetadata() {
+        realm.cleanup().add(r -> r.users().userProfile().update(null));
+
         UPConfig config = realm.admin().users().userProfile().getConfiguration();
 
         for (int i = 0; i < 3; i++) {
@@ -156,8 +106,6 @@ public class UserProfileAdminTest {
         firstName.setGroup(config.getGroups().get(0).getName());
         UserProfileResource userProfile = realm.admin().users().userProfile();
         userProfile.update(config);
-        // TODO
-        /*getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));*/
 
         UserProfileMetadata metadata = realm.admin().users().userProfile().getMetadata();
         List<UserProfileAttributeGroupMetadata> groups = metadata.getGroups();
