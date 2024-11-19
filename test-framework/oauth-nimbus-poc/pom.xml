@@ -26,33 +26,25 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-framework-core</artifactId>
+    <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
     <name>Keycloak Test Framework</name>
     <packaging>jar</packaging>
-    <description>Preview Keycloak testing framework based on JUnit 5</description>
+    <description>Nimbus OAuth PoC extension for Keycloak Test Framework</description>
+
+    <properties>
+        <nimbus-sdk.version>11.13</nimbus-sdk.version>
+    </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
+            <groupId>org.keycloak.test</groupId>
+            <artifactId>keycloak-test-framework-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-junit5</artifactId>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+            <version>${nimbus-sdk.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
-
 </project>
