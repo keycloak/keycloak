@@ -178,7 +178,7 @@ public class LoggingDistTest {
     @Launch({"start-dev", "--log-console-level=wrong"})
     void wrongLevelForHandlers(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are: off, fatal, error, warn, info, debug, trace, all");
+        cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all");
     }
 
     @Test

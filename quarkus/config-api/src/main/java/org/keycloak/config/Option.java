@@ -15,9 +15,10 @@ public class Option<T> {
     private final Optional<T> defaultValue;
     private final List<String> expectedValues;
     private final boolean strictExpectedValues;
+    private final boolean caseInsensitiveExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, DeprecatedMetadata deprecatedMetadata) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -27,6 +28,7 @@ public class Option<T> {
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
         this.strictExpectedValues = strictExpectedValues;
+        this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
     }
 
@@ -72,6 +74,10 @@ public class Option<T> {
         return strictExpectedValues;
     }
 
+    public boolean isCaseInsensitiveExpectedValues() {
+        return caseInsensitiveExpectedValues;
+    }
+
     public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
         return Optional.ofNullable(deprecatedMetadata);
     }
@@ -87,6 +93,7 @@ public class Option<T> {
             Optional.ofNullable(defaultValue),
             this.expectedValues,
             this.strictExpectedValues,
+            this.caseInsensitiveExpectedValues,
             this.deprecatedMetadata
         );
     }

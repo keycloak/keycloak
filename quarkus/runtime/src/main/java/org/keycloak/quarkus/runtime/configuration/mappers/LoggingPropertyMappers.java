@@ -44,6 +44,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.level")
                         .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
@@ -78,6 +79,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.level")
                         .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -116,6 +118,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.level")
                         .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
@@ -247,5 +250,9 @@ public final class LoggingPropertyMappers {
         }
 
         return LoggingOptions.DEFAULT_LOG_TRACING_FORMAT;
+    }
+
+    private static String upperCase(String value, ConfigSourceInterceptorContext context) {
+        return value.toUpperCase(Locale.ROOT);
     }
 }

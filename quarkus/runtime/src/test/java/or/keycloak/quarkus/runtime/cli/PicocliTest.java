@@ -131,7 +131,20 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Invalid value for option '--log-console-level': wrong. Expected values are: off, fatal, error, warn, info, debug, trace, all"));
+                "Invalid value for option '--log-console-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all"));
+    }
+
+    @Test
+    public void passUpperCaseLogValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=INFO");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void passMixedCaseLogValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=Info");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("INFO", nonRunningPicocli.config.getConfigValue("quarkus.log.console.level").getValue());
     }
 
     @Test
