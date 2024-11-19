@@ -218,6 +218,14 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
       (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
+    if (user) {
+      delete newFilters.user;
+    }
+
+    if (client) {
+      delete newFilters.client;
+    }
+
     setActiveFilters(newFilters);
     setKey(key + 1);
   }
@@ -397,6 +405,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                       categoryName={filterLabels[key]}
                       isClosable={!disableClose}
                       onClick={() => removeFilter(key)}
+                      isClosable
                     >
                       {typeof value === "string" ? (
                         <Chip isReadOnly>{value}</Chip>
