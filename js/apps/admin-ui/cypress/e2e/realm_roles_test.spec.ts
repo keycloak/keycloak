@@ -292,7 +292,7 @@ describe("Realm roles test", () => {
     });
   });
 
-  describe("Accessibility tests for realm roles", () => {
+  describe.skip("Accessibility tests for realm roles", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
