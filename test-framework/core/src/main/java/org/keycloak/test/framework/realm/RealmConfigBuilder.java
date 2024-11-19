@@ -33,6 +33,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder defaultSignatureAlgorithm(String algorithm) {
+        rep.setDefaultSignatureAlgorithm(algorithm);
+        return this;
+    }
+
     public RealmConfigBuilder roles(String... roleNames) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
