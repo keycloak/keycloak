@@ -79,6 +79,16 @@ styles=css/login.css css/theme-styles.css
 `,
     );
 
+    zip.file(
+      "META-INF/keycloak-themes.json",
+      `{
+  "themes": [{
+      "name" : "quick-theme",
+      "types": [ "login", "account", "admin" ]
+  }]
+}`,
+    );
+
     const toCss = (obj?: object) =>
       Object.entries(obj || {})
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
