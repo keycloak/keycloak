@@ -15,6 +15,7 @@ public class CommandBuilder {
     private final String command;
     private final Map<String, String> options = new HashMap<>();
     private final Set<String> features = new HashSet<>();
+    private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
 
     private CommandBuilder(String command) {
@@ -40,6 +41,11 @@ public class CommandBuilder {
 
     public CommandBuilder features(Set<String> features) {
         this.features.addAll(features);
+        return this;
+    }
+
+    public CommandBuilder featuresDisabled(Set<String> featuresDisabled) {
+        this.featuresDisabled.addAll(featuresDisabled);
         return this;
     }
 
@@ -152,6 +158,9 @@ public class CommandBuilder {
         }
         if (!features.isEmpty()) {
             args.add("--features=" + String.join(",", features));
+        }
+        if (!featuresDisabled.isEmpty()) {
+            args.add("--features-disabled=" + String.join(",", featuresDisabled));
         }
 
         return args;

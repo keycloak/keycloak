@@ -16,6 +16,10 @@ public interface KeycloakTestServerConfig {
         return Collections.emptySet();
     }
 
+    default Set<String> featuresDisabled() {
+        return Collections.emptySet();
+    }
+
     default boolean enableSysLog() { return false; }
 
     default Set<Dependency> dependencies() {
