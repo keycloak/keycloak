@@ -33,6 +33,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder editUsernameAllowed(boolean editUsernameAllowed) {
+        rep.setEditUsernameAllowed(editUsernameAllowed);
+        return this;
+    }
+
     public RealmConfigBuilder defaultSignatureAlgorithm(String algorithm) {
         rep.setDefaultSignatureAlgorithm(algorithm);
         return this;
