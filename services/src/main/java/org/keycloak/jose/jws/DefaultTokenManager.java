@@ -274,7 +274,7 @@ public class DefaultTokenManager implements TokenManager {
         String encryptionKekId = keyWrapper.getKid();
         try {
             encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes(StandardCharsets.UTF_8), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
-        } catch (JWEException | UnsupportedEncodingException e) {
+        } catch (JWEException e) {
             throw new RuntimeException(e);
         }
         return encryptedToken;
