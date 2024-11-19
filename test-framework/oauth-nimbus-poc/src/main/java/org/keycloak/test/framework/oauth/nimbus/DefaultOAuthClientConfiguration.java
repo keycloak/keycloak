@@ -1,4 +1,4 @@
-package org.keycloak.test.framework.oauth;
+package org.keycloak.test.framework.oauth.nimbus;
 
 import org.keycloak.test.framework.realm.ClientConfig;
 import org.keycloak.test.framework.realm.ClientConfigBuilder;

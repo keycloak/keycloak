@@ -1,6 +1,6 @@
-package org.keycloak.test.framework.oauth;
+package org.keycloak.test.framework.oauth.nimbus;
 
-import org.keycloak.test.framework.annotations.InjectOAuthClient;
+import org.keycloak.test.framework.oauth.nimbus.annotations.InjectOAuthClient;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
