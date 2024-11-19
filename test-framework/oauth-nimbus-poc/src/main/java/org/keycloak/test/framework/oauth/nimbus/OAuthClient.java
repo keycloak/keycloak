@@ -1,4 +1,4 @@
-package org.keycloak.test.framework.oauth;
+package org.keycloak.test.framework.oauth.nimbus;
 
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;

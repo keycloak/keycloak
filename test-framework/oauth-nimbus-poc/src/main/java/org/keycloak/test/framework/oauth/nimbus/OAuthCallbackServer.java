@@ -1,4 +1,4 @@
-package org.keycloak.test.framework.oauth;
+package org.keycloak.test.framework.oauth.nimbus;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

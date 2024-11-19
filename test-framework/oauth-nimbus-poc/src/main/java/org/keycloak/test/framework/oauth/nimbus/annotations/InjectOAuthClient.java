@@ -1,6 +1,6 @@
-package org.keycloak.test.framework.annotations;
+package org.keycloak.test.framework.oauth.nimbus.annotations;
 
-import org.keycloak.test.framework.oauth.DefaultOAuthClientConfiguration;
+import org.keycloak.test.framework.oauth.nimbus.DefaultOAuthClientConfiguration;
 import org.keycloak.test.framework.realm.ClientConfig;
 
 import java.lang.annotation.ElementType;
