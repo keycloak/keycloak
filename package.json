@@ -16,7 +16,7 @@
     "eslint-plugin-cypress": "^4.1.0",
     "eslint-plugin-lodash": "^8.0.0",
     "eslint-plugin-mocha": "^10.5.0",
-    "eslint-plugin-playwright": "^2.0.1",
+    "eslint-plugin-playwright": "^2.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-compiler": "19.0.0-beta-63b359f-20241101",
