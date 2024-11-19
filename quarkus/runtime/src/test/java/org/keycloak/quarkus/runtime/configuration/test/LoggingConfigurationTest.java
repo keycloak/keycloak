@@ -179,9 +179,9 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
 
         assertExternalConfig(Map.of(
                 "quarkus.log.level", "DEBUG",
-                "quarkus.log.console.level", "info",
-                "quarkus.log.syslog.level", "trace",
-                "quarkus.log.file.level", "debug"
+                "quarkus.log.console.level", "INFO",
+                "quarkus.log.syslog.level", "TRACE",
+                "quarkus.log.file.level", "DEBUG"
         ));
     }
 }
