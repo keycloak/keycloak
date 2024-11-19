@@ -169,10 +169,10 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findEvents({
-      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
-      ...(activeFilters as any),
       client,
       user,
+      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
+      ...(activeFilters as any),
       realm,
       first,
       max,
@@ -216,6 +216,14 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
       getValues(),
       (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
+
+    if (user) {
+      delete newFilters.user;
+    }
+
+    if (client) {
+      delete newFilters.client;
+    }
 
     setActiveFilters(newFilters);
     setKey(key + 1);
@@ -393,6 +401,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                       key={key}
                       categoryName={filterLabels[key]}
                       onClick={() => removeFilter(key)}
+                      isClosable
                     >
                       {typeof value === "string" ? (
                         <Chip isReadOnly>{value}</Chip>
