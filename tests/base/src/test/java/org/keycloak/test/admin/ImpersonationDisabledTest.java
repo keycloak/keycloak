@@ -38,9 +38,6 @@ import java.util.Set;
 @KeycloakIntegrationTest(config = ImpersonationDisabledTest.ServerConfig.class)
 public class ImpersonationDisabledTest {
 
-    @InjectAdminClient
-    private Keycloak adminClient;
-
     @InjectRealm
     private ManagedRealm realm;
 
@@ -57,16 +54,12 @@ public class ImpersonationDisabledTest {
 
     @Test
     public void testImpersonationDisabled() {
-        String impersonatedUserId = adminClient.realm(realm.getName()).users().search(user.getUsername(), 0, 1).get(0).getId();
         
         try {
-            System.out.println("--Expected javax.ws.rs.WebApplicationException--");
-            adminClient.realms().realm(realm.getName()).users().get(impersonatedUserId).impersonate();
+            user.admin().impersonate();
+            Assertions.fail("Feature impersonation should be disabled.");
         } catch (ServerErrorException e) {
             Assertions.assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());
-            return;
         }
-        Assertions.fail("Feature impersonation should be disabled.");
     }
-
 }
