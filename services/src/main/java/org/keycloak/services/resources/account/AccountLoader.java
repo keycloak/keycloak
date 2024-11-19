@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.account;
 
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -37,7 +40,6 @@ import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.theme.Theme;
 
-import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -70,12 +72,18 @@ public class AccountLoader {
         this.response = session.getContext().getHttpResponse();
     }
 
+    @OPTIONS
+    @Path("{any:.*}")
+    @Operation(hidden = true)
+    public Response preFlight() {
+        return new CorsPreflightService().preflight();
+    }
+
     @Path("/")
     public Object getAccountService() {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = getAccountManagementClient(realm);
 
-        HttpRequest request = session.getContext().getHttpRequest();
         HttpHeaders headers = session.getContext().getRequestHeaders();
         MediaType content = headers.getMediaType();
         List<MediaType> accepts = headers.getAcceptableMediaTypes();
@@ -84,10 +92,8 @@ public class AccountLoader {
         UriInfo uriInfo = session.getContext().getUri();
 
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
-        
-        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService();
-        } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
+
+        if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
         } else if (accountResourceProvider != null) {
             return accountResourceProvider.getResource();
@@ -99,9 +105,6 @@ public class AccountLoader {
     @Path("{version : v\\d[0-9a-zA-Z_\\-]*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
-        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService();
-        }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
     }
 
