@@ -1,10 +1,9 @@
 package org.keycloak.test.suites;
 
-import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
-import org.keycloak.test.tmp.PlaceHolderTest;
 
 @Suite
-@SelectClasses({ PlaceHolderTest.class })
+@SelectPackages({"org.keycloak.test.admin"})
 public class DatabaseTestSuite {
 }
