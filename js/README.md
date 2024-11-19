@@ -16,3 +16,7 @@ This directory contains the UIs and related libraries of the Keycloak project wr
 ## Data processing
 
 Red Hat may process information including business contact information and code contributions as part of its participation in the project, data is processed in accordance with [Red Hat Privacy Statement](https://www.redhat.com/en/about/privacy-policy).
+
+To speed up the build process, the following build flag can be used to disable the processing of these modules:
+
+    -Dskip.npm
