@@ -20,7 +20,6 @@ package org.keycloak.util;
 import org.keycloak.common.util.Base64;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -65,14 +64,10 @@ public class BasicAuthHelper {
     public static abstract class RFC6749 {
 
         public static String createHeader(String username, String password) {
-            try {
-                return BasicAuthHelper.createHeader(
-                    URLEncoder.encode(username, "UTF-8"),
-                    URLEncoder.encode(password, "UTF-8")
-                );
-            } catch (UnsupportedEncodingException e) {
-                return null;
-            }
+            return BasicAuthHelper.createHeader(
+                URLEncoder.encode(username, StandardCharsets.UTF_8),
+                URLEncoder.encode(password, StandardCharsets.UTF_8)
+            );
         }
 
         public static String[] parseHeader(String header) {
@@ -81,14 +76,10 @@ public class BasicAuthHelper {
                 return null;
             }
 
-            try {
-                return new String[]{
-                    URLDecoder.decode(val[0], "UTF-8"),
-                    URLDecoder.decode(val[1], "UTF-8")
-                };
-            } catch (UnsupportedEncodingException e) {
-                return null;
-            }
+            return new String[]{
+                URLDecoder.decode(val[0], StandardCharsets.UTF_8),
+                URLDecoder.decode(val[1], StandardCharsets.UTF_8)
+            };
         }
     }
 }

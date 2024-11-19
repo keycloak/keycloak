@@ -16,7 +16,7 @@
  */
 package org.keycloak.crypto.elytron;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -143,7 +143,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                                             while(!Character.isLetterOrDigit(sb[0])) {
                                                 sb = Arrays.copyOfRange(sb, 1, sb.length);
                                             }
-                                            subjectName = new String(sb, "UTF-8");
+                                            subjectName = new String(sb, StandardCharsets.UTF_8);
                                             upnOidFound = true;
                                         }
                                         break;
@@ -176,7 +176,7 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                     }
                     
                 }
-            } catch (CertificateParsingException | UnsupportedEncodingException e) {
+            } catch (CertificateParsingException e) {
                 log.error("Failed to parse Subject Name:",e);
             }
             

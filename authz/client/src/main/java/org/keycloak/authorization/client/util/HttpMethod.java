@@ -17,7 +17,7 @@
  */
 package org.keycloak.authorization.client.util;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -184,11 +184,7 @@ public class HttpMethod<R> {
                         }
                     }
 
-                    try {
-                        builder.setEntity(new UrlEncodedFormEntity(formparams, "UTF-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException("Error creating form parameters");
-                    }
+                    builder.setEntity(new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8));
                 }
             }
         };

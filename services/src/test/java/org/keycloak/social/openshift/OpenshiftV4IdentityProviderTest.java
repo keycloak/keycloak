@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class OpenshiftV4IdentityProviderTest {
     @Before
     public void before() throws Exception {
         oauthMetadataFile = OpenshiftV4IdentityProviderTest.class.getResource(TEST_OAUTH_METADATA_FILE);
-        authMetadata = IOUtils.toString(oauthMetadataFile, Charsets.toCharset("UTF-8"));
+        authMetadata = IOUtils.toString(oauthMetadataFile, StandardCharsets.UTF_8);
 
         ObjectMapper objectMapper = new ObjectMapper();
         oauthMetadataMap = objectMapper.readValue(authMetadata, HashMap.class);

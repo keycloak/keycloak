@@ -32,6 +32,7 @@ import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -432,7 +433,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     public void verifySignature() throws VerificationException {
         if (this.verifier != null) {
             try {
-                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature())) {
+                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }
             } catch (Exception e) {

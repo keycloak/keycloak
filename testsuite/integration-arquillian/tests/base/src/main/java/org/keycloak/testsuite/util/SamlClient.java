@@ -79,7 +79,6 @@ import jakarta.xml.ws.soap.SOAPFaultException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -148,7 +147,7 @@ public class SamlClient {
             @Override
             public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlResponseFromForm(responsePage);
             }
@@ -176,7 +175,7 @@ public class SamlClient {
             @Override
             public String extractRelayState(CloseableHttpResponse response) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlRelayStateFromForm(responsePage);
             }
@@ -227,14 +226,7 @@ public class SamlClient {
                     parameters.add(new BasicNameValuePair(RELAY_STATE, relayState));
                 }
 
-                UrlEncodedFormEntity formEntity;
-
-                try {
-                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
-
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
                 post.setEntity(formEntity);
 
                 return post;

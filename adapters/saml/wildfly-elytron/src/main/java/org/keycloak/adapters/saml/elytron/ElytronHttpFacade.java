@@ -22,11 +22,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -226,11 +226,7 @@ class ElytronHttpFacade implements HttpFacade {
             @Override
             public String getURI() {
                 if (elyweb163Workaround) {
-                    try {
-                        return URLDecoder.decode(request.getRequestURI().toString(), "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException("Failed to decode request URI", e);
-                    }
+                    return URLDecoder.decode(request.getRequestURI().toString(), StandardCharsets.UTF_8);
                 } else {
                     return request.getRequestURI().toString();
                 }
@@ -261,11 +257,7 @@ class ElytronHttpFacade implements HttpFacade {
                         for (String parameter : parameters) {
                             String[] keyValue = parameter.split("=", 2);
                             if (keyValue[0].equals(param)) {
-                                try {
-                                    return URLDecoder.decode(keyValue[1], "UTF-8");
-                                } catch (IOException e) {
-                                    throw new RuntimeException("Failed to decode request URI", e);
-                                }
+                                return URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
                             }
                         }
                     }

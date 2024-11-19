@@ -25,6 +25,7 @@ import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Signature;
 import java.util.Collections;
 import java.util.List;
@@ -138,7 +139,7 @@ public class BasicSamlTest extends AbstractSamlTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
           CloseableHttpResponse response = client.execute(post)) {
             assertThat(response, statusCodeIsHC(Response.Status.OK));
-            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), containsString("login"));
+            assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), containsString("login"));
         }
     }
 
@@ -152,7 +153,7 @@ public class BasicSamlTest extends AbstractSamlTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
           CloseableHttpResponse response = client.execute(post)) {
             assertThat(response, statusCodeIsHC(Response.Status.OK));
-            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), containsString("login"));
+            assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), containsString("login"));
         }
     }
 
@@ -195,7 +196,7 @@ public class BasicSamlTest extends AbstractSamlTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
           CloseableHttpResponse response = client.execute(post)) {
             assertThat(response, statusCodeIsHC(expectedHttpCode));
-            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), pageTextMatcher);
+            assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), pageTextMatcher);
         }
     }
 
@@ -341,7 +342,7 @@ public class BasicSamlTest extends AbstractSamlTest {
                     .build()
                     .executeAndTransform(response -> {
                         assertThat(response, statusCodeIsHC(Status.BAD_REQUEST));
-                        return EntityUtils.toString(response.getEntity(), "UTF-8");
+                        return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                     });
             assertThat(page, containsString("Invalid redirect uri"));
         }
@@ -359,7 +360,7 @@ public class BasicSamlTest extends AbstractSamlTest {
                     .login().user(bburkeUser).build()
                     .executeAndTransform(response -> {
                         assertThat(response, statusCodeIsHC(Response.Status.OK));
-                        String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                        String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                         return SamlClient.extractFormFromPostResponse(responsePage)
                                 .attributes().asList().stream()
                                 .filter(a -> "action".equalsIgnoreCase(a.getKey()))

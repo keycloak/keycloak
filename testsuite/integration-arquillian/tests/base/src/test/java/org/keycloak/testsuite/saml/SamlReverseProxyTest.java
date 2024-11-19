@@ -36,6 +36,7 @@ import org.w3c.dom.Document;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import static org.hamcrest.Matchers.containsString;
@@ -135,7 +136,7 @@ public class SamlReverseProxyTest extends AbstractSamlTest {
                 setRedirectStrategy(new SamlClient.RedirectStrategyWithSwitchableFollowRedirect()).build();
              CloseableHttpResponse response = client.execute(post)) {
             assertThat(response, statusCodeIsHC(expectedHttpCode));
-            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), pageTextMatcher);
+            assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), pageTextMatcher);
         }
     }
 
