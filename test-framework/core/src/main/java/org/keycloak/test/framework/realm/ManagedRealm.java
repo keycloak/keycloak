@@ -9,6 +9,7 @@ public class ManagedRealm extends ManagedTestResource {
     private final String baseUrl;
     private final RealmRepresentation createdRepresentation;
     private final RealmResource realmResource;
+    private String realmId;
 
     private ManagedRealmCleanup cleanup;
 
@@ -20,6 +21,15 @@ public class ManagedRealm extends ManagedTestResource {
 
     public String getBaseUrl() {
         return baseUrl;
+    }
+
+    public String getId() {
+        if (realmId == null && createdRepresentation.getId() != null) {
+            realmId = createdRepresentation.getId();
+        } else {
+            realmId = admin().toRepresentation().getId();
+        }
+        return realmId;
     }
 
     public String getName() {

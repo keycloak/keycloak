@@ -25,6 +25,7 @@ public class ManagedResourcesTest {
 
     @Test
     public void testCreatedRealm() {
+        Assertions.assertEquals(realm.admin().toRepresentation().getId(), realm.getId());
         Assertions.assertEquals("default", realm.getName());
     }
 
