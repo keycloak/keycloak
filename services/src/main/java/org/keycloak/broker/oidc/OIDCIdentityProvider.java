@@ -864,7 +864,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         try {
-            if (!isTokenTypeSupported(parsedToken)) {
+            if (!getConfig().isDisableTypeClaimCheck() && !isTokenTypeSupported(parsedToken)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token type not supported", Response.Status.BAD_REQUEST);
             }
             boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
