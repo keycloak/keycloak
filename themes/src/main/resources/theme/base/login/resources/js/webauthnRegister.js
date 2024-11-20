@@ -131,10 +131,10 @@ function returnSuccess(result, initLabel, initLabelPrompt) {
     }
     document.getElementById("authenticatorLabel").value = labelResult;
 
-    document.getElementById("register").submit();
+    document.getElementById("register").requestSubmit();
 }
 
 function returnFailure(err) {
     document.getElementById("error").value = err;
-    document.getElementById("register").submit();
+    document.getElementById("register").requestSubmit();
 }
