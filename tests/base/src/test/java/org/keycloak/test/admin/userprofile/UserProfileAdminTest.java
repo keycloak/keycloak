@@ -1,7 +1,6 @@
 package org.keycloak.test.admin.userprofile;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
@@ -27,7 +26,6 @@ public class UserProfileAdminTest {
     private ManagedRealm realm;
 
     @Test
-    @Order(1)
     public void testDefaultConfigIfNoneSet() {
         JsonTestUtils.assertJsonEquals(UPConfigUtils.readSystemDefaultConfig(), realm.admin().users().userProfile().getConfiguration());
     }

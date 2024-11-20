@@ -21,8 +21,6 @@ import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.InjectUser;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
