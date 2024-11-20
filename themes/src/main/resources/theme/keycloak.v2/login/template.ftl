@@ -86,9 +86,9 @@
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
-        import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
 
-        checkCookiesAndSetTimer(
+        startSessionPolling(
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
@@ -207,7 +207,7 @@
         <#if auth?has_content && auth.showTryAnotherWayLink()>
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>
-              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].submit()"
+              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
                   class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
                     ${kcSanitize(msg("doTryAnotherWay"))?no_esc}
               </a>
