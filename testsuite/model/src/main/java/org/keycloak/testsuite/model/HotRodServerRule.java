@@ -1,5 +1,11 @@
 package org.keycloak.testsuite.model;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.BackupConfiguration;
@@ -7,6 +13,11 @@ import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.container.versioning.IncrementableEntryVersion;
+import org.infinispan.container.versioning.NumericVersion;
+import org.infinispan.container.versioning.VersionGenerator;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.server.hotrod.HotRodServer;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfiguration;
@@ -15,9 +26,6 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -80,6 +88,9 @@ public class HotRodServerRule extends ExternalResource {
         getCaches(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME,
                 LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
 
+        replaceVersionGenerator(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME,
+                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
+
         // Use Keycloak time service in remote caches
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager);
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
@@ -91,6 +102,35 @@ public class HotRodServerRule extends ExternalResource {
             hotRodCacheManager2.getCache(c, true);
         }
     }
+
+    // ----- WORKAROUND FOR https://github.com/infinispan/infinispan/issues/13191 -----//
+    private void replaceVersionGenerator(String... caches) {
+        Arrays.stream(caches)
+                .flatMap(name -> Stream.of(hotRodCacheManager.getCache(name), hotRodCacheManager2.getCache(name)))
+                .map(ComponentRegistry::of)
+                .forEach(cr -> cr.registerComponent(RANDOM_GENERATOR, KnownComponentNames.HOT_ROD_VERSION_GENERATOR, false));
+    }
+
+    private static final NumericVersion NON_EXISTING = new NumericVersion(0);
+    private static final VersionGenerator RANDOM_GENERATOR = new VersionGenerator() {
+        @Override
+        public IncrementableEntryVersion generateNew() {
+            var version = ThreadLocalRandom.current().nextLong();
+            return version == 0 ? new NumericVersion(1L) : new NumericVersion(version);
+        }
+
+        @Override
+        public IncrementableEntryVersion increment(IncrementableEntryVersion initialVersion) {
+            // not used by hot rod
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public IncrementableEntryVersion nonExistingVersion() {
+            return NON_EXISTING;
+        }
+    };
+    // ----- END OF WORKAROUND -----//
 
     private void createKeycloakCaches(boolean async, String... cache) {
         ConfigurationBuilder sessionConfigBuilder1 = createCacheConfigurationBuilder();
