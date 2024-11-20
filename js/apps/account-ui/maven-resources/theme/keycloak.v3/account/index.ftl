@@ -147,7 +147,7 @@
         "realm": "${realm.name}",
         "clientId": "${clientId}",
         "resourceUrl": "${resourceUrl}",
-        "logo": "${attributes['style.logo']!properties.logo!""}",
+        "logo": "${properties.logo!""}",
         "logoUrl": "${properties.logoUrl!""}",
         "baseUrl": "${baseUrl}",
         "locale": "${locale}",

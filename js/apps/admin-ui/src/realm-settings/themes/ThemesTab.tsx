@@ -65,6 +65,7 @@ styles=css/theme-styles.css
 parent=keycloak.v3
 import=common/quick-theme
 
+logo=${logoName}
 styles=css/theme-styles.css
 `,
     );
