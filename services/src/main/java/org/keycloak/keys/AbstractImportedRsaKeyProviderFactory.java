@@ -31,7 +31,8 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -67,7 +68,7 @@ public abstract class AbstractImportedRsaKeyProviderFactory extends AbstractRsaK
         }
 
         if (model.contains(Attributes.CERTIFICATE_KEY)) {
-            Certificate certificate = null;
+            X509Certificate certificate = null;
             try {
                 certificate = PemUtils.decodeCertificate(model.get(Attributes.CERTIFICATE_KEY));
             } catch (Throwable t) {
@@ -81,9 +82,15 @@ public abstract class AbstractImportedRsaKeyProviderFactory extends AbstractRsaK
             if (!certificate.getPublicKey().equals(keyPair.getPublic())) {
                 throw new ComponentValidationException("Certificate does not match private key");
             }
+
+            try {
+                certificate.checkValidity();
+            } catch (CertificateException e) {
+                throw new ComponentValidationException("Certificate is not valid", e);
+            }
         } else {
             try {
-                Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
+                X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
                 model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
             } catch (Throwable t) {
                 throw new ComponentValidationException("Failed to generate self-signed certificate", t);
