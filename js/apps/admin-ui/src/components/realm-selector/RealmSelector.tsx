@@ -34,6 +34,7 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
 
 import "./realm-selector.css";
+import { environment } from "../../environment";
 
 const MAX_RESULTS = 10;
 
@@ -117,6 +118,7 @@ export const RealmSelector = () => {
 
   useFetch(
     async () => {
+      adminClient.realmName = environment.masterRealm;
       try {
         return await fetchAdminUI<RealmNameRepresentation[]>(
           adminClient,
