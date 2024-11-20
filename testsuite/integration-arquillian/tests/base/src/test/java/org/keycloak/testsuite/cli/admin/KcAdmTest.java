@@ -672,7 +672,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         // should contain an error message
         assertExitCodeAndStreamSizes(exec, 0, 0, 1);
     }
-    
+
     @Test
     public void testEnvPasswordWithRegularCommand() {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
@@ -682,6 +682,19 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 .execute();
         // should not contain an error message
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+    }
+
+    @Test
+    public void testStatusOptionForConfigCred() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("config credentials --status");
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
+        Assert.assertTrue(exec.stdoutString().endsWith("from now)\n"));
+        exec = execute("config credentials --status --server " + serverUrl + " --realm master --user admin --password admin");
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
+        Assert.assertTrue(exec.stdoutString().endsWith("from now)\n"));
     }
 
 }
