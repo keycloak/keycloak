@@ -27,6 +27,7 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAM
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -42,6 +43,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
+@Tag(DistributionTest.WIN)
 public class StartCommandDistTest {
 
     @DryRun

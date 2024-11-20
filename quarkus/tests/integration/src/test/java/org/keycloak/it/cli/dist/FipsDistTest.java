@@ -18,6 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.crypto.fips.KeycloakFipsSecurityProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -31,6 +33,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(keepAlive = true, defaultOptions = { "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
 @RawDistOnly(reason = "Containers are immutable")
+@Tag(DistributionTest.SLOW)
 public class FipsDistTest {
 
     private static final String BCFIPS_VERSION = "BCFIPS version 2.0";

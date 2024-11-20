@@ -32,7 +32,7 @@ public abstract class BasicDatabaseTest {
 
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
-    void testSuccessful(LaunchResult result) {
+    protected void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
     }

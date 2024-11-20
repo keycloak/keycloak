@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -40,6 +41,8 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
 @Storage(defaultLocalCache = false)
+@Tag(DistributionTest.SMOKE)
+@Tag(DistributionTest.SLOW)
 public class ClusterConfigDistTest {
 
     @Test
