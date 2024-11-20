@@ -37,6 +37,11 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder emailVerified() {
+        rep.setEmailVerified(true);
+        return this;
+    }
+
     public UserConfigBuilder password(String password) {
         rep.setCredentials(Collections.combine(rep.getCredentials(), Representations.toCredential(CredentialRepresentation.PASSWORD, password)));
         return this;
