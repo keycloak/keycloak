@@ -19,13 +19,13 @@ package org.keycloak.test.admin;
 
 import jakarta.ws.rs.NotFoundException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.test.framework.realm.RealmConfig;
+import org.keycloak.test.framework.realm.RealmConfigBuilder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,30 +39,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @KeycloakIntegrationTest
 public class RealmLocalizationResourceTest {
 
-    @InjectRealm
+    @InjectRealm(config = RealmLocaleConfig.class)
     private ManagedRealm realm;
 
-    @BeforeEach
-    public void setupRealmLocale() {
-        RealmRepresentation rep = new RealmRepresentation();
-        rep.setDefaultLocale("en");
-        realm.admin().update(rep);
+    private static class RealmLocaleConfig implements RealmConfig {
 
-        realm.admin().localization().saveRealmLocalizationText("en", "key-a", "text-a_en");
-        realm.admin().localization().saveRealmLocalizationText("en", "key-b", "text-b_en");
-        realm.admin().localization().saveRealmLocalizationText("de", "key-a", "text-a_de");
-    }
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            RealmRepresentation rep = realm.build();
+            rep.setDefaultLocale("en");
+            rep.setLocalizationTexts(Map.of("en", Map.of("key-a", "text-a_en", "key-b", "text-b_en"), "de", Map.of("key-a", "text-a_de")));
+            rep.setEnabled(true);
 
-    @AfterEach
-    public void cleanupRealmLocale() {
-        if (realm.admin().localization().getRealmLocalizationTexts("en").size() > 0) {
-            realm.cleanup().add(r -> r.localization().deleteRealmLocalizationTexts("en"));
-        }
-        if (realm.admin().localization().getRealmLocalizationTexts("de").size() > 0) {
-            realm.cleanup().add(r -> r.localization().deleteRealmLocalizationTexts("de"));
-        }
-        if (realm.admin().localization().getRealmLocalizationTexts("es").size() > 0) {
-            realm.cleanup().add(r -> r.localization().deleteRealmLocalizationTexts("es"));
+            return realm.update(rep);
         }
     }
 
@@ -116,6 +105,8 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void addRealmLocalizationText() {
+        realm.cleanup().add(r -> r.localization().deleteRealmLocalizationText("en", "key-c"));
+
         realm.admin().localization().saveRealmLocalizationText("en", "key-c", "text-c");
 
         String localizationText = realm.admin().localization().getRealmLocalizationText("en", "key-c");
@@ -126,6 +117,8 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void updateRealmLocalizationText() {
+        realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-b", "text-b_en"));
+
         realm.admin().localization().saveRealmLocalizationText("en", "key-b", "text-b-new");
 
         String localizationText = realm.admin().localization().getRealmLocalizationText("en", "key-b");
@@ -136,6 +129,8 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void deleteRealmLocalizationText() {
+        realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-a", "text-a_en"));
+
         realm.admin().localization().deleteRealmLocalizationText("en", "key-a");
 
         Map<String, String> localizations = realm.admin().localization().getRealmLocalizationTexts("en");
@@ -152,8 +147,11 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void deleteRealmLocalizationTexts() {
-        realm.admin().localization().deleteRealmLocalizationTexts("en");
+        realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-a", "text-a_en"));
+        realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-b", "text-b_en"));
 
+        realm.admin().localization().deleteRealmLocalizationTexts("en");
+        
         List<String> localizations = realm.admin().localization().getRealmSpecificLocales();
         assertEquals(1, localizations.size());
 
@@ -162,6 +160,8 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void createOrUpdateRealmLocalizationWhenLocaleDoesNotYetExist() {
+        realm.cleanup().add(r -> r.localization().deleteRealmLocalizationTexts("es"));
+
         final Map<String, String> newLocalizationTexts = new HashMap<>();
         newLocalizationTexts.put("key-a", "text-a_es");
         newLocalizationTexts.put("key-b", "text-b_es");
@@ -174,6 +174,8 @@ public class RealmLocalizationResourceTest {
 
     @Test
     public void createOrUpdateRealmLocalizationWhenLocaleAlreadyExists() {
+        realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-b", "text-b_en"));
+
         final Map<String, String> newLocalizationTexts = new HashMap<>();
         newLocalizationTexts.put("key-b", "text-b_changed_en");
         newLocalizationTexts.put("key-c", "text-c_en");

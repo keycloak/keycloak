@@ -4,7 +4,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 
 import java.util.Arrays;
-import java.util.EventListener;
 import java.util.LinkedList;
 import java.util.List;
 
