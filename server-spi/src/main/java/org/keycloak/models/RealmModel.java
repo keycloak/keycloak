@@ -63,6 +63,13 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
+    interface RealmAttributeUpdateEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getAttributeName();
+        String getAttributeValue();
+        KeycloakSession getKeycloakSession();
+    }
+
     @Override
     String getId();
 
@@ -676,6 +683,10 @@ public interface RealmModel extends RoleContainerModel {
      * @param role to be set
      */
     void setDefaultRole(RoleModel role);
+
+    ClientModel getAdminPermissionsClient();
+
+    void setAdminPermissionsClient(ClientModel client);
 
     /**
      * @deprecated use {@link IdentityProviderStorageProvider#isIdentityFederationEnabled()} instead.

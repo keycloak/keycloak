@@ -534,8 +534,13 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
-        Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
+        Map<String, ClientModel> appMap = new HashMap<>();
         for (ClientRepresentation resourceRep : rep.getClients()) {
+            if (Profile.isFeatureEnabled(Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+                if (realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getClientId().equals(resourceRep.getClientId())) {
+                    continue; // admin-permission-client is already imported at this point
+                }
+            }
             ClientModel app = RepresentationToModel.createClient(session, realm, resourceRep, mappedFlows);
             String postLogoutRedirectUris = app.getAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
             if (postLogoutRedirectUris == null) {

@@ -161,6 +161,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean adminEventsEnabled;
     protected boolean adminEventsDetailsEnabled;
     protected String defaultRoleId;
+    protected String adminPermissionsClientId;
     private boolean allowUserManagedAccess;
 
     protected List<String> defaultGroups;
@@ -257,6 +258,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
+        adminPermissionsClientId = model.getAdminPermissionsClient() == null ? null : model.getAdminPermissionsClient().getId();
 
         if(Objects.isNull(model.getDefaultRole())) {
             throw new ModelException("Default Role is null for Realm " + name);
@@ -337,6 +339,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public String getDefaultRoleId() {
         return defaultRoleId;
+    }
+
+    public String getAdminPermissionsClientId() {
+        return adminPermissionsClientId;
     }
 
     public String getName() {

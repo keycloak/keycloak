@@ -561,6 +561,16 @@ public class RealmManager {
                 realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
             }
 
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+                if (rep.getAdminPermissionsClient() != null) {
+                    ClientModel client = RepresentationToModel.createClient(session, realm, rep.getAdminPermissionsClient());
+                    realm.setAdminPermissionsClient(client);
+                    RepresentationToModel.createResourceServer(client, session, false);
+                } else if (Boolean.TRUE.equals(rep.isAdminPermissionsEnabled())) {
+                    KeycloakModelUtils.setupAdminPermissionsClient(session, realm);
+                }
+            }
+
             boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
             if (!postponeMasterClientSetup) {
                 setupMasterAdminManagement(realm);

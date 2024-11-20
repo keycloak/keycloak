@@ -973,6 +973,16 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setDefaultRole(role);
     }
 
+    @Override
+    public ClientModel getAdminPermissionsClient() {
+        return delegate.getAdminPermissionsClient();
+    }
+
+    @Override
+    public void setAdminPermissionsClient(ClientModel client) {
+        delegate.setAdminPermissionsClient(client);
+    }
+
     public boolean isIdentityFederationEnabled() {
         return delegate.isIdentityFederationEnabled();
     }

@@ -60,4 +60,5 @@ public interface RealmAttributes {
 
     String ORGANIZATIONS_ENABLED = "organizationsEnabled";
     String ADMIN_PERMISSIONS_ENABLED = "adminPermissionsEnabled";
+    String ADMIN_PERMISSIONS_CLIENT_ID = "adminPermissionsClientId";
 }

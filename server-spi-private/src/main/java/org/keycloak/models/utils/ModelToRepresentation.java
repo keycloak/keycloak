@@ -126,6 +126,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -508,6 +509,14 @@ public class ModelToRepresentation {
         if (realm.getFirstBrokerLoginFlow() != null) rep.setFirstBrokerLoginFlow(realm.getFirstBrokerLoginFlow().getAlias());
 
         rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
+
+        if (realm.getAdminPermissionsClient() != null) {
+            ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+            ClientRepresentation clientRep = new ClientRepresentation();
+            clientRep.setId(adminPermissionsClient.getId());
+            clientRep.setClientId(adminPermissionsClient.getClientId());
+            rep.setAdminPermissionsClient(clientRep);
+        }
 
         List<String> defaultGroups = realm.getDefaultGroupsStream()
                 .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
@@ -1037,8 +1046,6 @@ public class ModelToRepresentation {
     }
 
     public static ResourceServerRepresentation toRepresentation(ResourceServer model, ClientModel client) {
-        RealmModel realm = client.getRealm();
-
         ResourceServerRepresentation server = new ResourceServerRepresentation();
 
         server.setId(model.getId());
@@ -1047,9 +1054,20 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
-        server.setAuthorizationSchema(KeycloakModelUtils.isAdminPermissionsEnabled(realm) ? AdminPermissionsAuthorizationSchema.INSTANCE : null);
+        server.setAuthorizationSchema(getAuthorizationSchema(client));
 
         return server;
+    }
+
+    private static AuthorizationSchema getAuthorizationSchema(ClientModel client) {
+        if (!KeycloakModelUtils.isAdminPermissionsEnabled(client.getRealm())) {
+            return null;
+        }
+        ClientModel adminPermissionsClient = client.getRealm().getAdminPermissionsClient();
+        if (adminPermissionsClient == null || ! client.getClientId().equals(adminPermissionsClient.getClientId())) {
+            return null;
+        }
+        return AdminPermissionsAuthorizationSchema.INSTANCE;
     }
 
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {
