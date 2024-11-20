@@ -52,5 +52,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-junit5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client-tests</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

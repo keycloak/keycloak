@@ -14,38 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.admin;
+package org.keycloak.test.admin;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.*;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.test.framework.annotations.InjectRealm;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.utils.admin.ApiUtil;
 
 import jakarta.ws.rs.core.Response;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:leon.graser@bosch-si.com">Leon Graser</a>
  */
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
-public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest(config = ManagementPermissionsTest.ServerConfig.class)
+public class ManagementPermissionsTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    @InjectRealm
+    private ManagedRealm realm;
 
+    public static class ServerConfig implements KeycloakTestServerConfig {
+
+        @Override
+        public Set<String> features() {
+            return Set.of("admin-fine-grained-authz");
+        }
     }
 
     @Test
     public void updateGroupPermissions() {
-        RealmResource realmResource = adminClient.realms().realm("test");
+        RealmResource realmResource = realm.admin();
         GroupRepresentation group = new GroupRepresentation();
         group.setName("perm-group-test");
         Response response = realmResource.groups().add(group);
@@ -97,7 +107,7 @@ public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void updateClientPermissions() {
-        RealmResource realmResource = adminClient.realms().realm("test");
+        RealmResource realmResource = realm.admin();
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setName("perm-client-test");
         Response response = realmResource.clients().create(clientRepresentation);
@@ -149,7 +159,7 @@ public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void updateRealmRolePermissions() {
-        RealmResource realmResource = adminClient.realms().realm("test");
+        RealmResource realmResource = realm.admin();
         RoleRepresentation roleRepresentation = new RoleRepresentation();
         roleRepresentation.setName("perm-role-test");
         realmResource.roles().create(roleRepresentation);
@@ -200,7 +210,7 @@ public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void updateClientRolePermissions() {
-        RealmResource realmResource = adminClient.realms().realm("test");
+        RealmResource realmResource = realm.admin();
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setName("perm-client-test");
         Response response = realmResource.clients().create(clientRepresentation);
