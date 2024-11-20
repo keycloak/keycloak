@@ -37,9 +37,9 @@ public class UPConfigUtilsTest {
 
     @Test
     public void canBeAuthFlowContext() {
-        Assert.assertFalse(UserProfileContext.ACCOUNT.canBeAuthFlowContext());
         Assert.assertFalse(UserProfileContext.USER_API.canBeAuthFlowContext());
 
+        Assert.assertTrue(UserProfileContext.ACCOUNT.canBeAuthFlowContext());
         Assert.assertTrue(UserProfileContext.IDP_REVIEW.canBeAuthFlowContext());
         Assert.assertTrue(UserProfileContext.REGISTRATION.canBeAuthFlowContext());
         Assert.assertTrue(UserProfileContext.UPDATE_PROFILE.canBeAuthFlowContext());

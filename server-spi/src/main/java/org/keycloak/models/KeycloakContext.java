@@ -104,4 +104,8 @@ public interface KeycloakContext {
     void setHttpRequest(HttpRequest httpRequest);
 
     void setHttpResponse(HttpResponse httpResponse);
+
+    UserSessionModel getUserSession();
+
+    void setUserSession(UserSessionModel session);
 }
