@@ -105,7 +105,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
         assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
         
-        UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", false, false);
+        UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
         assertNull(uam.getAnnotations());
         Map<String, Object> vc = assertValidatorExists(uam, "length");
         assertEquals(255, vc.get("max"));
@@ -121,7 +121,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
         assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
         
-        assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", false, false);
+        assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
         
         assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
         assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
@@ -229,7 +229,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
             
-            UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", false, false);
+            UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
             assertNull(uam.getAnnotations());
             Map<String, Object> vc = assertValidatorExists(uam, "length");
             assertEquals(255, vc.get("max"));
@@ -245,7 +245,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
             assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
             
-            assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", false, false);
+            assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
             
             assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
