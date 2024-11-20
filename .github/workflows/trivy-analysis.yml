@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: quay.io/keycloak/${{ matrix.container }}:nightly
           format: sarif
