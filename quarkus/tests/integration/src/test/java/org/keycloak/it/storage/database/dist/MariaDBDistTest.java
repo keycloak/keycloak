@@ -19,13 +19,13 @@ package org.keycloak.it.storage.database.dist;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.MariaDBTest;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "mariadb")
@@ -35,7 +35,7 @@ public class MariaDBDistTest extends MariaDBTest {
     @Tag(DistributionTest.STORAGE)
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
-    protected void testSuccessful(LaunchResult result) {
+    protected void testSuccessful(CLIResult result) {
         super.testSuccessful(result);
     }
 

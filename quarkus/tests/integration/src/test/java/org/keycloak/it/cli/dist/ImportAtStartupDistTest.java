@@ -35,7 +35,6 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -47,8 +46,7 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     @Launch({"start-dev", "--import-realm"})
-    void testImport(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImport(CLIResult cliResult) {
         cliResult.assertMessage("Realm 'quickstart-realm' imported");
     }
 
@@ -70,8 +68,7 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileAndDir.class)
     @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.exportimport.ExportImportManager:debug"})
-    void testImportAndIgnoreDirectory(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImportAndIgnoreDirectory(CLIResult cliResult) {
         cliResult.assertMessage("Realm 'quickstart-realm' imported");
         cliResult.assertMessage("Ignoring import file because it is not a valid file");
     }
@@ -79,8 +76,7 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileWithUnsupportedExtension.class)
     @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.exportimport.ExportImportManager:debug"})
-    void testIgnoreFileWithUnsupportedExtension(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testIgnoreFileWithUnsupportedExtension(CLIResult cliResult) {
         cliResult.assertMessage("Ignoring import file because it is not a valid file");
     }
 
@@ -88,8 +84,7 @@ public class ImportAtStartupDistTest {
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     @Launch({"start-dev", "--import-realm=some-file"})
-    void failSetValueToImportRealmOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failSetValueToImportRealmOption(CLIResult cliResult) {
         cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
     }
 
