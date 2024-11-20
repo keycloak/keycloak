@@ -6,6 +6,7 @@ import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ClientCredentialsGrant;
 import com.nimbusds.oauth2.sdk.GeneralException;
+import com.nimbusds.oauth2.sdk.ResourceOwnerPasswordCredentialsGrant;
 import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.TokenIntrospectionRequest;
 import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
@@ -62,6 +63,15 @@ public class OAuthClient {
         URI tokenEndpoint = getOIDCProviderMetadata().getTokenEndpointURI();
 
         TokenRequest tokenRequest = new TokenRequest(tokenEndpoint, clientAuthentication, clientGrant);
+        return TokenResponse.parse(tokenRequest.toHTTPRequest().send());
+    }
+
+    public TokenResponse resourceOwnerCredentialGrant(String username, String password) throws GeneralException, IOException {
+        ResourceOwnerPasswordCredentialsGrant credentialsGrant = new ResourceOwnerPasswordCredentialsGrant(username, new Secret(password));
+        ClientAuthentication clientAuthentication = getClientAuthentication();
+        URI tokenEndpoint = getOIDCProviderMetadata().getTokenEndpointURI();
+
+        TokenRequest tokenRequest = new TokenRequest(tokenEndpoint, clientAuthentication, credentialsGrant);
         return TokenResponse.parse(tokenRequest.toHTTPRequest().send());
     }
 

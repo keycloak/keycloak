@@ -4,6 +4,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 
 import java.util.Arrays;
+import java.util.EventListener;
+import java.util.LinkedList;
+import java.util.List;
 
 public class RealmConfigBuilder {
 
@@ -40,6 +43,14 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder defaultSignatureAlgorithm(String algorithm) {
         rep.setDefaultSignatureAlgorithm(algorithm);
+        return this;
+    }
+
+    public RealmConfigBuilder eventsListeners(String... eventListeners) {
+        if (rep.getEventsListeners() == null) {
+            rep.setEventsListeners(new LinkedList<>());
+        }
+        rep.getEventsListeners().addAll(List.of(eventListeners));
         return this;
     }
 
