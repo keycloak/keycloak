@@ -259,7 +259,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        suite: [zip, container, storage, smoke]
+        suite: [zip-slow, zip-fast, container, storage, smoke]
         full-testsuite:
           - ${{ needs.conditional.outputs.ci-quarkus == 'true' }}
         # Win runs always as includes are evaluated after excludes
@@ -269,7 +269,9 @@ jobs:
         # Either run smoke tests, or full testsuite
         exclude:
           - full-testsuite: false
-            suite: zip
+            suite: zip-slow
+          - full-testsuite: false
+            suite: zip-fast
           - full-testsuite: false
             suite: container
           - full-testsuite: false
@@ -289,14 +291,17 @@ jobs:
 
       # Not sure why, but needs to re-build otherwise there's some failures starting up
       # Smoke tests should cover scenarios that could be broken by changes in other modules that quarkus
+      # test classes and even individual tests are included in the following suites by junit tags
+      # kc.quarkus.tests.groups acts as the tag filter
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
-          PARAMS["win"]="-Dtest=JavaOptsScriptTest,StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
-          PARAMS["zip"]=""
+          PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
+          PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow"
+          PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow'
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
-          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest,ExternalInfinispanTest"
-          PARAMS["smoke"]="-Dtest=ClusterConfigDistTest,CustomJpaEntityProviderDistTest,ExportDistTest,FeaturesDistTest,ImportAtStartupDistTest,ImportDistTest,JaxRsDistTest,TruststoreDistTest"
+          PARAMS["storage"]="-Ptest-database"
+          PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
           ./mvnw install -pl quarkus/tests/integration -am -DskipTests
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh

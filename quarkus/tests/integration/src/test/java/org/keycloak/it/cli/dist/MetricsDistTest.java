@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -36,6 +38,7 @@ import io.quarkus.test.junit.main.Launch;
 @DistributionTest(keepAlive = true,
         requestPort = 9000,
         containerExposedPorts = {8080, 9000})
+@Tag(DistributionTest.SLOW)
 public class MetricsDistTest {
 
     @Test

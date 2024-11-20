@@ -19,6 +19,8 @@ package org.keycloak.it.storage.database;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -31,6 +33,7 @@ import static io.restassured.RestAssured.when;
 
 @DistributionTest(keepAlive = true)
 @WithExternalInfinispan
+@Tag(DistributionTest.STORAGE)
 public class ExternalInfinispanTest {
 
     @Test
