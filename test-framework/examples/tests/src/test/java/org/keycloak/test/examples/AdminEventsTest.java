@@ -13,6 +13,7 @@ import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.events.AdminEvents;
 import org.keycloak.test.framework.realm.ManagedRealm;
 import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.framework.server.KeycloakTestServerConfigBuilder;
 
 @KeycloakIntegrationTest(config = AdminEventsTest.ServerConfig.class)
 public class AdminEventsTest {
@@ -69,8 +70,8 @@ public class AdminEventsTest {
 
     public static class ServerConfig implements KeycloakTestServerConfig {
         @Override
-        public boolean enableSysLog() {
-            return true;
+        public KeycloakTestServerConfigBuilder configure(KeycloakTestServerConfigBuilder config) {
+            return config.syslog();
         }
     }
 

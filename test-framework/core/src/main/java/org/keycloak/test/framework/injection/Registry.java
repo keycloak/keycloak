@@ -237,6 +237,15 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         destroy.forEach(this::destroy);
     }
 
+    void decorate(Object object) {
+        for (InstanceContext deployedInstance : deployedInstances) {
+            deployedInstance.getSupplier().decorate(object, deployedInstance);
+        }
+        for (RequestedInstance requestedInstance : requestedInstances) {
+            requestedInstance.getSupplier().decorate(object, null);
+        }
+    }
+
     List<Supplier<?, ?>> getSuppliers() {
         return suppliers;
     }

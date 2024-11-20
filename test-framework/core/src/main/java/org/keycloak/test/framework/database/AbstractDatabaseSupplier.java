@@ -5,6 +5,9 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
+import org.keycloak.test.framework.server.KeycloakTestServerConfigBuilder;
+
+import java.util.Map;
 
 public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase, InjectTestDatabase> {
 
@@ -40,5 +43,12 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
     @Override
     public void close(InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
         instanceContext.getValue().stop();
+    }
+
+    @Override
+    public void decorate(Object object, InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
+        if (object instanceof KeycloakTestServerConfigBuilder serverConfig) {
+            serverConfig.options(instanceContext.getValue().serverConfig());
+        }
     }
 }

@@ -31,39 +31,29 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
     public KeycloakTestServer getValue(InstanceContext<KeycloakTestServer, KeycloakIntegrationTest> instanceContext) {
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
+        KeycloakTestServerConfigBuilder serverConfigBuilder = serverConfig.configure(KeycloakTestServerConfigBuilder.create());
+
+        TestDatabase testDatabase = null;
+        if (requiresDatabase()) {
+            testDatabase = instanceContext.getDependency(TestDatabase.class);
+        }
+
+        instanceContext.decorate(serverConfigBuilder);
 
         CommandBuilder command = CommandBuilder.startDev()
                 .cache("local")
                 .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
 
-        if (serverConfig.enableSysLog()) {
+        if (serverConfigBuilder.isSyslogEnabled()) {
             SysLogServer sysLogServer = instanceContext.getDependency(SysLogServer.class);
             command.log().enableSyslog(sysLogServer.getEndpoint());
         }
 
         command.log().fromConfig(Config.getConfig());
 
-        if (!serverConfig.features().isEmpty()) {
-            command.features(serverConfig.features());
-        }
+        serverConfigBuilder.updateCommandBuilder(command);
 
-        if (!serverConfig.featuresDisabled().isEmpty()) {
-            command.featuresDisabled(serverConfig.featuresDisabled());
-        }
-
-        command.options(serverConfig.options());
-
-        Set<Dependency> dependencies = new HashSet<>(serverConfig.dependencies());
-
-        if (requiresDatabase()) {
-            TestDatabase testDatabase = instanceContext.getDependency(TestDatabase.class);
-            command.databaseConfig(testDatabase.serverConfig());
-
-            Dependency jdbcDriver = testDatabase.jdbcDriver();
-            if (jdbcDriver != null) {
-                dependencies.add(jdbcDriver);
-            }
-        }
+        Set<Dependency> dependencies = serverConfigBuilder.getDependencies();
 
         getLogger().info("Starting Keycloak test server");
         if (getLogger().isDebugEnabled()) {

@@ -34,4 +34,13 @@ public interface Supplier<T, S extends Annotation> {
     default void onBeforeEach(InstanceContext<T, S> instanceContext) {
     }
 
+    /**
+     * Allows suppliers to decorate values injected by other suppliers
+     *
+     * @param object the object to decorate
+     * @param instanceContext the deployed instance for this supplier; or <code>null</code> if the value has not been created yet
+     */
+    default void decorate(Object object, InstanceContext<T, S> instanceContext) {
+    }
+
 }

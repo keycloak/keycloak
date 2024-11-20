@@ -8,9 +8,9 @@ import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.framework.server.KeycloakTestServerConfigBuilder;
 
 import java.util.Optional;
-import java.util.Set;
 
 @KeycloakIntegrationTest(config = CustomConfigTest.CustomServerConfig.class)
 public class CustomConfigTest {
@@ -26,12 +26,10 @@ public class CustomConfigTest {
     }
 
     public static class CustomServerConfig implements KeycloakTestServerConfig {
-
         @Override
-        public Set<String> features() {
-            return Set.of("update-email");
+        public KeycloakTestServerConfigBuilder configure(KeycloakTestServerConfigBuilder config) {
+            return config.enableFeatures(Profile.Feature.UPDATE_EMAIL);
         }
-
     }
 
 }

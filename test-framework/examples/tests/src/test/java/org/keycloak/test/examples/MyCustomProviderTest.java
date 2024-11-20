@@ -1,7 +1,5 @@
 package org.keycloak.test.examples;
 
-import io.quarkus.maven.dependency.Dependency;
-import io.quarkus.maven.dependency.DependencyBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -13,10 +11,10 @@ import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
 import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.framework.server.KeycloakTestServerConfigBuilder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 
 
 /**
@@ -44,9 +42,9 @@ public class MyCustomProviderTest {
     }
 
     public static class ServerConfig implements KeycloakTestServerConfig {
-
-        public Set<Dependency> dependencies() {
-            return Set.of(new DependencyBuilder().setGroupId("org.keycloak.test").setArtifactId("keycloak-test-framework-example-providers").build());
+        @Override
+        public KeycloakTestServerConfigBuilder configure(KeycloakTestServerConfigBuilder config) {
+            return config.dependency("org.keycloak.test", "keycloak-test-framework-example-providers");
         }
     }
 }

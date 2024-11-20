@@ -84,4 +84,8 @@ public class InstanceContext<T, A extends Annotation> {
         return (N) notes.get(key);
     }
 
+    public void decorate(Object object) {
+        registry.decorate(object);
+    }
+
 }

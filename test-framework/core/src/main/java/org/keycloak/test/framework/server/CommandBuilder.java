@@ -49,15 +49,6 @@ public class CommandBuilder {
         return this;
     }
 
-    public CommandBuilder databaseConfig(Map<String, String> databaseConfig) {
-        for (String k : databaseConfig.keySet()) {
-            if (!k.startsWith("db")) {
-                throw new IllegalArgumentException("Database config supplied non-database configuration: " + k);
-            }
-        }
-        return options(databaseConfig);
-    }
-
     public CommandBuilder options(Map<String, String> options) {
         this.options.putAll(options);
         return this;

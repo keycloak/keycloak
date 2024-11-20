@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.events.EventType;
 import org.keycloak.test.framework.annotations.InjectEvents;
 import org.keycloak.test.framework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.test.framework.server.KeycloakTestServerConfigBuilder;
 import org.keycloak.test.framework.ui.annotations.InjectPage;
 import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
@@ -52,8 +53,8 @@ public class EventsTest {
 
     public static class ServerConfig implements KeycloakTestServerConfig {
         @Override
-        public boolean enableSysLog() {
-            return true;
+        public KeycloakTestServerConfigBuilder configure(KeycloakTestServerConfigBuilder config) {
+            return config.syslog();
         }
     }
 
