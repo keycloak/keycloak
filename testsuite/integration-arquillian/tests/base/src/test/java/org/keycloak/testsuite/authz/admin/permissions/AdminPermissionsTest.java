@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.authz.admin;
+package org.keycloak.testsuite.authz.admin.permissions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -73,13 +73,24 @@ public class AdminPermissionsTest extends AbstractTestRealmKeycloakTest {
         assertThat(clients, hasSize(1));
         ResourceServerRepresentation authorizationSettings = testRealm().clients().get(clients.get(0).getId()).authorization().getSettings();
         assertThat(authorizationSettings, notNullValue());
+
         //admin permissions not enabled for the realm
         assertThat(authorizationSettings.getAuthorizationSchema(), nullValue());
 
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setAdminPermissionsEnabled(Boolean.TRUE).update()) {
             authorizationSettings = testRealm().clients().get(clients.get(0).getId()).authorization().getSettings();
             assertThat(authorizationSettings, notNullValue());
+
+            //schema should be available only for admin-permissions client
+            assertThat(authorizationSettings.getAuthorizationSchema(), nullValue());
+
+            //get the admin-permissions client
+            ClientRepresentation adminPermissionsClient = testRealm().toRepresentation().getAdminPermissionsClient();
+            assertThat(adminPermissionsClient, notNullValue());
+
+            authorizationSettings = testRealm().clients().get(adminPermissionsClient.getId()).authorization().getSettings();
             assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
         }
     }
+
 }

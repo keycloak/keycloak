@@ -1095,6 +1095,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public void setAdminPermissionsClient(ClientModel client) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsClient(client);
+    }
+
+    @Override
+    public ClientModel getAdminPermissionsClient() {
+        if (isUpdated()) return updated.getAdminPermissionsClient();
+        return cached.getAdminPermissionsClientId() == null ? null : cacheSession.getClientById(this, cached.getAdminPermissionsClientId());
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         return cacheSession.getRealmRole(this, name);
     }

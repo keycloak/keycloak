@@ -1188,4 +1188,11 @@ public final class KeycloakModelUtils {
     public static boolean isAdminPermissionsEnabled(RealmModel realm) {
         return Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) && realm.isAdminPermissionsEnabled();
     }
+
+    public static void setupAdminPermissionsClient(KeycloakSession session, RealmModel realm) {
+        ClientModel client = session.clients().addClient(realm, Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        realm.setAdminPermissionsClient(client);
+        RepresentationToModel.createResourceServer(client, session, false);
+    }
+
 }
