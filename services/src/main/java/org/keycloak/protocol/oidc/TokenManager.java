@@ -697,6 +697,10 @@ public class TokenManager {
 
     /** Return client itself + all default client scopes of client + optional client scopes requested by scope parameter **/
     public static Stream<ClientScopeModel> getRequestedClientScopes(KeycloakSession session, String scopeParam, ClientModel client, UserModel user) {
+        if (client == null) {
+            return Stream.of();
+        }
+
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
                 client.getClientScopes(true).values().stream(),

@@ -13,8 +13,6 @@ import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
@@ -33,7 +31,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
-import org.keycloak.services.resources.AbstractSecuredLocalService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.util.ViteManifest;
@@ -146,7 +143,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
         map.put("resourceVersion", Version.RESOURCES_VERSION);
 
-        var requestedScopes = getRequestedScopes();
+        var requestedScopes = AuthenticationManager.getRequestedScopes(session, realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID));
 
         if (requestedScopes != null) {
             map.put(OIDCLoginProtocol.SCOPE_PARAM, requestedScopes);
@@ -360,27 +357,5 @@ public class AccountConsole implements AccountResourceProvider {
         }
 
         return new String[]{referrer, referrerName, referrerUri};
-    }
-
-    private String getRequestedScopes() {
-        if (auth == null) {
-            return null;
-        }
-
-        UserSessionModel userSession = auth.getSession();
-
-        if (userSession == null) {
-            return null;
-        }
-
-        for (AuthenticatedClientSessionModel c : userSession.getAuthenticatedClientSessions().values()) {
-            ClientModel client = c.getClient();
-
-            if (Constants.ACCOUNT_CONSOLE_CLIENT_ID.equals(client.getClientId())) {
-                return c.getNote(OIDCLoginProtocol.SCOPE_PARAM);
-            }
-        }
-
-        return null;
     }
 }

@@ -29,6 +29,7 @@ import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
@@ -37,6 +38,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,6 +56,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private Map<UrlType, KeycloakUriInfo> uriInfo;
 
     private AuthenticationSessionModel authenticationSession;
+    private UserSessionModel userSession;
     private HttpRequest request;
     private HttpResponse response;
     private ClientConnection clientConnection;
@@ -113,6 +116,11 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public ClientModel getClient() {
+        if (client == null) {
+            client = Optional.ofNullable(authenticationSession)
+                    .map(AuthenticationSessionModel::getClient)
+                    .orElse(null);
+        }
         return client;
     }
 
@@ -205,4 +213,13 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         this.response = httpResponse;
     }
 
+    @Override
+    public UserSessionModel getUserSession() {
+        return userSession;
+    }
+
+    @Override
+    public void setUserSession(UserSessionModel userSession) {
+        this.userSession = userSession;
+    }
 }
