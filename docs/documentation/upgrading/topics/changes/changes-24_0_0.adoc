@@ -155,7 +155,7 @@ If you use a custom theme to change these templates, they will function as expec
 However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
 changing the built-in templates by using all the capabilities provided by this feature.
 
-Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are longer necessary and removed in this release:
+Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are no longer necessary and removed in this release:
 
 * `update-user-profile.ftl`
 * `register-user-profile.ftl`
