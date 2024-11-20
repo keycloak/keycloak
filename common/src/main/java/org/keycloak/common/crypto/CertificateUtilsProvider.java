@@ -63,6 +63,8 @@ public interface CertificateUtilsProvider {
 
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber);
 
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate);
+
     public List<String> getCertificatePolicyList(X509Certificate cert) throws GeneralSecurityException;
 
     public List<String> getCRLDistributionPoints(X509Certificate cert) throws IOException;

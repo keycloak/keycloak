@@ -49,7 +49,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 
 import java.io.ByteArrayInputStream;
@@ -164,12 +163,16 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     }
 
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, 10);
+        return generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, calendar.getTime());
+    }
+
+    @Override
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
             Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.YEAR, 10);
-            Date validityEndDate = new Date(calendar.getTime().getTime());
             SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(caKeyPair.getPublic().getEncoded());
 
             X509v1CertificateBuilder builder = new X509v1CertificateBuilder(subjectDN, serialNumber, validityStartDate,

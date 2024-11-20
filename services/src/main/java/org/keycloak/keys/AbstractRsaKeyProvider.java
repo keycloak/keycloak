@@ -18,12 +18,15 @@
 package org.keycloak.keys;
 
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.*;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +41,7 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
 
     private final ComponentModel model;
 
-    private final KeyWrapper key;
+    protected final KeyWrapper key;
 
     private final String algorithm;
 
@@ -57,7 +60,23 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         }
     }
 
-    protected abstract KeyWrapper loadKey(RealmModel realm, ComponentModel model);
+    public KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
+        String privateRsaKeyPem = model.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY);
+        String certificatePem = model.getConfig().getFirst(Attributes.CERTIFICATE_KEY);
+
+        PrivateKey privateKey = PemUtils.decodePrivateKey(privateRsaKeyPem);
+        if (privateKey == null) {
+            throw new RuntimeException("Key not found on the server. Check key for " + ImportedRsaKeyProviderFactory.ID + " in realm " + realm.getName());
+        }
+        PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
+
+        KeyPair keyPair = new KeyPair(publicKey, privateKey);
+        X509Certificate certificate = PemUtils.decodeCertificate(certificatePem);
+
+        KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.name()).toUpperCase());
+
+        return createKeyWrapper(keyPair, certificate, keyUse);
+    }
 
     @Override
     public Stream<KeyWrapper> getKeysStream() {

@@ -42,23 +42,16 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.EdECPrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.SecretKey;
@@ -86,12 +79,12 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         String defaultAlgorithmKey = KeyUse.ENC.name().equalsIgnoreCase(model.get(Attributes.KEY_USE)) ? JWEConstants.RSA_OAEP : Algorithm.RS256;
         this.algorithm = model.get(Attributes.ALGORITHM_KEY, defaultAlgorithmKey);
 
-        if (model.hasNote(KeyWrapper.class.getName())) {
-            key = model.getNote(KeyWrapper.class.getName());
-        } else {
-            key = loadKey(realm, model);
-            model.setNote(KeyWrapper.class.getName(), key);
+        KeyWrapper tmpKey = KeyNoteUtils.retrieveKeyFromNotes(model, KeyWrapper.class.getName());
+        if (tmpKey == null) {
+            tmpKey = loadKey(realm, model);
+            KeyNoteUtils.attachKeyNotes(model, KeyWrapper.class.getName(), tmpKey);
         }
+        this.key = tmpKey;
     }
 
     protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
@@ -221,15 +214,11 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
     }
 
     private List<X509Certificate> loadCertificateChain(KeyStore.PrivateKeyEntry privateKeyEntry) throws GeneralSecurityException {
-        List<X509Certificate> chain = Optional.ofNullable(privateKeyEntry.getCertificateChain())
+        return Optional.ofNullable(privateKeyEntry.getCertificateChain())
                 .map(certificates -> Arrays.stream(certificates)
                         .map(X509Certificate.class::cast)
                         .collect(Collectors.toList()))
                 .orElseGet(Collections::emptyList);
-
-        validateCertificateChain(chain);
-
-        return chain;
     }
 
     private KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<X509Certificate> certificateChain,
@@ -273,35 +262,6 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         keyWrapper.setStatus(status);
         keyWrapper.setSecretKey(secretKey);
         return keyWrapper;
-    }
-
-    /**
-     * <p>Validates the giving certificate chain represented by {@code certificates}. If the list of certificates is empty
-     * or does not have at least 2 certificates (end-user certificate plus intermediary/root CAs) this method does nothing.
-     *
-     * <p>It should not be possible to import to keystores invalid chains though. So this is just an additional check
-     * that we can reuse later for other purposes when the cert chain is also provided manually, in PEM.
-     *
-     * @param certificates
-     */
-    private void validateCertificateChain(List<X509Certificate> certificates) throws GeneralSecurityException {
-        if (certificates == null || certificates.isEmpty()) {
-            return;
-        }
-
-        Set<TrustAnchor> anchors = new HashSet<>();
-
-        // consider the last certificate in the chain as the most trusted cert
-        anchors.add(new TrustAnchor(certificates.get(certificates.size() - 1), null));
-
-        PKIXParameters params = new PKIXParameters(anchors);
-
-        params.setRevocationEnabled(false);
-
-        CertPath certPath = CertificateFactory.getInstance("X.509").generateCertPath(certificates);
-        CertPathValidator validator = CertPathValidator.getInstance(CertPathValidator.getDefaultType());
-
-        validator.validate(certPath, params);
     }
 
     @Override
