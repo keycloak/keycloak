@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package or.keycloak.quarkus.runtime.cli;
+package org.keycloak.quarkus.runtime.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
