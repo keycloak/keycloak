@@ -21,7 +21,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -34,6 +33,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +47,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import java.io.IOException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -107,17 +108,25 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testGetAll() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 15; i++) {
             OrganizationRepresentation organization = createOrganization("kc.org." + i);
             expected.add(organization);
             organization.setAttributes(Map.of("foo", List.of("foo")));
             testRealm().organizations().get(organization.getId()).update(organization).close();
         }
 
-        List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
+        List<OrganizationRepresentation> existing = testRealm().organizations().list(-1, -1);
         assertFalse(existing.isEmpty());
-        assertThat(expected, containsInAnyOrder(existing.toArray()));
+        assertThat(existing, containsInAnyOrder(expected.toArray()));
         Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
+
+        List<OrganizationRepresentation> concatenatedList = Stream.of(
+                testRealm().organizations().list(0, 5),
+                testRealm().organizations().list(5, 5),
+                testRealm().organizations().list(10, 5))
+                .flatMap(Collection::stream).toList();
+
+        assertThat(concatenatedList, containsInAnyOrder(expected.toArray()));
     }
 
     @Test
@@ -424,7 +433,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
                 assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
             }
             try {
-                testRealm().organizations().getAll();
+                testRealm().organizations().list(-1, -1);
                 fail("Expected NotFoundException");
             } catch (NotFoundException expected) {
             }
@@ -457,7 +466,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             createOrganization(realmRes, "test-org", "test.org");
 
-            List<OrganizationRepresentation> orgs = realmRes.organizations().getAll();
+            List<OrganizationRepresentation> orgs = realmRes.organizations().list(-1, -1);
             assertThat(orgs, hasSize(1));
 
             IdentityProviderRepresentation broker = bc.setUpIdentityProvider();

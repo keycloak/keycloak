@@ -129,7 +129,7 @@ public class AdminEventTest extends AbstractEventTest {
         orgRep.setAlias(orgRep.getName());
         orgRep.addDomain(new OrganizationDomainRepresentation(orgRep.getName()));
         testRealmResource().organizations().create(orgRep).close();
-        orgRep = testRealmResource().organizations().getAll().get(0);
+        orgRep = testRealmResource().organizations().list(-1, -1).get(0);
         testRealmResource().organizations().get(orgRep.getId()).members().addMember(userId).close();
         List<AdminEventRepresentation> events = events();
         assertThat(events().size(), is(equalTo(4)));
