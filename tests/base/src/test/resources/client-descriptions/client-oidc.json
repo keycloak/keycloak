@@ -1,0 +1,6 @@
+{
+  "client_name": "Name",
+  "redirect_uris": [
+    "http://localhost"
+  ]
+}
