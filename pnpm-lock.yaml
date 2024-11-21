@@ -87,8 +87,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.11
+        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.16.6
         version: 23.16.6
@@ -172,8 +172,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.11
+        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
         version: '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.12)'
@@ -392,8 +392,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.11
+        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^23.16.6
         version: 23.16.6
@@ -1224,8 +1224,8 @@ packages:
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
 
-  '@patternfly/react-table@5.4.10':
-    resolution: {integrity: sha512-5p95UZer+4GJyS9pXUEqYal/bixuyNn4GhH/Hyk3dj/MeLKZrQWD6hmRaj7/SqJiVC2FhZBoQoDGEeXElqkc0g==}
+  '@patternfly/react-table@5.4.11':
+    resolution: {integrity: sha512-TlEPx4G+49QYZxk649WUIHkRPA/JB//i29fUosrJdI6EEzpTe8keHLXe5wA9KkhCxOtna7iHPTPWv5qRiDJKSg==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -3253,6 +3253,7 @@ packages:
 
   i18next-http-backend@2.7.0:
     resolution: {integrity: sha512-ruusEX6azT8pXy+C2etRQZ0ylbs1ix/z6D+zNv/tUcy9Sw8TWRO989Z7X1LLV31JVO/cAoSk3gH3rapSTL+j9w==}
+    deprecated: this version has been deprecated, since it should have been a major version (v3.0.0)
 
   i18next@23.16.6:
     resolution: {integrity: sha512-wGdE5rUfkZtrL5k6MCptxbpjmgwku4rBRVU/YOJ7Xfd841fgaZjlxHpVJ5NIz8sfSvAJhEhJrvJ8qE7AWXE4Xg==}
@@ -5669,7 +5670,7 @@ snapshots:
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-table': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-table': 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
       flat: 6.0.1
@@ -5857,7 +5858,7 @@ snapshots:
 
   '@patternfly/react-styles@5.4.1': {}
 
-  '@patternfly/react-table@5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-table@5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
