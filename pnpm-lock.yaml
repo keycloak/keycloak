@@ -93,8 +93,8 @@ importers:
         specifier: ^23.16.6
         version: 23.16.6
       i18next-http-backend:
-        specifier: ^2.7.0
-        version: 2.7.0
+        specifier: ^3.0.1
+        version: 3.0.1
       keycloak-js:
         specifier: workspace:*
         version: link:../../libs/keycloak-js
@@ -190,8 +190,8 @@ importers:
         specifier: ^23.16.6
         version: 23.16.6
       i18next-http-backend:
-        specifier: ^2.7.0
-        version: 2.7.0
+        specifier: ^3.0.1
+        version: 3.0.1
       keycloak-js:
         specifier: workspace:*
         version: link:../../libs/keycloak-js
@@ -3251,9 +3251,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  i18next-http-backend@2.7.0:
-    resolution: {integrity: sha512-ruusEX6azT8pXy+C2etRQZ0ylbs1ix/z6D+zNv/tUcy9Sw8TWRO989Z7X1LLV31JVO/cAoSk3gH3rapSTL+j9w==}
-    deprecated: this version has been deprecated, since it should have been a major version (v3.0.0)
+  i18next-http-backend@3.0.1:
+    resolution: {integrity: sha512-XT2lYSkbAtDE55c6m7CtKxxrsfuRQO3rUfHzj8ZyRtY9CkIX3aRGwXGTkUhpGWce+J8n7sfu3J0f2wTzo7Lw0A==}
 
   i18next@23.16.6:
     resolution: {integrity: sha512-wGdE5rUfkZtrL5k6MCptxbpjmgwku4rBRVU/YOJ7Xfd841fgaZjlxHpVJ5NIz8sfSvAJhEhJrvJ8qE7AWXE4Xg==}
@@ -5675,7 +5674,7 @@ snapshots:
       file-saver: 2.0.5
       flat: 6.0.1
       i18next: 23.16.6
-      i18next-http-backend: 2.7.0
+      i18next-http-backend: 3.0.1
       keycloak-js: link:js/libs/keycloak-js
       lodash-es: 4.17.21
       monaco-editor: 0.52.0
@@ -8166,7 +8165,7 @@ snapshots:
 
   husky@9.1.7: {}
 
-  i18next-http-backend@2.7.0:
+  i18next-http-backend@3.0.1:
     dependencies:
       cross-fetch: 4.0.0
     transitivePeerDependencies:
