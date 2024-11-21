@@ -84,7 +84,7 @@
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
     "i18next": "^23.16.6",
-    "i18next-http-backend": "^2.7.0",
+    "i18next-http-backend": "^3.0.1",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
     "monaco-editor": "^0.52.0",
