@@ -134,7 +134,7 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             orgIds.add(createOrganization("org-" + i).getId());
         }
 
-        assertEquals(orgIds.size(), testRealm().organizations().getAll().size());
+        assertEquals(orgIds.size(), testRealm().organizations().list(-1, -1).size());
         assertTrue(testRealm().groups().groups().stream().map(GroupRepresentation::getId).noneMatch(orgIds::contains));
     }
 
