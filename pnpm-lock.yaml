@@ -269,8 +269,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(axe-core@4.10.1)(cypress@13.16.0)
       cypress-split:
-        specifier: ^1.24.5
-        version: 1.24.5(@babel/core@7.25.8)
+        specifier: ^1.24.6
+        version: 1.24.6(@babel/core@7.25.8)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -2444,8 +2444,8 @@ packages:
       axe-core: ^3 || ^4
       cypress: ^10 || ^11 || ^12 || ^13
 
-  cypress-split@1.24.5:
-    resolution: {integrity: sha512-7c58IyRtT79wSffrJ78pbKtvhYsjhF6OD5Jhe/32mJ6ue9YFocHIy8D2LM5imM6UcDri6pPMROLMlIyxPElfIg==}
+  cypress-split@1.24.6:
+    resolution: {integrity: sha512-1/qyie/fh632msYuIw2IqKuhst0dPptV16iFNnmri/OeRzpAuFhYg2Qc/Jacj907b2a4+FGfh8UF9PgwAnptkw==}
     hasBin: true
 
   cypress@13.16.0:
@@ -2985,8 +2985,8 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  find-cypress-specs@1.45.2:
-    resolution: {integrity: sha512-D289NM0Dpqoz4+yl8oEtbioqm7zPKQo0hLcvwlg5Z9iBm7EioMIFiOYgluthDNPxUES/aJF+1xHRHAJpC3ejcA==}
+  find-cypress-specs@1.46.2:
+    resolution: {integrity: sha512-eXvGQMftYDTbQflVX6TzJj7hA0ypO5+FfUrnMdRf1+yCu5xVY5wPv721AWp/xPBOpQXwx5jdoZRH9m95U/1c7A==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -7109,14 +7109,14 @@ snapshots:
       axe-core: 4.10.1
       cypress: 13.16.0
 
-  cypress-split@1.24.5(@babel/core@7.25.8):
+  cypress-split@1.24.6(@babel/core@7.25.8):
     dependencies:
       '@actions/core': 1.11.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.3.7(supports-color@8.1.1)
       fast-shuffle: 6.1.0
-      find-cypress-specs: 1.45.2(@babel/core@7.25.8)
+      find-cypress-specs: 1.46.2(@babel/core@7.25.8)
       globby: 11.1.0
       humanize-duration: 3.32.1
     transitivePeerDependencies:
@@ -7875,7 +7875,7 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  find-cypress-specs@1.45.2(@babel/core@7.25.8):
+  find-cypress-specs@1.46.2(@babel/core@7.25.8):
     dependencies:
       '@actions/core': 1.11.1
       arg: 5.0.2
