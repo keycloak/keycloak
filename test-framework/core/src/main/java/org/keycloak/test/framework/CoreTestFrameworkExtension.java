@@ -12,11 +12,11 @@ import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.realm.ClientSupplier;
 import org.keycloak.test.framework.realm.RealmSupplier;
 import org.keycloak.test.framework.realm.UserSupplier;
-import org.keycloak.test.framework.server.DistributionKeycloakTestServerSupplier;
-import org.keycloak.test.framework.server.EmbeddedKeycloakTestServerSupplier;
-import org.keycloak.test.framework.server.KeycloakTestServer;
+import org.keycloak.test.framework.server.DistributionKeycloakServerSupplier;
+import org.keycloak.test.framework.server.EmbeddedKeycloakServerSupplier;
+import org.keycloak.test.framework.server.KeycloakServer;
 import org.keycloak.test.framework.server.KeycloakUrlsSupplier;
-import org.keycloak.test.framework.server.RemoteKeycloakTestServerSupplier;
+import org.keycloak.test.framework.server.RemoteKeycloakServerSupplier;
 
 import java.util.List;
 import java.util.Map;
@@ -30,9 +30,9 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new ClientSupplier(),
                 new RealmSupplier(),
                 new UserSupplier(),
-                new DistributionKeycloakTestServerSupplier(),
-                new EmbeddedKeycloakTestServerSupplier(),
-                new RemoteKeycloakTestServerSupplier(),
+                new DistributionKeycloakServerSupplier(),
+                new EmbeddedKeycloakServerSupplier(),
+                new RemoteKeycloakServerSupplier(),
                 new KeycloakUrlsSupplier(),
                 new DevMemDatabaseSupplier(),
                 new DevFileDatabaseSupplier(),
@@ -46,7 +46,7 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
     @Override
     public Map<Class<?>, String> valueTypeAliases() {
         return Map.of(
-                KeycloakTestServer.class, "server",
+                KeycloakServer.class, "server",
                 TestDatabase.class, "database"
         );
     }

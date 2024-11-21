@@ -21,14 +21,14 @@ import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.InjectUser;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
 import org.keycloak.test.framework.realm.ManagedUser;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
-
-import java.util.Set;
+import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
+import org.keycloak.test.framework.server.KeycloakServerConfig;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
@@ -42,14 +42,6 @@ public class ImpersonationDisabledTest {
     @InjectUser
     private ManagedUser user;
 
-    public static class ServerConfig implements KeycloakTestServerConfig {
-
-        @Override
-        public Set<String> featuresDisabled() {
-            return Set.of("impersonation");
-        }
-    }
-
     @Test
     public void testImpersonationDisabled() {
         
@@ -60,4 +52,14 @@ public class ImpersonationDisabledTest {
             Assertions.assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());
         }
     }
+
+    public static class ServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.featuresDisabled(Profile.Feature.IMPERSONATION);
+        }
+
+    }
+
 }

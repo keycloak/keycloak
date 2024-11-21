@@ -1,7 +1,7 @@
 package org.keycloak.test.framework.annotations;
 
-import org.keycloak.test.framework.server.DefaultKeycloakTestServerConfig;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.framework.server.DefaultKeycloakServerConfig;
+import org.keycloak.test.framework.server.KeycloakServerConfig;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,6 +12,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface KeycloakIntegrationTest {
 
-    Class<? extends KeycloakTestServerConfig> config() default DefaultKeycloakTestServerConfig.class;
+    Class<? extends KeycloakServerConfig> config() default DefaultKeycloakServerConfig.class;
 
 }

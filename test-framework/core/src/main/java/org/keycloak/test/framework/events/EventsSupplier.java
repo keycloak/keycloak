@@ -5,8 +5,10 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
+import org.keycloak.test.framework.injection.SupplierOrder;
 
 public class EventsSupplier implements Supplier<Events, InjectEvents> {
+
     @Override
     public Class<InjectEvents> getAnnotationClass() {
         return InjectEvents.class;
@@ -43,5 +45,10 @@ public class EventsSupplier implements Supplier<Events, InjectEvents> {
     @Override
     public boolean compatible(InstanceContext<Events, InjectEvents> a, RequestedInstance<Events, InjectEvents> b) {
         return true;
+    }
+
+    @Override
+    public int order() {
+        return SupplierOrder.BEFORE_KEYCLOAK_SERVER;
     }
 }
