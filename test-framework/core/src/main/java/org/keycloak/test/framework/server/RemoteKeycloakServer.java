@@ -7,12 +7,12 @@ import java.net.URL;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class RemoteKeycloakTestServer implements KeycloakTestServer {
+public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
-    public void start(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         if (!verifyRunningKeycloak()) {
-            printStartupInstructions(commandBuilder, dependencies);
+            printStartupInstructions(keycloakServerConfigBuilder);
             waitForStartup();
         }
     }
@@ -26,13 +26,17 @@ public class RemoteKeycloakTestServer implements KeycloakTestServer {
         return "http://localhost:8080";
     }
 
-    private void printStartupInstructions(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
+    private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("Remote Keycloak server is not running on " + getBaseUrl() + ", please start Keycloak with:\n\n");
+        sb.append("Remote Keycloak server is not running on ")
+                .append(getBaseUrl())
+                .append(", please start Keycloak with:\n\n");
 
-        sb.append(String.join(" \\\n", commandBuilder.toArgs()));
+        sb.append(String.join(" \\\n", keycloakServerConfigBuilder.toArgs()));
         sb.append("\n\n");
+
+        Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
         if (!dependencies.isEmpty()) {
             sb.append("Requested providers:\n");
             for (Dependency d : dependencies) {

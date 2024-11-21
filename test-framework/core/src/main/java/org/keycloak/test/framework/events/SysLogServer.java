@@ -17,12 +17,12 @@ public class SysLogServer {
 
     private static final Logger LOGGER = Logger.getLogger(SysLogServer.class);
     private static final int MAX_THREADS = 5;
-    private ServerSocket serverSocket;
+    private final ServerSocket serverSocket;
     private final List<Thread> threads = Collections.synchronizedList(new LinkedList<>());
     private final Set<SysLogListener> listeners = new HashSet<>();
     private boolean running = true;
 
-    public void start() throws IOException {
+    public SysLogServer() throws IOException {
         serverSocket = new ServerSocket(0);
         startThread();
     }

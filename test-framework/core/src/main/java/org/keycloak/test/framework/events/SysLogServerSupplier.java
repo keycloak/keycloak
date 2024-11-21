@@ -5,10 +5,14 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
+import org.keycloak.test.framework.injection.SupplierOrder;
+import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
+import org.keycloak.test.framework.server.KeycloakServerConfigInterceptor;
 
 import java.io.IOException;
 
-public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLogServer> {
+public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLogServer>, KeycloakServerConfigInterceptor<SysLogServer, InjectSysLogServer> {
+
     @Override
     public Class<InjectSysLogServer> getAnnotationClass() {
         return InjectSysLogServer.class;
@@ -22,9 +26,7 @@ public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLog
     @Override
     public SysLogServer getValue(InstanceContext<SysLogServer, InjectSysLogServer> instanceContext) {
         try {
-            SysLogServer server = new SysLogServer();
-            server.start();
-            return server;
+            return new SysLogServer();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -48,5 +50,23 @@ public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLog
     @Override
     public boolean compatible(InstanceContext<SysLogServer, InjectSysLogServer> a, RequestedInstance<SysLogServer, InjectSysLogServer> b) {
         return true;
+    }
+
+    @Override
+    public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<SysLogServer, InjectSysLogServer> instanceContext) {
+        serverConfig.log()
+                .handlers(KeycloakServerConfigBuilder.LogHandlers.SYSLOG)
+                .syslogEndpoint(instanceContext.getValue().getEndpoint())
+                .handlerLevel(KeycloakServerConfigBuilder.LogHandlers.SYSLOG, "INFO");
+
+        serverConfig.option("spi-events-listener-jboss-logging-success-level", "INFO")
+                .log().categoryLevel("org.keycloak.events", "INFO");
+
+        return serverConfig;
+    }
+
+    @Override
+    public int order() {
+        return SupplierOrder.BEFORE_KEYCLOAK_SERVER;
     }
 }

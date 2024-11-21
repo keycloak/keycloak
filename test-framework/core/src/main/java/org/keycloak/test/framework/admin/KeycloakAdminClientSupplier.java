@@ -9,7 +9,7 @@ import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
-import org.keycloak.test.framework.server.KeycloakTestServer;
+import org.keycloak.test.framework.server.KeycloakServer;
 
 public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
@@ -25,9 +25,9 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
 
     @Override
     public Keycloak getValue(InstanceContext<Keycloak, InjectAdminClient> instanceContext) {
-        KeycloakTestServer testServer = instanceContext.getDependency(KeycloakTestServer.class);
+        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         return KeycloakBuilder.builder()
-                .serverUrl(testServer.getBaseUrl())
+                .serverUrl(server.getBaseUrl())
                 .realm("master")
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .clientId(Config.getAdminClientId())
