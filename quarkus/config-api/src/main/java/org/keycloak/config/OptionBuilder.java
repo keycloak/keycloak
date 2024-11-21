@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -106,30 +105,19 @@ public class OptionBuilder<T> {
     }
 
     public OptionBuilder<T> deprecated() {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, null);
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null);
         return this;
     }
 
-    public OptionBuilder<T> deprecated(String note) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, null);
+    public OptionBuilder<T> deprecatedMetadata(DeprecatedMetadata deprecatedMetadata) {
+        this.deprecatedMetadata = deprecatedMetadata;
         return this;
     }
 
-    public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, newOptionsKeys);
+    public OptionBuilder<T> deprecatedValues(String note, T... values) {
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(note, Stream.of(values).map(Object::toString).toArray(String[]::new));
         return this;
     }
-
-    public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, newOptionsKeys);
-        return this;
-    }
-
-    public OptionBuilder<T> deprecatedValues(Set<String> values, String note) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(values, note);
-        return this;
-    }
-
 
     public Option<T> build() {
         if (deprecatedMetadata == null && category.getSupportLevel() == ConfigSupportLevel.DEPRECATED) {
