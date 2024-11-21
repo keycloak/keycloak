@@ -47,8 +47,10 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
+import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -272,11 +274,26 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session,
                 getKeyFromSession(session).getKid(),
                 Algorithm.RS256);
+
+        return prepareIssuerEndpoint(
+                session,
+                authenticator,
+                Map.of(jwtCredentialBuilder.locator(), jwtCredentialBuilder),
+                Map.of(jwtSigningService.locator(), jwtSigningService)
+        );
+    }
+
+    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator,
+            Map<String, CredentialBuilder> credentialBuilders,
+            Map<String, VerifiableCredentialsSigningService> signingServices
+    ) {
         return new OID4VCIssuerEndpoint(
                 session,
                 "did:web:issuer.org",
-                Map.of(jwtCredentialBuilder.locator(), jwtCredentialBuilder),
-                Map.of(jwtSigningService.locator(), jwtSigningService),
+                credentialBuilders,
+                signingServices,
                 authenticator,
                 JsonSerialization.mapper,
                 TIME_PROVIDER,

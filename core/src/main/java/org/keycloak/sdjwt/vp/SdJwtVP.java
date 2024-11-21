@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -132,7 +133,7 @@ public class SdJwtVP {
         ObjectNode issuerPayload = (ObjectNode) issuerSignedJWT.getPayload();
         String hashAlgorithm = Optional.ofNullable(issuerPayload.get(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM))
                 .map(JsonNode::asText)
-                .orElse(null);
+                .orElse(JavaAlgorithm.SHA256.toLowerCase());
 
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();

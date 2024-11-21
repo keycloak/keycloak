@@ -26,7 +26,7 @@ public interface LocatableProvider extends Provider {
 
     /**
      * Enables a provider instance to self-identify based on its internal properties,
-     * which may potentially not be known by its factory before hand. This makes it
+     * which may potentially not be known by its factory beforehand. This makes it
      * possible to locate a created component with more precision.
      */
     String locator();

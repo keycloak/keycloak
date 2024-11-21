@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -274,6 +275,26 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                                 .setCredentialIdentifier("test-credential"));
                     }));
         });
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void testRequestCredentialNoMatchingCredentialBuilder() throws Throwable {
+        String token = getBearerToken(oauth);
+        withCausePropagation(() ->
+            testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        authenticator.setTokenString(token);
+
+                        // Prepare the issue endpoint with no credential builders.
+                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of(), Map.of());
+
+                        issuerEndpoint.requestCredential(new CredentialRequest()
+                                .setFormat(Format.JWT_VC)
+                                .setCredentialIdentifier("test-credential"));
+                    }))
+        );
     }
 
     @Test(expected = BadRequestException.class)

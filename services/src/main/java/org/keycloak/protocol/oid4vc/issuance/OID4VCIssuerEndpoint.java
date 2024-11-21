@@ -157,23 +157,6 @@ public class OID4VCIssuerEndpoint {
                                 Map<String, CredentialBuilder> credentialBuilders,
                                 Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
-                                ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan) {
-        this.session = session;
-        this.bearerTokenAuthenticator = authenticator;
-        this.objectMapper = objectMapper;
-        this.timeProvider = timeProvider;
-        this.issuerDid = issuerDid;
-        this.credentialBuilders = credentialBuilders;
-        this.signingServices = signingServices;
-        this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
-        this.isIgnoreScopeCheck = false;
-    }
-
-    public OID4VCIssuerEndpoint(KeycloakSession session,
-                                String issuerDid,
-                                Map<String, CredentialBuilder> credentialBuilders,
-                                Map<String, VerifiableCredentialsSigningService> signingServices,
-                                AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
                                 boolean isIgnoreScopeCheck) {
         this.session = session;
@@ -651,7 +634,7 @@ public class OID4VCIssuerEndpoint {
         CredentialBuilder credentialBuilder = credentialBuilders.get(locator);
 
         if (credentialBuilder == null) {
-            throw new IllegalArgumentException(String.format("No credential builder found for format %s", format));
+            throw new BadRequestException(String.format("No credential builder found for format %s", format));
         }
 
         return credentialBuilder;
