@@ -110,7 +110,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
-            client.setDirectAccessGrantsEnabled(false);
+            client.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
 
             Stream<String> defaultRolesNames = getDefaultRolesStream(clientModel);
             if (defaultRolesNames != null) {
