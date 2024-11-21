@@ -619,7 +619,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         loginOrgIdp("external", bc.getUserEmail(), true, true);
 
-        assertThat(organization.members().getAll(), Matchers.empty());
+        assertThat(organization.members().list(-1, -1), Matchers.empty());
 
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
         testRealm().users().get(user.getId()).remove();
