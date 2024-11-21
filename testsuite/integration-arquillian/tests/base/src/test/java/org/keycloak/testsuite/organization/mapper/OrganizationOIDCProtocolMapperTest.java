@@ -89,8 +89,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         oauth.clientId("direct-grant");
         oauth.scope("openid organization:*");

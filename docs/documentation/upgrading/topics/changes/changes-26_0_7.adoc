@@ -1,0 +1,4 @@
+= Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
+
+`getAll()` methods in `Organizations` and `OrganizationMembers` APIs are now deprecated and will be removed in the next major release.
+Instead, use corresponding `list(first, max)` methods in `Organizations` and `OrganizationMembers` APIs.
