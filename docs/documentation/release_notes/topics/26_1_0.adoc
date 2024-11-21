@@ -23,6 +23,11 @@ by the LDAP provider.
 
 {project_name} now uses by default its database to discover other nodes of the same cluster, which removes the need of additional network related configurations. It is also a default that will work out-of-the-box in cloud environments.
 
+= Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
+
+`getAll()` methods in `Organizations` and `OrganizationMembers` APIs are now deprecated and will be removed in the next minor release.
+Instead, use corresponding `list(first, max)` methods in `Organizations` and `OrganizationMembers` APIs.
+
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}], and the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
 
 

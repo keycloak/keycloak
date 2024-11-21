@@ -43,10 +43,26 @@ public interface OrganizationMembersResource {
      * Return all members in the organization.
      *
      * @return a list containing the organization members.
+     * @Deprecated Use {@link org.keycloak.admin.client.resource.OrganizationMembersResource#list} instead.
      */
+    @Deprecated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<MemberRepresentation> getAll();
+
+    /**
+     * Return members in the organization.
+     *
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @return a list containing organization members.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<MemberRepresentation> list(
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults
+    );
 
     /**
      * Return all organization members that match the specified filters.

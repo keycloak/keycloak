@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.member;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -33,6 +34,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
@@ -40,6 +42,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -51,6 +54,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -134,11 +138,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 15; i++) {
             expected.add(addMember(organization, "member-" + i + "@neworg.org"));
         }
 
-        List<MemberRepresentation> existing = organization.members().getAll();
+        List<MemberRepresentation> existing = organization.members().list(-1, -1);
         assertFalse(existing.isEmpty());
         assertEquals(expected.size(), existing.size());
         for (UserRepresentation expectedRep : expected) {
@@ -151,6 +155,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             assertEquals(expectedRep.getLastName(), existingRep.getLastName());
             assertTrue(expectedRep.isEnabled());
         }
+
+        List<String> concatenatedList = Stream.of(
+                        organization.members().list(0, 5).stream().map(AbstractUserRepresentation::getId).toList(),
+                        organization.members().list(5, 5).stream().map(AbstractUserRepresentation::getId).toList(),
+                        organization.members().list(10, 5).stream().map(AbstractUserRepresentation::getId).toList())
+                .flatMap(Collection::stream).toList();
+
+        assertThat(concatenatedList, containsInAnyOrder(expected.stream().map(AbstractUserRepresentation::getId).toArray()));
     }
 
     @Test
@@ -177,7 +189,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existingOrg.isEnabled(), is(false));
 
         // now fetch all users from the org - unmanaged users should still be enabled, but managed ones should not.
-        List<MemberRepresentation> existing = organization.members().getAll();
+        List<MemberRepresentation> existing = organization.members().list(-1, -1);
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
@@ -467,7 +479,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         //check the federated user is not a member
-        assertThat(testRealm().organizations().get(id).members().getAll(), hasSize(0));
+        assertThat(testRealm().organizations().get(id).members().list(-1, -1), hasSize(0));
     }
 
     @Test
@@ -481,8 +493,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
         String orgbId = orgb.toRepresentation().getId();
         String orgaId = orga.toRepresentation().getId();
         List<String> memberOfOrgs = orga.members().member(member.getId()).getOrganizations().stream().map(OrganizationRepresentation::getId).toList();
@@ -494,7 +506,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     public void testManagedMemberOnlyRemovedFromHomeOrganization() {
         OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
         assertBrokerRegistration(orga, bc.getUserEmail(), "managed-org-a@org-a.org");
-        UserRepresentation memberOrgA = orga.members().getAll().get(0);
+        UserRepresentation memberOrgA = orga.members().list(-1, -1).get(0);
         realmsResouce().realm(bc.consumerRealmName()).users().get(memberOrgA.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
@@ -506,21 +518,21 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 .build();
         realmsResouce().realm(bc.providerRealmName()).users().create(memberOrgB).close();
         assertBrokerRegistration(orgb, memberOrgB.getUsername(), "managed-org-b@org-b.org");
-        memberOrgB = orgb.members().getAll().get(0);
+        memberOrgB = orgb.members().list(-1, -1).get(0);
 
         orga.members().addMember(memberOrgB.getId()).close();
-        assertThat(orga.members().getAll().size(), is(2));
+        assertThat(orga.members().list(-1, -1).size(), is(2));
         OrganizationMemberResource memberOrgBInOrgA = orga.members().member(memberOrgB.getId());
         memberOrgB = memberOrgBInOrgA.toRepresentation();
         memberOrgBInOrgA.delete().close();
-        assertThat(orga.members().getAll().size(), is(1));
-        assertThat(orga.members().getAll().get(0).getId(), is(memberOrgA.getId()));
-        assertThat(orgb.members().getAll().size(), is(1));
+        assertThat(orga.members().list(-1, -1).size(), is(1));
+        assertThat(orga.members().list(-1, -1).get(0).getId(), is(memberOrgA.getId()));
+        assertThat(orgb.members().list(-1, -1).size(), is(1));
 
         orgb.members().member(memberOrgB.getId()).delete().close();
-        assertThat(orga.members().getAll().size(), is(1));
-        assertThat(orga.members().getAll().get(0).getId(), is(memberOrgA.getId()));
-        assertThat(orgb.members().getAll().size(), is(0));
+        assertThat(orga.members().list(-1, -1).size(), is(1));
+        assertThat(orga.members().list(-1, -1).get(0).getId(), is(memberOrgA.getId()));
+        assertThat(orgb.members().list(-1, -1).size(), is(0));
     }
 
     @Test

@@ -48,10 +48,26 @@ public interface OrganizationsResource {
      * Returns all organizations in the realm.
      *
      * @return a list containing the organizations.
+     * @Deprecated Use {@link org.keycloak.admin.client.resource.OrganizationsResource#list} instead.
      */
+    @Deprecated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<OrganizationRepresentation> getAll();
+
+    /**
+     * Returns organizations in the realm.
+     *
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @return a list containing the organizations.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> list(
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults
+    );
 
     /**
      * Returns all organizations that match the specified filter.
