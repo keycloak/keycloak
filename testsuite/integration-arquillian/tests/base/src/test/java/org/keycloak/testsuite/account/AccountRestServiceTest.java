@@ -97,6 +97,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1820,6 +1821,19 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setAccountTheme(accountTheme);
             testRealm().update(realmRep);
         }
+    }
+
+    @Test
+    public void testUpdateProfileUnrecognizedPropertyInRepresentation() throws IOException {
+        final UserRepresentation user = getUser();
+        final Map<String,String> invalidRep = Map.of("id", user.getId(), "username", user.getUsername(), "invalid", "something");
+        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
+                .auth(tokenUtil.getToken())
+                .json(invalidRep)
+                .asResponse();
+       assertEquals(400, response.getStatus());
+       final OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+       assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
     }
 
     @EnableFeature(Profile.Feature.UPDATE_EMAIL)
