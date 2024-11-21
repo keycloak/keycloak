@@ -43,14 +43,14 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
     if (logo) {
-      zip.file(`common/resources/${logoName}`, logo);
+      zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
     }
     if (bgimage) {
-      zip.file(`common/resources/${bgimageName}`, bgimage);
+      zip.file(`theme/quick-theme/common/resources/${bgimageName}`, bgimage);
     }
 
     zip.file(
-      "admin/theme.properties",
+      "theme/quick-theme/admin/theme.properties",
       `
 parent=keycloak.v2
 import=common/quick-theme
@@ -60,7 +60,7 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "account/theme.properties",
+      "theme/quick-theme/account/theme.properties",
       `
 parent=keycloak.v3
 import=common/quick-theme
@@ -71,7 +71,7 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "login/theme.properties",
+      "theme/quick-theme/login/theme.properties",
       `
 parent=keycloak.v2
 import=common/quick-theme
@@ -85,7 +85,7 @@ styles=css/login.css css/theme-styles.css
       `{
   "themes": [{
       "name" : "quick-theme",
-      "types": [ "login", "account", "admin" ]
+      "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
     );
@@ -98,10 +98,10 @@ styles=css/login.css css/theme-styles.css
     const logoCss = (
       await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
     ).text();
-    zip.file("common/resources/css/login.css", logoCss);
+    zip.file("theme/quick-theme/common/resources/css/login.css", logoCss);
 
     zip.file(
-      "common/resources/css/theme-styles.css",
+      "theme/quick-theme/common/resources/css/theme-styles.css",
       `:root {
         --keycloak-bg-logo-url: url('../${bgimageName}');
         --keycloak-logo-url: url('../${logoName}');
