@@ -43,6 +43,10 @@ describe("Realm settings general tab tests", () => {
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
+  });
+
+  it("Test realm enable/disable switch", () => {
+    sidebarPage.goToRealmSettings();
 
     // Enable realm
     realmSettingsPage.toggleSwitch(`${realmName}-switch`);
