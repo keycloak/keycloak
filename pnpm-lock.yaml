@@ -160,8 +160,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-code-editor':
-        specifier: ^5.4.12
-        version: 5.4.12(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.13
+        version: 5.4.13(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core':
         specifier: ^5.4.10
         version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1203,8 +1203,8 @@ packages:
   '@patternfly/patternfly@5.4.1':
     resolution: {integrity: sha512-0+KxsQJrFzOMANALW82BHAO7bSm9tEbG1RrOlGT23ME1CaBoetGSMRLymutvojn/b/EKfJIr5rLzQa+14Lvg2g==}
 
-  '@patternfly/react-code-editor@5.4.12':
-    resolution: {integrity: sha512-ffPLa5P4wZSVdFm37hHgrv8YUA6L59zHtknDmSUHxtEFwY4BsWlcBKB0vtm0ZfKpkreXtKLOLX8MjcYm48DfdQ==}
+  '@patternfly/react-code-editor@5.4.13':
+    resolution: {integrity: sha512-HLtVxPqIeHKMtnkPr5LrbDzs6LfCNYclIoVOTOVOFy+UETj0wE7Rl4QwFsi8L92vfDyM+PciBD58MfyOQWRdVA==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -3253,6 +3253,7 @@ packages:
 
   i18next-http-backend@2.7.0:
     resolution: {integrity: sha512-ruusEX6azT8pXy+C2etRQZ0ylbs1ix/z6D+zNv/tUcy9Sw8TWRO989Z7X1LLV31JVO/cAoSk3gH3rapSTL+j9w==}
+    deprecated: this version has been deprecated, since it should have been a major version (v3.0.0)
 
   i18next@23.16.6:
     resolution: {integrity: sha512-wGdE5rUfkZtrL5k6MCptxbpjmgwku4rBRVU/YOJ7Xfd841fgaZjlxHpVJ5NIz8sfSvAJhEhJrvJ8qE7AWXE4Xg==}
@@ -5665,7 +5666,7 @@ snapshots:
       '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
       '@patternfly/patternfly': 5.4.1
-      '@patternfly/react-code-editor': 5.4.12(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-code-editor': 5.4.13(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
@@ -5826,7 +5827,7 @@ snapshots:
 
   '@patternfly/patternfly@5.4.1': {}
 
-  '@patternfly/react-code-editor@5.4.12(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-code-editor@5.4.13(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@monaco-editor/react': 4.6.0(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
