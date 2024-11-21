@@ -8,6 +8,7 @@ import org.keycloak.test.framework.config.Config;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -61,6 +62,14 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         throw new RuntimeException("Dependency not found: " + typeClass);
     }
 
+    public List<InstanceContext<?, ?>> getDeployedInstances() {
+        return deployedInstances;
+    }
+
+    public List<RequestedInstance<?, ?>> getRequestedInstances() {
+        return requestedInstances;
+    }
+
     private <T> T getDeployedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency = getDeployedInstance(typeClass, ref);
         if (dependency != null) {
@@ -80,7 +89,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private <T> T getRequestedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         RequestedInstance requestedDependency = getRequestedInstance(typeClass, ref);
         if (requestedDependency != null) {
-            InstanceContext dependency = new InstanceContext<Object, Annotation>(this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
+            InstanceContext dependency = new InstanceContext<Object, Annotation>(requestedDependency.getInstanceId(), this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
             dependency.registerDependency(dependent);
             deployedInstances.add(dependency);
@@ -104,7 +113,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         if (supplied.isPresent()) {
             Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
             Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
-            dependency = new InstanceContext(this, supplier, defaultAnnotation, typeClass);
+            dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
 
             dependency.registerDependency(dependent);
             dependency.setValue(supplier.getValue(dependency));
@@ -176,11 +185,12 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     private void deployRequestedInstances() {
+        requestedInstances.sort(RequestedInstanceComparator.INSTANCE);
         while (!requestedInstances.isEmpty()) {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 
             if (getDeployedInstance(requestedInstance) == null) {
-                InstanceContext instance = new InstanceContext(this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+                InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
@@ -233,7 +243,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void close() {
         LOGGER.debug("Closing all instances");
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().sorted(InstanceContextComparator.INSTANCE.reversed()).toList();
         destroy.forEach(this::destroy);
     }
 
@@ -380,6 +390,26 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         }
 
         return fields;
+    }
+
+    private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {
+
+        static final RequestedInstanceComparator INSTANCE = new RequestedInstanceComparator();
+
+        @Override
+        public int compare(RequestedInstance o1, RequestedInstance o2) {
+            return Integer.compare(o1.getSupplier().order(), o2.getSupplier().order());
+        }
+    }
+
+    private static class InstanceContextComparator implements Comparator<InstanceContext> {
+
+        static final InstanceContextComparator INSTANCE = new InstanceContextComparator();
+
+        @Override
+        public int compare(InstanceContext o1, InstanceContext o2) {
+            return Integer.compare(o1.getSupplier().order(), o2.getSupplier().order());
+        }
     }
 
 }

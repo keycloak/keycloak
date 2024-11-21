@@ -7,11 +7,10 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DistributionKeycloakTestServer implements KeycloakTestServer {
+public class DistributionKeycloakServer implements KeycloakServer {
 
     private static final boolean DEBUG = false;
     private static final boolean MANUAL_STOP = true;
@@ -23,14 +22,14 @@ public class DistributionKeycloakTestServer implements KeycloakTestServer {
     private RawKeycloakDistribution keycloak;
 
     @Override
-    public void start(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
 
-        for (Dependency dependency : dependencies) {
+        for (Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
         }
 
-        keycloak.run(commandBuilder.toArgs());
+        keycloak.run(keycloakServerConfigBuilder.toArgs());
     }
 
     @Override

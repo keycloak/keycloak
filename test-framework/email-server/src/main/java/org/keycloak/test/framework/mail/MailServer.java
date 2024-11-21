@@ -8,13 +8,10 @@ import org.keycloak.test.framework.injection.ManagedTestResource;
 
 public class MailServer extends ManagedTestResource {
 
-    private static final int PORT = 3025;
-    private static final String HOST = "localhost";
+    private final GreenMail greenMail;
 
-    private GreenMail greenMail;
-
-    public void start() {
-        ServerSetup setup = new ServerSetup(PORT, HOST, "smtp");
+    public MailServer(String host, int port) {
+        ServerSetup setup = new ServerSetup(port, host, "smtp");
 
         greenMail = new GreenMail(setup);
         greenMail.start();

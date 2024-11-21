@@ -4,23 +4,21 @@ import io.quarkus.maven.dependency.Dependency;
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
 
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
+public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
 
     @Override
-    public void start(CommandBuilder commandBuilder, Set<Dependency> dependencies) {
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
 
-        for(Dependency dependency : dependencies) {
+        for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
         }
 
-        keycloak = builder.start(commandBuilder.toArgs());
+        keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 
     @Override

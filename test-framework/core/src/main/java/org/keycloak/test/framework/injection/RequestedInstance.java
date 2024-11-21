@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 
 public class RequestedInstance<T, A extends Annotation> {
 
+    private final int instanceId;
     private final Supplier<T, A> supplier;
     private final A annotation;
     private final Class<? extends T> valueType;
@@ -11,11 +12,16 @@ public class RequestedInstance<T, A extends Annotation> {
     private final String ref;
 
     public RequestedInstance(Supplier<T, A> supplier, A annotation, Class<? extends T> valueType) {
+        this.instanceId = this.hashCode();
         this.supplier = supplier;
         this.annotation = annotation;
         this.valueType = valueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
         this.ref = StringUtil.convertEmptyToNull(supplier.getRef(annotation));
+    }
+
+    public int getInstanceId() {
+        return instanceId;
     }
 
     public Supplier<T, A> getSupplier() {
