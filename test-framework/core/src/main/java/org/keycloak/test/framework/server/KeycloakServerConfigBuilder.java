@@ -1,37 +1,43 @@
 package org.keycloak.test.framework.server;
 
+import io.quarkus.maven.dependency.Dependency;
+import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.common.Profile;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class CommandBuilder {
+public class KeycloakServerConfigBuilder {
 
     private final String command;
     private final Map<String, String> options = new HashMap<>();
     private final Set<String> features = new HashSet<>();
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
+    private final Set<Dependency> dependencies = new HashSet<>();
 
-    private CommandBuilder(String command) {
+    private KeycloakServerConfigBuilder(String command) {
         this.command = command;
     }
 
-    public static CommandBuilder startDev() {
-        return new CommandBuilder("start-dev");
+    public static KeycloakServerConfigBuilder startDev() {
+        return new KeycloakServerConfigBuilder("start-dev");
     }
 
-    public CommandBuilder bootstrapAdminClient(String clientId, String clientSecret) {
+    public KeycloakServerConfigBuilder bootstrapAdminClient(String clientId, String clientSecret) {
         return option("bootstrap-admin-client-id", clientId)
                 .option("bootstrap-admin-client-secret", clientSecret);
     }
 
-    public CommandBuilder cache(String cache) {
+    public KeycloakServerConfigBuilder cache(String cache) {
         return option("cache", cache);
     }
 
@@ -39,32 +45,28 @@ public class CommandBuilder {
         return log;
     }
 
-    public CommandBuilder features(Set<String> features) {
-        this.features.addAll(features);
+    public KeycloakServerConfigBuilder features(Profile.Feature... features) {
+        this.features.addAll(toFeatureStrings(features));
         return this;
     }
 
-    public CommandBuilder featuresDisabled(Set<String> featuresDisabled) {
-        this.featuresDisabled.addAll(featuresDisabled);
+    public KeycloakServerConfigBuilder featuresDisabled(Profile.Feature... features) {
+        this.featuresDisabled.addAll(toFeatureStrings(features));
         return this;
     }
 
-    public CommandBuilder databaseConfig(Map<String, String> databaseConfig) {
-        for (String k : databaseConfig.keySet()) {
-            if (!k.startsWith("db")) {
-                throw new IllegalArgumentException("Database config supplied non-database configuration: " + k);
-            }
-        }
-        return options(databaseConfig);
-    }
-
-    public CommandBuilder options(Map<String, String> options) {
+    public KeycloakServerConfigBuilder options(Map<String, String> options) {
         this.options.putAll(options);
         return this;
     }
 
-    public CommandBuilder option(String key, String value) {
+    public KeycloakServerConfigBuilder option(String key, String value) {
         options.put(key, value);
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
+        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
         return this;
     }
 
@@ -73,10 +75,27 @@ public class CommandBuilder {
         private Boolean color;
         private String format;
         private String rootLevel;
-        private Map<String, String> categoryLevels = new HashMap<>();
+        private final Map<String, String> categoryLevels = new HashMap<>();
+        private final Map<String, String> handlerLevels = new HashMap<>();
+        private final Set<String> handlers = new HashSet<>();
         private String syslogEndpoint;
 
-        public LogBuilder enableSyslog(String syslogEndpoint) {
+        public LogBuilder handlers(LogHandlers... handlers) {
+            this.handlers.addAll(Arrays.stream(handlers).map(l -> l.name().toLowerCase()).collect(Collectors.toSet()));
+            return this;
+        }
+
+        public LogBuilder handlerLevel(LogHandlers handler, String logLevel) {
+            handlerLevels.put(handler.name().toLowerCase(), logLevel);
+            return this;
+        }
+
+        public LogBuilder categoryLevel(String category, String logLevel) {
+            categoryLevels.put(category, logLevel);
+            return this;
+        }
+
+        public LogBuilder syslogEndpoint(String syslogEndpoint) {
             this.syslogEndpoint = syslogEndpoint;
             return this;
         }
@@ -112,12 +131,16 @@ public class CommandBuilder {
         }
 
         private void build() {
+            if (!handlers.isEmpty()) {
+                option("log", String.join(",", handlers));
+            }
+
+            if (!handlerLevels.isEmpty()) {
+                handlerLevels.forEach((key, value) -> option("log-" + key + "-level", value));
+            }
+
             if (syslogEndpoint != null) {
-                option("log", "console,syslog");
-                option("log-syslog-level", "info");
                 option("log-syslog-endpoint", syslogEndpoint);
-                option("spi-events-listener-jboss-logging-success-level", "INFO");
-                categoryLevels.put("org.keycloak.events", "INFO");
             }
 
             if (format != null) {
@@ -164,6 +187,20 @@ public class CommandBuilder {
         }
 
         return args;
+    }
+
+    public Set<Dependency> toDependencies() {
+        return dependencies;
+    }
+
+    private Set<String> toFeatureStrings(Profile.Feature... features) {
+        return Arrays.stream(features).map(f -> f.name().toLowerCase().replace('_', '-')).collect(Collectors.toSet());
+    }
+
+    public enum LogHandlers {
+        CONSOLE,
+        FILE,
+        SYSLOG
     }
 
 }

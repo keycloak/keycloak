@@ -16,21 +16,24 @@
  */
 package org.keycloak.test.admin;
 
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.representations.idm.*;
+import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.test.framework.server.KeycloakServerConfig;
+import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
 import org.keycloak.test.utils.admin.ApiUtil;
-
-import jakarta.ws.rs.core.Response;
-
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,14 +47,6 @@ public class ManagementPermissionsTest {
 
     @InjectRealm
     private ManagedRealm realm;
-
-    public static class ServerConfig implements KeycloakTestServerConfig {
-
-        @Override
-        public Set<String> features() {
-            return Set.of("admin-fine-grained-authz");
-        }
-    }
 
     @Test
     public void updateGroupPermissions() {
@@ -263,4 +258,14 @@ public class ManagementPermissionsTest {
         assertNotNull(result);
         assertFalse(result.isEnabled());
     }
+
+    public static class ServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
+        }
+
+    }
+
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 
 public class InstanceContext<T, A extends Annotation> {
 
+    private final int instanceId;
     private final Registry registry;
     private final Supplier<T, A> supplier;
     private final A annotation;
@@ -18,13 +19,18 @@ public class InstanceContext<T, A extends Annotation> {
     private final String ref;
     private final Map<String, Object> notes = new HashMap<>();
 
-    public InstanceContext(Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
+    public InstanceContext(int instanceId, Registry registry, Supplier<T, A> supplier, A annotation, Class<? extends T> requestedValueType) {
+        this.instanceId = instanceId != -1 ? instanceId : hashCode();
         this.registry = registry;
         this.supplier = supplier;
         this.annotation = annotation;
         this.requestedValueType = requestedValueType;
         this.lifeCycle = supplier.getLifeCycle(annotation);
         this.ref = StringUtil.convertEmptyToNull(supplier.getRef(annotation));
+    }
+
+    public int getInstanceId() {
+        return instanceId;
     }
 
     public <D> D getDependency(Class<D> typeClazz) {

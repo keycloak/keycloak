@@ -2,13 +2,13 @@ package org.keycloak.test.framework.server;
 
 import org.jboss.logging.Logger;
 
-public class EmbeddedKeycloakTestServerSupplier extends AbstractKeycloakTestServerSupplier {
+public class EmbeddedKeycloakServerSupplier extends AbstractKeycloakServerSupplier {
 
-    private static final Logger LOGGER = Logger.getLogger(EmbeddedKeycloakTestServerSupplier.class);
+    private static final Logger LOGGER = Logger.getLogger(EmbeddedKeycloakServerSupplier.class);
 
     @Override
-    public KeycloakTestServer getServer() {
-        return new EmbeddedKeycloakTestServer();
+    public KeycloakServer getServer() {
+        return new EmbeddedKeycloakServer();
     }
 
     @Override

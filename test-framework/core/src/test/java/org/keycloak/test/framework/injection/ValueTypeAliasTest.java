@@ -3,7 +3,7 @@ package org.keycloak.test.framework.injection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.test.framework.server.KeycloakTestServer;
+import org.keycloak.test.framework.server.KeycloakServer;
 
 import java.util.Map;
 
@@ -12,8 +12,8 @@ public class ValueTypeAliasTest {
     @Test
     public void withAlias() {
         ValueTypeAlias valueTypeAlias = new ValueTypeAlias();
-        valueTypeAlias.addAll(Map.of(KeycloakTestServer.class, "server"));
-        Assertions.assertEquals("server", valueTypeAlias.getAlias(KeycloakTestServer.class));
+        valueTypeAlias.addAll(Map.of(KeycloakServer.class, "server"));
+        Assertions.assertEquals("server", valueTypeAlias.getAlias(KeycloakServer.class));
     }
 
     @Test

@@ -12,9 +12,8 @@ import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.events.AdminEvents;
 import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
 
-@KeycloakIntegrationTest(config = AdminEventsTest.ServerConfig.class)
+@KeycloakIntegrationTest
 public class AdminEventsTest {
 
     @InjectAdminEvents
@@ -65,13 +64,6 @@ public class AdminEventsTest {
         adminClient.realms().realm(realmName).update(realmRep2);
 
         Assertions.assertEquals(OperationType.UPDATE, adminEvents.poll().getOperationType());
-    }
-
-    public static class ServerConfig implements KeycloakTestServerConfig {
-        @Override
-        public boolean enableSysLog() {
-            return true;
-        }
     }
 
 }
