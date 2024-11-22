@@ -144,7 +144,7 @@ The test suite has two main types of tests:
 * `distribution`
 
 The `jvm` tests execute both the test class and server within the same JVM. While the `distribution` tests execute the server
-by running the distribution in a separte JVM.
+by running the distribution in a separate JVM.
 
 The `distribution` tests are marked as such using the `DistributionTest` annotation. If not marked with this annotation, the test is a `JVM` test.
 

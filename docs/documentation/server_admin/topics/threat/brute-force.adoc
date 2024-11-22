@@ -25,7 +25,7 @@ To enable this protection:
 image:images/brute-force.png[]
 
 ==== Lockout permanently
-{project_name} disables a user account (blocking log in attemps) until an administrator re-enables it.
+{project_name} disables a user account (blocking log in attempts) until an administrator re-enables it.
 
 .Lockout permanently
 image:images/brute-force-permanently.png[]
