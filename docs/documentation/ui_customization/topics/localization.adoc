@@ -1,16 +1,81 @@
 [[_localization]]
 == Internationalization and Localization
 
-blah blah
+Keycloak supports localized text throughout all user interfaces.
 
-=== Installing the packages
+.Prerequisites
 
-blah blah
+* To enable internationalization for a realm, you must enable internationalization in the `Realm settings` section of the admin console. See the {adminguide_link}[{adminguide_name}].
 
-=== second subheader
+=== Localizing mesages in a theme
 
-=== Using the pages
+Text in the templates is loaded from message bundles. A theme that extends another theme will inherit all messages from the parent's message bundle and you can
+override individual messages by adding `<THEME TYPE>/messages/messages_en.properties` to your theme.
 
-All "pages" are React components that can be used in your application.
-To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
-Or have a look at the [quick start](https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
+For example to replace `Username` on the login form with `Your Username` for the `mytheme` create the file
+`themes/mytheme/login/messages/messages_en.properties` with the following content:
+
+[source]
+----
+usernameOrEmail=Your Username
+----
+
+Within a message values like `{0}` and `{1}` are replaced with arguments when the message is used. For example {0} in `Log in to {0}` is replaced with the name
+of the realm.
+
+Texts of these message bundles can be overwritten by realm-specific values. The realm-specific values are manageable via UI and API.
+
+=== Adding a language to a theme
+
+
+
+.Procedure
+
+. Create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme.
+
+. Add this file to the `locales` property in `<THEME TYPE>/theme.properties`.
+For a language to be available to users the realms `login`, `account` and `email`, the theme has to support the language, so you need to add your language for those theme types.
++
+For example, to add Norwegian translations to the `mytheme` theme create the file `themes/mytheme/login/messages/messages_no.properties` with the
+following content:
++
+[source]
+----
+usernameOrEmail=Brukernavn
+password=Passord
+----
++
+If you omit a translation for messages, they will use English.
+
+. Edit `themes/mytheme/login/theme.properties` and add:
++
+[source]
+----
+locales=en,no
+----
+
+. Add the same for the `account` and `email` theme types. To do this create `themes/mytheme/account/messages/messages_no.properties` and
+`themes/mytheme/email/messages/messages_no.properties`. Leaving these files empty will result in the English messages being used.
+
+. Copy `themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
+
+. Add a translation for the language selector. This is done by adding a message to the English translation. To do this add the following to
+`themes/mytheme/account/messages/messages_en.properties` and `themes/mytheme/login/messages/messages_en.properties`:
++
+[source]
+----
+locale_no=Norsk
+----
+
+By default, message properties files should be encoded using UTF-8.
+Keycloak falls back to ISO-8859-1 handling if it can't read the contents as UTF-8.
+Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
+Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported.
+
+[role="_additional-resources"]
+.Additional resources
+* See <<_locale_selector,Locale Selector>> for details on how the current locale is selected.
+
+=== Overriding localized text for an entire realm
+
+Often, you wish to declare translations that take effect for an entire realm.  This is done by specifying key/value pairs in the realm settings.
