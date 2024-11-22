@@ -13,6 +13,9 @@ Keycloak is an Open Source community-driven project and we welcome contributions
 Firstly, if you want to contribute a larger change to Keycloak we ask that you open a 
 discussion first. For minor changes you can skip this part and go straight ahead to sending a contribution. Bear in mind that if you open a discussion first you can identify if the change will be accepted, as well as getting early feedback.  
 
+Each PR, no matter how small, should have a GitHub issue associated with it.
+Issues are important for administrative purposes such as generating a changelog and handling backports.
+
 Here's a quick checklist for a good PR, more details below:
 
 1. A discussion around the change (https://github.com/keycloak/keycloak/discussions/categories/ideas)
