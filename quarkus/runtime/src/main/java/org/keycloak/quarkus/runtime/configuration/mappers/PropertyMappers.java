@@ -14,6 +14,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
@@ -36,14 +37,14 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
 
 public final class PropertyMappers {
-    
+
     public static final String KC_SPI_PREFIX = "kc.spi";
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
 
     private PropertyMappers(){}
-    
+
     static {
         reset();
     }
@@ -74,11 +75,26 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        return getMapperOrDefault(name, PropertyMapper.IDENTITY).getConfigValue(name, context);
+        PropertyMapper<?> mapper = getMapper(name);
+        // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
+        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper)) {
+            return ConfigValue.builder().withName(name).build();
+        }
+        if (mapper == null) {
+            return context.proceed(name);
+        }
+        return mapper.getConfigValue(name, context);
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
+    }
+
+    private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
+        if (mapper == null) {
+            return name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK) && !isSpiBuildTimeProperty(name);
+        }
+        return mapper.isRunTime();
     }
 
     public static Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
@@ -150,10 +166,6 @@ public final class PropertyMappers {
         };
     }
 
-    private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper) {
-        return getMapperOrDefault(property, defaultMapper, null);
-    }
-
     public static PropertyMapper<?> getMapper(String property, OptionCategory category) {
         return getMapperOrDefault(property, null, category);
     }
@@ -172,7 +184,9 @@ public final class PropertyMappers {
     }
 
     public static Optional<PropertyMapper<?>> getDisabledMapper(String property) {
-        if (property == null) return Optional.empty();
+        if (property == null) {
+            return Optional.empty();
+        }
 
         PropertyMapper<?> mapper = getDisabledBuildTimeMappers().get(property);
         if (mapper == null) {
