@@ -290,7 +290,7 @@ spec:
 +
 To ensure that request forwarding works as expected, it is necessary for the Keycloak CR to specify the hostname through
 which clients will access the {project_name} instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
-with the Global Accelerator. If you are using a custom domain, point your custom domain to the AWS Globa Accelerator, and use your custom domain here.
+with the Global Accelerator. If you are using a custom domain, point your custom domain to the AWS Global Accelerator, and use your custom domain here.
 
 == Verify
 To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to hostname configured above, and you should be presented with the {project_name} admin console.
