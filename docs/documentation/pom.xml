@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -37,11 +39,12 @@
         <module>authorization_services</module>
         <module>server_admin</module>
         <module>server_development</module>
+        <module>ui_customization</module>
         <module>release_notes</module>
         <module>upgrading</module>
         <module>aggregation</module>
         <module>dist</module>
-  </modules>
+    </modules>
 
     <profiles>
         <profile>
@@ -83,8 +86,11 @@
                             </goals>
                             <configuration>
                                 <target>
-                                    <!-- print the link on the console to be able to open it in the local browser -->
-                                    <echo>OUTPUT: file://${project.build.directory}/generated-docs/${masterFile}.html ${projectLatestBuild}</echo>
+                                    <!-- print the link on the console to be able to open it in the
+                                    local browser -->
+                                    <echo>OUTPUT:
+                                        file://${project.build.directory}/generated-docs/${masterFile}.html
+                                        ${projectLatestBuild}</echo>
                                 </target>
                             </configuration>
                         </execution>
@@ -137,7 +143,7 @@
                                     <toc>left</toc>
                                     <icons>font</icons>
                                     <sectanchors>true</sectanchors>
-                                    <idprefix/>
+                                    <idprefix />
                                     <idseparator>-</idseparator>
                                     <docinfo1>true</docinfo1>
                                     <masterFile>${masterFile}</masterFile>

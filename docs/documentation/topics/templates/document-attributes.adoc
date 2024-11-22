@@ -70,6 +70,11 @@
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
 :developerguide_jsproviders_name: JavaScript Providers
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
+:uicustomizationguide_name: UI Customization Guide
+:uicustomizationguide_name_short: UI Customization
+:uicustomizationguide_link: {project_doc_base_url}/ui_customization/
+:uicustomizationguide_link_latest: {project_doc_base_url_latest}/ui_customization/
+:uicustomizationguide_deploying_themes: {uicustomizationguide_link}#deploying-themes
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started

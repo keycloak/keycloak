@@ -1,0 +1,16 @@
+:toc: left
+:toclevels: 3
+:sectanchors:
+:linkattrs:
+
+include::topics/templates/document-attributes.adoc[]
+
+:ui_customization_guide:
+
+= {uicustomizationguide_name}
+
+:release_header_guide: {uicustomizationguide_name_short}
+:release_header_latest_link: {uicustomizationguide_link_latest}
+include::topics/templates/release-header.adoc[]
+
+include::topics.adoc[]

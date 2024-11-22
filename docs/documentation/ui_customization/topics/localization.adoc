@@ -1,0 +1,16 @@
+[[_localization]]
+== Internationalization and Localization
+
+blah blah
+
+=== Installing the packages
+
+blah blah
+
+=== second subheader
+
+=== Using the pages
+
+All "pages" are React components that can be used in your application.
+To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
+Or have a look at the [quick start](https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
