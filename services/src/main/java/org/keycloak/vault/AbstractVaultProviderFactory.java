@@ -140,7 +140,7 @@ public abstract class AbstractVaultProviderFactory implements VaultProviderFacto
          * all realms to share the secrets, so instead of replicating entries for all existing realms in the vault one can
          * simply use key directly and all realms will obtain the same secret.
          */
-        KEY_ONLY((realm, key) -> key),
+        KEY_ONLY((realm, key) -> key.replaceAll("_", "__")),
 
         /**
          * The realm is prepended to the vault key and they are separated by an underscore ({@code '_'}) character. If either

@@ -17,6 +17,10 @@
 
 package org.keycloak.vault;
 
+import org.jboss.logging.Logger;
+
+import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +42,8 @@ import java.util.Optional;
  */
 public abstract class AbstractVaultProvider implements VaultProvider {
 
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
+
     protected final String realm;
     protected final List<VaultKeyResolver> resolvers;
 
@@ -56,12 +62,48 @@ public abstract class AbstractVaultProvider implements VaultProvider {
     @Override
     public VaultRawSecret obtainSecret(String vaultSecretId) {
         for (VaultKeyResolver resolver : this.resolvers) {
-            VaultRawSecret secret = this.obtainSecretInternal(resolver.apply(this.realm, vaultSecretId));
+            String resolvedKey = resolver.apply(this.realm, vaultSecretId);
+            if (!validate(resolver, vaultSecretId, resolvedKey)) {
+                logger.warnf("Validation failed for secret %s with resolved key %s", vaultSecretId, resolvedKey);
+                return DefaultVaultRawSecret.forBuffer(Optional.empty());
+            }
+        }
+
+        for (VaultKeyResolver resolver : this.resolvers) {
+            String resolvedKey = resolver.apply(this.realm, vaultSecretId);
+            VaultRawSecret secret = this.obtainSecretInternal(resolvedKey);
             if (secret != null && secret.get().isPresent()) {
                 return secret;
             }
+            checkForLegacyKey(resolver, vaultSecretId, resolvedKey);
         }
         return DefaultVaultRawSecret.forBuffer(Optional.empty());
+    }
+
+    private void checkForLegacyKey(VaultKeyResolver resolver, String vaultSecretId, String resolvedKey) {
+        if (resolver == AbstractVaultProviderFactory.AvailableResolvers.KEY_ONLY.getVaultKeyResolver() && vaultSecretId.contains("_")) {
+            String legacyKey = vaultSecretId.replaceAll("__", "_");
+            VaultRawSecret legacySecret = this.obtainSecretInternal(legacyKey);
+            if (legacySecret != null && legacySecret.get().isPresent()) {
+                logger.warnf("Secret was found using legacy key '%s'. Please rename the key to '%s' and repeat the action.", legacyKey, resolvedKey);
+            }
+        }
+    }
+
+    /**
+     * Validates the resolved key to ensure it meets the necessary criteria.
+     *
+     * @param resolver the {@link VaultKeyResolver} used to resolve the key.
+     * @param key the original key provided.
+     * @param resolvedKey the key after being resolved by the resolver.
+     * @return a boolean indicating whether the validation passed.
+     */
+    protected boolean validate(VaultKeyResolver resolver, String key, String resolvedKey) {
+        if (key.contains(File.separator)) {
+            logger.warnf("Key %s contains invalid file separator character", key);
+            return false;
+        }
+        return true;
     }
 
     /**
