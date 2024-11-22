@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -110,7 +111,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             testingClient.server().run(session -> {
                 // ensure that our logic to detect the authentication session works as expected
                 RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-                assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId));
             });
 
             changePasswordPage.changePassword("new-password", "new-password");

@@ -80,6 +80,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -1155,7 +1156,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realmName, @QueryParam("authSessionId") String authSessionId) {
         RealmModel realm = getRealmByName(realmName);
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
         if (rootAuthSession == null) {
             return 0;
         }

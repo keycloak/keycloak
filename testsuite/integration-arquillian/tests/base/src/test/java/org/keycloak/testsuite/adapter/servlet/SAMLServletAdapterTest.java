@@ -149,6 +149,7 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.adapter.page.*;
@@ -1891,7 +1892,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             final String authSessionId = sessionCookie.getValue();
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(DEMO);
-                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
                 session.authenticationSessions().removeRootAuthenticationSession(realm, root);
             });
 
