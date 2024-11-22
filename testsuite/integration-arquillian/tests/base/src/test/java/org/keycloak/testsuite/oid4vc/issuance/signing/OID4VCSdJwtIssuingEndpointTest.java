@@ -210,7 +210,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     // We are offering key binding only for identity credential
                     assertTrue("The IdentityCredential should contain a cryptographic binding method supported named jwk", credentialIssuer.getCredentialsSupported().get("IdentityCredential").getCryptographicBindingMethodsSupported().contains("jwk"));
                     assertTrue("The IdentityCredential should contain a credential signing algorithm named ES256", credentialIssuer.getCredentialsSupported().get("IdentityCredential").getCredentialSigningAlgValuesSupported().contains("ES256"));
-                    assertTrue("The IdentityCredential should contain a credential signing algorithm named ES384", credentialIssuer.getCredentialsSupported().get("IdentityCredential").getCredentialSigningAlgValuesSupported().contains("ES384"));
                     assertEquals("The IdentityCredential should display as Test Credential", "Identity Credential", credentialIssuer.getCredentialsSupported().get("IdentityCredential").getDisplay().get(0).getName());
                     assertTrue("The IdentityCredential should support a proof of type jwt with signing algorithm ES256", credentialIssuer.getCredentialsSupported().get("IdentityCredential").getProofTypesSupported().getJwt().getProofSigningAlgValuesSupported().contains("ES256"));
                 }));
@@ -252,7 +251,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 Map.of(
                         testCredentialSigningService.locator(), testCredentialSigningService,
                         identityCredentialSigningService.locator(), identityCredentialSigningService
-                        ),
+                ),
                 authenticator,
                 new ObjectMapper(),
                 TIME_PROVIDER,
@@ -314,7 +313,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 "vc.test-credential.scope", "test-credential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
                 "vc.test-credential.vct", "https://credentials.example.com/test-credential",
-                "vc.test-credential.credential_signing_alg_values_supported", "ES256,ES384",
                 "vc.test-credential.display.0", "{\n  \"name\": \"Test Credential\"\n}"
         );
         Map<String, String> identityCredentialAttributes = Map.of(
@@ -323,7 +321,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 "vc.IdentityCredential.scope", "identity_credential",
                 "vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential",
                 "vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk",
-                "vc.IdentityCredential.credential_signing_alg_values_supported", "ES256,ES384",
                 "vc.IdentityCredential.claims", "{\"given_name\":{\"display\":[{\"name\":\"الاسم الشخصي\",\"locale\":\"ar\"},{\"name\":\"Vorname\",\"locale\":\"de\"},{\"name\":\"Given Name\",\"locale\":\"en\"},{\"name\":\"Nombre\",\"locale\":\"es\"},{\"name\":\"نام\",\"locale\":\"fa\"},{\"name\":\"Etunimi\",\"locale\":\"fi\"},{\"name\":\"Prénom\",\"locale\":\"fr\"},{\"name\":\"पहचानी गई नाम\",\"locale\":\"hi\"},{\"name\":\"Nome\",\"locale\":\"it\"},{\"name\":\"名\",\"locale\":\"ja\"},{\"name\":\"Овог нэр\",\"locale\":\"mn\"},{\"name\":\"Voornaam\",\"locale\":\"nl\"},{\"name\":\"Nome Próprio\",\"locale\":\"pt\"},{\"name\":\"Förnamn\",\"locale\":\"sv\"},{\"name\":\"مسلمان نام\",\"locale\":\"ur\"}]},\"family_name\":{\"display\":[{\"name\":\"اسم العائلة\",\"locale\":\"ar\"},{\"name\":\"Nachname\",\"locale\":\"de\"},{\"name\":\"Family Name\",\"locale\":\"en\"},{\"name\":\"Apellido\",\"locale\":\"es\"},{\"name\":\"نام خانوادگی\",\"locale\":\"fa\"},{\"name\":\"Sukunimi\",\"locale\":\"fi\"},{\"name\":\"Nom de famille\",\"locale\":\"fr\"},{\"name\":\"परिवार का नाम\",\"locale\":\"hi\"},{\"name\":\"Cognome\",\"locale\":\"it\"},{\"name\":\"姓\",\"locale\":\"ja\"},{\"name\":\"өөрийн нэр\",\"locale\":\"mn\"},{\"name\":\"Achternaam\",\"locale\":\"nl\"},{\"name\":\"Sobrenome\",\"locale\":\"pt\"},{\"name\":\"Efternamn\",\"locale\":\"sv\"},{\"name\":\"خاندانی نام\",\"locale\":\"ur\"}]},\"birthdate\":{\"display\":[{\"name\":\"تاريخ الميلاد\",\"locale\":\"ar\"},{\"name\":\"Geburtsdatum\",\"locale\":\"de\"},{\"name\":\"Date of Birth\",\"locale\":\"en\"},{\"name\":\"Fecha de Nacimiento\",\"locale\":\"es\"},{\"name\":\"تاریخ تولد\",\"locale\":\"fa\"},{\"name\":\"Syntymäaika\",\"locale\":\"fi\"},{\"name\":\"Date de naissance\",\"locale\":\"fr\"},{\"name\":\"जन्म की तारीख\",\"locale\":\"hi\"},{\"name\":\"Data di nascita\",\"locale\":\"it\"},{\"name\":\"生年月日\",\"locale\":\"ja\"},{\"name\":\"төрсөн өдөр\",\"locale\":\"mn\"},{\"name\":\"Geboortedatum\",\"locale\":\"nl\"},{\"name\":\"Data de Nascimento\",\"locale\":\"pt\"},{\"name\":\"Födelsedatum\",\"locale\":\"sv\"},{\"name\":\"تاریخ پیدائش\",\"locale\":\"ur\"}]}}",
                 "vc.IdentityCredential.display.0", "{\"name\": \"Identity Credential\"}",
                 "vc.IdentityCredential.proof_types_supported", "{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"
@@ -340,18 +337,19 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         getUserAttributeMapper("lastName", "lastName", "test-credential"),
                         getIdMapper("test-credential"),
                         getStaticClaimMapper("test-credential", "test-credential"),
-                        getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE","test-credential"),
-                        getIssuedAtTimeMapper("nbf", null, "COMPUTE","test-credential"),
+                        getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE", "test-credential"),
+                        getIssuedAtTimeMapper("nbf", null, "COMPUTE", "test-credential"),
 
                         getUserAttributeMapper("given_name", "firstName", "identity_credential"),
                         getUserAttributeMapper("family_name", "lastName", "identity_credential"),
-                        getIssuedAtTimeMapper(null, ChronoUnit.MINUTES.name(), "COMPUTE","identity_credential"),
-                        getIssuedAtTimeMapper("nbf", ChronoUnit.SECONDS.name(), "COMPUTE","identity_credential")
+                        getIssuedAtTimeMapper(null, ChronoUnit.MINUTES.name(), "COMPUTE", "identity_credential"),
+                        getIssuedAtTimeMapper("nbf", ChronoUnit.SECONDS.name(), "COMPUTE", "identity_credential")
                 )
         );
         return clientRepresentation;
     }
 
+    @Override
     protected ComponentExportRepresentation getKeyProvider(){
         return getEcKeyProvider();
     }
