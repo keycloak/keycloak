@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER, defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @TestMethodOrder(OrderAnnotation.class)

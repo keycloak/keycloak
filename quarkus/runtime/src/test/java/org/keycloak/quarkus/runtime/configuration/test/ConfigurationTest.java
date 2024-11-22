@@ -206,7 +206,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
-    
+
     @Test
     public void testExpansionDisabled() {
         ConfigArgsConfigSource.setCliArgs("--db=mysql");
@@ -316,8 +316,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertNull(config.getConfigValue("kc.db-dialect").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
@@ -500,7 +500,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
     }
-    
+
     @Test
     public void testHttpsPaths() {
         ConfigArgsConfigSource.setCliArgs("--https-certificate-file=\\some\\file");
@@ -511,7 +511,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         }
         assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
     }
-    
+
     @Test
     public void testCacheMaxCount() {
         int maxCount = 500;
@@ -520,8 +520,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
               .collect(Collectors.toSet());
 
         StringBuilder sb = new StringBuilder();
-        for (String cache : maxCountCaches)
+        for (String cache : maxCountCaches) {
             sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
+        }
 
         String args = sb.toString();
         ConfigArgsConfigSource.setCliArgs(args.split(" "));

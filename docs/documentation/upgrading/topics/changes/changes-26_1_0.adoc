@@ -4,6 +4,7 @@ Breaking changes are identified as requiring changes from existing users to thei
 
 There are no breaking changes in this release to public APIs or documented behavior.
 
+<<<<<<< HEAD
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
