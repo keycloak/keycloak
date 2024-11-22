@@ -87,6 +87,18 @@
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak.test</groupId>
+                <artifactId>keycloak-test-framework-remote</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.test</groupId>
+                <artifactId>keycloak-test-framework-remote-providers</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
