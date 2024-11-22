@@ -1,16 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import {
-  HelpItem,
-  TextControl,
-  useAlerts,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { HelpItem, TextControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Alert,
   Button,
   FormGroup,
+  FormHelperText,
   Grid,
   GridItem,
   PageSection,
@@ -18,6 +14,7 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
   FormProvider,
@@ -27,13 +24,12 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { i18n } from "../../i18n/i18n";
-import useLocale from "../../utils/useLocale";
 import useToggle from "../../utils/useToggle";
 import "../realm-settings-section.css";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
@@ -41,10 +37,10 @@ import { toUserProfile } from "../routes/UserProfile";
 import { useUserProfile } from "./UserProfileContext";
 import {
   AddTranslationsDialog,
+  saveTranslations,
+  Translations,
   TranslationsType,
 } from "./attribute/AddTranslationsDialog";
-import { GlobeRouteIcon } from "@patternfly/react-icons";
-import { useAdminClient } from "../../admin-client";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -64,25 +60,18 @@ function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
   );
 }
 
-type FormFields = Required<Omit<UserProfileGroup, "annotations">> & {
-  annotations: KeyValueType[];
-};
-
-type TranslationForm = {
-  locale: string;
-  value: string;
-};
-
-type Translations = {
-  key: string;
-  translations: TranslationForm[];
-};
+type FormFields = Required<Omit<UserProfileGroup, "annotations">> &
+  Translations & {
+    annotations: KeyValueType[];
+  };
 
 const defaultValues: FormFields = {
   annotations: [],
   displayDescription: "",
   displayHeader: "",
   name: "",
+  translations: [],
+  key: "",
 };
 
 export default function AttributesGroupForm() {
@@ -91,7 +80,6 @@ export default function AttributesGroupForm() {
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { config, save } = useUserProfile();
   const navigate = useNavigate();
-  const combinedLocales = useLocale();
   const params = useParams<EditAttributesGroupParams>();
   const form = useForm<FormFields>({ defaultValues });
   const { addError } = useAlerts();
@@ -108,17 +96,6 @@ export default function AttributesGroupForm() {
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const regexPattern = /\$\{([^}]+)\}/;
   const [type, setType] = useState<TranslationsType>();
-
-  const [translationsData, setTranslationsData] = useState({
-    displayHeader: {
-      key: "",
-      translations: [] as TranslationForm[],
-    },
-    displayDescription: {
-      key: "",
-      translations: [] as TranslationForm[],
-    },
-  });
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
@@ -155,138 +132,6 @@ export default function AttributesGroupForm() {
     form,
   ]);
 
-  useFetch(
-    async () => {
-      const translationsToSaveDisplayHeader: Translations[] = [];
-      const translationsToSaveDisplayDescription: Translations[] = [];
-
-      await Promise.all(
-        combinedLocales.map(async (locale: string) => {
-          try {
-            const translations =
-              await adminClient.realms.getRealmLocalizationTexts({
-                realm: realmName,
-                selectedLocale: locale,
-              });
-
-            const formData = form.getValues();
-            const extractKey = (value: string | undefined) => {
-              const match = value?.match(/\$\{(.*?)\}/);
-              return match ? match[1] : "";
-            };
-
-            const displayHeaderKey = extractKey(formData.displayHeader) || "";
-            const displayDescriptionKey =
-              extractKey(formData.displayDescription) || "";
-
-            const headerTranslation = translations[displayHeaderKey] || "";
-            const descriptionTranslation =
-              translations[displayDescriptionKey] || "";
-
-            if (headerTranslation) {
-              translationsToSaveDisplayHeader.push({
-                key: displayHeaderKey,
-                translations: [{ locale, value: headerTranslation }],
-              });
-            }
-
-            if (descriptionTranslation) {
-              translationsToSaveDisplayDescription.push({
-                key: displayDescriptionKey,
-                translations: [{ locale, value: descriptionTranslation }],
-              });
-            }
-          } catch (error) {
-            console.error(`Error fetching translations for ${locale}:`, error);
-          }
-        }),
-      );
-
-      const translationsDataNew = {
-        displayHeader: {
-          key:
-            translationsToSaveDisplayHeader.length > 0
-              ? translationsToSaveDisplayHeader[0].key
-              : "",
-          translations: translationsToSaveDisplayHeader.flatMap(
-            (data) => data.translations,
-          ),
-        },
-        displayDescription: {
-          key:
-            translationsToSaveDisplayDescription.length > 0
-              ? translationsToSaveDisplayDescription[0].key
-              : "",
-          translations: translationsToSaveDisplayDescription.flatMap(
-            (data) => data.translations,
-          ),
-        },
-      };
-
-      setTranslationsData(translationsDataNew);
-    },
-    () => {},
-    [combinedLocales, realmName, form],
-  );
-
-  const saveTranslations = async () => {
-    const addLocalization = async (
-      key: string,
-      locale: string,
-      value: string,
-    ) => {
-      try {
-        await adminClient.realms.addLocalization(
-          {
-            realm: realmName,
-            selectedLocale: locale,
-            key: key,
-          },
-          value,
-        );
-      } catch (error) {
-        console.error(
-          `Error saving translation for locale ${locale}: ${error}`,
-        );
-      }
-    };
-
-    try {
-      if (
-        translationsData &&
-        translationsData.displayHeader.translations.length > 0
-      ) {
-        for (const translation of translationsData.displayHeader.translations) {
-          if (translation.locale && translation.value) {
-            await addLocalization(
-              translationsData.displayHeader.key,
-              translation.locale,
-              translation.value,
-            );
-          }
-        }
-      }
-
-      if (
-        translationsData &&
-        translationsData.displayDescription.translations.length > 0
-      ) {
-        for (const translation of translationsData.displayDescription
-          .translations) {
-          if (translation.locale && translation.value) {
-            await addLocalization(
-              translationsData.displayDescription.key,
-              translation.locale,
-              translation.value,
-            );
-          }
-        }
-      }
-    } catch (error) {
-      console.error(`Error while processing translations: ${error}`);
-    }
-  };
-
   const onSubmit: SubmitHandler<FormFields> = async (values) => {
     if (!config) {
       return;
@@ -294,8 +139,9 @@ export default function AttributesGroupForm() {
 
     const groups = [...(config.groups ?? [])];
     const updateAt = matchingGroup ? groups.indexOf(matchingGroup) : -1;
+    const { translations, key, ...groupValues } = values;
     const updatedGroup: UserProfileGroup = {
-      ...values,
+      ...groupValues,
       annotations: transformAnnotations(values.annotations),
     };
 
@@ -305,30 +151,21 @@ export default function AttributesGroupForm() {
       groups[updateAt] = updatedGroup;
     }
 
-    if (realm?.internationalizationEnabled) {
-      const hasNonEmptyDisplayHeaderTranslations =
-        translationsData.displayHeader.translations.some(
-          (translation) => translation.value.trim() !== "",
-        );
-      const hasNonEmptyDisplayDescriptionTranslations =
-        translationsData.displayDescription.translations.some(
-          (translation) => translation.value.trim() !== "",
-        );
-
-      if (
-        !hasNonEmptyDisplayHeaderTranslations ||
-        !hasNonEmptyDisplayDescriptionTranslations
-      ) {
-        addError("createAttributeError", t("translationError"));
-        return;
-      }
-    }
-
     const success = await save({ ...config, groups });
 
-    if (success) {
-      await saveTranslations();
-      i18n.reloadResources();
+    if (success && realm?.internationalizationEnabled) {
+      try {
+        await saveTranslations({
+          adminClient,
+          realmName,
+          translationsData: {
+            key,
+            translations,
+          },
+        });
+      } catch (error) {
+        addError(t("errorSavingTranslations"), error);
+      }
       navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
     }
   };
@@ -375,26 +212,6 @@ export default function AttributesGroupForm() {
       attributesGroupDisplayDescription.length - 1,
     );
 
-  const handleHeaderTranslationsAdded = (headerTranslations: Translations) => {
-    setTranslationsData((prev) => ({
-      ...prev,
-      displayHeader: headerTranslations,
-    }));
-  };
-
-  const handleDescriptionTranslationsAdded = (
-    descriptionTranslations: Translations,
-  ) => {
-    setTranslationsData((prev) => ({
-      ...prev,
-      displayDescription: descriptionTranslations,
-    }));
-  };
-
-  const handleToggleDialog = () => {
-    toggleModal();
-  };
-
   const groupDisplayNameKey =
     type === "displayHeader"
       ? formattedAttributesGroupDisplayName
@@ -405,7 +222,7 @@ export default function AttributesGroupForm() {
       : `profile.attribute-group-description.${newAttributesGroupName}`;
 
   return (
-    <>
+    <FormProvider {...form}>
       {addTranslationsModalOpen && (
         <AddTranslationsDialog
           translationKey={
@@ -413,23 +230,8 @@ export default function AttributesGroupForm() {
               ? groupDisplayNameKey
               : groupDisplayDescriptionKey
           }
-          type={
-            type === "displayHeader" ? "displayHeader" : "displayDescription"
-          }
-          translations={
-            type === "displayHeader"
-              ? translationsData.displayHeader
-              : translationsData.displayDescription
-          }
-          onTranslationsAdded={
-            type === "displayHeader"
-              ? handleHeaderTranslationsAdded
-              : handleDescriptionTranslationsAdded
-          }
-          toggleDialog={handleToggleDialog}
-          onCancel={() => {
-            toggleModal();
-          }}
+          fieldName={type || "displayDescription"}
+          toggleDialog={toggleModal}
         />
       )}
       <ViewHeader
@@ -438,170 +240,168 @@ export default function AttributesGroupForm() {
       />
       <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
         <FormAccess isHorizontal role="manage-realm">
-          <FormProvider {...form}>
-            <TextControl
-              name="name"
-              label={t("nameField")}
-              labelIcon={t("nameHintHelp")}
-              isDisabled={!!matchingGroup || editMode}
-              rules={{
-                required: t("required"),
-                onChange: (event) => {
-                  handleAttributesGroupNameChange(event, event.target.value);
-                },
-              }}
-            />
-            {!!matchingGroup && (
-              <input type="hidden" {...form.register("name")} />
-            )}
-            <FormGroup
-              label={t("displayHeaderField")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("displayHeaderHintHelp")}
-                  fieldLabelId="displayHeaderField"
+          <TextControl
+            name="name"
+            label={t("nameField")}
+            labelIcon={t("nameHintHelp")}
+            isDisabled={!!matchingGroup || editMode}
+            rules={{
+              required: t("required"),
+              onChange: (event) => {
+                handleAttributesGroupNameChange(event, event.target.value);
+              },
+            }}
+          />
+          {!!matchingGroup && (
+            <input type="hidden" {...form.register("name")} />
+          )}
+          <FormGroup
+            label={t("displayHeaderField")}
+            labelIcon={
+              <HelpItem
+                helpText={t("displayHeaderHintHelp")}
+                fieldLabelId="displayHeaderField"
+              />
+            }
+            fieldId="kc-attributes-group-display-header"
+          >
+            <Grid hasGutter>
+              <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
+                <TextInput
+                  id="kc-attributes-group-display-header"
+                  data-testid="attributes-group-display-header"
+                  isDisabled={
+                    (realm?.internationalizationEnabled &&
+                      newAttributesGroupName !== "") ||
+                    (editMode && attributesGroupDisplayPatternMatch)
+                  }
+                  value={
+                    editMode
+                      ? attributesGroupDisplayName
+                      : realm?.internationalizationEnabled
+                        ? generatedAttributesGroupDisplayName
+                        : undefined
+                  }
+                  {...form.register("displayHeader")}
                 />
-              }
-              fieldId="kc-attributes-group-display-header"
-            >
-              <Grid hasGutter>
-                <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
-                  <TextInput
-                    id="kc-attributes-group-display-header"
-                    data-testid="attributes-group-display-header"
-                    isDisabled={
-                      (realm?.internationalizationEnabled &&
-                        newAttributesGroupName !== "") ||
-                      (editMode && attributesGroupDisplayPatternMatch)
-                    }
-                    value={
-                      editMode
-                        ? attributesGroupDisplayName
-                        : realm?.internationalizationEnabled
-                          ? generatedAttributesGroupDisplayName
-                          : undefined
-                    }
-                    {...form.register("displayHeader")}
-                  />
-                  {generatedAttributesGroupDisplayName && (
+                {generatedAttributesGroupDisplayName && (
+                  <FormHelperText>
                     <Alert
-                      className="pf-v5-u-mt-sm"
                       variant="info"
                       isInline
                       isPlain
-                      title={t("addAttributesGroupTranslationInfo")}
+                      title={t("addTranslationsModalSubTitle", {
+                        fieldName: t("displayHeader"),
+                      })}
                     />
-                  )}
-                </GridItem>
-                {realm?.internationalizationEnabled && (
-                  <GridItem span={1}>
-                    <Button
-                      variant="link"
-                      className="pf-m-plain"
-                      data-testid="addAttributeDisplayNameTranslationBtn"
-                      aria-label={t("addAttributeDisplayNameTranslation")}
-                      isDisabled={!newAttributesGroupName && !editMode}
-                      onClick={() => {
-                        setType("displayHeader");
-                        toggleModal();
-                      }}
-                      icon={<GlobeRouteIcon />}
-                    />
-                  </GridItem>
+                  </FormHelperText>
                 )}
-              </Grid>
-            </FormGroup>
-            <FormGroup
-              label={t("displayDescriptionField")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("displayDescriptionHintHelp")}
-                  fieldLabelId="displayDescriptionField"
-                />
-              }
-              fieldId="kc-attributes-group-display-description"
-            >
-              <Grid hasGutter>
-                <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
-                  <TextInput
-                    id="kc-attributes-group-display-description"
-                    data-testid="attributes-group-display-description"
-                    isDisabled={
-                      (realm?.internationalizationEnabled &&
-                        newAttributesGroupName !== "") ||
-                      (editMode && attributesGroupDisplayPatternMatch)
-                    }
-                    value={
-                      editMode
-                        ? attributesGroupDisplayDescription
-                        : realm?.internationalizationEnabled
-                          ? generatedAttributesGroupDisplayDescription
-                          : undefined
-                    }
-                    {...form.register("displayDescription")}
+              </GridItem>
+              {realm?.internationalizationEnabled && (
+                <GridItem span={1}>
+                  <Button
+                    variant="link"
+                    className="pf-m-plain"
+                    data-testid="addAttributeDisplayNameTranslationBtn"
+                    aria-label={t("addAttributeDisplayNameTranslation")}
+                    isDisabled={!newAttributesGroupName && !editMode}
+                    onClick={() => {
+                      setType("displayHeader");
+                      toggleModal();
+                    }}
+                    icon={<GlobeRouteIcon />}
                   />
-                  {generatedAttributesGroupDisplayDescription && (
+                </GridItem>
+              )}
+            </Grid>
+          </FormGroup>
+          <FormGroup
+            label={t("displayDescriptionField")}
+            labelIcon={
+              <HelpItem
+                helpText={t("displayDescriptionHintHelp")}
+                fieldLabelId="displayDescriptionField"
+              />
+            }
+            fieldId="kc-attributes-group-display-description"
+          >
+            <Grid hasGutter>
+              <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
+                <TextInput
+                  id="kc-attributes-group-display-description"
+                  data-testid="attributes-group-display-description"
+                  isDisabled={
+                    (realm?.internationalizationEnabled &&
+                      newAttributesGroupName !== "") ||
+                    (editMode && attributesGroupDisplayPatternMatch)
+                  }
+                  value={
+                    editMode
+                      ? attributesGroupDisplayDescription
+                      : realm?.internationalizationEnabled
+                        ? generatedAttributesGroupDisplayDescription
+                        : undefined
+                  }
+                  {...form.register("displayDescription")}
+                />
+                {generatedAttributesGroupDisplayDescription && (
+                  <FormHelperText>
                     <Alert
-                      className="pf-v5-u-mt-sm"
                       variant="info"
                       isInline
                       isPlain
-                      title={t("addAttributesGroupTranslationInfo")}
+                      title={t("addTranslationsModalSubTitle", {
+                        fieldName: t("displayDescription"),
+                      })}
                     />
-                  )}
-                </GridItem>
-                {realm?.internationalizationEnabled && (
-                  <GridItem span={1}>
-                    <Button
-                      variant="link"
-                      className="pf-m-plain"
-                      data-testid="addAttributeDisplayDescriptionTranslationBtn"
-                      aria-label={t(
-                        "addAttributeDisplayDescriptionTranslation",
-                      )}
-                      isDisabled={!newAttributesGroupName && !editMode}
-                      onClick={() => {
-                        setType("displayDescription");
-                        toggleModal();
-                      }}
-                      icon={<GlobeRouteIcon />}
-                    />
-                  </GridItem>
+                  </FormHelperText>
                 )}
-              </Grid>
-            </FormGroup>
-            <TextContent>
-              <Text component="h2">{t("annotationsText")}</Text>
-            </TextContent>
-            <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-              <KeyValueInput label={t("annotationsText")} name="annotations" />
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                type="submit"
-                data-testid="saveGroupBtn"
-              >
-                {t("save")}
-              </Button>
-              <Button
-                variant="link"
-                component={(props) => (
-                  <Link
-                    {...props}
-                    to={toUserProfile({
-                      realm: realmName,
-                      tab: "attributes-group",
-                    })}
+              </GridItem>
+              {realm?.internationalizationEnabled && (
+                <GridItem span={1}>
+                  <Button
+                    variant="link"
+                    className="pf-m-plain"
+                    data-testid="addAttributeDisplayDescriptionTranslationBtn"
+                    aria-label={t("addAttributeDisplayDescriptionTranslation")}
+                    isDisabled={!newAttributesGroupName && !editMode}
+                    onClick={() => {
+                      setType("displayDescription");
+                      toggleModal();
+                    }}
+                    icon={<GlobeRouteIcon />}
                   />
-                )}
-              >
-                {t("cancel")}
-              </Button>
-            </ActionGroup>
-          </FormProvider>
+                </GridItem>
+              )}
+            </Grid>
+          </FormGroup>
+          <TextContent>
+            <Text component="h2">{t("annotationsText")}</Text>
+          </TextContent>
+          <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
+            <KeyValueInput label={t("annotationsText")} name="annotations" />
+          </FormGroup>
+          <ActionGroup>
+            <Button variant="primary" type="submit" data-testid="saveGroupBtn">
+              {t("save")}
+            </Button>
+            <Button
+              variant="link"
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toUserProfile({
+                    realm: realmName,
+                    tab: "attributes-group",
+                  })}
+                />
+              )}
+            >
+              {t("cancel")}
+            </Button>
+          </ActionGroup>
         </FormAccess>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }
