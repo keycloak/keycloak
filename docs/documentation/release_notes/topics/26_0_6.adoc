@@ -1,0 +1,6 @@
+= Updates to documentation of X.509 client certificate lookup via proxy
+
+Potential vulnerable configurations have been identified in the X.509 client certificate lookup when using a reverse proxy.
+Additional configuration steps might be required depending on your current configuration. Make sure to review the updated
+link:{client_certificate_lookup_link}[reverse proxy guide] if you have configured
+the client certificate lookup via a proxy header.
