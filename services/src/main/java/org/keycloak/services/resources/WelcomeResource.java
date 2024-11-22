@@ -51,13 +51,12 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.SecureContextResolver;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -271,25 +270,17 @@ public class WelcomeResource {
     }
 
     private boolean isLocal() {
-        try {
-            ClientConnection clientConnection = session.getContext().getConnection();
-            InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
-            InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
-            HttpRequest request = session.getContext().getHttpRequest();
-            HttpHeaders headers = request.getHttpHeaders();
-            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
-            logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
+        ClientConnection clientConnection = session.getContext().getConnection();
+        String remoteAddress = clientConnection.getRemoteAddr();
+        String localAddress = clientConnection.getLocalAddr();
+        HttpRequest request = session.getContext().getHttpRequest();
+        HttpHeaders headers = request.getHttpHeaders();
+        String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
+        String forwarded = headers.getHeaderString("Forwarded");
+        logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s, Forwarded header: %s", remoteAddress.toString(), localAddress.toString(), xForwardedFor, forwarded);
 
-            // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
-            // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
-            return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
-        } catch (UnknownHostException e) {
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private boolean isLocalAddress(InetAddress inetAddress) {
-        return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
+        // Consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for and forwarded header is empty).
+        return xForwardedFor == null && forwarded == null && SecureContextResolver.isLocalAddress(remoteAddress) && SecureContextResolver.isLocalAddress(localAddress);
     }
 
     private String setCsrfCookie() {
