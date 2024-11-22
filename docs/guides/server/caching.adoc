@@ -333,6 +333,6 @@ While these metrics provide more insights into the latency distribution, collect
 
 <@kc.start parameters="--metrics-enabled=true --cache-metrics-histograms-enabled=true"/>
 
-For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
+For more details about how to enable metrics, see <@links.observability id="configuration-metrics"/>.
 
 </@tmpl.guide>
