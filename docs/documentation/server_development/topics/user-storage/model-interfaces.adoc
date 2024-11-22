@@ -47,3 +47,18 @@ f:332a234e31234:wburke
 
 When the runtime does a lookup by id, the id is parsed to obtain the component id. The component id is used to locate the `UserStorageProvider` that was originally used to load the user. That provider is then passed the id. The provider again parses the id to obtain the external id and it will use to locate the user in external user storage.
 
+This format has the drawback that it can generate long IDs for the external storage users. This is specially important when combined with the link:{adminguide_link}#webauthn_server_administration_guide[WebAuthn authentication], which limits the user handle ID to 64 bytes. For that reason, if the storage users are going to use WebAuthn authentication, it is important to limit the full storage ID to 64 characters. The method `validateConfiguration` can be used to assign a short ID for the provider component on creation, giving some space to the user IDs within the 64 byte limitation.
+
+[source,java]
+----
+    @Override
+    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model)
+            throws ComponentValidationException
+    {
+        // ...
+        if (model.getId() == null) {
+            // On creation use short UUID of 22 chars, 40 chars left for the user ID
+            model.setId(KeycloakModelUtils.generateShortId());
+        }
+    }
+----
