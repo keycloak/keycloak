@@ -24,6 +24,10 @@ Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address
 
 This lists functionality that continues to work as before in this release, but will be removed in a future major release.
 
+=== Default `db` option for production deprecated.
+
+In previous releases, the `db` option defaulted to `dev-file` both in production (`start`) and development (`start-dev`) modes while `dev-file` has never been supported in the production mode. In this release, we have deprecated this behaviour and in some future release the `db` option won't default to `dev-file` in production mode. For `build` or non-optimized `start` and non-server commands `import`, `export`, or `bootstrap-admin` in the production profile, a value should be explicitly supplied. This is to prevent the unintentional usage of the `dev-file` (H2) database in a production environment, which is typically indicative of a misconfiguration.
+
 === Deprecated APIs for JavaScript Authorization client
 
 The following APIs for the JavaScript Authorization client are deprecated and will be removed in the next major release:

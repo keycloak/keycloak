@@ -83,7 +83,7 @@ public class TracingDistTest {
 
     @Test
     @Order(5)
-    @Launch({"build", "--tracing-enabled=true"})
+    @Launch({"build", "--db=dev-file", "--tracing-enabled=true"})
     void buildTracingEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 

@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import org.hamcrest.CoreMatchers;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -26,6 +25,7 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
@@ -46,14 +46,8 @@ import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_M
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_ORACLE;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_POSTGRES;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.test.ConfigurationTest.setSystemProperty;
 
-public class IgnoredArtifactsTest {
-    
-    @BeforeClass
-    public static void resetConfigruation() {
-        ConfigurationTest.createConfig(); // make sure we're dealing with a clean config
-    }
+public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
     @Test
     public void fipsDisabled() {
@@ -113,6 +107,10 @@ public class IgnoredArtifactsTest {
 
     @Test
     public void multipleDatasources() {
+        // initialize the test with a default database
+        ConfigArgsConfigSource.setCliArgs("--db=dev-file");
+        createConfig();
+
         var defaultDS = Configuration.getOptionalValue("quarkus.datasource.db-kind");
         assertThat(defaultDS.isPresent(), is(true));
         assertThat(defaultDS.get(), is("h2"));

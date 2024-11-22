@@ -29,7 +29,7 @@ public class ShowConfigCommandDistTest {
     void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistribution distribution) {
         CLIResult initialResult = distribution.run("show-config");
         initialResult.assertMessage("Current Mode: production");
-        initialResult.assertMessage("kc.db =  dev-file");
+        initialResult.assertNoMessage("kc.db =  dev-file");
 
         distribution.run("start-dev");
 
@@ -37,7 +37,7 @@ public class ShowConfigCommandDistTest {
         devModeResult.assertMessage("Current Mode: development");
         devModeResult.assertMessage("kc.db =  dev-file");
 
-        distribution.run("build");
+        distribution.run("build", "--db=dev-file");
 
         CLIResult resetResult = distribution.run("show-config");
         resetResult.assertMessage("Current Mode: production");
