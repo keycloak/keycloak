@@ -31,7 +31,7 @@ public final class QuarkusClientConnection implements ClientConnection {
 
     @Override
     public String getRemoteAddr() {
-        return request.remoteAddress().host();
+        return request.remoteAddress().hostAddress();
     }
 
     @Override
@@ -46,7 +46,7 @@ public final class QuarkusClientConnection implements ClientConnection {
 
     @Override
     public String getLocalAddr() {
-        return request.localAddress().host();
+        return request.localAddress().hostAddress();
     }
 
     @Override
