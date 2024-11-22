@@ -77,7 +77,10 @@ public final class Build extends AbstractCommand implements Runnable {
         exitWithErrorIfDevProfileIsSet();
 
         System.setProperty("quarkus.launch.rebuild", "true");
-        validateConfig();
+        PersistedConfigSource.getInstance().runWithDisabled(() -> {
+            validateConfig();
+            return null;
+        });
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 

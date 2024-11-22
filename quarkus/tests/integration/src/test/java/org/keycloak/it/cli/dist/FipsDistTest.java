@@ -31,7 +31,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(keepAlive = true, defaultOptions = { "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
+@DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SLOW)
 public class FipsDistTest {

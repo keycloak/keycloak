@@ -18,8 +18,7 @@ public class DatabaseOptions {
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
-            .description("The database vendor.")
-            .defaultValue("dev-file")
+            .description("The database vendor. In development mode the default value will be 'dev-file'.")
             .expectedValues(Database.getDatabaseAliases())
             .buildTime(true)
             .build();

@@ -4,6 +4,10 @@ Previous releases ignored any change  to `conf/cache-ispn.xml` if the `--cache-c
 
 Starting from this release, when `--cache-config-file` is not set, the default Infinispan XML configuration file is `conf/cache-ispn.xml` as this is both the expected behavior and the implied behavior given the docs of the current and previous releases.
 
+= `db` option required for production
+
+The `db` option is now required for the `start` and `build` commands, and when not using the dev profile for non-server commands like `import`, `export`, or `bootstrap-admin`. This is to prevent the unintentional usage of the `dev-file` (H2) database in a production environment.
+
 = Embedded Infinispan: `work` cache must be replicated
 
 The embedded `work` cache needs to be configured as a `replicated-cache` for cache invalidation to work as expected.

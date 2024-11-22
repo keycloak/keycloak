@@ -37,7 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true,
-        defaultOptions = {"--health-enabled=true", "--metrics-enabled=true"},
+        defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000,
         containerExposedPorts = {9000, 8080, 9005})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

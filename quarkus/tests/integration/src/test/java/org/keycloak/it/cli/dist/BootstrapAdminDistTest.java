@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class BootstrapAdminDistTest {
 
     @Test
-    @Launch({ "bootstrap-admin", "user", "--no-prompt" })
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--no-prompt" })
     void failNoPassword(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("No password provided"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
@@ -44,14 +44,14 @@ public class BootstrapAdminDistTest {
 
     /**
     @Test
-    @Launch({ "bootstrap-admin", "user", "--expiration=tomorrow" })
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--expiration=tomorrow" })
     void failBadExpiration(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("Invalid value for option '--expiration': 'tomorrow' is not an int"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }*/
 
     @Test
-    @Launch({ "bootstrap-admin", "user", "--username=admin", "--password:env=MY_PASSWORD" })
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD" })
     void failEnvNotSet(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("Environment variable MY_PASSWORD not found"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
@@ -59,7 +59,7 @@ public class BootstrapAdminDistTest {
 
     @Test
     @WithEnvVars({"MY_PASSWORD", "admin123"})
-    @Launch({ "bootstrap-admin", "user", "--username=admin", "--password:env=MY_PASSWORD" })
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD" })
     void createAdmin(LaunchResult result) {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
     }
@@ -72,14 +72,14 @@ public class BootstrapAdminDistTest {
     }
 
     @Test
-    @Launch({ "bootstrap-admin", "service", "--no-prompt" })
+    @Launch({ "bootstrap-admin", "service", "--db=dev-file", "--no-prompt" })
     void failServiceAccountNoSecret(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("No client secret provided"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @Test
-    @Launch({ "bootstrap-admin", "service", "--client-id=admin", "--client-secret:env=MY_SECRET" })
+    @Launch({ "bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET" })
     void failServiceAccountEnvNotSet(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("Environment variable MY_SECRET not found"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
@@ -89,7 +89,7 @@ public class BootstrapAdminDistTest {
     @WithEnvVars({"MY_SECRET", "admin123"})
     void createAndUseSericeAccountAdmin(KeycloakDistribution dist) throws Exception {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("bootstrap-admin", "service", "--client-id=admin", "--client-secret:env=MY_SECRET");
+        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 

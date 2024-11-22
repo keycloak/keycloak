@@ -37,7 +37,7 @@ public class FeaturesDistTest {
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run(Build.NAME, "--features=preview");
+        CLIResult cliResult = dist.run(Build.NAME, "--db=dev-file", "--features=preview");
         cliResult.assertBuild();
         assertPreviewFeaturesEnabled(cliResult);
 

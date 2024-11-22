@@ -92,7 +92,7 @@ public class ImportAtStartupDistTest {
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
         dist.run("start-dev", "--import-realm");
-        dist.run("export", "--file=../data/import/realm.json");
+        dist.run("--profile=dev", "export", "--file=../data/import/realm.json");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
@@ -107,7 +107,7 @@ public class ImportAtStartupDistTest {
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportSingleRealm(KeycloakDistribution dist) throws IOException {
         dist.run("start-dev", "--import-realm");
-        dist.run("export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
+        dist.run("--profile=dev", "export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
@@ -123,7 +123,7 @@ public class ImportAtStartupDistTest {
         dist.run("start-dev", "--import-realm");
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("import").toAbsolutePath());
-        dist.run("export", "--dir=../data/import");
+        dist.run("--profile=dev", "export", "--dir=../data/import");
 
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
 

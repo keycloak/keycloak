@@ -32,7 +32,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
-@DistributionTest(defaultOptions = {"--http-enabled=true", "--hostname-strict=false"})
+@DistributionTest(defaultOptions = {"--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
