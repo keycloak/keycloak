@@ -424,7 +424,7 @@ to avoid overflow after 2038.
 Method `String encode(String rawPassword, int iterations)` on the interface `org.keycloak.credential.hash.PasswordHashProvider` is deprecated. The method will be removed in
 one of the future {project_name} releases. It might be {project_name} 27 release.
 
-= CollectionUtil intesection method removed
+= CollectionUtil intersection method removed
 
 The method `org.keycloak.common.util.CollectionUtil.intersection` has been removed. You should use the 'java.util.Collection.retainAll' instead on an existing collection.
 
