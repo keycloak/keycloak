@@ -70,8 +70,7 @@ public class FipsDistTest {
 
     @Test
     @Launch({ "start", "--fips-mode=non-strict" })
-    void failStartDueToMissingFipsDependencies(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failStartDueToMissingFipsDependencies(CLIResult cliResult) {
         cliResult.assertError("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
     }
 

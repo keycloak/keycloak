@@ -18,7 +18,6 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -39,8 +38,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
@@ -57,8 +54,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({"build"})
     @Order(1)
-    void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testBuildWithPropertyFromQuarkusProperties(CLIResult cliResult) {
         cliResult.assertBuild();
     }
 
@@ -66,25 +62,22 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(QuarkusPropertiesDistTest.AddConsoleHandlerFromQuarkusProps.class)
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(2)
-    void testPropertyEnabledAtRuntime(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
+    void testPropertyEnabledAtRuntime(CLIResult cliResult) {
+        cliResult.assertMessage("Keycloak is the best");
     }
 
     @Test
     @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(3)
-    void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
+    void testIgnoreQuarkusSystemPropertiesAtStart(CLIResult cliResult) {
+        cliResult.assertMessage("Keycloak is the best");
     }
 
     @Test
     @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build"})
     @Order(4)
-    void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(), containsString("Keycloak is the best"));
+    void testIgnoreQuarkusSystemPropertyAtBuild(CLIResult cliResult) {
+        cliResult.assertMessage("Keycloak is the best");
         cliResult.assertBuild();
     }
 
@@ -93,9 +86,8 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
     @Launch({"build"})
     @Order(5)
-    void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
+    void testIgnoreQuarkusPropertyFromKeycloakConf(CLIResult cliResult) {
+        cliResult.assertNoMessage("Keycloak is the best");
         cliResult.assertBuild();
     }
 
@@ -105,9 +97,8 @@ public class QuarkusPropertiesDistTest {
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
     @Order(6)
     @Disabled(value = "We don't properly differentiate between quarkus runtime and build time properties")
-    void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(), not(containsString("Keycloak is the best")));
+    void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(CLIResult cliResult) {
+        cliResult.assertNoMessage("Keycloak is the best");
         cliResult.assertNoBuild();
     }
 
@@ -115,8 +106,7 @@ public class QuarkusPropertiesDistTest {
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @Launch({ "build", "--metrics-enabled=true" })
     @Order(7)
-    void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void buildFirstWithUnknownQuarkusBuildProperty(CLIResult cliResult) {
         cliResult.assertBuild();
     }
 
@@ -124,8 +114,7 @@ public class QuarkusPropertiesDistTest {
     @KeepServerAlive
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
-    void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testUnknownQuarkusBuildTimePropertyApplied(CLIResult cliResult) {
         cliResult.assertNoBuild();
         RestAssured.port = 9000;
         when().get("/metrics").then().statusCode(200)
@@ -135,8 +124,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
     @Order(9)
-    void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testMissingSmallRyeKeyStorePasswordProperty(CLIResult cliResult) {
         assertTrue(
                 Optional.of(cliResult.getErrorOutput())
                         .filter(s -> s.contains("config-keystore-password must be specified")
@@ -149,8 +137,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
     @Order(10)
-    void testMissingSmallRyeKeyStorePathProperty(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testMissingSmallRyeKeyStorePathProperty(CLIResult cliResult) {
         cliResult.assertBuild();
         cliResult.assertError("config-keystore must be specified");
     }
@@ -159,8 +146,7 @@ public class QuarkusPropertiesDistTest {
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=/invalid/path",
             "--config-keystore-password=secret" })
     @Order(11)
-    void testInvalidSmallRyeKeyStorePathProperty(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testInvalidSmallRyeKeyStorePathProperty(CLIResult cliResult) {
         cliResult.assertError("java.lang.IllegalArgumentException: config-keystore path does not exist: /invalid/path");
     }
 
@@ -168,10 +154,9 @@ public class QuarkusPropertiesDistTest {
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
             "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
     @Order(12)
-    void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
+    void testSmallRyeKeyStoreConfigSource(CLIResult cliResult) {
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(),containsString("DEBUG"));
+        cliResult.assertMessage("DEBUG");
         cliResult.assertStarted();
     }
 
@@ -182,9 +167,8 @@ public class QuarkusPropertiesDistTest {
             "--https-certificate-file=/tmp/kc/bin/../conf/server.crt.pem",
             "--https-certificate-key-file=/tmp/kc/bin/../conf/server.key.pem" })
     @Order(13)
-    void testHttpCertsPathTransformer(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(),containsString("Failed to load 'https-key-' material: NoSuchFileException /tmp/kc/bin/../conf/server.crt.pem"));
+    void testHttpCertsPathTransformer(CLIResult cliResult) {
+        cliResult.assertError("Failed to load 'https-key-' material: NoSuchFileException /tmp/kc/bin/../conf/server.crt.pem");
     }
 
     @Test
@@ -194,9 +178,8 @@ public class QuarkusPropertiesDistTest {
             "--https-certificate-file=C:\\tmp\\kc\\bin\\..\\conf/server.crt.pem",
             "--https-certificate-key-file=C:\\tmp\\kc\\bin\\..\\conf/server.key.pem" })
     @Order(14)
-    void testHttpCertsPathTransformerOnWindows(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(),containsString("Failed to load 'https-key-' material: NoSuchFileException C:/tmp/kc/bin/../conf/server.crt.pem"));
+    void testHttpCertsPathTransformerOnWindows(CLIResult cliResult) {
+        cliResult.assertError("Failed to load 'https-key-' material: NoSuchFileException C:/tmp/kc/bin/../conf/server.crt.pem");
     }
 
     public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
