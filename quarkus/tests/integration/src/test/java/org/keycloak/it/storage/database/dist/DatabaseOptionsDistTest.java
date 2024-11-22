@@ -18,7 +18,6 @@
 package org.keycloak.it.storage.database.dist;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -34,16 +33,14 @@ public class DatabaseOptionsDistTest {
 
     @Test
     @Launch({ "start-dev", "--db-schema=foo" })
-    void testSetSchema(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testSetSchema(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @Launch({ "start-dev" })
     @WithEnvVars({ "KC_DB_USERNAME", "bad" })
-    void testEnvVarPrecedenceOverConfFile(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testEnvVarPrecedenceOverConfFile(CLIResult cliResult) {
         cliResult.assertMessage("FATAL: password authentication failed for user \"bad\"");
     }
 

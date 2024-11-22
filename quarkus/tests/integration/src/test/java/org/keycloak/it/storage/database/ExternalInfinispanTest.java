@@ -18,7 +18,6 @@
 package org.keycloak.it.storage.database;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -93,7 +92,7 @@ public class ExternalInfinispanTest {
             "-Djboss.site.name=ISPN",
             "--verbose"
     })
-    void testSiteNameAsSystemProperty(LaunchResult result) {
-        ((CLIResult) result).assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
+    void testSiteNameAsSystemProperty(CLIResult cliResult) {
+        cliResult.assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
     }
 }
