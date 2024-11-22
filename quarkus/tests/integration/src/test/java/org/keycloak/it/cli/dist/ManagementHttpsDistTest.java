@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @DistributionTest(keepAlive = true,
         enableTls = true,
-        defaultOptions = {"--health-enabled=true", "--metrics-enabled=true"},
+        defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000)
 @RawDistOnly(reason = "We do not test TLS in containers")
 public class ManagementHttpsDistTest {

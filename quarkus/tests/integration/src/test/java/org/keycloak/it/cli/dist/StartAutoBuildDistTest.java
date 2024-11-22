@@ -41,7 +41,7 @@ public class StartAutoBuildDistTest {
 
     @DryRun
     @Test
-    @Launch({ "--verbose", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
     void testStartAutoBuild(CLIResult cliResult) {
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
@@ -56,7 +56,7 @@ public class StartAutoBuildDistTest {
 
     @DryRun
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(CLIResult cliResult) {
         cliResult.assertNoBuild();
@@ -91,7 +91,7 @@ public class StartAutoBuildDistTest {
 
     @DryRun
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(CLIResult cliResult) {
         cliResult.assertBuild();
@@ -129,6 +129,7 @@ public class StartAutoBuildDistTest {
     @Order(9)
     void testShouldNotReAugStartDevIfConfigIsSame(CLIResult cliResult) {
         cliResult.assertNoMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
+        cliResult.assertNoBuild();
         cliResult.assertStartedDevMode();
     }
 

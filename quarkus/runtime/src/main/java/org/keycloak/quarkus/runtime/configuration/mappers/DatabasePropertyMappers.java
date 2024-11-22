@@ -2,6 +2,8 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
+
+import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
@@ -28,6 +30,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB)
                         .to("quarkus.datasource.db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .isRequired(() -> !Environment.isDevMode(), "The db option must be explicitly provided in a non-development profile")
                         .paramLabel("vendor")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL)
@@ -114,7 +117,7 @@ final class DatabasePropertyMappers {
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
         String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
-        return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
+        return Database.getDatabaseKind(db).filter(DatabaseKind.H2::equals).isPresent();
     }
 
     private static String transformDialect(String db, ConfigSourceInterceptorContext context) {

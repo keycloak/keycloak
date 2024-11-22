@@ -85,7 +85,7 @@ public class TracingDistTest {
 
     @Test
     @Order(5)
-    @Launch({"build", "--tracing-enabled=true", "--features=opentelemetry"})
+    @Launch({"build", "--db=dev-file", "--tracing-enabled=true", "--features=opentelemetry"})
     void buildTracingEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
