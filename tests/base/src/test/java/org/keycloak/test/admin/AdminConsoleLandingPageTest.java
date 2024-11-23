@@ -1,65 +1,50 @@
-package org.keycloak.testsuite.admin;
+package org.keycloak.test.admin;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.keycloak.test.framework.annotations.InjectHttpClient;
+import org.keycloak.test.framework.annotations.InjectKeycloakUrls;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.server.KeycloakUrls;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class AdminConsoleLandingPageTest {
 
-    private CloseableHttpClient client;
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
-    @Before
-    public void before() {
-        client = HttpClientBuilder.create().build();
-    }
-
-    @After
-    public void after() {
-        try {
-            client.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-    }
+    @InjectHttpClient
+    HttpClient httpClient;
 
     @Test
     public void landingPage() throws IOException {
-        String body = SimpleHttpDefault.doGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", client).asString();
+        String body = EntityUtils.toString(httpClient.execute(new HttpGet(keycloakUrls.getBaseUrl().toString() + "/admin/master/console")).getEntity());
 
         Map<String, String> config = getConfig(body);
         String authUrl = config.get("authUrl");
-        Assert.assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", authUrl);
+        Assertions.assertEquals(keycloakUrls.getBaseUrl().toString()+ "", authUrl);
 
         String resourceUrl = config.get("resourceUrl");
-        Assert.assertTrue(resourceUrl.matches("/auth/resources/[^/]*/admin/keycloak.v2"));
+        Assertions.assertTrue(resourceUrl.matches("/resources/[^/]*/admin/keycloak.v2"));
 
         String consoleBaseUrl = config.get("consoleBaseUrl");
-        Assert.assertEquals(consoleBaseUrl, "/auth/admin/master/console/");
+        Assertions.assertEquals(consoleBaseUrl, "/admin/master/console/");
 
         Pattern p = Pattern.compile("link href=\"([^\"]*)\"");
         Matcher m = p.matcher(body);
 
         while(m.find()) {
-                String url = m.group(1);
-                Assert.assertTrue(url.startsWith("/auth/resources/"));
+            String url = m.group(1);
+            Assertions.assertTrue(url.startsWith("/resources/"));
         }
 
         p = Pattern.compile("script src=\"([^\"]*)\"");
@@ -68,9 +53,9 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
         while(m.find()) {
             String url = m.group(1);
             if (url.contains("keycloak.js")) {
-                Assert.assertTrue(url, url.startsWith("/auth/js/"));
+                Assertions.assertTrue(url.startsWith("/js/"), url);
             } else {
-                Assert.assertTrue(url, url.startsWith("/auth/resources/"));
+                Assertions.assertTrue(url.startsWith("/resources/"), url);
             }
         }
     }
@@ -90,5 +75,4 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
 
         return variables;
     }
-
 }
