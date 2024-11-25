@@ -48,6 +48,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,7 +69,7 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         CookieStore cookieStore = new BasicCookieStore();
 
         try (CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build()) {
-            String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", "UTF-8");
+            String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", StandardCharsets.UTF_8);
 
             PkceGenerator pkce = new PkceGenerator();
 
@@ -77,7 +78,7 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
                             "&redirect_uri=" + redirectUri + "&scope=openid&code_challenge_method=S256&code_challenge=" + pkce.getCodeChallenge());
 
             CloseableHttpResponse response = client.execute(get);
-            String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             response.close();
 
             String action = ActionURIUtils.getActionURIFromPageSource(s);

@@ -1,6 +1,6 @@
 package org.keycloak.services.x509;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -108,11 +108,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             log.warn("End user TLS Certificate is NULL! ");
             return null;
         }
-        try {
-            pem = java.net.URLDecoder.decode(pem, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            log.error("Cannot URL decode the end user TLS Certificate : " + pem,e);
-        }
+        pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
 
         if (pem.startsWith(PemUtils.BEGIN_CERT)) {
             pem = removeBeginEnd(pem);

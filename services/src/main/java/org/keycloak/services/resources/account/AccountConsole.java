@@ -47,6 +47,7 @@ import org.keycloak.utils.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -170,7 +171,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("theme", (Function<String, String>) file -> {
             try {
                 final InputStream resource = theme.getResourceAsStream(file);
-                return new Scanner(resource, "UTF-8").useDelimiter("\\A").next();
+                return new Scanner(resource, StandardCharsets.UTF_8).useDelimiter("\\A").next();
             } catch (IOException e) {
                 throw new RuntimeException("could not load file", e);
             }

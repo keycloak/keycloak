@@ -53,7 +53,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Comparator;
@@ -106,7 +106,7 @@ public class DefaultTokenManager implements TokenManager {
                 kid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, signatureAlgorithm).getKid();
             }
 
-            boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);
@@ -181,7 +181,7 @@ public class DefaultTokenManager implements TokenManager {
                 return null;
             }
 
-            boolean valid = signatureProvider.verifier(client, jws).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            boolean valid = signatureProvider.verifier(client, jws).verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);
@@ -272,8 +272,8 @@ public class DefaultTokenManager implements TokenManager {
         Key encryptionKek = keyWrapper.getPublicKey();
         String encryptionKekId = keyWrapper.getKid();
         try {
-            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes("UTF-8"), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
-        } catch (JWEException | UnsupportedEncodingException e) {
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes(StandardCharsets.UTF_8), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
+        } catch (JWEException e) {
             throw new RuntimeException(e);
         }
         return encryptedToken;

@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -54,7 +54,7 @@ public class MigrationContext {
         logger.infof("Reading previously saved offline token from the file: %s", file);
 
         try (FileInputStream fis = new FileInputStream(file)) {
-            String offlineToken = StreamUtil.readString(fis, Charset.forName("UTF-8"));
+            String offlineToken = StreamUtil.readString(fis, StandardCharsets.UTF_8);
             logger.infof("Successfully read offline token: %s", offlineToken);
             File f = new File(file);
             f.delete();

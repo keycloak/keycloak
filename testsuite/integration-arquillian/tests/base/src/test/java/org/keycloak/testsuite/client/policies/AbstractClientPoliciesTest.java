@@ -38,6 +38,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -573,7 +574,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
             HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
         } finally {

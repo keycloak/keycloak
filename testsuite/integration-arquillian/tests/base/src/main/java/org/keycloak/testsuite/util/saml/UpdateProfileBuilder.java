@@ -18,8 +18,8 @@ package org.keycloak.testsuite.util.saml;
 
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.SamlClient.Step;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -63,7 +63,7 @@ public class UpdateProfileBuilder implements Step {
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
         assertThat(currentResponse, statusCodeIsHC(Response.Status.OK));
-        String loginPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
+        String loginPageText = EntityUtils.toString(currentResponse.getEntity(), StandardCharsets.UTF_8);
         assertThat(loginPageText, containsString("Update Account Information"));
 
         return handleUpdateProfile(loginPageText, currentURI);
@@ -122,12 +122,7 @@ public class UpdateProfileBuilder implements Step {
             if (isPost) {
                 HttpPost res = new HttpPost(action);
 
-                UrlEncodedFormEntity formEntity;
-                try {
-                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
                 res.setEntity(formEntity);
 
                 return res;

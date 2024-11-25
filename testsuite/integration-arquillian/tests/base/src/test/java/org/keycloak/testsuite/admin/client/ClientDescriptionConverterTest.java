@@ -21,6 +21,8 @@ import org.keycloak.testsuite.AbstractAuthTest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -34,7 +36,7 @@ public class ClientDescriptionConverterTest extends AbstractAuthTest {
     @Test
     public void testOrganizationDetailsMetadata() throws IOException {
         try (InputStream is = ClientDescriptionConverterTest.class.getResourceAsStream("KEYCLOAK-4040-sharefile-metadata.xml")) {
-            String data = IOUtils.toString(is, "UTF-8");
+            String data = IOUtils.toString(is, StandardCharsets.UTF_8);
             testRealmResource().convertClientDescription(data);
         }
     }
