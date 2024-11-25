@@ -1,7 +1,6 @@
 package org.keycloak.social.openshift;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
