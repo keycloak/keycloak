@@ -97,7 +97,6 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.11.Final</infinispan.version>
-        <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.12.Final (IPROTO-395) -->
         <protostream.plugin.version>5.0.12.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
