@@ -266,7 +266,6 @@ export const ResourcesPolicySelect = ({
             }}
             isOpen={open}
             aria-label={t(name)}
-            isDisabled={!!preSelected}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}
             chipGroupComponent={toChipGroupItems(field)}
