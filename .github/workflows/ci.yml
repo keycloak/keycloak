@@ -33,7 +33,6 @@ jobs:
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
-      ci-test-poc: ${{ steps.conditional.outputs.ci-test-poc }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
 
     steps:
@@ -936,26 +935,6 @@ jobs:
       - name: Run tests
         run: ./mvnw test -f test-framework/pom.xml
 
-  test-poc:
-    name: Test PoC
-    runs-on: ubuntu-latest
-    if: needs.conditional.outputs.ci-test-poc == 'true'
-    needs:
-      - conditional
-      - build
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run tests
-        env:
-          KC_TEST_BROWSER: chrome-headless
-        run: ./mvnw clean install -f test-poc/pom.xml
-
   check:
     name: Status Check - Keycloak CI
     if: always()
@@ -979,7 +958,6 @@ jobs:
       - sssd-unit-tests
       - migration-tests
       - external-infinispan-tests
-      - test-poc
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
