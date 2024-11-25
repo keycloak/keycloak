@@ -316,12 +316,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         if (isPost) {
             HttpPost req = new HttpPost(action);
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(paramList, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(paramList, StandardCharsets.UTF_8);
             req.setEntity(formEntity);
 
             return req;

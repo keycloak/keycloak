@@ -31,6 +31,7 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -97,7 +98,7 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
             HttpClientContext context = HttpClientContext.create();
             response = client.execute(post, context);
 
-            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+            String loginPageText = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
             response.close();
 
             HttpUriRequest loginRequest = LoginBuilder.handleLoginPage(user, loginPageText);
