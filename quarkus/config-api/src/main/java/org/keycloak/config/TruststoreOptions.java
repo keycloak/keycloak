@@ -3,7 +3,6 @@ package org.keycloak.config;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 
 import java.util.List;
-import java.util.Set;
 
 public class TruststoreOptions {
 
@@ -16,7 +15,7 @@ public class TruststoreOptions {
             .category(OptionCategory.TRUSTSTORE)
             .description("The TLS hostname verification policy for out-going HTTPS and SMTP requests.")
             .defaultValue(HostnameVerificationPolicy.DEFAULT)
-            .deprecatedValues(Set.of("STRICT", "WILDCARD"), "STRICT and WILDCARD have been deprecated, use DEFAULT instead.")
+            .deprecatedValues("STRICT and WILDCARD have been deprecated, use DEFAULT instead.", HostnameVerificationPolicy.STRICT, HostnameVerificationPolicy.WILDCARD)
             .build();
 
 }
