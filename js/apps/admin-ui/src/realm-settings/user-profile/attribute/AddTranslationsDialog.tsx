@@ -1,8 +1,6 @@
-import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
-  TextControl,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -10,11 +8,13 @@ import {
   Flex,
   FlexItem,
   Form,
+  FormGroup,
   Label,
   Modal,
   ModalVariant,
   Text,
   TextContent,
+  TextInput,
   TextVariants,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
@@ -25,57 +25,14 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
-import { i18n } from "../../../i18n/i18n";
-import { localeToDisplayName } from "../../../util";
+import { beerify, localeToDisplayName } from "../../../util";
 import useLocale from "../../../utils/useLocale";
+import { Translation, TranslationForm } from "./TranslatableField";
 
-export type TranslationsType =
-  | "displayName"
-  | "displayHeader"
-  | "displayDescription";
-
-type TranslationForm = {
-  locale: string;
-  value: string;
-};
-
-export type Translations = {
-  key: string;
-  translations: TranslationForm[];
-};
-
-export type AddTranslationsDialogProps = {
+type AddTranslationsDialogProps = {
   translationKey: string;
-  fieldName: TranslationsType;
+  fieldName: string;
   toggleDialog: () => void;
-};
-
-type SaveTranslationsProps = {
-  adminClient: KeycloakAdminClient;
-  realmName: string;
-  translationsData: Translations;
-};
-
-export const saveTranslations = async ({
-  adminClient,
-  realmName,
-  translationsData: { key, translations },
-}: SaveTranslationsProps) => {
-  await Promise.all(
-    translations
-      .filter((translation) => translation.value.trim() !== "")
-      .map((translation) =>
-        adminClient.realms.addLocalization(
-          {
-            realm: realmName,
-            selectedLocale: translation.locale,
-            key,
-          },
-          translation.value,
-        ),
-      ),
-  );
-  i18n.reloadResources();
 };
 
 export const AddTranslationsDialog = ({
@@ -92,17 +49,20 @@ export const AddTranslationsDialog = ({
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
   const [translations, setTranslations] = useState<TranslationForm[]>([]);
+  const prefix = `translation.${beerify(translationKey)}`;
 
   const {
+    register,
     setValue,
+    getValues,
     formState: { isValid },
-  } = useFormContext<Translations>();
+  } = useFormContext();
 
-  const setupForm = (translation: Translations) => {
-    setValue("key", translation.key);
-    translation.translations.forEach((translation, rowIndex) => {
-      setValue(`translations.${rowIndex}.locale`, translation.locale || "");
-      setValue(`translations.${rowIndex}.value`, translation.value || "");
+  const setupForm = (translation: Translation) => {
+    translation[translationKey].forEach((translation, rowIndex) => {
+      const valueKey = `${prefix}.${rowIndex}.value`;
+      setValue(`${prefix}.${rowIndex}.locale`, translation.locale || "");
+      setValue(valueKey, getValues(valueKey) || translation.value);
     });
   };
 
@@ -132,7 +92,7 @@ export const AddTranslationsDialog = ({
     },
     (fetchedData) => {
       setTranslations(fetchedData);
-      setupForm({ key: translationKey, translations: fetchedData });
+      setupForm({ [translationKey]: fetchedData });
     },
     [combinedLocales, first, max, filter],
   );
@@ -159,7 +119,7 @@ export const AddTranslationsDialog = ({
           data-testid="cancelTranslationBtn"
           variant="link"
           onClick={() => {
-            setupForm({ key: translationKey, translations });
+            setupForm({ [translationKey]: translations });
             toggleDialog();
           }}
         >
@@ -181,13 +141,15 @@ export const AddTranslationsDialog = ({
         </FlexItem>
         <FlexItem>
           <Form id="add-translation" data-testid="addTranslationForm">
-            <TextControl
-              name="key"
-              label={t("translationKey")}
-              className="pf-v5-u-mt-md"
-              data-testid="translation-key"
-              isDisabled
-            />
+            <FormGroup label={t("translationKey")} fieldId="translationKey">
+              <TextInput
+                id="translationKey"
+                label={t("translationKey")}
+                data-testid="translation-key"
+                isDisabled
+                value={translationKey}
+              />
+            </FormGroup>
             <FlexItem>
               <TextContent>
                 <Text
@@ -254,17 +216,16 @@ export const AddTranslationsDialog = ({
                             )}
                           </Td>
                           <Td>
-                            <TextControl
-                              name={`translations.${index}.value`}
-                              label={t("translationValue")}
+                            <TextInput
+                              id={`${prefix}.${index}.value`}
                               data-testid={`translation-value-${index}`}
-                              rules={{
+                              {...register(`${prefix}.${index}.value`, {
                                 required: {
                                   value:
                                     translation.locale === realm?.defaultLocale,
                                   message: t("required"),
                                 },
-                              }}
+                              })}
                             />
                           </Td>
                         </Tr>

@@ -20,26 +20,20 @@ import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { convertToFormValues } from "../util";
 import { useParams } from "../utils/useParams";
+import { TranslationForm } from "./AddTranslationModal";
 import type { AttributeParams } from "./routes/Attribute";
 import { toUserProfile } from "./routes/UserProfile";
 import { UserProfileProvider } from "./user-profile/UserProfileContext";
-import { saveTranslations } from "./user-profile/attribute/AddTranslationsDialog";
+import {
+  saveTranslations,
+  Translations,
+} from "./user-profile/attribute/TranslatableField";
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
 
 import "./realm-settings-section.css";
-
-type TranslationForm = {
-  locale: string;
-  value: string;
-};
-
-type Translations = {
-  key: string;
-  translations: TranslationForm[];
-};
 
 type IndexedAnnotations = {
   key: string;
@@ -268,14 +262,13 @@ export default function NewAttributeSettings() {
         realm: realmName,
       });
 
-      if (formFields.translations?.length > 0) {
+      if (formFields.translation) {
         try {
           await saveTranslations({
             adminClient,
             realmName,
             translationsData: {
-              key: formFields.key,
-              translations: formFields.translations,
+              translation: formFields.translation,
             },
           });
         } catch (error) {

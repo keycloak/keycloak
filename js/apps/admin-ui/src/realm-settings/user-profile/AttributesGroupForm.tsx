@@ -3,25 +3,14 @@ import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/
 import { HelpItem, TextControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
-  Alert,
   Button,
   FormGroup,
-  FormHelperText,
-  Grid,
-  GridItem,
   PageSection,
   Text,
   TextContent,
-  TextInput,
 } from "@patternfly/react-core";
-import { GlobeRouteIcon } from "@patternfly/react-icons";
-import { useEffect, useMemo, useState } from "react";
-import {
-  FormProvider,
-  SubmitHandler,
-  useForm,
-  useWatch,
-} from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
@@ -30,17 +19,12 @@ import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import useToggle from "../../utils/useToggle";
 import "../realm-settings-section.css";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
 import { toUserProfile } from "../routes/UserProfile";
 import { useUserProfile } from "./UserProfileContext";
-import {
-  AddTranslationsDialog,
-  saveTranslations,
-  Translations,
-  TranslationsType,
-} from "./attribute/AddTranslationsDialog";
+import { saveTranslations, Translations } from "./attribute/TranslatableField";
+import { TranslatableField } from "./attribute/TranslatableField";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -70,8 +54,7 @@ const defaultValues: FormFields = {
   displayDescription: "",
   displayHeader: "",
   name: "",
-  translations: [],
-  key: "",
+  translation: { key: [] },
 };
 
 export default function AttributesGroupForm() {
@@ -84,18 +67,6 @@ export default function AttributesGroupForm() {
   const form = useForm<FormFields>({ defaultValues });
   const { addError } = useAlerts();
   const editMode = params.name ? true : false;
-  const [newAttributesGroupName, setNewAttributesGroupName] = useState("");
-  const [
-    generatedAttributesGroupDisplayName,
-    setGeneratedAttributesGroupDisplayName,
-  ] = useState("");
-  const [
-    generatedAttributesGroupDisplayDescription,
-    setGeneratedAttributesGroupDisplayDescription,
-  ] = useState("");
-  const [addTranslationsModalOpen, toggleModal] = useToggle();
-  const regexPattern = /\$\{([^}]+)\}/;
-  const [type, setType] = useState<TranslationsType>();
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
@@ -114,24 +85,6 @@ export default function AttributesGroupForm() {
     form.reset({ ...defaultValues, ...matchingGroup, annotations });
   }, [matchingGroup, form]);
 
-  useEffect(() => {
-    form.setValue(
-      "displayHeader",
-      matchingGroup?.displayHeader || generatedAttributesGroupDisplayName || "",
-    );
-    form.setValue(
-      "displayDescription",
-      matchingGroup?.displayDescription ||
-        generatedAttributesGroupDisplayDescription ||
-        "",
-    );
-  }, [
-    generatedAttributesGroupDisplayName,
-    generatedAttributesGroupDisplayDescription,
-    matchingGroup,
-    form,
-  ]);
-
   const onSubmit: SubmitHandler<FormFields> = async (values) => {
     if (!config) {
       return;
@@ -139,7 +92,7 @@ export default function AttributesGroupForm() {
 
     const groups = [...(config.groups ?? [])];
     const updateAt = matchingGroup ? groups.indexOf(matchingGroup) : -1;
-    const { translations, key, ...groupValues } = values;
+    const { translation, ...groupValues } = values;
     const updatedGroup: UserProfileGroup = {
       ...groupValues,
       annotations: transformAnnotations(values.annotations),
@@ -158,10 +111,7 @@ export default function AttributesGroupForm() {
         await saveTranslations({
           adminClient,
           realmName,
-          translationsData: {
-            key,
-            translations,
-          },
+          translationsData: { translation },
         });
       } catch (error) {
         addError(t("errorSavingTranslations"), error);
@@ -170,70 +120,8 @@ export default function AttributesGroupForm() {
     }
   };
 
-  const attributesGroupDisplayName = useWatch({
-    control: form.control,
-    name: "displayHeader",
-  });
-
-  const attributesGroupDisplayDescription = useWatch({
-    control: form.control,
-    name: "displayDescription",
-  });
-
-  const handleAttributesGroupNameChange = (
-    event: React.FormEvent<HTMLInputElement>,
-    value: string,
-  ) => {
-    const newDisplayName =
-      value !== "" && realm?.internationalizationEnabled
-        ? "${profile.attribute-group." + `${value}}`
-        : "";
-    const newDisplayDescription =
-      value !== "" && realm?.internationalizationEnabled
-        ? "${profile.attribute-group-description." + `${value}}`
-        : "";
-    setNewAttributesGroupName(value);
-    setGeneratedAttributesGroupDisplayName(newDisplayName);
-    setGeneratedAttributesGroupDisplayDescription(newDisplayDescription);
-  };
-
-  const attributesGroupDisplayPatternMatch = regexPattern.test(
-    attributesGroupDisplayName || attributesGroupDisplayDescription,
-  );
-
-  const formattedAttributesGroupDisplayName =
-    attributesGroupDisplayName?.substring(
-      2,
-      attributesGroupDisplayName.length - 1,
-    );
-  const formattedAttributesGroupDisplayDescription =
-    attributesGroupDisplayDescription?.substring(
-      2,
-      attributesGroupDisplayDescription.length - 1,
-    );
-
-  const groupDisplayNameKey =
-    type === "displayHeader"
-      ? formattedAttributesGroupDisplayName
-      : `profile.attribute-group.${newAttributesGroupName}`;
-  const groupDisplayDescriptionKey =
-    type === "displayDescription"
-      ? formattedAttributesGroupDisplayDescription
-      : `profile.attribute-group-description.${newAttributesGroupName}`;
-
   return (
     <FormProvider {...form}>
-      {addTranslationsModalOpen && (
-        <AddTranslationsDialog
-          translationKey={
-            type === "displayHeader"
-              ? groupDisplayNameKey
-              : groupDisplayDescriptionKey
-          }
-          fieldName={type || "displayDescription"}
-          toggleDialog={toggleModal}
-        />
-      )}
       <ViewHeader
         titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
         divider
@@ -247,133 +135,39 @@ export default function AttributesGroupForm() {
             isDisabled={!!matchingGroup || editMode}
             rules={{
               required: t("required"),
-              onChange: (event) => {
-                handleAttributesGroupNameChange(event, event.target.value);
-              },
             }}
           />
-          {!!matchingGroup && (
-            <input type="hidden" {...form.register("name")} />
-          )}
           <FormGroup
-            label={t("displayHeaderField")}
+            label={t("displayHeader")}
             labelIcon={
               <HelpItem
                 helpText={t("displayHeaderHintHelp")}
-                fieldLabelId="displayHeaderField"
+                fieldLabelId="displayHeader"
               />
             }
             fieldId="kc-attributes-group-display-header"
           >
-            <Grid hasGutter>
-              <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
-                <TextInput
-                  id="kc-attributes-group-display-header"
-                  data-testid="attributes-group-display-header"
-                  isDisabled={
-                    (realm?.internationalizationEnabled &&
-                      newAttributesGroupName !== "") ||
-                    (editMode && attributesGroupDisplayPatternMatch)
-                  }
-                  value={
-                    editMode
-                      ? attributesGroupDisplayName
-                      : realm?.internationalizationEnabled
-                        ? generatedAttributesGroupDisplayName
-                        : undefined
-                  }
-                  {...form.register("displayHeader")}
-                />
-                {generatedAttributesGroupDisplayName && (
-                  <FormHelperText>
-                    <Alert
-                      variant="info"
-                      isInline
-                      isPlain
-                      title={t("addTranslationsModalSubTitle", {
-                        fieldName: t("displayHeader"),
-                      })}
-                    />
-                  </FormHelperText>
-                )}
-              </GridItem>
-              {realm?.internationalizationEnabled && (
-                <GridItem span={1}>
-                  <Button
-                    variant="link"
-                    className="pf-m-plain"
-                    data-testid="addAttributeDisplayNameTranslationBtn"
-                    aria-label={t("addAttributeDisplayNameTranslation")}
-                    isDisabled={!newAttributesGroupName && !editMode}
-                    onClick={() => {
-                      setType("displayHeader");
-                      toggleModal();
-                    }}
-                    icon={<GlobeRouteIcon />}
-                  />
-                </GridItem>
-              )}
-            </Grid>
+            <TranslatableField
+              fieldName="displayHeader"
+              attributeName="name"
+              prefix="profile.attribute-group"
+            />
           </FormGroup>
           <FormGroup
-            label={t("displayDescriptionField")}
+            label={t("displayDescription")}
             labelIcon={
               <HelpItem
                 helpText={t("displayDescriptionHintHelp")}
-                fieldLabelId="displayDescriptionField"
+                fieldLabelId="displayDescription"
               />
             }
             fieldId="kc-attributes-group-display-description"
           >
-            <Grid hasGutter>
-              <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
-                <TextInput
-                  id="kc-attributes-group-display-description"
-                  data-testid="attributes-group-display-description"
-                  isDisabled={
-                    (realm?.internationalizationEnabled &&
-                      newAttributesGroupName !== "") ||
-                    (editMode && attributesGroupDisplayPatternMatch)
-                  }
-                  value={
-                    editMode
-                      ? attributesGroupDisplayDescription
-                      : realm?.internationalizationEnabled
-                        ? generatedAttributesGroupDisplayDescription
-                        : undefined
-                  }
-                  {...form.register("displayDescription")}
-                />
-                {generatedAttributesGroupDisplayDescription && (
-                  <FormHelperText>
-                    <Alert
-                      variant="info"
-                      isInline
-                      isPlain
-                      title={t("addTranslationsModalSubTitle", {
-                        fieldName: t("displayDescription"),
-                      })}
-                    />
-                  </FormHelperText>
-                )}
-              </GridItem>
-              {realm?.internationalizationEnabled && (
-                <GridItem span={1}>
-                  <Button
-                    variant="link"
-                    className="pf-m-plain"
-                    data-testid="addAttributeDisplayDescriptionTranslationBtn"
-                    aria-label={t("addAttributeDisplayDescriptionTranslation")}
-                    isDisabled={!newAttributesGroupName && !editMode}
-                    onClick={() => {
-                      setType("displayDescription");
-                      toggleModal();
-                    }}
-                    icon={<GlobeRouteIcon />}
-                  />
-                </GridItem>
-              )}
-            </Grid>
+            <TranslatableField
+              fieldName="displayDescription"
+              attributeName="name"
+              prefix="profile.attribute-group-description"
+            />
           </FormGroup>
           <TextContent>
             <Text component="h2">{t("annotationsText")}</Text>
