@@ -10,6 +10,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -19,9 +20,11 @@ import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.exceptions.UnexpectedScimDataException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class UserScimService extends AbstractScimService<UserModel, User> {
@@ -34,43 +37,45 @@ public class UserScimService extends AbstractScimService<UserModel, User> {
 
     @Override
     protected Stream<UserModel> getResourceStream() {
-        return getKeycloakDao().getUsersStream();
+        return keycloakSession.users().searchForUserStream(getRealm(), Collections.emptyMap());
     }
 
     @Override
-    protected boolean entityExists(KeycloakId keycloakId) {
-        return getKeycloakDao().userExists(keycloakId);
+    protected boolean entityExists(String keycloakId) {
+        return keycloakSession.users().getUserById(getRealm(), keycloakId) != null;
     }
 
     @Override
-    protected Optional<KeycloakId> matchKeycloakMappingByScimProperties(User resource) throws InconsistentScimMappingException {
-        Optional<KeycloakId> matchedByUsername = resource.getUserName().map(getKeycloakDao()::getUserByUsername)
-                .map(this::getId);
-        Optional<KeycloakId> matchedByEmail = resource.getEmails().stream().findFirst().flatMap(MultiComplexNode::getValue)
-                .map(getKeycloakDao()::getUserByEmail).map(this::getId);
-        if (matchedByUsername.isPresent() && matchedByEmail.isPresent() && !matchedByUsername.equals(matchedByEmail)) {
+    protected Optional<String> matchKeycloakMappingByScimProperties(User resource) throws InconsistentScimMappingException {
+        Optional<UserModel> matchedByUsername = resource.getUserName().map(username -> keycloakSession.users().getUserByUsername(getRealm(), username));
+        Optional<String> matchedByEmail = resource.getEmails().stream().findFirst().flatMap(MultiComplexNode::getValue)
+                .map(email -> keycloakSession.users().getUserByEmail(getRealm(), email)).map(this::getId);
+        if (matchedByUsername.isPresent() && !resource.getExternalId().equals(matchedByUsername.get().getFirstAttribute(SCIM_ID))) {
+            throw new InconsistentScimMappingException("A user with username [" + matchedByUsername.get().getUsername() + "] already exists in the local database");
+        }
+        if (matchedByUsername.isPresent() && matchedByEmail.isPresent() && !matchedByUsername.get().getUsername().equals(matchedByEmail)) {
             String inconstencyErrorMessage = "Found 2 possible users for remote user " + matchedByUsername.get() + " - "
                     + matchedByEmail.get();
             LOGGER.warn(inconstencyErrorMessage);
             throw new InconsistentScimMappingException(inconstencyErrorMessage);
         }
         if (matchedByUsername.isPresent()) {
-            return matchedByUsername;
+            return matchedByUsername.map(UserModel::getId);
         }
         return matchedByEmail;
     }
 
     @Override
-    protected KeycloakId createEntity(User resource) throws UnexpectedScimDataException {
+    protected String createEntity(User resource) throws UnexpectedScimDataException {
         String username = resource.getUserName().filter(StringUtils::isNotBlank)
                 .orElseThrow(() -> new UnexpectedScimDataException(
                         "Remote Scim user has empty username, can't create. Resource id = %s".formatted(resource.getId())));
-        UserModel user = getKeycloakDao().addUser(username);
+        UserModel user = keycloakSession.users().addUser(getRealm(), username);
         resource.getEmails().stream().findFirst().flatMap(MultiComplexNode::getValue).ifPresent(user::setEmail);
         boolean userEnabled = resource.isActive().orElse(false);
         user.setEnabled(userEnabled);
         user.setFederationLink(getConfiguration().getId());
-        return new KeycloakId(user.getId());
+        return user.getId();
     }
 
     @Override
@@ -79,8 +84,8 @@ public class UserScimService extends AbstractScimService<UserModel, User> {
     }
 
     @Override
-    protected KeycloakId getId(UserModel userModel) {
-        return new KeycloakId(userModel.getId());
+    protected String getId(UserModel userModel) {
+        return userModel.getId();
     }
 
     @Override

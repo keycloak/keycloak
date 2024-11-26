@@ -32,9 +32,10 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractScimService<K extends RoleMapperModel, S extends ResourceNode> implements AutoCloseable {
 
+    public static final String SCIM_ID = "SCIM_ID";
     private static final Logger LOGGER = Logger.getLogger(AbstractScimService.class);
     protected final SkipOrStopStrategy skipOrStopStrategy;
-    private final KeycloakSession keycloakSession;
+    protected final KeycloakSession keycloakSession;
     private final ScrimEndPointConfiguration scimProviderConfiguration;
     private final ScimResourceType type;
     private final ScimClient<S> scimClient;
@@ -54,7 +55,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
             return;
         }
         // If mapping, then we are trying to recreate a user that was already created by import
-        KeycloakId id = getId(roleMapperModel);
+        String id = getId(roleMapperModel);
         if (findMappingById(id) != null) {
             throw new InconsistentScimMappingException(
                     "Trying to create user with id " + id + ": id already exists in Keycloak database");
@@ -62,8 +63,8 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         S scimForCreation = scimRequestBodyForCreate(roleMapperModel);
         String externalId = scimClient.create(id, scimForCreation);
         switch (type) {
-            case USER -> UserModel.class.cast(roleMapperModel).setSingleAttribute("SCIM_ID", externalId);
-            case GROUP -> GroupModel.class.cast(roleMapperModel).setSingleAttribute("SCIM_ID", externalId);
+            case USER -> UserModel.class.cast(roleMapperModel).setSingleAttribute(SCIM_ID, externalId);
+            case GROUP -> GroupModel.class.cast(roleMapperModel).setSingleAttribute(SCIM_ID, externalId);
         }
     }
 
@@ -72,7 +73,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
             // Silently return: resource is explicitly marked as to ignore
             return;
         }
-        KeycloakId keycloakId = getId(roleMapperModel);
+        String keycloakId = getId(roleMapperModel);
         String entityOnRemoteScimId = findMappingById(keycloakId);
         if (entityOnRemoteScimId == null) {
             throw new InconsistentScimMappingException("Failed to find SCIM mapping for " + keycloakId);
@@ -94,7 +95,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         try (Stream<K> resourcesStream = getResourceStream()) {
             Set<K> resources = resourcesStream.collect(Collectors.toUnmodifiableSet());
             for (K resource : resources) {
-                KeycloakId id = getId(resource);
+                String id = getId(resource);
                 pushSingleResourceToScim(syncRes, resource, id);
             }
         }
@@ -108,7 +109,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         }
     }
 
-    private void pushSingleResourceToScim(SynchronizationResult syncRes, K resource, KeycloakId id)
+    private void pushSingleResourceToScim(SynchronizationResult syncRes, K resource, String id)
             throws InvalidResponseFromScimEndpointException, InconsistentScimMappingException {
         try {
             LOGGER.infof("[SCIM] Reconciling local resource %s", id);
@@ -152,7 +153,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
             // Here no keycloak user/group matching the SCIM external id exists
             // Try to match existing keycloak resource by properties (username, email, name)
-            Optional<KeycloakId> mapped = matchKeycloakMappingByScimProperties(resource);
+            Optional<String> mapped = matchKeycloakMappingByScimProperties(resource);
             if (mapped.isPresent()) {
                 // If found a mapped, update
                 LOGGER.info(
@@ -191,7 +192,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         String optionalMapping = findByExternalId(externalId, type);
         // If an existing mapping exists, delete potential dangling references
         if (optionalMapping != null) {
-            if (entityExists(new KeycloakId(optionalMapping))) {
+            if (entityExists(optionalMapping)) {
                 LOGGER.info("[SCIM] Valid mapping found, skipping");
                 return true;
             }
@@ -202,10 +203,10 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
     protected String findByExternalId(String externalId, ScimResourceType type) {
         RealmModel realm = keycloakSession.getContext().getRealm();
         if (ScimResourceType.USER.equals(type)) {
-            return keycloakSession.users().searchForUserByUserAttributeStream(realm, "SCIM_ID", externalId)
+            return keycloakSession.users().searchForUserByUserAttributeStream(realm, SCIM_ID, externalId)
                     .map(UserModel::getId).findFirst().orElse(null);
         } else if (ScimResourceType.GROUP.equals(type)) {
-            return keycloakSession.groups().searchGroupsByAttributes(realm, Map.of("SCIM_ID", externalId), -1, -1)
+            return keycloakSession.groups().searchGroupsByAttributes(realm, Map.of(SCIM_ID, externalId), -1, -1)
                     .map(GroupModel::getId).findFirst().orElse(null);
         }
         return null;
@@ -216,13 +217,13 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         switch (scimProviderConfiguration.getImportAction()) {
             case CREATE_LOCAL -> {
                 LOGGER.info("[SCIM] Create local resource for SCIM resource " + externalId);
-                KeycloakId id = createEntity(resource);
+                String id = createEntity(resource);
                 RealmModel realm = keycloakSession.getContext().getRealm();
                 switch (type) {
                     case USER -> {
-                        UserModel.class.cast(keycloakSession.users().getUserById(realm, id.asString())).setSingleAttribute("SCIM_ID", externalId);
+                        UserModel.class.cast(keycloakSession.users().getUserById(realm, id)).setSingleAttribute(SCIM_ID, externalId);
                     }
-                    case GROUP -> GroupModel.class.cast(keycloakSession.groups().getGroupById(realm, id.asString())).setSingleAttribute("SCIM_ID", externalId);
+                    case GROUP -> GroupModel.class.cast(keycloakSession.groups().getGroupById(realm, id)).setSingleAttribute(SCIM_ID, externalId);
                 }
                 syncRes.increaseAdded();
             }
@@ -236,16 +237,16 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
     protected abstract S scimRequestBodyForCreate(K roleMapperModel) throws InconsistentScimMappingException;
 
-    protected abstract KeycloakId getId(K roleMapperModel);
+    protected abstract String getId(K roleMapperModel);
 
     protected abstract boolean isMarkedToIgnore(K roleMapperModel);
 
-    protected String findMappingById(KeycloakId keycloakId) {
-        UserModel user = keycloakSession.users().getUserById(keycloakSession.getContext().getRealm(), keycloakId.asString());
+    protected String findMappingById(String keycloakId) {
+        UserModel user = keycloakSession.users().getUserById(keycloakSession.getContext().getRealm(), keycloakId);
         if (user == null) {
             return null;
         }
-        return user.getFirstAttribute("SCIM_ID");
+        return user.getFirstAttribute(SCIM_ID);
     }
 
     private KeycloakSession getKeycloakSession() {
@@ -256,12 +257,12 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
     protected abstract Stream<K> getResourceStream();
 
-    protected abstract KeycloakId createEntity(S resource) throws UnexpectedScimDataException, InconsistentScimMappingException;
+    protected abstract String createEntity(S resource) throws UnexpectedScimDataException, InconsistentScimMappingException;
 
-    protected abstract Optional<KeycloakId> matchKeycloakMappingByScimProperties(S resource)
+    protected abstract Optional<String> matchKeycloakMappingByScimProperties(S resource)
             throws InconsistentScimMappingException;
 
-    protected abstract boolean entityExists(KeycloakId keycloakId);
+    protected abstract boolean entityExists(String keycloakId);
 
     public void sync(SynchronizationResult syncRes)
             throws InconsistentScimMappingException, InvalidResponseFromScimEndpointException, UnexpectedScimDataException {
@@ -289,10 +290,6 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         }
     }
 
-    protected KeycloakDao getKeycloakDao() {
-        return new KeycloakDao(getKeycloakSession());
-    }
-
     @Override
     public void close() {
         scimClient.close();
@@ -300,5 +297,9 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
     public ScrimEndPointConfiguration getConfiguration() {
         return scimProviderConfiguration;
+    }
+
+    protected RealmModel getRealm() {
+        return keycloakSession.getContext().getRealm();
     }
 }

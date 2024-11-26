@@ -51,14 +51,14 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
         return new ScimClient<>(scimRequestBuilder, scimResourceType, scimProviderConfiguration.isLogAllScimRequests());
     }
 
-    public String create(KeycloakId id, S scimForCreation) throws InvalidResponseFromScimEndpointException {
+    public String create(String id, S scimForCreation) throws InvalidResponseFromScimEndpointException {
         Optional<String> scimForCreationId = scimForCreation.getId();
         if (scimForCreationId.isPresent()) {
             throw new IllegalArgumentException(
                     "User to create should never have an existing id: %s %s".formatted(id, scimForCreationId.get()));
         }
         try {
-            Retry retry = retryRegistry.retry("create-%s".formatted(id.asString()));
+            Retry retry = retryRegistry.retry("create-%s".formatted(id));
             if (logAllRequests) {
                 LOGGER.info("[SCIM] Sending CREATE " + scimForCreation.toPrettyString() + "\n to " + getScimEndpoint());
             }

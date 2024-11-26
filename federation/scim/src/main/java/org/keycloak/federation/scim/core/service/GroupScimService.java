@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GroupScimService extends AbstractScimService<GroupModel, Group> {
@@ -32,31 +34,32 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
 
     @Override
     protected Stream<GroupModel> getResourceStream() {
-        return getKeycloakDao().getGroupsStream();
+        return keycloakSession.groups().getGroupsStream(getRealm());
     }
 
     @Override
-    protected boolean entityExists(KeycloakId keycloakId) {
-        return getKeycloakDao().groupExists(keycloakId);
+    protected boolean entityExists(String keycloakId) {
+        return keycloakSession.groups().getGroupById(getRealm(), keycloakId) != null;
     }
 
     @Override
-    protected Optional<KeycloakId> matchKeycloakMappingByScimProperties(Group resource) {
+    protected Optional<String> matchKeycloakMappingByScimProperties(Group resource) {
         Set<String> names = new TreeSet<>();
         resource.getId().ifPresent(names::add);
         resource.getDisplayName().ifPresent(names::add);
-        try (Stream<GroupModel> groupsStream = getKeycloakDao().getGroupsStream()) {
+        try (Stream<GroupModel> groupsStream = keycloakSession.groups().getGroupsStream(getRealm())) {
             Optional<GroupModel> group = groupsStream.filter(groupModel -> names.contains(groupModel.getName())).findFirst();
-            return group.map(GroupModel::getId).map(KeycloakId::new);
+            return group.map(GroupModel::getId);
         }
     }
 
     @Override
-    protected KeycloakId createEntity(Group resource) throws UnexpectedScimDataException, InconsistentScimMappingException {
+    protected String createEntity(Group resource) throws UnexpectedScimDataException, InconsistentScimMappingException {
         String displayName = resource.getDisplayName().filter(StringUtils::isNotBlank)
                 .orElseThrow(() -> new UnexpectedScimDataException(
                         "Remote Scim group has empty name, can't create. Resource id = %s".formatted(resource.getId())));
-        GroupModel group = getKeycloakDao().createGroup(displayName);
+        RealmModel realm = getRealm();
+        GroupModel group = keycloakSession.groups().createGroup(realm, displayName);
         List<Member> groupMembers = resource.getMembers();
         if (CollectionUtils.isNotEmpty(groupMembers)) {
             for (Member groupMember : groupMembers) {
@@ -68,11 +71,11 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
                 if (userId == null) {
                     throw new InconsistentScimMappingException("can't find mapping for group member %s".formatted(externalId));
                 }
-                UserModel userModel = getKeycloakDao().getUserById(new KeycloakId(userId));
+                UserModel userModel = keycloakSession.users().getUserById(realm, userId);
                 userModel.joinGroup(group);
             }
         }
-        return new KeycloakId(group.getId());
+        return group.getId();
     }
 
     @Override
@@ -81,17 +84,17 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
     }
 
     @Override
-    protected KeycloakId getId(GroupModel groupModel) {
-        return new KeycloakId(groupModel.getId());
+    protected String getId(GroupModel groupModel) {
+        return groupModel.getId();
     }
 
     @Override
     protected Group scimRequestBodyForCreate(GroupModel groupModel) throws InconsistentScimMappingException {
-        Set<KeycloakId> members = getKeycloakDao().getGroupMembers(groupModel);
+        Set<String> members = keycloakSession.users().getGroupMembersStream(getRealm(), groupModel).map(UserModel::getId).collect(Collectors.toSet());
         Group group = new Group();
         group.setExternalId(groupModel.getId());
         group.setDisplayName(groupModel.getName());
-        for (KeycloakId member : members) {
+        for (String member : members) {
             Member groupMember = new Member();
             String externalIdAsEntityOnRemoteScimId = findMappingById(member);
             if (externalIdAsEntityOnRemoteScimId != null) {
