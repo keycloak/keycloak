@@ -124,7 +124,7 @@
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
-        <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
+        <undertow-jakarta.version>2.3.18.Final</undertow-jakarta.version>
         <wildfly-elytron.version>2.5.2.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -286,7 +286,7 @@
         </developer>
     </developers>
 
-    <contributors></contributors>
+    <contributors/>
 
     <modules>
         <module>boms</module>
