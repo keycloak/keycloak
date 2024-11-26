@@ -3,19 +3,21 @@ package org.keycloak.federation.scim.core.service;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import org.jboss.logging.Logger;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
 import org.keycloak.federation.scim.core.exceptions.InvalidResponseFromScimEndpointException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.exceptions.UnexpectedScimDataException;
-import org.keycloak.federation.scim.jpa.ScimResourceDao;
-import org.keycloak.federation.scim.jpa.ScimResourceMapping;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,13 +55,16 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         }
         // If mapping, then we are trying to recreate a user that was already created by import
         KeycloakId id = getId(roleMapperModel);
-        if (findMappingById(id).isPresent()) {
+        if (findMappingById(id) != null) {
             throw new InconsistentScimMappingException(
                     "Trying to create user with id " + id + ": id already exists in Keycloak database");
         }
         S scimForCreation = scimRequestBodyForCreate(roleMapperModel);
-        EntityOnRemoteScimId externalId = scimClient.create(id, scimForCreation);
-        createMapping(id, externalId);
+        String externalId = scimClient.create(id, scimForCreation);
+        switch (type) {
+            case USER -> UserModel.class.cast(roleMapperModel).setSingleAttribute("SCIM_ID", externalId);
+            case GROUP -> GroupModel.class.cast(roleMapperModel).setSingleAttribute("SCIM_ID", externalId);
+        }
     }
 
     public void update(K roleMapperModel) throws InconsistentScimMappingException, InvalidResponseFromScimEndpointException {
@@ -68,22 +73,19 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
             return;
         }
         KeycloakId keycloakId = getId(roleMapperModel);
-        EntityOnRemoteScimId entityOnRemoteScimId = findMappingById(keycloakId)
-                .map(ScimResourceMapping::getExternalIdAsEntityOnRemoteScimId)
-                .orElseThrow(() -> new InconsistentScimMappingException("Failed to find SCIM mapping for " + keycloakId));
+        String entityOnRemoteScimId = findMappingById(keycloakId);
+        if (entityOnRemoteScimId == null) {
+            throw new InconsistentScimMappingException("Failed to find SCIM mapping for " + keycloakId);
+        }
         S scimForReplace = scimRequestBodyForUpdate(roleMapperModel, entityOnRemoteScimId);
         scimClient.update(entityOnRemoteScimId, scimForReplace);
     }
 
-    protected abstract S scimRequestBodyForUpdate(K roleMapperModel, EntityOnRemoteScimId externalId)
+    protected abstract S scimRequestBodyForUpdate(K roleMapperModel, String externalId)
             throws InconsistentScimMappingException;
 
-    public void delete(KeycloakId id) throws InconsistentScimMappingException, InvalidResponseFromScimEndpointException {
-        ScimResourceMapping resource = findMappingById(id).orElseThrow(() -> new InconsistentScimMappingException(
-                "Failed to delete resource %s, scim mapping not found: ".formatted(id)));
-        EntityOnRemoteScimId externalId = resource.getExternalIdAsEntityOnRemoteScimId();
+    public void delete(String externalId) throws InconsistentScimMappingException, InvalidResponseFromScimEndpointException {
         scimClient.delete(externalId);
-        getScimResourceDao().delete(resource);
     }
 
     public void pushAllResourcesToScim(SynchronizationResult syncRes)
@@ -114,7 +116,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
                 LOGGER.infof("[SCIM] Skip local resource %s", id);
                 return;
             }
-            if (findMappingById(id).isPresent()) {
+            if (findMappingById(id) != null) {
                 LOGGER.info("[SCIM] Replacing it");
                 update(resource);
             } else {
@@ -141,9 +143,10 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
             throws UnexpectedScimDataException, InconsistentScimMappingException, InvalidResponseFromScimEndpointException {
         try {
             LOGGER.infof("[SCIM] Reconciling remote resource %s", resource);
-            EntityOnRemoteScimId externalId = resource.getId().map(EntityOnRemoteScimId::new)
-                    .orElseThrow(() -> new UnexpectedScimDataException(
-                            "Remote SCIM resource doesn't have an id, cannot import it in Keycloak"));
+            String externalId = resource.getId().orElse(null);
+            if (externalId == null) {
+                throw new UnexpectedScimDataException("Remote SCIM resource doesn't have an id, cannot import it in Keycloak");
+            }
             if (validMappingAlreadyExists(externalId))
                 return;
 
@@ -154,7 +157,6 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
                 // If found a mapped, update
                 LOGGER.info(
                         "[SCIM] Matched SCIM resource " + externalId + " from properties with keycloak entity " + mapped.get());
-                createMapping(mapped.get(), externalId);
                 syncRes.increaseUpdated();
             } else {
                 // If not, create it locally or deleting it remotely (according to the configured Import Action)
@@ -185,29 +187,43 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
     }
 
-    private boolean validMappingAlreadyExists(EntityOnRemoteScimId externalId) {
-        Optional<ScimResourceMapping> optionalMapping = getScimResourceDao().findByExternalId(externalId, type);
+    private boolean validMappingAlreadyExists(String externalId) {
+        String optionalMapping = findByExternalId(externalId, type);
         // If an existing mapping exists, delete potential dangling references
-        if (optionalMapping.isPresent()) {
-            ScimResourceMapping mapping = optionalMapping.get();
-            if (entityExists(mapping.getIdAsKeycloakId())) {
+        if (optionalMapping != null) {
+            if (entityExists(new KeycloakId(optionalMapping))) {
                 LOGGER.info("[SCIM] Valid mapping found, skipping");
                 return true;
-            } else {
-                LOGGER.info("[SCIM] Delete a dangling mapping");
-                getScimResourceDao().delete(mapping);
             }
         }
         return false;
     }
 
-    private void createLocalOrDeleteRemote(SynchronizationResult syncRes, S resource, EntityOnRemoteScimId externalId)
+    protected String findByExternalId(String externalId, ScimResourceType type) {
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        if (ScimResourceType.USER.equals(type)) {
+            return keycloakSession.users().searchForUserByUserAttributeStream(realm, "SCIM_ID", externalId)
+                    .map(UserModel::getId).findFirst().orElse(null);
+        } else if (ScimResourceType.GROUP.equals(type)) {
+            return keycloakSession.groups().searchGroupsByAttributes(realm, Map.of("SCIM_ID", externalId), -1, -1)
+                    .map(GroupModel::getId).findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    private void createLocalOrDeleteRemote(SynchronizationResult syncRes, S resource, String externalId)
             throws UnexpectedScimDataException, InconsistentScimMappingException, InvalidResponseFromScimEndpointException {
         switch (scimProviderConfiguration.getImportAction()) {
             case CREATE_LOCAL -> {
                 LOGGER.info("[SCIM] Create local resource for SCIM resource " + externalId);
                 KeycloakId id = createEntity(resource);
-                createMapping(id, externalId);
+                RealmModel realm = keycloakSession.getContext().getRealm();
+                switch (type) {
+                    case USER -> {
+                        UserModel.class.cast(keycloakSession.users().getUserById(realm, id.asString())).setSingleAttribute("SCIM_ID", externalId);
+                    }
+                    case GROUP -> GroupModel.class.cast(keycloakSession.groups().getGroupById(realm, id.asString())).setSingleAttribute("SCIM_ID", externalId);
+                }
                 syncRes.increaseAdded();
             }
             case DELETE_REMOTE -> {
@@ -224,16 +240,12 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
 
     protected abstract boolean isMarkedToIgnore(K roleMapperModel);
 
-    private void createMapping(KeycloakId keycloakId, EntityOnRemoteScimId externalId) {
-        getScimResourceDao().create(keycloakId, externalId, type);
-    }
-
-    protected ScimResourceDao getScimResourceDao() {
-        return ScimResourceDao.newInstance(getKeycloakSession(), scimProviderConfiguration.getId());
-    }
-
-    private Optional<ScimResourceMapping> findMappingById(KeycloakId keycloakId) {
-        return getScimResourceDao().findById(keycloakId, type);
+    protected String findMappingById(KeycloakId keycloakId) {
+        UserModel user = keycloakSession.users().getUserById(keycloakSession.getContext().getRealm(), keycloakId.asString());
+        if (user == null) {
+            return null;
+        }
+        return user.getFirstAttribute("SCIM_ID");
     }
 
     private KeycloakSession getKeycloakSession() {
@@ -261,16 +273,16 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         }
     }
 
-    protected Meta newMetaLocation(EntityOnRemoteScimId externalId) {
+    protected Meta newMetaLocation(String externalId) {
         Meta meta = new Meta();
         URI uri = getUri(type, externalId);
         meta.setLocation(uri.toString());
         return meta;
     }
 
-    protected URI getUri(ScimResourceType type, EntityOnRemoteScimId externalId) {
+    protected URI getUri(ScimResourceType type, String externalId) {
         try {
-            return new URI("%s/%s".formatted(type.getEndpoint(), externalId.asString()));
+            return new URI("%s/%s".formatted(type.getEndpoint(), externalId));
         } catch (URISyntaxException e) {
             throw new IllegalStateException(
                     "should never occur: can not format URI for type %s and id %s".formatted(type, externalId), e);

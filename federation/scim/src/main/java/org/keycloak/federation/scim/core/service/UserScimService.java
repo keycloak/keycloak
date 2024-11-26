@@ -69,6 +69,7 @@ public class UserScimService extends AbstractScimService<UserModel, User> {
         resource.getEmails().stream().findFirst().flatMap(MultiComplexNode::getValue).ifPresent(user::setEmail);
         boolean userEnabled = resource.isActive().orElse(false);
         user.setEnabled(userEnabled);
+        user.setFederationLink(getConfiguration().getId());
         return new KeycloakId(user.getId());
     }
 
@@ -115,9 +116,9 @@ public class UserScimService extends AbstractScimService<UserModel, User> {
     }
 
     @Override
-    protected User scimRequestBodyForUpdate(UserModel userModel, EntityOnRemoteScimId externalId) {
+    protected User scimRequestBodyForUpdate(UserModel userModel, String externalId) {
         User user = scimRequestBodyForCreate(userModel);
-        user.setId(externalId.asString());
+        user.setId(externalId);
         Meta meta = newMetaLocation(externalId);
         user.setMeta(meta);
         return user;

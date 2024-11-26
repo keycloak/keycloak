@@ -4,10 +4,13 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import jakarta.ws.rs.core.MediaType;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -17,6 +20,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.federation.scim.event.ScimBackgroundGroupMembershipUpdater;
+import org.keycloak.storage.user.UserRegistrationProvider;
 
 import java.util.Date;
 import java.util.List;
@@ -63,9 +67,11 @@ public class ScimEndpointConfigurationStorageProviderFactory implements
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        ScimBackgroundGroupMembershipUpdater scimBackgroundGroupMembershipUpdater = new ScimBackgroundGroupMembershipUpdater(
-                factory);
-        scimBackgroundGroupMembershipUpdater.startBackgroundUpdates();
+        if (Profile.isFeatureEnabled(Feature.SCIM_FEDERATION)) {
+            ScimBackgroundGroupMembershipUpdater scimBackgroundGroupMembershipUpdater = new ScimBackgroundGroupMembershipUpdater(
+                    factory);
+            scimBackgroundGroupMembershipUpdater.startBackgroundUpdates();
+        }
     }
 
     @Override
@@ -109,10 +115,20 @@ public class ScimEndpointConfigurationStorageProviderFactory implements
      * Empty implementation : we used this {@link ScimEndpointConfigurationStorageProviderFactory} to generate Admin Console
      * page.
      */
-    public static final class ScimEndpointConfigurationStorageProvider implements UserStorageProvider {
+    public static final class ScimEndpointConfigurationStorageProvider implements UserStorageProvider, UserRegistrationProvider {
         @Override
         public void close() {
             // Nothing to close here
+        }
+
+        @Override
+        public UserModel addUser(RealmModel realm, String username) {
+            return null;
+        }
+
+        @Override
+        public boolean removeUser(RealmModel realm, UserModel user) {
+            return true;
         }
     }
 }

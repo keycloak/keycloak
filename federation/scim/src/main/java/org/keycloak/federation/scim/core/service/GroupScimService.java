@@ -14,7 +14,6 @@ import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.exceptions.UnexpectedScimDataException;
-import org.keycloak.federation.scim.jpa.ScimResourceMapping;
 
 import java.net.URI;
 import java.util.List;
@@ -61,13 +60,15 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
         List<Member> groupMembers = resource.getMembers();
         if (CollectionUtils.isNotEmpty(groupMembers)) {
             for (Member groupMember : groupMembers) {
-                EntityOnRemoteScimId externalId = groupMember.getValue().map(EntityOnRemoteScimId::new)
+                String externalId = groupMember.getValue()
                         .orElseThrow(() -> new UnexpectedScimDataException(
                                 "can't create group member for group '%s' without id: ".formatted(displayName) + resource));
-                KeycloakId userId = getScimResourceDao().findUserByExternalId(externalId)
-                        .map(ScimResourceMapping::getIdAsKeycloakId).orElseThrow(() -> new InconsistentScimMappingException(
-                                "can't find mapping for group member %s".formatted(externalId)));
-                UserModel userModel = getKeycloakDao().getUserById(userId);
+                String userId = findByExternalId(externalId, ScimResourceType.USER);
+
+                if (userId == null) {
+                    throw new InconsistentScimMappingException("can't find mapping for group member %s".formatted(externalId));
+                }
+                UserModel userModel = getKeycloakDao().getUserById(new KeycloakId(userId));
                 userModel.joinGroup(group);
             }
         }
@@ -92,12 +93,9 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
         group.setDisplayName(groupModel.getName());
         for (KeycloakId member : members) {
             Member groupMember = new Member();
-            Optional<ScimResourceMapping> optionalGroupMemberMapping = getScimResourceDao().findUserById(member);
-            if (optionalGroupMemberMapping.isPresent()) {
-                ScimResourceMapping groupMemberMapping = optionalGroupMemberMapping.get();
-                EntityOnRemoteScimId externalIdAsEntityOnRemoteScimId = groupMemberMapping
-                        .getExternalIdAsEntityOnRemoteScimId();
-                groupMember.setValue(externalIdAsEntityOnRemoteScimId.asString());
+            String externalIdAsEntityOnRemoteScimId = findMappingById(member);
+            if (externalIdAsEntityOnRemoteScimId != null) {
+                groupMember.setValue(externalIdAsEntityOnRemoteScimId);
                 URI ref = getUri(ScimResourceType.USER, externalIdAsEntityOnRemoteScimId);
                 groupMember.setRef(ref.toString());
                 group.addMember(groupMember);
@@ -114,10 +112,10 @@ public class GroupScimService extends AbstractScimService<GroupModel, Group> {
     }
 
     @Override
-    protected Group scimRequestBodyForUpdate(GroupModel groupModel, EntityOnRemoteScimId externalId)
+    protected Group scimRequestBodyForUpdate(GroupModel groupModel, String externalId)
             throws InconsistentScimMappingException {
         Group group = scimRequestBodyForCreate(groupModel);
-        group.setId(externalId.asString());
+        group.setId(externalId);
         Meta meta = newMetaLocation(externalId);
         group.setMeta(meta);
         return group;

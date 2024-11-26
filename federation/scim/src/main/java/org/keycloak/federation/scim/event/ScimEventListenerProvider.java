@@ -2,6 +2,7 @@ package org.keycloak.federation.scim.event;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -50,7 +51,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        if (Profile.isFeatureEnabled(Profile.Feature.SCIM)) {
+        if (Profile.isFeatureEnabled(Feature.SCIM_FEDERATION)) {
             // React to User-related event : creation, deletion, update
             EventType eventType = event.getType();
             KeycloakId eventUserId = new KeycloakId(event.getUserId());
@@ -67,7 +68,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                 }
                 case DELETE_ACCOUNT -> {
                     LOGGER.infof("[SCIM] Propagate User deletion - %s", eventUserId);
-                    dispatcher.dispatchUserModificationToAll(client -> client.delete(eventUserId));
+                    dispatcher.dispatchUserModificationToAll(client -> client.delete(event.getDetails().get("SCIM_ID")));
                 }
                 default -> {
                     // No other event has to be propagated to Scim endpoints
@@ -78,7 +79,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        if (Profile.isFeatureEnabled(Profile.Feature.SCIM)) {
+        if (Profile.isFeatureEnabled(Feature.SCIM_FEDERATION)) {
             // Step 1: check if event is relevant for propagation through SCIM
             Pattern pattern = listenedEventPathPatterns.get(event.getResourceType());
             if (pattern == null)
@@ -137,7 +138,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                 UserModel user = getUser(userId);
                 dispatcher.dispatchUserModificationToAll(client -> client.update(user));
             }
-            case DELETE -> dispatcher.dispatchUserModificationToAll(client -> client.delete(userId));
+            case DELETE -> dispatcher.dispatchUserModificationToAll(client -> client.delete(userEvent.getDetails().get("SCIM_ID")));
             default -> {
                 // ACTION userEvent are not relevant, nothing to do
             }
@@ -161,7 +162,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                 GroupModel group = getGroup(groupId);
                 dispatcher.dispatchGroupModificationToAll(client -> client.update(group));
             }
-            case DELETE -> dispatcher.dispatchGroupModificationToAll(client -> client.delete(groupId));
+            case DELETE -> dispatcher.dispatchGroupModificationToAll(client -> client.delete(event.getDetails().get("SCIM_ID")));
             default -> {
                 // ACTION event are not relevant, nothing to do
             }

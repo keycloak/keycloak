@@ -159,7 +159,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         realm.removeGroup(group);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).detail("SCIM_ID", group.getFirstAttribute("SCIM_ID")).success();
     }
 
     @GET
