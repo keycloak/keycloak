@@ -5,9 +5,10 @@ import { Controller, useFormContext } from "react-hook-form";
 
 type ImageUploadProps = {
   name: string;
+  onChange?: (file: string) => void;
 };
 
-export const ImageUpload = ({ name }: ImageUploadProps) => {
+export const ImageUpload = ({ name, onChange }: ImageUploadProps) => {
   const [dataUri, setDataUri] = useState("");
   const [file, setFile] = useState<File>();
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,7 @@ export const ImageUpload = ({ name }: ImageUploadProps) => {
   if (file) {
     fileToDataUri(file).then((dataUri) => {
       setDataUri(dataUri);
+      onChange?.(dataUri);
     });
   }
 

@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { Tab, TabTitleText } from "@patternfly/react-core";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
@@ -7,12 +8,12 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { joinPath } from "../../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
+import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { ThemeSettingsTab } from "./ThemeSettings";
-import { joinPath } from "../../utils/joinPath";
-import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
@@ -55,6 +56,7 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 parent=keycloak.v2
 import=common/quick-theme
 
+logo=${logoName}
 styles=css/theme-styles.css
 `,
     );
@@ -171,7 +173,9 @@ styles=css/login.css css/theme-styles.css
         data-testid="lightColors-tab"
         {...lightColorsTab}
       >
-        <ThemeColors realm={realm} save={saveTheme} theme="light" />
+        <LogoContext>
+          <ThemeColors realm={realm} save={saveTheme} theme="light" />
+        </LogoContext>
       </Tab>
       <Tab
         id="darkColors"
@@ -179,7 +183,9 @@ styles=css/login.css css/theme-styles.css
         data-testid="darkColors-tab"
         {...darkColorsTab}
       >
-        <ThemeColors realm={realm} save={saveTheme} theme="dark" />
+        <LogoContext>
+          <ThemeColors realm={realm} save={saveTheme} theme="dark" />
+        </LogoContext>
       </Tab>
     </RoutableTabs>
   );

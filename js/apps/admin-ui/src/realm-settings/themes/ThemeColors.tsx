@@ -9,6 +9,8 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
+  Text,
+  TextContent,
   TextInputProps,
 } from "@patternfly/react-core";
 import { useEffect, useMemo } from "react";
@@ -22,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ImageUpload } from "./ImageUpload";
+import { usePreviewLogo } from "./LogoContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
@@ -77,6 +80,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   const form = useForm();
   const { handleSubmit, watch } = form;
   const style = watch();
+  const contextLogo = usePreviewLogo();
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const mapping = useMemo(
@@ -131,6 +135,9 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
 
   return (
     <PageSection variant="light">
+      <TextContent className="pf-v5-u-mb-lg">
+        <Text>{t("themeColorInfo")}</Text>
+      </TextContent>
       {mediaQuery.matches && theme === "light" && (
         <Alert variant="info" isInline title={t("themePreviewInfo")} />
       )}
@@ -139,7 +146,10 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           <FormAccess isHorizontal role="manage-realm">
             <FormProvider {...form}>
               <FormGroup label={t("logo")}>
-                <ImageUpload name="logo" />
+                <ImageUpload
+                  name="logo"
+                  onChange={(logo) => contextLogo?.setLogo(logo)}
+                />
               </FormGroup>
               <FormGroup label={t("backgroundImage")}>
                 <ImageUpload name="bgimage" />
@@ -161,6 +171,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
       </Flex>
       <FixedButtonsGroup
         name="colors"
+        saveText={t("downloadThemeJar")}
         save={handleSubmit(convert)}
         reset={setupForm}
       >

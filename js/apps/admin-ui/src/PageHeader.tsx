@@ -25,6 +25,7 @@ import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
+import { usePreviewLogo } from "./realm-settings/themes/LogoContext";
 import { joinPath } from "./utils/joinPath";
 import useToggle from "./utils/useToggle";
 
@@ -184,12 +185,11 @@ const UserDropdown = () => {
 export const Header = () => {
   const { environment, keycloak } = useEnvironment();
   const { t } = useTranslation();
-  const { realm, realmRepresentation } = useRealm();
+  const { realm } = useRealm();
+  const contextLogo = usePreviewLogo();
+  const customLogo = contextLogo?.logo;
 
   const picture = keycloak.tokenParsed?.picture;
-  const customLogo = JSON.parse(
-    realmRepresentation?.attributes?.style || "{}",
-  )?.logo;
   const logo = customLogo || environment.logo || "/logo.svg";
   const url = useHref(toDashboard({ realm }));
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
