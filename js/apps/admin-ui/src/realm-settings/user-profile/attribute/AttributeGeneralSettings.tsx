@@ -104,7 +104,7 @@ export const AttributeGeneralSettings = () => {
               fieldLabelId="attributeDisplayName"
             />
           }
-          fieldId="kc-attribute-display-name"
+          fieldId="kc-attribute-displayName"
         >
           <TranslatableField
             attributeName="name"

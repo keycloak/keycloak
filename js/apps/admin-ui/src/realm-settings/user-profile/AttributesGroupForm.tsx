@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { HelpItem, TextControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
@@ -106,15 +105,17 @@ export default function AttributesGroupForm() {
 
     const success = await save({ ...config, groups });
 
-    if (success && realm?.internationalizationEnabled) {
-      try {
-        await saveTranslations({
-          adminClient,
-          realmName,
-          translationsData: { translation },
-        });
-      } catch (error) {
-        addError(t("errorSavingTranslations"), error);
+    if (success) {
+      if (realm?.internationalizationEnabled) {
+        try {
+          await saveTranslations({
+            adminClient,
+            realmName,
+            translationsData: { translation },
+          });
+        } catch (error) {
+          addError(t("errorSavingTranslations"), error);
+        }
       }
       navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
     }

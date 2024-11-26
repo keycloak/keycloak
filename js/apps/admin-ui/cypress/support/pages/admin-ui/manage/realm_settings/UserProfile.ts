@@ -14,8 +14,8 @@ export default class UserProfile {
   #deleteDrpDwnOption = "deleteDropdownAttributeItem";
   #editDrpDwnOption = "editDropdownAttributeItem";
   #cancelNewAttribute = "attribute-cancel";
-  #newAttributeNameInput = "attribute-name";
-  #newAttributeDisplayNameInput = "attribute-display-name";
+  #newAttributeNameInput = "name";
+  #newAttributeDisplayNameInput = "attributes-displayName";
   #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
   #newAttributeEmptyValidators = ".kc-emptyValidators";
   #newAttributeAnnotationBtn = "annotations-add-row";

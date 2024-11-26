@@ -122,7 +122,7 @@ export const TranslatableField = ({
         <InputGroupItem isFill>
           <TextInput
             id={`kc-attribute-${fieldName}`}
-            data-testid={`attributes-group-${fieldName}`}
+            data-testid={`attributes-${fieldName}`}
             isDisabled={realm?.internationalizationEnabled}
             {...register(fieldName)}
           />
