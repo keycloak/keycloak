@@ -51,7 +51,7 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
         return new ScimClient<>(scimRequestBuilder, scimResourceType, scimProviderConfiguration.isLogAllScimRequests());
     }
 
-    public EntityOnRemoteScimId create(KeycloakId id, S scimForCreation) throws InvalidResponseFromScimEndpointException {
+    public String create(KeycloakId id, S scimForCreation) throws InvalidResponseFromScimEndpointException {
         Optional<String> scimForCreationId = scimForCreation.getId();
         if (scimForCreationId.isPresent()) {
             throw new IllegalArgumentException(
@@ -66,7 +66,7 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
                     .create(getResourceClass(), getScimEndpoint()).setResource(scimForCreation).sendRequest());
             checkResponseIsSuccess(response);
             S resource = response.getResource();
-            return resource.getId().map(EntityOnRemoteScimId::new).orElseThrow(
+            return resource.getId().orElseThrow(
                     () -> new InvalidResponseFromScimEndpointException(response, "Created SCIM resource does not have id"));
 
         } catch (Exception e) {
@@ -93,14 +93,14 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
         return scimResourceType.getResourceClass();
     }
 
-    public void update(EntityOnRemoteScimId externalId, S scimForReplace) throws InvalidResponseFromScimEndpointException {
-        Retry retry = retryRegistry.retry("replace-%s".formatted(externalId.asString()));
+    public void update(String externalId, S scimForReplace) throws InvalidResponseFromScimEndpointException {
+        Retry retry = retryRegistry.retry("replace-%s".formatted(externalId));
         try {
             if (logAllRequests) {
                 LOGGER.info("[SCIM] Sending UPDATE " + scimForReplace.toPrettyString() + "\n to " + getScimEndpoint());
             }
             ServerResponse<S> response = retry.executeSupplier(
-                    () -> scimRequestBuilder.update(getResourceClass(), getScimEndpoint(), externalId.asString())
+                    () -> scimRequestBuilder.update(getResourceClass(), getScimEndpoint(), externalId)
                             .setResource(scimForReplace).sendRequest());
             checkResponseIsSuccess(response);
         } catch (Exception e) {
@@ -109,14 +109,14 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
         }
     }
 
-    public void delete(EntityOnRemoteScimId externalId) throws InvalidResponseFromScimEndpointException {
-        Retry retry = retryRegistry.retry("delete-%s".formatted(externalId.asString()));
+    public void delete(String externalId) throws InvalidResponseFromScimEndpointException {
+        Retry retry = retryRegistry.retry("delete-%s".formatted(externalId));
         if (logAllRequests) {
             LOGGER.info("[SCIM] Sending DELETE to " + getScimEndpoint());
         }
         try {
             ServerResponse<S> response = retry.executeSupplier(() -> scimRequestBuilder
-                    .delete(getResourceClass(), getScimEndpoint(), externalId.asString()).sendRequest());
+                    .delete(getResourceClass(), getScimEndpoint(), externalId).sendRequest());
             checkResponseIsSuccess(response);
         } catch (Exception e) {
             LOGGER.warn(e);
