@@ -1,5 +1,7 @@
 package org.keycloak.federation.scim.event;
 
+import static org.keycloak.federation.scim.core.service.AbstractScimService.SCIM_ID;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -10,13 +12,12 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.federation.scim.core.service.AbstractScimService;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.federation.scim.core.ScimDispatcher;
 import org.keycloak.federation.scim.core.ScimEndpointConfigurationStorageProviderFactory;
-import org.keycloak.federation.scim.core.service.KeycloakDao;
-import org.keycloak.federation.scim.core.service.KeycloakId;
 import org.keycloak.federation.scim.core.service.ScimResourceType;
 
 import java.util.Map;
@@ -36,8 +37,6 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
     private final KeycloakSession session;
 
-    private final KeycloakDao keycloakDao;
-
     private final Map<ResourceType, Pattern> listenedEventPathPatterns = Map.of(ResourceType.USER,
             Pattern.compile("users/(.+)"), ResourceType.GROUP, Pattern.compile("groups/([\\w-]+)(/children)?"),
             ResourceType.GROUP_MEMBERSHIP, Pattern.compile("users/(.+)/groups/(.+)"), ResourceType.REALM_ROLE_MAPPING,
@@ -45,7 +44,6 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
     public ScimEventListenerProvider(KeycloakSession session) {
         this.session = session;
-        this.keycloakDao = new KeycloakDao(session);
         this.dispatcher = new ScimDispatcher(session);
     }
 
@@ -54,21 +52,20 @@ public class ScimEventListenerProvider implements EventListenerProvider {
         if (Profile.isFeatureEnabled(Feature.SCIM_FEDERATION)) {
             // React to User-related event : creation, deletion, update
             EventType eventType = event.getType();
-            KeycloakId eventUserId = new KeycloakId(event.getUserId());
+            String eventUserId = event.getUserId();
+            UserModel user = session.users().getUserById(session.getContext().getRealm(), eventUserId);
             switch (eventType) {
                 case REGISTER -> {
                     LOGGER.infof("[SCIM] Propagate User Registration - %s", eventUserId);
-                    UserModel user = getUser(eventUserId);
                     dispatcher.dispatchUserModificationToAll(client -> client.create(user));
                 }
                 case UPDATE_EMAIL, UPDATE_PROFILE -> {
                     LOGGER.infof("[SCIM] Propagate User %s - %s", eventType, eventUserId);
-                    UserModel user = getUser(eventUserId);
                     dispatcher.dispatchUserModificationToAll(client -> client.update(user));
                 }
                 case DELETE_ACCOUNT -> {
                     LOGGER.infof("[SCIM] Propagate User deletion - %s", eventUserId);
-                    dispatcher.dispatchUserModificationToAll(client -> client.delete(event.getDetails().get("SCIM_ID")));
+                    dispatcher.dispatchUserModificationToAll(client -> client.delete(event.getDetails().get(AbstractScimService.SCIM_ID)));
                 }
                 default -> {
                     // No other event has to be propagated to Scim endpoints
@@ -91,16 +88,16 @@ public class ScimEventListenerProvider implements EventListenerProvider {
             // Step 2: propagate event (if needed) according to its resource type
             switch (event.getResourceType()) {
                 case USER -> {
-                    KeycloakId userId = new KeycloakId(matcher.group(1));
+                    String userId = matcher.group(1);
                     handleUserEvent(event, userId);
                 }
                 case GROUP -> {
-                    KeycloakId groupId = new KeycloakId(matcher.group(1));
+                    String groupId = matcher.group(1);
                     handleGroupEvent(event, groupId);
                 }
                 case GROUP_MEMBERSHIP -> {
-                    KeycloakId userId = new KeycloakId(matcher.group(1));
-                    KeycloakId groupId = new KeycloakId(matcher.group(2));
+                    String userId = matcher.group(1);
+                    String groupId = matcher.group(2);
                     handleGroupMemberShipEvent(event, userId, groupId);
                 }
                 case REALM_ROLE_MAPPING -> {
@@ -110,7 +107,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                         case "groups" -> ScimResourceType.GROUP;
                         default -> throw new IllegalArgumentException("Unsupported resource type: " + rawResourceType);
                     };
-                    KeycloakId id = new KeycloakId(matcher.group(2));
+                    String id = matcher.group(2);
                     handleRoleMappingEvent(event, type, id);
                 }
                 case COMPONENT -> {
@@ -125,20 +122,20 @@ public class ScimEventListenerProvider implements EventListenerProvider {
         }
     }
 
-    private void handleUserEvent(AdminEvent userEvent, KeycloakId userId) {
+    private void handleUserEvent(AdminEvent userEvent, String userId) {
         LOGGER.infof("[SCIM] Propagate User %s - %s", userEvent.getOperationType(), userId);
         switch (userEvent.getOperationType()) {
             case CREATE -> {
-                UserModel user = getUser(userId);
+                UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
                 dispatcher.dispatchUserModificationToAll(client -> client.create(user));
                 user.getGroupsStream()
                         .forEach(group -> dispatcher.dispatchGroupModificationToAll(client -> client.update(group)));
             }
             case UPDATE -> {
-                UserModel user = getUser(userId);
+                UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
                 dispatcher.dispatchUserModificationToAll(client -> client.update(user));
             }
-            case DELETE -> dispatcher.dispatchUserModificationToAll(client -> client.delete(userEvent.getDetails().get("SCIM_ID")));
+            case DELETE -> dispatcher.dispatchUserModificationToAll(client -> client.delete(userEvent.getDetails().get(SCIM_ID)));
             default -> {
                 // ACTION userEvent are not relevant, nothing to do
             }
@@ -151,30 +148,30 @@ public class ScimEventListenerProvider implements EventListenerProvider {
      * @param event the event to propagate
      * @param groupId event target's id
      */
-    private void handleGroupEvent(AdminEvent event, KeycloakId groupId) {
+    private void handleGroupEvent(AdminEvent event, String groupId) {
         LOGGER.infof("[SCIM] Propagate Group %s - %s", event.getOperationType(), groupId);
         switch (event.getOperationType()) {
             case CREATE -> {
-                GroupModel group = getGroup(groupId);
+                GroupModel group = session.groups().getGroupById(session.getContext().getRealm(), groupId);
                 dispatcher.dispatchGroupModificationToAll(client -> client.create(group));
             }
             case UPDATE -> {
-                GroupModel group = getGroup(groupId);
+                GroupModel group = session.groups().getGroupById(session.getContext().getRealm(), groupId);
                 dispatcher.dispatchGroupModificationToAll(client -> client.update(group));
             }
-            case DELETE -> dispatcher.dispatchGroupModificationToAll(client -> client.delete(event.getDetails().get("SCIM_ID")));
+            case DELETE -> dispatcher.dispatchGroupModificationToAll(client -> client.delete(event.getDetails().get(SCIM_ID)));
             default -> {
                 // ACTION event are not relevant, nothing to do
             }
         }
     }
 
-    private void handleGroupMemberShipEvent(AdminEvent groupMemberShipEvent, KeycloakId userId, KeycloakId groupId) {
+    private void handleGroupMemberShipEvent(AdminEvent groupMemberShipEvent, String userId, String groupId) {
         LOGGER.infof("[SCIM] Propagate GroupMemberShip %s - User %s Group %s", groupMemberShipEvent.getOperationType(), userId,
                 groupId);
         // Step 1: update USER immediately
-        GroupModel group = getGroup(groupId);
-        UserModel user = getUser(userId);
+        GroupModel group = session.groups().getGroupById(session.getContext().getRealm(), groupId);
+        UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
         dispatcher.dispatchUserModificationToAll(client -> client.update(user));
 
         // Step 2: delayed GROUP update :
@@ -186,15 +183,15 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                 "" + System.currentTimeMillis());
     }
 
-    private void handleRoleMappingEvent(AdminEvent roleMappingEvent, ScimResourceType type, KeycloakId id) {
+    private void handleRoleMappingEvent(AdminEvent roleMappingEvent, ScimResourceType type, String id) {
         LOGGER.infof("[SCIM] Propagate RoleMapping %s - %s %s", roleMappingEvent.getOperationType(), type, id);
         switch (type) {
             case USER -> {
-                UserModel user = getUser(id);
+                UserModel user = session.users().getUserById(session.getContext().getRealm(), id);
                 dispatcher.dispatchUserModificationToAll(client -> client.update(user));
             }
             case GROUP -> {
-                GroupModel group = getGroup(id);
+                GroupModel group = session.groups().getGroupById(session.getContext().getRealm(), id);
                 session.users().getGroupMembersStream(session.getContext().getRealm(), group)
                         .forEach(user -> dispatcher.dispatchUserModificationToAll(client -> client.update(user)));
             }
@@ -225,14 +222,6 @@ public class ScimEventListenerProvider implements EventListenerProvider {
             }
         }
 
-    }
-
-    private UserModel getUser(KeycloakId id) {
-        return keycloakDao.getUserById(id);
-    }
-
-    private GroupModel getGroup(KeycloakId id) {
-        return keycloakDao.getGroupById(id);
     }
 
     @Override

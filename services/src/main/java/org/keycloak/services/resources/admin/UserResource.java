@@ -706,6 +706,7 @@ public class UserResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
+            // we won't need to propagate the scim id once the scim user storage provider is implemented
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri())
                     .detail("SCIM_ID", user.getFirstAttribute("SCIM_ID"))
                     .success();
