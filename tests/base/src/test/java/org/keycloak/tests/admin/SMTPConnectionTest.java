@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.test.admin;
 
 import org.junit.Before;
 import org.junit.Rule;
