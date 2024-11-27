@@ -9,7 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.user.SynchronizationResult;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
 import org.keycloak.federation.scim.core.exceptions.InvalidResponseFromScimEndpointException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
@@ -36,11 +36,11 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
     private static final Logger LOGGER = Logger.getLogger(AbstractScimService.class);
     protected final SkipOrStopStrategy skipOrStopStrategy;
     protected final KeycloakSession keycloakSession;
-    private final ScrimEndPointConfiguration scimProviderConfiguration;
+    private final ScimEndPointConfiguration scimProviderConfiguration;
     private final ScimResourceType type;
     private final ScimClient<S> scimClient;
 
-    protected AbstractScimService(KeycloakSession keycloakSession, ScrimEndPointConfiguration scimProviderConfiguration,
+    protected AbstractScimService(KeycloakSession keycloakSession, ScimEndPointConfiguration scimProviderConfiguration,
             ScimResourceType type, SkipOrStopStrategy skipOrStopStrategy) {
         this.keycloakSession = keycloakSession;
         this.scimProviderConfiguration = scimProviderConfiguration;
@@ -295,7 +295,7 @@ public abstract class AbstractScimService<K extends RoleMapperModel, S extends R
         scimClient.close();
     }
 
-    public ScrimEndPointConfiguration getConfiguration() {
+    public ScimEndPointConfiguration getConfiguration() {
         return scimProviderConfiguration;
     }
 

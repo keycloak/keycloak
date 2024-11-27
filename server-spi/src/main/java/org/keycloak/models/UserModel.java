@@ -31,6 +31,8 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface UserModel extends RoleMapperModel {
+
+    String ID = "ID";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";

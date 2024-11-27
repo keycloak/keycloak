@@ -11,7 +11,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.exceptions.UnexpectedScimDataException;
@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public class GroupScimService extends AbstractScimService<GroupModel, Group> {
     private static final Logger LOGGER = Logger.getLogger(GroupScimService.class);
 
-    public GroupScimService(KeycloakSession keycloakSession, ScrimEndPointConfiguration scimProviderConfiguration,
+    public GroupScimService(KeycloakSession keycloakSession, ScimEndPointConfiguration scimProviderConfiguration,
             SkipOrStopStrategy skipOrStopStrategy) {
         super(keycloakSession, scimProviderConfiguration, ScimResourceType.GROUP, skipOrStopStrategy);
     }

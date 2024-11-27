@@ -3,7 +3,7 @@ package org.keycloak.federation.scim.core;
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import org.keycloak.component.ComponentModel;
 
-public class ScrimEndPointConfiguration {
+public class ScimEndPointConfiguration {
     // Configuration keys : also used in Admin Console page
     public static final String CONF_KEY_AUTH_MODE = "auth-mode";
     public static final String CONF_KEY_AUTH_PASSWORD = "auth-pass";
@@ -27,7 +27,7 @@ public class ScrimEndPointConfiguration {
     private final boolean pushToScimSynchronisationActivated;
     private final boolean logAllScimRequests;
 
-    public ScrimEndPointConfiguration(ComponentModel scimProviderConfiguration) {
+    public ScimEndPointConfiguration(ComponentModel scimProviderConfiguration) {
         try {
             AuthMode authMode = AuthMode.valueOf(scimProviderConfiguration.get(CONF_KEY_AUTH_MODE));
 

@@ -1,1 +1,1 @@
-org.keycloak.federation.scim.core.ScimEndpointConfigurationStorageProviderFactory
+org.keycloak.federation.scim.core.ScimUserStorageProviderFactory

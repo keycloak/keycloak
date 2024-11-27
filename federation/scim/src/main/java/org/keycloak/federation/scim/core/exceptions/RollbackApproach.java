@@ -1,26 +1,26 @@
 package org.keycloak.federation.scim.core.exceptions;
 
 import com.google.common.collect.Lists;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 
 import java.util.ArrayList;
 
 public enum RollbackApproach implements RollbackStrategy {
     ALWAYS_ROLLBACK {
         @Override
-        public boolean shouldRollback(ScrimEndPointConfiguration configuration, ScimPropagationException e) {
+        public boolean shouldRollback(ScimEndPointConfiguration configuration, ScimPropagationException e) {
             return true;
         }
     },
     NEVER_ROLLBACK {
         @Override
-        public boolean shouldRollback(ScrimEndPointConfiguration configuration, ScimPropagationException e) {
+        public boolean shouldRollback(ScimEndPointConfiguration configuration, ScimPropagationException e) {
             return false;
         }
     },
     CRITICAL_ONLY_ROLLBACK {
         @Override
-        public boolean shouldRollback(ScrimEndPointConfiguration configuration, ScimPropagationException e) {
+        public boolean shouldRollback(ScimEndPointConfiguration configuration, ScimPropagationException e) {
             if (e instanceof InconsistentScimMappingException) {
                 // Occurs when mapping between a SCIM resource and a keycloak user failed (missing, ambiguous..)
                 // Log can be sufficient here, no rollback required
