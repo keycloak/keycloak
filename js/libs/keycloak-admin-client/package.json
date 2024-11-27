@@ -24,12 +24,11 @@
     "build": {
       "command": "tsc --pretty",
       "files": [
-        "src/**",
-        "package.json",
+        "src",
         "tsconfig.json"
       ],
       "output": [
-        "lib/**"
+        "lib"
       ]
     },
     "lint": {
