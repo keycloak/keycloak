@@ -308,7 +308,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
-        <module>js</module>
         <module>test-framework</module>
         <module>tests</module>
         <module>quarkus</module>
@@ -1563,6 +1562,26 @@
 
     <profiles>
         <profile>
+            <id>snapshot-repository</id>
+            <activation>
+                <property>
+                    <name>enableNightly</name>
+                </property>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>sonatype-snapshots</id>
+                    <name>Sonatype Snapshots</name>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>daily</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+      
+        <profile>
             <id>testsuite</id>
             <activation>
                 <property>
@@ -1571,6 +1590,18 @@
             </activation>
             <modules>
                 <module>testsuite</module>
+            </modules>
+        </profile>
+        
+        <profile>
+           <id>js</id>
+           <activation>
+                <property>
+                    <name>!skipJs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>js</module>
             </modules>
         </profile>
 

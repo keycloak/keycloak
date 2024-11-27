@@ -47,6 +47,30 @@ To enable it by default, add it to the `MAVEN_OPTS` environment variable:
 
     export MAVEN_OPTS="-Dmaven.build.cache.enabled=true"
 
+### Skipping parts of the build
+
+A full build with all tests can take a significant amount of time, for this reason it is possible to skip parts of the
+build.
+
+#### Enable snapshot repository
+
+Every night Keycloak is built from main and released to the Maven snapshot repository. To enable this repository when
+doing a build use `./mvnw install -DenableNightly`.
+
+#### Skipping tests
+
+To not run tests as part of the build use `./mvnw install -DskipTests` or skip the integration testsuite
+use `./mvwn install -DskipTestsuite`.
+
+#### Skipping building Admin and Account UI
+
+Building Admin and Account UIs are quite time consuming, and unless you are working on those you don't need to build
+them for every build. To skip building the Admin and Account UIs use `./mvnw install -DskipJs`. 
+
+When these are skipped whatever the Admin and Account UIs will still be included in the distribution, but it will be 
+whatever version exists in your local Maven repository. You can for example build the UIs once in a while, or you can
+also enable the Maven Snapshot repository to use the versions from the Nightly builds of Keycloak.
+
 ### Starting Keycloak
 
 To start Keycloak during development first build as specified above, then run:
