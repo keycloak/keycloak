@@ -17,60 +17,30 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
-import java.util.Objects;
 import java.util.Set;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PermissionTicketRemovedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.PERMISSION_TICKET_REMOVED_EVENT)
+public class PermissionTicketRemovedEvent extends BasePermissionTicketEvent {
 
-    private String owner;
-    private String resource;
-    private String scope;
-    private String serverId;
-    private String requester;
-    private String resourceName;
-
-    private PermissionTicketRemovedEvent(String id) {
-        super(id);
+    @ProtoFactory
+    PermissionTicketRemovedEvent(String id, String owner, String resource, String scope, String serverId, String requester, String resourceName) {
+        super(id, owner, resource, scope, serverId, requester, resourceName);
     }
 
     public static PermissionTicketRemovedEvent create(String id, String owner, String requester, String resource, String resourceName, String scope, String serverId) {
-        PermissionTicketRemovedEvent event = new PermissionTicketRemovedEvent(id);
-        event.owner = owner;
-        event.requester = requester;
-        event.resource = resource;
-        event.resourceName = resourceName;
-        event.scope = scope;
-        event.serverId = serverId;
-        return event;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        PermissionTicketRemovedEvent that = (PermissionTicketRemovedEvent) o;
-        return Objects.equals(resource, that.resource) && Objects.equals(serverId, that.serverId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), resource, serverId);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("PermissionTicketRemovedEvent [ id=%s, name=%s]", getId(), resource);
+        return new PermissionTicketRemovedEvent(id, owner, resource, scope, serverId, requester, resourceName);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.permissionTicketRemoval(getId(), owner, requester, resource, resourceName, scope, serverId, invalidations);
+        cache.permissionTicketRemoval(getId(), getOwner(), getRequester(), getResource(), getResourceName(), getScope(), getServerId(), invalidations);
     }
 }
