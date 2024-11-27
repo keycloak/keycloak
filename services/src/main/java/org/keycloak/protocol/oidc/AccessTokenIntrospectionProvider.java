@@ -28,7 +28,6 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -41,7 +40,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.DefaultClientSessionContext;
-import org.keycloak.services.util.UserSessionUtil;
+import org.keycloak.tracing.TracingAttributes;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.MediaType;
@@ -175,6 +175,15 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             verifier.verifierContext(verifierContext);
 
             AccessToken accessToken = verifier.verify().getToken();
+
+            var tracing = session.getProvider(TracingProvider.class);
+            var span = tracing.getCurrentSpan();
+            if (span.isRecording()) {
+                span.setAttribute(TracingAttributes.TOKEN_ISSUER, accessToken.getIssuer());
+                span.setAttribute(TracingAttributes.TOKEN_SID, accessToken.getSessionId());
+                span.setAttribute(TracingAttributes.TOKEN_ID, accessToken.getId());
+            }
+
             if (validateSession) {
                 return tokenManager.checkTokenValidForIntrospection(session, realm, verifier.verify().getToken(), eventBuilder);
             }
