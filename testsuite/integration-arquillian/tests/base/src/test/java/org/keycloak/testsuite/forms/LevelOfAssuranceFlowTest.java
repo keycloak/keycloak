@@ -47,10 +47,12 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,6 +73,7 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -79,6 +82,7 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -99,7 +103,9 @@ import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialT
 @EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
-    private static final String FLOW_NAME = "";
+    private final static String FLOW_ALIAS = "browser -  Level of Authentication FLow";
+
+    private static final String CLIENT_ID = "test-app";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -129,6 +135,9 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected DeleteCredentialPage deleteCredentialPage;
+
+    @Page
+    protected AppPage appPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -193,10 +202,9 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     private static void configureStepUpFlow(KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
-        final String newFlowAlias = "browser -  Level of Authentication FLow";
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
         testingClient.server(TEST_REALM_NAME)
-                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms -> forms.clear()
+                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
                         // level 1 authentication
                         .addSubFlowExecution("level1-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
@@ -237,16 +245,14 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void reconfigureStepUpFlow(int maxAge1, int maxAge2, int maxAge3) {
-        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
+        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
         configureStepUpFlow(testingClient, maxAge1, maxAge2, maxAge3);
     }
 
     private static void configureFlowsWithRecoveryCodes(KeycloakTestingClient testingClient) {
-        final String newFlowAlias = "browser -  Level of Authentication FLow";
-
         testingClient.server(TEST_REALM_NAME)
                 .run(session -> {
-                    FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms ->
+                    FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms ->
                                     // Remove "OTP" required execution
                                     forms.selectFlow("level2-subflow")
                                             .removeExecution(1)
@@ -258,7 +264,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @After
     public void after() {
-        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
+        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
     }
 
     @Test
@@ -425,7 +431,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testRealm().update(realmRep);
 
         // Remove acr-to-loa mapping from the client. It should use realm acr-to-loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         testClientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{}");
         testClient.update(testClientRep);
@@ -453,7 +459,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientDefaultAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
         testClient.update(testClientRep);
@@ -494,7 +500,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testRealm().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "foo"));
         try {
@@ -535,7 +541,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testRealm().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("foo");
         Assert.assertThrows(BadRequestException.class, () -> {
@@ -688,11 +694,10 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testBackwardsCompatibilityForLoaConditionConfig() {
         // Reconfigure to the format of Keycloak 17 with option "Store Loa in User Session"
-        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
-        final String newFlowAlias = "browser -  Level of Authentication FLow";
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
         testingClient.server(TEST_REALM_NAME)
-                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms -> forms.clear()
+                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
                         // level 1 authentication
                         .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
@@ -739,7 +744,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Test
     @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
     public void testDisableStepupFeatureTest() {
-        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
+        BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
 
         // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
         loginPage.open();
@@ -752,7 +757,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("0");
 
         // Flow is needed due the "after()" method
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("browser -  Level of Authentication FLow"));
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
     }
 
     @Test
@@ -930,7 +935,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testLoginWithMinimumAcrWithoutAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -948,7 +953,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testLoginWithMinimumAcrWithLowerAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -968,7 +973,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testLoginWithMinimumAcrWithHigherAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -989,7 +994,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testEssentialAcrMinimumOk() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1008,7 +1013,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testEssentialAcrMinimumTooLow() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1024,7 +1029,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testNonEssentialAcrMinimumUpgrade() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1038,6 +1043,26 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         // Revert
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue(null);
         testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testClientOverrideLOAFlow() throws Exception {
+        reconfigureStepUpFlow(300, 300, 300);
+
+        String flowId = testRealm().flows().getFlows().stream().filter(flow -> FLOW_ALIAS.equals(flow.getAlias())).findFirst().get().getId();
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW).update(); 
+             ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, CLIENT_ID)
+                .setAttribute(Constants.MINIMUM_ACR_VALUE, "gold")
+                .setAuthenticationFlowBindingOverrides(Collections.singletonMap(AuthenticationFlowBindings.BROWSER_BINDING, flowId))
+                .update()) {
+            openLoginFormWithAcrClaim(true, "gold");
+            authenticateWithUsernamePassword();
+            authenticateWithTotp();
+            assertLoggedInWithAcr("gold");
+            appPage.assertCurrent();
+            openLoginFormWithAcrClaim(true, "gold");
+            appPage.assertCurrent();
+        }
     }
 
     private String getCredentialIdByLabel(String credentialLabel) {
