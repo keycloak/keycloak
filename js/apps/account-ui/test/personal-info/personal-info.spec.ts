@@ -5,7 +5,6 @@ import {
   deleteUser,
   enableLocalization,
   importUserProfile,
-  inRealm,
 } from "../admin-client";
 import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };
@@ -16,11 +15,8 @@ const realm = "user-profile";
 test.describe("Personal info page", () => {
   const user = "user-" + randomUUID();
 
-  test.beforeAll(
-    async () =>
-      await inRealm(realm, () => createRandomUserWithPassword(user, "pwd")),
-  );
-  test.afterAll(async () => await inRealm(realm, () => deleteUser(user)));
+  test.beforeAll(() => createRandomUserWithPassword(user, "pwd", realm));
+  test.afterAll(async () => deleteUser(user, realm));
 
   test("sets basic information", async ({ page }) => {
     await login(page, user, "pwd", realm);
@@ -39,8 +35,11 @@ test.describe("Personal info with userprofile enabled", () => {
   let user: string;
   test.beforeAll(async () => {
     await importUserProfile(userProfileConfig as UserProfileConfig, realm);
-    user = await inRealm(realm, () =>
-      createRandomUserWithPassword("user-" + randomUUID(), "jdoe", {
+    user = await createRandomUserWithPassword(
+      "user-" + randomUUID(),
+      "jdoe",
+      realm,
+      {
         email: "jdoe@keycloak.org",
         firstName: "John",
         lastName: "Doe",
@@ -48,11 +47,11 @@ test.describe("Personal info with userprofile enabled", () => {
         clientRoles: {
           account: ["manage-account"],
         },
-      }),
+      },
     );
   });
 
-  test.afterAll(async () => await inRealm(realm, () => deleteUser(user)));
+  test.afterAll(() => deleteUser(user, realm));
 
   test("render user profile fields", async ({ page }) => {
     await login(page, user, "jdoe", realm);
@@ -121,8 +120,10 @@ test.describe("Personal info with userprofile enabled", () => {
 test.describe("Realm localization", () => {
   test.beforeAll(() => enableLocalization());
   test("change locale", async ({ page }) => {
-    const user = await inRealm(realm, () =>
-      createRandomUserWithPassword("user-" + randomUUID(), "pwd"),
+    const user = await createRandomUserWithPassword(
+      "user-" + randomUUID(),
+      "pwd",
+      realm,
     );
 
     await login(page, user, "pwd", realm);
