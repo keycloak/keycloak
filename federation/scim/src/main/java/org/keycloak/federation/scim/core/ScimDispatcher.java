@@ -1,8 +1,13 @@
 package org.keycloak.federation.scim.core;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.federation.scim.core.exceptions.ScimExceptionHandler;
 import org.keycloak.federation.scim.core.exceptions.ScimPropagationException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopApproach;
@@ -10,12 +15,7 @@ import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.service.AbstractScimService;
 import org.keycloak.federation.scim.core.service.GroupScimService;
 import org.keycloak.federation.scim.core.service.UserScimService;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * In charge of sending SCIM Request to all registered Scim endpoints.
@@ -50,19 +50,19 @@ public class ScimDispatcher {
 
         // Step 2: Get All SCIM endpoints defined in Admin Console (enabled ScimStorageProviderFactory)
         session.getContext().getRealm().getComponentsStream().filter(
-                m -> ScimEndpointConfigurationStorageProviderFactory.ID.equals(m.getProviderId()) && m.get("enabled", true))
+                m -> ScimUserStorageProviderFactory.ID.equals(m.getProviderId()) && m.get("enabled", true))
                 .forEach(scimEndpointConfigurationRaw -> {
                     try {
-                        ScrimEndPointConfiguration scrimEndPointConfiguration = new ScrimEndPointConfiguration(
+                        ScimEndPointConfiguration scrimEndPointConfiguration = new ScimEndPointConfiguration(
                                 scimEndpointConfigurationRaw);
 
                         // Step 3 : create scim clients for each endpoint
-                        if (scimEndpointConfigurationRaw.get(ScrimEndPointConfiguration.CONF_KEY_PROPAGATION_GROUP, false)) {
+                        if (scimEndpointConfigurationRaw.get(ScimEndPointConfiguration.CONF_KEY_PROPAGATION_GROUP, false)) {
                             GroupScimService groupScimService = new GroupScimService(session, scrimEndPointConfiguration,
                                     skipOrStopStrategy);
                             groupScimServices.add(groupScimService);
                         }
-                        if (scimEndpointConfigurationRaw.get(ScrimEndPointConfiguration.CONF_KEY_PROPAGATION_USER, false)) {
+                        if (scimEndpointConfigurationRaw.get(ScimEndPointConfiguration.CONF_KEY_PROPAGATION_USER, false)) {
                             UserScimService userScimService = new UserScimService(session, scrimEndPointConfiguration,
                                     skipOrStopStrategy);
                             userScimServices.add(userScimService);

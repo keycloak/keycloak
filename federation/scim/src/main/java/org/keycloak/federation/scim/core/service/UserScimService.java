@@ -10,27 +10,26 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InconsistentScimMappingException;
 import org.keycloak.federation.scim.core.exceptions.SkipOrStopStrategy;
 import org.keycloak.federation.scim.core.exceptions.UnexpectedScimDataException;
+import org.keycloak.storage.UserStoragePrivateUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class UserScimService extends AbstractScimService<UserModel, User> {
     private static final Logger LOGGER = Logger.getLogger(UserScimService.class);
 
-    public UserScimService(KeycloakSession keycloakSession, ScrimEndPointConfiguration scimProviderConfiguration,
+    public UserScimService(KeycloakSession keycloakSession, ScimEndPointConfiguration scimProviderConfiguration,
             SkipOrStopStrategy skipOrStopStrategy) {
         super(keycloakSession, scimProviderConfiguration, ScimResourceType.USER, skipOrStopStrategy);
     }
@@ -70,10 +69,12 @@ public class UserScimService extends AbstractScimService<UserModel, User> {
         String username = resource.getUserName().filter(StringUtils::isNotBlank)
                 .orElseThrow(() -> new UnexpectedScimDataException(
                         "Remote Scim user has empty username, can't create. Resource id = %s".formatted(resource.getId())));
-        UserModel user = keycloakSession.users().addUser(getRealm(), username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(keycloakSession).addUser(getRealm(), username);
         resource.getEmails().stream().findFirst().flatMap(MultiComplexNode::getValue).ifPresent(user::setEmail);
         boolean userEnabled = resource.isActive().orElse(false);
         user.setEnabled(userEnabled);
+        user.setFirstName(resource.getName().flatMap(Name::getGivenName).orElse(null));
+        user.setLastName(resource.getName().flatMap(Name::getFamilyName).orElse(null));
         user.setFederationLink(getConfiguration().getId());
         return user.getId();
     }

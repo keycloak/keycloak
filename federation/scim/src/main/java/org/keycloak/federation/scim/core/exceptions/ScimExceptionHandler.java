@@ -2,7 +2,7 @@ package org.keycloak.federation.scim.core.exceptions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 
 /**
  * In charge of dealing with SCIM exceptions by ignoring, logging or rollback transaction according to : - The context in which
@@ -29,7 +29,7 @@ public class ScimExceptionHandler {
      * @param scimProviderConfiguration the configuration of the endpoint for which the propagation exception occured
      * @param e the occuring exception
      */
-    public void handleException(ScrimEndPointConfiguration scimProviderConfiguration, ScimPropagationException e) {
+    public void handleException(ScimEndPointConfiguration scimProviderConfiguration, ScimPropagationException e) {
         String errorMessage = "[SCIM] Error while propagating to SCIM endpoint " + scimProviderConfiguration.getName();
         if (rollbackStrategy.shouldRollback(scimProviderConfiguration, e)) {
             session.getTransactionManager().rollback();

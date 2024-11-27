@@ -12,7 +12,7 @@ import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
 import jakarta.ws.rs.ProcessingException;
 import org.jboss.logging.Logger;
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 import org.keycloak.federation.scim.core.exceptions.InvalidResponseFromScimEndpointException;
 
 import java.util.HashMap;
@@ -39,8 +39,8 @@ public class ScimClient<S extends ResourceNode> implements AutoCloseable {
         this.logAllRequests = detailedLogs;
     }
 
-    public static <T extends ResourceNode> ScimClient<T> open(ScrimEndPointConfiguration scimProviderConfiguration,
-            ScimResourceType scimResourceType) {
+    public static <T extends ResourceNode> ScimClient<T> open(ScimEndPointConfiguration scimProviderConfiguration,
+                                                              ScimResourceType scimResourceType) {
         String scimApplicationBaseUrl = scimProviderConfiguration.getEndPoint();
         Map<String, String> httpHeaders = new HashMap<>();
         httpHeaders.put(HttpHeaders.AUTHORIZATION, scimProviderConfiguration.getAuthorizationHeaderValue());

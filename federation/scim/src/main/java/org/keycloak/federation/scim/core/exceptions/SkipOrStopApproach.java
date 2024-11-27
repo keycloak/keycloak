@@ -1,21 +1,21 @@
 package org.keycloak.federation.scim.core.exceptions;
 
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 
 public enum SkipOrStopApproach implements SkipOrStopStrategy {
     ALWAYS_SKIP_AND_CONTINUE {
         @Override
-        public boolean allowPartialSynchronizationWhenPushingToScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowPartialSynchronizationWhenPushingToScim(ScimEndPointConfiguration configuration) {
             return false;
         }
 
         @Override
-        public boolean allowPartialSynchronizationWhenPullingFromScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowPartialSynchronizationWhenPullingFromScim(ScimEndPointConfiguration configuration) {
             return false;
         }
 
         @Override
-        public boolean allowMissingMembersWhenPushingGroupToScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowMissingMembersWhenPushingGroupToScim(ScimEndPointConfiguration configuration) {
             return false;
         }
 
@@ -25,23 +25,23 @@ public enum SkipOrStopApproach implements SkipOrStopStrategy {
         }
 
         @Override
-        public boolean skipInvalidDataFromScimEndpoint(ScrimEndPointConfiguration configuration) {
+        public boolean skipInvalidDataFromScimEndpoint(ScimEndPointConfiguration configuration) {
             return false;
         }
     },
     ALWAYS_STOP {
         @Override
-        public boolean allowPartialSynchronizationWhenPushingToScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowPartialSynchronizationWhenPushingToScim(ScimEndPointConfiguration configuration) {
             return true;
         }
 
         @Override
-        public boolean allowPartialSynchronizationWhenPullingFromScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowPartialSynchronizationWhenPullingFromScim(ScimEndPointConfiguration configuration) {
             return true;
         }
 
         @Override
-        public boolean allowMissingMembersWhenPushingGroupToScim(ScrimEndPointConfiguration configuration) {
+        public boolean allowMissingMembersWhenPushingGroupToScim(ScimEndPointConfiguration configuration) {
             return true;
         }
 
@@ -51,7 +51,7 @@ public enum SkipOrStopApproach implements SkipOrStopStrategy {
         }
 
         @Override
-        public boolean skipInvalidDataFromScimEndpoint(ScrimEndPointConfiguration configuration) {
+        public boolean skipInvalidDataFromScimEndpoint(ScimEndPointConfiguration configuration) {
             return true;
         }
     }

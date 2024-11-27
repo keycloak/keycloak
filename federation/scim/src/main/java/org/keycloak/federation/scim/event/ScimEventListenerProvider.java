@@ -2,28 +2,26 @@ package org.keycloak.federation.scim.event;
 
 import static org.keycloak.federation.scim.core.service.AbstractScimService.SCIM_ID;
 
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.federation.scim.core.service.AbstractScimService;
+import org.keycloak.federation.scim.core.ScimDispatcher;
+import org.keycloak.federation.scim.core.ScimUserStorageProviderFactory;
+import org.keycloak.federation.scim.core.service.ScimResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.federation.scim.core.ScimDispatcher;
-import org.keycloak.federation.scim.core.ScimEndpointConfigurationStorageProviderFactory;
-import org.keycloak.federation.scim.core.service.ScimResourceType;
-
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * An Event listener reacting to Keycloak models modification (e.g. User creation, Group deletion, membership modifications,
@@ -49,29 +47,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        if (Profile.isFeatureEnabled(Feature.SCIM_FEDERATION)) {
-            // React to User-related event : creation, deletion, update
-            EventType eventType = event.getType();
-            String eventUserId = event.getUserId();
-            UserModel user = session.users().getUserById(session.getContext().getRealm(), eventUserId);
-            switch (eventType) {
-                case REGISTER -> {
-                    LOGGER.infof("[SCIM] Propagate User Registration - %s", eventUserId);
-                    dispatcher.dispatchUserModificationToAll(client -> client.create(user));
-                }
-                case UPDATE_EMAIL, UPDATE_PROFILE -> {
-                    LOGGER.infof("[SCIM] Propagate User %s - %s", eventType, eventUserId);
-                    dispatcher.dispatchUserModificationToAll(client -> client.update(user));
-                }
-                case DELETE_ACCOUNT -> {
-                    LOGGER.infof("[SCIM] Propagate User deletion - %s", eventUserId);
-                    dispatcher.dispatchUserModificationToAll(client -> client.delete(event.getDetails().get(AbstractScimService.SCIM_ID)));
-                }
-                default -> {
-                    // No other event has to be propagated to Scim endpoints
-                }
-            }
-        }
+        /** @see org.keycloak.federation.scim.core.ScimUserStorageProvider **/
     }
 
     @Override
@@ -87,10 +63,6 @@ public class ScimEventListenerProvider implements EventListenerProvider {
 
             // Step 2: propagate event (if needed) according to its resource type
             switch (event.getResourceType()) {
-                case USER -> {
-                    String userId = matcher.group(1);
-                    handleUserEvent(event, userId);
-                }
                 case GROUP -> {
                     String groupId = matcher.group(1);
                     handleGroupEvent(event, groupId);
@@ -118,26 +90,6 @@ public class ScimEventListenerProvider implements EventListenerProvider {
                 default -> {
                     // No other resource modification has to be propagated to Scim endpoints
                 }
-            }
-        }
-    }
-
-    private void handleUserEvent(AdminEvent userEvent, String userId) {
-        LOGGER.infof("[SCIM] Propagate User %s - %s", userEvent.getOperationType(), userId);
-        switch (userEvent.getOperationType()) {
-            case CREATE -> {
-                UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
-                dispatcher.dispatchUserModificationToAll(client -> client.create(user));
-                user.getGroupsStream()
-                        .forEach(group -> dispatcher.dispatchGroupModificationToAll(client -> client.update(group)));
-            }
-            case UPDATE -> {
-                UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
-                dispatcher.dispatchUserModificationToAll(client -> client.update(user));
-            }
-            case DELETE -> dispatcher.dispatchUserModificationToAll(client -> client.delete(userEvent.getDetails().get(SCIM_ID)));
-            default -> {
-                // ACTION userEvent are not relevant, nothing to do
             }
         }
     }
@@ -207,7 +159,7 @@ public class ScimEventListenerProvider implements EventListenerProvider {
             // Check if it was a Scim endpoint configuration, and forward deletion if so
             Stream<ComponentModel> scimEndpointConfigurationsWithDeletedId = session.getContext().getRealm()
                     .getComponentsStream()
-                    .filter(m -> ScimEndpointConfigurationStorageProviderFactory.ID.equals(m.getProviderId())
+                    .filter(m -> ScimUserStorageProviderFactory.ID.equals(m.getProviderId())
                             && id.equals(m.getId()));
             if (scimEndpointConfigurationsWithDeletedId.iterator().hasNext()) {
                 LOGGER.infof("[SCIM] SCIM Endpoint configuration DELETE - %s ", id);

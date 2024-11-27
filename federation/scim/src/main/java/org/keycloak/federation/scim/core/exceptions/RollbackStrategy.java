@@ -1,6 +1,6 @@
 package org.keycloak.federation.scim.core.exceptions;
 
-import org.keycloak.federation.scim.core.ScrimEndPointConfiguration;
+import org.keycloak.federation.scim.core.ScimEndPointConfiguration;
 
 /**
  * In charge of deciding, when facing a SCIM-related issue during an operation (e.g User creation), whether we should : - Log
@@ -16,5 +16,5 @@ public interface RollbackStrategy {
      * @param e the exception that we have to handle
      * @return true if transaction should be rolled back, false if we should log and continue operation
      */
-    boolean shouldRollback(ScrimEndPointConfiguration configuration, ScimPropagationException e);
+    boolean shouldRollback(ScimEndPointConfiguration configuration, ScimPropagationException e);
 }
