@@ -1,10 +1,12 @@
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
 import {
+  Action,
+  KeycloakDataTable,
   KeycloakSelect,
+  ListEmptyState,
   SelectVariant,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
   Button,
@@ -33,14 +35,13 @@ import {
   Tr,
   cellWidth,
 } from "@patternfly/react-table";
+import CodeEditor from "@uiw/react-textarea-code-editor";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
-import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -263,11 +264,10 @@ export const AdminEvents = () => {
           onClose={() => setRepresentationEvent(undefined)}
         >
           <CodeEditor
-            isLineNumbersVisible
-            isReadOnly
-            code={code}
-            language={Language.json}
-            height="8rem"
+            readOnly
+            value={code}
+            language="json"
+            style={{ height: "8rem", overflow: "scroll" }}
           />
         </DisplayDialog>
       )}

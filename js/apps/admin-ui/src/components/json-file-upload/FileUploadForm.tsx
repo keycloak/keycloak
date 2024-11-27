@@ -1,4 +1,3 @@
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   Button,
   DropEvent,
@@ -11,6 +10,7 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
+import CodeEditor from "@uiw/react-textarea-code-editor";
 import {
   ChangeEvent,
   DragEvent as ReactDragEvent,
@@ -37,7 +37,7 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
   onChange: (value: string) => void;
   helpText?: string;
   unWrap?: boolean;
-  language?: Language;
+  language?: string;
 };
 
 export const FileUploadForm = ({
@@ -129,7 +129,7 @@ export const FileUploadForm = ({
         />
       )}
       {!unWrap && (
-        <FormGroup label={t("resourceFile")} fieldId={id}>
+        <FormGroup label={t("resourceFile")} fieldId={id + "-filename"}>
           <FileUpload
             data-testid={id}
             id={id}
@@ -152,12 +152,12 @@ export const FileUploadForm = ({
           >
             {!rest.hideDefaultPreview && (
               <CodeEditor
-                isLineNumbersVisible
-                code={fileUpload.value}
+                aria-label="File content"
+                value={fileUpload.value}
                 language={language}
-                height="128px"
-                onChange={handleTextOrDataChange}
-                isReadOnly={!rest.allowEditingUploadedText}
+                style={{ height: "128px", overflow: "scroll" }}
+                onChange={(value) => handleTextOrDataChange(value.target.value)}
+                readOnly={!rest.allowEditingUploadedText}
               />
             )}
           </FileUpload>

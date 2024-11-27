@@ -34,3 +34,7 @@ input[type="checkbox"] {
 #app {
   overflow: hidden;
 }
+
+div.w-tc-editor {
+  font-family: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace';
+}

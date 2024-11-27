@@ -1,9 +1,8 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import { FormGroup } from "@patternfly/react-core";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
-
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { FormGroup } from "@patternfly/react-core";
+import CodeEditor from "@uiw/react-textarea-code-editor";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 export const JavaScript = () => {
   const { t } = useTranslation();
@@ -26,11 +25,10 @@ export const JavaScript = () => {
           <CodeEditor
             id="code"
             data-testid="code"
-            onChange={field.onChange}
-            code={field.value}
-            height="600px"
-            language={Language.javascript}
-            isReadOnly={true}
+            readOnly
+            value={field.value}
+            style={{ height: "600px", overflow: "scroll" }}
+            language="js"
           />
         )}
       />
