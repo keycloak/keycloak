@@ -18,6 +18,7 @@
 package org.keycloak.services;
 
 import jakarta.ws.rs.core.HttpHeaders;
+import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -60,6 +61,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private HttpRequest request;
     private HttpResponse response;
     private ClientConnection clientConnection;
+    private Token bearerToken;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
@@ -221,5 +223,15 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
+    }
+
+    @Override
+    public void setBearerToken(Token token) {
+        this.bearerToken = token;
+    }
+
+    @Override
+    public Token getBearerToken() {
+        return bearerToken;
     }
 }
