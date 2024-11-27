@@ -45,13 +45,6 @@ export default defineConfig(({ mode }) => {
         external,
       },
     },
-    optimizeDeps: {
-      esbuildOptions: {
-        supported: {
-          "top-level-await": true,
-        },
-      },
-    },
     plugins,
     test: {
       watch: false,
