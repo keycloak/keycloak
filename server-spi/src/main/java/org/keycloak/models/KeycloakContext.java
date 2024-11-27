@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -108,4 +109,8 @@ public interface KeycloakContext {
     UserSessionModel getUserSession();
 
     void setUserSession(UserSessionModel session);
+
+    Token getBearerToken();
+
+    void setBearerToken(Token token);
 }
