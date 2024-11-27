@@ -16,6 +16,19 @@
     <name>Keycloak Admin UI</name>
     <description>The user interface to administrate the Keycloak server.</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-js-admin-client</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ui-shared</artifactId>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+
     <profiles>
         <profile>
             <id>withTranslations</id>
