@@ -140,6 +140,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected UserModel user;
 
+    protected String lang;
+
     protected final Map<String, Object> attributes = new HashMap<>();
     private Function<Map<String, Object>, Map<String, Object>> attributeMapper;
 
@@ -150,6 +152,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
         this.uriInfo = session.getContext().getUri();
+        this.lang = Locale.ENGLISH.toLanguageTag();
     }
 
     @SuppressWarnings("unchecked")
@@ -544,7 +547,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
                 }
 
-                attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
+                final var localeBean = new LocaleBean(realm, locale, b, messagesBundle);
+                attributes.put("locale", localeBean);
+
+                lang = localeBean.getCurrentLanguageTag();
             }
 
             if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
@@ -564,6 +570,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 && !Boolean.TRUE.toString().equals(authenticationSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             attributes.put("isAppInitiatedAction", true);
         }
+
+        attributes.put("lang", lang);
     }
 
     /**
@@ -600,8 +608,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public Response createLoginUsername() {
         return createResponse(LoginFormsPages.LOGIN_USERNAME);
     }
-
-    ;
 
     public Response createLoginPassword() {
         return createResponse(LoginFormsPages.LOGIN_PASSWORD);
