@@ -17,6 +17,8 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -1537,6 +1539,7 @@ public class AuthenticationManager {
                         }
                         context.setUserSession(offlineUserSession);
                         context.setClient(client);
+                        context.setBearerToken(token);
                         return new AuthResult(user, offlineUserSession, token, client);
                     }
                 }
@@ -1568,6 +1571,7 @@ public class AuthenticationManager {
                     return null;
                 }
                 context.setClient(client);
+                context.setBearerToken(token);
             }
 
             context.setUserSession(userSession);
@@ -1683,6 +1687,12 @@ public class AuthenticationManager {
 
     public static String getRequestedScopes(KeycloakSession session, ClientModel client) {
         KeycloakContext context = session.getContext();
+        Token bearerToken = context.getBearerToken();
+
+        if (bearerToken != null && TokenCategory.ACCESS.equals(bearerToken.getCategory())) {
+            return AccessToken.class.cast(bearerToken).getScope();
+        }
+
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         if (authenticationSession != null) {
