@@ -13,7 +13,6 @@ export enum ClientsDetailsTab {
   Credentials = "Credentials",
   Roles = "Roles",
   Sessions = "Sessions",
-  Permissions = "Permissions",
   ClientScopes = "Client scopes",
   Authorization = "Authorization",
   ServiceAccountsRoles = "Service accounts roles",

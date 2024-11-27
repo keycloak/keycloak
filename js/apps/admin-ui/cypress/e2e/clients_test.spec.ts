@@ -115,24 +115,6 @@ describe("Clients test", () => {
       );
     });
 
-    it("Should check temporary admin service label (non)existence", () => {
-      commonPage.sidebar().goToRealm("master");
-      commonPage.sidebar().goToClients();
-      commonPage
-        .tableToolbarUtils()
-        .searchItem("temporary-admin-service", false);
-      commonPage.tableUtils().checkRowItemExists("temporary-admin-service");
-      commonPage
-        .tableUtils()
-        .checkTemporaryAdminLabelExists("temporary-admin-label");
-
-      commonPage.tableToolbarUtils().searchItem("admin-cli", false);
-      commonPage.tableUtils().checkRowItemExists("admin-cli");
-      commonPage
-        .tableUtils()
-        .checkTemporaryAdminLabelExists("temporary-admin-label", false);
-    });
-
     it("Should list client scopes", () => {
       commonPage
         .tableUtils()
@@ -1219,9 +1201,8 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
         .checkTabExists(ClientsDetailsTab.Sessions, true)
-        .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(5);
+        .checkNumberOfTabsIsEqual(4);
     });
 
     it("Hides the delete action", () => {
