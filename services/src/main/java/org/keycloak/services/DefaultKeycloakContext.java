@@ -25,7 +25,6 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
@@ -247,7 +246,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
                 span.setAttribute(TracingAttributes.AUTH_SESSION_ID, session.getParentSession().getId());
             }
             if (session.getTabId() != null) {
-                span.setAttribute(TracingAttributes.KC_PREFIX + Constants.TAB_ID, session.getTabId());
+                span.setAttribute(TracingAttributes.AUTH_TAB_ID, session.getTabId());
             }
         }
     }

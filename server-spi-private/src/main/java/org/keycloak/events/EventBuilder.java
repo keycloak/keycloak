@@ -18,6 +18,7 @@
 package org.keycloak.events;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -293,7 +294,9 @@ public class EventBuilder {
             if (details != null) {
                 details.forEach((k, v) -> ab.put(TracingAttributes.KC_PREFIX + "details." + k, v));
             }
-
+            if (event.getType().name().endsWith("_ERROR")) {
+                span.setStatus(StatusCode.ERROR);
+            }
             span.addEvent(event.getType().name(), ab.build(), event.getTime(), TimeUnit.MILLISECONDS);
         }
     }

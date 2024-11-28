@@ -31,6 +31,7 @@ public interface TracingAttributes {
     AttributeKey<String> CLIENT_ID = AttributeKey.stringKey(KC_PREFIX + "clientId");
     AttributeKey<String> USER_ID = AttributeKey.stringKey(KC_PREFIX + "userId");
     AttributeKey<String> AUTH_SESSION_ID = AttributeKey.stringKey(KC_PREFIX + "authenticationSessionId");
+    AttributeKey<String> AUTH_TAB_ID = AttributeKey.stringKey(KC_PREFIX + "authenticationTabId");
     AttributeKey<String> SESSION_ID = AttributeKey.stringKey(KC_PREFIX + "sessionId");
     AttributeKey<String> EVENT_ID = AttributeKey.stringKey(KC_PREFIX + "eventId");
     AttributeKey<String> EVENT_ERROR = AttributeKey.stringKey(KC_PREFIX + "eventError");
