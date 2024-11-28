@@ -48,9 +48,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ClientScopeDecorator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -312,7 +310,7 @@ public class TokenManager {
         if (realm.isRevokeRefreshToken()
                 && (tokenType.equals(TokenUtil.TOKEN_TYPE_REFRESH) || tokenType.equals(TokenUtil.TOKEN_TYPE_OFFLINE))
                 && !validateTokenReuseForIntrospection(session, realm, token)) {
-            logger.debug("Introspection access token for "+token.getIssuedFor() +" client: failed to validate Token reuse for introspection");
+            logger.debugf("Introspection access token for %s client: failed to validate Token reuse for introspection", token.getIssuedFor());
             eventBuilder.detail(Details.REASON, "Realm revoke refresh token, token type is "+tokenType+ " and token is not eligible for introspection");
             return null;
         }

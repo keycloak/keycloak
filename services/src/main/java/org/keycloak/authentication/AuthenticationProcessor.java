@@ -938,7 +938,7 @@ public class AuthenticationProcessor {
     public Response redirectToFlow() {
         URI redirect = new AuthenticationFlowURLHelper(session, realm, uriInfo).getLastExecutionUrl(authenticationSession);
 
-        logger.debug("Redirecting to URL: " + redirect.toString());
+        logger.debugf("Redirecting to URL: %s", redirect.toString());
 
         return Response.status(302).location(redirect).build();
 

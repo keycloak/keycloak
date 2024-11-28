@@ -404,7 +404,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
 
@@ -652,7 +652,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
         List<AuthenticationExecutionInfoRepresentation> result = new LinkedList<>();
@@ -770,7 +770,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("flow not found");
         }
 
