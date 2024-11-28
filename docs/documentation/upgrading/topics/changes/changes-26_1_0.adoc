@@ -57,11 +57,14 @@ Users should use the TCP based `jdbc-ping` stack as a direct replacement.
 When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
 See the Javadoc for a detailed description.
 
-= Updated format of KEYCLOAK_SESSION cookie
+= Updated format of KEYCLOAK_SESSION cookie and AUTH_SESSION_ID cookie
 
-The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie
-contains user session ID, which is hashed by SHA-256 and URL encoded. This can affect you just in case when implementing your own providers and relying on the format of internal {project_name}
-cookies.
+The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie contains user session ID, which is hashed by SHA-256 and URL encoded.
+
+
+The format of `AUTH_SESSION_ID` cookie was updated to include a signature of the auth session id to ensure its integrity through signature verification. The new format is `base64(auth_session_id.auth_session_id_signature)`. With this update, the old format will no longer be accepted, meaning that old auth sessions will no longer be valid. This change has no impact on user sessions.
+
+These changes can affect you just in case when implementing your own providers and relying on the format of internal Keycloak cookies.
 
 = Removal of robots.txt file
 

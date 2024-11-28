@@ -22,7 +22,6 @@ import java.util.Base64;
 import java.util.Objects;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
@@ -183,12 +182,12 @@ public class AuthenticationSessionManager {
                 return validate ? validateAuthSessionIdSignature(authSessionId, signature) : authSessionId;
             }
         } catch (Exception e) {
-            log.errorf("Error decoding auth session id with value: ", encodedBase64AuthSessionId, e);
+            log.errorf("Error decoding auth session id with value: %s", encodedBase64AuthSessionId, e);
         }
         return null;
     }
 
-    public String validateAuthSessionIdSignature(String authSessionId, String signature) {
+    private String validateAuthSessionIdSignature(String authSessionId, String signature) {
         //check if the signature has already been verified for the same request
         if(signature.equals(session.getAttribute(authSessionId))) {
             return authSessionId;
@@ -210,7 +209,7 @@ public class AuthenticationSessionManager {
         return null;
     }
 
-    public String signAndEncodeToBase64AuthSessionId(String authSessionId) {
+    private String signAndEncodeToBase64AuthSessionId(String authSessionId) {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
         SignatureSignerContext signer = signatureProvider.signer();
         StringBuilder buffer = new StringBuilder();
