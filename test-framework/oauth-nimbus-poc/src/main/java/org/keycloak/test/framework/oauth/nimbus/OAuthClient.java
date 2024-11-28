@@ -66,13 +66,17 @@ public class OAuthClient {
         return TokenResponse.parse(tokenRequest.toHTTPRequest().send());
     }
 
-    public TokenResponse resourceOwnerCredentialGrant(String username, String password) throws GeneralException, IOException {
-        ResourceOwnerPasswordCredentialsGrant credentialsGrant = new ResourceOwnerPasswordCredentialsGrant(username, new Secret(password));
-        ClientAuthentication clientAuthentication = getClientAuthentication();
-        URI tokenEndpoint = getOIDCProviderMetadata().getTokenEndpointURI();
+    public TokenResponse resourceOwnerCredentialGrant(String username, String password) {
+        try {
+            ResourceOwnerPasswordCredentialsGrant credentialsGrant = new ResourceOwnerPasswordCredentialsGrant(username, new Secret(password));
+            ClientAuthentication clientAuthentication = getClientAuthentication();
+            URI tokenEndpoint = getOIDCProviderMetadata().getTokenEndpointURI();
 
-        TokenRequest tokenRequest = new TokenRequest(tokenEndpoint, clientAuthentication, credentialsGrant);
-        return TokenResponse.parse(tokenRequest.toHTTPRequest().send());
+            TokenRequest tokenRequest = new TokenRequest(tokenEndpoint, clientAuthentication, credentialsGrant);
+            return TokenResponse.parse(tokenRequest.toHTTPRequest().send());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public TokenResponse tokenRequest(AuthorizationCode authorizationCode) throws IOException, GeneralException {
@@ -98,18 +102,22 @@ public class OAuthClient {
         return revocationRequest.toHTTPRequest().send();
     }
 
-    public URL authorizationRequest() throws IOException, GeneralException {
-        URI authorizationEndpoint = getOIDCProviderMetadata().getAuthorizationEndpointURI();
-        State state = new State();
-        ClientID clientID = new ClientID(client.getClientId());
+    public URL authorizationRequest() {
+        try {
+            URI authorizationEndpoint = getOIDCProviderMetadata().getAuthorizationEndpointURI();
+            State state = new State();
+            ClientID clientID = new ClientID(client.getClientId());
 
-        AuthorizationRequest authorizationRequest = new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
-                .state(state)
-                .redirectionURI(callbackServer.getRedirectionUri())
-                .endpointURI(authorizationEndpoint)
-                .build();
+            AuthorizationRequest authorizationRequest = new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE), clientID)
+                    .state(state)
+                    .redirectionURI(callbackServer.getRedirectionUri())
+                    .endpointURI(authorizationEndpoint)
+                    .build();
 
-        return authorizationRequest.toURI().toURL();
+            return authorizationRequest.toURI().toURL();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<URI> getCallbacks() {
