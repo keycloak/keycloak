@@ -2,7 +2,7 @@ import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 import { uniqBy } from "lodash-es";
 import { isValidElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import useBreadcrumbs, {
   BreadcrumbData,
   BreadcrumbsRoute,

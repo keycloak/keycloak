@@ -1,5 +1,5 @@
 import { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { useMatches } from "react-router-dom";
+import { useMatches } from "react-router";
 
 import { ForbiddenSection } from "../ForbiddenSection";
 import { useAccess } from "../context/access/Access";

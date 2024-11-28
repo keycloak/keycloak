@@ -25,7 +25,7 @@ import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../../context/access/Access";

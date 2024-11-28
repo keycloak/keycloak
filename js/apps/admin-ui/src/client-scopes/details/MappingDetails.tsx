@@ -14,7 +14,7 @@ import {
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useMatch, useNavigate } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";

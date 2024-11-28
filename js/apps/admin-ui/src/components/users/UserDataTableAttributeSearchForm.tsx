@@ -24,7 +24,7 @@ import { CheckIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Form } from "react-router-dom";
+import { Form } from "react-router";
 import { UserAttribute, UserFilter } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {

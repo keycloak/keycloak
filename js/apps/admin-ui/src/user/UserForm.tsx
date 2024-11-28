@@ -38,7 +38,7 @@ import { UserFormFields, toUserFormFields } from "./form-state";
 import { toUsers } from "./routes/Users";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
 
 export type BruteForced = {

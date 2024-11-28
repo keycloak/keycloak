@@ -5,7 +5,7 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense, useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 
 import {
   ErrorBoundaryFallback,

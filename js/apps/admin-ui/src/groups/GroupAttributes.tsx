@@ -8,7 +8,7 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { useAdminClient } from "../admin-client";
 import {
   AttributeForm,

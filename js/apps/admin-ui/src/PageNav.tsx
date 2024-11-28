@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useMatch, useNavigate } from "react-router-dom";
+import { NavLink, useMatch, useNavigate } from "react-router";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";

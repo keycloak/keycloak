@@ -1,4 +1,4 @@
-import { generatePath } from "react-router-dom";
+import { generatePath } from "react-router";
 
 import { DEFAULT_REALM, ROOT_PATH, SERVER_URL } from "./constants";
 

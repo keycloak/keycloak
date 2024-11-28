@@ -9,7 +9,7 @@ import {
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {

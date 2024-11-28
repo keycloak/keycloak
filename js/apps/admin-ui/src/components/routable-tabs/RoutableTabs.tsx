@@ -19,7 +19,7 @@ import {
   useHref,
   useLocation,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { PageHandler } from "../../page/PageHandler";
 import { TAB_PROVIDER } from "../../page/constants";

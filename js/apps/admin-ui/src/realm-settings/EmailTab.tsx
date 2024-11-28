@@ -12,7 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FormPanel,
   PasswordControl,

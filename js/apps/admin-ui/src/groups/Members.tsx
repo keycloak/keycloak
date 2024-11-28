@@ -22,7 +22,7 @@ import { EllipsisVIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";

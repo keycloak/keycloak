@@ -16,7 +16,7 @@ import { sortBy } from "lodash-es";
 import { BellIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ManageOrderDialog } from "../identity-providers/ManageOrderDialog";

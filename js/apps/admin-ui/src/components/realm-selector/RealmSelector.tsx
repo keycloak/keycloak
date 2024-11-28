@@ -24,7 +24,7 @@ import {
 import { debounce } from "lodash-es";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { useRecentRealms } from "../../context/RecentRealms";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";

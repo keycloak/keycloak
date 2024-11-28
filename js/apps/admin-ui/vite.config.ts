@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   const plugins = [react(), checker({ typescript: true })];
   const input = env.LIB ? undefined : "src/main.tsx";
   if (env.LIB) {
-    external.push("react-router-dom");
+    external.push("react-router");
     external.push("react-i18next");
     plugins.push(dts({ insertTypesEntry: true }));
   }

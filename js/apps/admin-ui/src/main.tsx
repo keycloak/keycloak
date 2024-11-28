@@ -3,7 +3,8 @@ import "@patternfly/react-core/dist/styles/base.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { i18n } from "./i18n/i18n";
 import { RootRoute } from "./routes";
 

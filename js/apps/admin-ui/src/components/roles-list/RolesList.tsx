@@ -3,7 +3,7 @@ import { HelpItem, useAlerts } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, To, useNavigate } from "react-router-dom";
+import { Link, To, useNavigate } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";

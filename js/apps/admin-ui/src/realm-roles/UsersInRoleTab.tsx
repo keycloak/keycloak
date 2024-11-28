@@ -1,7 +1,7 @@
 import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useHelp } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import type { ClientRoleParams } from "../clients/routes/ClientRole";

@@ -6,7 +6,7 @@ import {
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { useMatch } from "react-router-dom";
+import { useMatch } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import { i18n } from "../../i18n/i18n";

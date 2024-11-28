@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";

@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import type { IndexRouteObject, RouteObject } from "react-router-dom";
+import type { IndexRouteObject, RouteObject } from "react-router";
 import { environment } from "./environment";
 import { Organizations } from "./organizations/Organizations";
 import { Root } from "./root/Root";

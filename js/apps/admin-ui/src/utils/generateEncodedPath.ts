@@ -1,4 +1,4 @@
-import { generatePath, type PathParam } from "react-router-dom";
+import { generatePath, type PathParam } from "react-router";
 
 /**
  * Represents an object that contains the parameters to be included in a path.

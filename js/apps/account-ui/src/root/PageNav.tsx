@@ -21,7 +21,7 @@ import {
   useHref,
   useLinkClickHandler,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
 
 import fetchContentJson from "../content/fetchContent";
 import { environment, type Environment, type Feature } from "../environment";

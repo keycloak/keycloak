@@ -6,7 +6,7 @@ import {
 import { Button } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { useHref } from "react-router-dom";
+import { useHref } from "react-router";
 
 import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";

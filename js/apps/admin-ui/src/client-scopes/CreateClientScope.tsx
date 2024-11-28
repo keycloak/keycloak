@@ -1,6 +1,6 @@
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {

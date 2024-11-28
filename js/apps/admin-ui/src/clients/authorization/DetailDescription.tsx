@@ -4,7 +4,7 @@ import {
   DescriptionListTerm,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { Link, Path } from "react-router-dom";
+import { Link, Path } from "react-router";
 
 type DetailDescriptionProps<T> = {
   name: string;

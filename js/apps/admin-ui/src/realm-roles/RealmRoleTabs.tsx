@@ -16,7 +16,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useMatch, useNavigate } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {

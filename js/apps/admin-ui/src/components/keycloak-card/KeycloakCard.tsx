@@ -13,7 +13,7 @@ import {
   MenuToggleElement,
 } from "@patternfly/react-core";
 import { ReactElement, useState } from "react";
-import { Link, To } from "react-router-dom";
+import { Link, To } from "react-router";
 
 import "./keycloak-card.css";
 import { EllipsisVIcon } from "@patternfly/react-icons";

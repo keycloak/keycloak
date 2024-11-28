@@ -13,7 +13,7 @@ import {
 import { EllipsisVIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 import {

@@ -1,6 +1,6 @@
 import { Spinner } from "@patternfly/react-core";
 import { Suspense, lazy, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { MenuItem } from "../root/PageNav";
 import { ContentComponentParams } from "../routes";

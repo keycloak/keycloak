@@ -4,7 +4,7 @@ import { RedirectUrl } from "../component/RedirectUrl";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { useTranslation } from "react-i18next";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 type GeneralSettingsProps = {

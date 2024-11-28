@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { generateEncodedPath } from "../../utils/generateEncodedPath";
-import type { Path } from "react-router-dom";
+import type { Path } from "react-router";
 import type { AppRouteObject } from "../../routes";
 
 export type UserTab = "list" | "permissions";

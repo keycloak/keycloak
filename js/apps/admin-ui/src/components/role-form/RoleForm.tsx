@@ -6,7 +6,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, To } from "react-router-dom";
+import { Link, To } from "react-router";
 import {
   FormSubmitButton,
   TextAreaControl,

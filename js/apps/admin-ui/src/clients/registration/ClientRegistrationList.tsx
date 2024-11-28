@@ -3,7 +3,7 @@ import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";

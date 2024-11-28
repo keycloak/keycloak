@@ -13,7 +13,7 @@ import { CubesIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { IRowData } from "@patternfly/react-table";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useMatch, useNavigate } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router";
 import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";

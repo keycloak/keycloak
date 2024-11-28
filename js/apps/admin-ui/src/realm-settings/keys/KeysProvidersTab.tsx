@@ -16,7 +16,7 @@ import {
 import { SearchIcon } from "@patternfly/react-icons";
 import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";

@@ -2,7 +2,7 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { Button, Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
