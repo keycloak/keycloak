@@ -133,8 +133,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       '@vitejs/plugin-react-swc':
-        specifier: ^3.7.1
-        version: 3.7.1(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
+        specifier: ^3.7.2
+        version: 3.7.2(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
       lightningcss:
         specifier: ^1.28.2
         version: 1.28.2
@@ -260,8 +260,8 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
       '@vitejs/plugin-react-swc':
-        specifier: ^3.7.1
-        version: 3.7.1(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
+        specifier: ^3.7.2
+        version: 3.7.2(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
       cypress:
         specifier: ^13.16.0
         version: 13.16.0
@@ -426,8 +426,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       '@vitejs/plugin-react-swc':
-        specifier: ^3.7.1
-        version: 3.7.1(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
+        specifier: ^3.7.2
+        version: 3.7.2(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.27.4)
@@ -1892,10 +1892,10 @@ packages:
     resolution: {integrity: sha512-pq19gbaMOmFE3CbL0ZB8J8BFCo2ckfHBfaIsaOZgBIF4EoISJIdLX5xRhd0FGB0LlHReNRuzoJoMGpTjq8F2CQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@vitejs/plugin-react-swc@3.7.1':
-    resolution: {integrity: sha512-vgWOY0i1EROUK0Ctg1hwhtC3SdcDjZcdit4Ups4aPkDcB1jYhmo+RMYWY87cmXMhvtD5uf8lV89j2w16vkdSVg==}
+  '@vitejs/plugin-react-swc@3.7.2':
+    resolution: {integrity: sha512-y0byko2b2tSVVf5Gpng1eEhX1OvPC7x8yns1Fx8jDzlJp4LS6CMkCPfLw47cjyoMrshQDoQw4qcgjsU9VvlCew==}
     peerDependencies:
-      vite: ^4 || ^5
+      vite: ^4 || ^5 || ^6
 
   '@vitest/expect@2.1.5':
     resolution: {integrity: sha512-nZSBTW1XIdpZvEJyoP/Sy8fUg0b8od7ZpGDkTUcfJ7wz/VoZAFzFfLyxVxGFhUjJzhYqSbIpfMtl/+k/dpWa3Q==}
@@ -6543,7 +6543,7 @@ snapshots:
       '@typescript-eslint/types': 8.16.0
       eslint-visitor-keys: 4.2.0
 
-  '@vitejs/plugin-react-swc@3.7.1(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))':
+  '@vitejs/plugin-react-swc@3.7.2(vite@5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0))':
     dependencies:
       '@swc/core': 1.7.36
       vite: 5.4.11(@types/node@22.10.0)(lightningcss@1.28.2)(terser@5.36.0)
