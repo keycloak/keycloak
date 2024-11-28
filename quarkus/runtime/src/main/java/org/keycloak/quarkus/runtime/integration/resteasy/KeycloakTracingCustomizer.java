@@ -23,6 +23,7 @@ import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import jakarta.enterprise.inject.spi.CDI;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
@@ -36,10 +37,14 @@ import java.util.List;
 public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
 
     private static class StartHandler implements ServerRestHandler {
+        private final String className;
+        private final String methodName;
         private final String spanName;
 
-        public StartHandler(String spanName) {
-            this.spanName = spanName;
+        public StartHandler(String className, String methodName) {
+            this.className = className;
+            this.methodName = methodName;
+            this.spanName = StringUtils.substringAfterLast(className, ".") + "." + methodName;
         }
 
         @Override
@@ -51,6 +56,8 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             Tracer myTracer = openTelemetry.getTracer(this.getClass().getName(), Version.VERSION);
             SpanBuilder spanBuilder = myTracer.spanBuilder(spanName);
             spanBuilder.setParent(Context.current().with(Span.current()));
+            spanBuilder.setAttribute("code.function", methodName);
+            spanBuilder.setAttribute("code.namespace", className);
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
         }
@@ -74,7 +81,7 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
 
         switch (phase) {
             case BEFORE_METHOD_INVOKE:
-                handlers.add(new StartHandler(resourceClass.getClassName() + "." + resourceMethod.getName()));
+                handlers.add(new StartHandler(resourceClass.getClassName(), resourceMethod.getName()));
                 break;
             case AFTER_METHOD_INVOKE:
                 handlers.add(new EndHandler());
