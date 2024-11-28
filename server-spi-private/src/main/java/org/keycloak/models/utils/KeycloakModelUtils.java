@@ -151,6 +151,23 @@ public final class KeycloakModelUtils {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /**
+     * Check if a string is a valid UUID.
+     * @param uuid The UUID string to verify
+     * @return true if the string is a valid uuid
+     */
+    public static boolean isValidUUID(String uuid) {
+        if (uuid == null) {
+            return false;
+        }
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public static PublicKey getPublicKey(String publicKeyPem) {
         if (publicKeyPem != null) {
             try {
