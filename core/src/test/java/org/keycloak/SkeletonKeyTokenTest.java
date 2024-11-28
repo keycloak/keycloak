@@ -17,6 +17,7 @@
 
 package org.keycloak;
 
+import io.github.pixee.security.ObjectInputFilters;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -100,6 +101,7 @@ public class SkeletonKeyTokenTest {
         byte[] bytes = bso.toByteArray();
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
         ObjectInputStream ois = new ObjectInputStream(bis);
+        ObjectInputFilters.enableObjectFilterIfUnprotected(ois);
         principal = (KeycloakPrincipal)ois.readObject();
         ctx = principal.getKeycloakSecurityContext();
         token = ctx.getToken();

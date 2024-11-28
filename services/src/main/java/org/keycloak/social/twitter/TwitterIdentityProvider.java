@@ -16,6 +16,7 @@
  */
 package org.keycloak.social.twitter;
 
+import io.github.pixee.security.ObjectInputFilters;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -211,6 +212,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 RequestToken requestToken;
                 try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(twitterToken)))) {
+                    ObjectInputFilters.enableObjectFilterIfUnprotected(in);
                     requestToken = (RequestToken) in.readObject();
                 }
 

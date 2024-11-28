@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.runonserver;
 
+import io.github.pixee.security.ObjectInputFilters;
 import org.keycloak.common.util.Base64;
 
 import java.io.*;
@@ -65,6 +66,7 @@ public class SerializationUtil {
             byte[] bytes = Base64.decode(result);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is);
+            ObjectInputFilters.enableObjectFilterIfUnprotected(ois);
             return (Throwable) ois.readObject();
         } catch (Exception e) {
             throw new RuntimeException(e);

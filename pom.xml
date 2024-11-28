@@ -248,7 +248,8 @@
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
         <skipProtoLock>false</skipProtoLock>
-    </properties>
+    <versions.java-security-toolkit>1.2.0</versions.java-security-toolkit>
+  </properties>
 
     <url>http://keycloak.org</url>
 
@@ -1292,8 +1293,13 @@
                 <type>test-jar</type>
                 <version>${infinispan.version}</version>
             </dependency>
-
-        </dependencies>
+      <dependency>
+        <groupId>io.github.pixee</groupId>
+        <artifactId>java-security-toolkit</artifactId>
+        
+        <version>${versions.java-security-toolkit}</version>
+      </dependency>
+    </dependencies>
     </dependencyManagement>
 
     <build>
