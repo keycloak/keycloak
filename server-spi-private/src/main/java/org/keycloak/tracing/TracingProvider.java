@@ -171,7 +171,7 @@ public interface TracingProvider extends Provider {
      */
     default void trace(Class<?> tracerClass, String spanSuffix, Consumer<Span> execution) {
         String className = prepareClassName(tracerClass);
-        trace(tracerClass.getName(), className + "." + spanSuffix, execution);
+        trace(className, className + "." + spanSuffix, execution);
     }
 
     private static String prepareClassName(Class<?> tracerClass) {
@@ -234,7 +234,7 @@ public interface TracingProvider extends Provider {
      */
     default <T> T trace(Class<?> tracerClass, String spanSuffix, Function<Span, T> execution) {
         String className = prepareClassName(tracerClass);
-        return trace(tracerClass.getName(), className + "." + spanSuffix, execution);
+        return trace(className, className + "." + spanSuffix, execution);
     }
 
     /**

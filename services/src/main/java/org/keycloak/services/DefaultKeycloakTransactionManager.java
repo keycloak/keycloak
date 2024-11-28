@@ -166,12 +166,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     private static void commitWithTracing(KeycloakTransaction tx, TracingProvider tracing) {
         tracing.trace(tx.getClass(), "commit", span -> {
-            try {
-                tx.commit();
-            } catch (RuntimeException e) {
-                tracing.error(e);
-                throw e;
-            }
+            tx.commit();
         });
     }
 
@@ -212,12 +207,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     private static void rollbackWithTracing(KeycloakTransaction tx, TracingProvider tracing) {
         tracing.trace(tx.getClass(), "rollback", span -> {
-            try {
-                tx.rollback();
-            } catch (RuntimeException e) {
-                tracing.error(e);
-                throw e;
-            }
+            tx.rollback();
         });
     }
 
