@@ -19,7 +19,9 @@ export default class CreateRealmPage {
   }
 
   fillCodeEditor() {
-    cy.get(this.#codeEditor).click().type("clear this field");
+    cy.get(".view-lines");
+    cy.get(this.#codeEditor).click();
+    cy.get(this.#codeEditor).type("clear this field");
 
     return this;
   }
