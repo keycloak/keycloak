@@ -232,13 +232,6 @@
         <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
-        <!-- Frontend -->
-        <node.version>v22.11.0</node.version>
-        <pnpm.version>9.14.4</pnpm.version>
-        <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
-        <!-- The clean step is skipped on Windows -->
-        <js.skip.clean>false</js.skip.clean>
-
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
         <skipProtoLock>false</skipProtoLock>
@@ -1462,68 +1455,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <configuration>
-                        <followSymLinks>false</followSymLinks>
-                        <!-- Skip this step if on windows -->
-                        <skip>${js.skip.clean}</skip>
-                        <filesets>
-                            <fileset>
-                                <directory>${basedir}</directory>
-                                <includes>
-                                    <include>**/.wireit/**</include>
-                                    <include>**/node_modules/**</include>
-                                </includes>
-                            </fileset>
-                            <!-- include all non-maven projects here as well -->
-                            <fileset>
-                                <directory>js/apps/keycloak-server</directory>
-                                <includes>
-                                    <include>server/**</include>
-                                </includes>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.github.eirslett</groupId>
-                    <artifactId>frontend-maven-plugin</artifactId>
-                    <version>${frontend.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>install-node-and-pnpm</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>pnpm-install</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>${pnpm.args.install}</arguments>
-                                <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>pnpm-build</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>build</arguments>
-                            </configuration>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <nodeVersion>${node.version}</nodeVersion>
-                        <pnpmVersion>${pnpm.version}</pnpmVersion>
-                        <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
-                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
                     <version>${project.version}</version>
@@ -1739,18 +1670,6 @@
             </activation>
             <properties>
                 <keycloak.crypto.artifactId>keycloak-crypto-fips1402</keycloak.crypto.artifactId>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>clean-when-not-on-windows</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <js.skip.clean>true</js.skip.clean>
             </properties>
         </profile>
     </profiles>

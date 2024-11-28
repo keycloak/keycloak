@@ -69,8 +69,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   ui-shared:
     name: UI Shared
@@ -85,8 +87,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   account-ui:
     name: Account UI
@@ -101,8 +105,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   admin-ui:
     name: Admin UI
@@ -117,12 +123,16 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:check-types
+        working-directory: js
 
   account-ui-e2e:
     name: Account UI E2E
@@ -156,9 +166,11 @@ jobs:
 
       - name: Install Playwright browsers
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        working-directory: js
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -228,6 +240,7 @@ jobs:
 
       - name: Compile Admin Client
         run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+        working-directory: js
 
       - name: Download Keycloak server
         uses: actions/download-artifact@v4
@@ -249,6 +262,7 @@ jobs:
 
       - name: Start LDAP server
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &
+        working-directory: js
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
