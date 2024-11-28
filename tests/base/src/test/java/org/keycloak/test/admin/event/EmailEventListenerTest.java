@@ -15,53 +15,65 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.event;
+package org.keycloak.test.admin.event;
 
-import static org.junit.Assert.assertNotNull;
-
-import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.test.framework.annotations.InjectRealm;
+import org.keycloak.test.framework.annotations.InjectUser;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.test.framework.mail.MailServer;
+import org.keycloak.test.framework.mail.annotations.InjectMailServer;
+import org.keycloak.test.framework.oauth.nimbus.OAuthClient;
+import org.keycloak.test.framework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.test.framework.realm.ManagedUser;
+import org.keycloak.test.framework.realm.RealmConfig;
+import org.keycloak.test.framework.realm.RealmConfigBuilder;
+import org.keycloak.test.framework.realm.UserConfig;
+import org.keycloak.test.framework.realm.UserConfigBuilder;
 
-public class EmailEventListenerTest extends AbstractEventTest {
+@KeycloakIntegrationTest
+public class EmailEventListenerTest {
 
-    @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    @InjectRealm(config = EmailSenderRealmConfig.class)
+    ManagedRealm realm;
 
-    @Before
-    public void init() {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
+    @InjectUser(config = UserWithEmail.class)
+    ManagedUser user;
 
-        realm.setSmtpServer(suiteContext.getSmtpServer());
+    @InjectMailServer
+    MailServer mail;
 
-        testRealmResource().update(realm);
-
-        configRep.setEventsEnabled(true);
-        configRep.setEventsListeners(List.of(EmailEventListenerProviderFactory.ID));
-        saveConfig();
-        RealmResource realmResource = testRealmResource();
-
-        realmResource.users().create(UserBuilder.create()
-                .username("alice")
-                .email("alice@keycloak.org")
-                .emailVerified(true)
-                .password("alice").build());
-
-        createAppClientInRealm("test");
-        realmResource.clearEvents();
-    }
+    @InjectOAuthClient
+    OAuthClient oAuthClient;
 
     @Test
-    public void eventAttributesTest() {
-        driver.navigate().to(oauth.getLoginFormUrl());
-        loginPage.form().login("alice", "invalid");
-        loginPage.assertCurrent();
-        assertNotNull(greenMail.getLastReceivedMessage());
+    public void testFailedLoginEmailEvent() throws MessagingException {
+        oAuthClient.resourceOwnerCredentialGrant(user.getUsername(), "invalid");
+
+        mail.waitForIncomingEmail(1);
+        MimeMessage lastReceivedMessage = mail.getLastReceivedMessage();
+        Assertions.assertEquals("Login error", lastReceivedMessage.getSubject());
     }
+
+    public static class EmailSenderRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.eventsListeners(EmailEventListenerProviderFactory.ID);
+        }
+    }
+
+    public static class UserWithEmail implements UserConfig {
+
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.username("test").email("test@local").password("password").emailVerified();
+        }
+    }
+
 }
