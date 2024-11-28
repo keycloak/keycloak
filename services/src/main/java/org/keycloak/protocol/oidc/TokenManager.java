@@ -95,6 +95,8 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.tracing.TracingAttributes;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
@@ -596,7 +598,7 @@ public class TokenManager {
 
     public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                                ClientSessionContext clientSessionCtx) {
-        AccessToken token = initToken(realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
+        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
         token = transformAccessToken(session, token, userSession, clientSessionCtx);
         return token;
     }
@@ -1013,12 +1015,12 @@ public class TokenManager {
                 });
     }
 
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session,
+    protected AccessToken initToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                     ClientSessionContext clientSessionCtx, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.type(formatTokenType(client, token));
-        if (UserSessionModel.SessionPersistenceState.TRANSIENT.equals(session.getPersistenceState())) {
+        if (UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
             token.subject(user.getId());
         }
         token.issuedNow();
@@ -1035,11 +1037,20 @@ public class TokenManager {
             token.setAcr(acr);
         }
 
-        token.setSessionId(session.getId());
+        token.setSessionId(userSession.getId());
         ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
         boolean offlineTokenRequested = offlineAccessScope == null ? false
                 : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
-        token.exp(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
+        token.exp(getTokenExpiration(realm, client, userSession, clientSession, offlineTokenRequested));
+
+        // Tracing
+        var tracing = session.getProvider(TracingProvider.class);
+        var span = tracing.getCurrentSpan();
+        if (span.isRecording()) {
+            span.setAttribute(TracingAttributes.TOKEN_ISSUER, token.getIssuer());
+            span.setAttribute(TracingAttributes.TOKEN_SID, token.getSessionId());
+            span.setAttribute(TracingAttributes.TOKEN_ID, token.getId());
+        }
 
         return token;
     }
