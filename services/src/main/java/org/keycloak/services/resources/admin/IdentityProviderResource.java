@@ -184,7 +184,7 @@ public class IdentityProviderResource {
     }
 
     private void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
-        
+
         if (!identityProviderModel.getInternalId().equals(providerRep.getInternalId())) {
             providerRep.setInternalId(identityProviderModel.getInternalId());
         }
@@ -204,7 +204,7 @@ public class IdentityProviderResource {
         if (!oldProviderAlias.equals(newProviderAlias)) {
 
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
-            logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderAlias + ", newProviderId=" + newProviderAlias);
+            logger.debugf("Changing providerId in all clients and linked users. oldProviderId=%s, newProviderId=%s", oldProviderAlias, newProviderAlias);
 
             updateUsersAfterProviderAliasChange(session.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())),
                     oldProviderAlias, newProviderAlias, realm, session);

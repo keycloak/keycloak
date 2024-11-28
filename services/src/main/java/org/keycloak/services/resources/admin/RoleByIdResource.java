@@ -200,7 +200,7 @@ public class RoleByIdResource extends RoleResource {
                                                         final @QueryParam("max") Integer max
     ) {
 
-        if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
+        logger.debugf("*** getRoleComposites: '%s'", id);
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
 

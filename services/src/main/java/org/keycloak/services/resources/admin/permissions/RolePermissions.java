@@ -287,7 +287,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     private boolean adminConflictMessage(RoleModel role) {
-        logger.debug("Trying to assign admin privileges of role: " + role.getName() + " but admin doesn't have same privilege");
+        logger.debugf("Trying to assign admin privileges of role: %s but admin doesn't have same privilege", role.getName());
         return false;
     }
 
