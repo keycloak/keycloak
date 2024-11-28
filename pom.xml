@@ -212,11 +212,6 @@
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
-        <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
-        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
-
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
 
@@ -1586,6 +1581,12 @@
                 <wildfly.version>${eap8.version}</wildfly.version>
                 <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>non-metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
         </profile>
         <profile>
@@ -1601,6 +1602,12 @@
                 <wildfly.version>${upstream.wildfly.version}</wildfly.version>
                 <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 
         </profile>
