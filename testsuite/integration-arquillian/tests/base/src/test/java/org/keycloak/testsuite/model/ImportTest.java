@@ -25,12 +25,14 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -46,7 +48,9 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -64,7 +68,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
         // was having trouble deleting this realm from admin console
         removeRealm("demo-delete");
     }
-    
+
 	@Test
     public void install2() {
         testingClient.server().run(session -> {
@@ -135,6 +139,38 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             ClientModel client = realm.getClientByClientId("appserver");
             ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
             Assert.assertEquals("AFFIRMATIVE", resourceServer.getDecisionStrategy().name());
+        });
+    }
+
+    // https://github.com/keycloak/keycloak/issues/32799
+    @Test
+    public void importAcrToLoaMappingWithDefaultAcrValues() {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/acr-values-import-bug.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("acr-import-bug");
+            Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(realm);
+            Assert.assertNotNull(acrLoaMap);
+
+            ClientModel clientSilverAcr = realm.getClientByClientId("client-silver");
+            Assert.assertEquals("silver", clientSilverAcr.getAttribute("default.acr.values"));
+        });
+    }
+
+    // https://github.com/keycloak/keycloak/issues/10730
+    @Test
+    public void importLdapWithReferenceToGroupBeingImported() {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/testrealm-ldap-group.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("ldap-group-import-bug");
+
+            Optional<ComponentModel> hardCodedGroup = realm.getComponentsStream()
+                    .filter((component) -> component.getName().equals("hard-coded-group"))
+                    .findFirst();
+
+
+            Assert.assertTrue(hardCodedGroup.isPresent());
         });
     }
 

@@ -17,7 +17,6 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.io.IOException;
@@ -43,7 +42,6 @@ import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
@@ -53,99 +51,85 @@ public class HelpCommandDistTest {
 
     @Test
     @Launch({})
-    void testDefaultToHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testDefaultToHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({"--help"})
-    void testHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ "-h" })
-    void testHelpShort(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testHelpShort(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help", OPTIMIZED_BUILD_OPTION_LONG})
-    void testStartOptimizedHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartOptimizedHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help" })
-    void testStartHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--optimized", "--help-all" })
-    void testStartOptimizedHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartOptimizedHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ StartDev.NAME, "--help" })
-    void testStartDevHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartDevHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ StartDev.NAME, "--help-all" })
-    void testStartDevHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartDevHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help-all" })
-    void testStartHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Build.NAME, "--help" })
-    void testBuildHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testBuildHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Export.NAME, "--help" })
-    void testExportHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testExportHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Export.NAME, "--help-all" })
-    void testExportHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testExportHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Import.NAME, "--help" })
-    void testImportHelp(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImportHelp(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Import.NAME, "--help-all" })
-    void testImportHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImportHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
@@ -165,13 +149,13 @@ public class HelpCommandDistTest {
         }
     }
 
-    private void assertSingleJvmStarted(CLIResult run) {
-        assertEquals(1, run.getOutputStream().stream().filter(s -> s.contains("Listening for transport dt_socket")).count());
+    private void assertSingleJvmStarted(CLIResult cliResult) {
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket", 1);
     }
 
-    private void assertHelp(CLIResult result) {
+    private void assertHelp(CLIResult cliResult) {
         // normalize the output to prevent changes around the feature toggles to mark the output to differ
-        String output = result.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
+        String output = cliResult.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
 
         String osName = System.getProperty("os.name");
         if(osName.toLowerCase(Locale.ROOT).contains("windows")) {

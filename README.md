@@ -2,9 +2,10 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/keycloak/keycloak?label=latest%20release)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6818/badge)](https://bestpractices.coreinfrastructure.org/projects/6818)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/keycloak-operator)](https://artifacthub.io/packages/olm/community-operators/keycloak-operator)
 ![GitHub Repo stars](https://img.shields.io/github/stars/keycloak/keycloak?style=flat)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/keycloak/keycloak)
-
+[![Translation status](https://hosted.weblate.org/widget/keycloak/svg-badge.svg)](https://hosted.weblate.org/engage/keycloak/)
 
 # Open Source Identity and Access Management
 
@@ -62,6 +63,7 @@ To write tests, refer to the [writing tests](docs/tests-development.md) guide.
 
 Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md). Participation in the Keycloak project is governed by the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md).
 
+Joining a [community meeting](https://www.keycloak.org/community) is a great way to get involved and help shape the future of Keycloak.
 
 ## Other Keycloak Projects
 

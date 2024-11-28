@@ -51,7 +51,22 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
             logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
             stdoutForwarderThread = new Thread(logProcessor);
             stdoutForwarderThread.start();
-            waitForReadiness();
+
+            try {
+                waitForReadiness();
+            } catch (Exception e) {
+                if (logProcessor.containsBuildTimeOptionsError()) {
+                    log.warn("The build time options have values that differ from what is persisted. Restarting container...");
+                    container.destroy();
+                    container = startContainer();
+                    logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
+                    stdoutForwarderThread = new Thread(logProcessor);
+                    stdoutForwarderThread.start();
+                    waitForReadiness();
+                } else {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -80,6 +95,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         if (args != null) {
             commands.addAll(Arrays.asList(args));
         }
+        log.debugf("Non-server process arguments: %s", commands);
         ProcessBuilder pb = new ProcessBuilder(commands);
         Process p = pb.directory(wrkDir).inheritIO().start();
         try {
@@ -167,9 +183,6 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         List<String> commands = new ArrayList<>(args);
 
         commands.add(0, getCommand());
-        commands.add("--optimized");
-
-        log.debugf("Quarkus parameters: %s", commands);
 
         return commands;
     }
@@ -177,6 +190,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     private ProcessBuilder getProcessBuilder() {
         Map<String, String> env = new HashMap<>();
         String[] processCommands = getArgs(env).toArray(new String[0]);
+        log.debugf("Quarkus process arguments: %s", Arrays.asList(processCommands));
         ProcessBuilder pb = new ProcessBuilder(processCommands);
         pb.environment().putAll(env);
 
@@ -285,14 +299,21 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
                         loggedLines.remove(0);
                     }
                 }
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException e) {
+                if ("Stream closed".equals(e.getMessage())) {
+                    System.out.println("Log has ended");
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
         public String getBufferedLog() {
             return String.join("\n", loggedLines);
+        }
+
+        public boolean containsBuildTimeOptionsError() {
+            return loggedLines.stream().anyMatch(line -> line.contains("The following build time options have values that differ from what is persisted"));
         }
     }
 }

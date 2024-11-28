@@ -43,11 +43,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import javax.net.ssl.HostnameVerifier;
@@ -101,8 +99,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private ExecutorService outputExecutor;
     private boolean inited = false;
     private final Map<String, String> envVars = new HashMap<>();
+    private OutputConsumer outputConsumer;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
+        this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
+    }
+
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort, OutputConsumer outputConsumer) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
@@ -110,6 +113,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
+        this.outputConsumer = outputConsumer;
     }
     
     public CLIResult kcadm(String... arguments) throws IOException {
@@ -139,13 +143,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         Process kcadm = builder.start();
 
-        List<String> outputStream = new ArrayList<>();
-        List<String> errorStream = new ArrayList<>();
-        readOutput(kcadm, outputStream, errorStream);
+        DefaultOutputConsumer outputConsumer = new DefaultOutputConsumer();
+        readOutput(kcadm, outputConsumer);
 
         int exitValue = kcadm.exitValue();
 
-        return CLIResult.create(outputStream, errorStream, exitValue);
+        return CLIResult.create(outputConsumer.getStdOut(), outputConsumer.getErrOut(), exitValue);
     }
 
 	private void invoke(List<String> allArgs, String cmd) {
@@ -189,7 +192,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             }
             if (!manualStop) {
                 stop();
-                envVars.clear();
             }
         }
 
@@ -217,6 +219,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
+                threadDump();
                 throw new RuntimeException("Failed to stop the server", cause);
             }
         }
@@ -259,12 +262,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public List<String> getOutputStream() {
-        return outputStream;
+        return outputConsumer.getStdOut();
     }
 
     @Override
     public List<String> getErrorStream() {
-        return errorStream;
+        return outputConsumer.getErrOut();
     }
 
     @Override
@@ -302,24 +305,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         allArgs.addAll(arguments);
 
         return allArgs.toArray(String[]::new);
-    }
-
-    @Override
-    public void assertStopped() {
-        try {
-            if (keycloak != null) {
-                keycloak.onExit().get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            LOG.warn("Process did not exit as expected, will attempt a thread dump");
-            threadDump();
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -470,8 +455,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void reset() {
-        outputStream.clear();
-        errorStream.clear();
+        outputConsumer.reset();
         exitCode = -1;
         shutdownOutputExecutor();
         keycloak = null;
@@ -521,17 +505,17 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void readOutput() {
-        readOutput(keycloak, outputStream, errorStream);
+        readOutput(keycloak, outputConsumer);
     }
 
-    private static void readOutput(Process process, List<String> outputStream, List<String> errorStream) {
+    private void readOutput(Process process, OutputConsumer outputConsumer) {
         try (
                 BufferedReader outStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         ) {
             while (process.isAlive()) {
-                readStream(outStream, outputStream);
-                readStream(errStream, errorStream);
+                readStream(outStream, outputConsumer, false);
+                readStream(errStream, outputConsumer, true);
                 // a hint to temporarily disable the current thread in favor of the process where the distribution is running
                 // after some tests it shows effective to help starting the server faster
                 LockSupport.parkNanos(1L);
@@ -541,12 +525,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private static void readStream(BufferedReader reader, List<String> stream) throws IOException {
+    private void readStream(BufferedReader reader, OutputConsumer outputConsumer, boolean error) throws IOException {
         String line;
 
         while (reader.ready() && (line = reader.readLine()) != null) {
-            stream.add(line);
-            System.out.println(line);
+            if (error) {
+                outputConsumer.onErrOut(line);
+            } else {
+                outputConsumer.onStdOut(line);
+            }
         }
     }
 
@@ -726,5 +713,44 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
+    }
+
+    private static final class DefaultOutputConsumer implements OutputConsumer {
+
+        private final List<String> stdOut = Collections.synchronizedList(new ArrayList<>());
+        private final List<String> errOut = Collections.synchronizedList(new ArrayList<>());
+
+        @Override
+        public void onStdOut(String line) {
+            System.out.println(line);
+            stdOut.add(line);
+        }
+
+        @Override
+        public void onErrOut(String line) {
+            System.err.println(line);
+            errOut.add(line);
+        }
+
+        @Override
+        public void reset() {
+            stdOut.clear();
+            errOut.clear();
+        }
+
+        @Override
+        public List<String> getErrOut() {
+            return errOut;
+        }
+
+        @Override
+        public List<String> getStdOut() {
+            return stdOut;
+        }
     }
 }

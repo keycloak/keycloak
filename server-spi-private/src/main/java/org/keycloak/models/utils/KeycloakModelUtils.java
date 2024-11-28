@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.RequestContextHelper;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import jakarta.transaction.InvalidTransactionException;
@@ -70,6 +71,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -83,6 +85,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -106,8 +109,46 @@ public final class KeycloakModelUtils {
     private KeycloakModelUtils() {
     }
 
+    /**
+     * Return an ID generated using the UUID java class.
+     * @return The ID using UUID.toString (36 chars)
+     */
     public static String generateId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Return an ID generated using the UUID class but using base64 URL encoding
+     * with the two longs (msb+lsb).
+     * @return The ID getting msb and lsb from UUID and encoding them in
+     * base64 URL without padding (22 chars)
+     */
+    public static String generateShortId() {
+        return generateShortId(UUID.randomUUID());
+    }
+
+    /**
+     * Generates a short ID representation for the UUID. The representation is the
+     * base64 url encoding of the msb+lsb of the UUID.
+     * @param uuid The UUID to represent
+     * @return The string representation in 22 characters
+     */
+    public static String generateShortId(final UUID uuid) {
+        final byte[] bytes = new byte[2 * Long.BYTES];
+        // first the msb
+        long l = uuid.getMostSignificantBits();
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
+            bytes[i] = (byte) (l & 0xff);
+            l >>= 8;
+        }
+        // second the lsb
+        l = uuid.getLeastSignificantBits();
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
+            bytes[Long.BYTES + i] = (byte) (l & 0xff);
+            l >>= 8;
+        }
+        // encode in base64 URL no padding (22 chars)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -259,10 +300,7 @@ public final class KeycloakModelUtils {
      * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, null, session -> {
-            task.run(session);
-            return null;
-        });
+        runJobInTransaction(factory, null, task);
     }
 
     /**
@@ -275,7 +313,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        });
+        }, task.useExistingSession(), task.getTaskName());
     }
 
     /**
@@ -365,7 +403,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable);
+        return runJobInTransactionWithResult(factory, null, callable, false, "Non-HTTP task");
     }
 
     /**
@@ -374,13 +412,22 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
+     * @param useExistingSession if the existing session should be used
+     * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
-    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable,
+                                                      boolean useExistingSession, String taskName) {
         V result;
+        KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
+        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
+            return callable.run(existing);
+        }
+
         try (KeycloakSession session = factory.create()) {
+            RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
-            KeycloakSession old = KeycloakSessionUtil.setKeycloakSession(session);
+            KeycloakSessionUtil.setKeycloakSession(session);
             try {
                 cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
@@ -388,7 +435,7 @@ public final class KeycloakModelUtils {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
             } finally {
-                KeycloakSessionUtil.setKeycloakSession(old);
+                KeycloakSessionUtil.setKeycloakSession(existing);
             }
         }
         return result;
@@ -1121,4 +1168,7 @@ public final class KeycloakModelUtils {
         });
     }
 
+    public static boolean isAdminPermissionsEnabled(RealmModel realm) {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) && realm.isAdminPermissionsEnabled();
+    }
 }

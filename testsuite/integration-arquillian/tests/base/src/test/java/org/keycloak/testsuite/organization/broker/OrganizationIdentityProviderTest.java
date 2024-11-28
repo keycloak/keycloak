@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
-import static org.keycloak.models.OrganizationModel.BROKER_PUBLIC;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 
 import jakarta.ws.rs.BadRequestException;
@@ -35,17 +34,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
 
     @Test
@@ -114,7 +110,6 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         //remove Org related stuff from the template
         idpTemplate.setOrganizationId(null);
         idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpTemplate.getConfig().remove(OrganizationModel.BROKER_PUBLIC);
         idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
 
         for (int i = 0; i < 5; i++) {
@@ -194,7 +189,6 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         // broker no longer linked to the org
         Assert.assertNull(idpRep.getOrganizationId());
         Assert.assertNull(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
-        Assert.assertNull(idpRep.getConfig().get(BROKER_PUBLIC));
     }
 
     @Test

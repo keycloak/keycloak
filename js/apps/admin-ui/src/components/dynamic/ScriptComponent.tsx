@@ -41,7 +41,7 @@ export const ScriptComponent = ({
             isReadOnly={isDisabled}
             type="text"
             onChange={field.onChange}
-            code={field.value}
+            code={Array.isArray(field.value) ? field.value[0] : field.value}
             height="600px"
             language={Language.javascript}
           />

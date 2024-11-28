@@ -93,7 +93,10 @@ public class UserEntity {
     @Column(name = "REALM_ID")
     protected String realmId;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
+    // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
+    // delete query.
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = false, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     protected Collection<UserAttributeEntity> attributes = new LinkedList<>();

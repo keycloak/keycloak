@@ -7,7 +7,9 @@ import path from "node:path";
 
 const plugins = [
   nodeResolve(),
-  commonjs(),
+  commonjs({
+    strictRequires: "auto",
+  }),
   replace({
     preventAssignment: true,
     // React depends on process.env.NODE_ENV to determine which code to include for production.
@@ -38,6 +40,14 @@ export default defineConfig([
       format: "es",
     },
     external: ["react"],
+    plugins,
+  },
+  {
+    input: "src/main/js/web-crypto-shim.js",
+    output: {
+      dir: path.join(targetDir, "web-crypto-shim"),
+      format: "es",
+    },
     plugins,
   },
 ]);

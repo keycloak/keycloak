@@ -274,7 +274,7 @@ public class DefaultDatastoreProvider implements DatastoreProvider, StoreManager
     }
 
     public MigrationManager getMigrationManager() {
-        return new DefaultMigrationManager(session);
+        return new DefaultMigrationManager(session, factory.isAllowMigrateExistingDatabaseToSnapshot());
     }
 
 }

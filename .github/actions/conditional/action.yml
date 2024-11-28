@@ -22,9 +22,6 @@ outputs:
   ci-webauthn:
     description: Should "ci.yml" execute (WebAuthn)
     value: ${{ steps.changes.outputs.ci-webauthn }}
-  ci-test-poc:
-    description: Should "ci.yml" execute (Test PoC)
-    value: ${{ steps.changes.outputs.ci-test-poc }}
   operator:
     description: Should "operator-ci.yml" execute
     value: ${{ steps.changes.outputs.operator }}
@@ -34,9 +31,12 @@ outputs:
   codeql-java:
     description: Should "codeql-analysis.yml / java" execute
     value: ${{ steps.changes.outputs.codeql-java }}
-  codeql-themes:
-    description: Should "codeql-analysis.yml / themes" execute
-    value: ${{ steps.changes.outputs.codeql-themes }}
+  codeql-javascript:
+    description: Should "codeql-analysis.yml / javascript" execute
+    value: ${{ steps.changes.outputs.codeql-javascript }}
+  codeql-typescript:
+    description: Should "codeql-analysis.yml / typescript" execute
+    value: ${{ steps.changes.outputs.codeql-typescript }}
   guides:
     description: Should "guides.yml" execute
     value: ${{ steps.changes.outputs.guides }}

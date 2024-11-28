@@ -16,6 +16,7 @@ export interface OrganizationQuery extends PaginatedQuery {
 
 interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
+  membershipType?: string;
 }
 
 export class Organizations extends Resource<{ realm?: string }> {
@@ -51,7 +52,6 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public create = this.makeRequest<OrganizationRepresentation, { id: string }>({
     method: "POST",
-    path: "/",
     returnResourceIdInLocationHeader: { field: "id" },
   });
 

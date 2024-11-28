@@ -40,6 +40,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Map;
 import java.util.Set;
@@ -186,6 +187,10 @@ public class RealmModelDelegate implements RealmModel {
     public void setBruteForceProtected(boolean value) {
         delegate.setBruteForceProtected(value);
     }
+
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() { return delegate.getBruteForceStrategy(); }
+
+    public void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy value) { delegate.setBruteForceStrategy(value); }
 
     public boolean isPermanentLockout() {
         return delegate.isPermanentLockout();
@@ -1154,5 +1159,25 @@ public class RealmModelDelegate implements RealmModel {
     @Override
     public void setOrganizationsEnabled(boolean organizationsEnabled) {
         delegate.setOrganizationsEnabled(organizationsEnabled);
+    }
+
+    @Override
+    public boolean isAdminPermissionsEnabled() {
+        return delegate.isAdminPermissionsEnabled();
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        delegate.setAdminPermissionsEnabled(adminPermissionsEnabled);
+    }
+
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        return delegate.isVerifiableCredentialsEnabled();
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
 }

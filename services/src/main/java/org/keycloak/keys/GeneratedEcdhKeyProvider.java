@@ -18,6 +18,8 @@ package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -27,8 +29,11 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.List;
+import java.util.Optional;
 
 public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
     private static final Logger logger = Logger.getLogger(GeneratedEcdhKeyProvider.class);
@@ -42,6 +47,10 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
         String privateEcdhKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_PRIVATE_KEY_KEY);
         String publicEcdhKeyBase64Encoded = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_PUBLIC_KEY_KEY);
         String ecdhAlgorithm = model.getConfig().getFirst(GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_KEY);
+        boolean generateCertificate = Optional.ofNullable(model.getConfig()
+                                                               .getFirst(Attributes.EC_GENERATE_CERTIFICATE_KEY))
+                                              .map(Boolean::parseBoolean)
+                                              .orElse(false);
 
         try {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decode(privateEcdhKeyBase64Encoded));
@@ -52,9 +61,20 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);
+            X509Certificate selfSignedCertificate = Optional.ofNullable(model.getConfig()
+                                                                             .getFirst(Attributes.CERTIFICATE_KEY))
+                                                            .map(PemUtils::decodeCertificate)
+                                                            .orElse(null);
+            if (generateCertificate && selfSignedCertificate == null)
+            {
+                selfSignedCertificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
+                model.getConfig().put(Attributes.CERTIFICATE_KEY,
+                                      List.of(Base64.encodeBytes(selfSignedCertificate.getEncoded())));
+            }
 
-            return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC);
+            return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC, selfSignedCertificate);
         } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
             logger.warnf("Exception at decodeEcdhPublicKey. %s", e.toString());
             return null;
         }

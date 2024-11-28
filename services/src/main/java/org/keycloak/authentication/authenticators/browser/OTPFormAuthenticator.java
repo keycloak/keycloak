@@ -87,13 +87,17 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
         UserModel userModel = context.getUser();
+        boolean userEnabled = enabledUser(context, userModel);
+        // the brute force lock might be lifted/user enabled in the meantime -> we need to clear the auth session note
+        if (userEnabled) {
+            context.getAuthenticationSession().removeAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID);
+        }
         if("true".equals(context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
             context.getEvent().user(context.getUser()).error(Errors.INVALID_AUTHENTICATION_SESSION);
-            Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
-            context.forceChallenge(challengeResponse);
+            // challenge already set by calling enabledUser() above
             return;
         }
-        if (!enabledUser(context, userModel)) {
+        if (!userEnabled) {
             // error in context is set in enabledUser/isDisabledByBruteForce
             context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
             return;
@@ -121,8 +125,11 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_TOTP;
+    protected String disabledByBruteForceError(String error) {
+        if(Errors.USER_TEMPORARILY_DISABLED.equals(error)) {
+            return Messages.ACCOUNT_TEMPORARILY_DISABLED_TOTP;
+        }
+        return Messages.ACCOUNT_PERMANENTLY_DISABLED_TOTP;
     }
 
     @Override

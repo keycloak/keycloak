@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -77,5 +78,16 @@ public class SearchQueryUtilsTest {
         Map<String, String> actual = SearchQueryUtils.getFields(query);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReDoS() {
+        long start = System.currentTimeMillis();
+        int count = 50000;
+        for (int i = 0; i < count; i++) {
+            SearchQueryUtils.getFields(" ".repeat(1443) + "\n\n".repeat(1443) + 0);
+        }
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took: " + end + " milliseconds");
     }
 }

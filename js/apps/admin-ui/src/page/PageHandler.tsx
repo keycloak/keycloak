@@ -10,7 +10,7 @@ import { useAdminClient } from "../admin-client";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useParams } from "../utils/useParams";
-import { type PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
+import { type PAGE_PROVIDER, TAB_PROVIDER } from "./constants";
 import { toPage } from "./routes";
 
 type PageHandlerProps = {
@@ -67,7 +67,8 @@ export const PageHandler = ({
       if (id) {
         await adminClient.components.update({ id }, updatedComponent);
       } else {
-        await adminClient.components.create(updatedComponent);
+        const { id } = await adminClient.components.create(updatedComponent);
+        setId(id);
       }
       addAlert(t("itemSaveSuccessful"));
     } catch (error) {

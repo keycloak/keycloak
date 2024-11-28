@@ -1,6 +1,7 @@
 configuration
 configuration-production
 bootstrap-admin-recovery
+directory-structure
 containers
 enabletls
 hostname
@@ -9,14 +10,12 @@ db
 caching
 outgoinghttp
 keycloak-truststore
+mutual-tls
 features
 configuration-provider
 logging
 fips
 management-interface
-health
-configuration-metrics
-tracing
 importExport
 vault
 all-config

@@ -8,7 +8,7 @@ import {
   TextArea,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { CopyToClipboardButton } from "./CopyToClipboardButton";
+import { CopyToClipboardButton } from "../../components/copy-to-clipboard-button/CopyToClipboardButton";
 
 type GeneratedCodeTabProps = {
   user?: UserRepresentation;

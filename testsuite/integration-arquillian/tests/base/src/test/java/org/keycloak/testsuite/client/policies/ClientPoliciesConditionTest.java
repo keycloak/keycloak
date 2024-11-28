@@ -46,6 +46,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenti
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
@@ -399,10 +400,10 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                         .addCondition(ClientAttributesConditionFactory.PROVIDER_ID,
-                                createClientAttributesConditionConfig(new HashMap<String, String>() {
+                                createClientAttributesConditionConfig(new MultivaluedHashMap<String, String>() {
                                     {
-                                        put("attr1", "Apple");
-                                        put("attr2", "Orange");
+                                        putSingle("attr1", "Apple");
+                                        putSingle("attr2", "Orange");
                                     }
                                 }))
                         .addProfile(PROFILE_NAME)

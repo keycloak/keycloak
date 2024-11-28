@@ -1,13 +1,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static java.util.Optional.of;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
@@ -17,9 +15,9 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class LoggingPropertyMappers {
 
@@ -42,6 +40,12 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
+                        .to("quarkus.log.console.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
+                        .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.format")
@@ -57,21 +61,25 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.console.color")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
-                        .mapFrom("log")
+                        .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .to("quarkus.log.console.enable")
-                        .transformer(LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .build(),
                 // File
                 fromOption(LoggingOptions.LOG_FILE_ENABLED)
-                        .mapFrom("log")
+                        .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("file"))
                         .to("quarkus.log.file.enable")
-                        .transformer(LoggingPropertyMappers.resolveLogHandler("file"))
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.path")
                         .paramLabel("file")
                         .transformer(LoggingPropertyMappers::resolveFileLogLocation)
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -98,14 +106,19 @@ public final class LoggingPropertyMappers {
                         .build(),
                 // Syslog
                 fromOption(LoggingOptions.LOG_SYSLOG_ENABLED)
-                        .mapFrom("log")
+                        .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("syslog"))
                         .to("quarkus.log.syslog.enable")
-                        .transformer(LoggingPropertyMappers.resolveLogHandler("syslog"))
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_ENDPOINT)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.endpoint")
                         .paramLabel("host:port")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
@@ -160,18 +173,16 @@ public final class LoggingPropertyMappers {
         return isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
     }
 
-    private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> resolveLogHandler(String handler) {
-        return (parentValue, context) -> {
-            String handlers = parentValue.get();
-
+    private static BiFunction<String, ConfigSourceInterceptorContext, String> resolveLogHandler(String handler) {
+        return (handlers, context) -> {
             String[] logHandlerValues = handlers.split(",");
 
-            return of(String.valueOf(Stream.of(logHandlerValues).anyMatch(handler::equals)));
+            return String.valueOf(Stream.of(logHandlerValues).anyMatch(handler::equals));
         };
     }
 
-    private static Optional<String> resolveFileLogLocation(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        return value.map(location -> location.endsWith(File.separator) ? location + LoggingOptions.DEFAULT_LOG_FILENAME : location);
+    private static String resolveFileLogLocation(String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        return value.endsWith(File.separator) ? value + LoggingOptions.DEFAULT_LOG_FILENAME : value;
     }
 
     private static Level toLevel(String categoryLevel) throws IllegalArgumentException {
@@ -206,13 +217,13 @@ public final class LoggingPropertyMappers {
         }
     }
 
-    private static Optional<String> resolveLogLevel(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        Optional<String> rootLevel = of(LoggingOptions.DEFAULT_LOG_LEVEL.name());
+    private static String resolveLogLevel(String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        String rootLevel = LoggingOptions.DEFAULT_LOG_LEVEL.name();
 
-        for (String level : value.get().split(",")) {
+        for (String level : value.split(",")) {
             var categoryLevel = validateLogLevel(level);
             if (categoryLevel.category == null) {
-                rootLevel = of(categoryLevel.levelName);
+                rootLevel = categoryLevel.levelName;
             } else {
                 setCategoryLevel(categoryLevel.category, categoryLevel.levelName);
             }
@@ -221,26 +232,27 @@ public final class LoggingPropertyMappers {
         return rootLevel;
     }
 
-    private static Optional<String> resolveLogOutput(Optional<String> value, ConfigSourceInterceptorContext context) {
-        if (value.get().equals(LoggingOptions.DEFAULT_CONSOLE_OUTPUT.name().toLowerCase(Locale.ROOT))) {
-            return of(Boolean.FALSE.toString());
-        }
-
-        return of(Boolean.TRUE.toString());
+    private static String resolveLogOutput(String value, ConfigSourceInterceptorContext context) {
+        boolean isDefault = LoggingOptions.DEFAULT_CONSOLE_OUTPUT.name().toLowerCase(Locale.ROOT).equals(value);
+        return Boolean.valueOf(!isDefault).toString();
     }
 
     /**
      * Add tracing info to the log if the format is not explicitly set, and tracing and {@code includeTraceOption} options are enabled
      */
-    private static Optional<String> addTracingInfo(Optional<String> value, Option<Boolean> includeTraceOption) {
+    private static String addTracingInfo(String value, Option<Boolean> includeTraceOption) {
         var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
         var includeTrace = Configuration.isTrue(includeTraceOption);
-        var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value.get());
+        var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value);
 
         if (!isTracingEnabled || !includeTrace || isChangedLogFormat) {
             return value;
         }
 
-        return Optional.of(LoggingOptions.DEFAULT_LOG_TRACING_FORMAT);
+        return LoggingOptions.DEFAULT_LOG_TRACING_FORMAT;
+    }
+
+    private static String upperCase(String value, ConfigSourceInterceptorContext context) {
+        return value.toUpperCase(Locale.ROOT);
     }
 }

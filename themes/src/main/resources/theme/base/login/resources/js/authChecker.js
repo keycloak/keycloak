@@ -1,18 +1,24 @@
-const CHECK_INTERVAL_MILLISECS = 2000;
+const SESSION_POLLING_INTERVAL = 2000;
+const AUTH_SESSION_TIMEOUT_MILLISECS = 1000;
 const initialSession = getSession();
-
+const forms = Array.from(document.forms);
 let timeout;
 
-// Remove the timeout when unloading to avoid execution of the
-// checkCookiesAndSetTimer when the page is already submitted
-addEventListener("beforeunload", () => {
-  if (timeout) {
-    clearTimeout(timeout);
-    timeout = undefined;
-  }
-});
+// Stop polling for a session when a form is submitted to prevent unexpected redirects.
+// This is required as Safari does not support the 'beforeunload' event properly.
+// See: https://bugs.webkit.org/show_bug.cgi?id=219102
+forms.forEach((form) =>
+  form.addEventListener("submit", () => stopSessionPolling()),
+);
 
-export function checkCookiesAndSetTimer(loginRestartUrl) {
+// Stop polling for a session when the page is unloaded to prevent unexpected redirects.
+globalThis.addEventListener("beforeunload", () => stopSessionPolling());
+
+/**
+ * Starts polling to check if a new session was started in another context (e.g. a tab or window), and redirects to the specified URL if a session is detected.
+ * @param {string} redirectUrl - The URL to redirect to if a new session is detected.
+ */
+export function startSessionPolling(redirectUrl) {
   if (initialSession) {
     // We started with a session, so there is nothing to do, exit.
     return;
@@ -21,15 +27,42 @@ export function checkCookiesAndSetTimer(loginRestartUrl) {
   const session = getSession();
 
   if (!session) {
-    // The session is not present, check again later.
+    // No new session detected, check again later.
     timeout = setTimeout(
-      () => checkCookiesAndSetTimer(loginRestartUrl),
-      CHECK_INTERVAL_MILLISECS,
+      () => startSessionPolling(redirectUrl),
+      SESSION_POLLING_INTERVAL,
     );
   } else {
-    // Redirect to the login restart URL. This can typically automatically login user due the SSO
-    location.href = loginRestartUrl;
+    // A new session was detected, redirect to the specified URL and stop polling.
+    location.href = redirectUrl;
+    stopSessionPolling();
   }
+}
+
+/**
+ * Stops polling the session.
+ */
+function stopSessionPolling() {
+  if (timeout) {
+    clearTimeout(timeout);
+    timeout = undefined;
+  }
+}
+
+export function checkAuthSession(pageAuthSessionHash) {
+  setTimeout(() => {
+    const cookieAuthSessionHash = getKcAuthSessionHash();
+    if (
+      cookieAuthSessionHash &&
+      cookieAuthSessionHash !== pageAuthSessionHash
+    ) {
+      location.reload();
+    }
+  }, AUTH_SESSION_TIMEOUT_MILLISECS);
+}
+
+function getKcAuthSessionHash() {
+  return getCookieByName("KC_AUTH_SESSION_HASH");
 }
 
 function getSession() {

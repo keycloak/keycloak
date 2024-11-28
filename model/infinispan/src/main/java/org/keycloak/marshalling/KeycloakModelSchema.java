@@ -36,6 +36,8 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketRemovedEvent;
+import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.ResourceRemovedEvent;
@@ -94,8 +96,13 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
+import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
+import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
+import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
+import org.keycloak.models.sessions.infinispan.stream.MapEntryToKeyMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
+import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -131,6 +138,8 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 ClearCacheEvent.class,
 
                 //models.cache.infinispan.authorization.events package
+                PermissionTicketRemovedEvent.class,
+                PermissionTicketUpdatedEvent.class,
                 PolicyUpdatedEvent.class,
                 PolicyRemovedEvent.class,
                 ResourceUpdatedEvent.class,
@@ -210,7 +219,14 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 RootAuthenticationSessionEntity.class,
                 SingleUseObjectValueEntity.class,
                 UserSessionEntity.class,
-                ReplaceFunction.class
+                ReplaceFunction.class,
+
+                // sessions.infinispan.stream
+                AuthClientSessionSetMapper.class,
+                CollectionToStreamMapper.class,
+                GroupAndCountCollectorSupplier.class,
+                MapEntryToKeyMapper.class,
+                SessionUnwrapMapper.class,
         }
 )
 public interface KeycloakModelSchema extends GeneratedSchema {

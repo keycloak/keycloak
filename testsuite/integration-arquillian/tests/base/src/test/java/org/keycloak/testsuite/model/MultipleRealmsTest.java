@@ -80,20 +80,22 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = sessionTestUser1;
 
             RealmModel realm1 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm1");
-            RealmModel realm2 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm2");
+            currentSession.getContext().setRealm(realm1);
+
             String id1 = realm1.getId();
-            String id2 = realm2.getId();
-
             realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
-            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
-
             createObjects(currentSession, realm1);
-            createObjects(currentSession, realm2);
-
             UserModel r1user1 = currentSession.users().getUserByUsername(realm1, "user1");
-            UserModel r2user1 = currentSession.users().getUserByUsername(realm2, "user1");
-
+            
             r1user1Atomic.set(r1user1);
+
+            RealmModel realm2 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm2");
+            currentSession.getContext().setRealm(realm2);
+
+            String id2 = realm2.getId();
+            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));            
+            createObjects(currentSession, realm2);
+            UserModel r2user1 = currentSession.users().getUserByUsername(realm2, "user1");
 
             Assert.assertEquals(r1user1.getUsername(), r2user1.getUsername());
             // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
@@ -108,6 +110,7 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             Assert.assertFalse(r2user1.credentialManager().isValid(UserCredentialModel.password("pass1")));
             Assert.assertTrue(r2user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
 
+            currentSession.getContext().setRealm(realm1);
             // Test searching
             Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, Map.of(UserModel.SEARCH, "user")).count());
 
@@ -162,29 +165,33 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = sessionById;
 
             RealmModel realm1 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm1");
-            RealmModel realm2 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm2");
+            currentSession.getContext().setRealm(realm1);
+
             String id1 = realm1.getId();
-            String id2 = realm2.getId();
-
             realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
-            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
-
             createObjects(currentSession, realm1);
-            createObjects(currentSession, realm2);
-
             Assert.assertEquals(realm1, currentSession.realms().getRealm(id1));
             Assert.assertEquals(realm1, currentSession.realms().getRealmByName("realm1"));
-            Assert.assertEquals(realm2, currentSession.realms().getRealm(id2));
-            Assert.assertEquals(realm2, currentSession.realms().getRealmByName("realm2"));
 
             ClientModel r1app1 = realm1.getClientByClientId("app1");
-
             Assert.assertNotNull(realm1.getClientByClientId("app2"));
-            Assert.assertNotNull(realm2.getClientByClientId("app1"));
-            Assert.assertNotNull(realm2.getClientByClientId("app2"));
 
             Assert.assertEquals(r1app1, realm1.getClientById(r1app1.getId()));
             assertThat(r1app1.getAttribute(REALM_ATTRIBUTE), is(realm1.getName()));
+
+            
+            RealmModel realm2 = currentSession.realms().createRealm(KeycloakModelUtils.generateId(), "realm2");
+            currentSession.getContext().setRealm(realm2);
+
+            String id2 = realm2.getId();
+            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
+            createObjects(currentSession, realm2);
+            
+            Assert.assertEquals(realm2, currentSession.realms().getRealm(id2));
+            Assert.assertEquals(realm2, currentSession.realms().getRealmByName("realm2"));
+
+            Assert.assertNotNull(realm2.getClientByClientId("app1"));
+            Assert.assertNotNull(realm2.getClientByClientId("app2"));
 
             ClientModel r2cl1 = realm2.getClientByClientId("cl1");
             Assert.assertEquals(r2cl1.getId(), realm2.getClientById(r2cl1.getId()).getId());
@@ -197,8 +204,11 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             RoleModel r2Role1 = realm2.getRole("role2");
             assertAttrRealm(realm2, r2Role1.getAttributeStream(REALM_ATTRIBUTE));
 
+            currentSession.getContext().setRealm(realm1);
             UserModel user1 = currentSession.users().getUserByUsername(realm1, "user1");
             assertAttrRealm(realm1, user1.getAttributeStream(REALM_ATTRIBUTE));
+            currentSession.getContext().setRealm(realm2);
+
             UserModel user1a = currentSession.users().getUserByUsername(realm2, "user1");
             assertAttrRealm(realm2, user1a.getAttributeStream(REALM_ATTRIBUTE));
 

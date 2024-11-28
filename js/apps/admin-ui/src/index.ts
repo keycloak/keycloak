@@ -56,7 +56,7 @@ export * as DetailProvider from "./clients/registration/DetailProvider";
 export * as CreateClientRole from "./clients/roles/CreateClientRole";
 export { AddScopeDialog } from "./clients/scopes/AddScopeDialog";
 export { ClientScopes } from "./clients/scopes/ClientScopes";
-export { CopyToClipboardButton } from "./clients/scopes/CopyToClipboardButton";
+export { CopyToClipboardButton } from "./components/copy-to-clipboard-button/CopyToClipboardButton";
 export { DedicatedScope } from "./clients/scopes/DedicatedScope";
 export * as DedicatedScopes from "./clients/scopes/DedicatedScopes";
 export { EvaluateScopes } from "./clients/scopes/EvaluateScopes";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type {
   UserProfileAttribute,
   UserProfileConfig,
@@ -61,6 +62,7 @@ type UserProfileAttributeFormFields = Omit<
     annotations: IndexedAnnotations[];
     hasSelector: boolean;
     hasRequiredScopes: boolean;
+    translations?: TranslationForm[];
   };
 
 type Attribute = {
@@ -172,7 +174,8 @@ export default function NewAttributeSettings() {
 
   useFetch(
     async () => {
-      const translationsToSave: any[] = [];
+      const translationsToSave: Translations[] = [];
+
       await Promise.all(
         combinedLocales.map(async (selectedLocale) => {
           try {
@@ -183,55 +186,50 @@ export default function NewAttributeSettings() {
               });
 
             const formData = form.getValues();
-            const formattedKey = formData.displayName?.substring(
-              2,
-              formData.displayName.length - 1,
-            );
-            const filteredTranslations: Array<{
-              locale: string;
-              value: string;
-            }> = [];
-            const allTranslations = Object.entries(translations).map(
-              ([key, value]) => ({
-                key,
+            const formattedKey =
+              formData.displayName?.substring(
+                2,
+                formData.displayName.length - 1,
+              ) || "";
+
+            const filteredTranslations: TranslationForm[] = Object.entries(
+              translations,
+            )
+              .filter(([key]) => key === formattedKey)
+              .map(([_, value]) => ({
+                locale: selectedLocale,
                 value,
-              }),
-            );
+              }));
 
-            allTranslations.forEach((translation) => {
-              if (translation.key === formattedKey) {
-                filteredTranslations.push({
-                  locale: selectedLocale,
-                  value: translation.value,
-                });
-              }
-            });
-
-            const translationToSave: any = {
-              key: formattedKey,
-              translations: filteredTranslations,
-            };
-
-            translationsToSave.push(translationToSave);
+            if (filteredTranslations.length > 0) {
+              translationsToSave.push({
+                key: formattedKey,
+                translations: filteredTranslations,
+              });
+            }
           } catch (error) {
-            console.error(
-              `Error fetching translations for ${selectedLocale}:`,
-              error,
-            );
+            addError("errorSavingTranslations", error);
           }
         }),
       );
+
       return translationsToSave;
     },
-    (translationsToSaveData) => {
-      setTranslationsData(() => ({
-        key: translationsToSaveData[0].key,
-        translations: translationsToSaveData.flatMap(
-          (translationData) => translationData.translations,
-        ),
-      }));
+    (translationsToSave) => {
+      if (translationsToSave && translationsToSave.length > 0) {
+        const allTranslations = translationsToSave.flatMap(
+          (translation) => translation.translations,
+        );
+
+        setTranslationsData({
+          key: translationsToSave[0].key,
+          translations: allTranslations,
+        });
+
+        form.setValue("translations", allTranslations);
+      }
     },
-    [combinedLocales],
+    [combinedLocales, realmName, form],
   );
 
   useFetch(
@@ -282,8 +280,9 @@ export default function NewAttributeSettings() {
 
   const saveTranslations = async () => {
     try {
-      const nonEmptyTranslations = translationsData.translations.map(
-        async (translation) => {
+      const nonEmptyTranslations = translationsData.translations
+        .filter((translation) => translation.value.trim() !== "")
+        .map(async (translation) => {
           try {
             await adminClient.realms.addLocalization(
               {
@@ -293,11 +292,11 @@ export default function NewAttributeSettings() {
               },
               translation.value,
             );
-          } catch {
-            console.error(`Error saving translation for ${translation.locale}`);
+          } catch (error) {
+            addError(t("errorSavingTranslations"), error);
           }
-        },
-      );
+        });
+
       await Promise.all(nonEmptyTranslations);
     } catch (error) {
       console.error(`Error saving translations: ${error}`);
@@ -377,7 +376,7 @@ export default function NewAttributeSettings() {
         (translation) => translation.value.trim() !== "",
       );
 
-      if (!hasNonEmptyTranslations && !formFields.displayName) {
+      if (!hasNonEmptyTranslations) {
         addError("createAttributeError", t("translationError"));
         return;
       }

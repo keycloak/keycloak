@@ -152,16 +152,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter-jar</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
             <exclusions>
                 <exclusion>
@@ -583,6 +573,13 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
+            <exclusions>
+                <exclusion>
+                    <!-- compile-only dependency -->
+                    <groupId>org.infinispan.protostream</groupId>
+                    <artifactId>protostream-processor</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -595,6 +592,12 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
+        </dependency>
+        <dependency>
+            <!-- adding to avoid warning during compilation about "unknown enum constant org.infinispan.jmx.annotations.DataType.TRAIT" and others -->
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- required for query/search in the external Infinispan server -->
         <dependency>
@@ -623,6 +626,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
 

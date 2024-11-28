@@ -45,6 +45,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
@@ -106,6 +110,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration combine.self="append">
+                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock</remoteLockFiles>
+                </configuration>
             </plugin>
         </plugins>
     </build>

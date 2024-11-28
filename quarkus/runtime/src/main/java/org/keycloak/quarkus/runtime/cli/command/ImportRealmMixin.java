@@ -20,7 +20,8 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 import java.io.File;
-import java.util.Optional;
+
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
@@ -40,7 +41,7 @@ public final class ImportRealmMixin {
         File importDir = Environment.getHomePath().resolve("data").resolve("import").toFile();
 
         if (importDir.exists()) {
-            System.setProperty("keycloak.import", importDir.getAbsolutePath());
+            ExportImportConfig.setDir(importDir.getAbsolutePath());
         }
     }
 }

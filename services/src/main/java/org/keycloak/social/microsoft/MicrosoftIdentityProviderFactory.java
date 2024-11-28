@@ -54,7 +54,13 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+        // The supported authentication URI parameters can be found in the Microsoft identity documentation
+        // https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc#send-the-sign-in-request
         return ProviderConfigurationBuilder.create()
+                .property().name("prompt")
+                .label("Prompt")
+                .helpText("Indicates the type of user interaction that is required. The only valid values at this time are login, none, consent, and select_account.")
+                .type(ProviderConfigProperty.STRING_TYPE).add()
                 .property().name("tenantId")
                 .label("Tenant ID")
                 .helpText("Uses single-tenant auth endpoints when specified, uses 'common' multi-tenant endpoints otherwise.")

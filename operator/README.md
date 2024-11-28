@@ -11,7 +11,7 @@ When build from the project root directory, this module is only enabled if the i
 
 ## Building
 
-Ensure you have JDK 11 (or newer) installed.
+Ensure you have JDK 17 (or newer) installed.
 
 Build the Docker image with:
 

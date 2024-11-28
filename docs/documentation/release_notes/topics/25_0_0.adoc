@@ -42,6 +42,9 @@ per-hashing request.
 To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
 To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.
 
+Note that Argon2 is not compliant with FIPS 140-2. So if you are in the FIPS environment, the default algorithm will be still PBKDF2. Also note that if you are on non-FIPS environment and
+you plan to migrate to the FIPS environment, consider changing the password policy to a FIPS compliant algorithm such as `pbkdf2-sha512` at the outset. Otherwise, users will not be able to log in after they switch to the FIPS environment.
+
 = New Hostname options
 
 In response to the complexity and lack of intuitiveness experienced with previous hostname configuration settings, we are proud to introduce Hostname v2 options.

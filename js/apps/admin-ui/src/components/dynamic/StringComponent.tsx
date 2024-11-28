@@ -15,7 +15,7 @@ export const StringComponent = ({
     <TextControl
       name={convertToName(name!)}
       label={t(label!)}
-      helperText={t(helpText!)}
+      labelIcon={t(helpText!)}
       data-testid={name}
       {...props}
     />

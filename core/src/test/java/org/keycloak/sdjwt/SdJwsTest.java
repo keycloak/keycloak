@@ -26,6 +26,9 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.rule.CryptoInitRule;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +47,7 @@ public abstract class SdJwsTest {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("sub", "test");
-        node.put("exp", Instant.now().plus(1, TimeUnit.HOURS.toChronoUnit()).getEpochSecond());
+        node.put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
         node.put("name", "Test User");
         return node;
     }
@@ -66,7 +69,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyExpClaim_ExpiredJWT() {
         JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().minus(1, TimeUnit.HOURS.toChronoUnit()).getEpochSecond());
+        ((ObjectNode) payload).put("exp", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
         SdJws sdJws = new SdJws(payload) {
         };
         assertThrows(VerificationException.class, sdJws::verifyExpClaim);
@@ -75,7 +78,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyExpClaim_Positive() throws Exception {
         JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().plus(1, TimeUnit.HOURS.toChronoUnit()).getEpochSecond());
+        ((ObjectNode) payload).put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
         SdJws sdJws = new SdJws(payload) {
         };
         sdJws.verifyExpClaim();
@@ -84,7 +87,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyNotBeforeClaim_Negative() {
         JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().plus(1, TimeUnit.HOURS.toChronoUnit()).getEpochSecond());
+        ((ObjectNode) payload).put("nbf", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
         SdJws sdJws = new SdJws(payload) {
         };
         assertThrows(VerificationException.class, sdJws::verifyNotBeforeClaim);
@@ -93,7 +96,7 @@ public abstract class SdJwsTest {
     @Test
     public void testVerifyNotBeforeClaim_Positive() throws Exception {
         JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().minus(1, TimeUnit.HOURS.toChronoUnit()).getEpochSecond());
+        ((ObjectNode) payload).put("nbf", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
         SdJws sdJws = new SdJws(payload) {
         };
         sdJws.verifyNotBeforeClaim();
@@ -124,17 +127,17 @@ public abstract class SdJwsTest {
 
     @Test
     public void testVerifyIssClaim_Negative() {
-        List<String> allowedIssuers = List.of("issuer1@sdjwt.com", "issuer2@sdjwt.com");
+        List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("iss", "unknown-issuer@sdjwt.com");
         SdJws sdJws = new SdJws(payload) {};
-        var exception = assertThrows(VerificationException.class, () -> sdJws.verifyIssClaim(allowedIssuers));
+        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyIssClaim(allowedIssuers));
         assertEquals("Unknown 'iss' claim value: unknown-issuer@sdjwt.com", exception.getMessage());
     }
 
     @Test
     public void testVerifyIssClaim_Positive() throws VerificationException {
-        List<String> allowedIssuers = List.of("issuer1@sdjwt.com", "issuer2@sdjwt.com");
+        List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("iss", "issuer1@sdjwt.com");
         SdJws sdJws = new SdJws(payload) {};
@@ -146,7 +149,7 @@ public abstract class SdJwsTest {
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("vct", "IdentityCredential");
         SdJws sdJws = new SdJws(payload) {};
-        var exception = assertThrows(VerificationException.class, () -> sdJws.verifyVctClaim(List.of("PassportCredential")));
+        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyVctClaim(Collections.singletonList("PassportCredential")));
         assertEquals("Unknown 'vct' claim value: IdentityCredential", exception.getMessage());
     }
 
@@ -155,26 +158,26 @@ public abstract class SdJwsTest {
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("vct", "IdentityCredential");
         SdJws sdJws = new SdJws(payload) {};
-        sdJws.verifyVctClaim(List.of("IdentityCredential"));
+        sdJws.verifyVctClaim(Collections.singletonList("IdentityCredential"));
     }
 
     @Test
     public void shouldValidateAgeSinceIssued() throws VerificationException {
         long now = Instant.now().getEpochSecond();
-        var sdJws = exampleSdJws(now);
+        SdJws sdJws = exampleSdJws(now);
         sdJws.verifyAge(180);
     }
 
     @Test
     public void shouldValidateAgeSinceIssued_IfJwtIsTooOld() {
         long now = Instant.now().getEpochSecond();
-        var sdJws = exampleSdJws(now - 1000); // that will be too old
-        var exception = assertThrows(VerificationException.class, () -> sdJws.verifyAge(180));
+        SdJws sdJws = exampleSdJws(now - 1000); // that will be too old
+        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyAge(180));
         assertEquals("jwt is too old", exception.getMessage());
     }
 
     private SdJws exampleSdJws(long iat) {
-        var payload = SdJwtUtils.mapper.createObjectNode();
+        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
         payload.set("iat", SdJwtUtils.mapper.valueToTree(iat));
 
         return new SdJws(payload) {

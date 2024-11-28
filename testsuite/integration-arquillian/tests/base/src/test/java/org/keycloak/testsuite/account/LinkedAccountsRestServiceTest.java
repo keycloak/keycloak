@@ -89,17 +89,18 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
 
-        String[] providers = new String[]{"saml:mysaml", "oidc:myoidc", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
+        String[] providers = new String[]{"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
         for (int i = 0; i < providers.length; i++) {
             String[] idpInfo = providers[i].split(":");
             testRealm.addIdentityProvider(IdentityProviderBuilder.create()
                     .providerId(idpInfo[0])
                     .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
+                    .displayName(idpInfo.length == 1 ? null : idpInfo[2])
                     .setAttribute("guiOrder", String.valueOf(i))
                     .build());
         }
 
-        addFederatedIdentities(testRealm, "github", "gitlab", "twitter");
+        addFederatedIdentities(testRealm, "github", "gitlab", "mysaml");
     }
 
     private void addFederatedIdentities(RealmRepresentation testRealm, String... idpAliases) {
@@ -183,7 +184,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         List<String> linkedAccountAliases = details.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
         assertThat(linkedAccountAliases, contains("mysaml", "myoidc", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"));
 
-        List<String> expectedConnectedAccounts = List.of("github", "gitlab", "twitter");
+        List<String> expectedConnectedAccounts = List.of("github", "gitlab", "mysaml");
         for (LinkedAccountRepresentation account : details) {
             if (expectedConnectedAccounts.contains(account.getProviderAlias())) {
                 assertTrue(account.isConnected());
@@ -201,7 +202,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         assertEquals(3, accounts.size());
 
         List<String> linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
-        assertThat(linkedAccountAliases, contains("github", "gitlab", "twitter"));
+        assertThat(linkedAccountAliases, contains("mysaml", "github", "gitlab"));
         for (LinkedAccountRepresentation account : accounts) {
             assertTrue(account.isConnected());
         }
@@ -210,12 +211,12 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         accounts = linkedAccountsRep("linked=true&first=0&max=2");
         assertEquals(2, accounts.size());
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
-        assertThat(linkedAccountAliases, contains("github", "gitlab"));
+        assertThat(linkedAccountAliases, contains("mysaml","github"));
 
         accounts = linkedAccountsRep("linked=true&first=2&max=4");
         assertEquals(1, accounts.size());
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
-        assertThat(linkedAccountAliases, contains("twitter"));
+        assertThat(linkedAccountAliases, contains("gitlab"));
 
         // now use a search string to further filter the results.
         accounts = linkedAccountsRep("linked=true&search=git*");
@@ -223,13 +224,18 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
         assertThat(linkedAccountAliases, contains("github", "gitlab"));
 
+        accounts = linkedAccountsRep("linked=true&search=*l-id*");
+        assertEquals(1, accounts.size());
+        linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
+        assertThat(linkedAccountAliases, contains("mysaml"));
+
         // search unlinked identity providers.
         accounts = linkedAccountsRep("linked=false&first=0&max=10");
         assertEquals(5, accounts.size());
 
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
         // the unlinked accounts are ordered by alias, not gui order (this test needs to be adjusted if the model is fixed to order by gui order)
-        assertThat(linkedAccountAliases, contains("bitbucket", "facebook", "microsoft", "myoidc", "mysaml"));
+        assertThat(linkedAccountAliases, contains("bitbucket", "facebook", "microsoft", "myoidc", "twitter"));
         for (LinkedAccountRepresentation account : accounts) {
             assertFalse(account.isConnected());
         }
@@ -243,7 +249,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         accounts = linkedAccountsRep("linked=false&first=3&max=3");
         assertEquals(2, accounts.size());
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
-        assertThat(linkedAccountAliases, contains("myoidc", "mysaml"));
+        assertThat(linkedAccountAliases, contains("myoidc", "twitter"));
 
         // now use a search string to filter the results.
         accounts = linkedAccountsRep("linked=false&search=*o*");
@@ -256,6 +262,12 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         assertEquals(1, accounts.size());
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
         assertThat(linkedAccountAliases, contains("microsoft"));
+
+        //search based on display name
+        accounts = linkedAccountsRep("linked=false&search=*c-id*");
+        assertEquals(1, accounts.size());
+        linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
+        assertThat(linkedAccountAliases, contains("myoidc"));
     }
 
     @Test

@@ -346,7 +346,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     public void facebookLogin() throws InterruptedException {
         setTestProvider(FACEBOOK);
-        performFacebookLogin();
+        performLogin();
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -356,7 +356,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void facebookLoginWithEnhancedScope() throws InterruptedException {
         setTestProvider(FACEBOOK_INCLUDE_BIRTHDAY);
         addAttributeMapper("birthday", "birthday");
-        performFacebookLogin();
+        performLogin();
         appPage.assertCurrent();
         assertAttribute("birthday", getConfig("profile.birthday"));
         testTokenExchange();
@@ -514,27 +514,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         doLogin();
     }
 
-    private void performFacebookLogin() {
-        navigateToLoginPage();
-
-        // Check if allowing cookies is required and eventually allow them
-        List<WebElement> allowCookiesButton = driver.findElements(By.xpath("//button[text()='Allow all cookies']"));
-        if (allowCookiesButton.size() > 0) {
-            allowCookiesButton.get(0).click();
-        }
-
-        doLogin();
-
-        // When logging into facebook app for the first time user is required to press continue as button to finish login flow
-        String firstName = getConfig("profile.firstName");
-        List<WebElement> continueAsButton = driver.findElements(By.xpath("//span[text()='Continue as " + firstName + "']"));
-        if (continueAsButton.size() > 0) {
-            continueAsButton.get(0).click();
-            WaitUtils.pause(3000);
-            WaitUtils.waitForPageToLoad();
-        }
-    }
-
     private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
 
@@ -570,7 +549,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertNotNull(users.get(0).getAttributes().get(attrName));
         String attrValue = users.get(0).getAttributes().get(attrName).get(0);
         if (currentTestProvider.equals(LINKEDIN) && attrName.equals("picture")) {
-            assertTrue(attrValue.contains(expectedValue));
+            assertTrue(attrValue.contains(expectedValue.replace("image/","image/v2/").replace("/0/","/")));
         } else {
             assertEquals(expectedValue, attrValue);
         }

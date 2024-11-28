@@ -17,14 +17,15 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -56,7 +57,6 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -339,15 +339,8 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            if (isOrganizationDisabled(session, delegate)) {
-                return new ReadOnlyUserModelDelegate(delegate) {
-                    @Override
-                    public boolean isEnabled() {
-                        return false;
-                    }
-                };
-            }
+        if (isReadOnlyOrganizationMember(session, delegate)) {
+            return new ReadOnlyUserModelDelegate(delegate, false);
         }
 
         CachedUser cached;
@@ -357,12 +350,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             ComponentModel component = realm.getComponent(delegate.getFederationLink());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {
-                return new ReadOnlyUserModelDelegate(delegate) {
-                    @Override
-                    public boolean isEnabled() {
-                        return false;
-                    }
-                };
+                return new ReadOnlyUserModelDelegate(delegate, false);
             }
             UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
             if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
@@ -834,6 +822,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
     protected void fullyInvalidateUser(RealmModel realm, UserModel user) {
+        if (user instanceof CachedUserModel) {
+           ((CachedUserModel) user).invalidate();
+        }
+
         Stream<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ?
                 getFederatedIdentitiesStream(realm, user) : Stream.empty();
 
@@ -845,7 +837,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-         fullyInvalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 
@@ -975,12 +967,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return List.of();
     }
 
-    private boolean isOrganizationDisabled(KeycloakSession session, UserModel delegate) {
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+    public UserCacheManager getCache() {
+        return cache;
+    }
 
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+    public long getStartupRevision() {
+        return startupRevision;
+    }
+
+    public void registerInvalidation(String id) {
+        cache.invalidateCacheKey(id, invalidations);
+        invalidationEvents.add(new CacheKeyInvalidatedEvent(id));
+    }
+
+    public boolean isInvalid(String key) {
+        return invalidations.contains(key);
     }
 }

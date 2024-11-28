@@ -22,12 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.keycloak.provider.ProviderEvent;
+
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
-    String BROKER_PUBLIC = "kc.org.broker.public";
     String ALIAS = "alias";
 
     enum IdentityProviderRedirectMode {
@@ -48,6 +49,54 @@ public interface OrganizationModel {
         }
     }
 
+    interface OrganizationMembershipEvent extends ProviderEvent {
+        OrganizationModel getOrganization();
+        UserModel getUser();
+        KeycloakSession getSession();
+    }
+
+    interface OrganizationMemberJoinEvent extends OrganizationMembershipEvent {
+        static void fire(OrganizationModel organization, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new OrganizationModel.OrganizationMemberJoinEvent() {
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public OrganizationModel getOrganization() {
+                    return organization;
+                }
+
+                @Override
+                public KeycloakSession getSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface OrganizationMemberLeaveEvent extends OrganizationMembershipEvent {
+        static void fire(OrganizationModel organization, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new OrganizationModel.OrganizationMemberLeaveEvent() {
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public OrganizationModel getOrganization() {
+                    return organization;
+                }
+
+                @Override
+                public KeycloakSession getSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
     String getId();
 
     void setName(String name);
@@ -65,6 +114,10 @@ public interface OrganizationModel {
     String getDescription();
 
     void setDescription(String description);
+
+    String getRedirectUrl();
+
+    void setRedirectUrl(String redirectUrl);
 
     Map<String, List<String>> getAttributes();
 

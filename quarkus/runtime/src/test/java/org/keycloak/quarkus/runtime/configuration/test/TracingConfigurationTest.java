@@ -46,7 +46,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
         assertConfig("tracing-service-name", "keycloak");
 
         assertExternalConfig(Map.of(
-                "quarkus.otel.traces.enabled", "false",
+                "quarkus.otel.enabled", "false",
                 "quarkus.otel.service.name", "keycloak",
                 "quarkus.otel.exporter.otlp.traces.endpoint", "http://localhost:4317",
                 "quarkus.otel.exporter.otlp.traces.protocol", "grpc",
@@ -96,7 +96,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
         ));
 
         assertExternalConfig(Map.of(
-                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.enabled", "true",
                 "quarkus.otel.exporter.otlp.traces.endpoint", "http://something:4444",
                 "quarkus.otel.exporter.otlp.traces.protocol", "http/protobuf",
                 "quarkus.datasource.jdbc.telemetry", "false",
@@ -194,7 +194,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
         ));
 
         assertExternalConfig(Map.of(
-                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.enabled", "true",
                 "quarkus.log." + loggerType.name() + ".format", expectedFormat
         ));
 
@@ -210,7 +210,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
         ));
 
         assertExternalConfig(Map.of(
-                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.enabled", "true",
                 "quarkus.log." + loggerType.name() + ".format", "someFormat"
         ));
     }

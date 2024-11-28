@@ -5,7 +5,6 @@ import {
   DropdownItem,
   DropdownList,
   MenuToggle,
-  PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -22,6 +21,13 @@ import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
+import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
+import { translationFormatter } from "../utils/translationFormatter";
+
+type MembershipTypeRepresentation = UserRepresentation & {
+  membershipType?: string;
+};
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -37,19 +43,79 @@ export const Members = () => {
   const { adminClient } = useAdminClient();
   const { id: orgId } = useParams<EditOrganizationParams>();
   const { addAlert, addError } = useAlerts();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-
   const [open, toggle] = useToggle();
   const [openAddMembers, toggleAddMembers] = useToggle();
   const [openInviteMembers, toggleInviteMembers] = useToggle();
   const [selectedMembers, setSelectedMembers] = useState<UserRepresentation[]>(
     [],
   );
+  const [searchText, setSearchText] = useState<string>("");
+  const [searchTriggerText, setSearchTriggerText] = useState<string>("");
+  const [filteredMembershipTypes, setFilteredMembershipTypes] = useState<
+    string[]
+  >([]);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const loader = (first?: number, max?: number, search?: string) =>
-    adminClient.organizations.listMembers({ orgId, first, max, search });
+  const membershipOptions = [
+    { value: "Managed", label: "Managed" },
+    { value: "Unmanaged", label: "Unmanaged" },
+  ];
+
+  const onToggleClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const onSelect = (_event: any, value: string) => {
+    if (filteredMembershipTypes.includes(value)) {
+      setFilteredMembershipTypes(
+        filteredMembershipTypes.filter((item) => item !== value),
+      );
+    } else {
+      setFilteredMembershipTypes([...filteredMembershipTypes, value]);
+    }
+    setIsOpen(false);
+    refresh();
+  };
+
+  const loader = async (first?: number, max?: number) => {
+    try {
+      const membershipType =
+        filteredMembershipTypes.length === 1
+          ? filteredMembershipTypes[0]
+          : undefined;
+
+      const memberships: MembershipTypeRepresentation[] =
+        await adminClient.organizations.listMembers({
+          orgId,
+          first,
+          max,
+          search: searchTriggerText,
+          membershipType,
+        });
+
+      return memberships;
+    } catch (error) {
+      addError("organizationsMembersListError", error);
+      return [];
+    }
+  };
+
+  const handleChange = (value: string) => {
+    setSearchText(value);
+  };
+
+  const handleSearch = () => {
+    setSearchTriggerText(searchText);
+    refresh();
+  };
+
+  const clearInput = () => {
+    setSearchText("");
+    setSearchTriggerText("");
+    refresh();
+  };
 
   const removeMember = async (selectedMembers: UserRepresentation[]) => {
     try {
@@ -68,8 +134,9 @@ export const Members = () => {
 
     refresh();
   };
+
   return (
-    <PageSection variant="light">
+    <>
       {openAddMembers && (
         <MemberModal
           membersQuery={() => adminClient.organizations.listMembers({ orgId })}
@@ -104,11 +171,20 @@ export const Members = () => {
         loader={loader}
         isPaginated
         ariaLabelKey="membersList"
-        searchPlaceholderKey="searchMember"
         onSelect={(members) => setSelectedMembers([...members])}
         canSelectAll
         toolbarItem={
           <>
+            <ToolbarItem>
+              <SearchInputComponent
+                value={searchText}
+                onChange={handleChange}
+                onSearch={handleSearch}
+                onClear={clearInput}
+                placeholder={t("searchMembers")}
+                aria-label={t("searchMembers")}
+              />
+            </ToolbarItem>
             <ToolbarItem>
               <Dropdown
                 onOpenChange={toggle}
@@ -153,6 +229,18 @@ export const Members = () => {
                 {t("removeMember")}
               </Button>
             </ToolbarItem>
+            <ToolbarItem>
+              <CheckboxFilterComponent
+                filterPlaceholderText={t("filterByMembershipType")}
+                isOpen={isOpen}
+                options={membershipOptions}
+                onOpenChange={(nextOpen) => setIsOpen(nextOpen)}
+                onToggleClick={onToggleClick}
+                onSelect={onSelect}
+                selectedItems={filteredMembershipTypes}
+                width={"260px"}
+              />
+            </ToolbarItem>
           </>
         }
         actions={[
@@ -177,6 +265,10 @@ export const Members = () => {
           {
             name: "lastName",
           },
+          {
+            name: "membershipType",
+            cellFormatters: [translationFormatter(t)],
+          },
         ]}
         emptyState={
           <ListEmptyState
@@ -194,7 +286,8 @@ export const Members = () => {
             ]}
           />
         }
+        isSearching={filteredMembershipTypes.length > 0}
       />
-    </PageSection>
+    </>
   );
 };

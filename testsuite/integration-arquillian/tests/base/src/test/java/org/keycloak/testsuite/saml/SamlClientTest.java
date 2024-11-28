@@ -23,6 +23,7 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -48,7 +49,7 @@ public class SamlClientTest extends AbstractSamlTest {
             HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
             CloseableHttpResponse response = sendPost(post, client);
             Assert.assertEquals(response.getStatusLine().getStatusCode(), 400);
-            String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             assertThat(s, Matchers.containsString("Wrong client protocol."));
 
             response.close();

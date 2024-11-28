@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
@@ -63,6 +64,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
@@ -307,7 +309,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenWithDifferentIssuer() throws Exception {
-        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final String proxyHost = "localhost";
         final int httpPort = 8666;
         final int httpsPort = 8667;
 
@@ -328,16 +330,19 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
         proxy.start();
 
-        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+        try {
+            oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
 
-        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
 
-        Assert.assertEquals(400, response.getStatusCode());
-        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
-
-        proxy.stop();
-
-        oauth.baseUrl(AUTH_SERVER_ROOT);
+            Assert.assertEquals(400, response.getStatusCode());
+            Assert.assertEquals("invalid_grant", response.getError());
+            assertThat(response.getErrorDescription(), Matchers.startsWith("Invalid token issuer."));
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+        } finally {
+            proxy.stop();
+            oauth.baseUrl(AUTH_SERVER_ROOT);
+        }
     }
 
     @Test
@@ -350,7 +355,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String accessTokenString = tokenResponse.getAccessToken();
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(accessTokenString, "password");
-
         Assert.assertNotEquals(200, response.getStatusCode());
     }
 
@@ -1068,8 +1072,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             // Continue with login
             setTimeOffset(2);
-            WaitUtils.waitForPageToLoad();
-            loginPage.login("password");
+            driver.navigate().refresh();
+            oauth.fillLoginForm("test-user@localhost", "password");
 
             assertFalse(loginPage.isCurrent());
 
@@ -1102,8 +1106,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             // Continue with login
             setTimeOffset(2);
-            WaitUtils.waitForPageToLoad();
-            loginPage.login("password");
+            driver.navigate().refresh();
+            oauth.fillLoginForm("test-user@localhost", "password");
 
             assertFalse(loginPage.isCurrent());
 
@@ -1135,8 +1139,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             // Continue with login
             setTimeOffset(2);
-            WaitUtils.waitForPageToLoad();
-            loginPage.login("password");
+            driver.navigate().refresh();
+            oauth.fillLoginForm("test-user@localhost", "password");
 
             assertFalse(loginPage.isCurrent());
 
@@ -1211,7 +1215,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.clear();
             // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
-            setTimeOffset(6 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            setTimeOffset(6 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
             tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
             // test idle timeout
@@ -1253,7 +1257,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
             int last = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
-            setTimeOffset(110 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            setTimeOffset(110 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
             tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
             oauth.verifyToken(tokenResponse.getAccessToken());
             oauth.parseRefreshToken(tokenResponse.getRefreshToken());
@@ -1264,7 +1268,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.clear();
             // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
-            setTimeOffset(620 + 2 * SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            setTimeOffset(620 + 2 * (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
             tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
             // test idle remember me timeout

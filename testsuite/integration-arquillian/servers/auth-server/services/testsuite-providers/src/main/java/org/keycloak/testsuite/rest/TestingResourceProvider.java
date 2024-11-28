@@ -41,6 +41,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -48,6 +49,7 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -1194,5 +1196,27 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No authenticatedClientSession found."));
         return PreAuthorizedCodeGrantType.getPreAuthorizedCode(session, ascm, expiration);
+    }
+
+    @POST
+    @Path("/email-event-litener-provide/add-events")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addEventsToEmailEventListenerProvider(List<EventType> events) {
+        if (events != null && !events.isEmpty()) {
+            EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+            prov.addIncludedEvents(events.toArray(EventType[]::new));
+        }
+    }
+
+    @POST
+    @Path("/email-event-litener-provide/remove-events")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void removeEventsToEmailEventListenerProvider(List<EventType> events) {
+        if (events != null && !events.isEmpty()) {
+            EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+            prov.removeIncludedEvents(events.toArray(EventType[]::new));
+        }
     }
 }

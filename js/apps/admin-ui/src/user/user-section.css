@@ -26,7 +26,7 @@ button#kc-join-groups-button {
 }
 
 .kc-who-will-appear-button {
-  margin-left: var(--pf-v5-global--spacer--md);
+  margin-left: var(--pf-v5-global--spacer--sm);
 }
 
 .pf-v5-c-chip.kc-consents-chip::before {

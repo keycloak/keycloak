@@ -23,7 +23,7 @@ import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 
 /**
  * This has same providerID like built-in ValidateUsername provider. But it should be called in favour of ValidateUsername even
- * if it doesn't have "order" set. Ass it is custom provider and it worked this way in previous versions
+ * if it doesn't have "order" set. As it is custom provider and it worked this way in previous versions
  *
  */
 public class CustomValidateUsername extends ValidateUsername {

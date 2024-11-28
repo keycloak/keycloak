@@ -31,6 +31,7 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.services.validation.Validation;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -185,6 +186,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         new CibaClientValidation(context).validate();
         validateJwks(context);
         validateDefaultAcrValues(context);
+        validateMinimumAcrValue(context);
 
         return context.toResult();
     }
@@ -195,6 +197,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
         validateDefaultAcrValues(context);
+        validateMinimumAcrValue(context);
 
         return context.toResult();
     }
@@ -379,9 +382,27 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
         for (String configuredAcr : defaultAcrValues) {
             if (acrToLoaMap.containsKey(configuredAcr)) continue;
-            if (!LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
-                    .anyMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
+            if (LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                    .noneMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
                 context.addError("defaultAcrValues", "Default ACR values need to contain values specified in the ACR-To-Loa mapping or number levels from set realm browser flow");
+            }
+        }
+    }
+
+    private void validateMinimumAcrValue(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        String minimumAcrValue = AcrUtils.getMinimumAcrValue(client);
+        if (minimumAcrValue != null) {
+            Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
+            if (acrToLoaMap.isEmpty()) {
+                acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
+            }
+
+            if(!acrToLoaMap.containsKey(minimumAcrValue)) {
+                if (LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                        .noneMatch(level -> minimumAcrValue.equals(String.valueOf(level)))) {
+                    context.addError("minimumAcrValue", "Minimum ACR value needs to be value specified in the ACR-To-Loa mapping or number level from set realm browser flow");
+                }
             }
         }
     }

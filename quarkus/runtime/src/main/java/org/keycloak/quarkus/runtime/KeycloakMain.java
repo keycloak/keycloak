@@ -18,13 +18,9 @@
 package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -32,9 +28,7 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import org.keycloak.common.profile.ProfileException;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import picocli.CommandLine.ExitCode;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
@@ -44,6 +38,7 @@ import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 
 import io.quarkus.runtime.QuarkusApplication;
@@ -56,16 +51,34 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
+    private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
+
+    static {
+        // enable Infinispan and JGroups virtual threads by default
+        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null) {
+            System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
+        }
+    }
+
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
 
         System.setProperty("kc.version", Version.VERSION);
+
+        main(args, new Picocli());
+    }
+
+    public static void main(String[] args, Picocli picocli) {
         List<String> cliArgs = null;
         try {
             cliArgs = Picocli.parseArgs(args);
         } catch (PropertyException e) {
-            handleUsageError(e.getMessage());
+            picocli.usageException(e.getMessage(), e.getCause());
             return;
+        }
+        
+        if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
+            PersistedConfigSource.getInstance().useDryRunProperties();
         }
 
         if (cliArgs.isEmpty()) {
@@ -73,32 +86,12 @@ public class KeycloakMain implements QuarkusApplication {
             // default to show help message
             cliArgs.add("-h");
         } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
-
-            if (isDevProfileNotAllowed()) {
-                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
-                return;
-            }
-
-            Environment.setParsedCommand(new Start());
-
-            try {
-                PropertyMappers.sanitizeDisabledMappers();
-                Picocli.validateConfig(cliArgs, new Start());
-            } catch (PropertyException | ProfileException e) {
-                handleUsageError(e.getMessage(), e.getCause());
-                return;
-            }
-
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
-
-            start(errorHandler, errStream, args);
-
+            Start.fastStart(picocli, Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)));
             return;
         }
 
         // parse arguments and execute any of the configured commands
-        parseAndRun(cliArgs);
+        picocli.parseAndRun(cliArgs);
     }
 
     /**
@@ -120,28 +113,17 @@ public class KeycloakMain implements QuarkusApplication {
         }
     }
 
-    private static void handleUsageError(String message) {
-        handleUsageError(message, null);
-    }
-
-    private static void handleUsageError(String message, Throwable cause) {
-        ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-        PrintWriter errStream = new PrintWriter(System.err, true);
-        errorHandler.error(errStream, message, cause);
-        System.exit(ExitCode.USAGE);
-    }
-
     private static boolean isFastStart(List<String> cliArgs) {
         // 'start --optimized' should start the server without parsing CLI
         return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
+    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
-                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
+                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                             cause.getCause());
                 }
 
@@ -150,10 +132,10 @@ public class KeycloakMain implements QuarkusApplication {
                     // as we are replacing the default exit handler, we need to force exit
                     System.exit(exitCode);
                 }
-            }, args);
+            });
         } catch (Throwable cause) {
             errorHandler.error(errStream,
-                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
+                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
             System.exit(1);
         }
@@ -164,10 +146,6 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (isDevProfile()) {
-            Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
-        }
-
         int exitCode = ApplicationLifecycleManager.getExitCode();
 
         if (isTestLaunchMode() || isNonServerMode()) {

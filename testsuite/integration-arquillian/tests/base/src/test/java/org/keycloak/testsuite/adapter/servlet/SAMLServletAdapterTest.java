@@ -41,6 +41,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -106,6 +107,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import org.keycloak.admin.client.Keycloak;
@@ -167,6 +169,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserDriverUtil;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SamlClient;
@@ -1133,6 +1136,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void testSavedPostRequest() {
         inputPortalPage.navigateTo();
         assertCurrentUrlStartsWith(inputPortalPage);
+        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
         inputPortalPage.execute("hello");
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1143,6 +1147,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // test that user principal and KeycloakSecurityContext available
         driver.navigate().to(inputPortalPage + "/insecure");
         waitUntilElement(By.xpath("//body")).text().contains("Insecure Page");
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
 
         if (System.getProperty("insecure.user.principal.unsupported") == null) waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
 
@@ -1950,6 +1955,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void testImpersonationForSaml() throws IOException {
+        Assume.assumeFalse("The firefox driver does not allow to set the cookies", BrowserDriverUtil.isDriverFirefox(driver));
+
         RealmResource realm = adminClient.realm(SAMLSERVLETDEMO);
         List<UserRepresentation> users = realm.users().search("bburke", true);
         Assert.assertNotNull(users);
@@ -1985,12 +1992,21 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
     }
 
+    private String getCookieValue(String name, String path) {
+        return driver.manage().getCookies()
+                .stream()
+                .filter(c -> name.equals(c.getName()) && path.equals(c.getPath()))
+                .findAny()
+                .map(Cookie::getValue)
+                .orElse(null);
+    }
+
     @Test
     public void testChangeSessionID() throws Exception {
         // login in the employeeDom application
         assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
         assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
-        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
+        String sessionId = getCookieValue("JSESSIONID", "/employee-dom");
 
         // retrieve the saml document
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
@@ -2001,7 +2017,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // change the session id
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
         waitForPageToLoad();
-        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, getCookieValue("JSESSIONID", "/employee-dom"));
 
         // retrieve again the saml document and should be the same as login should be maintained
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
@@ -2023,7 +2039,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
         transformer.transform(doc,
-                new StreamResult(new OutputStreamWriter(out, "UTF-8")));
+                new StreamResult(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
     }
 
     private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {

@@ -28,8 +28,6 @@ public interface KeycloakDistribution {
 
     boolean isManualStop();
 
-    void assertStopped();
-
     void setRequestPort();
 
     void setRequestPort(int port);
@@ -71,4 +69,6 @@ public interface KeycloakDistribution {
     }
 
     <D extends KeycloakDistribution> D unwrap(Class<D> type);
+
+    void clearEnv();
 }

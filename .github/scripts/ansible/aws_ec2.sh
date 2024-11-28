@@ -13,7 +13,7 @@ CLUSTER_NAME=$3
 case $OPERATION in
   requirements)
     ansible-galaxy collection install -r requirements.yml
-    pip3 install --user "ansible==9.*" boto3 botocore
+    pip3 install ansible boto3 botocore
   ;;
   create|delete|start|stop)
     if [ -f "env.yml" ]; then ANSIBLE_CUSTOM_VARS_ARG="-e @env.yml"; fi

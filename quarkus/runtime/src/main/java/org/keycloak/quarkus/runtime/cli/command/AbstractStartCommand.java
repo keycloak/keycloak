@@ -18,9 +18,7 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 
 import java.util.EnumSet;
@@ -28,20 +26,32 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
+
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin = new DryRunMixin();
+
     @Override
     public void run() {
-        Environment.setParsedCommand(this);
         doBeforeRun();
-        CommandLine cmd = spec.commandLine();
         HttpPropertyMappers.validateConfig();
+        HostnameV2PropertyMappers.validateConfig();
         validateConfig();
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
-    }
 
+        if (isDevProfile()) {
+            picocli.getOutWriter().println(Ansi.AUTO.string(
+                    "@|bold,red Running the server in development mode. DO NOT use this configuration in production.|@"));
+        }
+        if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+            picocli.start();
+        }
+    }
+    
     protected void doBeforeRun() {
 
     }

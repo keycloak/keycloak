@@ -34,6 +34,7 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
 
 import "./realm-selector.css";
+import { environment } from "../../environment";
 
 const MAX_RESULTS = 10;
 
@@ -117,6 +118,7 @@ export const RealmSelector = () => {
 
   useFetch(
     async () => {
+      adminClient.realmName = environment.masterRealm;
       try {
         return await fetchAdminUI<RealmNameRepresentation[]>(
           adminClient,
@@ -136,18 +138,15 @@ export const RealmSelector = () => {
   );
 
   const sortedRealms = useMemo(
-    () => [
-      ...(first === 0 && !search
-        ? recentRealms.reduce((acc, name) => {
-            const realm = realms.find((r) => r.name === name);
-            if (realm) {
-              acc.push(realm);
-            }
-            return acc;
-          }, [] as RealmNameRepresentation[])
-        : []),
-      ...realms.filter((r) => !recentRealms.includes(r.name)),
-    ],
+    () =>
+      realms.length > MAX_RESULTS
+        ? [
+            ...(first === 0 && !search
+              ? (recentRealms || []).map((name) => ({ name }))
+              : []),
+            ...realms.filter((r) => !(recentRealms || []).includes(r.name)),
+          ]
+        : realms,
     [recentRealms, realms, first, search],
   );
 
@@ -200,7 +199,12 @@ export const RealmSelector = () => {
         {(realms.length !== 0
           ? [
               first !== 0 ? (
-                <DropdownItem onClick={() => setFirst(first - MAX_RESULTS)}>
+                <DropdownItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFirst(first - MAX_RESULTS);
+                  }}
+                >
                   <AngleLeftIcon /> {t("previous")}
                 </DropdownItem>
               ) : (
@@ -218,13 +222,18 @@ export const RealmSelector = () => {
                   <RealmText
                     {...realm}
                     showIsRecent={
-                      realms.length > 5 && recentRealms.includes(realm.name)
+                      realms.length > 5 && recentRealms?.includes(realm.name)
                     }
                   />
                 </DropdownItem>
               )),
               realms.length > MAX_RESULTS ? (
-                <DropdownItem onClick={() => setFirst(first + MAX_RESULTS)}>
+                <DropdownItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFirst(first + MAX_RESULTS);
+                  }}
+                >
                   <AngleRightIcon />
                   {t("next")}
                 </DropdownItem>

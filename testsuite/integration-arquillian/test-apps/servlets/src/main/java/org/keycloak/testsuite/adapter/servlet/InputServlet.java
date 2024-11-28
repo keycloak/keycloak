@@ -40,6 +40,7 @@ public class InputServlet extends HttpServlet {
         String appBase = ServletTestUtils.getUrlBase();
         String actionUrl = appBase + "/input-portal/secured/post";
 
+        req.getSession(true);
         if (req.getRequestURI().endsWith("insecure")) {
             if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertNotNull(req.getUserPrincipal());
             resp.setContentType("text/html");
@@ -65,6 +66,7 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getSession(true);
         if (!FORM_URLENCODED.equals(req.getContentType())) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter pw = resp.getWriter();

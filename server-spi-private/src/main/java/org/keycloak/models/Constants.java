@@ -43,8 +43,6 @@ public final class Constants {
     public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
-    public static final String INSTALLED_APP_URL = "http://localhost";
-    public static final String INSTALLED_APP_LOOPBACK = "http://127.0.0.1";
 
     public static final String READ_TOKEN_ROLE = "read-token";
     public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
@@ -142,6 +140,8 @@ public final class Constants {
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 
+    public static final String SNAPSHOT_VERSION = "999.0.0-SNAPSHOT";
+
     // Client Polices Realm Attributes Keys
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
@@ -165,6 +165,7 @@ public final class Constants {
     public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
     public static final String ACR_LOA_MAP = "acr.loa.map";
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
+    public static final String MINIMUM_ACR_VALUE = "minimum.acr.value";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 

@@ -29,6 +29,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
+import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -529,8 +530,10 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         ).toString();
         updatePolicies(json);
 
-        // delete the non-offline session to force the NPE
-        adminClient.realm(REALM_NAME).deleteSession(token.getSessionId(), false);
+        // now the online session should be removed as it's a offline first request
+        NotFoundException nfe = Assert.assertThrows(NotFoundException.class,
+                () -> adminClient.realm(REALM_NAME).deleteSession(token.getSessionId(), false));
+        Assert.assertEquals(404, nfe.getResponse().getStatus());
 
         String refreshTokenString = res.getRefreshToken();
         OAuthClient.AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);

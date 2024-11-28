@@ -191,23 +191,17 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRestartCookieBackwardsCompatible_Keycloak25() throws IOException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
-            try {
-                String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
-                RealmModel realm = session.realms().getRealmByName("test");
+            String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
+            RealmModel realm = session.realms().getRealmByName("test");
 
-                KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+            KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
 
-                String encodedToken = new JWSBuilder()
-                        .kid(activeKey.getKid())
-                        .content(cookieVal.getBytes("UTF-8"))
-                        .hmac256(activeKey.getSecretKey());
+            String encodedToken = new JWSBuilder()
+                    .kid(activeKey.getKid())
+                    .content(cookieVal.getBytes(StandardCharsets.UTF_8))
+                    .hmac256(activeKey.getSecretKey());
 
-                return encodedToken;
-
-
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
+            return encodedToken;
         });
 
         oauth.openLoginForm();
@@ -229,24 +223,18 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRestartCookieBackwardsCompatible_Keycloak19() throws IOException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
-            try {
-                String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
-                RealmModel realm = session.realms().getRealmByName("test");
+            String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
+            RealmModel realm = session.realms().getRealmByName("test");
 
-                KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+            KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
 
-                // There was no KID in the token in Keycloak 1.9.8
-                String encodedToken = new JWSBuilder()
-                        //.kid(activeKey.getKid())
-                        .content(cookieVal.getBytes("UTF-8"))
-                        .hmac256(activeKey.getSecretKey());
+            // There was no KID in the token in Keycloak 1.9.8
+            String encodedToken = new JWSBuilder()
+                    //.kid(activeKey.getKid())
+                    .content(cookieVal.getBytes(StandardCharsets.UTF_8))
+                    .hmac256(activeKey.getSecretKey());
 
-                return encodedToken;
-
-
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
+            return encodedToken;
         });
 
         oauth.openLoginForm();

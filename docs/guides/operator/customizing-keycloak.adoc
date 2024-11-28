@@ -22,6 +22,8 @@ To avoid this delay, you can provide a custom image with the augmentation built-
 
 With a custom image, you can also specify the Keycloak _build-time_ configurations and extensions during the build of the container.
 
+WARNING: When using optimized custom image, `health-enabled` and `metrics-enabled` options need to be explicitly set in the Containerfile.
+
 For instructions on how to build such an image, see <@links.server id="containers"/>.
 
 === Providing a custom {project_name} image

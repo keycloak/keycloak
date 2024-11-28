@@ -39,7 +39,7 @@ public abstract class AbstractFileBasedImportProvider implements ImportProvider 
 
     protected InputStream parseFile(File importFile) throws IOException {
         if (ExportImportConfig.isReplacePlaceholders()) {
-            String raw = new String(Files.readAllBytes(importFile.toPath()), "UTF-8");
+            String raw = Files.readString(importFile.toPath());
             String parsed = replaceProperties(raw, ENV_VAR_PROPERTY_RESOLVER);
             return new ByteArrayInputStream(parsed.getBytes());
         }

@@ -64,7 +64,7 @@ protocol mappers::
   protocol mappers.
 session::
   When a user logs in, a session is created to manage the login session.  A session contains information like when the user logged in and what
-  applications have participated within single-sign on during that session.  Both admins and users can view session information.
+  applications have participated within single sign-on during that session.  Both admins and users can view session information.
 user federation provider::
   {project_name} can store and manage users.  Often, companies already have LDAP or Active Directory services that store user and credential
   information.  You can point {project_name} to validate credentials from those external stores and pull in identity information.

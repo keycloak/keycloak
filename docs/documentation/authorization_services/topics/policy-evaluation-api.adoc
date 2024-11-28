@@ -88,7 +88,7 @@ The `Identity` is built based on the OAuth2 Access Token that was sent along wit
 extracted from the original token. For example, if you are using a _Protocol Mapper_ to include a custom claim in an OAuth2 Access Token you can also access this claim
 from a policy and use it to build your conditions.
 
-The `EvaluationContext` also gives you access to attributes related to both the execution and runtime environments. For now, there only a few built-in attributes.
+The `EvaluationContext` also gives you access to attributes related to both the execution and runtime environments. For now, these are only a few built-in attributes.
 
 .Execution and Runtime Attributes
 |===

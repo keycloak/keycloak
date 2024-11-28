@@ -106,12 +106,12 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
 
         ClientBuilder installedApp = ClientBuilder.create().clientId("test-installed").name("test-installed")
-                .redirectUris(Constants.INSTALLED_APP_URN, Constants.INSTALLED_APP_URL)
+                .redirectUris(Constants.INSTALLED_APP_URN, "http://localhost")
                 .secret("password");
         realm.client(installedApp);
 
         ClientBuilder installedApp2 = ClientBuilder.create().clientId("test-installed2").name("test-installed2")
-                .redirectUris(Constants.INSTALLED_APP_URL + "/myapp")
+                .redirectUris("http://localhost/myapp")
                 .secret("password");
         realm.client(installedApp2);
 
@@ -158,12 +158,12 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         realm.client(installedAppCustomScheme);
 
         ClientBuilder installedAppLoopback = ClientBuilder.create().clientId("test-installed-loopback").name("test-installed-loopback")
-                .redirectUris(Constants.INSTALLED_APP_LOOPBACK)
+                .redirectUris("http://127.0.0.1")
                 .secret("password");
         realm.client(installedAppLoopback);
 
         ClientBuilder installedAppLoopback2 = ClientBuilder.create().clientId("test-installed-loopback2").name("test-installed-loopback2")
-                .redirectUris(Constants.INSTALLED_APP_LOOPBACK + "/myapp")
+                .redirectUris("http://127.0.0.1/myapp")
                 .secret("password");
         realm.client(installedAppLoopback2);
 

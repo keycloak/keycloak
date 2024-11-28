@@ -182,6 +182,10 @@ public final class SuiteContext {
         return authServerBackendsInfo.size() > 1;
     }
 
+    /**
+     * @return true during migration test, but just right before and during old container running. It returns false during lifecycle of new container running
+     * and during migration test itself. Use {@link #getMigrationContext().isRunningMigrationTest()} if want to check if we are in the context of migration (including lifecycle of the new container)
+     */
     public boolean isAuthServerMigrationEnabled() {
         return migratedAuthServerInfo != null;
     }

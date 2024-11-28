@@ -246,22 +246,22 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.assertCurrent();
         getLogger().info("URL in tab1: " + driver.getCurrentUrl());
-
         // Open new tab 2
         tabUtil.newTab(oauth.getLoginFormUrl());
         assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
         loginPage.assertCurrent();
         getLogger().info("URL in tab2: " + driver.getCurrentUrl());
-
         // Wait until authentication session expires
         setTimeOffset(7200000);
+
+        //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+        WaitUtils.pause(2000);
 
         // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
         loginPage.login("login-test", "password");
         loginPage.assertCurrent();
         Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
         events.clear();
-
         loginSuccessAndDoRequiredActions();
 
         // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
@@ -338,6 +338,9 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             // Wait until authentication session expires
             setTimeOffset(7200000);
 
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
+
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
             loginPage.login("login-test", "password");
             loginPage.assertCurrent();
@@ -373,6 +376,9 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
             // Wait until authentication session expires
             setTimeOffset(7200000);
+
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
 
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
             loginPage.login("login-test", "password");
@@ -690,6 +696,44 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             waitForAppPage(() -> driver.navigate().refresh());
             appPage.assertCurrent();
         }
+    }
+
+   @Test
+    public void testLoginPageRefresh() {
+
+       try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+           assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+           oauth.openLoginForm();
+           loginPage.assertCurrent();
+           getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+           //delete cookie to be recreated in tab 2
+           driver.manage().deleteCookieNamed("AUTH_SESSION_ID");
+
+           // Open new tab 2
+           tabUtil.newTab(oauth.getLoginFormUrl());
+           assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+           loginPage.assertCurrent();
+           getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+           tabUtil.switchToTab(0);
+           loginPage.assertCurrent();
+
+           //wait for the refresh in the first tab
+           WaitUtils.pause(2000);
+
+           if (driver instanceof HtmlUnitDriver) {
+               // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"
+               // error and being redirected to client
+               driver.navigate().refresh();
+           }
+
+           loginSuccessAndDoRequiredActions();
+
+           tabUtil.switchToTab(1);
+
+           waitForAppPage(() -> loginPage.login("login-test", "password"));
+       }
     }
 
     private void waitForAppPage(Runnable htmlUnitAction) {

@@ -30,6 +30,7 @@ import java.util.Set;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.SdJwt;
@@ -54,6 +55,7 @@ public class SdJwtVP {
     private final String hashAlgorithm;
 
     private final Optional<KeyBindingJWT> keyBindingJWT;
+    private final SdJwtVerificationContext sdJwtVerificationContext;
 
     public Map<String, ArrayNode> getClaims() {
         return claims;
@@ -98,14 +100,30 @@ public class SdJwtVP {
         this.recursiveDigests = Collections.unmodifiableMap(recursiveDigests);
         this.ghostDigests = Collections.unmodifiableList(ghostDigests);
         this.keyBindingJWT = keyBindingJWT;
+
+        // Instantiate context for verification
+        this.sdJwtVerificationContext = new SdJwtVerificationContext(
+                this.sdJwtVpString,
+                this.issuerSignedJWT,
+                this.disclosures,
+                this.keyBindingJWT.orElse(null)
+        );
     }
 
     public static SdJwtVP of(String sdJwtString) {
         int disclosureStart = sdJwtString.indexOf(SdJwt.DELIMITER);
         int disclosureEnd = sdJwtString.lastIndexOf(SdJwt.DELIMITER);
 
+        if (disclosureStart == -1) {
+            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + SdJwt.DELIMITER + "'");
+        }
+
         String issuerSignedJWTString = sdJwtString.substring(0, disclosureStart);
-        String disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
+        String disclosuresString = "";
+
+        if (disclosureEnd > disclosureStart) {
+            disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
+        }
 
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
 
@@ -209,21 +227,33 @@ public class SdJwtVP {
     /**
      * Verifies SD-JWT presentation.
      *
-     * @param issuerSignedJwtVerificationOpts Options to parameterize the verification. A verifier must be specified
-     *                                        for validating the Issuer-signed JWT. The caller is responsible for
-     *                                        establishing trust in that associated public keys belong to the
-     *                                        intended issuer.
+     * @param issuerVerifyingKeys             Verifying keys for validating the Issuer-signed JWT. The caller
+     *                                        is responsible for establishing trust in that the keys belong
+     *                                        to the intended issuer.
+     * @param issuerSignedJwtVerificationOpts Options to parameterize the Issuer-Signed JWT verification.
      * @param keyBindingJwtVerificationOpts   Options to parameterize the Key Binding JWT verification.
      *                                        Must, among others, specify the Verifier's policy whether
      *                                        to check Key Binding.
      * @throws VerificationException if verification failed
      */
     public void verify(
+            List<SignatureVerifierContext> issuerVerifyingKeys,
             IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
-        new SdJwtVerificationContext(sdJwtVpString, issuerSignedJWT, disclosures, keyBindingJWT.orElse(null))
-                .verifyPresentation(issuerSignedJwtVerificationOpts, keyBindingJwtVerificationOpts);
+        sdJwtVerificationContext.verifyPresentation(
+                issuerVerifyingKeys,
+                issuerSignedJwtVerificationOpts,
+                keyBindingJwtVerificationOpts,
+                null
+        );
+    }
+
+    /**
+     * Retrieve verification context for advanced scenarios.
+     */
+    public SdJwtVerificationContext getSdJwtVerificationContext() {
+        return sdJwtVerificationContext;
     }
 
     // Recursively searches the node with the given value.

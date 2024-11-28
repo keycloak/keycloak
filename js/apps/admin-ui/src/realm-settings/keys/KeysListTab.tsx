@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
@@ -30,6 +30,7 @@ import { toKeysTab } from "../routes/KeysTab";
 import "../realm-settings-section.css";
 
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
+
 type FilterType = (typeof FILTER_OPTIONS)[number];
 
 type KeyData = KeyMetadataRepresentation & {
@@ -94,8 +95,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
 
   const { realm } = useRealm();
 
-  const [keyData, setKeyData] = useState<KeyData[]>();
-  const [filteredKeyData, setFilteredKeyData] = useState<KeyData[]>();
+  const [keyData, setKeyData] = useState<KeyData[]>([]);
+
+  const [filter, setFilter] = useState<string>(FILTER_OPTIONS[0]);
+
+  const filteredKeyData = useMemo(
+    () => keyData?.filter(({ status }) => status === filter),
+    [keyData, filter],
+  );
 
   useFetch(
     async () => {
@@ -139,19 +146,11 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <KeycloakDataTable
         isNotCompact
         className="kc-keys-list"
-        loader={filteredKeyData || keyData}
+        loader={filteredKeyData}
         ariaLabelKey="keysList"
         searchPlaceholderKey="searchKey"
         searchTypeComponent={
-          <SelectFilter
-            onFilter={(filterType) =>
-              setFilteredKeyData(
-                filterType !== FILTER_OPTIONS[0]
-                  ? keyData!.filter(({ status }) => status === filterType)
-                  : undefined,
-              )
-            }
-          />
+          <SelectFilter onFilter={(filterType) => setFilter(filterType)} />
         }
         columns={[
           {
@@ -194,21 +193,8 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "publicKeys",
             displayKey: "publicKeys",
-            cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
-              if (type === "EC") {
-                return (
-                  <Button
-                    onClick={() => {
-                      togglePublicKeyDialog();
-                      setPublicKey(publicKey!);
-                    }}
-                    variant="secondary"
-                    id="kc-public-key"
-                  >
-                    {t("publicKey")}
-                  </Button>
-                );
-              } else if (type === "RSA") {
+            cellRenderer: ({ publicKey, certificate }: KeyData) => {
+              if (certificate) {
                 return (
                   <div className="button-wrapper">
                     <Button
@@ -234,7 +220,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     </Button>
                   </div>
                 );
-              } else if (type === "OKP") {
+              } else if (publicKey) {
                 return (
                   <Button
                     onClick={() => {

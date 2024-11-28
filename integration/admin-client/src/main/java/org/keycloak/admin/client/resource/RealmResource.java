@@ -267,6 +267,13 @@ public interface RealmResource {
     @Produces(MediaType.APPLICATION_JSON)
     GlobalRequestResult logoutAll();
 
+    /**
+     * Delete given user session
+     *
+     * @param sessionId session ID
+     * @param offline Parameter available since Keycloak server 24.0.2. Will be ignored on older Keycloak versions with the default value false.
+     * @throws jakarta.ws.rs.NotFoundException if the user session is not found
+     */
     @Path("sessions/{session}")
     @DELETE
     void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline);

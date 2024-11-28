@@ -17,13 +17,16 @@
 package org.keycloak.organization;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.idm.MembershipType;
 
 /**
  * A {@link Provider} that manages organization and its data within the scope of a realm.
@@ -31,14 +34,26 @@ import org.keycloak.provider.Provider;
 public interface OrganizationProvider extends Provider {
 
     /**
-     * Creates a new organization with given {@code name} to the realm.
+     * Creates a new organization with given {@code name} and {@code alias} to the realm.
      * The internal ID of the organization will be created automatically.
-     * @param name String name of the organization.
+     * @param name the name of the organization.
      * @param alias the alias of the organization. If not set, defaults to the value set to {@code name}. Once set, the alias is immutable.
      * @throws ModelDuplicateException If there is already an organization with the given name or alias
      * @return Model of the created organization.
      */
-    OrganizationModel create(String name, String alias);
+    default OrganizationModel create(String name, String alias) {
+        return create(null, name, alias);
+    }
+
+    /**
+     * Creates a new organization with given {@code id}, {@code name}, and {@code alias} to the realm
+     * @param id the id of the organization.
+     * @param name the name of the organization.
+     * @param alias the alias of the organization. If not set, defaults to the value set to {@code name}. Once set, the alias is immutable.
+     * @throws ModelDuplicateException If there is already an organization with the given name or alias
+     * @return Model of the created organization.
+     */
+    OrganizationModel create(String id, String name, String alias);
 
     /**
      * Returns a {@link OrganizationModel} by its {@code id};
@@ -127,8 +142,27 @@ public interface OrganizationProvider extends Provider {
      *
      * @param organization the organization
      * @return Stream of the members. Never returns {@code null}.
+     * @deprecated Use {@link #getMembersStream(OrganizationModel, Map, Boolean, Integer, Integer)} instead.
      */
+    @Deprecated(forRemoval = true, since = "26")
     Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max);
+
+    /**
+     * Returns the members of a given {@link OrganizationModel} filtered according to the specified {@code filters}.
+     *
+     * @param organization the organization
+     * @return Stream of the members. Never returns {@code null}.
+     */
+    default Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
+        var result = getMembersStream(organization, Optional.ofNullable(filters).orElse(Map.of()).get(UserModel.SEARCH), exact, first, max);
+        var membershipType = Optional.ofNullable(filters.get(MembershipType.NAME)).map(MembershipType::valueOf).orElse(null);
+
+        if (membershipType != null) {
+            return result.filter(userModel -> MembershipType.MANAGED.equals(membershipType) ? isManagedMember(organization, userModel) : !isManagedMember(organization, userModel));
+        }
+
+        return result;
+    }
 
     /**
      * Returns number of members in the organization.

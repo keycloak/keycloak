@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -99,6 +100,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -475,9 +477,14 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
             assertEquals("Certificates don't match", pem, publicKeyNew);
         } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET)) {
-            final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
+            Assert.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
+            String jwks = new String(Files.readAllBytes(keystoreFile.toPath()));
+            Assert.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
+            CertificateRepresentation info = getClient(testRealm.getRealm(), client.getId())
+                    .getCertficateResource(JWTClientAuthenticator.ATTR_PREFIX).getKeyInfo();
+            Assert.assertNotNull(info.getPublicKey());
             // Just assert it's valid public key
-            PublicKey pk = KeycloakModelUtils.getPublicKey(publicKeyNew);
+            PublicKey pk = KeycloakModelUtils.getPublicKey(info.getPublicKey());
             Assert.assertNotNull(pk);
         } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
@@ -713,7 +720,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         CloseableHttpClient client = new DefaultHttpClient();
         try {
             HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
         } finally {

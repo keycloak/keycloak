@@ -31,6 +31,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -49,6 +50,7 @@ import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -63,6 +65,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -182,6 +186,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
         }
 
+        // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
+        String dpopJkt = session.getAttribute(PAR_DPOP_PROOF_JKT, String.class);
+        if (dpopJkt != null) {
+            // if dpop_jkt is specified in an authorization request sent to Authorization Endpoint, it is overwritten by one in PAR request
+            request.setDpopJkt(dpopJkt);
+        }
+
         try {
             session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params));
         } catch (ClientPolicyException cpe) {
@@ -205,11 +216,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         throw new RuntimeException("Unknown action " + action);
     }
 
-    public AuthorizationEndpoint register() {
+    public AuthorizationEndpoint register(String tokenString) {
         event.event(EventType.REGISTER);
         action = Action.REGISTER;
 
-        if (!realm.isRegistrationAllowed()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            Response errorResponse = new LoginActionsService(session, event).preHandleActionToken(tokenString);
+            if (errorResponse != null) {
+                throw new ErrorPageException(errorResponse);
+            }
+        }
+
+        if (!Organizations.isRegistrationAllowed(session, realm)) {
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
@@ -307,6 +326,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (acrValues.isEmpty()) {
             acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr(), authenticationSession.getClient());
         } else {
+            List<String> minimizedAcrValues = AcrUtils.enforceMinimumAcr(acrValues, client);
+            // If enforcing a minimum here changes the list, the client has an essential claim that is too low
+            if (!minimizedAcrValues.equals(acrValues)) {
+                logger.errorf("Requested essential acr value list contains values lower than the client minimum. Please doublecheck the client configuration or correct ACR passed in the 'claims' parameter.");
+                event.detail(Details.REASON, "Invalid requested essential acr value");
+                event.error(Errors.INVALID_REQUEST);
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+            }
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
@@ -351,6 +378,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         AuthenticationProcessor processor = createProcessor(authenticationSession, flowId, LoginActionsService.REGISTRATION_PATH);
         authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.REGISTRATION_PATH);
+        LocaleUtil.processLocaleParam(session, realm, authenticationSession);
 
         return processor.authenticate();
     }
@@ -391,5 +419,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
         paramAction.accept(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
         paramAction.accept(OIDCLoginProtocol.STATE_PARAM, request.getState());
+        paramAction.accept(OIDCLoginProtocol.DPOP_JKT, request.getDpopJkt());
     }
 }

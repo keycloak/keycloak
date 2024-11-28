@@ -17,10 +17,12 @@
 
 package org.keycloak.models;
 
+import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -73,9 +75,17 @@ public interface KeycloakContext {
 
     void setClient(ClientModel client);
 
+    OrganizationModel getOrganization();
+
+    void setOrganization(OrganizationModel organization);
+
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);
+
+    default Locale resolveLocale(UserModel user, Theme.Type themeType) {
+        return resolveLocale(user);
+    }
 
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
@@ -95,4 +105,12 @@ public interface KeycloakContext {
     void setHttpRequest(HttpRequest httpRequest);
 
     void setHttpResponse(HttpResponse httpResponse);
+
+    UserSessionModel getUserSession();
+
+    void setUserSession(UserSessionModel session);
+
+    Token getBearerToken();
+
+    void setBearerToken(Token token);
 }

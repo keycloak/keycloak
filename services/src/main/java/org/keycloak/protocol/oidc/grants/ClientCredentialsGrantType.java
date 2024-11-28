@@ -41,8 +41,6 @@ import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestCont
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -79,12 +77,11 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         UserModel clientUser = session.users().getServiceAccount(client);
-
-        if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
-            // May need to handle bootstrap here as well
-            logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
-            new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            clientUser = session.users().getServiceAccount(client);
+        if (clientUser == null) {
+            event.detail(Details.REASON, "The associated service account for the client does not exist");
+            event.error(Errors.USER_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "The associated service account for the client does not exist", Response.Status.UNAUTHORIZED);
         }
 
         String clientUsername = clientUser.getUsername();
@@ -106,6 +103,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+        setAuthorizationDetailsNoteIfIncluded(authSession);
 
         // persisting of userSession by default
         UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
@@ -145,6 +143,10 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // Make refresh token generation optional, see KEYCLOAK-9551
         if (useRefreshToken) {
             responseBuilder = responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
+                // for client credentials the online session can be removed
+                session.sessions().removeUserSession(realm, userSession);
+            }
         } else {
             responseBuilder.getAccessToken().setSessionId(null);
         }
@@ -188,4 +190,14 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         return EventType.CLIENT_LOGIN;
     }
 
+    /**
+     * Setting a client note with authorization_details to support custom protocol mappers using RAR (Rich Authorization Request)
+     * until RAR is fully implemented.
+     */
+    private void setAuthorizationDetailsNoteIfIncluded(AuthenticationSessionModel authSession) {
+        String authorizationDetails = formParams.getFirst(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM);
+        if (authorizationDetails != null) {
+            authSession.setClientNote(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM, authorizationDetails);
+        }
+    }
 }

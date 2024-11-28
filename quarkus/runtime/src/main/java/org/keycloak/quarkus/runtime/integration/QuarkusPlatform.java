@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.quarkus.runtime.Environment;
 
@@ -103,9 +102,4 @@ public class QuarkusPlatform implements PlatformProvider {
         return tmpDir;
     }
 
-    @Override
-    public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
-        // It is fine to return null assuming that nashorn and it's dependencies are included on the classpath (usually "providers" directory)
-        return null;
-    }
 }

@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathValidatorException;
@@ -66,13 +68,13 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.OCSPProvider;
@@ -85,7 +87,7 @@ import org.keycloak.utils.OCSPProvider;
 
 public class CertificateValidator {
 
-    private static final ServicesLogger logger = ServicesLogger.LOGGER;
+    private final static Logger logger = Logger.getLogger(CertificateValidator.class);
 
     enum KeyUsageBits {
         DIGITAL_SIGNATURE(0, "digitalSignature"),
@@ -589,8 +591,8 @@ public class CertificateValidator {
         }
         else
         {
-            Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
-            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
 
             logger.debugf("Found %d trusted root certs, %d trusted intermediate certs", trustedRootCerts.size(), trustedIntermediateCerts.size());
 
@@ -651,16 +653,30 @@ public class CertificateValidator {
         return result;
     }
 
-    private X509Certificate findCAInTruststore(X500Principal issuer) throws GeneralSecurityException {
+    private X509Certificate findCAInTruststore(X509Certificate cert) throws GeneralSecurityException {
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
             return null;
         }
-        Map<X500Principal, X509Certificate> rootCerts = truststoreProvider.getRootCertificates();
-        X509Certificate ca = rootCerts.get(issuer);
-        if (ca == null) {
+        Map<X500Principal, List<X509Certificate>> rootCerts = truststoreProvider.getRootCertificates();
+        X500Principal issuer = cert.getIssuerX500Principal();
+        List<X509Certificate> cas = rootCerts.get(issuer);
+        X509Certificate ca = null;
+        if (cas == null) {
             // fallback to lookup the issuer from the list of intermediary CAs
-            ca = truststoreProvider.getIntermediateCertificates().get(issuer);
+            cas = truststoreProvider.getIntermediateCertificates().get(issuer);
+        }
+        // find the one that signed the cert
+        if (cas != null) {
+            for (X509Certificate cacert : cas) {
+                try {
+                    cert.verify(cacert.getPublicKey());
+                } catch (InvalidKeyException | SignatureException e) {
+                    continue;
+                }
+                ca = cacert;
+                break;
+            }
         }
         if (ca != null) {
             ca.checkValidity();
@@ -687,7 +703,7 @@ public class CertificateValidator {
         } else {
             // only one cert => find the CA certificate using the truststore SPI
             cert = certs[0];
-            issuer = findCAInTruststore(cert.getIssuerX500Principal());
+            issuer = findCAInTruststore(cert);
             if (issuer == null) {
                 throw new GeneralSecurityException(
                         String.format("No trusted CA in certificate found: %s. Add it to truststore SPI if valid.",

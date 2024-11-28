@@ -26,6 +26,15 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-embedded-authorization-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       authorization cache.
+--cache-embedded-client-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       clientSessions cache. Available only when embedded Infinispan clusters
+                       configured.
+--cache-embedded-keys-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
                      Encrypts the network communication between Keycloak servers. Default: false.
 --cache-embedded-mtls-key-store-file <file>
@@ -40,43 +49,51 @@ Cache:
                        'cache-mtls-truststore.p12' under conf/ directory.
 --cache-embedded-mtls-trust-store-password <password>
                      The password to access the Truststore.
+--cache-embedded-offline-client-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       offlineClientSessions cache. Available only when embedded Infinispan
+                       clusters configured.
+--cache-embedded-offline-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the
+                       offlineSessions cache. Available only when embedded Infinispan clusters
+                       configured.
+--cache-embedded-realms-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the realms cache.
+--cache-embedded-sessions-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the sessions
+                       cache. Available only when embedded Infinispan clusters configured.
+--cache-embedded-users-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the users cache.
 --cache-metrics-histograms-enabled <true|false>
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
 --cache-remote-host <hostname>
-                     The hostname of the remote server for the remote store configuration. It
-                       replaces the 'host' attribute of 'remote-server' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' and 'cache-remote-password' are required
-                       as well and the related configuration in XML file should not be present.
+                     The hostname of the external Infinispan cluster. Available only when feature
+                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
+                       Required when feature 'multi-site' or 'clusterless' is set.
 --cache-remote-password <password>
-                     The password for the authentication to the remote server for the remote store.
-                       It replaces the 'password' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
---cache-remote-port <port>
-                     The port of the remote server for the remote store configuration. It replaces
-                       the 'port' attribute of 'remote-server' tag of the configuration specified
-                       via XML file (see 'cache-config-file' option.). Default: 11222. Available
+                     The password for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-username' is required as well. Available
                        only when remote host is set.
+--cache-remote-port <port>
+                     The port of the external Infinispan cluster. Default: 11222. Available only
+                       when remote host is set.
 --cache-remote-tls-enabled <true|false>
                      Enable TLS support to communicate with a secured remote Infinispan server.
                        Recommended to be enabled in production. Default: true. Available only when
                        remote host is set.
 --cache-remote-username <username>
-                     The username for the authentication to the remote server for the remote store.
-                       It replaces the 'username' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-password' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
+                     The username for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-password' is required as well. Available
+                       only when remote host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Possible values are: tcp, udp, kubernetes, ec2, azure, google, or a custom
-                       one.
+                       Possible values are: tcp (deprecated), udp (deprecated), jdbc-ping,
+                       jdbc-ping-udp (deprecated), kubernetes, ec2 (deprecated), azure
+                       (deprecated), google (deprecated), or a custom one. Default: jdbc-ping.
+                       Available only when 'cache' type is set to 'ispn'.
 
 Config:
 
@@ -162,8 +179,10 @@ Hostname v2:
 HTTP(S):
 
 --http-enabled <true|false>
-                     Enables the HTTP listener. Default: false.
---http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+                     Enables the HTTP listener. Enabled by default in development mode. Typically
+                       not enabled in production unless the server is fronted by a TLS termination
+                       proxy. Default: false.
+--http-host <host>   The HTTP Host. Default: 0.0.0.0.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -189,6 +208,11 @@ HTTP(S):
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
                      The file path to a private key in PEM format.
+--https-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
+                       be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
                      The cipher suites to use. If none is given, a reasonable default is selected.
 --https-client-auth <auth>
@@ -207,17 +231,14 @@ HTTP(S):
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     DEPRECATED. The trust store which holds the certificate information of the
-                       certificates to trust. Use the System Truststore instead, see the docs for
-                       details.
+                     The trust store which holds the certificate information of the certificates to
+                       trust.
 --https-trust-store-password <password>
-                     DEPRECATED. The password of the trust store file. Use the System Truststore
-                       instead, see the docs for details.
+                     The password of the trust store file.
 --https-trust-store-type <type>
-                     DEPRECATED. The type of the trust store file. If not given, the type is
-                       automatically detected based on the file extension. If 'fips-mode' is set to
-                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
-                       Truststore instead, see the docs for details.
+                     The type of the trust store file. If not given, the type is automatically
+                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
+                       no value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -277,6 +298,10 @@ Proxy:
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence
                        over the deprecated proxy option. Possible values are: forwarded, xforwarded.
+--proxy-protocol-enabled <true|false>
+                     Whether the server should use the HA PROXY protocol when serving requests from
+                       behind a proxy. When set to true, the remote address returned will be the
+                       one from the actual connecting client. Default: false.
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.
@@ -308,6 +333,13 @@ Logging:
                      Include tracing information in the console log. If the 'log-console-format'
                        option is specified, this option has no effect. Default: true. Available
                        only when Console log handler and Tracing is activated.
+--log-console-level <level>
+                     Set the log level for the console handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -322,6 +354,13 @@ Logging:
                      Include tracing information in the file log. If the 'log-file-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        File log handler and Tracing is activated.
+--log-file-level <level>
+                     Set the log level for the file handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when File log handler is activated.
 --log-file-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
@@ -343,6 +382,13 @@ Logging:
                      Include tracing information in the Syslog. If the 'log-syslog-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        Syslog handler and Tracing is activated.
+--log-syslog-level <level>
+                     Set the log level for the Syslog handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Syslog is activated.
 --log-syslog-max-length <max-length>
                      Set the maximum length, in bytes, of the message allowed to be sent. The
                        length includes the header and the message. If not set, the default value is
@@ -397,6 +443,21 @@ Tracing (Preview):
                        defined in the 'tracing-resource-attributes' property. Default: keycloak.
                        Available only when 'opentelemetry' feature and Tracing is enabled.
 
+Events (Preview):
+
+--event-metrics-user-enabled <true|false>
+                     Preview: Create metrics based on user events. Default: false. Available only
+                       when metrics are enabled and feature user-event-metrics is enabled.
+--event-metrics-user-events <events>
+                     Preview: Comma-separated list of events to be collected for user event
+                       metrics. Reduce the number of metrics. If empty or not set, all events
+                       create a metric. Available only when user event metrics are enabled.
+--event-metrics-user-tags <tags>
+                     Preview: Comma-separated list of tags to be collected for user event metrics.
+                       By default only 'realm' is enabled to avoid a high metrics cardinality.
+                       Possible values are: realm, idp, clientId. Default: realm. Available only
+                       when user event metrics are enabled.
+
 Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
@@ -404,8 +465,8 @@ Truststore:
                        Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
                        DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
-                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
-                       containing those files that will be used as a system truststore.
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.
 
 Security:
 

@@ -36,6 +36,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -266,6 +268,20 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public int getMaxTemporaryLockouts() {
         return getAttribute("maxTemporaryLockouts", 0);
+    }
+
+    @Override
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        String name = getAttribute("bruteForceStrategy");
+        if(name == null)
+            return RealmRepresentation.BruteForceStrategy.MULTIPLE;
+
+        return RealmRepresentation.BruteForceStrategy.valueOf(name);
+    }
+
+    @Override
+    public void setBruteForceStrategy(final RealmRepresentation.BruteForceStrategy val) {
+        setAttribute("bruteForceStrategy", val.toString());
     }
 
     @Override
@@ -1181,6 +1197,26 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setOrganizationsEnabled(boolean organizationsEnabled) {
         setAttribute(RealmAttributes.ORGANIZATIONS_ENABLED, organizationsEnabled);
+    }
+
+    @Override
+    public boolean isAdminPermissionsEnabled() {
+        return getAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+    }
+
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        return getAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
     }
 
     @Override

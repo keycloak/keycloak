@@ -17,7 +17,6 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -221,8 +220,8 @@ public class RealmCacheSession implements CacheRealmProvider {
         return groupDelegate;
     }
 
-    public Set<String> getInvalidations() {
-        return Collections.unmodifiableSet(invalidations);
+    public boolean isInvalid(String key) {
+        return invalidations.contains(key);
     }
 
     public RealmCacheManager getCache() {
@@ -265,6 +264,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void registerClientScopeInvalidation(String id, String realmId) {
         invalidateClientScope(id);
         cache.clientScopeUpdated(realmId, invalidations);
+        invalidationEvents.add(new CacheKeyInvalidatedEvent(id));
     }
 
     private void invalidateClientScope(String id) {

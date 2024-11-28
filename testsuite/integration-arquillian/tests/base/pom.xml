@@ -184,13 +184,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
-        <dependency>
-            <groupId>org.jboss.threads</groupId>
-            <artifactId>jboss-threads</artifactId>
-            <version>2.4.0.Final</version>
-        </dependency>
-
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
@@ -416,8 +409,11 @@
                                             <MSSQL_SA_PASSWORD>${keycloak.connectionsJpa.password}</MSSQL_SA_PASSWORD>
 
                                             <!-- Oracle -->
-                                            <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PWD>sa</ORACLE_PWD>
+<!--                                        <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>-->
+                                            <ORACLE_DATABASE>${keycloak.connectionsJpa.database}</ORACLE_DATABASE>
+                                            <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
+                                            <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
+                                            <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
@@ -480,6 +476,12 @@
                     <scope>test</scope>
                     <version>${wildfly.core.version}</version>
                 </dependency>
+                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
+                <dependency>
+                    <groupId>org.jboss.threads</groupId>
+                    <artifactId>jboss-threads</artifactId>
+                    <version>2.4.0.Final</version>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -517,6 +519,12 @@
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
                     <version>${wildfly.core.version}</version>
+                </dependency>
+                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
+                <dependency>
+                    <groupId>org.jboss.threads</groupId>
+                    <artifactId>jboss-threads</artifactId>
+                    <version>2.4.0.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -706,6 +714,7 @@
                                             <includes>
                                                 <include>bc-fips-*</include>
                                                 <include>bctls-fips-*</include>
+                                                <include>bcutil-fips-*</include>
                                             </includes>
                                         </resource>
                                     </resources>

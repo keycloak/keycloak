@@ -21,6 +21,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -176,6 +177,27 @@ public class LDAPTestUtils {
         return ldapObject;
     }
 
+    public static LDAPObject addLdapOUinBaseDn(LDAPStorageProvider ldapProvider, String name) {
+        LDAPObject ldapObject = new LDAPObject();
+        ldapObject.setRdnAttributeName("ou");
+        ldapObject.setObjectClasses(Collections.singletonList("organizationalUnit"));
+        ldapObject.setSingleAttribute("ou", name);
+        LDAPDn dn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getBaseDn());
+        dn.addFirst("ou", name);
+        ldapObject.setDn(dn);
+
+        // remove OU before adding it in case it already exists
+        try {
+            ldapProvider.getLdapIdentityStore().remove(ldapObject);
+        } catch (ModelException e) {
+                // OK
+        }
+
+        ldapProvider.getLdapIdentityStore().add(ldapObject);
+
+        return ldapObject;
+    }
+
     public static void updateLDAPPassword(LDAPStorageProvider ldapProvider, LDAPObject ldapUser, String password) {
         ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password, null);
 
@@ -277,14 +299,18 @@ public class LDAPTestUtils {
     }
 
     public static void addOrUpdateGroupMapper(RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {
-        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "groupsMapper");
+        addOrUpdateGroupMapper("groupsMapper", realm, providerModel, mode, descriptionAttrName, otherConfigOptions);
+    }
+
+    public static void addOrUpdateGroupMapper(String mapperName, RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {
+        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, mapperName);
         if (mapperModel != null) {
             mapperModel.getConfig().putSingle(GroupMapperConfig.MODE, mode.toString());
             updateGroupMapperConfigOptions(mapperModel, otherConfigOptions);
             realm.updateComponent(mapperModel);
         } else {
             String baseDn = providerModel.getConfig().getFirst(LDAPConstants.BASE_DN);
-            mapperModel = KeycloakModelUtils.createComponentModel("groupsMapper", providerModel.getId(), GroupLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+            mapperModel = KeycloakModelUtils.createComponentModel(mapperName, providerModel.getId(), GroupLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
                     GroupMapperConfig.GROUPS_DN, "ou=Groups," + baseDn,
                     GroupMapperConfig.MAPPED_GROUP_ATTRIBUTES, descriptionAttrName,
                     GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true",

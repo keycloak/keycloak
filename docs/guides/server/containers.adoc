@@ -29,7 +29,7 @@ The following `Containerfile` creates a pre-configured {project_name} image that
 .Containerfile:
 [source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:{containerlabel} as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} AS builder
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -136,7 +136,7 @@ To start the image, run:
 podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
-        start --optimized
+        start --optimized --hostname=localhost
 ----
 
 {project_name} starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
@@ -149,7 +149,7 @@ Opening up `https://localhost:9000/metrics` leads to a page containing operation
 
 By default, the server is listening for `http` and `https` requests using the ports `8080` and `8443`, respectively.
 
-If you want to expose the container using a different port, you need to set the `hostname-port` accordingly:
+If you want to expose the container using a different port, you need to set the `hostname` accordingly:
 
 . Exposing the container using a port other than the default ports
 [source, bash]
@@ -157,10 +157,10 @@ If you want to expose the container using a different port, you need to set the 
 podman|docker run --name mykeycloak -p 3000:8443 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         mykeycloak \
-        start --optimized --hostname-port=3000
+        start --optimized --hostname=https://localhost:3000
 ----
 
-By setting the `hostname-port` option you can now access the server at `https://localhost:3000`.
+By setting the `hostname` option to a full url you can now access the server at `https://localhost:3000`.
 
 == Trying {project_name} in development mode
 The easiest way to try {project_name} from a container for development or testing purposes is to use the Development mode.

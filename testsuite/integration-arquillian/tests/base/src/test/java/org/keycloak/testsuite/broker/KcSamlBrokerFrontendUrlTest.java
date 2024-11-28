@@ -21,10 +21,10 @@ import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import jakarta.ws.rs.core.Response;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -133,11 +133,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
         log.debug("Logging in");
 
         // make sure the frontend url is used to build the redirect uri when redirecting to the broker
-        try {
-            assertThat(driver.getCurrentUrl(), containsString("client_id=" + URLEncoder.encode(proxy.getUrl(), "UTF-8")));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        assertThat(driver.getCurrentUrl(), containsString("client_id=" + URLEncoder.encode(proxy.getUrl(), StandardCharsets.UTF_8)));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "AUTH_RESPONSE", true);

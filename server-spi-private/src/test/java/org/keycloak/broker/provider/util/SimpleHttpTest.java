@@ -120,7 +120,7 @@ public final class SimpleHttpTest {
 
         @Test
         public void requestWithEncodingParam() throws IOException {
-            String expectedResponse = "dummy=" + URLEncoder.encode(value, "UTF-8");
+            String expectedResponse = "dummy=" + URLEncoder.encode(value, StandardCharsets.UTF_8);
             HttpClientMock client = new HttpClientMock();
             if (expectedResponse.getBytes(StandardCharsets.UTF_8).length < 1024) {
                 SimpleHttp.Response response = SimpleHttp.doPost("", client, 1024).param("dummy", value).asResponse();

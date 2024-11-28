@@ -7,6 +7,7 @@ priority=40
 summary="Node.js adapter to protect server-side JavaScript apps">
 
 {project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps - the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
+The adapter uses OpenID Connect protocol under the covers. You can take a look at the <@links.securingapps id="oidc-layers" anchor="_oidc_available_endpoints"/> {section} for the more generic information about OpenID Connect endpoints and capabilities.
 
 ifeval::[{project_community}==true]
 The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {project_name} organization] and the source is available at

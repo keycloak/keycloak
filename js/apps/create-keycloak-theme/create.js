@@ -57,7 +57,9 @@ function cloneQuickstart() {
           "--single-branch": undefined,
           "--branch": "main",
         })
-        .then(() => resolve(join(dir, "extension/extend-admin-console-node")));
+        .then(() =>
+          resolve(join(dir, "extension/extend-account-console-node")),
+        );
     });
   });
 }

@@ -37,6 +37,13 @@ public interface CryptoProvider {
     Provider getBouncyCastleProvider();
 
     /**
+     * Order of this provider. This allows to specify which CryptoProvider will have preference in case that more of them are on the classpath.
+     *
+     * The higher number has preference over the lower number
+     */
+    int order();
+
+    /**
      * Get some algorithm provider implementation. Returned implementation can be dependent according to if we have
      * non-fips bouncycastle or fips bouncycastle on the classpath.
      *
@@ -84,7 +91,7 @@ public interface CryptoProvider {
     KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException;
 
     Cipher getAesCbcCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException;
-    
+
     Cipher getAesGcmCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException;
 
     SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException;

@@ -163,6 +163,7 @@ export default class UserEventsTab extends PageObject {
 
   public removeEventTypeChipGroupItem(itemName: string) {
     super.removeChipGroupItem(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.EventType,
       itemName,
     );
@@ -171,6 +172,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertEventTypeChipGroupItemExist(itemName: string, exist: boolean) {
     super.assertChipGroupItemExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.EventType,
       itemName,
       exist,
@@ -180,6 +182,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertUserIdChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.UserId,
       exist,
     );
@@ -188,6 +191,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertEventTypeChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.EventType,
       exist,
     );
@@ -196,6 +200,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertClientChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.Client,
       exist,
     );
@@ -204,6 +209,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertDateFromChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.DateFrom,
       exist,
     );
@@ -212,6 +218,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.DateTo,
       exist,
     );
@@ -220,6 +227,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertIpAddressChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
+      this.genericChipGroupSelector,
       UserEventsTabSearchFormFieldsLabel.IpAddress,
       exist,
     );

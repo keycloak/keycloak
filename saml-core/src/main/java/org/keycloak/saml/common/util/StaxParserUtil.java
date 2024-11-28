@@ -880,8 +880,10 @@ public class StaxParserUtil {
     @Deprecated
     public static void validate(StartElement startElement, String tag) {
         String foundElementTag = StaxParserUtil.getElementName(startElement);
-        if (!tag.equals(foundElementTag))
-            throw logger.parserExpectedTag(tag, foundElementTag);
+        if (!tag.equals(foundElementTag)) {
+            Location location = startElement.getLocation();
+            throw logger.parserExpectedTag(tag, foundElementTag, location.getLineNumber(), location.getColumnNumber());
+        }
     }
 
     /**
@@ -894,8 +896,10 @@ public class StaxParserUtil {
      */
     public static void validate(StartElement startElement, QName tag) {
         if (! Objects.equals(startElement.getName(), tag)) {
-            String foundElementTag = StaxParserUtil.getElementName(startElement);
-            throw logger.parserExpectedTag(tag.getLocalPart(), foundElementTag);
+            Location location = startElement.getLocation();
+            throw logger.parserExpectedTag(
+                    tag.toString(), startElement.getName().toString(),
+                    location.getLineNumber(), location.getColumnNumber());
         }
     }
 

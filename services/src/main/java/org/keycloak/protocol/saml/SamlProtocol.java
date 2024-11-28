@@ -100,6 +100,7 @@ import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -219,7 +220,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(AuthenticationSessionModel authSession, Error error) {
+    public Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage) {
         try {
             ClientModel client = authSession.getClient();
 
@@ -233,7 +234,7 @@ public class SamlProtocol implements LoginProtocol {
                     URI redirect = builder.buildFromMap(params);
                     return Response.status(302).location(redirect).build();
                 } else {
-                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, translateErrorToIdpInitiatedErrorMessage(error));
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, errorMessage != null ? errorMessage : translateErrorToIdpInitiatedErrorMessage(error));
                 }
             } else {
                 return samlErrorMessage(
@@ -859,7 +860,7 @@ public class SamlProtocol implements LoginProtocol {
                 formparams.add(new BasicNameValuePair("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT")); // for Picketlink
                 // todo remove
                 // this
-                UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+                UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8);
                 HttpPost post = new HttpPost(logoutUrl);
                 post.setEntity(form);
                 try (CloseableHttpResponse response = httpClient.execute(post)) {

@@ -107,24 +107,7 @@ public class ClassLoaderTheme implements Theme {
 
     @Override
     public InputStream getResourceAsStream(String path) throws IOException {
-        final URL rootResourceURL = classLoader.getResource(resourceRoot);
-        if (rootResourceURL == null) {
-            return null;
-        }
-        String rootPath = rootResourceURL.getPath();
-
-        if (rootPath.endsWith("//")) {
-            // needed for asset loading in quarkus IDELauncher - see gh issue #9942
-            rootPath = rootPath.substring(0, rootPath.length() -1);
-        }
-
-        final URL resourceURL = classLoader.getResource(resourceRoot + path);
-        if(resourceURL == null || !resourceURL.getPath().startsWith(rootPath)) {
-            return null;
-        }
-        else {
-            return resourceURL.openConnection().getInputStream();
-        }
+        return ResourceLoader.getResourceAsStream(resourceRoot, path);
     }
 
     @Override

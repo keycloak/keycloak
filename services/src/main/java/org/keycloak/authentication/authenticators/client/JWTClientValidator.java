@@ -57,6 +57,8 @@ public class JWTClientValidator {
     private JsonWebToken token;
     private ClientModel client;
 
+    private static final int ALLOWED_CLOCK_SKEW = 15; // sec
+
     public JWTClientValidator(ClientAuthenticationFlowContext context) {
         this.context = context;
         this.realm = context.getRealm();
@@ -163,13 +165,19 @@ public class JWTClientValidator {
     public void validateToken() {
         if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken");
 
-        if (!token.isActive()) {
+        if (!token.isActive(ALLOWED_CLOCK_SKEW)) {
             throw new RuntimeException("Token is not active");
         }
 
         // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-        if ((token.getExp() == null || token.getExp() <= 0) && token.getIat() + 10 < currentTime) {
-            throw new RuntimeException("Token is not active");
+        if (token.getExp() == null || token.getExp() <= 0) { // in case of "exp" not exist
+            if (token.getIat() + ALLOWED_CLOCK_SKEW + 10 < currentTime) { // consider "exp" = 10, client's clock delays from Keycloak's clock
+                throw new RuntimeException("Token is not active");
+            }
+        } else {
+            if ((token.getIat() != null && token.getIat() > 0) && token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) { // consider client's clock is ahead from Keycloak's clock
+                throw new RuntimeException("Token was issued in the future");
+            }
         }
 
         if (token.getId() == null) {

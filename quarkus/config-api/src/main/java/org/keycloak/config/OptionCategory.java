@@ -16,6 +16,7 @@ public enum OptionCategory {
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
     TRACING("Tracing", 111, ConfigSupportLevel.PREVIEW),
+    EVENTS("Events", 112, ConfigSupportLevel.PREVIEW),
     TRUSTSTORE("Truststore", 115, ConfigSupportLevel.SUPPORTED),
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),

@@ -2070,7 +2070,7 @@
            "id":"saml-user-attribute-mapper",
            "name":"User Attribute",
            "category":"AttributeStatement Mapper",
-           "helpText":"Map a custom user attribute to a to a SAML attribute.",
+           "helpText":"Map a custom user attribute to a SAML attribute.",
            "priority":0,
            "properties":[
               {
@@ -6444,7 +6444,7 @@
         },
         {
            "id":"saml-user-attribute-mapper",
-           "helpText":"Map a custom user attribute to a to a SAML attribute.",
+           "helpText":"Map a custom user attribute to a SAML attribute.",
            "properties":[
               {
                  "name":"user.attribute",

@@ -92,6 +92,7 @@ public class RealmRepresentation {
     protected Boolean bruteForceProtected;
     protected Boolean permanentLockout;
     protected Integer maxTemporaryLockouts;
+    protected BruteForceStrategy bruteForceStrategy;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -216,6 +217,10 @@ public class RealmRepresentation {
 
     protected Boolean organizationsEnabled;
     private List<OrganizationRepresentation> organizations;
+
+    protected Boolean verifiableCredentialsEnabled;
+
+    protected Boolean adminPermissionsEnabled;
 
     @Deprecated
     protected Boolean social;
@@ -775,6 +780,14 @@ public class RealmRepresentation {
 
     public void setMaxTemporaryLockouts(Integer maxTemporaryLockouts) {
         this.maxTemporaryLockouts = maxTemporaryLockouts;
+    }
+
+    public BruteForceStrategy getBruteForceStrategy() {
+        return this.bruteForceStrategy;
+    }
+
+    public void setBruteForceStrategy(BruteForceStrategy bruteForceStrategy) {
+        this.bruteForceStrategy = bruteForceStrategy;
     }
 
     public Integer getMaxFailureWaitSeconds() {
@@ -1431,6 +1444,22 @@ public class RealmRepresentation {
         this.organizationsEnabled = organizationsEnabled;
     }
 
+    public Boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public void setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        this.adminPermissionsEnabled = adminPermissionsEnabled;
+    }
+
+    public Boolean isVerifiableCredentialsEnabled() {
+        return verifiableCredentialsEnabled;
+    }
+
+    public void setVerifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
+        this.verifiableCredentialsEnabled = verifiableCredentialsEnabled;
+    }
+
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
         return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
@@ -1449,5 +1478,9 @@ public class RealmRepresentation {
             organizations = new ArrayList<>();
         }
         organizations.add(org);
+    }
+
+    public enum BruteForceStrategy {
+        LINEAR, MULTIPLE;
     }
 }

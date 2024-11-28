@@ -94,7 +94,6 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
@@ -102,7 +101,6 @@ import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
 
 import org.keycloak.utils.StreamsUtil;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -232,7 +230,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // Any attempt to write data, which are not supported by the LDAP schema, should fail
                 // This check is skipped when register new user as there are many "generic" attributes always written (EG. enabled, emailVerified) and those are usually unsupported by LDAP schema
                 if (!model.isImportEnabled() && !newUser) {
-                    UserModel readOnlyDelegate = new ReadOnlyUserModelDelegate(local, ModelException::new);
+                    UserModel readOnlyDelegate = new ReadOnlyUserModelDelegate(local, ReadOnlyException::new);
                     proxied = new LDAPWritesOnlyUserModelDelegate(readOnlyDelegate, this);
                 }
                 break;
@@ -297,7 +295,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
-        return ldapObjects.stream().map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
+        return ldapObjects.stream().map(ldapUser -> {
+            String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
+            if (localUser == null) {
+                return importUserFromLDAP(session, realm, ldapUser);
+            } else {
+                return proxy(realm, localUser, ldapUser, false);
+            }
+        });
     }
 
     public boolean synchronizeRegistrations() {
@@ -382,7 +388,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
             result = result.filter(filterLocalUsers(realm));
         }
         return StreamsUtil.paginatedStream(
-                result.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, false))
+                // search users but not force import returning null as they were returned before by the DB
+                result.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, ImportType.NOT_FORCED_RETURN_NULL))
                         .filter(Objects::nonNull),
                 firstResult, maxResults);
     }
@@ -452,7 +459,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .flatMap(Function.identity())
                 .skip(firstResult)
                 .limit(maxResults)
-                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
+                // do no force the import and return the current existing user if available
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING));
     }
 
     private Stream<LDAPObject> loadUsersByUniqueAttributeChunk(RealmModel realm, String uidName, Collection<String> uids) {
@@ -473,7 +481,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .flatMap(Function.identity())
                 .skip(firstResult)
                 .limit(maxResults)
-                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
+                // do no force the import and return the current existing user if available
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser, ImportType.NOT_FORCED_RETURN_EXISTING));
     }
 
     private Condition createSearchCondition(LDAPQueryConditionsBuilder conditionsBuilder, String name, boolean equals, String value) {
@@ -566,16 +575,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     /**
-     * Searches LDAP using logical disjunction of params. It supports 
+     * Searches LDAP using logical disjunction of params. It supports
      * <ul>
      *     <li>{@link UserModel#FIRST_NAME}</li>
      *     <li>{@link UserModel#LAST_NAME}</li>
      *     <li>{@link UserModel#EMAIL}</li>
      *     <li>{@link UserModel#USERNAME}</li>
      * </ul>
-     * 
+     *
      * It uses multiple LDAP calls and results are combined together with respect to firstResult and maxResults
-     * 
+     *
      * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
      */
     private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
@@ -612,18 +621,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * @return ldapUser corresponding to local user or null if user is no longer in LDAP
      */
     protected LDAPObject loadAndValidateUser(RealmModel realm, UserModel local) {
-        LDAPObject existing = userManager.getManagedLDAPUser(local.getId());
+        // getFirstAttribute triggers validation and another call to this method, so we run it before checking the cache
+        String uuidLdapAttribute = local.getFirstAttribute(LDAPConstants.LDAP_ID);
+
+        LDAPObject existing = userManager.getManagedLDAPObject(local.getId());
         if (existing != null) {
             return existing;
         }
 
-        String uuidLdapAttribute = local.getFirstAttribute(LDAPConstants.LDAP_ID);
-
         LDAPObject ldapUser = loadLDAPUserByUuid(realm, uuidLdapAttribute);
-
         if(ldapUser == null){
             return null;
         }
+        userManager.setManagedLDAPObject(local.getId(), ldapUser);
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
 
         if (ldapUser.getUuid().equals(local.getFirstAttribute(LDAPConstants.LDAP_ID))) {
@@ -645,7 +655,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
-        return importUserFromLDAP(session, realm, ldapUser, true);
+        return importUserFromLDAP(session, realm, ldapUser, ImportType.FORCED);
     }
 
     private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
@@ -680,9 +690,18 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 user.getUsername(), user.getEmail(), ldapUser.getUuid(), userDN);
     }
 
-    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, boolean forcedImport) {
+    protected enum ImportType {
+        FORCED, // the import is forced
+        NOT_FORCED_RETURN_NULL, // the import is not forced and null is returned when a previous user exists
+        NOT_FORCED_RETURN_EXISTING  // the import is not forced and existing user is returned
+    };
+
+    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+        if (importType == null) {
+            importType = ImportType.FORCED;
+        }
 
         UserModel imported = null;
         UserModel existingLocalUser = null;
@@ -694,13 +713,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         .findFirst().orElse(null);
                 if (existingLocalUser != null) {
                     imported = existingLocalUser;
-                    // Need to evict the existing user from cache
+                    if (importType == ImportType.NOT_FORCED_RETURN_NULL) {
+                        // import not forced and return null
+                        return null;
+                    } else if (importType == ImportType.NOT_FORCED_RETURN_EXISTING) {
+                        // import not forced and return the current DB user
+                        return proxy(realm, imported, ldapUser, false);
+                    }
+                    // import is forced, need to evict the existing user from cache
                     if (UserStorageUtil.userCache(session) != null) {
                         UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
-                    }
-                    if (!forcedImport) {
-                        // if import is not forced return null as it was already imported
-                        return null;
                     }
                 } else {
                     imported = userProvider.addUser(realm, ldapUsername);
@@ -713,7 +735,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             doImportUser(realm, imported, ldapUser);
         } catch (ModelDuplicateException e) {
             logger.warnf(e, "Duplicated user importing from LDAP. LDAP Entry DN: [%s], LDAP_ID: [%s]", ldapUser.getDn(), ldapUser.getUuid());
-            if (!forcedImport && existingLocalUser == null) {
+            if (importType != ImportType.FORCED && existingLocalUser == null) {
                 // try to continue if import was not forced, delete created db user if necessary
                 if (model.isImportEnabled() && imported != null) {
                     userProvider.removeUser(realm, imported);
@@ -1070,11 +1092,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
     /**
      * This method leverages existing pagination support in {@link LDAPQuery#getResultList()}. It sets the limit for the query
      * based on {@code firstResult}, {@code maxResults} and {@link LDAPConfig#getBatchSizeForSync()}.
-     * 
+     *
      * <p/>
-     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)} 
-     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be 
-     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled 
+     * Internally it uses {@link Stream#iterate(java.lang.Object, java.util.function.Predicate, java.util.function.UnaryOperator)}
+     * to ensure there will be obtained required number of users considering a fact that some of the returned ldap users could be
+     * filtered out (as they might be already imported in local storage). The returned {@code Stream<LDAPObject>} will be filled
      * "on demand".
      */
     private Stream<LDAPObject> paginatedSearchLDAP(LDAPQuery ldapQuery, Integer firstResult, Integer maxResults) {
@@ -1097,7 +1119,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 }
             }
 
-            return Stream.iterate(ldapQuery, 
+            return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
                         if (query.getPaginationContext() == null) try {
@@ -1108,7 +1130,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                             throw new ModelException("Querying of LDAP failed " + query, e);
                         }
                         return query.getPaginationContext().hasNextPage();
-                    }, 
+                    },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);

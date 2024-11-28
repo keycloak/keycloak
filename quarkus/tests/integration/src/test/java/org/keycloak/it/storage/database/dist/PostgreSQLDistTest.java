@@ -20,6 +20,7 @@ package org.keycloak.it.storage.database.dist;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -27,16 +28,15 @@ import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.PostgreSQLTest;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "postgres")
+@Tag(DistributionTest.STORAGE)
 public class PostgreSQLDistTest extends PostgreSQLTest {
 
     @Test
     @Launch("show-config")
-    public void testDbOptionFromPersistedConfigSource(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    public void testDbOptionFromPersistedConfigSource(CLIResult cliResult) {
         assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
     }
 }

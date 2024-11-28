@@ -25,7 +25,6 @@ import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
-import io.quarkus.builder.item.EmptyBuildItem;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
@@ -46,11 +45,11 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
-import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.smallrye.config.ConfigValue;
+
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
@@ -77,6 +76,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
@@ -96,11 +96,11 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
@@ -112,7 +112,6 @@ import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.LoadBalancerResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -123,13 +122,13 @@ import org.keycloak.theme.ThemeResourceSpi;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -152,15 +151,11 @@ import java.util.logging.Handler;
 
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
-import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
-import static org.keycloak.quarkus.runtime.storage.legacy.database.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -235,16 +230,42 @@ class KeycloakProcessor {
     }
 
     @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void configureRedirectForRootPath(BuildProducer<RouteBuildItem> routes,
+                                      HttpRootPathBuildItem httpRootPathBuildItem,
+                                      KeycloakRecorder recorder) {
+        Configuration.getOptionalKcValue(HttpOptions.HTTP_RELATIVE_PATH)
+                .filter(StringUtil::isNotBlank)
+                .filter(f -> !f.equals("/"))
+                .ifPresent(relativePath ->
+                        routes.produce(httpRootPathBuildItem.routeBuilder()
+                                .route("/")
+                                .handler(recorder.getRedirectHandler(relativePath))
+                                .build())
+                );
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
     void configureManagementInterface(BuildProducer<RouteBuildItem> routes,
                                       NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
                                       KeycloakRecorder recorder) {
-        final var path = Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH.getKey()).orElse("/");
+        final var relativePath = Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH).orElse("/");
+
+        if (StringUtil.isNotBlank(relativePath) && !relativePath.equals("/")) {
+            // redirect from / to the relativePath
+            routes.produce(nonApplicationRootPathBuildItem.routeBuilder()
+                    .management()
+                    .route("/")
+                    .handler(recorder.getRedirectHandler(relativePath))
+                    .build());
+        }
 
         routes.produce(nonApplicationRootPathBuildItem.routeBuilder()
                 .management()
-                .route(path)
+                .route(relativePath)
                 .handler(recorder.getManagementHandler())
                 .build());
     }
@@ -458,7 +479,7 @@ class KeycloakProcessor {
             }
         }
 
-        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath(), Environment.isRebuild());
+        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath());
     }
 
     private List<ClasspathThemeProviderFactory.ThemesRepresentation> loadThemesFromClassPath() {
@@ -551,69 +572,13 @@ class KeycloakProcessor {
      */
     @BuildStep(onlyIf = IsReAugmentation.class)
     void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
-        Properties properties = new Properties();
-
-        putPersistedProperty(properties, "kc.db");
-
-        for (String name : getPropertyNames()) {
-            putPersistedProperty(properties, name);
-        }
-
-        for (File jar : getProviderFiles().values()) {
-            properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
-        }
-
-        if (!Environment.isRebuildCheck()) {
-            // not auto-build (e.g.: start without optimized option) but a regular build to create an optimized server image
-            Configuration.markAsOptimized(properties);
-        }
-
-        String profile = org.keycloak.common.util.Environment.getProfile();
-
-        if (profile != null) {
-            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
-            properties.put(LaunchMode.current().getProfileKey(), profile);
-        }
-
-        properties.put(QUARKUS_PROPERTY_ENABLED, String.valueOf(QuarkusPropertiesConfigSource.getConfigurationFile() != null));
+        Properties properties = Picocli.getNonPersistedBuildTimeOptions();
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             properties.store(outputStream, " Auto-generated, DO NOT change this file");
             resources.produce(new GeneratedResourceBuildItem(PersistedConfigSource.PERSISTED_PROPERTIES, outputStream.toByteArray()));
         } catch (Exception cause) {
             throw new RuntimeException("Failed to persist configuration", cause);
-        }
-    }
-
-    private void putPersistedProperty(Properties properties, String name) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-        ConfigValue value = null;
-
-        if (mapper == null) {
-            if (name.startsWith(NS_QUARKUS)) {
-                value = Configuration.getConfigValue(name);
-
-                if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
-                    return;
-                }
-            }
-        } else if (mapper.isBuildTime()) {
-            name = mapper.getFrom();
-            value = Configuration.getConfigValue(name);
-        }
-
-        if (value != null && value.getValue() != null) {
-            if (value.getConfigSourceName() == null) {
-                // only persist build options resolved from config sources and not default values
-                return;
-            }
-            String rawValue = value.getRawValue();
-
-            if (rawValue == null) {
-                rawValue = value.getValue();
-            }
-
-            properties.put(name, rawValue);
         }
     }
 
@@ -664,11 +629,6 @@ class KeycloakProcessor {
         if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     AdminRoot.class.getName())), false));
-        }
-
-        if (!Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
-            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
-                    JsResource.class.getName())), false));
         }
 
         if (!MultiSiteUtils.isMultiSiteEnabled()) {

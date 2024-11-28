@@ -13,6 +13,12 @@ public class ProxyOptions {
             .category(OptionCategory.PROXY)
             .description("The proxy headers that should be accepted by the server. Misconfiguration might leave the server exposed to security vulnerabilities. Takes precedence over the deprecated proxy option.")
             .build();
+    
+    public static final Option<Boolean> PROXY_PROTOCOL_ENABLED = new OptionBuilder<>("proxy-protocol-enabled", Boolean.class)
+            .category(OptionCategory.PROXY)
+            .description("Whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.")
+            .defaultValue(Boolean.FALSE)
+            .build();
 
     public static final Option<Boolean> PROXY_FORWARDED_HOST = new OptionBuilder<>("proxy-forwarded-host", Boolean.class)
             .category(OptionCategory.PROXY)

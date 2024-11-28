@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.List;
@@ -218,7 +219,7 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         
         if (currentResponse.getFirstHeader("location") != null) {
             String location = currentResponse.getFirstHeader("location").getValue();
-            List<NameValuePair> params = URLEncodedUtils.parse(URI.create(location), Charset.forName("UTF-8"));
+            List<NameValuePair> params = URLEncodedUtils.parse(URI.create(location), StandardCharsets.UTF_8);
             for (NameValuePair param : params) {
                 if (GeneralConstants.SAML_ARTIFACT_KEY.equals(param.getName())) {
                     String artifact = param.getValue();

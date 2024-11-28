@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -10,7 +11,6 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -69,12 +69,59 @@ public final class UIUtils {
         performOperationWithPageReload(() -> getCurrentDriver().navigate().refresh());
     }
 
+    /**
+     * The method executes click or sendKeys(Keys.ENTER) in the element.
+     * In the chrome driver click is emulated by pressing the ENTER key. Since
+     * the upgrade to chrome 128 some clicks are missed and that triggers CI
+     * failures. The method is intended to be used for buttons and links which
+     * accept clicking by pressing the ENTER key. If the element passed does
+     * not allow clicking using keys use the {@link #click(WebElement) click}
+     * method.
+     *
+     * @param element The element to click
+     */
     public static void clickLink(WebElement element) {
+        clickElement(element, Keys.ENTER);
+    }
+
+    private static void clickElement(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
         waitUntilElement(element).is().clickable();
 
+        performOperationWithPageReload(BrowserDriverUtil.isDriverChrome(driver)
+                ? () -> element.sendKeys(key)
+                : element::click);
+    }
+
+
+    /**
+     * The method executes click in the element. This method always uses click and
+     * is not emulated by key pressing in chrome.
+     *
+     * @param element The element to click
+     */
+    public static void click(WebElement element) {
+        waitUntilElement(element).is().clickable();
         performOperationWithPageReload(element::click);
+    }
+
+    /**
+     * The method switches the checkbox to the expected state.
+     *
+     * It looks that since chrome 128, the single click sometimes does
+     * not work (See also similar issue {@link #clickLink(WebElement)}, so it is possible repeated multiple times until it reach
+     * the desired state
+     *
+     * @param checkbox Checkbox element to enable or disable
+     * @param enable If true, the checkbox should be switched to enabled (checked). If false, the checkbox should be switched to disabled (unchecked)
+     */
+    public static void switchCheckbox(WebElement checkbox, boolean enable) {
+        boolean current = checkbox.isSelected();
+        if (current != enable) {
+            clickElement(checkbox, Keys.SPACE);
+            Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
+        }
     }
 
     /**

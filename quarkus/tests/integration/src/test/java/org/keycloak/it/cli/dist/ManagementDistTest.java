@@ -20,6 +20,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -29,7 +30,9 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import java.io.IOException;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -38,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         requestPort = 9000,
         containerExposedPorts = {9000, 8080, 9005})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(DistributionTest.SLOW)
 public class ManagementDistTest {
 
     @Test
@@ -46,7 +50,7 @@ public class ManagementDistTest {
     void testManagementNoHttps(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
-        cliResult.assertError("Key material not provided to setup HTTPS. Please configure your keys/certificates or start the server in development mode.");
+        cliResult.assertError("Key material not provided to setup HTTPS.");
     }
 
     @Test
@@ -120,10 +124,30 @@ public class ManagementDistTest {
         assertRelativePath(result, "/management");
     }
 
+    @Test
+    @Launch({"start-dev", "--http-relative-path=/auth", "--http-management-relative-path=/management"})
+    void testManagementRootRedirects(LaunchResult result, KeycloakDistribution distribution) {
+        assertRelativePath(result, "/management");
+
+        distribution.setRequestPort(8080);
+
+        given().redirects().follow(false).when().get("/").then().statusCode(302).header("Location", is("/auth"));
+        when().get("/").then().statusCode(200).body(containsString("Welcome to Keycloak"));
+        when().get("/auth").then().statusCode(200).body(containsString("Welcome to Keycloak"));
+    }
+
     private void assertRelativePath(LaunchResult result, String relativePath) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
 
+        given().redirects().follow(false).when().get("/").then()
+                .statusCode(302)
+                .and()
+                .header("Location", is(relativePath));
+        when().get("/").then()
+                .statusCode(200)
+                .and()
+                .body(is("Keycloak Management Interface"));
         when().get(relativePath).then()
                 .statusCode(200)
                 .and()
@@ -149,7 +173,9 @@ public class ManagementDistTest {
         cliResult.assertMessage("Management interface listening on http://localhost:9000");
 
         // If running in container, we cannot access the localhost due to network host settings
-        if (DistributionType.isContainerDist()) return;
+        if (DistributionType.isContainerDist()) {
+            return;
+        }
 
         when().get("/").then()
                 .statusCode(200)

@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.security.KeyFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
@@ -64,28 +66,49 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"),
+                                             RealmRepresentation.class);
         testRealms.add(realm);
     }
 
     @Test
     public void defaultEc() {
-        supportedEc(null);
+        supportedEc(null, true);
+    }
+
+    @Test
+    public void defaultEcWithCertificate() {
+        supportedEc(null, false);
     }
 
     @Test
     public void supportedEcP521() {
-        supportedEc("P-521");
+        supportedEc("P-521", false);
+    }
+
+    @Test
+    public void supportedEcP521WithCertificate() {
+        supportedEc("P-521", true);
     }
 
     @Test
     public void supportedEcP384() {
-        supportedEc("P-384");
+        supportedEc("P-384", false);
+    }
+
+    @Test
+    public void supportedEcP384WithCertificate() {
+        supportedEc("P-384", true);
     }
 
     @Test
     public void supportedEcP256() {
-        supportedEc("P-256");
+        supportedEc("P-256", false);
+    }
+
+    @Test
+    public void supportedEcP256AndCertificate() {
+        supportedEc("P-256", true);
     }
 
     @Test
@@ -94,7 +117,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         unsupportedEc("K-163");
     }
 
-    private String supportedEc(String ecInNistRep) {
+    private String supportedEc(String ecInNistRep, boolean withCertificate) {
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createRep("valid", GeneratedEcdsaKeyProviderFactory.ID);
@@ -102,8 +125,12 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
         if (ecInNistRep != null) {
             rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecInNistRep);
-        } else {
+        }
+        else {
             ecInNistRep = DEFAULT_EC;
+        }
+        if (withCertificate) {
+            rep.getConfig().putSingle(Attributes.EC_GENERATE_CERTIFICATE_KEY, "true");
         }
 
         Response response = adminClient.realm(TEST_REALM_NAME).components().add(rep);
@@ -114,9 +141,12 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation createdRep = adminClient.realm(TEST_REALM_NAME).components().component(id).toRepresentation();
 
         // stands for the number of properties in the key provider config
-        assertEquals(2, createdRep.getConfig().size());
+        assertEquals(withCertificate ? 3 : 2, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst(Attributes.PRIORITY_KEY));
         assertEquals(ecInNistRep, createdRep.getConfig().getFirst(ECDSA_ELLIPTIC_CURVE_KEY));
+        if (withCertificate) {
+            assertNotNull(createdRep.getConfig().getFirst(Attributes.EC_GENERATE_CERTIFICATE_KEY));
+        }
 
         KeysMetadataRepresentation keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
 
@@ -133,6 +163,13 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(id, key.getProviderId());
         assertEquals(KeyType.EC, key.getType());
         assertEquals(priority, key.getProviderPriority());
+        if (withCertificate) {
+            assertNotNull(key.getCertificate());
+            X509Certificate certificate = PemUtils.decodeCertificate(key.getCertificate());
+            final String expectedIssuerAndSubject = "CN=" + TEST_REALM_NAME;
+            assertEquals(expectedIssuerAndSubject, certificate.getIssuerX500Principal().getName());
+            assertEquals(expectedIssuerAndSubject, certificate.getSubjectX500Principal().getName());
+        }
 
         return id; // created key's component id
     }
@@ -176,7 +213,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     private void changeCurve(String FromEcInNistRep, String ToEcInNistRep) throws Exception {
-        String keyComponentId = supportedEc(FromEcInNistRep);
+        String keyComponentId = supportedEc(FromEcInNistRep, false);
         KeysMetadataRepresentation keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
         KeysMetadataRepresentation.KeyMetadataRepresentation originalKey = null;
         for (KeyMetadataRepresentation k : keys.getKeys()) {

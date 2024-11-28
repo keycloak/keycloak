@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -48,6 +49,7 @@ import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
+import org.keycloak.forms.login.freemarker.model.PasswordPoliciesBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
@@ -416,7 +418,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         try {
-            attributes.put("properties", theme.getProperties());
+            Properties properties = theme.getProperties();
+            attributes.put("properties", properties);
+            attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
+                    && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
             logger.warn("Failed to load properties", e);
         }
@@ -496,6 +501,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     switch (page) {
                         case LOGIN:
                         case LOGIN_USERNAME:
+                        case LOGIN_WEBAUTHN:
                         case X509_CONFIRM:
                             b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
                             break;
@@ -548,6 +554,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     attributes.put("org", new OrganizationBean(organization, user));
                 }
             }
+            attributes.put("passwordPolicies", new PasswordPoliciesBean(realm.getPasswordPolicy()));
         }
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
@@ -570,6 +577,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             Map<String, Object> attributes = Optional.ofNullable(attributeMapper).orElse(Function.identity()).apply(this.attributes);
+            if (!attributes.containsKey("templateName")) {
+                attributes.put("templateName", templateName);
+            }
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
@@ -643,6 +653,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 if (value == null || value.trim().isEmpty()) {
                     this.formData.putSingle("username", loginHint);
                 }
+            }
+        }
+
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            String email = (String) attributes.get(RegistrationPage.FIELD_EMAIL);
+            if (this.formData == null) {
+                this.formData = new MultivaluedHashMap<>();
+            }
+            String value = this.formData.getFirst(RegistrationPage.FIELD_EMAIL);
+            if (value == null || value.trim().isEmpty()) {
+                this.formData.putSingle(RegistrationPage.FIELD_EMAIL, email);
             }
         }
 

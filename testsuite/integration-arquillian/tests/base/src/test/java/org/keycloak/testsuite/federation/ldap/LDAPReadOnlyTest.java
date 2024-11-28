@@ -28,8 +28,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -42,7 +41,9 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -99,6 +100,16 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             ldapFedProvider.getModel().put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
+
+            // change MSAD mapper config "ALWAYS_READ_ENABLED_VALUE_FROM_LDAP" to false as edit mode is read only so setEnable(false) is not propagated to LDAP
+            ComponentModel msadMapperComponent = appRealm.getComponentsStream(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName())
+                    .filter(c -> MSADUserAccountControlStorageMapperFactory.PROVIDER_ID.equals(c.getProviderId()))
+                    .findFirst().orElse(null);
+            if (msadMapperComponent != null) {
+                msadMapperComponent.getConfig().putSingle(MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP, "false");
+                appRealm.updateComponent(msadMapperComponent);
+            }
+
             appRealm.updateComponent(ldapFedProvider.getModel());
         });
     }

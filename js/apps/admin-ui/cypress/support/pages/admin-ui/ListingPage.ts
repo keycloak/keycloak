@@ -52,7 +52,6 @@ export default class ListingPage extends CommonElements {
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
   #table = "table[aria-label]";
   #filterSessionDropdownButton = ".pf-v5-c-select button:nth-child(1)";
-  #searchTypeButton = "[data-testid='clientScopeSearch']";
   #filterDropdownButton = "[data-testid='clientScopeSearchType']";
   #protocolFilterDropdownButton = "[data-testid='clientScopeSearchProtocol']";
   #kebabMenu = "[data-testid='kebab']";
@@ -199,6 +198,14 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
+  clickMenuDuplicate() {
+    cy.get(this.#menuContent)
+      .find(this.#menuItemText)
+      .contains("Duplicate")
+      .click({ force: true });
+    return this;
+  }
+
   clickItemCheckbox(itemName: string) {
     cy.get(this.#itemsRows)
       .contains(itemName)
@@ -262,6 +269,13 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
+  duplicateItem(itemName: string) {
+    this.clickRowDetails(itemName);
+    this.clickMenuDuplicate();
+
+    return this;
+  }
+
   removeItem(itemName: string) {
     this.clickRowDetails(itemName);
     this.clickDetailMenu("Unassign");
@@ -320,9 +334,13 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
-  selectFilter(filter: Filter) {
-    cy.get(this.#searchTypeButton).click();
-    cy.get(this.#dropdownItem).contains(filter).click();
+  selectClientScopeFilter(filter: Filter) {
+    return this.selectFilter("clientScopeSearch", filter);
+  }
+
+  protected selectFilter(searchTypeButtonTestId: string, filterStr: string) {
+    cy.get(`[data-testid='${searchTypeButtonTestId}']`).click();
+    cy.get(this.#dropdownItem).contains(filterStr).click();
 
     return this;
   }

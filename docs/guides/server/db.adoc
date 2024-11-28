@@ -20,7 +20,7 @@ The server has built-in support for different databases. You can query the avail
 |Database | Option value | Tested Version
 
 |MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]?replace("-latest","")}
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]}
 |MySQL | `mysql` | ${properties["mysql.version"]}
 |Oracle Database | `oracle` | ${properties["oracledb.version"]}
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]}
@@ -128,20 +128,50 @@ Then continue configuring the database as described in the next section.
 
 For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
 
-. Start the server and set the basic options to configure a database
+The configuration can be set during a `build` command OR a `start` command:
+
+. Using a `build` command followed by an optimized `start` command (recommended)
 +
-<@kc.start parameters="--db postgres --db-url-host mypostgres --db-username myuser --db-password change_me"/>
+First, the minimum settings needed to connect to the database can be specified in `conf/keycloak.conf`:
++
+----
+# The database vendor.
+db=postgres
+
+# The username of the database user.
+db-username=keycloak
+
+# The password of the database user.
+db-password=change_me
+
+# Sets the hostname of the default JDBC URL of the chosen vendor
+db-url-host=keycloak-postgres
+----
 +
 
-This command includes the minimum settings needed to connect to the database.
+Then, the following commands create a new and optimized server image based on the configuration options and start the server.
++
+----
+bin/kc.[sh|bat] build
+bin/kc.[sh|bat] start --optimized
+----
++
+
+. Using *only a `start`* command (without `--optimized`)
++
+<@kc.start parameters="--db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me"/>
+
+WARNING: The examples above include the minimum settings needed to connect to the database but it exposes the database password and is not recommended. Use the `conf/keycloak.conf` as shown above, environment variables, or keystore for at least the password.
 
 The default schema is `keycloak`, but you can change it by using the `db-schema` configuration option.
 
-[WARNING]
-Do NOT use the `--optimized` flag for the `start` command if you want to use a particular DB (except the H2).
-Executing the build phase before starting the server instance is necessary.
-You can achieve it either by starting the instance without the `--optimized` flag,
-or by executing the `build` command before the optimized start.
+It is also possible to configure the database when <@links.server id="importExport"/> or <@links.server id="bootstrap-admin-recovery"/>:
+----
+bin/kc.[sh|bat] import --help
+bin/kc.[sh|bat] export --help
+bin/kc.[sh|bat] bootstrap-admin --help
+----
+
 For more information, see <@links.server id="configuration"/>.
 
 == Overriding default connection settings

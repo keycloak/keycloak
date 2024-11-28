@@ -56,6 +56,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     public static final String PROVIDER_ID = "oidc-organization-membership-mapper";
     public static final String ADD_ORGANIZATION_ATTRIBUTES = "addOrganizationAttributes";
+    public static final String ADD_ORGANIZATION_ID = "addOrganizationId";
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -76,6 +77,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_ATTRIBUTES + ".help");
+        properties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(ADD_ORGANIZATION_ID);
+        property.setLabel(ADD_ORGANIZATION_ID + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(ADD_ORGANIZATION_ID + ".help");
         properties.add(property);
         return properties;
     }
@@ -137,7 +145,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         if (!OIDCAttributeMapperHelper.isMultivalued(model)) {
-            return organizations.get(0).getName();
+            return organizations.get(0).getAlias();
         }
 
         Map<String, Map<String, Object>> value = new HashMap<>();
@@ -147,13 +155,16 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
                 continue;
             }
 
-            Map<String, Object> attributes = Map.of();
+            Map<String, Object> claims = new HashMap<>();
 
+            if (isAddOrganizationId(model)) {
+                claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
+            }
             if (isAddOrganizationAttributes(model)) {
-                attributes = new HashMap<>(o.getAttributes());
+                claims.putAll(o.getAttributes());
             }
 
-            value.put(o.getAlias(), attributes);
+            value.put(o.getAlias(), claims);
         }
 
         if (value.isEmpty()) {
@@ -181,9 +192,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
         if (!OIDCAttributeMapperHelper.isMultivalued(copy)) {
             config.put(ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
+            config.put(ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
         }
 
-        if (isAddOrganizationAttributes(copy)) {
+        if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy)) {
             config.put(JSON_TYPE, "JSON");
         }
 
@@ -206,6 +218,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private boolean isAddOrganizationAttributes(ProtocolMapperModel model) {
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString()));
+    }
+
+    private boolean isAddOrganizationId(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_ID, Boolean.FALSE.toString()));
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {

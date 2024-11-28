@@ -23,18 +23,18 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedIdentityProviderMapper extends AbstractRevisioned implements InRealm {
 
-    private final RealmModel realm;
+    private final String realm;
     private final IdentityProviderMapperModel mapper;
 
     public CachedIdentityProviderMapper(Long revision, RealmModel realm, String cacheKey, IdentityProviderMapperModel mapper) {
         super(revision, cacheKey);
-        this.realm = realm;
+        this.realm = realm.getId();
         this.mapper = mapper;
     }
 
     @Override
     public String getRealm() {
-        return realm.getId();
+        return realm;
     }
 
     public IdentityProviderMapperModel getIdentityProviderMapper() {

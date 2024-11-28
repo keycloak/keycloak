@@ -17,7 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,13 +35,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.ext.Provider;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
@@ -49,17 +51,14 @@ import org.keycloak.models.UserModel;
 
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.utils.StringUtil;
 
-@Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationMemberResource {
 
@@ -69,20 +68,12 @@ public class OrganizationMemberResource {
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
 
-    public OrganizationMemberResource() {
-        this.session = null;
-        this.realm = null;
-        this.provider = null;
-        this.organization = null;
-        this.adminEvent = null;
-    }
-
     public OrganizationMemberResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.provider = session.getProvider(OrganizationProvider.class);
         this.organization = organization;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
     }
 
     @POST
@@ -92,6 +83,8 @@ public class OrganizationMemberResource {
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
     public Response addMember(String id) {
+        id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {
@@ -100,6 +93,12 @@ public class OrganizationMemberResource {
 
         try {
             if (provider.addMember(organization, user)) {
+                adminEvent.operation(OperationType.CREATE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
+                        .representation(ModelToRepresentation.toRepresentation(organization))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, user.getUsername())
+                        .detail(UserModel.EMAIL, user.getEmail())
+                        .success();
                 return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
             }
         } catch (ModelException me) {
@@ -139,9 +138,20 @@ public class OrganizationMemberResource {
             @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
+            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
     ) {
-        return provider.getMembersStream(organization, search, exact, first, max).map(this::toRepresentation);
+        Map<String, String> filters = new HashMap<>();
+
+        if (search != null) {
+            filters.put(UserModel.SEARCH, search);
+        }
+
+        if (membershipType != null) {
+            filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
+        }
+
+        return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
     }
 
     @Path("{id}")
@@ -174,6 +184,12 @@ public class OrganizationMemberResource {
         UserModel member = getMember(id);
 
         if (provider.removeMember(organization, member)) {
+            adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
+                    .representation(ModelToRepresentation.toRepresentation(organization))
+                    .resourcePath(session.getContext().getUri())
+                    .detail(UserModel.USERNAME, member.getUsername())
+                    .detail(UserModel.EMAIL, member.getEmail())
+                    .success();
             return Response.noContent().build();
         }
 
@@ -193,7 +209,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getUser(id);
 
-        return provider.getByMember(member).map(Organizations::toRepresentation);
+        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
     }
 
     @Path("count")

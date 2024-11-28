@@ -17,11 +17,15 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
+import org.keycloak.services.Urls;
+import org.keycloak.urls.UrlType;
+import org.keycloak.utils.FreemarkerUtils;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.GET;
@@ -30,14 +34,17 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.Set;
+import org.keycloak.utils.SecureContextResolver;
 
-import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginStatusIframeEndpoint {
+
+    private static final Logger logger = Logger.getLogger(LoginStatusIframeEndpoint.class);
 
     private final KeycloakSession session;
 
@@ -48,7 +55,20 @@ public class LoginStatusIframeEndpoint {
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getLoginStatusIframe(@QueryParam("version") String version) {
-        return returnIframeFromResources("login-status-iframe.html", version, session);
+        final var map = new HashMap<String, Object>();
+        final var isSecureContext = SecureContextResolver.isSecureContext(session);
+        final var serverBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+        map.put("isSecureContext", isSecureContext);
+        map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
+
+        return IframeUtil.returnIframe(version, session, () -> {
+            try {
+                return FreemarkerUtils.loadTemplateFromClasspath(map, "login-status-iframe.ftl", getClass());
+            } catch (Exception e) {
+                logger.error("Failure when loading login-status-iframe.ftl", e);
+                return null;
+            }
+        });
     }
 
     @GET
@@ -60,12 +80,17 @@ public class LoginStatusIframeEndpoint {
             ClientModel client = session.clients().getClientByClientId(realm, clientId);
             if (client != null && client.isEnabled()) {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
-                validWebOrigins.add(UriUtils.getOrigin(uriInfo.getRequestUri()));
+                String requestOrigin = UriUtils.getOrigin(uriInfo.getRequestUri());
+                validWebOrigins.add(requestOrigin);
                 if (validWebOrigins.contains("*") || validWebOrigins.contains(origin)) {
                     return Response.noContent().build();
                 }
+                logger.debugf("client %s does not allow origin=%s for requestOrigin=%s (as determined by the proxy-header setting), init will return a 403", clientId, origin, requestOrigin);
+            } else {
+                logger.debugf("client %s does not exist or not enabled, init will return a 403", clientId);
             }
         } catch (Throwable t) {
+            logger.debug("Exception in init, will return a 403", t);
         }
         return Response.status(Response.Status.FORBIDDEN).build();
     }

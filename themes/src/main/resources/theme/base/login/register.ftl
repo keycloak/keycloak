@@ -49,7 +49,7 @@
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">
                                     <input type="password" id="password-confirm" class="${properties.kcInputClass!}"
-                                           name="password-confirm"
+                                           name="password-confirm" autocomplete="new-password"
                                            aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
                                     />
                                     <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
@@ -91,7 +91,7 @@
                 <#if recaptchaRequired?? && !(recaptchaVisible!false)>
                     <script>
                         function onSubmitRecaptcha(token) {
-                            document.getElementById("kc-register-form").submit();
+                            document.getElementById("kc-register-form").requestSubmit();
                         }
                     </script>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">

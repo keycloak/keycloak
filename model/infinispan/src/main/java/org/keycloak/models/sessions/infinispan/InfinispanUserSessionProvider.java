@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,7 +24,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -79,6 +77,8 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
+import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
+import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
@@ -388,8 +388,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        return StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
-                .map(Mappers.userSessionEntity())
+        return StreamSupport.stream(cache.entrySet().stream().filter(predicate).map(Mappers.userSessionEntity()).spliterator(), false)
                 .map(entity -> this.wrap(realm, entity, offline))
                 .filter(Objects::nonNull).map(Function.identity());
     }
@@ -561,12 +560,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return cache.entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()))
                 .map(Mappers.authClientSessionSetMapper())
-                .flatMap((Serializable & Function<Set<String>, Stream<? extends String>>) Mappers::toStream)
-                .collect(
-                        CacheCollectors.serializableCollector(
-                                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
-                        )
-                );
+                .flatMap(CollectionToStreamMapper.getInstance())
+                .collect(CacheCollectors.collector(GroupAndCountCollectorSupplier.getInstance()));
     }
 
     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {

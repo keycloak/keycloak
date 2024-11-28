@@ -20,7 +20,7 @@ package org.keycloak.testsuite.organization.admin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,17 +32,15 @@ import java.util.function.Predicate;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
+import java.time.Duration;
 import org.hamcrest.Matchers;
-import static org.hamcrest.Matchers.equalTo;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,15 +48,16 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Rule
@@ -72,6 +71,11 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Page
     protected RegisterPage registerPage;
+
+    @Before
+    public void setDriverTimeout() {
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofMinutes(1));
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -92,6 +96,22 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteExistingUserCustomRedirectUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
+            Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
     public void testInviteExistingUserWithEmail() throws IOException, MessagingException {
         UserRepresentation user = createUser("invitedWithMatchingEmail", "invitedWithMatchingEmail@myemail.com");
 
@@ -100,6 +120,22 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         organization.members().inviteUser(user.getEmail(), "Homer", "Simpson").close();
 
         acceptInvitation(organization, user);
+    }
+
+    @Test
+    public void testInviteExistingUserWithEmailCustomRedirectUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedWithMatchingEmail", "invitedWithMatchingEmail@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
+            Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson");
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
     }
 
     @Test
@@ -127,19 +163,53 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testFailRegistrationNotEnabledWhenInvitingNewUser() {
+    public void testInviteNewUserRegistrationCustomRedirectUrl() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
+            Response response = organization.members().inviteUser(email, firstName, lastName);
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            registerUser(organization, email);
+
+            List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+            assertThat(users, Matchers.not(empty()));
+            // user is a member
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assert.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+
+            // authenticated to the app
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
+    @Test
+    public void testRegistrationEnabledWhenInvitingNewUser() throws Exception {
         String email = "inviteduser@email";
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        RealmRepresentation realm = testRealm().toRepresentation();
-        realm.setRegistrationAllowed(false);
-        testRealm().update(realm);
-        try (Response response = organization.members().inviteUser(email, null, null)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            assertEquals("Realm does not allow self-registration", response.readEntity(ErrorRepresentation.class).getErrorMessage());
-        } finally {
-            realm.setRegistrationAllowed(true);
-            testRealm().update(realm);
+        try (
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
+                Response response = organization.members().inviteUser(email, null, null)
+            ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            registerUser(organization, email);
+
+            // authenticated to the account console
+            Assert.assertTrue(driver.getPageSource().contains("Account Management"));
+            Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+
+            List<MemberRepresentation> memberByEmail = organization.members().search(email, Boolean.TRUE, null, null);
+            assertThat(memberByEmail, Matchers.hasSize(1));
+            assertThat(memberByEmail.get(0).getMembershipType(), equalTo(MembershipType.MANAGED));
         }
     }
 
@@ -150,7 +220,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, null, null).close();
 
-        registerUser(organization, "invalid@email.com");
+        registerUser(organization, email, "invalid@email.com");
 
         assertThat(driver.getPageSource(), Matchers.containsString("Email does not match the invitation"));
         assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
@@ -166,6 +236,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         try (Response response = testRealm().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
         }
+        getCleanup().addUserId(user.getId());
         return user;
     }
 
@@ -185,6 +256,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(text, Matchers.containsString(("You were invited to join the " + organizationName + " organization. Click the link below to join. </p>")));
         assertThat(text, Matchers.containsString(("<a href=\"" + link + "\" rel=\"nofollow\">Link to join the organization</a></p>")));
         assertThat(text, Matchers.containsString(("Link to join the organization")));
+        assertThat(text, Matchers.containsString(("This link will expire within 12 hours")));
         assertThat(text, Matchers.containsString(("<p>If you dont want to join the organization, just ignore this message.</p>")));
 
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
@@ -203,9 +275,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         try {
             setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
 
-            registerUser(organization, email);
+            String link = getInvitationLinkFromEmail();
+            driver.navigate().to(link);
 
-            assertThat(driver.getPageSource(), Matchers.containsString("The provided token is not valid or has expired."));
+            assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
         } finally {
             resetTimeOffset();
@@ -213,26 +286,34 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void registerUser(OrganizationResource organization, String email) throws MessagingException, IOException {
+        registerUser(organization, email, email);
+    }
+
+    private void registerUser(OrganizationResource organization, String expectedEmail, String email) throws MessagingException, IOException {
         String link = getInvitationLinkFromEmail();
         driver.navigate().to(link);
-        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> email.equals(actual.getEmail())));
+        Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
         registerPage.assertCurrent(organizationName);
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        assertThat(registerPage.getEmail(), equalTo(expectedEmail));
         registerPage.register("firstName", "lastName", email,
                 "invitedUser", "password", "password", null, false, null);
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
+        acceptInvitation(organization, user, "Sign in to");
+    }
+
+    private void acceptInvitation(OrganizationResource organization, UserRepresentation user, String pageTitle) throws MessagingException, IOException {
         String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
         driver.navigate().to(link);
         // not yet a member
-        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> user.getId().equals(actual.getId())));
         // confirm the intent of membership
         assertThat(driver.getPageSource(), containsString("You are about to join organization " + organizationName));
         assertThat(infoPage.getInfo(), containsString("By clicking on the link below, you will become a member of the " + organizationName + " organization:"));
         infoPage.clickToContinue();
-        // redirect to the account console and eventually force the user to authenticate if not already
-        assertThat(driver.getTitle(), containsString("Account Management"));
+        // redirect to the redirectUrl and eventually force the user to authenticate if not already
+        assertThat(driver.getTitle(), containsString(pageTitle));
         // now a member
         Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
     }

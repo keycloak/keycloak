@@ -40,11 +40,13 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
 /**
@@ -173,6 +175,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             // PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
             PkceUtils.checkParamsForPkceNotEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
         }
+
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-10
+        DPoPUtil.validateDPoPJkt(codeData.getDpopJkt(), session, event, cors);
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult));

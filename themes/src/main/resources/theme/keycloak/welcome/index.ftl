@@ -4,8 +4,28 @@
     <meta charset="utf-8">
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
     <title>Welcome to ${productName}</title>
     <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
+    <#if properties.darkMode?boolean>
+      <script type="module" async blocking="render">
+          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+          updateDarkMode(mediaQuery.matches);
+          mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
+
+          function updateDarkMode(isEnabled) {
+            const { classList } = document.documentElement;
+
+            if (isEnabled) {
+              classList.add(DARK_MODE_CLASS);
+            } else {
+              classList.remove(DARK_MODE_CLASS);
+            }
+          }
+      </script>
+    </#if>
     <#if properties.stylesCommon?has_content>
       <#list properties.stylesCommon?split(' ') as style>
         <link rel="stylesheet" href="${resourcesCommonPath}/${style}">

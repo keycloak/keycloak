@@ -1,0 +1,28 @@
+= Dark mode enabled for the welcome theme
+
+We've now enabled dark mode support for all the `keycloak` themes. This feature was previously present in the admin console, account console and login, and is now also available in the welcome page. If a user indicates their preference through an operating system setting (e.g. light or dark mode) or a user agent setting, the theme will automatically follow these preferences.
+
+If you are using a custom theme that extends any of the `keycloak` themes and are not yet ready to support dark mode, or have styling conflicts that prevent you from implementing dark mode, you can disable support by adding the following property to your theme:
+
+[source,properties]
+----
+darkMode=false
+----
+
+Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the "Dark mode" setting under the "Theme" tab in the realm settings.
+
+= LDAP users are created as enabled by default when using Microsoft Active Directory
+
+If you are using Microsoft AD and creating users through the administrative interfaces, the user will created as enabled by default.
+
+In previous versions, it was only possible to update the user status after setting a (non-temporary) password to the user.
+This behavior was not consistent with other built-in user storages as well as not consistent with others LDAP vendors supported
+by the LDAP provider.
+
+= Transport stack `jdbc-ping` as new default, and recommended for cloud setups
+
+{project_name} now uses by default its database to discover other nodes of the same cluster, which removes the need of additional network related configurations. It is also a default that will work out-of-the-box in cloud environments.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}], and the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
+
+

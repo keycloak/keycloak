@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
@@ -33,6 +34,7 @@ import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -214,10 +216,15 @@ public final class ClientPoliciesUtil {
     }
 
     public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired) {
+        return createSecureRequestObjectExecutorConfig(availablePeriod, verifyNbf, encryptionRequired, null);
+    }
+
+    public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired, Integer allowedClockSkew) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
         if (encryptionRequired != null) config.setEncryptionRequired(encryptionRequired);
+        if (allowedClockSkew != null) config.setAllowedClockSkew(allowedClockSkew);
         return config;
     }
 
@@ -406,9 +413,10 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
-    public static ClientAttributesCondition.Configuration createClientAttributesConditionConfig(Map<String, String> attributes) {
+    public static ClientAttributesCondition.Configuration createClientAttributesConditionConfig(MultivaluedMap<String, String> attributes) {
         ClientAttributesCondition.Configuration config = new ClientAttributesCondition.Configuration();
-        config.setAttributes(attributes);
+        String attrsAsString = MapperTypeSerializer.serialize(attributes);
+        config.setAttributes(attrsAsString);
         return config;
     }
 

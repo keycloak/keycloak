@@ -1,3 +1,5 @@
+
+[#_oidc_available_endpoints]
 == Available Endpoints
 
 As a fully-compliant OpenID Connect Provider implementation, {project_name} exposes a set of endpoints that applications

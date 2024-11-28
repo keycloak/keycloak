@@ -17,15 +17,21 @@
 
 package org.keycloak.organization.jpa;
 
-import static org.keycloak.models.OrganizationModel.BROKER_PUBLIC;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
+import static org.keycloak.models.UserModel.EMAIL;
+import static org.keycloak.models.UserModel.FIRST_NAME;
+import static org.keycloak.models.UserModel.LAST_NAME;
+import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -34,6 +40,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -56,6 +63,8 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
@@ -77,7 +86,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name, String alias) {
+    public OrganizationModel create(String id, String name, String alias) {
         if (StringUtil.isBlank(name)) {
             throw new ModelValidationException("Name can not be null");
         }
@@ -99,11 +108,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelDuplicateException("A organization with the same alias already exists");
         }
 
-        RealmModel realm = getRealm();
-        OrganizationAdapter adapter = new OrganizationAdapter(session, realm, this);
+        OrganizationEntity entity = new OrganizationEntity();
+        entity.setId(id != null ? id : KeycloakModelUtils.generateId());
+        entity.setRealmId(getRealm().getId());
+        OrganizationAdapter adapter = new OrganizationAdapter(session, getRealm(), entity, this);
 
         try {
-            session.setAttribute(OrganizationModel.class.getName(), adapter);
+            session.getContext().setOrganization(adapter);
             GroupModel group = createOrganizationGroup(adapter.getId());
 
             adapter.setGroupId(group.getId());
@@ -113,7 +124,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
             em.persist(adapter.getEntity());
         } finally {
-            session.removeAttribute(OrganizationModel.class.getName());
+            session.getContext().setOrganization(null);
         }
 
         return adapter;
@@ -124,7 +135,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         OrganizationEntity entity = getEntity(organization.getId());
 
         try {
-            session.setAttribute(OrganizationModel.class.getName(), organization);
+            session.getContext().setOrganization(organization);
             RealmModel realm = session.realms().getRealm(getRealm().getId());
 
             // check if the realm is being removed so that we don't need to remove manually remove any other data but the org
@@ -143,7 +154,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
             em.remove(entity);
         } finally {
-            session.removeAttribute(OrganizationModel.class.getName());
+            session.getContext().setOrganization(null);
         }
 
         return true;
@@ -178,7 +189,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         if (current == null) {
-            session.setAttribute(OrganizationModel.class.getName(), organization);
+            session.getContext().setOrganization(organization);
         }
 
         try {
@@ -189,9 +200,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             user.joinGroup(group, metadata);
+            OrganizationModel.OrganizationMemberJoinEvent.fire(organization, user, session);
         } finally {
             if (current == null) {
-                session.removeAttribute(OrganizationModel.class.getName());
+                session.getContext().setOrganization(null);
             }
         }
 
@@ -272,10 +284,72 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
-        throwExceptionIfObjectIsNull(organization, "Organization");
-        GroupModel group = getOrganizationGroup(organization);
+        return getMembersStream(organization, Map.of(UserModel.SEARCH, search), exact, first, max);
+    }
 
-        return userProvider.getGroupMembersStream(getRealm(), group, search, exact, first, max);
+    @Override
+    public Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        var builder = em.getCriteriaBuilder();
+        var queryBuilder = builder.createQuery(String.class);
+        var groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        queryBuilder.select(groupMembership.get("user").get("id"));
+
+        var predicates = new ArrayList<>();
+        var group = getOrganizationGroup(organization);
+
+        predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
+
+        From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
+            switch (filter.getKey()) {
+                case UserModel.SEARCH -> predicates.add(builder
+                        .or(getSearchOptionPredicateArray(filter.getValue(), Optional.ofNullable(exact).orElse(false), builder, userJoin)));
+                case MembershipType.NAME -> predicates.add(builder
+                        .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
+            }
+        }
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(id -> {
+            UserModel user = userProvider.getUserById(getRealm(), id);
+
+            if (isReadOnlyOrganizationMember(session, user)) {
+                return new ReadOnlyUserModelDelegate(user) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+
+            return user;
+        }));
+    }
+
+    private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
+        value = value.toLowerCase();
+
+        List<Predicate> orPredicates = new ArrayList<>();
+
+        if (exact) {
+            orPredicates.add(builder.equal(from.get(USERNAME), value));
+            orPredicates.add(builder.equal(from.get(EMAIL), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
+        } else {
+            value = "%" + value + "%";
+            orPredicates.add(builder.like(from.get(USERNAME), value));
+            orPredicates.add(builder.like(from.get(EMAIL), value));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+        }
+
+        return orPredicates.toArray(Predicate[]::new);
     }
 
     @Override
@@ -367,7 +441,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         // clear the organization id and any domain assigned to the IDP.
         identityProvider.setOrganizationId(null);
         identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-        identityProvider.getConfig().remove(BROKER_PUBLIC);
         session.identityProviders().update(identityProvider);
 
         return true;
@@ -417,17 +490,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             OrganizationModel current = Organizations.resolveOrganization(session);
 
             if (current == null) {
-                session.setAttribute(OrganizationModel.class.getName(), organization);
+                session.getContext().setOrganization(organization);
             }
 
             try {
                 member.leaveGroup(getOrganizationGroup(organization));
             } finally {
                 if (current == null) {
-                    session.removeAttribute(OrganizationModel.class.getName());
+                    session.getContext().setOrganization(null);
                 }
             }
         }
+
+        OrganizationModel.OrganizationMemberLeaveEvent.fire(organization, member, session);
 
         return true;
     }

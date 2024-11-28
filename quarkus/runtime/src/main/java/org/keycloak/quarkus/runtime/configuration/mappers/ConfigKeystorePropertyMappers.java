@@ -6,7 +6,6 @@ import org.keycloak.config.ConfigKeystoreOptions;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -38,7 +37,7 @@ final class ConfigKeystorePropertyMappers {
         };
     }
 
-    private static Optional<String> validatePath(Optional<String> option, ConfigSourceInterceptorContext context) {
+    private static String validatePath(String option, ConfigSourceInterceptorContext context) {
         ConfigValue path = context.proceed(SMALLRYE_KEYSTORE_PATH);
         boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD) != null;
 
@@ -55,10 +54,10 @@ final class ConfigKeystorePropertyMappers {
             throw new IllegalArgumentException("config-keystore path does not exist: " + realPath);
         }
 
-        return Optional.of(realPath.toUri().toString());
+        return realPath.toUri().toString();
     }
 
-    private static Optional<String> validatePassword(Optional<String> option, ConfigSourceInterceptorContext context) {
+    private static String validatePassword(String option, ConfigSourceInterceptorContext context) {
         boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD).getValue() != null;
         boolean isPathDefined = context.proceed(SMALLRYE_KEYSTORE_PATH) != null;
 

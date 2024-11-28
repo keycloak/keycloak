@@ -12,6 +12,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     private final Charset charset;
 
     public SHA256PairwiseSubMapper() {
-        charset = Charset.forName("UTF-8");
+        charset = StandardCharsets.UTF_8;
     }
 
     public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
@@ -75,7 +76,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
             throw new IllegalStateException("Salt not available on mappingModel. Please update protocol mapper");
         }
 
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         byte[] salt = saltStr.getBytes(charset);
         String pairwiseSub = generateSub(sectorIdentifier, localSub, salt);
         logger.tracef("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);

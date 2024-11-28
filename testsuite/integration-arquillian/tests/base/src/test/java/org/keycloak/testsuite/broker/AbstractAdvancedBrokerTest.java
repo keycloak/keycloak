@@ -6,8 +6,6 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -22,13 +20,13 @@ import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 
 import jakarta.ws.rs.client.Client;
@@ -39,6 +37,7 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -533,7 +532,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
-        // Enable brute force protector in cosumer realm
+        // Enable brute force protector in consumer realm
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         RealmRepresentation consumerRealmRep = realm.toRepresentation();
         consumerRealmRep.setBruteForceProtected(true);
@@ -566,22 +565,18 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             loginTotpPage.assertCurrent();
 
+            Map<String, Object> bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
+            assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
+
             // Login for 2 times with incorrect TOTP. This should temporarily disable the user
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-
-            events.clear();
-
             loginTotpPage.login("bad-totp");
             Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+            WaitUtils.waitForBruteForceExecutors(testingClient);
 
-            // wait for the disabled to come
-            events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)
-                    .realm(consumerRealmRep.getId())
-                    .user(user.getId())
-                    .client((String) null)
-                    .detail(Details.REASON, "brute_force_attack detected")
-                    .assertEvent(true, 5);
+            bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
+            assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
 
             // Login with valid TOTP. I should not be able to login
             loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -593,6 +588,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             loginTotpPage.login(totp.generateTOTP(totpSecret));
+            WaitUtils.waitForPageToLoad();
+            appPage.assertCurrent();
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         } finally {
             testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));

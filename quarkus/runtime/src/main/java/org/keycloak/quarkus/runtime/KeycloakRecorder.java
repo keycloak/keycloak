@@ -31,6 +31,7 @@ import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.commons.util.FileLookupFactory;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -44,7 +45,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
@@ -72,12 +73,19 @@ public class KeycloakRecorder {
     public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
     public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
+    private static final Logger logger = Logger.getLogger(KeycloakRecorder.class);
+
     public void initConfig() {
         Config.init(new MicroProfileConfigProvider());
     }
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    // default handler for redirecting to specific path
+    public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
+        return routingContext -> routingContext.redirect(redirectPath);
     }
 
     // default handler for the management interface
@@ -113,14 +121,13 @@ public class KeycloakRecorder {
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
     }
 
-    public RuntimeValue<CacheManagerFactory> createCacheInitializer(ShutdownContext shutdownContext) {
+    public RuntimeValue<CacheManagerFactory> createCacheInitializer() {
         try {
             CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile());
-            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -130,29 +137,31 @@ public class KeycloakRecorder {
     private String getInfinispanConfigFile() {
         String configFile = getKcConfigValue("spi-connections-infinispan-quarkus-config-file").getValue();
 
-        if (configFile != null) {
-            Path configPath = Paths.get(configFile);
-            String path;
-
-            if (configPath.toFile().exists()) {
-                path = configPath.toFile().getAbsolutePath();
-            } else {
-                path = configPath.getFileName().toString();
-            }
-
-            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakRecorder.class.getClassLoader());
-
-            if (url == null) {
-                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
-                return reader.lines().collect(Collectors.joining("\n"));
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
-            }
-        } else {
+        if (configFile == null) {
             throw new IllegalArgumentException("Option 'configFile' needs to be specified");
+        }
+
+        Path configPath = Paths.get(configFile);
+        String path;
+
+        if (configPath.toFile().exists()) {
+            path = configPath.toFile().getAbsolutePath();
+        } else {
+            path = configPath.getFileName().toString();
+        }
+
+        logger.debugf("Infinispan configuration file: %s", path);
+
+        InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakRecorder.class.getClassLoader());
+
+        if (url == null) {
+            throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
         }
     }
 

@@ -47,7 +47,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -408,7 +408,8 @@ public class FlowTest extends AbstractAuthenticationTest {
         // adjust expected values before comparing
         browser.setAlias("Copy of browser");
         browser.setBuiltIn(false);
-        browser.getAuthenticationExecutions().get(3).setFlowAlias("Copy of browser forms");
+        browser.getAuthenticationExecutions().get(3).setFlowAlias("Copy of browser Organization");
+        browser.getAuthenticationExecutions().get(4).setFlowAlias("Copy of browser forms");
         compareFlows(browser, copyOfBrowser);
 
         // get new flow directly and compare
@@ -670,7 +671,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         } catch (InternalServerErrorException isee) {
             try (Response response = isee.getResponse()) {
                 assertEquals(500, response.getStatus());
-                assertFalse(StreamUtil.readString((InputStream) response.getEntity(), Charset.forName("UTF-8")).toLowerCase().contains("exception"));
+                assertFalse(StreamUtil.readString((InputStream) response.getEntity(), StandardCharsets.UTF_8).toLowerCase().contains("exception"));
             }
         } catch (Exception e) {
             fail("Unexpected exception");
@@ -735,7 +736,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
             getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTH_EXECUTION);
+            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTHENTICATOR_CONFIG);
         }
 
         String newFlowName = "Duplicated of " + DefaultAuthenticationFlows.BROWSER_FLOW;

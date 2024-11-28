@@ -75,7 +75,7 @@ We plan to improve the usability and allow integration of conditional passkeys w
 From https://www.w3.org/TR/webauthn-3/[Web Authn Level 3], *Resident Key* was replaced with *Discoverable Credential*.
 ====
 
-If a user's browser supports https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the follwing screen is shown.
+If a user's browser supports https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the following screen is shown.
 
 .Passkey Authentication with Conditional UI
 image:images/passkey-conditional-ui-authentication.png[Passkey Authentication with Conditional UI]
@@ -85,7 +85,7 @@ When the user clicks the *Select your passkey* textbox, a list of passkeys store
 .Passkey Authentication with Conditional UI Autofill
 image:images/passkey-conditional-ui-autofill.png[Passkey Authentication with Conditional UI Autofill]
 
-If a user's browser does not support https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the authenticaion falls back to the xref:_webauthn_loginless[LoginLess WebAuthn] as follows.
+If a user's browser does not support https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the authentication falls back to the xref:_webauthn_loginless[LoginLess WebAuthn] as follows.
 
 .Passkey Authentication with Conditional UI falling back to LoginLess WebAuthn
 image:images/passkey-conditional-ui-fallback-authentication.png[Passkey Authentication with Conditional UI falling back to LoginLess WebAuthn]

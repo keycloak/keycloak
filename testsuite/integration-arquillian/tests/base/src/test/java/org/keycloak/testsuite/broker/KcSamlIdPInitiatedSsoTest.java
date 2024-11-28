@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +99,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         try {
             String template = StreamUtil.readString(is, Charset.defaultCharset());
             String realmString = StringPropertyReplacer.replaceProperties(template, properties);
-            return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes("UTF-8")));
+            return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes(StandardCharsets.UTF_8)));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

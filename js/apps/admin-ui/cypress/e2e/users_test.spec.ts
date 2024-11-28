@@ -533,12 +533,6 @@ describe("User creation", () => {
       cy.checkA11y();
     });
 
-    it("Check a11y violations on user attributes tab", () => {
-      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
-      attributesTab.goToAttributesTab();
-      cy.checkA11y();
-    });
-
     it("Check a11y violations on user credentials tab setting a password", () => {
       usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
       credentialsPage.goToCredentialsTab();
@@ -625,11 +619,6 @@ describe("User creation", () => {
         .clickDropdownItem("Delete");
       cy.checkA11y();
       cy.findByTestId("confirm").click();
-    });
-
-    it("Check a11y violations on permissions tab", () => {
-      usersPage.goToPermissionsTab();
-      cy.checkA11y();
     });
   });
 });

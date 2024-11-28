@@ -39,6 +39,7 @@ import { toUsers } from "./routes/Users";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 import { useNavigate } from "react-router-dom";
+import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -183,12 +184,24 @@ export const UserForm = ({
         {user?.id && (
           <>
             <FormGroup label={t("id")} fieldId="kc-id" isRequired>
-              <TextInput
-                id={user.id}
-                aria-label={t("userID")}
-                value={user.id}
-                readOnly
-              />
+              <InputGroup>
+                <InputGroupItem isFill>
+                  <TextInput
+                    id={user.id}
+                    aria-label={t("userID")}
+                    value={user.id}
+                    readOnly
+                  />
+                </InputGroupItem>
+                <InputGroupItem>
+                  <CopyToClipboardButton
+                    id={`user-${user.id}`}
+                    text={user.id}
+                    label={t("userID")}
+                    variant="control"
+                  />
+                </InputGroupItem>
+              </InputGroup>
             </FormGroup>
             <FormGroup
               label={t("createdAt")}

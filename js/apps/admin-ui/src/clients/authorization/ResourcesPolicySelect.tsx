@@ -125,6 +125,12 @@ export const ResourcesPolicySelect = ({
               permissionId,
             })
           : Promise.resolve([]),
+        preSelected && name === "resources"
+          ? adminClient.clients.getResource({
+              id: clientId,
+              resourceId: preSelected,
+            })
+          : Promise.resolve([]),
       ]);
     },
     ([providers, ...policies]) => {
@@ -266,7 +272,6 @@ export const ResourcesPolicySelect = ({
             }}
             isOpen={open}
             aria-label={t(name)}
-            isDisabled={!!preSelected}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}
             chipGroupComponent={toChipGroupItems(field)}

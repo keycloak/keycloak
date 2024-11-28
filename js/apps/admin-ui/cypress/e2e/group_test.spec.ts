@@ -34,6 +34,11 @@ describe("Group test", () => {
   let users: { id: string; username: string }[] = [];
   const username = "test-user";
 
+  const duplicatedGroupErrorMessage = {
+    mainGroup: "Could not create group Top level group named '",
+    childGroup: "Could not create group Sibling group named '",
+  };
+
   before(async () => {
     users = await Promise.all(
       range(5).map((index) => {
@@ -98,7 +103,10 @@ describe("Group test", () => {
         .assertNoGroupsInThisRealmEmptyStateMessageExist(false)
         .createGroup(groupName, false)
         .createGroup(groupName, false)
-        .assertNotificationCouldNotCreateGroupWithDuplicatedName(groupName);
+        .assertNotificationCouldNotCreateGroupWithDuplicatedName(
+          groupName,
+          duplicatedGroupErrorMessage.mainGroup,
+        );
       groupModal.closeModal();
       groupPage.searchGroup(groupName).assertGroupItemsEqual(1);
     });
@@ -117,6 +125,12 @@ describe("Group test", () => {
       groupPage
         .searchGroup("not-existent-group")
         .assertNoSearchResultsMessageExist(true);
+    });
+
+    it("Duplicate group from item bar", () => {
+      groupPage
+        .duplicateGroupItem(groupNames[0])
+        .assertNotificationGroupDuplicated();
     });
 
     it("Delete group from item bar", () => {
@@ -261,11 +275,12 @@ describe("Group test", () => {
     });
 
     // https://github.com/keycloak/keycloak-admin-ui/issues/2726
-    it.skip("Fail to create group with duplicated name", () => {
+    it("Fail to create group with duplicated name", () => {
       childGroupsTab
         .createGroup(predefinedGroups[2], false)
         .assertNotificationCouldNotCreateGroupWithDuplicatedName(
           predefinedGroups[2],
+          duplicatedGroupErrorMessage.childGroup,
         );
     });
 
@@ -387,6 +402,16 @@ describe("Group test", () => {
         .leaveGroupUserItem(users[1].username)
         .assertNotificationUserLeftTheGroup(1)
         .assertNoUsersFoundEmptyStateMessageExist(true);
+    });
+
+    it("Show memberships from item bar", () => {
+      sidebarPage.goToGroups();
+      groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
+      childGroupsTab.goToMembersTab();
+      membersTab
+        .showGroupMembershipsItem(users[3].username)
+        .assertGroupItemExist(predefinedGroups[0], true)
+        .cancelShowGroupMembershipsModal();
     });
   });
 

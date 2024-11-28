@@ -46,6 +46,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.TokenUtil;
 
 /**
  *
@@ -62,7 +63,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testNonceWithoutMapper() throws JsonProcessingException {
-        testNonce(false);
+        testNonce(false, false);
     }
 
     @Test
@@ -70,7 +71,18 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
-            testNonce(true);
+            testNonce(true, false);
+        } finally {
+            testApp.getProtocolMappers().delete(mapperId);
+        }
+    }
+
+    @Test
+    public void testOfflineSessionNonceWithMapper() throws JsonProcessingException {
+        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        String mapperId = createNonceMapper(testApp);
+        try {
+            testNonce(true, true);
         } finally {
             testApp.getProtocolMappers().delete(mapperId);
         }
@@ -142,9 +154,12 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         testIntrospection(idTokenString, nonce, true);
     }
 
-    private void testNonce(boolean mapper) throws JsonProcessingException {
+    private void testNonce(boolean mapper, boolean offlineSession) throws JsonProcessingException {
         String nonce = KeycloakModelUtils.generateId();
         oauth.nonce(nonce);
+        if (offlineSession) {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        }
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -158,12 +173,14 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         checkNonce(nonce, refreshToken.getNonce(), mapper);
 
-        EventRepresentation tokenEvent = events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID),
-                loginEvent.getSessionId()).assertEvent();
+        EventRepresentation tokenEvent = events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
+                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .assertEvent();
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
-        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID),
-                loginEvent.getSessionId()).assertEvent();
+        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), loginEvent.getSessionId())
+                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .assertEvent();
 
         token = oauth.verifyToken(response.getAccessToken());
         checkNonce(nonce, token.getNonce(), mapper);

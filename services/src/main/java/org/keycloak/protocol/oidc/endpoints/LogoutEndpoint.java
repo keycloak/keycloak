@@ -231,7 +231,7 @@ public class LogoutEndpoint {
             }
         }
 
-        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true);
+        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
             logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
@@ -339,7 +339,7 @@ public class LogoutEndpoint {
 
         SessionCodeChecks checks = new LogoutSessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, code, clientId, tabId);
         checks.initialVerify();
-        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest() || !formData.containsKey("confirmLogout")) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest()) {
             AuthenticationSessionModel logoutSession = checks.getAuthenticationSession();
             String errorMessage = "Failed verification during logout.";
             logger.debugf( "%s logoutSessionId=%s, clientId=%s, tabId=%s",
@@ -432,7 +432,7 @@ public class LogoutEndpoint {
             return initiateBrowserLogout(userSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout
-            if (userSessionIdFromIdToken.equals(AuthenticationManager.getSessionIdFromSessionCookie(session))) {
+            if (AuthenticationManager.compareSessionIdWithSessionCookie(session, userSessionIdFromIdToken)) {
                 return initiateBrowserLogout(userSession);
             }
             // check if the user session is not logging out or already logged out

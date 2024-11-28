@@ -1,0 +1,91 @@
+= Infinispan default XML configuration location
+
+Previous releases ignored any change  to `conf/cache-ispn.xml` if the `--cache-config-file` option was not provided.
+
+Starting from this release, when `--cache-config-file` is not set, the default Infinispan XML configuration file is `conf/cache-ispn.xml` as this is both the expected behavior and the implied behavior given the docs of the current and previous releases.
+
+= Embedded Infinispan: `work` cache must be replicated
+
+The embedded `work` cache needs to be configured as a `replicated-cache` for cache invalidation to work as expected.
+
+Starting from this release, {project_name} check this at startup and will fail to start if it is not configured as such.
+
+= Deprecated APIs for JavaScript Authorization client
+
+The following APIs for the JavaScript Authorization client are deprecated and will be removed in the next major release:
+
+- The `ready` property on the `KeycloakAuthorization` instance.
+- The `init()` method on the `KeycloakAuthorization` instance.
+
+These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.
+
+= Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
+
+`getAll()` methods in `Organizations` and `OrganizationMembers` APIs are now deprecated and will be removed in the next major release.
+Instead, use corresponding `list(first, max)` methods in `Organizations` and `OrganizationMembers` APIs.
+
+= Virtual Threads enabled for Infinispan and JGroups thread pools
+
+Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
+This removes the need to configure the JGroups thread pool, the need to align the JGroups thread pool with the HTTP worker thread pool, and reduces the overall memory footprint.
+To disable the virtual threads, add one of the Java system properties combinations to your deployment:
+
+* `-Dorg.infinispan.threads.virtual=false`: disables virtual thread in both Infinispan and JGroups.
+* `-Djgroups.thread.virtual=false`: disables virtual threads only in JGroups.
+* `-Dorg.infinispan.threads.virtual=false -Djgroups.thread.virtual=true`: disables virtual threads only in Infinispan.
+
+= Default transport stack changed to `jdbc-ping` for distributed caches
+
+Previous versions of {project_name} used as a default UDP multicast to discover other nodes to form a cluster and to synchronize the replicated caches of {project_name}.
+This required multicast to be available and to be configured correctly, which is usually not the case in cloud environments.
+
+Starting with this version, the default changes to the `jdbc-ping` configuration which uses {project_name}'s database to discover other nodes.
+As this removes the need for multicast network capabilities and UDP and no longer using dynamic ports for the TCP-based failure detection, this is a simplification and a drop-in replacement for environments which used the previous default.
+To enable the previous behavior, choose the transport stack `udp` which is now deprecated.
+
+The {project_name} Operator will continue to configure `kubernetes` as a transport stack.
+
+See the https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more information.
+
+= Deprecated transport stacks for distributed caches
+
+The `udp`, `jdbc-ping-udp`, `tcp`, `azure`, `ec2` and `google` transport stacks have been deprecated.
+Users should use the TCP based `jdbc-ping` stack as a direct replacement.
+
+= Defining dependencies between provider factories
+
+When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
+See the Javadoc for a detailed description.
+
+= Updated format of KEYCLOAK_SESSION cookie
+
+The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie
+contains user session ID, which is hashed by SHA-256 and URL encoded. This can affect you just in case when implementing your own providers and relying on the format of internal {project_name}
+cookies.
+
+= Removal of robots.txt file
+
+The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overridden per-realm if a different behaviour is needed.
+
+= Offline access removes the associated online session if the `offline_scope` is requested in the initial exchange
+
+Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, with two sessions, one online and one offline.
+
+Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
+
+= New client scope `service_account` for `client_credentials` grant mappers
+
+{project_name} introduces a new client scope at the realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
+
+Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
+
+= Admin events might include now additional details about the context when the event is fired
+
+In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
+expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.
+
+= Imported key providers check and passivate keys with a expired cetificate
+
+The key providers that allow to import externally generated keys (`rsa` and `java-keystore` factories) now check the validity of the associated certificate if present. Therefore a key with a certificate that is expired cannot be imported in {project_name} anymore. If the certificate expires at runtime, the key is converted into a passive key (enabled but not active). A passive key is not used for new tokens, but it is still valid for validating previous issued tokens.
+
+The default `generated` key providers generate a certificate valid for 10 years (the types that have or can have an associated certificate). Because of the long validity and the recommendation to rotate keys frequently, the generated providers do not perform this check.

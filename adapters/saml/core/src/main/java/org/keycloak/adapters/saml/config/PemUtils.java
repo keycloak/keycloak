@@ -26,21 +26,39 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemException;
 
 /**
  * Fork of the PemUtils from common module to avoid dependency on keycloak-crypto-default
  */
 public class PemUtils {
+
+    private static final Logger log = Logger.getLogger(PemUtils.class);
+
+    static {
+        Provider existingBc = Security.getProvider(CryptoConstants.BC_PROVIDER_ID);
+        Provider bcProvider = existingBc == null ? new BouncyCastleProvider() : existingBc;
+
+        if (existingBc == null) {
+            Security.addProvider(bcProvider);
+            log.debugv("Loaded {0} security provider", bcProvider.getClass().getName());
+        } else {
+            log.debugv("Security provider {0} already loaded", bcProvider.getClass().getName());
+        }
+    }
 
     /**
      * Decode a X509 Certificate from a PEM string
@@ -124,12 +142,12 @@ public class PemUtils {
     private static PrivateKey decodePrivateKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(der);
-        KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyFactory kf = KeyFactory.getInstance("RSA", CryptoConstants.BC_PROVIDER_ID);
         return kf.generatePrivate(spec);
     }
 
     private static X509Certificate decodeCertificate(InputStream is) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509", BouncyIntegration.PROVIDER);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", CryptoConstants.BC_PROVIDER_ID);
         X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
         is.close();
         return cert;
@@ -138,7 +156,7 @@ public class PemUtils {
     private static PublicKey decodePublicKey(byte[] der, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec =
                 new X509EncodedKeySpec(der);
-        KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyFactory kf = KeyFactory.getInstance("RSA", CryptoConstants.BC_PROVIDER_ID);
         return kf.generatePublic(spec);
     }
 }

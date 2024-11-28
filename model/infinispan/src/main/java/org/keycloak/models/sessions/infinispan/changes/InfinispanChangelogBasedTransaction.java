@@ -169,6 +169,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             // Don't save transient entities to infinispan. They are valid just for current transaction
             if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
 
+            // Don't save entities in infinispan that are both added and removed within the same transaction.
+            if (!sessionUpdates.getUpdateTasks().isEmpty() && sessionUpdates.getUpdateTasks().get(0).getOperation().equals(SessionUpdateTask.CacheOperation.ADD_IF_ABSENT)
+                    && sessionUpdates.getUpdateTasks().get(sessionUpdates.getUpdateTasks().size() - 1).getOperation().equals(SessionUpdateTask.CacheOperation.REMOVE)) {
+                continue;
+            }
+
             RealmModel realm = sessionUpdates.getRealm();
 
             long lifespanMs = lifespanMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
@@ -237,6 +243,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             V session = oldVersion.getEntity();
             var writeCache = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache);
             while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+
+                if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
+                    logger.debugf("Entity %s removed after evaluation", key);
+                    writeCache.withFlags(Flag.IGNORE_RETURN_VALUES).remove(key);
+                    return;
+                }
+
                 SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
                 returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 

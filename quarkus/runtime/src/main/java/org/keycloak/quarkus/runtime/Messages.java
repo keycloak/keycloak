@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 import picocli.CommandLine;
 
 public final class Messages {
@@ -31,11 +33,10 @@ public final class Messages {
     }
 
     public static String httpsConfigurationNotSet() {
-        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
+        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates, or if HTTPS access is not needed see the `http-enabled` option.");
         if (!org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile())) {
-            builder.append(" or start the server in development mode");
+            builder.append(" If you meant to start the server in development mode, see the `start-dev` command.");
         }
-        builder.append(".");
         return builder.toString();
     }
 
@@ -45,6 +46,10 @@ public final class Messages {
 
     public static String devProfileNotAllowedError(String cmd) {
         return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE));
+    }
+
+    public static String optimizedUsedForFirstStartup() {
+        return String.format("The '%s' flag was used for first ever server start. Please don't use this flag for the first startup or use '%s %s' to build the server first.", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, Environment.getCommand(), Build.NAME);
     }
 
     public static String invalidLogLevel(String logLevel) {

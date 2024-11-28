@@ -74,6 +74,9 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
 
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.DPOP_JKT);
+
         // Those are not OAuth/OIDC parameters, but they should never be added to the additionalRequestParameters
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
@@ -113,6 +116,8 @@ public abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
         request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+
+        request.dpopJkt = replaceIfNotNull(request.dpopJkt, getParameter(OIDCLoginProtocol.DPOP_JKT));
 
         extractAdditionalReqParams(request.additionalReqParams);
     }

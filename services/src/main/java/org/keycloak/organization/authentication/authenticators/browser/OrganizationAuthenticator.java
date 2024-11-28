@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -103,14 +104,14 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         // make sure the organization is set to the session to make it available to templates
-        session.setAttribute(OrganizationModel.class.getName(), organization);
+        session.getContext().setOrganization(organization);
 
         if (tryRedirectBroker(context, organization, user, username, domain)) {
             return;
         }
 
         if (user == null) {
-            unknownUserChallenge(context, organization, realm);
+            unknownUserChallenge(context, organization, realm, domain != null);
             return;
         }
 
@@ -158,7 +159,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         String rawScope = authSession.getClientNote(OAuth2Constants.SCOPE);
         OrganizationScope scope = OrganizationScope.valueOfScope(rawScope);
 
-        if (!OrganizationScope.ANY.equals(scope)) {
+        if (!OrganizationScope.ANY.equals(scope) || user == null) {
             return false;
         }
 
@@ -240,7 +241,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         return user;
     }
 
-    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
+    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm, boolean domainMatch) {
         // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
         LoginFormsProvider form = context.form()
@@ -266,7 +267,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                     return attributes;
                 });
 
-        form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+        if (domainMatch) {
+            form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+        }
+
         context.challenge(form.createLoginUsername());
     }
 
@@ -287,7 +291,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean hasPublicBrokers(OrganizationModel organization) {
-        return organization.getIdentityProviders().anyMatch(p -> Boolean.parseBoolean(p.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString())));
+        return organization.getIdentityProviders().anyMatch(Predicate.not(IdentityProviderModel::isHideOnLogin));
     }
 
     private OrganizationProvider getOrganizationProvider() {

@@ -179,15 +179,15 @@ public class LinkedAccountsResource {
             return true;
         }else if (search.startsWith("\"") && search.endsWith("\"")) {
             final String name = search.substring(1, search.length() - 1);
-            return linkedAccount.getProviderAlias().equals(name);
+            return linkedAccount.getProviderAlias().equals(name) || linkedAccount.getDisplayName().equals(name);
         } else if (search.startsWith("*") && search.endsWith("*")) {
             final String name = search.substring(1, search.length() - 1);
-            return linkedAccount.getProviderAlias().contains(name);
+            return linkedAccount.getProviderAlias().contains(name) || linkedAccount.getDisplayName().contains(name);
         } else if (search.endsWith("*")) {
             final String name = search.substring(0, search.length() - 1);
-            return linkedAccount.getProviderAlias().startsWith(name);
+            return linkedAccount.getProviderAlias().startsWith(name) || linkedAccount.getDisplayName().startsWith(name);
         } else {
-            return linkedAccount.getProviderAlias().startsWith(search);
+            return linkedAccount.getProviderAlias().startsWith(search) || linkedAccount.getDisplayName().startsWith(search);
         }
     }
 

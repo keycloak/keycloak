@@ -25,17 +25,16 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -168,37 +167,46 @@ public class ClientManager {
 
         // Add protocol mappers to retrieve clientId in access token. Ignore this in case type is filled (protocol mappers can be explicitly specified for particular specific type)
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
-            addServiceAccountProtocolMappers(client);
+            addServiceAccountProtocolMappersViaScope(client);
         }
     }
 
-    private void addServiceAccountProtocolMappers(ClientModel client) {
-        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
-            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER, client.getClientId());
-            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_ID,
-                    ServiceAccountConstants.CLIENT_ID, "String",
-                    true, true, true);
-            client.addProtocolMapper(protocolMapper);
+    public void disableServiceAccount(ClientModel client) {
+        client.setServiceAccountsEnabled(false);
+
+        // remove the service account
+        UserModel serviceAccount = realmManager.getSession().users().getServiceAccount(client);
+        if (serviceAccount != null) {
+            new UserManager(realmManager.getSession()).removeUser(client.getRealm(), serviceAccount);
         }
 
-        // Add protocol mappers to retrieve hostname and IP address of client in access token
-        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER) == null) {
-            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER, client.getClientId());
-            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_HOST,
-                    ServiceAccountConstants.CLIENT_HOST, "String",
-                    true, true, true);
-            client.addProtocolMapper(protocolMapper);
+        // Remove protocol mappers to retrieve clientId in access token. Ignore this in case type is filled (protocol mappers can be explicitly specified for particular specific type)
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
+            removeServiceAccountProtocolMappersViaScope(client);
         }
+    }
 
-        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER) == null) {
-            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER, client.getClientId());
-            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_ADDRESS,
-                    ServiceAccountConstants.CLIENT_ADDRESS, "String",
-                    true, true, true);
-            client.addProtocolMapper(protocolMapper);
+    private void addServiceAccountProtocolMappersViaScope(ClientModel client) {
+        ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+
+        if (serviceAccountScope != null) {
+            if (client.getClientScopes(false).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE)) {
+                // if it's assigned as optional just remove it to assign it as default
+                client.removeClientScope(serviceAccountScope);
+            }
+            client.addClientScope(serviceAccountScope, true);
+        } else {
+            logger.tracef("Service account scope not added to client %s because it does not exist", client.getClientId());
+        }
+    }
+
+    private void removeServiceAccountProtocolMappersViaScope(ClientModel client) {
+        ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+
+        if (serviceAccountScope != null) {
+            client.removeClientScope(serviceAccountScope);
+        } else {
+            logger.tracef("Service account scope not removed from client %s because it does not exist", client.getClientId());
         }
     }
 

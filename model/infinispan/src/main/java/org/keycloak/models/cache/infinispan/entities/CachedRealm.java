@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -50,6 +52,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -72,10 +75,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     protected boolean organizationsEnabled;
+    protected boolean adminPermissionsEnabled;
+    protected boolean verifiableCredentialsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
+    protected RealmRepresentation.BruteForceStrategy bruteForceStrategy;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -187,10 +193,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetPasswordAllowed = model.isResetPasswordAllowed();
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
+        adminPermissionsEnabled = model.isAdminPermissionsEnabled();
+        verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
+        bruteForceStrategy = model.getBruteForceStrategy();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -249,7 +258,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
 
-        defaultRoleId = model.getDefaultRole().getId();
+        if(Objects.isNull(model.getDefaultRole())) {
+            throw new ModelException("Default Role is null for Realm " + name);
+        } else {
+            defaultRoleId = model.getDefaultRole().getId();
+        }
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
@@ -370,6 +383,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return maxTemporaryLockouts;
     }
 
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        return bruteForceStrategy;
+    }
+
     public int getMaxFailureWaitSeconds() {
         return this.maxFailureWaitSeconds;
     }
@@ -416,6 +433,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isOrganizationsEnabled() {
         return organizationsEnabled;
+    }
+
+    public boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public boolean isVerifiableCredentialsEnabled() {
+        return verifiableCredentialsEnabled;
     }
 
     public String getDefaultSignatureAlgorithm() {
@@ -696,7 +721,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     public MultivaluedMap<String, ComponentModel> getComponentsByParentAndType() {
-        return new MultivaluedHashMap<>(componentsByParentAndType);
+        return new ConcurrentMultivaluedHashMap<>(componentsByParentAndType);
     }
 
     public Map<String, ComponentModel> getComponents() {

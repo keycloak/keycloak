@@ -107,6 +107,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         createTestUserWithAdminClient(false);
 
         signingInPage.navigateTo();
+        waitForPageToLoad();
         loginToAccount();
         signingInPage.assertCurrent();
     }
@@ -158,6 +159,10 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     }
 
     protected void loginToAccount() {
+        if (!loginPage.isCurrent()) {
+            signingInPage.navigateTo();
+            waitForPageToLoad();
+        }
         loginPage.assertCurrent();
         loginPage.form().login(testUser);
         waitForPageToLoad();

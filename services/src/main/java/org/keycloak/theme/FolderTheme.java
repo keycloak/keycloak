@@ -90,16 +90,7 @@ public class FolderTheme implements Theme {
 
     @Override
     public InputStream getResourceAsStream(String path) throws IOException {
-        if (File.separatorChar != '/') {
-            path = path.replace('/', File.separatorChar);
-        }
-
-        File file = new File(resourcesDir, path);
-        if (!file.isFile() || !file.getCanonicalPath().startsWith(resourcesDir.getCanonicalPath() + File.separator)) {
-            return null;
-        } else {
-            return file.toURI().toURL().openStream();
-        }
+        return ResourceLoader.getFileAsStream(resourcesDir, path);
     }
 
     @Override

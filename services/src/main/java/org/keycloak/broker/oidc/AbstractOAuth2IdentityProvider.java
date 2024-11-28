@@ -665,7 +665,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             logger.debug("Failed to invoke user info for external exchange", e);
         }
         if (status != 200) {
-            logger.debug("Failed to invoke user info status: " + status);
+            logger.debugf("Failed to invoke user info status: %d", status);
             event.detail(Details.REASON, "user info call failure");
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);

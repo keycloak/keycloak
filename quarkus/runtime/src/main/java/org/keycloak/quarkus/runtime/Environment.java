@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -35,9 +33,8 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -111,21 +108,18 @@ public final class Environment {
         }
     }
 
-    public static String getCurrentOrPersistedProfile() {
+    /**
+     * Update the profile settings based upon what was set in the system, environment, or optionally persistent values
+     */
+    public static String updateProfile(boolean usePersistent) {
         String profile = org.keycloak.common.util.Environment.getProfile();
-        if(profile == null) {
+        if(profile == null && usePersistent) {
             profile = PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE);
         }
-        return profile;
-    }
-
-    public static String getProfileOrDefault(String defaultProfile) {
-        String profile = org.keycloak.common.util.Environment.getProfile();
-
         if (profile == null) {
-            profile = defaultProfile;
+            profile = Environment.PROD_PROFILE_VALUE;
         }
-
+        setProfile(profile);
         return profile;
     }
 
@@ -134,7 +128,7 @@ public final class Environment {
             return true;
         }
 
-        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null));
+        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(Configuration.getNonPersistedConfigValue(org.keycloak.common.util.Environment.PROFILE).getValue());
     }
 
     public static boolean isDevProfile(){
@@ -223,6 +217,10 @@ public final class Environment {
         return Boolean.getBoolean("kc.config.build-and-exit");
     }
 
+    public static void setRebuildCheck() {
+        System.setProperty("kc.config.build-and-exit", "true");
+    }
+
     public static boolean isRebuilt() {
         return Boolean.getBoolean("kc.config.built");
     }
@@ -242,7 +240,7 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesProfileConfigResolver(QuarkusProfileConfigResolver::getConfig), new PropertiesFileProfileConfigResolver());
+            profile = Profile.configure(new QuarkusProfileConfigResolver());
         }
 
         return profile;

@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
@@ -35,6 +36,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.services.ServicesLogger;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
@@ -44,6 +46,8 @@ import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils
  *
  */
 public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertificateAuthenticator {
+
+    private final static Logger logger = Logger.getLogger(X509ClientCertificateAuthenticator.class);
 
     @Override
     public void close() {
@@ -61,7 +65,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             if (certs == null || certs.length == 0) {
                 // No x509 client cert, fall through and
                 // continue processing the rest of the authentication flow
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] x509 client certificate is not available for mutual SSL.");
+                logger.debug("[authenticate] x509 client certificate is not available for mutual SSL.");
                 context.attempted();
                 return;
             }
@@ -74,7 +78,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 config = new X509AuthenticatorConfigModel(context.getAuthenticatorConfig());
             }
             if (config == null) {
-                logger.warn("[X509ClientCertificateAuthenticator:authenticate] x509 Client Certificate Authentication configuration is not available.");
+                logger.warn("[authenticate] x509 Client Certificate Authentication configuration is not available.");
                 context.challenge(createInfoResponse(context, "X509 client authentication has not been configured yet"));
                 context.attempted();
                 return;
@@ -104,7 +108,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             Object userIdentity = getUserIdentityExtractor(config).extractUserIdentity(certs);
             if (userIdentity == null) {
                 context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-                logger.warnf("[X509ClientCertificateAuthenticator:authenticate] Unable to extract user identity from certificate.");
+                logger.warnf("[authenticate] Unable to extract user identity from certificate.");
                 // TODO use specific locale to load error messages
                 String errorMessage = "Unable to extract user identity from specified certificate";
                 // TODO is calling form().setErrors enough to show errors on login screen?
@@ -120,7 +124,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 user = getUserIdentityToModelMapper(config).find(context, userIdentity);
             }
             catch(ModelDuplicateException e) {
-                logger.modelDuplicateException(e);
+                ServicesLogger.LOGGER.modelDuplicateException(e);
                 String errorMessage = "X509 certificate authentication's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
@@ -179,7 +183,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             }
         }
         catch(Exception e) {
-            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
+            logger.errorf(e, "[authenticate] Exception: %s", e.getMessage());
             context.attempted();
         }
     }
@@ -234,7 +238,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
         Map<String, Object> attributeNames = context.getSession().getAttributes();
         for (String name : attributeNames.keySet()) {
-            logger.tracef("[X509ClientCertificateAuthenticator:dumpContainerAttributes] \"%s\"", name);
+            logger.tracef("[dumpContainerAttributes] \"%s\"", name);
         }
     }
 

@@ -74,6 +74,7 @@ export default interface RealmRepresentation {
   maxDeltaTimeSeconds?: number;
   maxFailureWaitSeconds?: number;
   maxTemporaryLockouts?: number;
+  bruteForceStrategy?: "MULTIPLE" | "LINEAR";
   minimumQuickLoginWaitSeconds?: number;
   notBefore?: number;
   oauth2DeviceCodeLifespan?: number;
@@ -82,6 +83,7 @@ export default interface RealmRepresentation {
   offlineSessionMaxLifespan?: number;
   offlineSessionMaxLifespanEnabled?: boolean;
   organizationsEnabled?: boolean;
+  verifiableCredentialsEnabled?: boolean;
   otpPolicyAlgorithm?: string;
   otpPolicyDigits?: number;
   otpPolicyInitialCounter?: number;

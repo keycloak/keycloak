@@ -17,7 +17,13 @@
 
 <html>
 <head>
-    <script src="js/keycloak.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "keycloak-js": "./js/keycloak.js"
+        }
+      }
+    </script>
 </head>
 <body>
 
@@ -28,7 +34,37 @@
 <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
 
 
-<script>
+<script type="module">
+    import Keycloak from 'keycloak-js';
+
+    function output(data) {
+        if (typeof data === 'object') {
+            data = JSON.stringify(data, null, '  ');
+        }
+        document.getElementById('output').innerHTML = data;
+    }
+
+    function event(event) {
+        var e = document.getElementById('events').innerHTML;
+        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    // Expose globals for tests.
+    globalThis.Keycloak = Keycloak;
+    globalThis.output = output;
+    globalThis.event = event;
+    globalThis.getParameterByName = getParameterByName;
+
      function showExpires() {
         if (!keycloak.tokenParsed) {
             output("Not authenticated");
@@ -48,28 +84,6 @@
 
     function showError() {
         output("Error: " + getParameterByName("error") + "\n" + "Error description: " + getParameterByName("error_description"));
-    }
-
-    function getParameterByName(name, url) {
-        if (!url) url = window.location.href;
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
-            results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
-
-    function output(data) {
-        if (typeof data === 'object') {
-            data = JSON.stringify(data, null, '  ');
-        }
-        document.getElementById('output').innerHTML = data;
-    }
-
-    function event(event) {
-        var e = document.getElementById('events').innerHTML;
-        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
     }
 </script>
 </body>

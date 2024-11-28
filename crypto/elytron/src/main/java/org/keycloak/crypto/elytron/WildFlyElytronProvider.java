@@ -73,6 +73,11 @@ public class WildFlyElytronProvider implements CryptoProvider {
     }
 
     @Override
+    public int order() {
+        return 200;
+    }
+
+    @Override
     public <T> T getAlgorithmProvider(Class<T> clazz, String algorithm) {
         Object o = providers.get(algorithm);
         if (o == null) {

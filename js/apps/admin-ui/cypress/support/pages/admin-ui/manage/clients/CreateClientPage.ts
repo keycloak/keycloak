@@ -45,8 +45,11 @@ export default class CreateClientPage extends CommonPage {
     '[for="kc-frontchannelLogout-switch"] > .pf-v5-c-switch__toggle';
   #frontChannelLogoutSwitchInput = "#kc-frontchannelLogout-switch";
   #frontChannelLogoutInput = "frontchannelLogoutUrl";
+  #frontChannelLogoutSessionRequiredSwitchInput =
+    "#attributes\\.frontchannel🍺logout🍺session🍺required";
   #backChannelLogoutInput = "backchannelLogoutUrl";
-  #backChannelLogoutRequiredSwitchInput = "#backchannelLogoutSessionRequired";
+  #backChannelLogoutSessionRequiredSwitchInput =
+    "#backchannelLogoutSessionRequired";
   #backChannelLogoutRevoqueSwitch =
     '.pf-v5-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-v5-c-switch__toggle';
   #backChannelLogoutRevoqueSwitchInput =
@@ -268,17 +271,29 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkLogoutSettingsElements() {
-    cy.get(this.#backChannelLogoutRevoqueSwitch).scrollIntoView();
+    cy.get(this.#frontChannelLogoutSessionRequiredSwitchInput).scrollIntoView();
     cy.get(this.#frontChannelLogoutSwitchInput).should("not.be.disabled");
     cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
+    cy.get(this.#frontChannelLogoutSessionRequiredSwitchInput).should(
+      "not.be.disabled",
+    );
+    cy.findByTestId(this.#backChannelLogoutInput).should("not.exist");
+    cy.get(this.#backChannelLogoutSessionRequiredSwitchInput).should(
+      "not.exist",
+    );
+    cy.get(this.#backChannelLogoutRevoqueSwitchInput).should("not.exist");
+
+    cy.get(this.#frontChannelLogoutSwitch).click();
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.exist");
+    cy.get(this.#frontChannelLogoutSessionRequiredSwitchInput).should(
+      "not.exist",
+    );
     cy.findByTestId(this.#backChannelLogoutInput).should("not.be.disabled");
-    cy.get(this.#backChannelLogoutRequiredSwitchInput).should(
+    cy.get(this.#backChannelLogoutSessionRequiredSwitchInput).should(
       "not.be.disabled",
     );
     cy.get(this.#backChannelLogoutRevoqueSwitchInput).should("not.be.disabled");
 
-    cy.get(this.#frontChannelLogoutSwitch).click();
-    cy.findByTestId(this.#frontChannelLogoutInput).should("not.exist");
     cy.get(this.#frontChannelLogoutSwitch).click();
     cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
 

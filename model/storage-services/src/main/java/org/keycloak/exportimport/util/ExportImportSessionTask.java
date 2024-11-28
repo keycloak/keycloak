@@ -38,5 +38,10 @@ public abstract class ExportImportSessionTask implements KeycloakSessionTask {
         }
     }
 
+    @Override
+    public boolean useExistingSession() {
+        return true;
+    }
+
     protected abstract void runExportImportTask(KeycloakSession session) throws IOException;
 }

@@ -2,6 +2,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export enum Feature {
   AdminFineGrainedAuthz = "ADMIN_FINE_GRAINED_AUTHZ",
+  AdminFineGrainedAuthzV2 = "ADMIN_FINE_GRAINED_AUTHZ_V2",
   ClientPolicies = "CLIENT_POLICIES",
   Kerberos = "KERBEROS",
   DynamicScopes = "DYNAMIC_SCOPES",
@@ -11,6 +12,7 @@ export enum Feature {
   ClientTypes = "CLIENT_TYPES",
   DeclarativeUI = "DECLARATIVE_UI",
   Organizations = "ORGANIZATION",
+  OpenId4VCI = "OID4VC_VCI",
 }
 
 export default function useIsFeatureEnabled() {

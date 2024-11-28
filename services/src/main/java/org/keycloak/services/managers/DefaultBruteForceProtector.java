@@ -24,14 +24,24 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.http.FormPartValue;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ReadOnlyException;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.UriInfo;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -81,13 +91,18 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
         int waitSeconds = 0;
         if(!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0)) {
-            waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            if(RealmRepresentation.BruteForceStrategy.MULTIPLE.equals(realm.getBruteForceStrategy())) {
+                waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            } else {
+                waitSeconds = realm.getWaitIncrementSeconds() * (1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
+            }
         }
+
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
         boolean quickLoginFailure = false;
-        if (waitSeconds == 0) {
+        if (waitSeconds <= 0) {
             if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
                 logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
@@ -169,8 +184,8 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     @Override
-    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection) {
-        processLogin(realm, user, clientConnection, false);
+    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo) {
+        processLogin(realm, user, clientConnection, uriInfo, false);
         // wait a minimum of seconds for type to process so that a hacker
         // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
         // todo failure HTTP responses should be queued via async HTTP
@@ -179,18 +194,22 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     @Override
-    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection) {
-        processLogin(realm, user, clientConnection, true);
+    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo) {
+        processLogin(realm, user, clientConnection, uriInfo, true);
         logger.trace("sent success event");
     }
 
-    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, boolean success) {
+    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, boolean success) {
         ExecutorService executor = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
             ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
             return provider.getExecutor("bruteforce");
         });
+        final HttpRequest bruteForceHttpRequest = new BruteForceHttpRequest(uriInfo);
+        final HttpResponse bruteForceHttpResponse = new BruteForceHttpResponse();
         executor.execute(() -> KeycloakModelUtils.runJobInTransaction(factory, s -> {
             s.getContext().setRealm(s.realms().getRealm(realm.getId()));
+            s.getContext().setHttpRequest(bruteForceHttpRequest);
+            s.getContext().setHttpResponse(bruteForceHttpResponse);
             if (success) {
                 success(s, realm, user.getId());
             } else {
@@ -218,7 +237,15 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user) {
-        return !user.isEnabled() && DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON));
+        if (!user.isEnabled() && DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON))) {
+            return true;
+        }
+
+        if (!realm.isPermanentLockout()) return false;
+
+        // recheck failures just in case we are in a race
+        UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, user.getId());
+        return userLoginFailure != null && userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts();
     }
 
     @Override
@@ -230,4 +257,66 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public void close() {}
+
+    private static class BruteForceHttpRequest implements HttpRequest {
+
+        private final UriInfo uriInfo;
+
+        BruteForceHttpRequest(UriInfo uriInfo) {
+            this.uriInfo = uriInfo;
+        }
+
+        @Override
+        public String getHttpMethod() {
+            return "";
+        }
+
+        @Override
+        public MultivaluedMap<String, String> getDecodedFormParameters() {
+            return new MultivaluedHashMap<>();
+        }
+
+        @Override
+        public MultivaluedMap<String, FormPartValue> getMultiPartFormParameters() {
+             return new MultivaluedHashMap<>();
+        }
+
+        @Override
+        public HttpHeaders getHttpHeaders() {
+            return null;
+        }
+
+        @Override
+        public X509Certificate[] getClientCertificateChain() {
+            return null;
+        }
+
+        @Override
+        public UriInfo getUri() {
+            return uriInfo;
+        }
+    }
+
+    private static class BruteForceHttpResponse implements HttpResponse {
+        @Override
+        public int getStatus() {
+            return -1;
+        }
+
+        @Override
+        public void setStatus(int statusCode) {
+        }
+
+        @Override
+        public void addHeader(String name, String value) {
+        }
+
+        @Override
+        public void setHeader(String name, String value) {
+        }
+
+        @Override
+        public void setCookieIfAbsent(NewCookie cookie) {
+        }
+    }
 }

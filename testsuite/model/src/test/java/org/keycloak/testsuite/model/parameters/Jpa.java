@@ -30,9 +30,11 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
 import org.keycloak.models.IdentityProviderStorageSpi;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
 import org.keycloak.models.jpa.JpaClientScopeProviderFactory;
@@ -45,6 +47,8 @@ import org.keycloak.models.jpa.session.JpaRevokedTokensPersisterProviderFactory;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.session.RevokedTokenPersisterSpi;
 import org.keycloak.models.session.UserSessionPersisterSpi;
+import org.keycloak.organization.OrganizationSpi;
+import org.keycloak.organization.jpa.JpaOrganizationProviderFactory;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocolSpi;
 import org.keycloak.provider.ProviderFactory;
@@ -80,6 +84,8 @@ public class Jpa extends KeycloakModelParameters {
       .add(IdentityProviderStorageSpi.class)
       .add(IdentityProviderSpi.class)
 
+      .add(OrganizationSpi.class)
+
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -109,6 +115,8 @@ public class Jpa extends KeycloakModelParameters {
       //required for FederatedIdentityModel
       .add(IdentityProviderFactory.class)
 
+      .add(JpaOrganizationProviderFactory.class)
+
       .build();
 
     public Jpa() {
@@ -132,5 +140,13 @@ public class Jpa extends KeycloakModelParameters {
           .spi("deploymentState").defaultProvider("jpa")
           .spi("dblock").defaultProvider("jpa")
         ;
+// Use this for running model tests with Postgres database
+//        cf.spi("connectionsJpa")
+//                .provider("default")
+//                .config("url", "jdbc:postgresql://localhost:5432/keycloakDB")
+//                .config("user", "keycloak")
+//                .config("password", "pass")
+//                .config("driver", "org.postgresql.Driver");
+//
     }
 }

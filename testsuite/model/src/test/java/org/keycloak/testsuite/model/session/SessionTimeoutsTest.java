@@ -176,6 +176,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         try {
             final String[] sessions = inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
 
                 UserModel user = session.users().getUserByUsername(realm, "user1");
                 UserSessionModel userSession = createUserSession(session, realm, user, offline);

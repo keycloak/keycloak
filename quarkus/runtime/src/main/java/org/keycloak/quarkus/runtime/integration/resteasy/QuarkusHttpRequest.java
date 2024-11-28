@@ -54,11 +54,13 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public String getHttpMethod() {
+        if (context == null) return null;
         return context.getMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
+        if (context == null) return null;
         FormData parameters = context.getFormData();
 
         if (parameters == null || !parameters.iterator().hasNext()) {
@@ -84,6 +86,7 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public MultivaluedMap<String, FormPartValue> getMultiPartFormParameters() {
+        if (context == null) return null;
         FormData formData = context.getFormData();
 
         if (formData == null) {
@@ -119,6 +122,7 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
+        if (context == null) return null;
         return context.getHttpHeaders();
     }
 
@@ -147,6 +151,7 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public UriInfo getUri() {
+        if (context == null) return null;
         return context.getUriInfo();
     }
 }

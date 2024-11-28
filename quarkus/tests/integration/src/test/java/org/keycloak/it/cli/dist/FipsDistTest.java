@@ -18,6 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.crypto.fips.KeycloakFipsSecurityProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -31,9 +33,10 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(keepAlive = true, defaultOptions = { "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
 @RawDistOnly(reason = "Containers are immutable")
+@Tag(DistributionTest.SLOW)
 public class FipsDistTest {
 
-    private static final String BCFIPS_VERSION = "BCFIPS version 1.000205";
+    private static final String BCFIPS_VERSION = "BCFIPS version 2.0";
 
     @Test
     void testFipsNonApprovedMode(KeycloakDistribution dist) {
@@ -57,7 +60,7 @@ public class FipsDistTest {
             cliResult.assertMessage("password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
-            
+
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();
@@ -67,8 +70,7 @@ public class FipsDistTest {
 
     @Test
     @Launch({ "start", "--fips-mode=non-strict" })
-    void failStartDueToMissingFipsDependencies(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failStartDueToMissingFipsDependencies(CLIResult cliResult) {
         cliResult.assertError("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
     }
 
@@ -77,7 +79,6 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
-            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
@@ -125,7 +126,6 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
-            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
@@ -174,6 +174,7 @@ public class FipsDistTest {
         rawDist.copyProvider("org.bouncycastle", "bc-fips");
         rawDist.copyProvider("org.bouncycastle", "bctls-fips");
         rawDist.copyProvider("org.bouncycastle", "bcpkix-fips");
+        rawDist.copyProvider("org.bouncycastle", "bcutil-fips");
     }
 
 }

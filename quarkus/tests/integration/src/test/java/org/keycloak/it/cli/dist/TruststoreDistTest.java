@@ -21,6 +21,7 @@ import io.restassured.RestAssured;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -36,6 +37,7 @@ import static io.restassured.RestAssured.given;
 
 @DistributionTest(keepAlive = true)
 @RawDistOnly(reason = "Containers are immutable")
+@Tag(DistributionTest.SMOKE)
 public class TruststoreDistTest {
 
     @BeforeAll

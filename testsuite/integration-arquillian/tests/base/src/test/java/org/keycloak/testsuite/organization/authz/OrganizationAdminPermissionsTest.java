@@ -28,7 +28,6 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -36,12 +35,10 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Feature.ORGANIZATION)
 public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
 
     @Override
@@ -163,14 +160,14 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             //get members
             try {
                 //we should get 403, not 400 or 404 etc.
-                realmUserResource.organizations().get("non-existing").members().getAll();
+                realmUserResource.organizations().get("non-existing").members().list(-1, -1);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
             try {
-                realmUserResource.organizations().get(orgId).members().getAll();
+                realmUserResource.organizations().get(orgId).members().list(-1, -1);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).members().getAll(), Matchers.notNullValue());
+            assertThat(realmAdminResource.organizations().get(orgId).members().list(-1, -1), Matchers.notNullValue());
 
             //get member
             try {

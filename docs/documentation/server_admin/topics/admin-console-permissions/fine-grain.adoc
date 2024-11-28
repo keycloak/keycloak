@@ -68,11 +68,10 @@ image:images/fine-grain-client-manage-permissions.png[Fine grain client manage p
 
 When first initialized the `manage` permission does not have any policies associated with it.
 You will need to create one by going to the policy tab.  To get there fast, click on
-the `Authorization` link shown in the above image. Then click on the policies tab.
+the `Client details` link shown in the above image. Then click on the policies tab.
 
-There's a pull down menu on this page called `Create policy`.  There's a multitude of policies
-you can define.  You can define a policy that is associated with a role or a group or even define
-rules in JavaScript.  For this simple example, we're going to create a `User Policy`.
+On this page, look for the `Create client policy` button, which you can use to define many policies.  You can define a policy that is associated with a role or a group or even define
+rules in JavaScript.  For this simple example, we are going to create a `User Policy`.
 
 .User policy
 image:images/fine-grain-client-user-policy.png[Fine grain client user policy]
@@ -83,14 +82,12 @@ This policy will match a hard-coded user in the user database.  In this case, it
 .Assign user policy
 image:images/fine-grain-client-assign-user-policy.png[Fine grain client assign user policy]
 
-The `sales-admin` user can now has permission to manage the `sales-application` client.
+The `sales-admin` user now has permission to manage the `sales-application` client.
 
-There's one more thing we have to do.  Go to the `Role Mappings` tab and assign the `query-clients`
-role to the `sales-admin`.
+There is one more thing we have to do.  Go to `Users`, select the `sales-admin` user, then go to the `Role Mappings` tab and assign the `query-clients` role to the user.
 
 .Assign query-clients
 image:images/fine-grain-assign-query-clients.png[Fine grain assign query clients]
-
 
 Why do you have to do this?  This role tells the Admin Console
 what menu items to render when the `sales-admin` visits the Admin Console.  The `query-clients`
