@@ -30,8 +30,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.tracing.TracingProvider;
 
-import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -45,7 +45,7 @@ public class OTelTracingProvider implements TracingProvider {
 
     public OTelTracingProvider(OpenTelemetry openTelemetry) {
         this.openTelemetry = openTelemetry;
-        this.scopes = new ArrayDeque<>();
+        this.scopes = new ConcurrentLinkedDeque<>();
     }
 
     OpenTelemetry getOpenTelemetry() {

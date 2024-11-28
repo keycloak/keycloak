@@ -20,13 +20,14 @@ package org.keycloak.testsuite.tracing;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
+import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.internal.data.ExceptionEventData;
 import io.opentelemetry.semconv.ExceptionAttributes;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -38,7 +39,6 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.tracing.NoopTracingProvider;
-import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 
 import java.io.Serializable;
@@ -192,6 +192,10 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
                 assertThat(current instanceof ReadableSpan, is(true));
                 var spanData = ((ReadableSpan) current).toSpanData();
+
+                assertThat(spanData.getStatus(), notNullValue());
+                assertThat(spanData.getStatus(), is(StatusData.create(StatusCode.ERROR, "something bad happened")));
+
                 assertThat(spanData.getName(), is("something"));
                 assertThat(spanData.getTotalRecordedEvents(), is(1));
 
