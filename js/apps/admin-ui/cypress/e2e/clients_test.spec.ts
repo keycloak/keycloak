@@ -1201,8 +1201,9 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
         .checkTabExists(ClientsDetailsTab.Sessions, true)
+        .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(4);
+        .checkNumberOfTabsIsEqual(5);
     });
 
     it("Hides the delete action", () => {
