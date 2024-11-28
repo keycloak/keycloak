@@ -30,16 +30,15 @@ import org.keycloak.tracing.TracingProviderFactory;
 
 public class OTelTracingProviderFactory implements TracingProviderFactory {
     public static final String PROVIDER_ID = "opentelemetry";
-    private static OTelTracingProvider SINGLETON;
+    private static OpenTelemetry OTEL_SINGLETON;
 
     @Override
     public TracingProvider create(KeycloakSession session) {
-        if (SINGLETON == null) {
-            var openTelemetry = CDI.current().select(OpenTelemetry.class).get();
-            SINGLETON = new OTelTracingProvider(openTelemetry);
+        if (OTEL_SINGLETON == null) {
+            OTEL_SINGLETON = CDI.current().select(OpenTelemetry.class).get();
         }
 
-        return SINGLETON;
+        return new OTelTracingProvider(OTEL_SINGLETON);
     }
 
     @Override
@@ -54,10 +53,10 @@ public class OTelTracingProviderFactory implements TracingProviderFactory {
 
     @Override
     public void close() {
-        if (SINGLETON != null) {
+        if (OTEL_SINGLETON != null) {
             // explicitly remove the OpenTelemetry bean
-            CDI.current().select(OpenTelemetry.class).destroy(SINGLETON.getOpenTelemetry());
-            SINGLETON = null;
+            CDI.current().select(OpenTelemetry.class).destroy(OTEL_SINGLETON);
+            OTEL_SINGLETON = null;
         }
     }
 
