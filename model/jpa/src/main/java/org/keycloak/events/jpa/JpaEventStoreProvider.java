@@ -17,8 +17,6 @@
 
 package org.keycloak.events.jpa;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
@@ -37,6 +35,8 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import org.keycloak.util.JsonSerialization;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -49,9 +49,6 @@ import java.util.stream.Collectors;
  */
 public class JpaEventStoreProvider implements EventStoreProvider {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static final TypeReference<Map<String, String>> mapType = new TypeReference<Map<String, String>>() {
-    };
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
 
     private final KeycloakSession session;
@@ -264,7 +261,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private static void setDetails(Consumer<String> setter, Map<String, String> details) {
         if (details != null) {
             try {
-                setter.accept(mapper.writeValueAsString(details));
+                setter.accept(JsonSerialization.writeValueAsString(details));
             } catch (IOException e) {
                 logger.error("Failed to write event details", e);
             }
@@ -274,7 +271,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private static void setDetails(Consumer<Map<String, String>> setter, String details) {
         if (details != null) {
             try {
-                setter.accept(mapper.readValue(details, mapType));
+                setter.accept(JsonSerialization.readValue(details, Map.class));
             } catch (IOException e) {
                 logger.error("Failed to read event details", e);
             }
