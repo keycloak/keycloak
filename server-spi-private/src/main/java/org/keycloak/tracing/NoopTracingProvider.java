@@ -65,6 +65,16 @@ public class NoopTracingProvider implements TracingProvider {
     }
 
     @Override
+    public void trace(Class<?> tracerClass, String spanSuffix, Consumer<Span> execution) {
+        trace((String) null, null, execution);
+    }
+
+    @Override
+    public <T> T trace(Class<?> tracerClass, String spanSuffix, Function<Span, T> execution) {
+        return trace((String) null, null, execution);
+    }
+
+    @Override
     public Tracer getTracer(String name, String scopeVersion) {
         return TracerProvider.noop().get("");
     }

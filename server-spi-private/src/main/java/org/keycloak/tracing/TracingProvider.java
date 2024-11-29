@@ -170,7 +170,20 @@ public interface TracingProvider extends Provider {
      * @param execution   code that is executed and traced
      */
     default void trace(Class<?> tracerClass, String spanSuffix, Consumer<Span> execution) {
-        trace(tracerClass.getName(), tracerClass.getSimpleName() + "." + spanSuffix, execution);
+        String className = prepareClassName(tracerClass);
+        trace(className, className + "." + spanSuffix, execution);
+    }
+
+    private static String prepareClassName(Class<?> tracerClass) {
+        String className = tracerClass.getSimpleName();
+        if (className.isEmpty()) {
+            className = tracerClass.getName();
+            int end = className.lastIndexOf(".");
+            if (end != -1) {
+                className = className.substring(end + 1);
+            }
+        }
+        return className;
     }
 
     /**
@@ -220,7 +233,8 @@ public interface TracingProvider extends Provider {
      * @param execution   code that is executed and traced
      */
     default <T> T trace(Class<?> tracerClass, String spanSuffix, Function<Span, T> execution) {
-        return trace(tracerClass.getName(), tracerClass.getSimpleName() + "." + spanSuffix, execution);
+        String className = prepareClassName(tracerClass);
+        return trace(className, className + "." + spanSuffix, execution);
     }
 
     /**
