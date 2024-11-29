@@ -72,7 +72,7 @@ importers:
         specifier: ^0.14.9
         version: 0.14.9
 
-  js/apps/account-ui:
+  apps/account-ui:
     dependencies:
       '@keycloak/keycloak-ui-shared':
         specifier: workspace:*
@@ -148,7 +148,7 @@ importers:
         specifier: ^4.3.0
         version: 4.3.0(@types/node@22.10.1)(rollup@4.27.4)(typescript@5.7.2)(vite@6.0.1(@types/node@22.10.1)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.5.1))
 
-  js/apps/admin-ui:
+  apps/admin-ui:
     dependencies:
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
@@ -176,7 +176,7 @@ importers:
         version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.12)(typescript@5.7.2)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@types/react@18.3.12)(typescript@5.7.2)'
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -299,7 +299,7 @@ importers:
         specifier: ^2.1.6
         version: 2.1.6(@types/node@22.10.1)(jsdom@25.0.1)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.5.1)
 
-  js/apps/create-keycloak-theme:
+  apps/create-keycloak-theme:
     dependencies:
       chalk:
         specifier: ^5.3.0
@@ -317,7 +317,7 @@ importers:
         specifier: ^3.27.0
         version: 3.27.0
 
-  js/apps/keycloak-server:
+  apps/keycloak-server:
     dependencies:
       '@octokit/rest':
         specifier: ^21.0.2
@@ -335,7 +335,7 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
 
-  js/libs/keycloak-admin-client:
+  libs/keycloak-admin-client:
     dependencies:
       camelize-ts:
         specifier: ^3.0.0
@@ -375,9 +375,9 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.9.3)(@types/node@22.10.1)(typescript@5.7.2)
 
-  js/libs/keycloak-js: {}
+  libs/keycloak-js: {}
 
-  js/libs/ui-shared:
+  libs/ui-shared:
     dependencies:
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
@@ -447,7 +447,7 @@ importers:
         specifier: ^2.1.6
         version: 2.1.6(@types/node@22.10.1)(jsdom@25.0.1)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.5.1)
 
-  js/themes-vendor:
+  themes-vendor:
     dependencies:
       '@noble/hashes':
         specifier: ^1.6.1
@@ -1081,8 +1081,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui':
-    resolution: {directory: js/apps/admin-ui, type: directory}
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui':
+    resolution: {directory: apps/admin-ui, type: directory}
 
   '@kwsites/file-exists@1.1.1':
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
@@ -5509,10 +5509,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.12)(typescript@5.7.2)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@types/react@18.3.12)(typescript@5.7.2)':
     dependencies:
-      '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
-      '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
+      '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
+      '@keycloak/keycloak-ui-shared': link:libs/ui-shared
       '@patternfly/patternfly': 5.4.2
       '@patternfly/react-code-editor': 5.4.13(monaco-editor@0.52.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5524,7 +5524,7 @@ snapshots:
       flat: 6.0.1
       i18next: 24.0.2(typescript@5.7.2)
       i18next-http-backend: 3.0.1
-      keycloak-js: link:js/libs/keycloak-js
+      keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
       monaco-editor: 0.52.0
       p-debounce: 4.0.0

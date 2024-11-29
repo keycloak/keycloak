@@ -86,23 +86,8 @@ quarkus/data/*.db
 # Git ephemeral files
 *.versionsBackup
 
-# frontend-maven-plugin
-node
-
-# Wireit
-.wireit
-
-# Vite
-dist
-
 !/quarkus/dist
 !/quarkus/**/src/**/dist
-
-# ESLint
-.eslintcache
-
-# NPM
-node_modules
 
 # SDKMAM environment file
 .sdkmanrc
