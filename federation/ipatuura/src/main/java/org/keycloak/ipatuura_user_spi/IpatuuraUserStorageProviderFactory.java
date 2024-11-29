@@ -59,35 +59,7 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
                 .helpText("username to authenticate through the login page").add()
                 /* Login password, used to auth to make HTTP requests */
                 .property().name("loginpassword").type(ProviderConfigProperty.STRING_TYPE).label("Login password")
-                .helpText("password to authenticate through the login page").add()
-                /* Add Integration domain option */
-                .property().name("addintgdomain").type(ProviderConfigProperty.BOOLEAN_TYPE).label("Add Integration Domain")
-                .helpText("Option to automatically enroll to an integration domain").add()
-                /* Add Integration domain inputs */
-                .property().name("domainname").type(ProviderConfigProperty.STRING_TYPE).label("Integration domain name")
-                .helpText("Domain name").add().property().name("domaindesc").type(ProviderConfigProperty.STRING_TYPE)
-                .label("Optional description").helpText("Optional description").add().property().name("domainurl")
-                .type(ProviderConfigProperty.STRING_TYPE).label("Integration domain URL")
-                .helpText("The connection URL to the identity server, " + "e.g. https://client.ipa.test.").add().property()
-                .name("domainclientid").type(ProviderConfigProperty.STRING_TYPE).label("Integration domain client ID")
-                .helpText("Temporary admin service username").add().property().name("domainclientsecret")
-                .type(ProviderConfigProperty.PASSWORD).label("Integration domain client secret")
-                .helpText("Temporary admin service password").add().property().name("idprovider")
-                .type(ProviderConfigProperty.LIST_TYPE).options(PROVIDERS).label("Integration domain provider")
-                .helpText("Identity provider type").add().property().name("extraattrs").type(ProviderConfigProperty.STRING_TYPE)
-                .label("User extra attributes")
-                .helpText("Comma separated list of LDAP attributes fetched along"
-                        + "with the usual set of attributes, e.g. mail:mail, sn:sn, " + "givenname:givenname")
-                .add().property().name("cacert").type(ProviderConfigProperty.STRING_TYPE).label("LDAP TLS CA Certificate")
-                .helpText("Path to CA Certificate used for LDAP authentication," + " e.g. /etc/openldap/certs/ca.pem").add()
-                .property().name("user_object_classes").type(ProviderConfigProperty.STRING_TYPE)
-                .label("LDAP User Object Classes")
-                .helpText("OPTIONAL. The object classes of a user entry in LDAP, comma separated,"
-                        + " e.g. inetOrgPerson, organizationalPerson")
-                .add().property().name("users_dn").type(ProviderConfigProperty.STRING_TYPE).label("LDAP Users DN")
-                .helpText("OPTIONAL. Full DN of the LDAP tree where your users are," + " e.g. cn=users,dc=ipa,dc=test").add()
-                .property().name("keycloak_hostname").type(ProviderConfigProperty.STRING_TYPE).label("Keycloak Hostname")
-                .helpText("Fully qualified hostname of the keycloak host").add().build();
+                .helpText("password to authenticate through the login page").add().build();
     }
 
     @Override
@@ -108,27 +80,11 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
         } catch (Exception e) {
             throw new ComponentValidationException("Cannot connect to provided URL!", e);
         }
-
-        Boolean add_set = Boolean.valueOf(config.getConfig().getFirst("addintgdomain"));
-
-        if (add_set) {
-            Boolean result = ipatuura.domainsRequest();
-            logger.debugv("Add intgDomains Result is {0}", result);
-        }
     }
 
     @Override
     public String getId() {
         return PROVIDER_NAME;
-    }
-
-    @Override
-    public void preRemove(KeycloakSession session, RealmModel realm, ComponentModel config) {
-        logger.debug("PreRemove");
-        Ipatuura ipatuura = new Ipatuura(session, config);
-
-        Boolean result = ipatuura.domainsRemove();
-        logger.debugv("Delete intgDomains Result is {0}", result);
     }
 
     @Override

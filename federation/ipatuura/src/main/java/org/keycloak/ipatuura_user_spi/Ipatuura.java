@@ -22,7 +22,6 @@ import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
@@ -32,7 +31,6 @@ import org.keycloak.broker.provider.util.SimpleHttp.Response;
 
 import org.keycloak.ipatuura_user_spi.schemas.SCIMSearchRequest;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
-import org.keycloak.ipatuura_user_spi.schemas.IntegrationDomain;
 
 public class Ipatuura {
     private static final Logger logger = Logger.getLogger(Ipatuura.class);
@@ -151,36 +149,6 @@ public class Ipatuura {
         }
     }
 
-    public boolean domainsRequest() {
-
-        IntegrationDomain intgdomain = this.setupIntegrationDomain();
-        String domainurl = "domain";
-
-        try (Response response = clientRequest(domainurl, "POST", intgdomain)) {
-            JsonNode result = response.asJson();
-            logger.debugv("Result is {0}", result);
-            return true;
-        } catch (Exception e) {
-            logger.errorv("Failed to add integration domain: {0}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean domainsRemove() {
-
-        /* Currently only a single domain is supported */
-        String domainurl = "domain/1";
-
-        try (Response response = clientRequest(domainurl, "DELETE", null)){
-            /* Returns HttpStatus.SC_NO_CONTENT (HTTP 204) */
-            logger.debugv("Response status is {0}", response.getStatus());
-            return true;
-        } catch (Exception e) {
-            logger.errorv("Failed to remove existing integration domain: {0}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
     public <T> Response clientRequest(String endpoint, String method, T entity) throws Exception {
         Response response = null;
 
@@ -246,37 +214,6 @@ public class Ipatuura {
         logger.debugv("Schema: {0}", SCHEMA_API_MESSAGES_SEARCHREQUEST);
 
         return search;
-    }
-
-    private IntegrationDomain setupIntegrationDomain() {
-        IntegrationDomain intgdomain = new IntegrationDomain();
-
-        intgdomain.setName(model.getConfig().getFirst("domainname"));
-        intgdomain.setDescription(model.getConfig().getFirst("domaindesc"));
-        intgdomain.setIntegrationDomainUrl(model.getConfig().getFirst("domainurl"));
-        intgdomain.setClientId(model.getConfig().getFirst("domainclientid"));
-        intgdomain.setClientSecret(model.getConfig().getFirst("domainclientsecret"));
-        intgdomain.setIdProvider(model.getConfig().getFirst("idprovider"));
-        intgdomain.setUsersDn(model.getConfig().getFirst("users_dn"));
-        intgdomain.setkeycloakHostname(model.getConfig().getFirst("keycloak_hostname"));
-
-        /* Optional fields */
-        String cacert = model.getConfig().getFirst("cacert");
-        String extra = model.getConfig().getFirst("extraattrs");
-        String oc = model.getConfig().getFirst("user_object_classes");
-
-        if (cacert != null && !cacert.isEmpty()) {
-            intgdomain.setLdapTlsCacert(cacert);
-        }
-        if (extra != null && !extra.isEmpty()) {
-            intgdomain.setUserExtraAttrs(extra);
-        }
-        if (oc != null && !oc.isEmpty()) {
-            List<String> oclist = Arrays.asList(oc.split("\\s*,\\s*"));
-            intgdomain.setUserObjectClasses(oclist);
-        }
-
-        return intgdomain;
     }
 
     private SCIMUser getUserByAttr(String username, String attribute) {
