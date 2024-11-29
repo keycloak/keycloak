@@ -17,6 +17,7 @@
 
 package org.keycloak.ipatuura_user_spi;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.util.List;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp.Response;
 
 import org.keycloak.ipatuura_user_spi.schemas.SCIMSearchRequest;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
@@ -51,11 +53,11 @@ public class Ipatuura {
         this.session = session;
     }
 
-    private void parseSetCookie(SimpleHttp.Response response) throws IOException {
+    private void parseSetCookie(Response response) throws IOException {
         List<String> setCookieHeaders = response.getHeader("Set-Cookie");
 
         for (String h : setCookieHeaders) {
-            String[] kv = h.split("\\;");
+            String[] kv = h.split(";");
             for (String s : kv) {
                 if (s.contains("csrftoken")) {
                     /* key=value */
@@ -71,9 +73,8 @@ public class Ipatuura {
     }
 
     public Integer csrfAuthLogin() {
-        String url = "";
-        String loginPage = "";
-        SimpleHttp.Response response = null;
+
+        Response response;
 
         /* Get inputs */
         String server = model.getConfig().getFirst("scimurl");
@@ -81,13 +82,11 @@ public class Ipatuura {
         String password = model.getConfig().getFirst("loginpassword");
 
         /* Execute GET to get initial csrftoken */
-        url = String.format("https://%s%s", server, "/admin/login/");
+        String url = String.format("https://%s%s", server, "/admin/login/");
 
         try {
             response = SimpleHttp.doGet(url, session).asResponse();
-
             parseSetCookie(response);
-
             response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
@@ -109,27 +108,24 @@ public class Ipatuura {
 
         this.logged_in = true;
         return 0;
-
     }
 
     public boolean isValid(String username, String password) {
-        SimpleHttp.Response response = null;
-        com.fasterxml.jackson.databind.JsonNode result;
-        if (this.logged_in == false) {
+
+        if (!this.logged_in) {
             this.csrfAuthLogin();
         }
 
         /* Build URL */
-
         String server = model.getConfig().getFirst("scimurl");
         String endpointurl = String.format("https://%s/creds/simple_pwd", server);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        try {
-            response = SimpleHttp.doPost(endpointurl, session).header("X-CSRFToken", this.csrf_value)
-                    .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
-                    .param("username", username).param("password", password).asResponse();
-            result = response.asJson();
+        SimpleHttp simpleHttp = SimpleHttp.doPost(endpointurl, session).header("X-CSRFToken", this.csrf_value)
+                .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
+                .param("username", username).param("password", password);
+        try (Response response = simpleHttp.asResponse()){
+            JsonNode result = response.asJson();
             return (result.get("result").get("validated").asBoolean());
         } catch (Exception e) {
             logger.debugv("Failed to authenticate user {0}: {1}", username, e);
@@ -139,20 +135,16 @@ public class Ipatuura {
     }
 
     public String gssAuth(String spnegoToken) {
-        SimpleHttp.Response response = null;
-        com.fasterxml.jackson.databind.JsonNode result;
 
         String server = model.getConfig().getFirst("scimurl");
         String endpointurl = String.format("https://%s/bridge/login_kerberos/", server);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        try {
-            response = SimpleHttp.doPost(endpointurl, session).header("Authorization", "Negotiate " + spnegoToken)
-                    .param("username", "").asResponse();
-            result = response.asJson();
+        SimpleHttp simpleHttp = SimpleHttp.doPost(endpointurl, session).header("Authorization", "Negotiate " + spnegoToken)
+                .param("username", "");
+        try (Response response = simpleHttp.asResponse()) {
             logger.debugv("Response status is {0}", response.getStatus());
-            String user = response.getFirstHeader("Remote-User");
-            return user;
+            return response.getFirstHeader("Remote-User");
         } catch (Exception e) {
             logger.debugv("Failed to authenticate user with GSSAPI: {0}", e.toString());
             return null;
@@ -160,16 +152,12 @@ public class Ipatuura {
     }
 
     public boolean domainsRequest() {
+
         IntegrationDomain intgdomain = this.setupIntegrationDomain();
-
-        SimpleHttp.Response response = null;
-        com.fasterxml.jackson.databind.JsonNode result;
-
         String domainurl = "domain";
 
-        try {
-            response = clientRequest(domainurl, "POST", intgdomain);
-            result = response.asJson();
+        try (Response response = clientRequest(domainurl, "POST", intgdomain)) {
+            JsonNode result = response.asJson();
             logger.debugv("Result is {0}", result);
             return true;
         } catch (Exception e) {
@@ -179,14 +167,11 @@ public class Ipatuura {
     }
 
     public boolean domainsRemove() {
-        SimpleHttp.Response response = null;
-        com.fasterxml.jackson.databind.JsonNode result;
 
         /* Currently only a single domain is supported */
         String domainurl = "domain/1";
 
-        try {
-            response = clientRequest(domainurl, "DELETE", null);
+        try (Response response = clientRequest(domainurl, "DELETE", null)){
             /* Returns HttpStatus.SC_NO_CONTENT (HTTP 204) */
             logger.debugv("Response status is {0}", response.getStatus());
             return true;
@@ -196,10 +181,10 @@ public class Ipatuura {
         }
     }
 
-    public <T> SimpleHttp.Response clientRequest(String endpoint, String method, T entity) throws Exception {
-        SimpleHttp.Response response = null;
+    public <T> Response clientRequest(String endpoint, String method, T entity) throws Exception {
+        Response response = null;
 
-        if (this.logged_in == false) {
+        if (!this.logged_in) {
             this.csrfAuthLogin();
         }
 
@@ -212,7 +197,7 @@ public class Ipatuura {
             endpointurl = String.format("https://%s/scim/v2/%s", server, endpoint);
         }
 
-        logger.debugv("Sending {0} request to {1}", method.toString(), endpointurl);
+        logger.debugv("Sending {0} request to {1}", method, endpointurl);
 
         try {
             switch (method) {
@@ -300,7 +285,7 @@ public class Ipatuura {
         String usersSearchUrl = "Users/.search";
         SCIMUser user = null;
 
-        SimpleHttp.Response response;
+        Response response;
         try {
             response = clientRequest(usersSearchUrl, "POST", newSearch);
             user = response.asJson(SCIMUser.class);
@@ -333,13 +318,13 @@ public class Ipatuura {
         return getUserByAttr(username, attribute);
     }
 
-    public SimpleHttp.Response deleteUser(String username) {
+    public Response deleteUser(String username) {
         SCIMUser userobj = getUserByUsername(username);
         SCIMUser.Resource user = userobj.getResources().get(0);
 
         String userIdUrl = String.format("Users/%s", user.getId());
 
-        SimpleHttp.Response response;
+        Response response;
         try {
             response = clientRequest(userIdUrl, "DELETE", null);
         } catch (Exception e) {
@@ -382,12 +367,12 @@ public class Ipatuura {
         return user;
     }
 
-    public SimpleHttp.Response createUser(String username) {
+    public Response createUser(String username) {
         String usersUrl = "Users";
 
         SCIMUser.Resource newUser = setupUser(username);
 
-        SimpleHttp.Response response;
+        Response response;
         try {
             response = clientRequest(usersUrl, "POST", newUser);
         } catch (Exception e) {
@@ -426,7 +411,7 @@ public class Ipatuura {
         }
     }
 
-    public SimpleHttp.Response updateUser(Ipatuura ipatuura, String username, String attr, List<String> values) {
+    public Response updateUser(Ipatuura ipatuura, String username, String attr, List<String> values) {
         logger.debug(String.format("Updating %s attribute for %s", attr, username));
         /* Get existing user */
         if (ipatuura.csrfAuthLogin() == null) {
@@ -442,7 +427,7 @@ public class Ipatuura {
         /* Update user in SCIM */
         String modifyUrl = String.format("Users/%s", user.getId());
 
-        SimpleHttp.Response response;
+        Response response;
         try {
             response = clientRequest(modifyUrl, "PUT", user);
         } catch (Exception e) {
@@ -454,7 +439,7 @@ public class Ipatuura {
     }
 
     public boolean getActive(SCIMUser user) {
-        return Boolean.valueOf(user.getResources().get(0).getActive());
+        return user.getResources().get(0).getActive();
     }
 
     public String getEmail(SCIMUser user) {
@@ -478,13 +463,12 @@ public class Ipatuura {
     }
 
     public List<String> getGroupsList(SCIMUser user) {
-        List<SCIMUser.Resource.Group> groups = new ArrayList<SCIMUser.Resource.Group>();
+        List<SCIMUser.Resource.Group> groups = user.getResources().get(0).getGroups();
         List<String> groupnames = new ArrayList<String>();
-        groups = user.getResources().get(0).getGroups();
 
-        for (int i = 0; i < groups.size(); i++) {
-            logger.debug("Retrieving group: " + groups.get(i).getDisplay());
-            groupnames.add(groups.get(i).getDisplay());
+        for (SCIMUser.Resource.Group group : groups) {
+            logger.debug("Retrieving group: " + group.getDisplay());
+            groupnames.add(group.getDisplay());
         }
 
         return groupnames;
