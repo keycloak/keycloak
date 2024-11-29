@@ -103,7 +103,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
 
         UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (user != null) {
-            logger.info("User already exists in keycloak");
+            logger.debug("User already exists in keycloak");
             return user;
         } else {
             return createUserInKeycloak(realm, username);
@@ -127,13 +127,13 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
             GroupModel group = groupsStream.findFirst().orElse(null);
 
             if (group == null) {
-                logger.infov("No group found, creating group: {0}", name);
+                logger.debugv("No group found, creating group: {0}", name);
                 group = session.groups().createGroup(realm, name);
             }
             user.joinGroup(group);
         }
 
-        logger.infov("Creating SCIM user {0} in keycloak", username);
+        logger.debugv("Creating SCIM user {0} in keycloak", username);
         return new IpatuuraUserModelDelegate(ipatuura, user, model);
     }
 
@@ -165,11 +165,11 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
          * The password can either be validated locally in keycloak (tried first) or in the SCIM server
          */
         if (((UserCredentialManager) user.credentialManager()).isConfiguredLocally(input.getType())) {
-            logger.infov("Local password validation for {0}", user.getUsername());
+            logger.debugv("Local password validation for {0}", user.getUsername());
             /* return false in order to fallback to the next validator */
             return false;
         } else {
-            logger.infov("Delegated password validation for {0}", user.getUsername());
+            logger.debugv("Delegated password validation for {0}", user.getUsername());
             Ipatuura ipatuura = this.ipatuura;
             return ipatuura.isValid(user.getUsername(), input.getChallengeResponse());
         }
@@ -222,7 +222,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        logger.infov("Removing user: {0}", user.getUsername());
+        logger.debugv("Removing user: {0}", user.getUsername());
         Ipatuura ipatuura = this.ipatuura;
 
         SimpleHttp.Response resp = ipatuura.deleteUser(user.getUsername());
@@ -243,12 +243,12 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
 
         SCIMUser scimuser = ipatuura.getUserByUsername(search);
         if (scimuser.getTotalResults() > 0) {
-            logger.info("User found by username!");
+            logger.debug("User found by username!");
             if (UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, search) == null) {
                 UserModel user = getUserByUsername(realm, ipatuura.getUserName(scimuser));
                 users.add(user);
             } else {
-                logger.info("User exists!");
+                logger.debug("User exists!");
             }
 
             return users.stream();
@@ -315,15 +315,15 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
             if (idx != -1) {
                 username = username.substring(0, idx);
             }
-            logger.info("GSSAPI authenticating with user " + username);
+            logger.debug("GSSAPI authenticating with user " + username);
         }
 
         UserModel user = getUserByUsername(realm, username);
         if (user == null) {
-            logger.info("CredentialValidationOutput failed");
+            logger.debug("CredentialValidationOutput failed");
             return CredentialValidationOutput.failed();
         }
-        logger.info("CredentialValidationOutput success!");
+        logger.debug("CredentialValidationOutput success!");
         return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
     }
 }

@@ -37,13 +37,13 @@ public class IpatuuraAuthenticator {
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null) {
-            logger.info("authHeader == NULL()!");
+            logger.debug("authHeader == NULL()!");
             return null;
         }
         String[] tokens = authHeader.split(" ");
 
         if (tokens.length == 0) { // assume not supported
-            logger.info("Invalid length of tokens: " + tokens.length);
+            logger.debug("Invalid length of tokens: " + tokens.length);
             return null;
         }
         if (!KerberosConstants.NEGOTIATE.equalsIgnoreCase(tokens[0])) {

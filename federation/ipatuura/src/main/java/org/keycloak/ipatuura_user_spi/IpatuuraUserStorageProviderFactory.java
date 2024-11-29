@@ -106,15 +106,14 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
             response = ipatuura.clientRequest("", "GET", null);
             response.close();
         } catch (Exception e) {
-            logger.info(e);
-            throw new ComponentValidationException("Cannot connect to provided URL!");
+            throw new ComponentValidationException("Cannot connect to provided URL!", e);
         }
 
         Boolean add_set = Boolean.valueOf(config.getConfig().getFirst("addintgdomain"));
 
         if (add_set) {
             Boolean result = ipatuura.domainsRequest();
-            logger.infov("Add intgDomains Result is {0}", result);
+            logger.debugv("Add intgDomains Result is {0}", result);
         }
     }
 
@@ -125,11 +124,11 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
 
     @Override
     public void preRemove(KeycloakSession session, RealmModel realm, ComponentModel config) {
-        logger.info("PreRemove");
+        logger.debug("PreRemove");
         Ipatuura ipatuura = new Ipatuura(session, config);
 
         Boolean result = ipatuura.domainsRemove();
-        logger.infov("Delete intgDomains Result is {0}", result);
+        logger.debugv("Delete intgDomains Result is {0}", result);
     }
 
     @Override

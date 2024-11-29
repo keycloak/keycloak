@@ -107,7 +107,7 @@ public class Ipatuura {
         String server = model.getConfig().getFirst("scimurl");
         String endpointurl = String.format("https://%s/creds/simple_pwd", server);
 
-        logger.infov("Sending POST request to {0}", endpointurl);
+        logger.debugv("Sending POST request to {0}", endpointurl);
         try {
             response = SimpleHttp.doPost(endpointurl, session).header("X-CSRFToken", this.csrf_value)
                     .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
@@ -115,7 +115,7 @@ public class Ipatuura {
             result = response.asJson();
             return (result.get("result").get("validated").asBoolean());
         } catch (Exception e) {
-            logger.infov("Failed to authenticate user {0}: {1}", username, e);
+            logger.debugv("Failed to authenticate user {0}: {1}", username, e);
             return false;
         }
 
@@ -128,16 +128,16 @@ public class Ipatuura {
         String server = model.getConfig().getFirst("scimurl");
         String endpointurl = String.format("https://%s/bridge/login_kerberos/", server);
 
-        logger.infov("Sending POST request to {0}", endpointurl);
+        logger.debugv("Sending POST request to {0}", endpointurl);
         try {
             response = SimpleHttp.doPost(endpointurl, session).header("Authorization", "Negotiate " + spnegoToken)
                     .param("username", "").asResponse();
             result = response.asJson();
-            logger.infov("Response status is {0}", response.getStatus());
+            logger.debugv("Response status is {0}", response.getStatus());
             String user = response.getFirstHeader("Remote-User");
             return user;
         } catch (Exception e) {
-            logger.infov("Failed to authenticate user with GSSAPI: {0}", e.toString());
+            logger.debugv("Failed to authenticate user with GSSAPI: {0}", e.toString());
             return null;
         }
     }
@@ -153,7 +153,7 @@ public class Ipatuura {
         try {
             response = clientRequest(domainurl, "POST", intgdomain);
             result = response.asJson();
-            logger.infov("Result is {0}", result);
+            logger.debugv("Result is {0}", result);
             return true;
         } catch (Exception e) {
             logger.errorv("Failed to add integration domain: {0}", e.getMessage());
@@ -171,7 +171,7 @@ public class Ipatuura {
         try {
             response = clientRequest(domainurl, "DELETE", null);
             /* Returns HttpStatus.SC_NO_CONTENT (HTTP 204) */
-            logger.infov("Response status is {0}", response.getStatus());
+            logger.debugv("Response status is {0}", response.getStatus());
             return true;
         } catch (Exception e) {
             logger.errorv("Failed to remove existing integration domain: {0}", e.getMessage());
@@ -195,7 +195,7 @@ public class Ipatuura {
             endpointurl = String.format("https://%s/scim/v2/%s", server, endpoint);
         }
 
-        logger.infov("Sending {0} request to {1}", method.toString(), endpointurl);
+        logger.debugv("Sending {0} request to {1}", method.toString(), endpointurl);
 
         try {
             switch (method) {
@@ -240,8 +240,8 @@ public class Ipatuura {
 
         filter = String.format("%s eq \"%s\"", attribute, username);
         search.setFilter(filter);
-        logger.infov("filter: {0}", filter);
-        logger.infov("Schema: {0}", SCHEMA_API_MESSAGES_SEARCHREQUEST);
+        logger.debugv("filter: {0}", filter);
+        logger.debugv("Schema: {0}", SCHEMA_API_MESSAGES_SEARCHREQUEST);
 
         return search;
     }
@@ -404,13 +404,13 @@ public class Ipatuura {
                 /* Changing username not supported */
                 break;
             default:
-                logger.info("Unknown user attribute to set: " + attr);
+                logger.debug("Unknown user attribute to set: " + attr);
                 break;
         }
     }
 
     public SimpleHttp.Response updateUser(Ipatuura ipatuura, String username, String attr, List<String> values) {
-        logger.info(String.format("Updating %s attribute for %s", attr, username));
+        logger.debug(String.format("Updating %s attribute for %s", attr, username));
         /* Get existing user */
         if (ipatuura.csrfAuthLogin() == null) {
             logger.error("Error during login");
@@ -466,7 +466,7 @@ public class Ipatuura {
         groups = user.getResources().get(0).getGroups();
 
         for (int i = 0; i < groups.size(); i++) {
-            logger.info("Retrieving group: " + groups.get(i).getDisplay());
+            logger.debug("Retrieving group: " + groups.get(i).getDisplay());
             groupnames.add(groups.get(i).getDisplay());
         }
 
