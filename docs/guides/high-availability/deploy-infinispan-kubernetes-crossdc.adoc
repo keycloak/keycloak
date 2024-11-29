@@ -198,10 +198,29 @@ The following example shows the `Cache` CR for `{site-a}`.
 +
 --
 . In `{site-a}` create a `Cache` CR for each of the caches mentioned above with the following content.
-This is an example for the `authenticationSessions` cache:
++
+.Cache `actionTokens`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
+----
++
+.Cache `authenticationSessions`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authenticationSessions]
+----
++
+.Cache `loginFailures`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-loginFailures]
+----
++
+.Cache `work`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-work]
 ----
 <1> The transaction mode.
 <2> The locking mode used by the transaction.
@@ -218,7 +237,7 @@ The example above is the recommended configuration to achieve the best data cons
 
 Deadlocks may occur in an active-active setup as entries are modified concurrently in both sites.
 
-The `transaction.mode: NON_XA` ensures that the transaction is rolled back keeping the data consistent if this occurs.
+The `transaction.mode: NON_DURABLE_XA` ensures that the transaction is rolled back keeping the data consistent if this occurs.
 The setting `backup.failurePolicy: FAIL` is required in this case.
 It will throw an error that allows the transaction to be safely rolled back.
 When this occurs, {project_name} will attempt a retry.
@@ -234,10 +253,10 @@ The `backup.timeout` must always be higher than the `locking.acquireTimeout`.
 +
 For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
 +
-.authenticationSessions `Cache` CR in `{site-b}`
+.Example for `actionTokens` cache in `{site-b}`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-authenticationSessions]
+include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
 ----
 
 == Verifying the deployment
