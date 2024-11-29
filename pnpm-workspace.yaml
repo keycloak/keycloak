@@ -1,4 +1,4 @@
 packages:
   - js/apps/*
   - js/libs/*
-  - themes
+  - js/themes-vendor
