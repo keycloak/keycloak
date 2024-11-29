@@ -118,6 +118,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import static org.keycloak.OAuth2Constants.ORGANIZATION;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 
@@ -750,6 +751,13 @@ public class TokenManager {
         }
 
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
+
+        // detect multiple organization scopes
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            if (rawScopes.stream().filter(scope -> scope.startsWith(ORGANIZATION)).count() > 1) {
+                return false;
+            }
+        }
 
         if (TokenUtil.isOIDCRequest(scopes)) {
             rawScopes.remove(OAuth2Constants.SCOPE_OPENID);
