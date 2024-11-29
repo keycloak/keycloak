@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,6 +108,35 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String orgbName = orgb.toRepresentation().getName();
         assertThat(claim.contains(orgaName), is(true));
         assertThat(claim.contains(orgbName), is(true));
+    }
+
+    @Test
+    public void testMultipleOrganizationScopes() throws Exception {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        oauth.clientId("test-app");
+        oauth.scope("openid organization organization:org-a");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+
+        oauth.scope("openid organization organization:*");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+        oauth.scope("openid organization:org-a organization:*");
+        response = oauth.doGrantAccessTokenRequest("password", memberEmail, memberPassword);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
     @Test
