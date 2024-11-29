@@ -18,11 +18,14 @@
 package org.keycloak.ipatuura_user_spi;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -35,7 +38,7 @@ import java.util.List;
  * @author <a href="mailto:jstephen@redhat.com">Justin Stephenson</a>
  * @version $Revision: 1 $
  */
-public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFactory<IpatuuraUserStorageProvider> {
+public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFactory<IpatuuraUserStorageProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(IpatuuraUserStorageProviderFactory.class);
     public static final String PROVIDER_NAME = "ipatuura";
@@ -137,5 +140,10 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
 
     protected IpatuuraAuthenticator createSCIMAuthenticator() {
         return new IpatuuraAuthenticator();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION);
     }
 }
