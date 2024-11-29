@@ -30,6 +30,7 @@ import org.keycloak.tracing.TracingProvider;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -96,10 +97,15 @@ public class PersistentSessionsWorker {
                         spanBuilder.setParent(Context.current().with(batch.get(0).getSpan()));
                     }
                     Span span = tracing.startSpan(spanBuilder);
+                    List<Span> batchSpans = new LinkedList<>();
                     try {
                         if (batch.size() > 1) {
                             batch.forEach(persistentUpdate -> {
-                                persistentUpdate.getSpan().addLink(span.getSpanContext());
+                                // This adds another span to the parent span to avoid updating span links after span creation as suggested by the API
+                                SpanBuilder sb = process.spanBuilder("PersistentSessionsWorker.batch");
+                                sb.setParent(Context.current().with(persistentUpdate.getSpan()));
+                                sb.addLink(span.getSpanContext());
+                                batchSpans.add(sb.startSpan());
                             });
                         }
                         LOG.debugf("Processing %d deferred session updates.", batch.size());
@@ -137,6 +143,7 @@ public class PersistentSessionsWorker {
                         batch.forEach(o -> o.fail(ex));
                         LOG.warnf(ex, "Unable to write %d deferred session updates", batch.size());
                     } finally {
+                        batchSpans.forEach(Span::end);
                         tracing.endSpan();
                     }
                 });
