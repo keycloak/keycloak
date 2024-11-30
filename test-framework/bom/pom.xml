@@ -47,6 +47,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.test</groupId>
+                <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.test</groupId>
                 <artifactId>keycloak-test-framework-db-mariadb</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -72,6 +78,12 @@
             <dependency>
                 <groupId>org.keycloak.test</groupId>
                 <artifactId>keycloak-test-framework-db-postgres</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.test</groupId>
+                <artifactId>keycloak-test-framework-email-server</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>

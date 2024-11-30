@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -43,16 +44,15 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
+@Tag(DistributionTest.SLOW)
 public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log-level=warn" })
-    void testSetRootLevel(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testSetRootLevel(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("INFO [io.quarkus]"));
         assertFalse(cliResult.getOutput().contains("Listening on:"));
         cliResult.assertStartedDevMode();
@@ -60,8 +60,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log-level=org.keycloak:debug" })
-    void testSetCategoryLevel(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testSetCategoryLevel(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("DEBUG [org.hibernate"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
         cliResult.assertStartedDevMode();
@@ -69,16 +68,14 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log-level=off,org.keycloak:debug" })
-    void testRootAndCategoryLevels(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testRootAndCategoryLevels(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
         assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
     }
 
     @Test
     @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,warn" })
-    void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testSetLastRootLevelIfMultipleSet(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("INFO"));
         assertFalse(cliResult.getOutput().contains("DEBUG"));
         assertFalse(cliResult.getOutput().contains("Listening on:"));
@@ -88,8 +85,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
-    void testSetLogFormat(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testSetLogFormat(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("(keycloak-cache-init)"));
         cliResult.assertStartedDevMode();
     }
@@ -132,8 +128,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--log=file"})
-    void testFileOnlyLogsNothingToConsole(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testFileOnlyLogsNothingToConsole(CLIResult cliResult) {
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
@@ -153,22 +148,19 @@ public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev","--log=foo,bar" })
-    void failUnknownHandlersInCliCommand(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failUnknownHandlersInCliCommand(CLIResult cliResult) {
         cliResult.assertError("Invalid value for option '--log': foo");
     }
 
     @Test
     @Launch({ "start-dev","--log=" })
-    void failEmptyLogValueInCliError(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failEmptyLogValueInCliError(CLIResult cliResult) {
         cliResult.assertError("Invalid value for option '--log': .");
     }
 
     @Test
     @Launch({"start-dev", "--log=syslog"})
-    void syslogHandler(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void syslogHandler(CLIResult cliResult) {
         cliResult.assertNoMessage("org.keycloak");
         cliResult.assertNoMessage("Listening on:");
         cliResult.assertError("Error writing to TCP stream");
@@ -176,15 +168,13 @@ public class LoggingDistTest {
 
     @Test
     @Launch({"start-dev", "--log-console-level=wrong"})
-    void wrongLevelForHandlers(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are: off, fatal, error, warn, info, debug, trace, all");
+    void wrongLevelForHandlers(CLIResult cliResult) {
+        cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all");
     }
 
     @Test
     @Launch({"start-dev", "--log=console,file", "--log-console-level=debug", "--log-file-level=debug"})
-    void levelRootDefault(LaunchResult result, RawDistRootPath path) {
-        CLIResult cliResult = (CLIResult) result;
+    void levelRootDefault(CLIResult cliResult, RawDistRootPath path) {
         var output = cliResult.getOutput();
 
         assertThat(output, not(containsString("DEBUG [org.hibernate")));
@@ -203,8 +193,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({"start-dev", "--log=console,file", "--log-level=org.keycloak:debug", "--log-console-level=debug", "--log-file-level=debug"})
-    void levelRootCategoryDebug(LaunchResult result, RawDistRootPath path) {
-        CLIResult cliResult = (CLIResult) result;
+    void levelRootCategoryDebug(CLIResult cliResult, RawDistRootPath path) {
         var output = cliResult.getOutput();
 
         assertThat(output, not(containsString("DEBUG [org.hibernate")));
@@ -223,8 +212,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({"start-dev", "--log=console,file", "--log-level=info,org.keycloak:warn", "--log-console-level=off", "--log-file-level=off"})
-    void levelOffHandlers(LaunchResult result, RawDistRootPath path) {
-        CLIResult cliResult = (CLIResult) result;
+    void levelOffHandlers(CLIResult cliResult, RawDistRootPath path) {
         var output = cliResult.getOutput();
 
         // log contains DB migration status + build time logs

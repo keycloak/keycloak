@@ -1,9 +1,6 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.common.base.CaseFormat;
 
@@ -64,10 +61,10 @@ public class CachingOptions {
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
-            .expectedValues(false)
+            .strictExpectedValues(false)
             .description("Define the default stack to use for cluster communication and node discovery.")
             .defaultValue(Stack.jdbc_ping)
-            .deprecatedValues(Stream.of(Stack.azure, Stack.ec2, Stack.google, Stack.tcp, Stack.udp, Stack.jdbc_ping_udp).map(Object::toString).collect(Collectors.toSet()), "Use 'jdbc-ping' instead")
+            .deprecatedValues("Use 'jdbc-ping' instead", Stack.azure, Stack.ec2, Stack.google, Stack.tcp, Stack.udp, Stack.jdbc_ping_udp)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)

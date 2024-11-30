@@ -38,7 +38,7 @@ image:images/recaptcha-config.png[]
 .. Enter the *reCAPTCHA Site Key* generated from the Google reCAPTCHA website.
 .. Enter the *reCAPTCHA Secret* generated from the Google reCAPTCHA website.
 .. Toggle **reCAPTCHA v3** according to your Site Key type: on for score-based reCAPTCHA (v3), off for challenge reCAPTCHA (v2).
-.. (Optional) Toggle *Use recaptcha.net* to use `www.recatcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
+.. (Optional) Toggle *Use recaptcha.net* to use `www.recaptcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
 . Authorize Google to use the registration page as an iframe.
 +
 NOTE: In {project_name}, websites cannot include a login page dialog in an iframe. This restriction is to prevent clickjacking attacks. You need to change the default HTTP response headers that is set in {project_name}.
@@ -86,7 +86,7 @@ image:images/recaptcha-enterprise-config.png[]
 .. Enter the *Recaptcha API Key* generated at the beginning of the procedure.
 .. Toggle **reCAPTCHA v3** according to your Site Key type: on for score-based reCAPTCHA (v3), off for challenge reCAPTCHA (v2).
 .. (Optional) Customize the *Min. Score Threshold* as you see fit. Set it to the minimum score, between 0.0 and 1.0, that a user should achieve on reCAPTCHA to be allowed to register. See https://cloud.google.com/recaptcha/docs/interpret-assessment-website#interpret_scores[interpret scores].
-.. (Optional) Toggle *Use recaptcha.net* to use `www.recatcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
+.. (Optional) Toggle *Use recaptcha.net* to use `www.recaptcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
 . Authorize Google to use the registration page as an iframe. See the last steps of <<procedure_recaptcha>> for a detailed procedure.
 
 [role="_additional-resources"]

@@ -338,8 +338,8 @@ Logging:
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when Console log handler is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -359,8 +359,8 @@ Logging:
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when File log handler is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when File log handler is activated.
 --log-file-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
@@ -387,8 +387,8 @@ Logging:
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when Syslog is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Syslog is activated.
 --log-syslog-max-length <max-length>
                      Set the maximum length, in bytes, of the message allowed to be sent. The
                        length includes the header and the message. If not set, the default value is

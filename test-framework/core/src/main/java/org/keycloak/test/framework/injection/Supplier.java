@@ -34,4 +34,7 @@ public interface Supplier<T, S extends Annotation> {
     default void onBeforeEach(InstanceContext<T, S> instanceContext) {
     }
 
+    default int order() {
+        return SupplierOrder.DEFAULT;
+    }
 }

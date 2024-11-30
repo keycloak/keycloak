@@ -7,6 +7,9 @@ if [ ! -f "$FILE" ]; then
   exit 0;
 fi
 
+# Change to the js directory.
+cd js
+
 # Exit if dependencies are not installed.
 if [ ! -d "node_modules" ]; then
   exit 0;

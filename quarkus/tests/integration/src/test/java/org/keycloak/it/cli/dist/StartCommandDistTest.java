@@ -27,6 +27,7 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAM
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -34,7 +35,6 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -42,41 +42,42 @@ import org.keycloak.it.utils.KeycloakDistribution;
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
+@Tag(DistributionTest.WIN)
 public class StartCommandDistTest {
 
     @DryRun
     @Test
     @Launch({ "start", "--hostname-strict=false" })
-    void failNoTls(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Key material not provided to setup HTTPS"),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    void failNoTls(CLIResult cliResult) {
+        assertTrue(cliResult.getErrorOutput().contains("Key material not provided to setup HTTPS"),
+                () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @DryRun
     @Test
     @Launch({ "start", "--spi-events-listener-jboss-logging-success-level" })
-    void failSpiArgMissingValue(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    void failSpiArgMissingValue(CLIResult cliResult) {
+        assertTrue(cliResult.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
+                () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @DryRun
     @Test
     @Launch({ "build", "--spi-events-listener-jboss-logging-success-level=debug" })
-    void warnSpiRuntimeAtBuildtime(LaunchResult result) {
-        assertTrue(result.getOutput().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    void warnSpiRuntimeAtBuildtime(CLIResult cliResult) {
+        assertTrue(cliResult.getOutput().contains("The following run time options were found, but will be ignored during build time: kc.spi-events-listener-jboss-logging-success-level"),
+                () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
     @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
-        CLIResult result = dist.run("build");
-        result.assertBuild();
+        CLIResult cliResult = dist.run("build");
+        cliResult.assertBuild();
 
-        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
-        result.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
+        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
     }
 
     @DryRun
@@ -84,41 +85,38 @@ public class StartCommandDistTest {
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
-        CLIResult result = dist.run("build");
-        result.assertBuild();
+        CLIResult cliResult = dist.run("build");
+        cliResult.assertBuild();
 
-        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
-        result.assertNoError("The following build time options");
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertNoError("The following build time options");
     }
 
     @DryRun
     @Test
     @Launch({ "--profile=dev", "start" })
-    void failUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    void failUsingDevProfile(CLIResult cliResult) {
+        assertTrue(cliResult.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
+                () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @Test
     @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false" })
-    void testHttpEnabled(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testHttpEnabled(CLIResult cliResult) {
         cliResult.assertStarted();
     }
 
     @DryRun
     @Test
     @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
-    void failBuildPropertyNotAvailable(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failBuildPropertyNotAvailable(CLIResult cliResult) {
         cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
-    void failIfAutoBuildUsingDevProfile(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
         assertEquals(4, cliResult.getErrorStream().size());
     }
@@ -128,8 +126,7 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "start", "--optimized" })
     @Order(1)
-    void failIfOptimizedUsedForFirstFastStartup(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failIfOptimizedUsedForFirstFastStartup(CLIResult cliResult) {
         cliResult.assertError("The '--optimized' flag was used for first ever server start.");
     }
 
@@ -137,23 +134,21 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
-    void failIfOptimizedUsedForFirstStartup(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void failIfOptimizedUsedForFirstStartup(CLIResult cliResult) {
         cliResult.assertError("The '--optimized' flag was used for first ever server start.");
     }
 
     @Test
     @Launch({ "start", "--http-enabled=true" })
-    void failNoHostnameNotSet(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: hostname is not configured; either configure hostname, or set hostname-strict to false"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    void failNoHostnameNotSet(CLIResult cliResult) {
+        assertTrue(cliResult.getErrorOutput().contains("ERROR: hostname is not configured; either configure hostname, or set hostname-strict to false"),
+                () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
     @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
-    void testStartUsingAutoBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartUsingAutoBuild(CLIResult cliResult) {
         cliResult.assertNoMessage("ignored during build");
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
@@ -168,16 +163,14 @@ public class StartCommandDistTest {
     @DryRun
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--db=postgres" })
-    void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartUsingOptimizedDoesNotAllowBuildOptions(CLIResult cliResult) {
         cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun
     @Test
     @Launch({ "start", "--http-enabled=true", "--cache-remote-host=localhost", "--hostname-strict=false", "--cache-remote-tls-enabled=false", "--transaction-xa-enabled=true" })
-    void testStartNoWarningOnDisabledRuntimeOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartNoWarningOnDisabledRuntimeOption(CLIResult cliResult) {
         cliResult.assertNoMessage("cache-remote-tls-enabled: Available only when remote host is set");
     }
 
@@ -185,8 +178,7 @@ public class StartCommandDistTest {
     @Test
     @WithEnvVars({"KC_LOG", "invalid"})
     @Launch({ "start", "--http-enabled=false", "--hostname-strict=false" })
-    void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartUsingOptimizedInvalidEnvOption(CLIResult cliResult) {
         cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog");
     }
 
@@ -251,9 +243,28 @@ public class StartCommandDistTest {
     @DryRun
     @Test
     @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/non-existing.conf", "start"})
-    void testInvalidConfigFileOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testInvalidConfigFileOption(CLIResult cliResult) {
         cliResult.assertError("File specified via '--config-file' or '-cf' option does not exist.");
         cliResult.assertError(String.format("Try '%s --help' for more information on the available options.", KeycloakDistribution.SCRIPT_CMD));
+    }
+
+    @RawDistOnly(reason = "Containers are immutable")
+    @Test
+    void testRuntimeValuesAreNotCaptured(KeycloakDistribution dist) {
+        // confirm that the invalid value prevents startup - if this passes, then we need to use a different
+        // spi provider
+        CLIResult cliResult = dist.run("start", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertError("Failed to start quarkus");
+
+        // if there was no auto-build use an explicit build to potentially capture the runtime default
+        if (!cliResult.getOutput().contains("Server configuration updated and persisted")) {
+            cliResult = dist.run("build", "--spi-events-listener-jboss-logging-success-level=invalid");
+            cliResult.assertBuild();
+        }
+
+        // the invalid value should not be the default
+        cliResult = dist.run("start", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertNoBuild();
+        cliResult.assertStarted();
     }
 }

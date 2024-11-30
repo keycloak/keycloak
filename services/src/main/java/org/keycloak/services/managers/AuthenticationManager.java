@@ -17,6 +17,8 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -97,7 +99,6 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -830,11 +831,7 @@ public class AuthenticationManager {
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         // remember me cookie should be persistent (hardcoded to 365 days for now)
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        try {
-            session.getProvider(CookieProvider.class).set(CookieType.LOGIN_HINT, "username:" + URLEncoder.encode(username, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Failed to urlencode", e);
-        }
+        session.getProvider(CookieProvider.class).set(CookieType.LOGIN_HINT, "username:" + URLEncoder.encode(username, StandardCharsets.UTF_8));
     }
 
     public static String getRememberMeUsername(KeycloakSession session) {
@@ -843,11 +840,7 @@ public class AuthenticationManager {
             if (value != null) {
                 String[] s = value.split(":");
                 if (s[0].equals("username") && s.length == 2) {
-                    try {
-                        return URLDecoder.decode(s[1], "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException("Failed to urldecode", e);
-                    }
+                    return URLDecoder.decode(s[1], StandardCharsets.UTF_8);
                 }
             }
         }
@@ -1532,6 +1525,8 @@ public class AuthenticationManager {
                 }
             }
 
+            KeycloakContext context = session.getContext();
+
             if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
@@ -1542,6 +1537,9 @@ public class AuthenticationManager {
                         if (!isClientValid(offlineUserSession, client, token)) {
                             return null;
                         }
+                        context.setUserSession(offlineUserSession);
+                        context.setClient(client);
+                        context.setBearerToken(token);
                         return new AuthResult(user, offlineUserSession, token, client);
                     }
                 }
@@ -1549,7 +1547,7 @@ public class AuthenticationManager {
 
                 if (userSession != null) {
                     String userSessionId = userSession.getId();
-                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), newSession -> {
+                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), context, newSession -> {
                         RealmModel realmModel = newSession.realms().getRealm(realm.getId());
                         UserSessionModel userSessionModel = newSession.sessions().getUserSession(realmModel, userSessionId);
                         backchannelLogout(newSession, realmModel, userSessionModel, uriInfo, connection, headers, true);
@@ -1572,7 +1570,12 @@ public class AuthenticationManager {
                 if (!isClientValid(userSession, client, token)) {
                     return null;
                 }
+                context.setClient(client);
+                context.setBearerToken(token);
             }
+
+            context.setUserSession(userSession);
+
             return new AuthResult(user, userSession, token, client);
         } catch (VerificationException e) {
             logger.debugf("Failed to verify identity token: %s", e.getMessage());
@@ -1678,4 +1681,36 @@ public class AuthenticationManager {
         return HashUtils.sha256UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
     }
 
+    public static String getRequestedScopes(KeycloakSession session) {
+        return getRequestedScopes(session, session.getContext().getClient());
+    }
+
+    public static String getRequestedScopes(KeycloakSession session, ClientModel client) {
+        KeycloakContext context = session.getContext();
+        Token bearerToken = context.getBearerToken();
+
+        if (bearerToken != null && TokenCategory.ACCESS.equals(bearerToken.getCategory())) {
+            return AccessToken.class.cast(bearerToken).getScope();
+        }
+
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+
+        if (authenticationSession != null) {
+            return authenticationSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+        }
+
+        UserSessionModel userSession = context.getUserSession();
+
+        if (userSession == null) {
+            return null;
+        }
+
+        Map<String, AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions();
+
+        return clientSessions.values().stream().filter(c -> c.getClient().equals(client))
+                .map((c) -> c.getNotes().get(OIDCLoginProtocol.SCOPE_PARAM))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
 }

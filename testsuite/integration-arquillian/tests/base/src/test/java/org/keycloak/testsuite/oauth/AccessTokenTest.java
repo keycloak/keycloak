@@ -102,6 +102,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1024,7 +1025,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
             post.setHeader("Authorization", "Negotiate something-which-will-be-ignored");
 
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
@@ -1474,7 +1475,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
             post.setHeader("Authorization", authorization);
 
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));

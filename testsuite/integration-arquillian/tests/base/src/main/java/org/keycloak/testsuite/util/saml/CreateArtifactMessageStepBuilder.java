@@ -19,9 +19,9 @@ import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,12 +67,7 @@ public class CreateArtifactMessageStepBuilder implements SamlClient.Step {
         parameters.add(new BasicNameValuePair(GeneralConstants.SAML_ARTIFACT_KEY, lastArtifact));
         LOG.infof("Sending POST request with artifact %s", lastArtifact);
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return post;

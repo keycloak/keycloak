@@ -44,11 +44,13 @@ import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
@@ -291,6 +293,21 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.REASON, errorMessage);
         event.error(Errors.INVALID_REQUEST);
         throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+    }
+
+    public void checkParDPoPParams() throws AuthorizationCheckException {
+        DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dpop == null) {
+            return;
+        }
+        if (request.getDpopJkt() != null) {
+            if (!request.getDpopJkt().equals(dpop.getThumbprint())) {
+                String errorMessage = "DPoP Proof public key thumbprint does not match dpop_jkt.";
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+            }
+        }
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4

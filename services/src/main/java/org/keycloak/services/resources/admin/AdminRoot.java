@@ -221,7 +221,9 @@ public class AdminRoot {
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            if (logger.isDebugEnabled()) {
+                logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
+            }
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
@@ -265,7 +267,7 @@ public class AdminRoot {
         }
 
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();

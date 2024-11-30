@@ -8,8 +8,8 @@ runs:
       id: tooling-versions
       shell: bash
       run: |
-        echo "node=$(cat pom.xml | grep '<node.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 2-)" >> $GITHUB_OUTPUT
-        echo "pnpm=$(cat pom.xml | grep '<pnpm.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 1-)" >> $GITHUB_OUTPUT
+        echo "node=$(cat js/pom.xml | grep '<node.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 2-)" >> $GITHUB_OUTPUT
+        echo "pnpm=$(cat js/pom.xml | grep '<pnpm.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 1-)" >> $GITHUB_OUTPUT
 
     # Downloading Node.js often fails due to network issues, therefore we cache the artifacts downloaded by the frontend plugin.
     - uses: actions/cache@v4

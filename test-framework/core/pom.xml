@@ -44,12 +44,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-junit5</artifactId>
         </dependency>
-        <!-- Temporary dependency until we figure out how we want to support OAuth -->
-        <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.13</version>
-        </dependency>
     </dependencies>
 
     <build>

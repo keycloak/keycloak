@@ -66,7 +66,7 @@ The `AppServerTestEnricher` then ensures the corresponding server is started dur
 The app-servers with installed Keycloak adapter are prepared in `servers/app-server` submodules, activated by `-Papp-server-MODULE` or `-Dapp.server=MODULE`
 [More details.](servers/app-server/README.md)
 
-NOTE: Some corresponding adapter test modules are in `tests/other/adapters` submodules, and are activated by the same profiles. It will be tranferred into base testsuite.
+NOTE: Some corresponding adapter test modules are in `tests/other/adapters` submodules, and are activated by the same profiles. It will be transferred into base testsuite.
 
 ## SuiteContext and TestContext
 

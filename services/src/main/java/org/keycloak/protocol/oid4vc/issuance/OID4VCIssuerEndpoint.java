@@ -513,7 +513,7 @@ public class OID4VCIssuerEndpoint {
     private String generateCodeForSession(int expiration, AuthenticatedClientSessionModel clientSession) {
         String codeId = SecretGenerator.getInstance().randomString();
         String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expiration, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null,
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expiration, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null, null,
                 clientSession.getUserSession().getId());
 
         return OAuth2CodeParser.persistCode(session, clientSession, oAuth2Code);

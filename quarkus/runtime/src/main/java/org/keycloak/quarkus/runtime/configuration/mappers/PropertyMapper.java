@@ -41,7 +41,6 @@ import io.smallrye.config.Expressions;
 
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
-import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
@@ -54,26 +53,6 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.utils.StringUtil;
 
 public class PropertyMapper<T> {
-
-    static PropertyMapper<?> IDENTITY = new PropertyMapper<>(
-            new OptionBuilder<>(null, String.class).build(),
-            null,
-            () -> false,
-            "",
-            null,
-            null,
-            null,
-            null,
-            false,
-            null,
-            null,
-            () -> false,
-            "") {
-        @Override
-        public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
-            return context.proceed(name);
-        }
-    };
 
     private final Option<T> option;
     private final String to;
@@ -526,10 +505,12 @@ public class PropertyMapper<T> {
 
     void validateExpectedValues(ConfigValue configValue, String v) {
         List<String> expectedValues = getExpectedValues();
-        if (!expectedValues.isEmpty() && !expectedValues.contains(v) && getOption().isStrictExpectedValues()) {
+        if (!expectedValues.isEmpty() && getOption().isStrictExpectedValues() && !expectedValues.contains(v)
+                && (!getOption().isCaseInsensitiveExpectedValues()
+                        || !expectedValues.stream().anyMatch(v::equalsIgnoreCase))) {
             throw new PropertyException(
                     String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
-                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues)));
+                            ShortErrorMessageHandler.getExpectedValuesMessage(expectedValues, getOption().isCaseInsensitiveExpectedValues())));
         }
     }
 

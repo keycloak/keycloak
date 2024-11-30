@@ -25,7 +25,6 @@ import org.keycloak.it.junit5.extension.TestProvider;
 import com.acme.provider.legacy.jpa.user.CustomUserProvider;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -34,8 +33,7 @@ public class CustomUserProviderDistTest {
     @Test
     @TestProvider(CustomUserProvider.class)
     @Launch({ "start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false" })
-    void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
         cliResult.assertMessage("KC-SERVICES0047: custom_jpa (com.acme.provider.legacy.jpa.user.MyUserProviderFactory) is implementing the internal SPI user. This SPI is internal and may change without notice");
         cliResult.assertStartedDevMode();
     }

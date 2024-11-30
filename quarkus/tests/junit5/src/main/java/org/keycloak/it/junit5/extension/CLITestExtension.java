@@ -255,7 +255,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
 
-        if (type == LaunchResult.class) {
+        if (type == LaunchResult.class || type == CLIResult.class) {
             boolean isDistribution = getDistributionConfig(context) != null;
 
             if (isDistribution) {
@@ -290,7 +290,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
+        return type == LaunchResult.class || type == CLIResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
     }
 
     private void configureProfile(ExtensionContext context) {

@@ -5,20 +5,19 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.EventType;
 import org.keycloak.test.framework.annotations.InjectEvents;
-import org.keycloak.test.framework.annotations.InjectOAuthClient;
-import org.keycloak.test.framework.ui.annotations.InjectPage;
-import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.events.Events;
-import org.keycloak.test.framework.oauth.OAuthClient;
+import org.keycloak.test.framework.oauth.nimbus.OAuthClient;
+import org.keycloak.test.framework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.test.framework.ui.annotations.InjectPage;
+import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
 import org.keycloak.test.framework.ui.page.LoginPage;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
 import java.net.URL;
 
-@KeycloakIntegrationTest(config = EventsTest.ServerConfig.class)
+@KeycloakIntegrationTest
 public class EventsTest {
 
     @InjectEvents
@@ -48,13 +47,6 @@ public class EventsTest {
         oAuthClient.clientCredentialGrant();
 
         Assertions.assertEquals(EventType.CLIENT_LOGIN, events.poll().getType());
-    }
-
-    public static class ServerConfig implements KeycloakTestServerConfig {
-        @Override
-        public boolean enableSysLog() {
-            return true;
-        }
     }
 
 }

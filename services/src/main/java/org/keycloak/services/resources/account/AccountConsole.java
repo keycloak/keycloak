@@ -13,6 +13,7 @@ import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.models.AccountRoles;
@@ -30,7 +31,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
-import org.keycloak.services.resources.AbstractSecuredLocalService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.util.ViteManifest;
@@ -47,6 +47,7 @@ import org.keycloak.utils.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -143,6 +144,12 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
         map.put("resourceVersion", Version.RESOURCES_VERSION);
 
+        var requestedScopes = AuthenticationManager.getRequestedScopes(session, realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+
+        if (requestedScopes != null) {
+            map.put(OIDCLoginProtocol.SCOPE_PARAM, requestedScopes);
+        }
+
         String[] referrer = getReferrer();
         if (referrer != null) {
             map.put("referrer", referrer[0]);
@@ -164,7 +171,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("theme", (Function<String, String>) file -> {
             try {
                 final InputStream resource = theme.getResourceAsStream(file);
-                return new Scanner(resource, "UTF-8").useDelimiter("\\A").next();
+                return new Scanner(resource, StandardCharsets.UTF_8).useDelimiter("\\A").next();
             } catch (IOException e) {
                 throw new RuntimeException("could not load file", e);
             }
@@ -352,5 +359,4 @@ public class AccountConsole implements AccountResourceProvider {
 
         return new String[]{referrer, referrerName, referrerUri};
     }
-
 }

@@ -25,22 +25,19 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public abstract class BasicDatabaseTest {
 
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
-    void testSuccessful(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    protected void testSuccessful(CLIResult cliResult) {
         cliResult.assertStarted();
     }
 
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
-    void testWrongUsername(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testWrongUsername(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongUsername(cliResult);
     }
@@ -49,8 +46,7 @@ public abstract class BasicDatabaseTest {
 
     @Test
     @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
-    void testWrongPassword(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testWrongPassword(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongPassword(cliResult);
     }
@@ -60,8 +56,7 @@ public abstract class BasicDatabaseTest {
     @Order(1)
     @Test
     @Launch({ "export", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export"})
-    public void testExportSucceeds(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    public void testExportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("Full model export requested");
         cliResult.assertMessage("Export finished successfully");
     }
@@ -69,8 +64,7 @@ public abstract class BasicDatabaseTest {
     @Order(2)
     @Test
     @Launch({ "import", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export" })
-    void testImportSucceeds(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("target/export");
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");

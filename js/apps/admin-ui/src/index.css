@@ -30,3 +30,7 @@ input[type="checkbox"] {
   color: var(--pf-v5-global--primary-color--100);
   width: fit-content;
 }
+
+#app {
+  overflow: hidden;
+}

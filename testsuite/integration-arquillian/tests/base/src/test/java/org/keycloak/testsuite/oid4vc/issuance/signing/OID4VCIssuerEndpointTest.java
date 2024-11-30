@@ -255,7 +255,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         AuthenticatedClientSessionModel authenticatedClientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
         String codeId = SecretGenerator.getInstance().randomString();
         String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, Time.currentTime() + 6000, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null,
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, Time.currentTime() + 6000, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null, null,
                 authenticatedClientSessionModel.getUserSession().getId());
 
         String oauthCode = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oAuth2Code);

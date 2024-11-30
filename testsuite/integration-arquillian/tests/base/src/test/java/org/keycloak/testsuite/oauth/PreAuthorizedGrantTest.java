@@ -39,6 +39,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -87,7 +88,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         OAuthClient.AccessTokenResponse accessTokenResponse = new OAuthClient.AccessTokenResponse(httpClient.execute(post));
@@ -99,7 +100,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
         parameters.add(new BasicNameValuePair("pre-authorized_code", preAuthorizedCode));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return new OAuthClient.AccessTokenResponse(httpClient.execute(post));

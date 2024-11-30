@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -25,17 +26,16 @@ import org.keycloak.it.junit5.extension.TestProvider;
 import com.acme.provider.legacy.jpa.entity.CustomJpaEntityProvider;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
+@Tag(DistributionTest.SMOKE)
 public class CustomJpaEntityProviderDistTest {
 
     @Test
     @TestProvider(CustomJpaEntityProvider.class)
     @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug" })
-    void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
         cliResult.assertStringCount("name: user-store", 1);
         cliResult.assertStringCount("com.acme.provider.legacy.jpa.entity.Realm", 1);
         cliResult.assertStartedDevMode();

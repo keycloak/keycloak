@@ -94,6 +94,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collection;
@@ -401,7 +402,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             JWEEncryptionProvider encryptionProvider = encAlgorithm != null ? getJweEncryptionProvider(encAlgorithm) :
                     getJweEncryptionProvider(JWEConstants.A128CBC_HS256);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, encryptedResponse, algorithmProvider, encryptionProvider);
-            String jwePayload = new String(decodedString, "UTF-8");
+            String jwePayload = new String(decodedString, StandardCharsets.UTF_8);
 
             UserInfo userInfo = null;
             // verify JWS
@@ -707,7 +708,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
-            testingClient.testing().removeUserSessions("test");
+            testingClient.testing().removeExpired("test");
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 

@@ -70,6 +70,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
         onLoad: "check-sso",
         pkceMethod: "S256",
         responseMode: "query",
+        scope: environment.scope,
       });
 
     init()

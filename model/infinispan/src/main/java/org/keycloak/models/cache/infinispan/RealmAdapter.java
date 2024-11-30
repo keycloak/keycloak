@@ -53,7 +53,6 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1811,8 +1810,8 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isOrganizationsEnabled() {
-        if (isUpdated()) return featureAwareIsOrganizationsEnabled(updated.isOrganizationsEnabled());
-        return featureAwareIsOrganizationsEnabled(cached.isOrganizationsEnabled());
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, updated.isOrganizationsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, cached.isOrganizationsEnabled());
     }
 
     @Override
@@ -1822,9 +1821,21 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isAdminPermissionsEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, updated.isAdminPermissionsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, cached.isAdminPermissionsEnabled());
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsEnabled(adminPermissionsEnabled);
+    }
+
+    @Override
     public boolean isVerifiableCredentialsEnabled() {
-        if (isUpdated()) return featureVerifiableCredentialsEnabled(updated.isVerifiableCredentialsEnabled());
-        return featureVerifiableCredentialsEnabled(cached.isVerifiableCredentialsEnabled());
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, updated.isVerifiableCredentialsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, cached.isVerifiableCredentialsEnabled());
     }
 
     @Override
@@ -1833,13 +1844,8 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
 
-    private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
-        return isOrganizationsEnabled;
-    }
-
-    private boolean featureVerifiableCredentialsEnabled(boolean isVerifiableCredentialsEnabled) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) return false;
-        return isVerifiableCredentialsEnabled;
+    private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {
+        if (!Profile.isFeatureEnabled(feature)) return false;
+        return isEnabled;
     }
 }

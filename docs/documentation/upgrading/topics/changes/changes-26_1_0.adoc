@@ -19,6 +19,11 @@ The following APIs for the JavaScript Authorization client are deprecated and wi
 
 These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.
 
+= Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
+
+`getAll()` methods in `Organizations` and `OrganizationMembers` APIs are now deprecated and will be removed in the next major release.
+Instead, use corresponding `list(first, max)` methods in `Organizations` and `OrganizationMembers` APIs.
+
 = Virtual Threads enabled for Infinispan and JGroups thread pools
 
 Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
@@ -52,15 +57,18 @@ Users should use the TCP based `jdbc-ping` stack as a direct replacement.
 When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
 See the Javadoc for a detailed description.
 
-= Updated format of KEYCLOAK_SESSION cookie
+= Updated format of KEYCLOAK_SESSION cookie and AUTH_SESSION_ID cookie
 
-The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie
-contains user session ID, which is hashed by SHA-256 and URL encoded. This can affect you just in case when implementing your own providers and relying on the format of internal {project_name}
-cookies.
+The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie contains user session ID, which is hashed by SHA-256 and URL encoded.
+
+
+The format of `AUTH_SESSION_ID` cookie was updated to include a signature of the auth session id to ensure its integrity through signature verification. The new format is `base64(auth_session_id.auth_session_id_signature)`. With this update, the old format will no longer be accepted, meaning that old auth sessions will no longer be valid. This change has no impact on user sessions.
+
+These changes can affect you just in case when implementing your own providers and relying on the format of internal Keycloak cookies.
 
 = Removal of robots.txt file
 
-The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overidden per-realm if a different behaviour is needed.
+The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overridden per-realm if a different behaviour is needed.
 
 = Offline access removes the associated online session if the `offline_scope` is requested in the initial exchange
 
@@ -78,3 +86,15 @@ Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address
 
 In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
 expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.
+
+= Imported key providers check and passivate keys with a expired cetificate
+
+The key providers that allow to import externally generated keys (`rsa` and `java-keystore` factories) now check the validity of the associated certificate if present. Therefore a key with a certificate that is expired cannot be imported in {project_name} anymore. If the certificate expires at runtime, the key is converted into a passive key (enabled but not active). A passive key is not used for new tokens, but it is still valid for validating previous issued tokens.
+
+The default `generated` key providers generate a certificate valid for 10 years (the types that have or can have an associated certificate). Because of the long validity and the recommendation to rotate keys frequently, the generated providers do not perform this check.
+
+= Sign out all active sessions in admin console now effectively removes all sessions
+
+In previous versions, clicking on `Sign out all active sessions` in the admin console resulted in the removal of regular sessions only. Offline sessions would still be displayed despite being effectively invalidated.
+
+This has been changed and now all sessions, regular and offline, are removed when signing out of all active sessions.

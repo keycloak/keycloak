@@ -110,6 +110,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setOrganizationsEnabled(boolean organizationsEnabled);
 
+    boolean isAdminPermissionsEnabled();
+
+    void setAdminPermissionsEnabled(boolean adminPermissionsEnabled);
+
     boolean isVerifiableCredentialsEnabled();
 
     void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);

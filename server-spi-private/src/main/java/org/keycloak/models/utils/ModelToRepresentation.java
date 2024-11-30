@@ -122,6 +122,10 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
 
         REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -405,6 +409,7 @@ public class ModelToRepresentation {
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
+        rep.setAdminPermissionsEnabled(realm.isAdminPermissionsEnabled());
         rep.setVerifiableCredentialsEnabled(realm.isVerifiableCredentialsEnabled());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
@@ -930,7 +935,9 @@ public class ModelToRepresentation {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
-            rep.setAuthenticatorConfig(config.getAlias());
+            if (config != null) {
+                rep.setAuthenticatorConfig(config.getAlias());
+            }
         }
         rep.setAuthenticator(model.getAuthenticator());
         rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
@@ -1030,6 +1037,8 @@ public class ModelToRepresentation {
     }
 
     public static ResourceServerRepresentation toRepresentation(ResourceServer model, ClientModel client) {
+        RealmModel realm = client.getRealm();
+
         ResourceServerRepresentation server = new ResourceServerRepresentation();
 
         server.setId(model.getId());
@@ -1038,7 +1047,7 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
-        server.setAuthorizationSchema(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) ? FineGrainedAdminPermissionsAuthorizationSchema.INSTANCE : null);
+        server.setAuthorizationSchema(KeycloakModelUtils.isAdminPermissionsEnabled(realm) ? AdminPermissionsAuthorizationSchema.INSTANCE : null);
 
         return server;
     }

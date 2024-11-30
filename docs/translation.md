@@ -65,7 +65,7 @@ If you have any questions or need assistance, feel free to reach out to the lang
 - The Keycloak-Team will then
     - enable the specific language
     - invite the two volunteers
-    - comment on discussion thread, that the langauge has been enabled
+    - comment on discussion thread, that the language has been enabled
 - Weblate synchronizes daily, so it may take up to 24 hours after enabling the language before you can start your first translations 
 
 ### Translation status

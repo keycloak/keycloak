@@ -300,8 +300,8 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
         }
 
-        String orgaId = testRealm().organizations().getAll().get(0).getId();
-        String orgbId = testRealm().organizations().getAll().get(1).getId();
+        String orgaId = testRealm().organizations().list(-1, -1).get(0).getId();
+        String orgbId = testRealm().organizations().list(-1, -1).get(1).getId();
 
         for (int i = 0; i < 5; i++) {
             final String aliasA = "org-idp-" + i;
@@ -376,7 +376,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
         }
 
-        String orgaId = testRealm().organizations().getAll().get(0).getId();
+        String orgaId = testRealm().organizations().list(-1, -1).get(0).getId();
         for (int i = 10; i < 20; i++) {
             testRealm().organizations().get(orgaId).identityProviders().addIdentityProvider("idp-alias-" + i);
         }

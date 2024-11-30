@@ -97,7 +97,6 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.11.Final</infinispan.version>
-        <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.12.Final (IPROTO-395) -->
         <protostream.plugin.version>5.0.12.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
@@ -156,15 +155,15 @@
         <twitter4j.version>4.1.2</twitter4j.version>
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
-        <mysql.version>8.0</mysql.version>
+        <mysql.version>8.4</mysql.version>
         <mysql.container>mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>16</postgresql.version>
+        <postgresql.version>17</postgresql.version>
         <postgresql.container>postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.4</postgresql-jdbc.version>
-        <mariadb.version>10.11</mariadb.version>
+        <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
@@ -220,11 +219,6 @@
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
-        <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
-        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
-
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
 
@@ -237,13 +231,6 @@
         <server.output.dir.prefix>keycloak</server.output.dir.prefix>
         <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
         <server.output.dir.version>${project.version}</server.output.dir.version>
-
-        <!-- Frontend -->
-        <node.version>v20.18.0</node.version>
-        <pnpm.version>9.12.2</pnpm.version>
-        <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
-        <!-- The clean step is skipped on Windows -->
-        <js.skip.clean>false</js.skip.clean>
 
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
@@ -950,6 +937,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-themes-vendor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1469,68 +1461,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <configuration>
-                        <followSymLinks>false</followSymLinks>
-                        <!-- Skip this step if on windows -->
-                        <skip>${js.skip.clean}</skip>
-                        <filesets>
-                            <fileset>
-                                <directory>${basedir}</directory>
-                                <includes>
-                                    <include>**/.wireit/**</include>
-                                    <include>**/node_modules/**</include>
-                                </includes>
-                            </fileset>
-                            <!-- include all non-maven projects here as well -->
-                            <fileset>
-                                <directory>js/apps/keycloak-server</directory>
-                                <includes>
-                                    <include>server/**</include>
-                                </includes>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.github.eirslett</groupId>
-                    <artifactId>frontend-maven-plugin</artifactId>
-                    <version>${frontend.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>install-node-and-pnpm</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>pnpm-install</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>${pnpm.args.install}</arguments>
-                                <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>pnpm-build</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>build</arguments>
-                            </configuration>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <nodeVersion>${node.version}</nodeVersion>
-                        <pnpmVersion>${pnpm.version}</pnpmVersion>
-                        <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
-                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
                     <version>${project.version}</version>
@@ -1594,6 +1524,12 @@
                 <wildfly.version>${eap8.version}</wildfly.version>
                 <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>non-metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
         </profile>
         <profile>
@@ -1609,6 +1545,12 @@
                 <wildfly.version>${upstream.wildfly.version}</wildfly.version>
                 <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 
         </profile>
@@ -1734,18 +1676,6 @@
             </activation>
             <properties>
                 <keycloak.crypto.artifactId>keycloak-crypto-fips1402</keycloak.crypto.artifactId>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>clean-when-not-on-windows</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <js.skip.clean>true</js.skip.clean>
             </properties>
         </profile>
     </profiles>

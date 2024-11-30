@@ -109,7 +109,7 @@ public class ResourceServerRepresentation {
         return decisionStrategy;
     }
 
-    public void setAuthorizationSchema(FineGrainedAdminPermissionsAuthorizationSchema authorizationSchema) {
+    public void setAuthorizationSchema(AuthorizationSchema authorizationSchema) {
         this.authorizationSchema = authorizationSchema;
     }
 

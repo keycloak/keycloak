@@ -18,8 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -39,28 +39,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(DistributionTest.WIN)
 public class StartDevCommandDistTest {
 
     @DryRun
     @Test
     @Launch({ "start-dev" })
-    void testDevModeWarning(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testDevModeWarning(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
     }
 
     @DryRun
     @Test
     @Launch({ "start-dev", "--db=dev-mem" })
-    void testBuildPropertyAvailable(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testBuildPropertyAvailable(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @Launch({ "start-dev", "--debug", "--features=passkeys:v1" })
-    void testStartDevShouldStartTwoJVMs(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartDevShouldStartTwoJVMs(CLIResult cliResult) {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("passkeys");
@@ -69,8 +67,7 @@ public class StartDevCommandDistTest {
     @DryRun
     @Test
     @Launch({ "build", "--debug" })
-    void testBuildMustNotRunTwoJVMs(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testBuildMustNotRunTwoJVMs(CLIResult cliResult) {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 1);
         cliResult.assertBuild();
     }
@@ -78,8 +75,7 @@ public class StartDevCommandDistTest {
     @DryRun
     @Test
     @Launch({ "start-dev", "--verbose" })
-    void testVerboseAfterCommand(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testVerboseAfterCommand(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
     }
 
@@ -88,9 +84,10 @@ public class StartDevCommandDistTest {
     void testConfigKeystoreAbsolutePath(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-        assertTrue(cliResult.getOutput().contains("Listening on:"));
+
+        cliResult.assertMessage("DEBUG [org.hibernate");
+        cliResult.assertMessage("DEBUG [org.keycloak");
+        cliResult.assertMessage("Listening on:");
         cliResult.assertStartedDevMode();
     }
 

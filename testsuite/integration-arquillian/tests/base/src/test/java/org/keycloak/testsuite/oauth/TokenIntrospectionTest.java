@@ -67,7 +67,7 @@ import org.keycloak.util.TokenUtil;
 import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.utils.MediaType;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -663,14 +663,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         parameters.add(new BasicNameValuePair("token", "foo"));
         parameters.add(new BasicNameValuePair("token_type_hint", "access_token"));
 
-        UrlEncodedFormEntity formEntity;
-
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         try (CloseableHttpResponse response = HttpClientBuilder.create().build().execute(post)) {

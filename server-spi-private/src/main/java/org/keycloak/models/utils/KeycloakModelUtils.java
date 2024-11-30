@@ -85,6 +85,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -148,6 +149,23 @@ public final class KeycloakModelUtils {
         }
         // encode in base64 URL no padding (22 chars)
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Check if a string is a valid UUID.
+     * @param uuid The UUID string to verify
+     * @return true if the string is a valid uuid
+     */
+    public static boolean isValidUUID(String uuid) {
+        if (uuid == null) {
+            return false;
+        }
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -1167,4 +1185,7 @@ public final class KeycloakModelUtils {
         });
     }
 
+    public static boolean isAdminPermissionsEnabled(RealmModel realm) {
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) && realm.isAdminPermissionsEnabled();
+    }
 }

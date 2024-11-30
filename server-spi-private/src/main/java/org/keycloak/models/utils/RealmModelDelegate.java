@@ -1162,6 +1162,16 @@ public class RealmModelDelegate implements RealmModel {
     }
 
     @Override
+    public boolean isAdminPermissionsEnabled() {
+        return delegate.isAdminPermissionsEnabled();
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        delegate.setAdminPermissionsEnabled(adminPermissionsEnabled);
+    }
+
+    @Override
     public boolean isVerifiableCredentialsEnabled() {
         return delegate.isVerifiableCredentialsEnabled();
     }

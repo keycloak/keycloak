@@ -18,7 +18,6 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,6 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.acme.provider.legacy.jpa.user.CustomUserProvider;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
@@ -45,15 +43,14 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "--verbose", "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
-    void testStartAutoBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testStartAutoBuild(CLIResult cliResult) {
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " --verbose start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
-        assertFalse(cliResult.getOutput().contains("--cache"));
+        cliResult.assertNoMessage("--cache");
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
@@ -61,8 +58,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
-    void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testShouldNotReAugIfConfigIsSame(CLIResult cliResult) {
         cliResult.assertNoBuild();
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
@@ -71,8 +67,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
-    void testShouldReAugIfConfigChanged(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testShouldReAugIfConfigChanged(CLIResult cliResult) {
         cliResult.assertBuild();
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
@@ -81,8 +76,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(4)
-    void testShouldNotReAugIfSameDatabase(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testShouldNotReAugIfSameDatabase(CLIResult cliResult) {
         cliResult.assertNoBuild();
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
@@ -91,8 +85,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "build", "--db=postgres" })
     @Order(5)
-    void testBuildForReAugWhenAutoBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testBuildForReAugWhenAutoBuild(CLIResult cliResult) {
         cliResult.assertBuild();
     }
 
@@ -100,8 +93,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
-    void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testReAugWhenNoOptionAfterBuild(CLIResult cliResult) {
         cliResult.assertBuild();
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
@@ -110,8 +102,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false" })
     @Order(7)
-    void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(CLIResult cliResult) {
         cliResult.assertBuild();
     }
 
@@ -119,8 +110,7 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
-    void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(CLIResult cliResult) {
         cliResult.assertNoBuild();
     }
 
@@ -128,9 +118,8 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start-dev" })
     @Order(8)
-    void testStartDevFirstTime(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
+    void testStartDevFirstTime(CLIResult cliResult) {
+        cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertStartedDevMode();
     }
 
@@ -138,9 +127,8 @@ public class StartAutoBuildDistTest {
     @Test
     @Launch({ "start-dev" })
     @Order(9)
-    void testShouldNotReAugStartDevIfConfigIsSame(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
+    void testShouldNotReAugStartDevIfConfigIsSame(CLIResult cliResult) {
+        cliResult.assertNoMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertStartedDevMode();
     }
 

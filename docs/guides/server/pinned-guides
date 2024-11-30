@@ -16,10 +16,6 @@ configuration-provider
 logging
 fips
 management-interface
-health
-configuration-metrics
-event-metrics
-tracing
 importExport
 vault
 all-config

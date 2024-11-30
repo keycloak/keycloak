@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.forms;
 
 import java.io.Closeable;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -45,6 +47,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -1031,4 +1034,21 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         }
 
     }
+
+    @Test
+    public void testAuthSessionIdCookieFormat(){
+        oauth.openLoginForm();
+        String encodedBase64AuthSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
+        String decodedAuthSessionId = new String(Base64Url.decode(encodedBase64AuthSessionId), StandardCharsets.UTF_8);
+        Assert.assertTrue(decodedAuthSessionId.contains("."));
+        String authSessionId = decodedAuthSessionId.substring(0, decodedAuthSessionId.indexOf("."));
+        String signature = decodedAuthSessionId.substring(decodedAuthSessionId.indexOf(".") + 1);
+        Assert.assertNotNull(authSessionId);
+        Assert.assertTrue(KeycloakModelUtils.isValidUUID(authSessionId));
+        Assert.assertNotNull(signature);
+
+        testingClient.server().run(session-> {
+           Assert.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
+        });
+   }
 }

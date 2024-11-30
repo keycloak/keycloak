@@ -1,0 +1,61 @@
+{
+  "name": "root",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.14.4+sha512.c8180b3fbe4e4bca02c94234717896b5529740a6cbadf19fa78254270403ea2f27d4e1d46a08a0f56c89b63dc8ebfd3ee53326da720273794e6200fcf0d184ab",
+  "scripts": {
+    "prepare": "cd .. && husky js/.husky"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.2.3",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.10.1",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-cypress": "^4.1.0",
+    "eslint-plugin-lodash": "^8.0.0",
+    "eslint-plugin-mocha": "^10.5.0",
+    "eslint-plugin-playwright": "^2.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-compiler": "19.0.0-beta-df7b47d-20241124",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0",
+    "wireit": "^0.14.9"
+  },
+  "pnpm": {
+    "ignoredOptionalDependencies": [
+      "@types/c3",
+      "bootstrap-datepicker",
+      "bootstrap-sass",
+      "bootstrap-select",
+      "bootstrap-slider",
+      "bootstrap-switch",
+      "bootstrap-touchspin",
+      "c3",
+      "d3",
+      "datatables.net",
+      "datatables.net-colreorder",
+      "datatables.net-colreorder-bs",
+      "datatables.net-select",
+      "drmonty-datatables-colvis",
+      "eonasdan-bootstrap-datetimepicker",
+      "font-awesome-sass",
+      "google-code-prettify",
+      "jquery-match-height",
+      "moment",
+      "moment-timezone",
+      "patternfly-bootstrap-combobox",
+      "patternfly-bootstrap-treeview"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
+  }
+}

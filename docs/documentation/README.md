@@ -30,15 +30,15 @@ If you are using Windows, you need to run the following command with administrat
 
 To build Keycloak Documentation run:
 
-    mvn clean install -am -pl docs/documentation/dist -Pdocumentation
+    ./mvnw clean install -am -pl docs/documentation/dist -Pdocumentation
 
 Or to build a specific guide run:
 
-    mvn clean install -pl docs/documentation/GUIDE_DIR -Pdocumentation
+    ./mvnw clean install -pl docs/documentation/GUIDE_DIR -Pdocumentation
     
 By default, an archive version of the documentation is built. To build the latest build run:
 
-    mvn clean install ... -Platest,documentation
+    ./mvnw clean install ... -Platest,documentation
 
 You can then view the documentation by opening `docs/documentation/GUIDE_DIR/target/generated-docs/index.html`.
 

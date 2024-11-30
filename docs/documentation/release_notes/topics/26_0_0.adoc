@@ -23,7 +23,7 @@ The client libraries are supported with Java 8, so it is possible to use them wi
 
 Beginning with this release, we are testing and supporting client libraries with the same server version and a few previous major server versions.
 
-For details about supported versions of client libraries with server versions, see the link:{upgradingguide_link}#_upgrade_client_libraries[{upgradingguide_name}].
+For details about supported versions of client libraries with server versions, see the link:{upgradingclientlibs_link}[{upgradingclientlibs_name}].
 
 = User sessions persisted by default
 

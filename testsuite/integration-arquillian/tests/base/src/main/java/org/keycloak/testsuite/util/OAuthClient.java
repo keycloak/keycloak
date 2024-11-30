@@ -88,11 +88,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -202,6 +200,7 @@ public class OAuthClient {
     private String codeChallengeMethod;
     private String origin;
     private String dpopProof;
+    private String dpopJkt;
 
     private Map<String, String> customParameters;
 
@@ -298,6 +297,7 @@ public class OAuthClient {
         codeChallengeMethod = null;
         origin = null;
         dpopProof = null;
+        dpopJkt = null;
         customParameters = null;
         openid = true;
     }
@@ -542,13 +542,7 @@ public class OAuthClient {
         parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
         parameters.add(new BasicNameValuePair("token_type_hint", tokenType));
 
-        UrlEncodedFormEntity formEntity;
-
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
 
         post.setEntity(formEntity);
 
@@ -639,12 +633,7 @@ public class OAuthClient {
                         .forEach(paramName -> parameters.add(new BasicNameValuePair(paramName, customParameters.get(paramName))));
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -694,12 +683,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -725,12 +709,7 @@ public class OAuthClient {
 
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -766,12 +745,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -785,12 +759,7 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
             parameters.add(new BasicNameValuePair("code", preAuthorizedCode));
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -836,12 +805,7 @@ public class OAuthClient {
                 }
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AuthenticationRequestAcknowledgement(client.execute(post));
@@ -881,12 +845,7 @@ public class OAuthClient {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE));
         parameters.add(new BasicNameValuePair(AUTH_REQ_ID, authReqId));
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return new AccessTokenResponse(client.execute(post));
@@ -919,12 +878,7 @@ public class OAuthClient {
             post.addHeader("Origin", origin);
         }
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return client.execute(post);
@@ -945,12 +899,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, logoutToken));
         }
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return client.execute(post);
@@ -991,12 +940,7 @@ public class OAuthClient {
             post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return client.execute(post);
@@ -1045,12 +989,7 @@ public class OAuthClient {
             post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         try {
@@ -1090,12 +1029,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new DeviceAuthorizationResponse(client.execute(post));
@@ -1124,12 +1058,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
@@ -1263,6 +1192,12 @@ public class OAuthClient {
             if (customParameters != null) {
                 customParameters.keySet().stream().forEach(i -> parameters.add(new BasicNameValuePair(i, customParameters.get(i))));
             }
+            if (dpopJkt != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.DPOP_JKT, dpopJkt));
+            }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+            }
 
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
@@ -1301,7 +1236,7 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
                 Map responseJson = JsonSerialization.readValue(s, Map.class);
                 if (statusCode == 201) {
                     requestUri = (String) responseJson.get("request_uri");
@@ -1453,7 +1388,7 @@ public class OAuthClient {
         Map<String, String> m = new HashMap<>();
 
         String fragment = getCurrentUri().getRawFragment();
-        List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, Charset.forName("UTF-8"));
+        List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, StandardCharsets.UTF_8);
 
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
@@ -1570,6 +1505,9 @@ public class OAuthClient {
         }
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }
+        if (dpopJkt != null) {
+            b.queryParam(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
         }
         if (customParameters != null) {
             customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
@@ -1809,7 +1747,7 @@ public class OAuthClient {
             this.claims = null;
         } else {
             try {
-                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), StandardCharsets.UTF_8);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
@@ -1844,6 +1782,11 @@ public class OAuthClient {
 
     public OAuthClient dpopProof(String dpopProof) {
         this.dpopProof = dpopProof;
+        return this;
+    }
+
+    public OAuthClient dpopJkt(String dpopJkt) {
+        this.dpopJkt = dpopJkt;
         return this;
     }
 
@@ -1999,7 +1942,7 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
                 Map responseJson = JsonSerialization.readValue(s, Map.class);
                 if (statusCode == 200) {
                     authReqId = (String) responseJson.get("auth_req_id");
@@ -2301,7 +2244,7 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
                 Map responseJson = JsonSerialization.readValue(s, Map.class);
 
                 if (statusCode == 200) {

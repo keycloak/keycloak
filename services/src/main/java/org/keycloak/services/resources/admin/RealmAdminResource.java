@@ -412,7 +412,7 @@ public class RealmAdminResource {
     public Response updateRealm(final RealmRepresentation rep) {
         auth.realm().requireManageRealm();
 
-        logger.debug("updating realm: " + realm.getName());
+        logger.debugf("updating realm: %s", realm.getName());
 
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
@@ -747,7 +747,7 @@ public class RealmAdminResource {
     public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
         auth.realm().requireManageEvents();
 
-        logger.debug("updating realm events config: " + realm.getName());
+        logger.debugf("updating realm events config: %s", realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM)
                 .resourcePath(session.getContext().getUri()).representation(rep)

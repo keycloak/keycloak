@@ -774,16 +774,20 @@ public class Picocli {
 
         if (mapper.getType() != Boolean.class && !mapper.getExpectedValues().isEmpty()) {
             List<String> decoratedExpectedValues = mapper.getExpectedValues().stream().map(value -> {
-                if (mapper.getDeprecatedMetadata().isPresent() && mapper.getDeprecatedMetadata().get().getDeprecatedValues().contains(value)) {
+                if (mapper.getDeprecatedMetadata().filter(metadata -> metadata.getDeprecatedValues().contains(value)).isPresent()) {
                     return value + " (deprecated)";
                 }
                 return value;
             }).toList();
 
             var isStrictExpectedValues = mapper.getOption().isStrictExpectedValues();
+            var isCaseInsensitiveExpectedValues = mapper.getOption().isCaseInsensitiveExpectedValues();
             var printableValues = String.join(", ", decoratedExpectedValues) + (!isStrictExpectedValues ? ", or a custom one" : "");
 
-            transformedDesc.append(String.format(" Possible values are: %s.", printableValues));
+            transformedDesc.append(String.format(" Possible values are%s: %s.",
+                    isCaseInsensitiveExpectedValues ? " (case insensitive)" : "",
+                    printableValues)
+            );
         }
 
         mapper.getDefaultValue()

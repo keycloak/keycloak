@@ -8,7 +8,7 @@
             refreshPage = () => {
                 document.getElementById('isSetRetry').value = 'retry';
                 document.getElementById('executionValue').value = '${execution}';
-                document.getElementById('kc-error-credential-form').submit();
+                document.getElementById('kc-error-credential-form').requestSubmit();
             }
         </script>
 

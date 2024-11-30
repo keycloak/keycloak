@@ -843,51 +843,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void testClientWithoutRefreshToken() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
-
-        clientRep = createRep();
-        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE));
-
-        response = reg.oidc().create(clientRep);
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertFalse(config.isUseRefreshToken());
-    }
-
-    @Test
-    public void testClientWithRefreshToken() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
-
-        clientRep = createRep();
-        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN));
-
-        response = reg.oidc().create(clientRep);
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertTrue(config.isUseRefreshToken());
-    }
-
-    @Test
-    public void testClientWithoutGrantTypes() throws Exception {
-        OIDCClientRepresentation response = create();
-
-        assertTrue(CollectionUtil.collectionEquals(
-            Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes()));
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertTrue(config.isUseRefreshToken());
-    }
-
-    @Test
     public void testDefaultAcrValues() throws Exception {
         // Set realm acr-to-loa mapping
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();

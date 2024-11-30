@@ -68,7 +68,7 @@ import org.keycloak.testsuite.util.UserManager;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -753,12 +753,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             HttpPost post = new HttpPost(oauth.getResourceOwnerPasswordCredentialGrantUrl());
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "unsupported_grant_type"));
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
 

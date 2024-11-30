@@ -70,6 +70,8 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -249,7 +251,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -279,7 +281,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "legal", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -328,7 +330,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -376,7 +378,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_AND_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -422,7 +424,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_UNSIGNED_AND_UNENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -469,7 +471,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, response.getIssuedTokenType());
@@ -547,7 +549,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             response.close();
 
             String exchangedTokenString = accessTokenResponse.getToken();
-            String assertionXML = new String(Base64Url.decode(exchangedTokenString), "UTF-8");
+            String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
 
             // Verify issued_token_type
             Assert.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, accessTokenResponse.getOtherClaims().get(OAuth2Constants.ISSUED_TOKEN_TYPE));

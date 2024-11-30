@@ -5,10 +5,13 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.injection.InstanceContext;
+import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
-import org.keycloak.test.framework.server.KeycloakTestServer;
+import org.keycloak.test.framework.injection.SupplierOrder;
+import org.keycloak.test.framework.server.AbstractInterceptorHelper;
+import org.keycloak.test.framework.server.KeycloakServer;
 
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
@@ -26,21 +29,33 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
     public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
-        KeycloakTestServer server = instanceContext.getDependency(KeycloakTestServer.class);
+        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class);
 
         RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
-        RealmRepresentation realmRepresentation = config.getRepresentation();
+
+        RealmConfigBuilder realmConfigBuilder = config.configure(RealmConfigBuilder.create());
+
+        RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(instanceContext.getRegistry());
+        realmConfigBuilder = interceptor.intercept(realmConfigBuilder, instanceContext);
+
+        RealmRepresentation realmRepresentation = realmConfigBuilder.build();
 
         if (realmRepresentation.getRealm() == null) {
             String realmName = SupplierHelpers.createName(instanceContext);
             realmRepresentation.setRealm(realmName);
         }
 
+        if (realmRepresentation.getId() == null) {
+            realmRepresentation.setId(realmRepresentation.getRealm());
+        }
+
         String realmName = realmRepresentation.getRealm();
         instanceContext.addNote(REALM_NAME_KEY, realmName);
 
-        adminClient.realms().create(realmRepresentation);
+        if (instanceContext.getAnnotation().createRealm()) {
+            adminClient.realms().create(realmRepresentation);
+        }
 
         // TODO Token needs to be invalidated after creating realm to have roles for new realm in the token. Maybe lightweight access tokens could help.
         adminClient.tokenManager().invalidate(adminClient.tokenManager().getAccessTokenString());
@@ -51,12 +66,40 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
     public boolean compatible(InstanceContext<ManagedRealm, InjectRealm> a, RequestedInstance<ManagedRealm, InjectRealm> b) {
-        return a.getAnnotation().config().equals(b.getAnnotation().config());
+        if (!a.getAnnotation().config().equals(b.getAnnotation().config())) {
+            return false;
+        }
+
+        RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(a.getRegistry());
+        return interceptor.sameInterceptors(a);
     }
 
     @Override
     public void close(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
-        instanceContext.getValue().admin().remove();
+        if (instanceContext.getAnnotation().createRealm()) {
+            instanceContext.getValue().admin().remove();
+        }
+    }
+
+    @Override
+    public int order() {
+        return SupplierOrder.REALM;
+    }
+
+    private static class RealmConfigInterceptorHelper extends AbstractInterceptorHelper<RealmConfigInterceptor, RealmConfigBuilder> {
+
+        private RealmConfigInterceptorHelper(Registry registry) {
+            super(registry, RealmConfigInterceptor.class);
+        }
+
+        @Override
+        public RealmConfigBuilder intercept(RealmConfigBuilder value, Supplier<?, ?> supplier, InstanceContext<?, ?> existingInstance) {
+            if (supplier instanceof RealmConfigInterceptor interceptor) {
+                value = interceptor.intercept(value, existingInstance);
+            }
+            return value;
+        }
+
     }
 
 }
