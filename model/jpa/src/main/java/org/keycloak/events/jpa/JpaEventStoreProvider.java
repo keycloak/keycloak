@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -147,11 +148,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         eventEntity.setSessionId(event.getSessionId());
         eventEntity.setIpAddress(event.getIpAddress());
         eventEntity.setError(event.getError());
-        try {
-            eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
-        } catch (IOException ex) {
-            logger.error("Failed to write log details", ex);
-        }
+        setDetails(eventEntity::setDetailsJson, event.getDetails());
         return eventEntity;
     }
 
@@ -166,12 +163,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         event.setSessionId(eventEntity.getSessionId());
         event.setIpAddress(eventEntity.getIpAddress());
         event.setError(eventEntity.getError());
-        try {
-            Map<String, String> details = mapper.readValue(eventEntity.getDetailsJson(), mapType);
-            event.setDetails(details);
-        } catch (IOException ex) {
-            logger.error("Failed to read log details", ex);
-        }
+        setDetails(event::setDetails, eventEntity.getDetailsJson());
         return event;
     }
 
@@ -194,11 +186,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             adminEventEntity.setRepresentation(adminEvent.getRepresentation());
         }
 
-        try {
-            adminEventEntity.setDetailsJson(mapper.writeValueAsString(adminEvent.getDetails()));
-        } catch (IOException ex) {
-            logger.error("Failed to write log details", ex);
-        }
+        setDetails(adminEventEntity::setDetailsJson, adminEvent.getDetails());
 
         return adminEventEntity;
     }
@@ -222,12 +210,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             adminEvent.setRepresentation(adminEventEntity.getRepresentation());
         }
 
-        try {
-            Map<String, String> details = mapper.readValue(adminEventEntity.getDetailsJson(), mapType);
-            adminEvent.setDetails(details);
-        } catch (IOException ex) {
-            logger.error("Failed to read log details", ex);
-        }
+        setDetails(adminEvent::setDetails, adminEventEntity.getDetailsJson());
 
         return adminEvent;
     }
@@ -276,5 +259,25 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                     .executeUpdate();
             logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
+    }
+
+    private static void setDetails(Consumer<String> setter, Map<String, String> details) {
+        if (details != null) {
+            try {
+                setter.accept(mapper.writeValueAsString(details));
+            } catch (IOException e) {
+                logger.error("Failed to write event details", e);
+            }
+        }
+    }
+
+    private static void setDetails(Consumer<Map<String, String>> setter, String details) {
+        if (details != null) {
+            try {
+                setter.accept(mapper.readValue(details, mapType));
+            } catch (IOException e) {
+                logger.error("Failed to read event details", e);
+            }
+        }
     }
 }
