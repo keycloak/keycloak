@@ -102,7 +102,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
             configureEnvVars(context.getRequiredTestClass().getAnnotation(WithEnvVars.class));
             configureEnvVars(context.getRequiredTestMethod().getAnnotation(WithEnvVars.class));
-            boolean dryRun = context.getRequiredTestMethod().getAnnotation(DryRun.class) != null;
+            boolean dryRun = context.getRequiredTestClass().getAnnotation(DryRun.class) != null
+                    || context.getRequiredTestMethod().getAnnotation(DryRun.class) != null;
             if (dryRun && isRaw()) {
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");

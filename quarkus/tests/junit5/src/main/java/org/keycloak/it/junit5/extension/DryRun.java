@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 /**
  * {@link DryRun} is used to configure a non-running, non-augmenting distribution
  */
-@Target({ ElementType.METHOD })
+@Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DryRun {
 
