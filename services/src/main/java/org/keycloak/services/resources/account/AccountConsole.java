@@ -4,6 +4,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.ServerErrorException;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
@@ -144,7 +145,12 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
         map.put("resourceVersion", Version.RESOURCES_VERSION);
 
-        var requestedScopes = AuthenticationManager.getRequestedScopes(session, realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+        MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
+        var requestedScopes = queryParameters.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
+
+        if (requestedScopes == null) {
+            requestedScopes = AuthenticationManager.getRequestedScopes(session, realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+        }
 
         if (requestedScopes != null) {
             map.put(OIDCLoginProtocol.SCOPE_PARAM, requestedScopes);
@@ -270,6 +276,10 @@ public class AccountConsole implements AccountResourceProvider {
                 } catch (IOException | FreeMarkerException e) {
                     throw new ServerErrorException(Status.INTERNAL_SERVER_ERROR);
                 }
+            }
+            String scope = queryParameters.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
+            if (StringUtil.isNotBlank(scope)) {
+                uriBuilder.queryParam(OIDCLoginProtocol.SCOPE_PARAM, scope);
             }
         }
 

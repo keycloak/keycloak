@@ -20,6 +20,8 @@
 .Account Console
 image:images/account-console-intro.png[Account Console]
 
+You can also ask for additional scopes when calling the account console URL by setting the `scope` parameter in this format: _server-root_{kc_realms_path}/{realm-name}/account?scope=phone.
+
 === Configuring ways to sign in
 
 You can sign in to this console using basic authentication (a login name and password) or two-factor authentication. For two-factor authentication, use one of the following procedures.
