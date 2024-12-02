@@ -8,8 +8,8 @@
       <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
           <#list social.providers as p>
               <li class="${properties.kcFormSocialAccountListItemClass!}">
-                  <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
-                          type="button" href="${p.loginUrl}">
+                  <a data-id="social-link" id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
+                          type="button" href="#" data-link="${p.loginUrl}">
                         <#if p.iconClasses?has_content>
                             <span class="${p.iconClasses!}">${p.displayName!}</span>
                         <#else>
@@ -102,4 +102,19 @@
           </#list>
       </ul>
   </div>
+  <script type="module">
+    const clickOnce = (event) => {
+      event.preventDefault();
+      const element = event.target.parentElement
+      element.removeEventListener('click', clickOnce);
+      const location = element.getAttribute('data-link');
+      if (location) {
+        window.location.href = location;
+      }
+    };
+    const socialLinks = document.querySelectorAll('[data-id="social-link"]');
+    socialLinks.forEach((link) => {
+      link.addEventListener('click', clickOnce);
+    });
+  </script>
 </#macro>
