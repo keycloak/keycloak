@@ -6,7 +6,7 @@ export default class CreateRealmPage {
   #enabledSwitch = ".pf-v5-c-toolbar .pf-v5-c-switch__toggle";
   #createBtn = '.pf-v5-c-form__group:last-child button[type="submit"]';
   #cancelBtn = '.pf-v5-c-form__group:last-child button[type="button"]';
-  #codeEditor = ".pf-v5-c-code-editor__code";
+  #codeEditor = ".w-tc-editor-text";
 
   #getClearBtn() {
     return cy.findByText("Clear");
@@ -19,8 +19,6 @@ export default class CreateRealmPage {
   }
 
   fillCodeEditor() {
-    cy.get(".view-lines");
-    cy.get(this.#codeEditor).click();
     cy.get(this.#codeEditor).type("clear this field");
 
     return this;
