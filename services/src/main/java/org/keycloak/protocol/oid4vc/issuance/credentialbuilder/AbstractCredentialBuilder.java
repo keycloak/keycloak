@@ -26,10 +26,6 @@ public abstract class AbstractCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String locator() {
-        return computeLocator(getSupportedFormat());
-    }
-
-    public static String computeLocator(String format) {
-        return format;
+        return getSupportedFormat();
     }
 }

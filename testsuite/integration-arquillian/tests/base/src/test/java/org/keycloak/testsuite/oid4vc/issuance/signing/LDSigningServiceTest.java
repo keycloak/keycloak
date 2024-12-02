@@ -154,7 +154,7 @@ public class LDSigningServiceTest extends OID4VCTest {
                 kid);
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        LDCredentialBody ldCredentialBody = new LDCredentialBuilder()
+        LDCredentialBody ldCredentialBody = new LDCredentialBuilder(TEST_DID.toString())
                 .buildCredentialBody(testCredential, new CredentialBuildConfig());
 
         VCIssuanceContext context = new VCIssuanceContext().setCredentialBody(ldCredentialBody);

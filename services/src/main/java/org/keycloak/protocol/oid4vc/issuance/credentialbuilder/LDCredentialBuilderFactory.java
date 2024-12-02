@@ -46,6 +46,9 @@ public class LDCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
-        return new LDCredentialBuilder();
+        String credentialIssuer = CredentialBuilderUtils.getIssuerDid(session)
+                .orElseThrow(() -> new CredentialBuilderException("No issuerDid configured."));
+
+        return new LDCredentialBuilder(credentialIssuer);
     }
 }

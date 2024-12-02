@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -52,7 +51,6 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.LocatableProvider;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.AbstractCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
@@ -79,11 +77,11 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -114,7 +112,6 @@ public class OID4VCIssuerEndpoint {
 
     private Cors cors;
 
-    private static final String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
@@ -124,10 +121,8 @@ public class OID4VCIssuerEndpoint {
     public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
     private final KeycloakSession session;
     private final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator;
-    private final ObjectMapper objectMapper;
     private final TimeProvider timeProvider;
 
-    private final String issuerDid;
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
 
@@ -153,17 +148,14 @@ public class OID4VCIssuerEndpoint {
     private final boolean isIgnoreScopeCheck;
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
-                                String issuerDid,
                                 Map<String, CredentialBuilder> credentialBuilders,
                                 Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
-                                ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
+                                TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
                                 boolean isIgnoreScopeCheck) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
-        this.objectMapper = objectMapper;
         this.timeProvider = timeProvider;
-        this.issuerDid = issuerDid;
         this.credentialBuilders = credentialBuilders;
         this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
@@ -173,15 +165,12 @@ public class OID4VCIssuerEndpoint {
     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession) {
         this.session = keycloakSession;
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
-        this.objectMapper = new ObjectMapper();
         this.timeProvider = new OffsetTimeProvider();
 
         this.credentialBuilders = initSpiComponents(keycloakSession, CredentialBuilder.class);
         this.signingServices = initSpiComponents(keycloakSession, VerifiableCredentialsSigningService.class);
 
         RealmModel realmModel = keycloakSession.getContext().getRealm();
-        this.issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
-                .orElseThrow(() -> new VCIssuerException("No issuer-did  configured."));
         this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
@@ -259,7 +248,7 @@ public class OID4VCIssuerEndpoint {
 
         String sessionCode = generateCodeForSession(expiration, clientSession);
         try {
-            clientSession.setNote(sessionCode, objectMapper.writeValueAsString(theOffer));
+            clientSession.setNote(sessionCode, JsonSerialization.mapper.writeValueAsString(theOffer));
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
@@ -543,7 +532,8 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
         }
         try {
-            return objectMapper.readValue(result.getClientSession().getNote(sessionCode), CredentialsOffer.class);
+            String offer = result.getClientSession().getNote(sessionCode);
+            return JsonSerialization.mapper.readValue(offer, CredentialsOffer.class);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert JSON to POJO: %s", e);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
@@ -598,7 +588,6 @@ public class OID4VCIssuerEndpoint {
                                           AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
-                .setIssuer(URI.create(issuerDid))
                 .setIssuanceDate(Instant.ofEpochMilli(timeProvider.currentTimeMillis()))
                 .setType(List.of(credentialConfig.getScope()));
 
@@ -630,8 +619,7 @@ public class OID4VCIssuerEndpoint {
 
     private CredentialBuilder locateCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
         String format = credentialConfig.getFormat();
-        String locator = AbstractCredentialBuilder.computeLocator(format);
-        CredentialBuilder credentialBuilder = credentialBuilders.get(locator);
+        CredentialBuilder credentialBuilder = credentialBuilders.get(format);
 
         if (credentialBuilder == null) {
             throw new BadRequestException(String.format("No credential builder found for format %s", format));

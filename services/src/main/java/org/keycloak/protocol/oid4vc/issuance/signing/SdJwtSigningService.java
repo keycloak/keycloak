@@ -60,8 +60,8 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
     // vct sort of additional category for sd-jwt.
     private final VerifiableCredentialType vct;
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String issuerDid, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {
-        super(keycloakSession, keyId, Format.SD_JWT_VC, algorithmType, issuerDid);
+    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {
+        super(keycloakSession, keyId, Format.SD_JWT_VC, algorithmType);
         this.vcConfigId = vcConfigId;
         this.vct = credentialType;
 

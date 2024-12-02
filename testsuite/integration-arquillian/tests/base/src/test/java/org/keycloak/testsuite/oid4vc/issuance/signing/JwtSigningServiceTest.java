@@ -148,7 +148,10 @@ public class JwtSigningServiceTest extends OID4VCTest {
                 algorithm);
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        JwtCredentialBuilder builder = new JwtCredentialBuilder(new StaticTimeProvider(1000));
+        JwtCredentialBuilder builder = new JwtCredentialBuilder(
+                TEST_DID.toString(),
+                new StaticTimeProvider(1000)
+        );
         CredentialBody credentialBody = builder.buildCredentialBody(
                 testCredential,
                 new CredentialBuildConfig().setTokenJwsType("JWT")

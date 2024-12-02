@@ -30,6 +30,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.Proof;
@@ -51,11 +52,8 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
     private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     public static final String PROOF_JWT_TYP="openid4vci-proof+jwt";
 
-    protected final String issuerDid;
-
-    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, String format, String type, String issuerDid) {
+    protected JwtProofBasedSigningService(KeycloakSession keycloakSession, String keyId, String format, String type) {
         super(keycloakSession, keyId, format, type);
-        this.issuerDid = issuerDid;
     }
 
     /*
@@ -177,8 +175,9 @@ public abstract class JwtProofBasedSigningService<T> extends SigningService<T> {
         //                .filter(proofIssuer -> Objects.equals(azp, proofIssuer))
         //                .orElseThrow(() -> new VCIssuerException("Issuer claim must be null for preauthorized code else the clientId of the client making the request: " + azp));
 
-        // The issuer is the token / credential is the audience of the proof
-        String credentialIssuer = issuerDid;
+        // The audience of the proof MUST be the Credential Issuer Identifier.
+        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-jwt-proof-type
+        String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         Optional.ofNullable(proofPayload.getAudience()) // Ensure null-safety with Optional
                 .map(Arrays::asList) // Convert to List<String>
                 .filter(audiences -> audiences.contains(credentialIssuer)) // Check if the issuer is in the audience list

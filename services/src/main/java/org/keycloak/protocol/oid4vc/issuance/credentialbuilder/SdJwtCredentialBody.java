@@ -20,6 +20,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.util.JsonSerialization;
 
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class SdJwtCredentialBody implements CredentialBody {
     }
 
     public String sign(SignatureSignerContext signatureSignerContext) {
-        JsonNode claimSet = CredentialBuilderUtils.mapper.valueToTree(this.claimSet);
+        JsonNode claimSet = JsonSerialization.mapper.valueToTree(this.claimSet);
         SdJwt sdJwt = sdJwtBuilder
                 .withClaimSet(claimSet)
                 .withSigner(signatureSignerContext)

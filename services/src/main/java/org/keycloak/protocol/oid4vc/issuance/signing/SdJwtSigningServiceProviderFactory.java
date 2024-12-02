@@ -21,7 +21,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
@@ -52,14 +51,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
         String vct = model.get(SigningProperties.VC_VCT.getKey());
         String vcConfigId = model.get(SigningProperties.VC_CONFIG_ID.getKey());
 
-        String issuerDid = Optional.ofNullable(
-                        session
-                                .getContext()
-                                .getRealm()
-                                .getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
-                .orElseThrow(() -> new VCIssuerException("No issuerDid configured."));
-
-        return new SdJwtSigningService(session, keyId, algorithmType, issuerDid, kid,
+        return new SdJwtSigningService(session, keyId, algorithmType, kid,
                 VerifiableCredentialType.from(vct), CredentialConfigId.from(vcConfigId));
     }
 

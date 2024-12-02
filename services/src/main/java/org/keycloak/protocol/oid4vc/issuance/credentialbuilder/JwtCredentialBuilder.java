@@ -24,6 +24,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -32,9 +33,11 @@ public class JwtCredentialBuilder extends AbstractCredentialBuilder {
     private static final String VC_CLAIM_KEY = "vc";
     private static final String ID_CLAIM_KEY = "id";
 
+    private final String credentialIssuer;
     private final TimeProvider timeProvider;
 
-    public JwtCredentialBuilder(TimeProvider timeProvider) {
+    public JwtCredentialBuilder(String credentialIssuer, TimeProvider timeProvider) {
+        this.credentialIssuer = credentialIssuer;
         this.timeProvider = timeProvider;
     }
 
@@ -48,6 +51,9 @@ public class JwtCredentialBuilder extends AbstractCredentialBuilder {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
+        // Populate the issuer field of the VC
+        verifiableCredential.setIssuer(URI.create(credentialIssuer));
+
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
         // provided
         long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())

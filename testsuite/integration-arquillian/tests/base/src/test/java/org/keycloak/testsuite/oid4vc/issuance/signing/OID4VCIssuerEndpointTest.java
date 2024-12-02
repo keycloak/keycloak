@@ -269,7 +269,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
-        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(new StaticTimeProvider(1000));
+        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(
+                TEST_DID.toString(),
+                new StaticTimeProvider(1000));
+
         JwtSigningService jwtSigningService = new JwtSigningService(
                 session,
                 getKeyFromSession(session).getKid(),
@@ -291,11 +294,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     ) {
         return new OID4VCIssuerEndpoint(
                 session,
-                "did:web:issuer.org",
                 credentialBuilders,
                 signingServices,
                 authenticator,
-                JsonSerialization.mapper,
                 TIME_PROVIDER,
                 30,
                 true);

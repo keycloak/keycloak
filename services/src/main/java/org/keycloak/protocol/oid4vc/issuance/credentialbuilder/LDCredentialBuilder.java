@@ -21,6 +21,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
+import java.net.URI;
+
 /**
  * Builds verifiable credentials for the LDP_VC format.
  * {@see https://www.w3.org/TR/vc-data-model/}
@@ -29,6 +31,11 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
  */
 public class LDCredentialBuilder extends AbstractCredentialBuilder {
 
+    private final String credentialIssuer;
+
+    public LDCredentialBuilder(String credentialIssuer) {
+        this.credentialIssuer = credentialIssuer;
+    }
 
     @Override
     public String getSupportedFormat() {
@@ -42,6 +49,7 @@ public class LDCredentialBuilder extends AbstractCredentialBuilder {
     ) throws CredentialBuilderException {
         // The default credential format is basically this format,
         // so not much is to be done.
+        verifiableCredential.setIssuer(URI.create(credentialIssuer));
         return new LDCredentialBody(verifiableCredential);
     }
 }

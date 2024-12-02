@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 public class JwtCredentialBuilderTest extends CredentialBuilderTest {
 
     TimeProvider timeProvider = new StaticTimeProvider(1000);
-    JwtCredentialBuilder builder = new JwtCredentialBuilder(timeProvider);
+    JwtCredentialBuilder builder = new JwtCredentialBuilder(TEST_DID.toString(), timeProvider);
 
     @Test
     public void shouldBuildJwtCredentialSuccessfully() throws Exception {

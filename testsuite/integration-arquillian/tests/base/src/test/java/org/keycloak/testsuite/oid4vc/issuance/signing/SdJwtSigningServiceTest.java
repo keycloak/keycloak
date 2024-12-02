@@ -72,7 +72,6 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                                     session,
                                     getKeyFromSession(session).getKid(),
                                     "unsupported-algorithm",
-                                    "did:web:issuer.org",
                                     Optional.empty(),
                                     VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
                                     CredentialConfigId.from("test-credential")));
@@ -92,7 +91,6 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                                     session,
                                     "no-such-key",
                                     Algorithm.RS256,
-                                    "did:web:issuer.org",
                                     Optional.empty(),
                                     VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
                                     CredentialConfigId.from("test-credential")));
@@ -195,7 +193,6 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 session,
                 keyWrapper.getKid(),
                 algorithm,
-                "did:web:test.org",
                 keyId,
                 VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
                 CredentialConfigId.from("test-credential"));
