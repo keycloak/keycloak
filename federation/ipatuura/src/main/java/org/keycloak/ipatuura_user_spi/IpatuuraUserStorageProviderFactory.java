@@ -53,13 +53,16 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
         configMetadata = ProviderConfigurationBuilder.create()
                 /* SCIMv2 server url */
                 .property().name("scimurl").type(ProviderConfigProperty.STRING_TYPE).label("Ipatuura Server URL")
-                .helpText("Backend ipatuura server URL in the format: server.example.com:8080").add()
+                .helpText("Backend ipatuura server URL in the format: server.example.com:8080")
+                .add()
                 /* Login username, used to auth to make HTTP requests */
                 .property().name("loginusername").type(ProviderConfigProperty.STRING_TYPE).label("Login username")
-                .helpText("username to authenticate through the login page").add()
+                .helpText("Username to authenticate through the server")
+                .add()
                 /* Login password, used to auth to make HTTP requests */
-                .property().name("loginpassword").type(ProviderConfigProperty.STRING_TYPE).label("Login password")
-                .helpText("password to authenticate through the login page").add().build();
+                .property().name("loginpassword").type(ProviderConfigProperty.PASSWORD).label("Login password")
+                .helpText("password to authenticate through the server")
+                .secret(true).add().build();
     }
 
     @Override
