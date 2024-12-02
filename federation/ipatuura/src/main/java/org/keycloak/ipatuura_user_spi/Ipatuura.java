@@ -31,6 +31,7 @@ import org.keycloak.broker.provider.util.SimpleHttp.Response;
 
 import org.keycloak.ipatuura_user_spi.schemas.SCIMSearchRequest;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
+import org.keycloak.models.UserModel;
 
 public class Ipatuura {
     private static final Logger logger = Logger.getLogger(Ipatuura.class);
@@ -326,20 +327,20 @@ public class Ipatuura {
         List<SCIMUser.Resource.Email> emails = new ArrayList<SCIMUser.Resource.Email>();
 
         switch (attr) {
-            case "firstName":
+            case UserModel.FIRST_NAME:
                 name.setGivenName(value);
                 user.setName(name);
                 break;
-            case "lastName":
+            case UserModel.LAST_NAME:
                 name.setFamilyName(value);
                 user.setName(name);
                 break;
-            case "email":
+            case UserModel.EMAIL:
                 email.setValue(value);
                 emails.add(email);
                 user.setEmails(emails);
                 break;
-            case "userName":
+            case UserModel.USERNAME:
                 /* Changing username not supported */
                 break;
             default:
