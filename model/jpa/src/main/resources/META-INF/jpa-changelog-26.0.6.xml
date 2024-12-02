@@ -18,6 +18,11 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="26.0.6-34013">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ADMIN_EVENT_ENTITY" columnName="DETAILS_JSON" />
+            </not>
+        </preConditions>
         <addColumn tableName="ADMIN_EVENT_ENTITY">
             <column name="DETAILS_JSON" type="NCLOB" />
         </addColumn>
