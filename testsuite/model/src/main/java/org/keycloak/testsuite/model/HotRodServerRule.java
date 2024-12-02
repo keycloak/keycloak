@@ -184,4 +184,8 @@ public class HotRodServerRule extends ExternalResource {
     public DefaultCacheManager getHotRodCacheManager2() {
         return hotRodCacheManager2;
     }
+
+    public Stream<DefaultCacheManager> streamCacheManagers() {
+        return Stream.of(hotRodCacheManager, hotRodCacheManager2);
+    }
 }
