@@ -471,7 +471,7 @@ describe("User creation", () => {
     listingPage.searchItem(itemId).itemExist(itemId);
     listingPage.deleteItemFromSearchBar(itemId);
 
-    modalUtils.checkModalTitle("Delete user?").confirmModal();
+    modalUtils.checkModalTitle("Delete user(s)?").confirmModal();
 
     masthead.checkNotificationMessage("The user has been deleted");
     sidebarPage.waitForPageLoad();
@@ -483,7 +483,7 @@ describe("User creation", () => {
     // Delete
     listingPage.deleteItem(itemIdWithGroups);
 
-    modalUtils.checkModalTitle("Delete user?").confirmModal();
+    modalUtils.checkModalTitle("Delete user(s)?").confirmModal();
 
     masthead.checkNotificationMessage("The user has been deleted");
     sidebarPage.waitForPageLoad();
@@ -495,7 +495,7 @@ describe("User creation", () => {
     // Delete
     listingPage.deleteItem(itemIdWithCred);
 
-    modalUtils.checkModalTitle("Delete user?").confirmModal();
+    modalUtils.checkModalTitle("Delete user(s)?").confirmModal();
 
     masthead.checkNotificationMessage("The user has been deleted");
     sidebarPage.waitForPageLoad();
