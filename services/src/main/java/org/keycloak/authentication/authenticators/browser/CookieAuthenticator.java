@@ -65,7 +65,8 @@ public class CookieAuthenticator implements Authenticator {
             } else if(AuthenticatorUtil.isForkedFlow(authSession)){
                 context.attempted();
             } else {
-                int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication();
+                String topLevelFlowId = context.getTopLevelFlow().getId();
+                int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication(topLevelFlowId);
                 AuthenticatorUtils.updateCompletedExecutions(context.getAuthenticationSession(), authResult.getSession(), context.getExecution().getId());
 
                 if (acrStore.getRequestedLevelOfAuthentication(context.getTopLevelFlow()) > previouslyAuthenticatedLevel) {

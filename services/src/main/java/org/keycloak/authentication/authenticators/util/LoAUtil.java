@@ -86,7 +86,16 @@ public class LoAUtil {
      * @return All LoA numbers configured in the conditions in the realm browser flow. Key is level, Value is maxAge for particular level
      */
     public static Map<Integer, Integer> getLoaMaxAgesConfiguredInRealmBrowserFlow(RealmModel realm) {
-        List<AuthenticationExecutionModel> loaConditions = AuthenticatorUtil.getExecutionsByType(realm, realm.getBrowserFlow().getId(), ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
+      return getLoaMaxAgesConfiguredInRealmFlow(realm, realm.getBrowserFlow().getId());
+    }
+
+    /**
+     * @param realm
+     * @param flowId
+     * @return All LoA numbers configured in the conditions in the realm flow @{param flowId}. Key is level, Vaue is maxAge for particular level
+     */
+    public static Map<Integer, Integer> getLoaMaxAgesConfiguredInRealmFlow(RealmModel realm, String flowId) {
+        List<AuthenticationExecutionModel> loaConditions = AuthenticatorUtil.getExecutionsByType(realm, flowId, ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
         if (loaConditions.isEmpty()) {
             // Default values used when step-up conditions not used in the browser authentication flow.
             // This is used for backwards compatibility and in case when step-up is not configured in the authentication flow (returning 1 in case of "normal" authentication, 0 for SSO authentication)
