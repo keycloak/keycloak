@@ -387,8 +387,17 @@ To deploy the archive to {project_name}, add it to the `providers/` directory of
 {project_name} and restart the server if it is already running.
 
 === Dark Mode
+Dark mode is a feature that changes the color scheme to a dark background with lighter text.  For example, themes based on PatternFly, such as Keycloak's admin console and account console, support dark mode.  But for some themes, dark mode doesn't work well for various reasons.  So Keycloak allows you to disable dark mode from the admin console.
 
-Explain how to enable/disable dark mode
+.Procedure to disable dark mode
+
+. Log into the Admin Console.
+. Select your realm.
+. Click *Realm Settings* from the menu.
+. Click on the *Themes* tab.
+. Unselect *Dark mode* and click *Save*.
+
+If enabled, the dark variant of the theme will be applied based on user preference through an operating system setting (e.g. light or dark mode) or a user agent setting. If disabled, only the light variant will be used. This setting only applies to themes that support dark and light variants. On themes that do not support this feature it will have no effect.
 
 [role="_additional-resources"]
 === Additional resources for Themes

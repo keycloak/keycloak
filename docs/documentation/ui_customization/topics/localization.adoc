@@ -78,4 +78,19 @@ Previous versions of Keycloak supported specifying the encoding in the first lin
 
 === Overriding localized text for an entire realm
 
-Often, you wish to declare translations that take effect for an entire realm.  This is done by specifying key/value pairs in the realm settings.
+Occasionally, you wish to declare translations that take effect for an entire realm.  This is done by specifying key/value pairs in the realm settings.  Any key specified in this way will override key/value pairs deployed with a theme.
+
+CAUTION: Using realm overrides is not the typical way to do localization in {project_name}.  Consider carefully if you want every theme in your realm to use these key/value pairs.
+
+.Procedure to add a realm override
+
+. Log into the Admin Console
+. Select your realm
+. Click *Realm Settings* from the menu.
+. Click on the *Localization* tab.
+. Click on the *Realm overrides* subtab.
+. Select a language from the dropdown
+. Click on *Add translation*
+. Create a key/value pair from the modal dialog
+
+Note that there is another subtab called *Effective message bundles*.  This subtab provides a tool to query key/value pairs for a combination of theme, language, and theme type.  You can use this tool to test and make sure your realm overrides have taken effect.

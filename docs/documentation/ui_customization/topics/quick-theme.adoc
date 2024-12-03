@@ -1,3 +1,5 @@
 [[_quick_theme]]
 
 == Customizing with Quick Theme
+
+blah blah blah
