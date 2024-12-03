@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class SdJwtCredentialBuilder extends AbstractCredentialBuilder {
+public class SdJwtCredentialBuilder implements CredentialBuilder {
 
     public static final String ISSUER_CLAIM = "iss";
     public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";

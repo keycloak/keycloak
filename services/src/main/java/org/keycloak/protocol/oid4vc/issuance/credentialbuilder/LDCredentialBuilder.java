@@ -29,7 +29,7 @@ import java.net.URI;
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class LDCredentialBuilder extends AbstractCredentialBuilder {
+public class LDCredentialBuilder implements CredentialBuilder {
 
     private final String credentialIssuer;
 

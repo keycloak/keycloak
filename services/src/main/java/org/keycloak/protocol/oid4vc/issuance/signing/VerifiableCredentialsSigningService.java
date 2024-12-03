@@ -17,18 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.keycloak.protocol.oid4vc.LocatableProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
+import org.keycloak.provider.Provider;
 
 /**
  * Interface to be used for signing verifiable credentials.
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public interface VerifiableCredentialsSigningService<T> extends LocatableProvider {
+public interface VerifiableCredentialsSigningService<T> extends Provider {
     /**
      * Takes a verifiable credential and signs it according to the implementation.
      * Depending on the type of the SigningService, it will return a signed representation of the credential
@@ -37,6 +37,12 @@ public interface VerifiableCredentialsSigningService<T> extends LocatableProvide
      * @return a signed representation
      */
     T signCredential(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
+
+    /**
+     * Returns the identifier of this service instance, can be either the format alone,
+     * or the combination between format, credential type and credential configuration id.
+     */
+    String locator();
 
     String LOCATION_SEPARATOR = "::";
 

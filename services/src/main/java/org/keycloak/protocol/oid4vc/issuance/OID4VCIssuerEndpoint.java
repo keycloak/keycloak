@@ -48,12 +48,12 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.LocatableProvider;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
+import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -167,33 +167,45 @@ public class OID4VCIssuerEndpoint {
         this.bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
         this.timeProvider = new OffsetTimeProvider();
 
-        this.credentialBuilders = initSpiComponents(keycloakSession, CredentialBuilder.class);
-        this.signingServices = initSpiComponents(keycloakSession, VerifiableCredentialsSigningService.class);
+        this.credentialBuilders = loadCredentialBuilders(session);
 
-        RealmModel realmModel = keycloakSession.getContext().getRealm();
-        this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        this.signingServices = new HashMap<>();
+        realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
+                .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
+
+        this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
         this.isIgnoreScopeCheck = false;
     }
 
+    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
+        ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
+                .getKeycloakSessionFactory()
+                .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
+        if (factory instanceof VCSigningServiceProviderFactory sspf) {
+            VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
+            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
+        } else {
+            throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
+        }
+    }
+
     /**
-     * Create components of the given class from the associated SPI factories in Keycloak's session.
-     * This enables the components to be locatable by their `locator` implementation.
+     * Create credential builders from configured component models in Keycloak.
      *
-     * @return a map of the created components with their locator strings as keys
+     * @return a map of the created credential builders with their supported formats as keys.
      */
-    private <T extends LocatableProvider> Map<String, T> initSpiComponents(
-            KeycloakSession keycloakSession,
-            Class<T> clazz
-    ) {
+    private Map<String, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
         KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
         RealmModel realm = keycloakSession.getContext().getRealm();
-        Stream<ComponentModel> componentModels = realm.getComponentsStream(realm.getId(), clazz.getName());
+        Stream<ComponentModel> componentModels = realm.getComponentsStream(
+                realm.getId(), CredentialBuilder.class.getName());
 
         return componentModels.map(componentModel -> {
-                    ProviderFactory<T> providerFactory = keycloakSessionFactory
-                            .getProviderFactory(clazz, componentModel.getProviderId());
+                    ProviderFactory<CredentialBuilder> providerFactory = keycloakSessionFactory
+                            .getProviderFactory(CredentialBuilder.class, componentModel.getProviderId());
 
                     if (!(providerFactory instanceof ComponentFactory<?, ?>)) {
                         throw new IllegalArgumentException(String.format(
@@ -202,10 +214,10 @@ public class OID4VCIssuerEndpoint {
                         ));
                     }
 
-                    ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
+                    var componentFactory = (ComponentFactory<CredentialBuilder, CredentialBuilder>) providerFactory;
                     return componentFactory.create(keycloakSession, componentModel);
                 })
-                .collect(Collectors.toMap(LocatableProvider::locator, component -> component));
+                .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat, component -> component));
     }
 
     /**
@@ -607,7 +619,7 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = locateCredentialBuilder(credentialConfig)
+        CredentialBody credentialBody = findCredentialBuilder(credentialConfig)
                 .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
 
         return new VCIssuanceContext()
@@ -617,7 +629,7 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialRequest(credentialRequestVO);
     }
 
-    private CredentialBuilder locateCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
+    private CredentialBuilder findCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
         String format = credentialConfig.getFormat();
         CredentialBuilder credentialBuilder = credentialBuilders.get(format);
 

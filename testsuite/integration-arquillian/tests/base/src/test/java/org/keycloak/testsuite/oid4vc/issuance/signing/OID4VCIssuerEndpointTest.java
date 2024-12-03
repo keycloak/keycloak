@@ -281,7 +281,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return prepareIssuerEndpoint(
                 session,
                 authenticator,
-                Map.of(jwtCredentialBuilder.locator(), jwtCredentialBuilder),
+                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder),
                 Map.of(jwtSigningService.locator(), jwtSigningService)
         );
     }

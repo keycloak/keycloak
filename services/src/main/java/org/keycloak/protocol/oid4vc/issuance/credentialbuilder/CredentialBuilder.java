@@ -17,15 +17,20 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import org.keycloak.protocol.oid4vc.LocatableProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.Provider;
 
-public interface CredentialBuilder extends LocatableProvider {
+public interface CredentialBuilder extends Provider {
 
     @Override
     default void close() {
     }
+
+    /**
+     * Returns the credential format supported by the builder.
+     */
+    String getSupportedFormat();
 
     /**
      * Builds a verifiable credential of a specific format from the basis of

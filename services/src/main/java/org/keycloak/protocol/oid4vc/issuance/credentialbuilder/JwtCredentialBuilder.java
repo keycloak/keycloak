@@ -28,7 +28,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
 
-public class JwtCredentialBuilder extends AbstractCredentialBuilder {
+public class JwtCredentialBuilder implements CredentialBuilder {
 
     private static final String VC_CLAIM_KEY = "vc";
     private static final String ID_CLAIM_KEY = "id";

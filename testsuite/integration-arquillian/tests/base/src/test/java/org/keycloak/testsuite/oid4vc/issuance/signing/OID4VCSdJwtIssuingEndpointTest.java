@@ -239,7 +239,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         return new OID4VCIssuerEndpoint(
                 session,
                 Map.of(
-                        testSdJwtCredentialBuilder.locator(), testSdJwtCredentialBuilder
+                        testSdJwtCredentialBuilder.getSupportedFormat(), testSdJwtCredentialBuilder
                 ),
                 Map.of(
                         testCredentialSigningService.locator(), testCredentialSigningService,
