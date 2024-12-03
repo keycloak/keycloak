@@ -1,6 +1,5 @@
 package org.keycloak.test.framework.injection;
 
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.keycloak.test.framework.TestFrameworkExtension;
 import org.keycloak.test.framework.config.Config;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry implements ExtensionContext.Store.CloseableResource {
 
-    private static final Logger LOGGER = Logger.getLogger(Registry.class);
+    private RegistryLogger logger;
 
     private ExtensionContext currentContext;
     private final List<Supplier<?, ?>> suppliers = new LinkedList<>();
@@ -75,11 +74,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         if (dependency != null) {
             dependency.registerDependency(dependent);
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugv("Injecting existing dependency {0} into {1}",
-                        dependency.getSupplier().getClass().getSimpleName(),
-                        dependent.getSupplier().getClass().getSimpleName());
-            }
+            logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.EXISTING);
 
             return (T) dependency.getValue();
         }
@@ -96,11 +91,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
             requestedInstances.remove(requestedDependency);
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugv("Injecting requested dependency {0} into {1}",
-                        dependency.getSupplier().getClass().getSimpleName(),
-                        dependent.getSupplier().getClass().getSimpleName());
-            }
+            logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.REQUESTED);
 
             return (T) dependency.getValue();
         }
@@ -120,11 +111,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
             deployedInstances.add(dependency);
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugv("Injecting un-configured dependency {0} into {1}",
-                        dependency.getSupplier().getClass().getSimpleName(),
-                        dependent.getSupplier().getClass().getSimpleName());
-            }
+            logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.UN_CONFIGURED);
 
             return (T) dependency.getValue();
         }
@@ -153,10 +140,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugv("Requested suppliers: {0}",
-                    requestedInstances.stream().map(r -> r.getSupplier().getClass().getSimpleName()).collect(Collectors.joining(", ")));
-        }
+        logger.logRequestedInstances(requestedInstances);
     }
 
     private void matchDeployedInstancesWithRequestedInstances() {
@@ -166,18 +150,10 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             InstanceContext deployedInstance = getDeployedInstance(requestedInstance);
             if (deployedInstance != null) {
                 if (requestedInstance.getLifeCycle().equals(deployedInstance.getLifeCycle()) && deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debugv("Reusing compatible: {0}",
-                                deployedInstance.getSupplier().getClass().getSimpleName());
-                    }
-
+                    logger.logReusingCompatibleInstance(deployedInstance);
                     itr.remove();
                 } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debugv("Destroying non-compatible: {0}",
-                                deployedInstance.getSupplier().getClass().getSimpleName());
-                    }
-
+                    logger.logDestroyIncompatible(deployedInstance);
                     destroy(deployedInstance);
                 }
             }
@@ -194,10 +170,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debugv("Created instance: {0}",
-                            requestedInstance.getSupplier().getClass().getSimpleName());
-                }
+                logger.logCreatedInstance(requestedInstance, instance);
             }
         }
     }
@@ -218,13 +191,13 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     public void afterAll() {
-        LOGGER.debug("Closing instances with class lifecycle");
+        logger.logAfterAll();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
-        LOGGER.debug("Closing instances with method lifecycle");
+        logger.logAfterEach();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
         destroy.forEach(this::destroy);
 
@@ -232,17 +205,17 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         for (InstanceContext<?, ?> c : cleanup) {
             ManagedTestResource managedTestResource = (ManagedTestResource) c.getValue();
             if (managedTestResource.isDirty()) {
-                LOGGER.debugv("Destroying dirty instance {0}", c.getValue());
+                logger.logDestroyDirty(c);
                 destroy(c);
             } else {
-                LOGGER.debugv("Cleanup instance {0}", c.getValue());
+                logger.logCleanup(c);
                 managedTestResource.runCleanup();
             }
         }
     }
 
     public void close() {
-        LOGGER.debug("Closing all instances");
+        logger.logClose();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().sorted(InstanceContextComparator.INSTANCE.reversed()).toList();
         destroy.forEach(this::destroy);
     }
@@ -283,10 +256,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             dependencies.forEach(this::destroy);
             instanceContext.getSupplier().close(instanceContext);
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugv("Closed instance: {0}",
-                        instanceContext.getSupplier().getClass().getSimpleName());
-            }
+            logger.logDestroy(instanceContext);
         }
     }
 
@@ -319,6 +289,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             valueTypeAlias.addAll(extension.valueTypeAliases());
         }
 
+        logger = new RegistryLogger(valueTypeAlias);
+
         Set<Class> loadedValueTypes = new HashSet<>();
         Set<Supplier> skippedSuppliers = new HashSet<>();
 
@@ -345,21 +317,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            StringBuilder loaded = new StringBuilder();
-            loaded.append("Loaded suppliers:");
-            for (Supplier s : suppliers) {
-                loaded.append("\n - " + valueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
-            }
-            LOGGER.debug(loaded.toString());
-
-            StringBuilder skipped = new StringBuilder();
-            skipped.append("Skipped suppliers:");
-            for (Supplier s : skippedSuppliers) {
-                skipped.append("\n - " + valueTypeAlias.getAlias(s.getValueType()) + " --> " + s.getAlias());
-            }
-            LOGGER.debug(skipped.toString());
-        }
+        logger.logSuppliers(suppliers, skippedSuppliers);
     }
 
     private InstanceContext getDeployedInstance(Class typeClass, String ref) {
