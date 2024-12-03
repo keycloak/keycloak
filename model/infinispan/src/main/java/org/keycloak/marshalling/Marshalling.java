@@ -160,6 +160,9 @@ public final class Marshalling {
     public static final int MAP_ENTRY_TO_KEY_FUNCTION = 65611;
     public static final int SESSION_UNWRAP_MAPPER = 65612;
 
+    public static final int PERMISSION_TICKET_REMOVED_EVENT = 65613;
+    public static final int PERMISSION_TICKET_UPDATED_EVENT = 65614;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);

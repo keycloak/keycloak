@@ -28,6 +28,7 @@ import org.keycloak.services.cors.Cors;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -130,12 +131,12 @@ public class TokenExchangeContext {
             return formParams.getFirst(OAuth2Constants.ACTOR_TOKEN_TYPE);
         }
 
-        public String getAudience() {
-            return formParams.getFirst(OAuth2Constants.AUDIENCE);
+        public List<String> getAudience() {
+            return formParams.get(OAuth2Constants.AUDIENCE);
         }
 
-        public String getResource() {
-            return formParams.getFirst(OAuth2Constants.RESOURCE);
+        public List<String> getResource() {
+            return formParams.get(OAuth2Constants.RESOURCE);
         }
 
         public String getRequestedTokenType() {

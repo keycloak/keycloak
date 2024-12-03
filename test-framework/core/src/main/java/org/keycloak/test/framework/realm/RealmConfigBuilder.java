@@ -1,7 +1,9 @@
 package org.keycloak.test.framework.realm;
 
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,6 +32,24 @@ public class RealmConfigBuilder {
     public RealmConfigBuilder name(String name) {
         rep.setRealm(name);
         return this;
+    }
+
+    public ClientConfigBuilder addClient(String clientId) {
+        if (rep.getClients() == null) {
+            rep.setClients(new LinkedList<>());
+        }
+        ClientRepresentation client = new ClientRepresentation();
+        rep.getClients().add(client);
+        return ClientConfigBuilder.update(client).enabled(true).clientId(clientId);
+    }
+
+    public UserConfigBuilder addUser(String username) {
+        if (rep.getUsers() == null) {
+            rep.setUsers(new LinkedList<>());
+        }
+        UserRepresentation user = new UserRepresentation();
+        rep.getUsers().add(user);
+        return UserConfigBuilder.update(user).enabled(true).username(username);
     }
 
     public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {

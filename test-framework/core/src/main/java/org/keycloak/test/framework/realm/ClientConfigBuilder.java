@@ -20,6 +20,11 @@ public class ClientConfigBuilder {
         return new ClientConfigBuilder(rep);
     }
 
+    public ClientConfigBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
+    }
+
     public ClientConfigBuilder clientId(String clientId) {
         rep.setClientId(clientId);
         return this;

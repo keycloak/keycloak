@@ -647,6 +647,12 @@ public class OAuthClient {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
+        List<String> targetAudienceList = targetAudience == null ? null : List.of(targetAudience);
+        return doTokenExchange(realm, token, targetAudienceList, clientId, clientSecret, additionalParams);
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, List<String> targetAudiences,
+                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -655,8 +661,10 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
 
-            if (targetAudience != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+            if (targetAudiences != null) {
+                for (String audience : targetAudiences) {
+                    parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, audience));
+                }
             }
 
             if (additionalParams != null) {

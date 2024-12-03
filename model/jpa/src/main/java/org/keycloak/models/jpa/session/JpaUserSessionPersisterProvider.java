@@ -191,13 +191,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        em.createNamedQuery("deleteClientSessionsByRealm")
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
-
-        em.createNamedQuery("deleteUserSessionsByRealm")
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
+        this.removeUserSessions(realm);
     }
 
     @Override
@@ -760,6 +754,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .executeUpdate();
     }
 
+    @Override
+    public void removeUserSessions(RealmModel realm) {
+        em.createNamedQuery("deleteClientSessionsByRealm")
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteUserSessionsByRealm")
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
+    }
 
     @Override
     public void close() {

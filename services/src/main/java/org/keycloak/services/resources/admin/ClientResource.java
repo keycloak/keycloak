@@ -634,7 +634,7 @@ public class ClientResource {
 
         ReservedCharValidator.validate(node);
 
-        if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
+        logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri(), node).success();
     }
@@ -652,7 +652,7 @@ public class ClientResource {
     public void unregisterNode(final @PathParam("node") String node) {
         auth.clients().requireConfigure(client);
 
-        if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
+        logger.debugf("Unregister node: %s", node);
 
         Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {

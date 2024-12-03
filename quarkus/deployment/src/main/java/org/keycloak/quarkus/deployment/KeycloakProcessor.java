@@ -80,6 +80,7 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
+import org.keycloak.config.TracingOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -104,6 +105,7 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
+import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -636,13 +638,19 @@ class KeycloakProcessor {
                     LoadBalancerResource.class.getName())), false));
         }
 
-        KeycloakHandlerChainCustomizer chainCustomizer = new KeycloakHandlerChainCustomizer();
+        ArrayList<HandlerChainCustomizer> chainCustomizers = new ArrayList<>();
+
+        chainCustomizers.add(new KeycloakHandlerChainCustomizer());
+
+        if (Configuration.isTrue(TracingOptions.TRACING_ENABLED)) {
+            chainCustomizers.add(new KeycloakTracingCustomizer());
+        }
 
         scanner.produce(new MethodScannerBuildItem(new MethodScanner() {
             @Override
             public List<HandlerChainCustomizer> scan(MethodInfo method, ClassInfo actualEndpointClass,
                     Map<String, Object> methodContext) {
-                return List.of(chainCustomizer);
+                return chainCustomizers;
             }
         }));
     }

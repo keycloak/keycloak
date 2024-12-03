@@ -48,18 +48,57 @@ jaegertracing/all-in-one
 
 === Exposed ports
 
-* `:16686` - Jaeger UI
-* `:4317` - OpenTelemetry Protocol gRPC receiver (default)
-* `:4318` - OpenTelemetry Protocol HTTP receiver
+`16686`:: Jaeger UI
+`4317`:: OpenTelemetry Protocol gRPC receiver (default)
+`4318`:: OpenTelemetry Protocol HTTP receiver
 
 You can visit the Jaeger UI on `+http://localhost:16686/+` to see the tracing information.
 The Jaeger UI might look like this with an arbitrary {project_name} trace:
 
 image::jaeger-tracing.png[Jaeger UI]
 
-== Traces in logs
+== Information in traces
 
-When tracing is enabled, the trace information is included in the log messages of all enabled log handlers (see more in <@links.server id="logging"/>).
+=== Spans
+
+{project_name} creates spans for the following activities:
+
+* Incoming HTTP requests
+* Outgoing Database including acquiring a database connections
+* Outgoing LDAP requests including connecting to the LDAP server
+
+=== Tags
+
+{project_name} adds tags to traces depending on the type of the request. All tags are prefixed with `kc.`.
+
+Example tags are:
+
+`kc.clientId`:: Client ID
+
+`kc.realmName`:: Realm name
+
+`kc.sessionId`:: User session ID
+
+`kc.token.id`:: `id` as mentioned in the token
+
+`kc.token.issuer`:: `issuer` as mentioned in the token
+
+`kc.token.sid`:: `sid` as mentioned in the token
+
+`kc.authenticationSessionId`:: Authentication session ID
+
+`kc.authenticationTabId`:: Authentication Tab ID
+
+=== Logs
+
+If a trace is being sampled, it will contain any user events created during the request.
+This includes, for example, `LOGIN`, `LOGOUT` or `REFRESH_TOKEN` events with all details and IDs found in user events.
+
+LDAP communication errors are shown as log entries in recorded traces as well with a stack trace and details of the failed operation.
+
+== Trace IDs in logs
+
+When tracing is enabled, the trace IDs are included in the log messages of all enabled log handlers (see more in <@links.server id="logging"/>).
 It can be useful for associating log events to request execution, which might provide better traceability and debugging.
 All log lines originating from the same request will have the same `traceId` in the log.
 
@@ -72,9 +111,9 @@ The format of the log records may start as follows:
 2024-08-05 15:27:07,144 traceId=b636ac4c665ceb901f7fdc3fc7e80154, parentId=d59cea113d0c2549, spanId=d59cea113d0c2549, sampled=true WARN  [org.keycloak.events] ...
 ----
 
-=== Hide trace info in logs
+=== Hide trace IDs in logs
 
-You can hide tracing information in specific log handlers by specifying their associated {project_name} option `log-<handler-name>-include-trace`, where `<handler-name>` is the name of the log handler.
+You can hide trace IDs in specific log handlers by specifying their associated {project_name} option `log-<handler-name>-include-trace`, where `<handler-name>` is the name of the log handler.
 For instance, to disable trace info in the `console` log, you can turn it off as follows:
 
 <@kc.start parameters="--tracing-enabled=true --features=opentelemetry --log=console --log-console-include-trace=false"/>

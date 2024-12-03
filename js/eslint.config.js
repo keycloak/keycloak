@@ -161,16 +161,16 @@ export default tseslint.config(
   },
   {
     ...playwright.configs["flat/recommended"],
-    files: ["js/apps/account-ui/test/**"],
+    files: ["apps/account-ui/test/**"],
   },
   {
-    files: ["js/libs/keycloak-admin-client/test/**"],
+    files: ["libs/keycloak-admin-client/test/**"],
     rules: {
       "@typescript-eslint/no-unused-expressions": "off",
     },
   },
   {
-    files: ["js/libs/keycloak-admin-client/src/**"],
+    files: ["libs/keycloak-admin-client/src/**"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
     },

@@ -1158,8 +1158,8 @@ public class SamlService extends AuthorizationEndpointBase {
      * @throws ProcessingException
      */
     public Response artifactResolve(ArtifactResolveType artifactResolveMessage, SAMLDocumentHolder artifactResolveHolder) throws ParsingException, ConfigurationException, ProcessingException {
-        logger.debug("Received artifactResolve message for artifact " + artifactResolveMessage.getArtifact() + "\n" +
-                "Message: \n" + DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
+        logger.debugf("Received artifactResolve message for artifact %s\n" +
+                "Message: \n%s", artifactResolveMessage.getArtifact(), DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
 
         String artifact = artifactResolveMessage.getArtifact(); // Artifact from resolve request
         if (artifact == null) {

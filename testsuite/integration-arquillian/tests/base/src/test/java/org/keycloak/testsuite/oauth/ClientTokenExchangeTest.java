@@ -1010,6 +1010,19 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testClientExchangeWithMoreAudiencesNotBreak() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+
+        response = oauth.doTokenExchange(TEST, accessToken, List.of("target", "client-exchanger"), "client-exchanger", "secret", null);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+    }
+
+    @Test
     public void testPublicClientNotAllowed() throws Exception {
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 

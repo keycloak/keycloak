@@ -36,6 +36,8 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketRemovedEvent;
+import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.ResourceRemovedEvent;
@@ -136,6 +138,8 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 ClearCacheEvent.class,
 
                 //models.cache.infinispan.authorization.events package
+                PermissionTicketRemovedEvent.class,
+                PermissionTicketUpdatedEvent.class,
                 PolicyUpdatedEvent.class,
                 PolicyRemovedEvent.class,
                 ResourceUpdatedEvent.class,

@@ -44,9 +44,9 @@
         </#list>
     </#if>
     <script type="module">
-        import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
 
-        checkCookiesAndSetTimer(
+        startSessionPolling(
           "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
@@ -157,7 +157,7 @@
                   <div class="${properties.kcFormGroupClass!}">
                       <input type="hidden" name="tryAnotherWay" value="on"/>
                       <a href="#" id="try-another-way"
-                         onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                         onclick="document.forms['kc-select-try-another-way-form'].requestSubmit();return false;">${msg("doTryAnotherWay")}</a>
                   </div>
               </form>
           </#if>

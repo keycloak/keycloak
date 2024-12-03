@@ -161,8 +161,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
             Function<X509Certificate[], String> func = null;
 
             UserIdentityExtractorProvider userIdExtractor = CryptoIntegration.getProvider().getIdentityExtractorProvider();
-            logger.debug("UID Source: " + userIdentitySource);
-            logger.debug("UID Extractor: " + userIdExtractor.getClass().getName());
+            logger.debugf("UID Source: %s", userIdentitySource);
+            logger.debugf("UID Extractor: %s", userIdExtractor.getClass().getName());
             switch(userIdentitySource) {
 
                 case SUBJECTDN:

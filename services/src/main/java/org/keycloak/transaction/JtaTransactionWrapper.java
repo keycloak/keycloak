@@ -18,7 +18,6 @@ package org.keycloak.transaction;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.provider.ExceptionConverter;
 
@@ -52,11 +51,13 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
             tm.begin();
             ut = tm.getTransaction();
 
-            String messageToLog = "new JtaTransactionWrapper. Was existing transaction suspended: " + (suspended != null);
-            if (suspended != null) {
-                messageToLog = messageToLog + " Suspended transaction: " + suspended + ". ";
+            if (logger.isDebugEnabled()) {
+                String messageToLog = "new JtaTransactionWrapper. Was existing transaction suspended: " + (suspended != null);
+                if (suspended != null) {
+                    messageToLog = messageToLog + " Suspended transaction: " + suspended + ". ";
+                }
+                logMessage(messageToLog);
             }
-            logMessage(messageToLog);
 
             //ended = new Exception();
         } catch (Exception e) {
@@ -162,7 +163,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         logMessage("JtaTransactionWrapper end.");
         if (suspended != null) {
             try {
-                logger.debug("JtaTransactionWrapper resuming suspended user transaction: " + suspended);
+                logger.debugf("JtaTransactionWrapper resuming suspended user transaction: %s", suspended);
                 tm.resume(suspended);
             } catch (Exception e) {
                 throw new RuntimeException(e);
