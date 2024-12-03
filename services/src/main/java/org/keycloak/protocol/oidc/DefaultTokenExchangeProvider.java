@@ -77,6 +77,7 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -99,6 +100,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultTokenExchangeProvider.class);
 
+    private TokenExchangeContext.Params params;
     private MultivaluedMap<String, String> formParams;
     private KeycloakSession session;
     private Cors cors;
@@ -117,6 +119,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
     @Override
     public Response exchange(TokenExchangeContext context) {
+        this.params = context.getParams();
         this.formParams = context.getFormParams();
         this.session = context.getSession();
         this.cors = context.getCors();
@@ -296,46 +299,73 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         }
 
-        String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
+        List<String> audienceParams = params.getAudience();
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
-        ClientModel targetClient = client;
+        List<ClientModel> targetAudienceClients = new ArrayList<>();
 
-        if (audience != null) {
-            targetClient = realm.getClientByClientId(audience);
-            if (targetClient == null) {
-                event.detail(Details.REASON, "audience not found");
-                event.error(Errors.CLIENT_NOT_FOUND);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Audience not found", Response.Status.BAD_REQUEST);
-
+        if (audienceParams != null) {
+            for (String audience : audienceParams) {
+                ClientModel targetClient = realm.getClientByClientId(audience);
+                if (targetClient == null) {
+                    event.detail(Details.REASON, "audience not found");
+                    event.detail(Details.AUDIENCE, audience);
+                    event.error(Errors.CLIENT_NOT_FOUND);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Audience not found", Response.Status.BAD_REQUEST);
+                } else {
+                    targetAudienceClients.add(targetClient);
+                }
             }
         }
 
-        if (targetClient.isConsentRequired()) {
-            event.detail(Details.REASON, "audience requires consent");
-            event.error(Errors.CONSENT_DENIED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
+        for (ClientModel targetClient : targetAudienceClients) {
+            if (targetClient.isConsentRequired()) {
+                event.detail(Details.REASON, "audience requires consent");
+                event.detail(Details.AUDIENCE, targetClient.getClientId());
+                event.error(Errors.CONSENT_DENIED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
+            }
+            if (!targetClient.isEnabled()) {
+                event.detail(Details.REASON, "audience client disabled");
+                event.detail(Details.AUDIENCE, targetClient.getClientId());
+                event.error(Errors.CLIENT_DISABLED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
+            }
         }
 
-        boolean isClientTheAudience = client.equals(targetClient);
 
-        if (isClientTheAudience) {
-            if (client.isPublicClient()) {
-                // public clients can only exchange on to themselves if they are the token holder
-                forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-            } else if (!client.equals(tokenHolder)) {
-                // confidential clients can only exchange to themselves if they are within the token audience
-                forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
+        // Assume client itself is audience in case audience parameter not provided
+        if (targetAudienceClients.isEmpty()) {
+            targetAudienceClients.add(client);
+        }
+
+        for (ClientModel targetClient : targetAudienceClients) {
+            boolean isClientTheAudience = targetClient.equals(client);
+            if (isClientTheAudience) {
+                if (client.isPublicClient()) {
+                    // public clients can only exchange on to themselves if they are the token holder
+                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+                } else if (!client.equals(tokenHolder)) {
+                    // confidential clients can only exchange to themselves if they are within the token audience
+                    forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
+                }
+            } else {
+                if (client.isPublicClient()) {
+                    // public clients can not exchange tokens from other client
+                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+                }
+                if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
+                    event.detail(Details.REASON, "client not allowed to exchange to audience");
+                    event.detail(Details.AUDIENCE, targetClient.getClientId());
+                    event.error(Errors.NOT_ALLOWED);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+                }
             }
-        } else {
-            if (client.isPublicClient()) {
-                // public clients can not exchange tokens from other client
-                forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-            }
-            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
-                event.detail(Details.REASON, "client not allowed to exchange to audience");
-                event.error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-            }
+        }
+
+        ClientModel targetClient = targetAudienceClients.get(0);
+        // TODO Remove once more audiences are properly supported
+        if (targetAudienceClients.size() > 1) {
+            logger.warnf("Only one value of audience parameter currently supported for token exchange. Using audience '%s' and ignoring the other audiences provided", targetClient.getClientId());
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
@@ -369,7 +399,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             switch (requestedTokenType) {
                 case OAuth2Constants.ACCESS_TOKEN_TYPE:
                 case OAuth2Constants.REFRESH_TOKEN_TYPE:
-                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, scope);
                 case OAuth2Constants.SAML2_TOKEN_TYPE:
                     return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
             }
@@ -406,7 +436,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     }
 
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  ClientModel targetClient, String audience, String scope) {
+                                                  ClientModel targetClient, String scope) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
 
@@ -433,8 +463,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
-        if (audience != null) {
-            responseBuilder.getAccessToken().addAudience(audience);
+        if (targetClient != null && !targetClient.equals(client)) {
+            responseBuilder.getAccessToken().addAudience(targetClient.getClientId());
         }
 
         if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
