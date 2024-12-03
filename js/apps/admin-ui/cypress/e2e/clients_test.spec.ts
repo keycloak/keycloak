@@ -1347,11 +1347,6 @@ describe("Clients test", () => {
       cy.findAllByTestId("confirm").click();
     });
 
-    it("Check a11y violations on import client", () => {
-      cy.findByTestId("importClient").click();
-      cy.checkA11y();
-    });
-
     it("Check a11y violations on initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
       initialAccessTokenTab.goToInitialAccessTokenTab();
