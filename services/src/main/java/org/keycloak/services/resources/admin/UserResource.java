@@ -1137,7 +1137,7 @@ public class UserResource {
             throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
         }
         if (!client.isEnabled()) {
-            logger.debugf("Client %s is not enabled", clientId);
+            logger.debugf("Client %s is not enabled", client.getClientId());
             throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
         }
 
@@ -1152,7 +1152,7 @@ public class UserResource {
             lifespan = realm.getActionTokenGeneratedByAdminLifespan();
         }
 
-        return new SendEmailParams(redirectUri, clientId, lifespan);
+        return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
     }
 
     private static class SendEmailParams {
