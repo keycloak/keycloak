@@ -40,7 +40,6 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int startupTimeoutInSeconds = 300;
     private String route;
     private String keycloakConfigPropertyOverrides;
-    private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
     private String profile;
     private String javaOpts;
     private boolean reaugmentBeforeStart;
@@ -62,15 +61,6 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         setBindHttpsPort(newHttpsPort);
 
         log.infof("Keycloak will listen for http on port: %d, for https on port: %d, and for management on port: %d\n", newPort, newHttpsPort, managementPort);
-
-        if (this.keycloakConfigPropertyOverrides != null) {
-            try {
-                TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
-                this.keycloakConfigPropertyOverridesMap = JsonSerialization.sysPropertiesAwareMapper.readValue(this.keycloakConfigPropertyOverrides, typeRef);
-            } catch (IOException ex) {
-                throw new ConfigurationException(ex);
-            }
-        }
     }
 
     public int getBindHttpPortOffset() {
@@ -180,18 +170,6 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public void setProfile(String profile) {
         this.profile = profile;
-    }
-
-    public String getKeycloakConfigPropertyOverrides() {
-        return keycloakConfigPropertyOverrides;
-    }
-
-    public void setKeycloakConfigPropertyOverrides(String keycloakConfigPropertyOverrides) {
-        this.keycloakConfigPropertyOverrides = keycloakConfigPropertyOverrides;
-    }
-
-    public Map<String, Object> getKeycloakConfigPropertyOverridesMap() {
-        return keycloakConfigPropertyOverridesMap;
     }
 
     public void setJavaOpts(String javaOpts) {
