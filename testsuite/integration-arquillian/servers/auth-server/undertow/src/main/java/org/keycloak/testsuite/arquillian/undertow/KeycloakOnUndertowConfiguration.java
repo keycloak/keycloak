@@ -37,7 +37,6 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
     private boolean remoteMode;
     private String route;
     private String keycloakConfigPropertyOverrides;
-    private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
 
     private int bindHttpPortOffset = 0;
     private int bindHttpsPortOffset = 0;
@@ -99,18 +98,6 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         this.remoteMode = remoteMode;
     }
 
-    public String getKeycloakConfigPropertyOverrides() {
-        return keycloakConfigPropertyOverrides;
-    }
-
-    public void setKeycloakConfigPropertyOverrides(String keycloakConfigPropertyOverrides) {
-        this.keycloakConfigPropertyOverrides = keycloakConfigPropertyOverrides;
-    }
-
-    public Map<String, Object> getKeycloakConfigPropertyOverridesMap() {
-        return keycloakConfigPropertyOverridesMap;
-    }
-
     @Override
     public void validate() throws ConfigurationException {
         super.validate();
@@ -125,15 +112,6 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
 
         log.info("KeycloakOnUndertow will listen for http on port: " + newPort + " and for https on port: " + newHttpsPort);
         
-        if (this.keycloakConfigPropertyOverrides != null) {
-            try {
-                TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
-                this.keycloakConfigPropertyOverridesMap = JsonSerialization.sysPropertiesAwareMapper.readValue(this.keycloakConfigPropertyOverrides, typeRef);
-            } catch (IOException ex) {
-                throw new ConfigurationException(ex);
-            }
-        }
-
         // TODO validate workerThreads
         
     }
