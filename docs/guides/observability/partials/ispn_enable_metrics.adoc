@@ -1,0 +1,54 @@
+= Enabled {jdgserver_name} server metrics
+
+{jdgserver_name} exposes metrics in the endpoint `/metrics`.
+By default, they are enabled.
+We recommend enabling the attribute `name-as-tags` as it makes the metrics name independent on the cache name.
+
+To configure metrics in the {jdgserver_name} server, just enabled as shown in the XML below.
+
+.infinispan.xml
+[source,xml]
+----
+<infinispan>
+    <cache-container statistics="true">
+        <metrics gauges="true" histograms="false" name-as-tags="true" />
+    </cache-container>
+</infinispan>
+----
+
+Using the {jdgserver_name} Operator in Kubernetes, metrics can be enabled by using a `ConfigMap` with a custom configuration.
+It is shown below an example.
+
+.ConfigMap
+[source,yaml]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config
+data:
+  infinispan-config.yaml: >
+    infinispan:
+      cacheContainer:
+        metrics:
+          gauges: true
+          namesAsTags: true
+          histograms: false
+----
+
+.infinispan.yaml CR
+[source,yaml]
+----
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: infinispan
+  annotations:
+    infinispan.org/monitoring: 'true' # <1>
+spec:
+  configMapName: "cluster-config" #<2>
+----
+<1> Enables monitoring for the deployment
+<2> Sets the `ConfigMap` name with the custom configuration.
+
+Additional information can be found in the https://infinispan.org/docs/stable/titles/server/server.html#configuring-metrics_statistics-jmx[Infinispan documentation] and https://infinispan.org/docs/infinispan-operator/main/operator.html#monitoring-services[Infinispan operator] documentation.

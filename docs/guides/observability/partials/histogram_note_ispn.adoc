@@ -1,0 +1,2 @@
+NOTE: When histogram is enabled, the percentile buckets are available.
+Those are useful to create heat maps but, collecting and exposing the percentile buckets may have a negative impact on the deployment performance.

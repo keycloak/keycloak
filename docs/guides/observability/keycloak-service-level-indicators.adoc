@@ -1,11 +1,9 @@
 <#import "/templates/guide.adoc" as tmpl>
-<#import "/templates/kc.adoc" as kc>
-<#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="{project_name} service level indicators (SLIs)"
-summary="Learn about the Service Level Indicators to monitor your {project_name} deployment's performance."
+summary="Learn about the Service Level Indicators to monitor your {project_name} deployment's performance"
 >
 
 Service Level Indicators (SLIs) and Service Level Objectives (SLOs) are essential components in monitoring and maintaining the performance and reliability of {project_name} in production environments.
@@ -21,7 +19,7 @@ can ensure that deployments are aligned with user's expectations and that they n
 
 == Prerequisites
 
-* Metrics need to be enabled for {project_name}, and the `http-metrics-slos` option needs to be set to latency to be measured for the SLO defined below. Follow <@links.server id="configuration-metrics"/> {section} for more details.
+* Metrics need to be enabled for {project_name}, and the `http-metrics-slos` option needs to be set to latency to be measured for the SLO defined below. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
 * A monitoring system collecting the metrics. The following paragraphs assume Prometheus or a similar system is used that supports the PromQL query language.
 
 == Definition of the service delivered
