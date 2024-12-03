@@ -2047,6 +2047,7 @@ public class UserTest extends AbstractAdminTest {
         try {
             final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
             assertThat(accessToken.getExp() - accessToken.getIat(), allOf(greaterThanOrEqualTo(lifespan - 1l), lessThanOrEqualTo(lifespan + 1l)));
+            assertEquals(accessToken.getIssuedFor(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         } catch (VerificationException e) {
             throw new IOException(e);
         }
