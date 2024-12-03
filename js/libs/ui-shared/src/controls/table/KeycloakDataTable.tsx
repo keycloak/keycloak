@@ -75,7 +75,7 @@ type DataTableProps<T> = {
 
 type CellRendererProps = {
   row: IRow;
-  index: number;
+  index?: number;
   actions?: IActions;
   actionResolver?: IActionsResolver;
 };
@@ -270,12 +270,7 @@ function DataTable<T>({
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
-                    <ExpandableRowRenderer
-                      row={row}
-                      index={index}
-                      actions={actions}
-                      actionResolver={actionResolver}
-                    />
+                    <ExpandableRowRenderer row={row} />
                   </ExpandableRowContent>
                 </Td>
               </Tr>
