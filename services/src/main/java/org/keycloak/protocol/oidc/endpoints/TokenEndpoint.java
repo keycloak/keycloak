@@ -212,7 +212,7 @@ public class TokenEndpoint {
 
     private void checkParameterDuplicated() {
         for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1) {
+            if (formParams.get(key).size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(key)) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
                         Response.Status.BAD_REQUEST);
             }

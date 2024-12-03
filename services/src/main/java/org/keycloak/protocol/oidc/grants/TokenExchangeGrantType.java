@@ -17,9 +17,12 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Set;
+
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
@@ -32,6 +35,8 @@ import org.keycloak.protocol.oidc.TokenExchangeProvider;
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a> (et al.)
  */
 public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
+
+    private static final Set<String> SUPPORTED_DUPLICATED_PARAMETERS = Set.of(OAuth2Constants.AUDIENCE, OAuth2Constants.RESOURCE);
 
     @Override
     public Response process(Context context) {
@@ -67,4 +72,8 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
         return EventType.TOKEN_EXCHANGE;
     }
 
+    @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        return SUPPORTED_DUPLICATED_PARAMETERS;
+    }
 }

@@ -22,7 +22,9 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
@@ -48,6 +50,14 @@ public interface OAuth2GrantType extends Provider {
      * @return event type
      */
     EventType getEventType();
+
+    /**
+     * @return request parameters, which can be duplicated for the particular grant type. The grant request is typically rejected if
+     * request contains multiple values of some parameter, which is not listed here
+     */
+    default Set<String> getSupportedMultivaluedRequestParameters() {
+        return Collections.emptySet();
+    }
 
     /**
      * Processes grant request.
