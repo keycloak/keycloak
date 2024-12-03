@@ -88,10 +88,6 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
         super(session, null, ID_PREFIX + (id == null ? SecretGenerator.getInstance().randomString(16) : id));
     }
 
-    public LightweightUserAdapter(KeycloakSession session, RealmModel realm) {
-        this(session, realm, null);
-    }
-
     public LightweightUserAdapter(KeycloakSession session, RealmModel realm, String id) {
         super(session, realm, ID_PREFIX + (id == null ? SecretGenerator.getInstance().randomString(16) : id));
     }
