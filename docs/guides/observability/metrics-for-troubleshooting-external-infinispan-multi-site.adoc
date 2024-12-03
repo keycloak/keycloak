@@ -11,6 +11,8 @@ tileVisible="false"
 :clustered_caches: true
 :external_infinispan: true
 
+This is part of the <@links.observability id="metrics-for-troubleshooting"/> {section}.
+
 == Prerequisites
 
 include::partials/ispn_enable_metrics.adoc[leveloffset=+2]

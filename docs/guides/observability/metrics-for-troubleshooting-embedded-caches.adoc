@@ -10,8 +10,11 @@ tileVisible="false"
 :jgrp_application: {project_name}
 :clustered_caches: true
 
-include::partials/ispn_metrics.adoc[leveloffset=+1]
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
 
+== Metrics
+
+include::partials/ispn_metrics.adoc[leveloffset=+1]
 
 == Next steps
 

@@ -7,7 +7,11 @@ summary="Learn about metrics for monitoring the {project_name} HTTP requests pro
 tileVisible="false"
 >
 
-== Processing time
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+=== Processing time
 
 The processing time is exposed by these metrics, to monitor the {project_name} performance and how long it takes to processing the requests.
 
@@ -17,9 +21,9 @@ Spikes or increases in the processing time may be an early sign that some node i
 ====
 *Tags*
 
-* `outcome`: A more general outcome tag.
-* `status`: The HTTP status code.
-* `uri`: The requested URI.
+`outcome`:: A more general outcome tag.
+`status`:: The HTTP status code.
+`uri`:: The requested URI.
 ====
 
 |===
@@ -32,9 +36,9 @@ m| http_server_requests_seconds_sum
 | The total duration for all the requests processed.
 |===
 
-include::partials/histogram_note.adoc[]
+include::partials/histogram_note_http.adoc[]
 
-== Active requests
+=== Active requests
 
 The current number of active requests is also available.
 
@@ -46,7 +50,7 @@ m| http_server_active_requests
 
 |===
 
-== Bandwidth
+=== Bandwidth
 
 The metrics below helps to monitor the bandwidth and consumed traffic used by {project_name} and consumed by the requests and responses received or sent.
 
@@ -67,7 +71,7 @@ m| http_server_bytes_read_sum
 
 |===
 
-include::partials/histogram_note.adoc[]
+include::partials/histogram_note_http.adoc[]
 
 
 == Next steps

@@ -7,6 +7,10 @@ summary="Learn about metrics monitoring communication between {project_name} nod
 tileVisible="false"
 >
 
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
 :jgrp_application: {project_name}
 :clustered_caches: true
 

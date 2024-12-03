@@ -7,10 +7,12 @@ summary="Learn about metrics describing {project_name}'s connection to the datab
 tileVisible="false"
 >
 
-== Database connection pool
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Database connection pool metrics
 
 Configure {project_name} to use a fixed size database connection pool.
-See https://www.keycloak.org/high-availability/concepts-database-connections[Concepts for database connection pools] for more information.
+See the <@links.ha id="concepts-database-connections"/> {section} for more information.
 
 [TIP]
 ====

@@ -7,17 +7,21 @@ summary="Learn about key JVM metrics for observing performance of {project_name}
 tileVisible="false"
 >
 
-== JVM info
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+=== JVM info
 
 |===
 |Metric |Description
 
-| jvm_info_total
+m| jvm_info_total
 | Information about the JVM such as version, runtime and vendor.
 
 |===
 
-== Heap Memory Usage
+=== Heap memory usage
 
 |===
 |Metric |Description
@@ -30,7 +34,7 @@ m| jvm_memory_used_bytes
 
 |===
 
-== Garbage Collection Metrics
+=== Garbage collection
 
 |===
 |Metric |Description
@@ -50,16 +54,14 @@ m| jvm_gc_overhead
 
 |===
 
-Additional information on the {project_name} `metrics` endpoint can be found https://www.keycloak.org/server/configuration-metrics[here].
-
-== CPU Usage in Kubernetes
+=== CPU Usage in Kubernetes
 
 |===
 |Metric |Description
 
 m| container_cpu_usage_seconds_total
 
-| Cumulative cpu time consumed by the container in core-seconds.
+| Cumulative CPU time consumed by the container in core-seconds.
 
 |===
 

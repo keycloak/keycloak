@@ -1,9 +1,10 @@
 ====
 *Global tags*
 
-* `cluster=<name>`: The cluster name.
+`cluster=<name>`:: The cluster name.
 If metrics from multiple clusters are being collected, this tag helps identify where they belong to.
-* `node=<node>`: The name of the node reporting the metric.
+
+`node=<node>`:: The name of the node reporting the metric.
 ====
 
 == Response Time
@@ -18,8 +19,8 @@ An increase in response time may indicate a degraded cluster or a node under hea
 ====
 *Tags*
 
-* `node=<node>`: It identifies the sender node.
-* `target_node=<node>`: It identifies the receiver node.
+`node=<node>`:: It identifies the sender node.
+`target_node=<node>`:: It identifies the receiver node.
 ====
 
 |===
@@ -33,7 +34,7 @@ m| vendor_jgroups_stats_sync_requests_seconds_sum
 
 |===
 
-include::histogram_note.adoc[]
+include::histogram_note_ispn.adoc[]
 
 == Bandwidth
 
@@ -77,9 +78,9 @@ A retransmission mechanism ensures a reliable communication with an increase of 
 
 TIP: In a healthy cluster, the thread pool should never be closer to its maximum size (by default, `200` threads).
 
-NOTE: Thread pool metrics are not available with virtual threads.
+NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21.
 
-IMPORTANT: The metric name depends on the JGroups transport protocol in use.
+IMPORTANT: The metric name depends on the JGroups transport protocol in use. The default transport protocol is TCP.
 
 |===
 |Metric |Protocol |Description
@@ -200,7 +201,7 @@ m| vendor_jgroups_site_view_status
 ====
 *Tags*
 
-* `site=<name>`: The name of the destination site.
+`site=<name>`:: The name of the destination site.
 ====
 endif::[]
 
