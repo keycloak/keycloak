@@ -3,6 +3,10 @@ package org.keycloak.test.framework.realm;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
 public class UserConfigBuilder {
 
     private final UserRepresentation rep;
@@ -19,6 +23,11 @@ public class UserConfigBuilder {
 
     public static UserConfigBuilder update(UserRepresentation rep) {
         return new UserConfigBuilder(rep);
+    }
+
+    public UserConfigBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
     }
 
     public UserConfigBuilder username(String username) {
@@ -49,6 +58,17 @@ public class UserConfigBuilder {
 
     public UserConfigBuilder roles(String... roles) {
         rep.setRealmRoles(Collections.combine(rep.getRealmRoles(), roles));
+        return this;
+    }
+
+    public UserConfigBuilder clientRoles(String client, String... roles) {
+        if (rep.getClientRoles() == null) {
+            rep.setClientRoles(new HashMap<>());
+        }
+        if (!rep.getClientRoles().containsKey(client)) {
+            rep.getClientRoles().put(client, new LinkedList<>());
+        }
+        rep.getClientRoles().get(client).addAll(List.of(roles));
         return this;
     }
 
