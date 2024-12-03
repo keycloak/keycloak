@@ -2,6 +2,7 @@
 <#import "field.ftl" as field>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
+<#import "password-validation.ftl" as validator>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
 <!-- template: register.ftl -->
 
@@ -61,52 +62,7 @@
 
         </form>
 
-        <template id="errorTemplate">
-            <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-                <div class="${properties.kcInputHelperTextClass}">
-                    <div class="${properties.kcInputHelperTextItemClass} ${properties.kcError}">
-                        <ul class="${properties.kcInputErrorMessageClass}">
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <template id="errorItemTemplate">
-            <li></li>
-        </template>
-
-        <script type="module">
-            import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
-
-            const activePolicies = [
-                { name: "length", policy: { value: ${passwordPolicies.length!-1}, error: "${msg('invalidPasswordMinLengthMessage')}"} },
-                { name: "maxLength", policy: { value: ${passwordPolicies.maxLength!-1}, error: "${msg('invalidPasswordMaxLengthMessage')}"} },
-                { name: "lowerCase", policy: { value: ${passwordPolicies.lowerCase!-1}, error: "${msg('invalidPasswordMinLowerCaseCharsMessage')}"} },
-                { name: "upperCase", policy: { value: ${passwordPolicies.upperCase!-1}, error: "${msg('invalidPasswordMinUpperCaseCharsMessage')}"} },
-                { name: "digits", policy: { value: ${passwordPolicies.digits!-1}, error: "${msg('invalidPasswordMinDigitsMessage')}"} },
-                { name: "specialChars", policy: { value: ${passwordPolicies.specialChars!-1}, error: "${msg('invalidPasswordMinSpecialCharsMessage')}"} }
-            ].filter(p => p.policy.value !== -1);
-
-            document.getElementById("password").addEventListener("change", (event) => {
-
-                const errorContainer = document.getElementById("input-error-container-password");
-                const template = document.querySelector("#errorTemplate").content.cloneNode(true);
-                const errors = validatePassword(event.target.value, activePolicies);
-
-                if (errors.length === 0) {
-                    errorContainer.replaceChildren();
-                    return;
-                }
-
-                const errorList = template.querySelector("ul");
-                const htmlErrors = errors.forEach((e) => {
-                    const row = document.querySelector("#errorItemTemplate").content.cloneNode(true);
-                    const li = row.querySelector("li");
-                    li.textContent = e;
-                    errorList.appendChild(li);
-                });
-                errorContainer.replaceChildren(template);
-            });
-        </script>
+        <@validator.templates/>
+        <@validator.script field="password"/>
     </#if>
 </@layout.registrationLayout>

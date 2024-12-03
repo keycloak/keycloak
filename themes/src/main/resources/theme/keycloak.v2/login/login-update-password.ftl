@@ -2,6 +2,7 @@
 <#import "password-commons.ftl" as passwordCommons>
 <#import "field.ftl" as field>
 <#import "buttons.ftl" as buttons>
+<#import "password-validation.ftl" as validator>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password','password-confirm'); section>
 <!-- template: login-update-password.ftl -->
     <#if section = "header">
@@ -24,5 +25,8 @@
                 </#if>
             </@buttons.actionGroup>
         </form>
+
+        <@validator.templates/>
+        <@validator.script field="password-new"/>
     </#if>
 </@layout.registrationLayout>
