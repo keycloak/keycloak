@@ -17,7 +17,7 @@
                                        aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
                                        class="${properties.kcInputClass!}" name="username"
                                        value="${(login.username!'')}"
-                                       type="text" autofocus autocomplete="off"
+                                       type="text" autofocus autocomplete="username"
                                        dir="ltr"/>
 
                                 <#if messagesPerField.existsError('username')>
