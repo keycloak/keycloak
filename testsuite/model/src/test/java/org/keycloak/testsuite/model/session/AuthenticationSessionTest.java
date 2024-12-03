@@ -270,7 +270,10 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             // optimization in place:
             // create and remove in the same transaction should not trigger any operation in the Infinispan cache.
             var rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            var client = realm.getClientByClientId("test-app");
             rootAuthSession.setTimestamp(1000);
+            var authSession = rootAuthSession.createAuthenticationSession(client);
+            rootAuthSession.removeAuthenticationSessionByTabId(authSession.getTabId());
             session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
         });
 
