@@ -177,7 +177,8 @@
 		<#assign classDiv=properties.kcInputClassRadio!>
 		<#assign classInput=properties.kcInputClassRadioInput!>
 		<#assign classLabel=properties.kcInputClassRadioLabel!>
-	<#else>	
+	<#else>
+		<input type="hidden" id="${attribute.name}-empty" name="${attribute.name}" value=""/>
 		<#assign inputType='checkbox'>
 		<#assign classDiv=properties.kcInputClassCheckbox!>
 		<#assign classInput=properties.kcInputClassCheckboxInput!>
