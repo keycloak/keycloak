@@ -21,6 +21,14 @@ public class KeycloakUrls {
         return toUrl(getBase());
     }
 
+    public String getMasterRealm() {
+        return baseUrl + "/realms/master";
+    }
+
+    public URL getMasterRealmUrl() {
+        return toUrl(getMasterRealm());
+    }
+
     public String getAdmin() {
         return baseUrl + "/admin";
     }
