@@ -11,6 +11,34 @@ darkMode=false
 
 Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the "Dark mode" setting under the "Theme" tab in the realm settings.
 
+= Authorization Code Binding to a DPoP Key
+
+Support now exists for https://datatracker.ietf.org/doc/html/rfc9449#section-10[Authorization Code Binding to a DPoP Key] including support for the DPoP with Pushed Authorization Requests.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+= Option to create certificates for generated EC keys
+
+A new option, `Generate certificate`, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a 
+certificate might be generated for this key. The certificate information is available in the Admin Console and in the JWK representation of this key, which is available
+from JWKS endpoint with the realm keys.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
+endif::[]
+
+= Minimum ACR Value for the client
+
+The option `Minimum ACR value` is added as a configuration option on the realm OIDC clients. This addition is an enhancement related to step-up authentication, which makes it possible
+to enforce minimum ACR level when logging in to the particular client.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/sonOfRa[Simon Levermann] for the contribution.
+endif::[]
+
+
 = LDAP users are created as enabled by default when using Microsoft Active Directory
 
 If you are using Microsoft AD and creating users through the administrative interfaces, the user will created as enabled by default.
