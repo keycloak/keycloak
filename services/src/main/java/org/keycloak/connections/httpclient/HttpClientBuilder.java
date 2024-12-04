@@ -252,7 +252,7 @@ public class HttpClientBuilder {
                     .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
-            org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
+            org.apache.http.impl.client.HttpClientBuilder builder = getApacheHttpClientBuilder()
                     .setDefaultRequestConfig(requestConfig)
                     .setSSLSocketFactory(sslsf)
                     .setMaxConnTotal(connectionPoolSize)

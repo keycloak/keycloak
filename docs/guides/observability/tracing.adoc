@@ -66,6 +66,7 @@ image::jaeger-tracing.png[Jaeger UI]
 * Incoming HTTP requests
 * Outgoing Database including acquiring a database connections
 * Outgoing LDAP requests including connecting to the LDAP server
+* Outgoing HTTP requests including IdP brokerage
 
 === Tags
 
