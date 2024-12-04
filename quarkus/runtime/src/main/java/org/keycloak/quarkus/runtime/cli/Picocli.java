@@ -194,8 +194,10 @@ public class Picocli {
     }
 
     public void exit(int exitCode) {
-        // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
-        System.exit(exitCode);
+        if (exitCode != CommandLine.ExitCode.OK && (!Environment.isTestLaunchMode() || isRebuildCheck())) {
+            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
+            System.exit(exitCode);
+        }
     }
 
     private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {

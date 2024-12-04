@@ -30,6 +30,7 @@ import org.keycloak.models.ModelDuplicateException;
 
 import javax.naming.NamingException;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 
 import static org.jboss.logging.Logger.Level.DEBUG;
@@ -47,7 +48,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 @MessageLogger(projectCode="KC-SERVICES", length=4)
 public interface ServicesLogger extends BasicLogger {
 
-    ServicesLogger LOGGER = Logger.getMessageLogger(ServicesLogger.class, "org.keycloak.services");
+    ServicesLogger LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ServicesLogger.class, "org.keycloak.services");
 
     @LogMessage(level = INFO)
     @Message(id=1, value="Loading config from %s")
