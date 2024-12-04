@@ -12,7 +12,7 @@ updates:
       - area/dependencies
       - area/ci
   - package-ecosystem: npm
-    directory: /
+    directory: js
     schedule:
       interval: daily
       time: "00:00"
