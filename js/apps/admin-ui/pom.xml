@@ -58,7 +58,7 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>lib-build</id>
+                                <id>pnpm-build-lib</id>
                                 <goals>
                                     <goal>pnpm</goal>
                                 </goals>
@@ -67,6 +67,16 @@
                                     <environmentVariables>
                                         <LIB>true</LIB>
                                     </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pnpm-pack</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>pack --pack-destination=target</arguments>
                                 </configuration>
                             </execution>
                         </executions>
@@ -86,18 +96,6 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>pack</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>pack --pack-destination=target</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
