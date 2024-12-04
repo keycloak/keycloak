@@ -63,10 +63,7 @@
                                     <goal>pnpm</goal>
                                 </goals>
                                 <configuration>
-                                    <arguments>build</arguments>
-                                    <environmentVariables>
-                                        <LIB>true</LIB>
-                                    </environmentVariables>
+                                    <arguments>build-lib</arguments>
                                 </configuration>
                             </execution>
                             <execution>

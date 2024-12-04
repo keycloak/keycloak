@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
+    "build-lib": "wireit",
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
@@ -44,6 +45,13 @@
     },
     "build": {
       "command": "vite build",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "build-lib": {
+      "command": "LIB=true vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
