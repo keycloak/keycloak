@@ -48,6 +48,15 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
+      ],
+      "files": [
+        "public",
+        "src",
+        "tsconfig.json",
+        "vite.config.ts"
+      ],
+      "output": [
+        "target/classes/theme/keycloak.v2/admin/resources"
       ]
     },
     "build-lib": {

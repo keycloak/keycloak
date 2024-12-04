@@ -27,13 +27,12 @@
         "../keycloak-admin-client:build"
       ],
       "files": [
-        "src/**",
-        "package.json",
+        "src",
         "tsconfig.json",
         "vite.config.ts"
       ],
       "output": [
-        "dist/**"
+        "dist"
       ]
     },
     "lint": {
