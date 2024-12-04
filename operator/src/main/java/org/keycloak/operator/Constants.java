@@ -59,6 +59,9 @@ public final class Constants {
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
     public static final String KEYCLOAK_DISCOVERY_TCP_PORT_NAME = "tcp";
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+    public static final Integer KEYCLOAK_JGROUPS_DATA_PORT = 7800;
+    public static final Integer KEYCLOAK_JGROUPS_FD_PORT = 57800;
+    public static final String KEYCLOAK_JGROUPS_PROTOCOL = "TCP";
     public static final Integer KEYCLOAK_MANAGEMENT_PORT = 9000;
     public static final String KEYCLOAK_MANAGEMENT_PORT_NAME = "management";
 
@@ -74,4 +77,6 @@ public final class Constants {
 
     public static final String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
     public static final String KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY = "http-management-relative-path";
+
+    public static final String KEYCLOAK_NETWORK_POLICY_SUFFIX = "-network-policy";
 }

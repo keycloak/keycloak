@@ -32,6 +32,8 @@ spec:
     annotations:
       myAnnotation: myValue
       anotherAnnotation: anotherValue
+  networkPolicy:
+    enabled: true
   http:
     httpEnabled: true
     httpPort: 123

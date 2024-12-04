@@ -45,6 +45,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CRSerializationTest {
 
@@ -94,6 +95,9 @@ public class CRSerializationTest {
         HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
         assertNotNull(managementSpec);
         assertEquals(9003, managementSpec.getPort());
+
+        assertNotNull(keycloak.getSpec().getNetworkPolicySpec());
+        assertTrue(keycloak.getSpec().getNetworkPolicySpec().isNetworkPolicyEnabled());
     }
 
     @Test

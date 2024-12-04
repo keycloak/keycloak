@@ -63,7 +63,8 @@ import jakarta.inject.Inject;
         @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
-        @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
+        @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
+        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class)
     })
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
@@ -77,7 +78,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
-    
+
     volatile KeycloakDeploymentDependentResource deploymentDependentResource;
 
     @Override
@@ -95,10 +96,10 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Map<String, EventSource> sources = new HashMap<>();
         sources.put("serviceSource", servicesEvent);
-        
+
         this.deploymentDependentResource = new KeycloakDeploymentDependentResource(config, watchedResources, distConfigurator);
         sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, this.deploymentDependentResource));
-        
+
         return sources;
     }
 
@@ -132,7 +133,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         if (modifiedSpec) {
             return UpdateControl.updateResource(kc);
         }
-        
+
         // after the spec has possibly been updated, reconcile the StatefulSet
         this.deploymentDependentResource.reconcile(kc, context);
 

@@ -14,35 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
-public class HttpManagementSpec {
+public class NetworkPolicySpec {
 
-    @JsonPropertyDescription("Port of the management interface.")
-    private Integer port = Constants.KEYCLOAK_MANAGEMENT_PORT;
+    @JsonProperty("enabled")
+    @JsonPropertyDescription("Enables or disable the ingress traffic control.")
+    private boolean networkPolicyEnabled = false;
 
-    public Integer getPort() {
-        return port;
+    public boolean isNetworkPolicyEnabled() {
+        return networkPolicyEnabled;
     }
 
-    public void setPort(Integer port) {
-        this.port = port;
+    public void setNetworkPolicyEnabled(boolean networkPolicyEnabled) {
+        this.networkPolicyEnabled = networkPolicyEnabled;
     }
 
-    public static int managementPort(Keycloak keycloak) {
-        return CRDUtils.keycloakSpecOf(keycloak)
-                .map(KeycloakSpec::getHttpManagementSpec)
-                .map(HttpManagementSpec::getPort)
-                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
+    public static boolean isNetworkPolicyEnabled(Keycloak keycloak) {
+        return Optional.ofNullable(keycloak.getSpec().getNetworkPolicySpec())
+                .map(NetworkPolicySpec::isNetworkPolicyEnabled)
+                .orElse(false);
     }
+
+    public static String networkPolicyName(Keycloak keycloak) {
+        return keycloak.getMetadata().getName() + Constants.KEYCLOAK_NETWORK_POLICY_SUFFIX;
+    }
+
 }

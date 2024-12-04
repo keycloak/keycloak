@@ -308,7 +308,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
       var rootsDeleted = CompletableFuture.allOf(roots.stream()
               .map(c -> k8sclient.resources(c).informOnCondition(List::isEmpty)).toArray(CompletableFuture[]::new));
-      roots.stream().forEach(c -> k8sclient.resources(c).withGracePeriod(0).delete());
+      roots.forEach(c -> k8sclient.resources(c).withGracePeriod(10).delete());
       try {
           rootsDeleted.get(1, TimeUnit.MINUTES);
       } catch (Exception e) {
@@ -316,7 +316,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           throw new RuntimeException(e);
       }
       dependents.stream().map(c -> k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS))
-              .forEach(r -> r.withGracePeriod(0).delete());
+              .forEach(r -> r.withGracePeriod(10).delete());
       // enforce that the dependents are gone
       Awaitility.await().during(5, TimeUnit.SECONDS).until(() -> {
           if (dependents.stream().anyMatch(
@@ -517,5 +517,9 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               .endStartupProbe().endContainer().endSpec().endPodTemplate().endUnsupported().build());
       return keycloak;
   }
+
+    protected static String namespaceOf(Keycloak keycloak) {
+        return keycloak.getMetadata().getNamespace();
+    }
 
 }
