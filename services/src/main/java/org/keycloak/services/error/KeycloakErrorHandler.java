@@ -184,12 +184,15 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         Map<String, Object> attributes = new HashMap<>();
         Properties messagesBundle = theme.getMessages(locale);
 
+        final var localeBean =  new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
+        final var lang = realm.isInternationalizationEnabled() ? localeBean.getCurrentLanguageTag() : Locale.ENGLISH.toLanguageTag();
+
         attributes.put("statusCode", responseStatus.getStatusCode());
 
         attributes.put("realm", realm);
         attributes.put("url", new UrlBean(realm, theme, session.getContext().getUri().getBaseUri(), null));
-        attributes.put("locale", new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle));
-
+        attributes.put("locale", localeBean);
+        attributes.put("lang", lang);
 
         String errorKey = responseStatus == Response.Status.NOT_FOUND ? Messages.PAGE_NOT_FOUND : Messages.INTERNAL_SERVER_ERROR;
         String errorMessage = messagesBundle.getProperty(errorKey);

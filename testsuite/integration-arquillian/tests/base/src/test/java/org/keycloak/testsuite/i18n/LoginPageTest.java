@@ -24,6 +24,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -83,6 +84,11 @@ public class LoginPageTest extends AbstractI18NTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Before
+    public void before() {
+        setRealmInternationalization(true);
+    }
+    
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
@@ -135,13 +141,21 @@ public class LoginPageTest extends AbstractI18NTest {
     }
 
     @Test
-    public void htmlLangAttribute() {
+    public void htmlLangAttributeWithInternationalizationEnabled() {
         loginPage.open();
         assertEquals("en", loginPage.getHtmlLanguage());
 
         oauth.uiLocales("de");
         loginPage.open();
         assertEquals("de", loginPage.getHtmlLanguage());
+    }
+
+    @Test
+    public void htmlLangAttributeWithInternationalizationDisabled() {
+        setRealmInternationalization(false);
+
+        loginPage.open();
+        assertEquals("en", loginPage.getHtmlLanguage());
     }
 
     @Test
@@ -380,5 +394,12 @@ public class LoginPageTest extends AbstractI18NTest {
         pageSource = driver.getPageSource();
         assertThat(pageSource, containsString(expectedEnglishMessage));
         assertThat(pageSource, not(containsString(expectedGermanMessage)));
+    }
+
+    private void setRealmInternationalization(final boolean enabled) {
+        final var realmResource = testRealm();
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setInternationalizationEnabled(enabled);
+        realmResource.update(realm);
     }
 }
