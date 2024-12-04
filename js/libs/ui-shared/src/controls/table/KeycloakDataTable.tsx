@@ -75,15 +75,34 @@ type DataTableProps<T> = {
 
 type CellRendererProps = {
   row: IRow;
+  index?: number;
+  actions?: IActions;
+  actionResolver?: IActionsResolver;
 };
 
 const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
   !!c && (c as IRowCell).title !== undefined;
 
-const CellRenderer = ({ row }: CellRendererProps) =>
-  row.cells!.map((c, i) => (
-    <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
-  ));
+const CellRenderer = ({
+  row,
+  index,
+  actions,
+  actionResolver,
+}: CellRendererProps) => (
+  <>
+    {row.cells!.map((c, i) => (
+      <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+    ))}
+    {(actions || actionResolver) && (
+      <Td isActionCell>
+        <ActionsColumn
+          items={actions || actionResolver?.(row, {})!}
+          extraData={{ rowIndex: index }}
+        />
+      </Td>
+    )}
+  </>
+);
 
 const ExpandableRowRenderer = ({ row }: CellRendererProps) =>
   row.cells!.map((c, i) => (
@@ -212,15 +231,12 @@ function DataTable<T>({
                   }}
                 />
               )}
-              <CellRenderer row={row} />
-              {(actions || actionResolver) && (
-                <Td isActionCell>
-                  <ActionsColumn
-                    items={actions || actionResolver?.(row, {})!}
-                    extraData={{ rowIndex: index }}
-                  />
-                </Td>
-              )}
+              <CellRenderer
+                row={row}
+                index={index}
+                actions={actions}
+                actionResolver={actionResolver}
+              />
             </Tr>
           ))}
         </Tbody>
@@ -242,7 +258,12 @@ function DataTable<T>({
                     },
                   }}
                 />
-                <CellRenderer row={row} />
+                <CellRenderer
+                  row={row}
+                  index={index}
+                  actions={actions}
+                  actionResolver={actionResolver}
+                />
               </Tr>
             ) : (
               <Tr isExpanded={!!expandedRows[index - 1]}>
