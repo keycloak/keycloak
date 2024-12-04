@@ -37,6 +37,7 @@ The following shows how to configure {project_name} to break down the metrics by
 <@kc.start parameters="... --event-metrics-user-tags=realm,idp,clientId ..."/>
 
 You can limit the events for which {project_name} will expose metrics.
+See the {adminguide_link}#event-types[{adminguide_name} on event types] for an overview of the available events.
 
 The following example limits the events collected to `LOGIN` and `LOGOUT` events:
 
