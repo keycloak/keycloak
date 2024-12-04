@@ -190,7 +190,7 @@ export default class RealmSettingsPage extends CommonPage {
   #jsonEditorSaveBtn = "jsonEditor-saveBtn";
   #jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   #jsonEditorReloadBtn = "jsonEditor-reloadBtn";
-  #jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
+  #jsonEditor = ".w-tc-editor-text";
   #clientPolicyDrpDwn = '[data-testid="action-dropdown"]';
   #deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   #clientProfileOne =
