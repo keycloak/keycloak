@@ -397,6 +397,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     string | EventType[],
                   ];
 
+                  if (
+                    (key === "user" && !!user) ||
+                    (key === "client" && !!client)
+                  ) {
+                    return null;
+                  }
+
                   return (
                     <ChipGroup
                       className="pf-v5-u-mt-md pf-v5-u-mr-md"

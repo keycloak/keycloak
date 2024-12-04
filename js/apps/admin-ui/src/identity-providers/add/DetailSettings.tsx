@@ -42,6 +42,7 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
@@ -64,6 +65,7 @@ import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { AdminEvents } from "../../events/AdminEvents";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -278,9 +280,10 @@ export default function DetailSettings() {
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const { hasAccess } = useAccess();
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -322,6 +325,7 @@ export default function DetailSettings() {
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
   const permissionsTab = useTab("permissions");
+  const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
@@ -616,6 +620,18 @@ export default function DetailSettings() {
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           )}
+          {realmRepresentation?.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents
+                  resourcePath={`identity-provider/instances/${alias}`}
+                />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </FormProvider>
