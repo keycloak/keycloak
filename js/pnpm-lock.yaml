@@ -87,8 +87,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.11
-        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.0.2
         version: 24.0.2(typescript@5.7.2)
@@ -169,8 +169,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.11
-        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-textarea-code-editor':
         specifier: ^3.1.0
         version: 3.1.0(@babel/runtime@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -392,8 +392,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.11
-        version: 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.0.2
         version: 24.0.2(typescript@5.7.2)
@@ -1183,6 +1183,12 @@ packages:
       react: ^17 || ^18
       react-dom: ^17 || ^18
 
+  '@patternfly/react-core@5.4.11':
+    resolution: {integrity: sha512-+WgxVnnqiZiASB+zMBA8Z1YuaX32/ehJ8Y4UB+j2xIB/tjvBqKNVn7n4VPy56F+G9nJ92Kv8Tekccau6bL6jFg==}
+    peerDependencies:
+      react: ^17 || ^18
+      react-dom: ^17 || ^18
+
   '@patternfly/react-icons@5.4.2':
     resolution: {integrity: sha512-CMQ5oHYzW6TPVTs2jpNJmP2vGCAKR/YeTPwHGO9dLkAUej1IcIxtCCWK2Fdo2UJsnBjuZihasyw2b6ehvbUm9Q==}
     peerDependencies:
@@ -1192,8 +1198,8 @@ packages:
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
 
-  '@patternfly/react-table@5.4.11':
-    resolution: {integrity: sha512-TlEPx4G+49QYZxk649WUIHkRPA/JB//i29fUosrJdI6EEzpTe8keHLXe5wA9KkhCxOtna7iHPTPWv5qRiDJKSg==}
+  '@patternfly/react-table@5.4.12':
+    resolution: {integrity: sha512-ZpW/49bWR9JkZCyBGBCbHNdJt0Vn34g5BaXlVF/P7Tl0WPdxFLWS5EQywiXEhu8qoOhz3uGcyGwACCJCvmqCSg==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -5677,7 +5683,7 @@ snapshots:
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-table': 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-table': 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-textarea-code-editor': 3.1.0(@babel/runtime@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
@@ -5836,6 +5842,17 @@ snapshots:
       react-dropzone: 14.3.5(react@18.3.1)
       tslib: 2.8.1
 
+  '@patternfly/react-core@5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles': 5.4.1
+      '@patternfly/react-tokens': 5.4.1
+      focus-trap: 7.6.2
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-dropzone: 14.3.5(react@18.3.1)
+      tslib: 2.8.1
+
   '@patternfly/react-icons@5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
@@ -5843,9 +5860,9 @@ snapshots:
 
   '@patternfly/react-styles@5.4.1': {}
 
-  '@patternfly/react-table@5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-table@5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-core': 5.4.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
       '@patternfly/react-tokens': 5.4.1
