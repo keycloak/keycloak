@@ -45,7 +45,7 @@ If this header is incorrectly configured, rogue clients can set this header and 
 
 NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
 
-NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
+NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the `http-enabled` setting is required.
 
 == Different context-path on reverse proxy
 
