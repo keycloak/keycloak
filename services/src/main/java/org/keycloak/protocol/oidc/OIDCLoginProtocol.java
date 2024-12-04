@@ -153,6 +153,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     protected OIDCResponseType responseType;
     protected OIDCResponseMode responseMode;
 
+    protected OIDCProviderConfig providerConfig;
+
     public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         this.session = session;
         this.realm = realm;
@@ -161,8 +163,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
     }
 
-    public OIDCLoginProtocol() {
-
+    public OIDCLoginProtocol(OIDCProviderConfig providerConfig) {
+        this.providerConfig = providerConfig;
     }
 
     private void setupResponseTypeAndMode(String responseType, String responseMode) {
@@ -200,6 +202,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public OIDCLoginProtocol setEventBuilder(EventBuilder event) {
         this.event = event;
         return this;
+    }
+
+    public OIDCProviderConfig getConfig() {
+        return this.providerConfig;
     }
 
     @Override
