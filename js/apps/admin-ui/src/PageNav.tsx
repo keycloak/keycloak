@@ -128,6 +128,10 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
+              {isFeatureEnabled(Feature.AdminFineGrainedAuthzV2) &&
+                realmRepresentation?.adminPermissionsEnabled && (
+                  <LeftNav title="permissions" path="/permissions" />
+                )}
               {isFeatureEnabled(Feature.DeclarativeUI) &&
                 pages?.map((p) => (
                   <LeftNav
