@@ -42,7 +42,7 @@ import { PartialImportDialog } from "./PartialImport";
 import { PoliciesTab } from "./PoliciesTab";
 import ProfilesTab from "./ProfilesTab";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
-import { RealmSettingsThemesTab } from "./ThemesTab";
+import ThemesTab from "./themes/ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
 import { UserRegistration } from "./UserRegistration";
 import { EventsTab } from "./event-config/EventsTab";
@@ -355,7 +355,7 @@ export const RealmSettingsTabs = () => {
             data-testid="rs-themes-tab"
             {...themesTab}
           >
-            <RealmSettingsThemesTab realm={realm!} save={save} />
+            <ThemesTab realm={realm!} save={save} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("keys")}</TabTitleText>}

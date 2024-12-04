@@ -4,20 +4,17 @@ import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormAccess } from "../components/form/FormAccess";
-import { DefaultSwitchControl } from "../components/SwitchControl";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { convertToFormValues } from "../util";
+import { FormAccess } from "../../components/form/FormAccess";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { convertToFormValues } from "../../util";
 
-type RealmSettingsThemesTabProps = {
+type ThemeSettingsTabProps = {
   realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
 };
 
-export const RealmSettingsThemesTab = ({
-  realm,
-  save,
-}: RealmSettingsThemesTabProps) => {
+export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   const { t } = useTranslation();
 
   const form = useForm<RealmRepresentation>();

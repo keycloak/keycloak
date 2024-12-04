@@ -65,6 +65,8 @@ public class Profile {
 
         LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1),
 
+        QUICK_THEME("WYSIWYG theme configuration tool", Type.EXPERIMENTAL, 1),
+
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
