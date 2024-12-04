@@ -11,7 +11,7 @@ import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
 import org.keycloak.test.framework.server.KeycloakServerConfigInterceptor;
 import org.keycloak.test.framework.server.KeycloakUrls;
 
-public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet>, KeycloakServerConfigInterceptor<TimeOffSet, InjectTimeOffSet> {
+public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet> {
     @Override
     public Class<InjectTimeOffSet> getAnnotationClass() {
         return InjectTimeOffSet.class;
@@ -55,11 +55,5 @@ public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet
     @Override
     public int order() {
         return SupplierOrder.BEFORE_KEYCLOAK_SERVER;
-        // Implementing the KeycloakServerConfigInterceptor is a workaround for RemoteProvidersSupplier to work
-    }
-
-    @Override
-    public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<TimeOffSet, InjectTimeOffSet> instanceContext) {
-        return serverConfig;
     }
 }

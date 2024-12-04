@@ -1,5 +1,6 @@
 package org.keycloak.test.framework.server;
 
+import org.jboss.logging.Logger;
 import org.keycloak.test.framework.injection.InstanceContext;
 import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.RequestedInstance;
@@ -11,11 +12,11 @@ import java.util.List;
 
 public abstract class AbstractInterceptorHelper<I, V> {
 
+    private static final Logger LOGGER = Logger.getLogger(AbstractInterceptorHelper.class);
+
     private final Class<?> interceptorClass;
     private final List<Interception> interceptions = new LinkedList<>();
     private final InterceptedBy interceptedBy = new InterceptedBy();
-
-
 
     public AbstractInterceptorHelper(Registry registry, Class<I> interceptorClass) {
         this.interceptorClass = interceptorClass;
@@ -34,6 +35,7 @@ public abstract class AbstractInterceptorHelper<I, V> {
     public V intercept(V value, InstanceContext<?, ?> instanceContext) {
         for (Interception interception : interceptions) {
             value = intercept(value, interception.supplier, interception.existingInstance);
+            LOGGER.debugv("{0} intercepted by {1}", value.getClass().getSimpleName(), interception.supplier.getClass().getSimpleName());
         }
         instanceContext.addNote("InterceptedBy", interceptedBy);
         return value;
