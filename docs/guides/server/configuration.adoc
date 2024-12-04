@@ -155,6 +155,8 @@ Note that some Quarkus properties are already mapped in the {project_name} confi
 To disable expression evaluation, the `\` character functions as an escape character. In particular, it must be used to escape the usage of `$` characters when they appear to define an expression or are repeated. For example, if you want the configuration value `my$$password`, use `my\$\$password` instead.  Note that the `\` character requires additional escaping or quoting when using most unix shells, or when it appears in properties files.
 For example, bash single quotes preserve the single backslash `--db-password='my\$\$password'`. Also, with bash double quotes, you need an additional backslash `--db-password="my\\$\\$password"`. Similarly in a properties file, backslash characters must also be escaped: `kc.db-password=my\\$\\$password`
 
+When specifying Windows file paths in configuration values, backslashes must also be escaped. For example, if you want to specify the path `C:\path\to\file`, you should write it as `C:\\path\\to\\file`. Alternatively, you can use forward slashes which don't need escaping: `C:/path/to/file`.
+
 == Starting {project_name}
 You can start {project_name} in `development mode` or `production mode`. Each mode offers different defaults for the intended environment.
 
