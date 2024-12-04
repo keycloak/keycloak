@@ -684,7 +684,13 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     public void logoutWithClientIdAndWithoutIdTokenHint() {
         OAuthClient.AccessTokenResponse tokenResponse = loginUser();
 
-        String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).clientId("test-app").state("somethingg").build();
+        // logout url with no parameters, client is the account app
+        String logoutUrl = oauth.getLogoutUrl().build();
+        driver.navigate().to(logoutUrl);
+        logoutConfirmPage.assertCurrent();
+
+        // change logout to our app with redirect uri
+        logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).clientId("test-app").state("somethingg").build();
         driver.navigate().to(logoutUrl);
 
         // Assert logout confirmation page as id_token_hint was not sent. Session still exists. Assert default language on logout page (English)

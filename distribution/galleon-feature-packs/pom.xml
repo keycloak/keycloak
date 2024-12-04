@@ -32,7 +32,20 @@
 
     <modules>
         <module>saml-adapter-galleon-pack</module>
-        <module>saml-adapter-galleon-pack-layer-metadata-tests</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>upstream-adapters</id>
+            <activation>
+                <property>
+                    <name>!eap8-adapters</name>
+                </property>
+            </activation>
+            <modules>
+                <module>saml-adapter-galleon-pack-layer-metadata-tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
 

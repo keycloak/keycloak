@@ -311,3 +311,4 @@ export { PageNotFoundSection } from "./PageNotFoundSection";
 export { App as AdminUi } from "./App";
 export type { Environment as AccountEnvironment } from "./environment";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
+export { AdminClientContext, initAdminClient } from "./admin-client";
