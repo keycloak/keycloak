@@ -1,6 +1,8 @@
 package org.keycloak.test.framework.injection;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.Set;
 
 public interface Supplier<T, S extends Annotation> {
 
@@ -37,4 +39,9 @@ public interface Supplier<T, S extends Annotation> {
     default int order() {
         return SupplierOrder.DEFAULT;
     }
+
+    default Set<Class<?>> dependencies() {
+        return Collections.emptySet();
+    }
+
 }

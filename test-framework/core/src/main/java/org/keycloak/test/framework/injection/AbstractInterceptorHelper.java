@@ -1,9 +1,4 @@
-package org.keycloak.test.framework.server;
-
-import org.keycloak.test.framework.injection.InstanceContext;
-import org.keycloak.test.framework.injection.Registry;
-import org.keycloak.test.framework.injection.RequestedInstance;
-import org.keycloak.test.framework.injection.Supplier;
+package org.keycloak.test.framework.injection;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -11,13 +6,13 @@ import java.util.List;
 
 public abstract class AbstractInterceptorHelper<I, V> {
 
+    private final Registry registry;
     private final Class<?> interceptorClass;
     private final List<Interception> interceptions = new LinkedList<>();
     private final InterceptedBy interceptedBy = new InterceptedBy();
 
-
-
     public AbstractInterceptorHelper(Registry registry, Class<I> interceptorClass) {
+        this.registry = registry;
         this.interceptorClass = interceptorClass;
 
         registry.getDeployedInstances().stream().filter(i -> isInterceptor(i.getSupplier())).forEach(i -> interceptions.add(new Interception(i)));
@@ -34,6 +29,7 @@ public abstract class AbstractInterceptorHelper<I, V> {
     public V intercept(V value, InstanceContext<?, ?> instanceContext) {
         for (Interception interception : interceptions) {
             value = intercept(value, interception.supplier, interception.existingInstance);
+            registry.getLogger().logIntercepted(value, interception.supplier);
         }
         instanceContext.addNote("InterceptedBy", interceptedBy);
         return value;

@@ -3,7 +3,6 @@ package org.keycloak.test.framework.injection;
 import org.jboss.logging.Logger;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("rawtypes")
@@ -89,7 +88,7 @@ class RegistryLogger {
         LOGGER.debug("Closing all instances");
     }
 
-    public void logSuppliers(List<Supplier<?, ?>> suppliers, Set<Supplier> skippedSuppliers) {
+    public void logSuppliers(List<Supplier<?, ?>> suppliers, List<Supplier<?, ?>> skippedSuppliers) {
         if (LOGGER.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder();
             sb.append("Loaded suppliers:");
@@ -120,6 +119,10 @@ class RegistryLogger {
             sb.append(alias);
         }
 
+    }
+
+    public void logIntercepted(Object value, Supplier<?, ?> supplier) {
+        LOGGER.debugv("{0} intercepted by {1}", value.getClass().getSimpleName(), supplier.getClass().getSimpleName());
     }
 
     public enum InjectionType {

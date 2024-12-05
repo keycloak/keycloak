@@ -21,6 +21,7 @@ public class SupplierHelpers {
         return value != null ? value : defaultValue;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T getAnnotationField(Annotation annotation, String name) {
         if (annotation != null) {
             for (Method m : annotation.annotationType().getMethods()) {
