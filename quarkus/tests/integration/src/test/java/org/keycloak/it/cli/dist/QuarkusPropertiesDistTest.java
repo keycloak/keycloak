@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -78,7 +79,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
-    @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "Different handling of quotes within arguments on Windows")
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStartWin(CLIResult cliResult) {
         cliResult.assertMessage("Keycloak is the best");
@@ -95,7 +96,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "build"})
-    @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "Different handling of quotes within arguments on Windows")
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
     @Order(4)
     void testIgnoreQuarkusSystemPropertyAtBuildWin(CLIResult cliResult) {
         cliResult.assertMessage("Keycloak is the best");
@@ -175,7 +176,7 @@ public class QuarkusPropertiesDistTest {
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=C:\\invalid\\path",
             "--config-keystore-password=secret" })
-    @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "Windows uses a different path separator.")
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Windows uses a different path separator.")
     @Order(11)
     void testInvalidSmallRyeKeyStorePathPropertyWin(CLIResult cliResult) {
         cliResult.assertError("java.lang.IllegalArgumentException: config-keystore path does not exist: C:\\invalid\\path");
@@ -204,7 +205,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(ForceRebuild.class)
-    @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "Windows uses a different path separator.")
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Windows uses a different path separator.")
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
             "--https-certificate-file=C:\\tmp\\kc\\bin\\..\\conf/server.crt.pem",
             "--https-certificate-key-file=C:\\tmp\\kc\\bin\\..\\conf/server.key.pem" })
