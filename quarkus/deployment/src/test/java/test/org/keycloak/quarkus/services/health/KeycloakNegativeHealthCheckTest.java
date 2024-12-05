@@ -45,6 +45,7 @@ public class KeycloakNegativeHealthCheckTest {
         agroalDataSource.close();
 
         RestAssured.port = 9001;
+        System.setProperty("KC_CACHE", "local"); // avoid flaky port conflicts
         given()
                 .when().get("/health/ready")
                 .then()

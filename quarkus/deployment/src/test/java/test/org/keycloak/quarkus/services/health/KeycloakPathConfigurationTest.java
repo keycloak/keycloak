@@ -30,8 +30,9 @@ import static org.hamcrest.CoreMatchers.is;
 class KeycloakPathConfigurationTest {
 
     @BeforeEach
-    void setUpPort() {
+    void setUp() {
         RestAssured.port = 9001;
+        System.setProperty("KC_CACHE", "local"); // avoid flaky port conflicts
     }
 
     @RegisterExtension
