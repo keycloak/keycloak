@@ -51,5 +51,6 @@ public class KeycloakNegativeHealthCheckTest {
                 .then()
                 .statusCode(503)
                 .body(Matchers.containsString("DOWN"));
+        System.clearProperty("KC_CACHE");
     }
 }
