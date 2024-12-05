@@ -138,15 +138,9 @@ export const RealmSelector = () => {
   const sortedRealms = useMemo(
     () => [
       ...(first === 0 && !search
-        ? recentRealms.reduce((acc, name) => {
-            const realm = realms.find((r) => r.name === name);
-            if (realm) {
-              acc.push(realm);
-            }
-            return acc;
-          }, [] as RealmNameRepresentation[])
+        ? (recentRealms || []).map((name) => ({ name }))
         : []),
-      ...realms.filter((r) => !recentRealms.includes(r.name)),
+      ...realms.filter((r) => !(recentRealms || []).includes(r.name)),
     ],
     [recentRealms, realms, first, search],
   );
@@ -218,7 +212,7 @@ export const RealmSelector = () => {
                   <RealmText
                     {...realm}
                     showIsRecent={
-                      realms.length > 5 && recentRealms.includes(realm.name)
+                      realms.length > 5 && recentRealms?.includes(realm.name)
                     }
                   />
                 </DropdownItem>
