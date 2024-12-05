@@ -111,7 +111,7 @@ export const RealmSelector = () => {
     debounce((value: string) => {
       setFirst(0);
       setSearch(value);
-    }, 1000),
+    }, 300),
     [],
   );
 
