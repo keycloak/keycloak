@@ -124,6 +124,7 @@ describe("Realm tests", () => {
   it("should create realm with special characters", () => {
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(specialCharsName).createRealm();
+    sidebarPage.goToRealm("master");
 
     sidebarPage.goToRealm(specialCharsName);
     sidebarPage.goToClients();
