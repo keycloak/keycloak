@@ -259,9 +259,6 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.1
         version: 18.3.1
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
       '@vitejs/plugin-react-swc':
         specifier: ^3.7.2
         version: 3.7.2(vite@6.0.3(@types/node@22.10.1)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.5.1))
@@ -286,9 +283,6 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.9.3)(@types/node@22.10.1)(typescript@5.7.2)
-      uuid:
-        specifier: ^11.0.3
-        version: 11.0.3
       vite:
         specifier: ^6.0.3
         version: 6.0.3(@types/node@22.10.1)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.5.1)
@@ -1854,9 +1848,6 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
-
-  '@types/uuid@10.0.0':
-    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -6701,8 +6692,6 @@ snapshots:
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
-
-  '@types/uuid@10.0.0': {}
 
   '@types/yauzl@2.10.3':
     dependencies:

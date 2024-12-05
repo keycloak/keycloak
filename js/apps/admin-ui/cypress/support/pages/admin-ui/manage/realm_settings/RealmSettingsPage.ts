@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import Select from "../../../../forms/Select";
 
 import CommonPage from "../../../CommonPage";
@@ -461,7 +460,7 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   toggleSwitch(switchName: string, waitFor: boolean | undefined = true) {
-    const loadName = `load-${uuid()}`;
+    const loadName = `load-${crypto.randomUUID()}`;
     if (waitFor) {
       cy.intercept({ path: "/admin/realms/*", times: 1 }).as(loadName);
     }

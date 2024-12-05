@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ListingPage, {
@@ -302,7 +301,7 @@ describe("Client Scopes test", () => {
     });
 
     it("Client scope CRUD test", () => {
-      itemId += "_" + uuid();
+      itemId += "_" + crypto.randomUUID();
 
       // Create
       listingPage.itemExist(itemId, false).goToCreateItem();
@@ -430,7 +429,7 @@ describe("Client Scopes test", () => {
       cy.injectAxe();
     });
 
-    const scopeName = "a11y_" + uuid();
+    const scopeName = "a11y_" + crypto.randomUUID();
 
     after(async () => {
       await adminClient.deleteClientScope(scopeName);
