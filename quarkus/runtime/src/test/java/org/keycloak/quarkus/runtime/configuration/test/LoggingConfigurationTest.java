@@ -184,4 +184,26 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.file.level", "DEBUG"
         ));
     }
+
+    @Test
+    public void logLevelTakesPrecedenceOverCategoryLevel() {
+        ConfigArgsConfigSource.setCliArgs("--log-level=org.keycloak:error");
+        SmallRyeConfig config = createConfig();
+        assertEquals("INFO", config.getConfigValue("quarkus.log.level").getValue());
+        assertEquals("ERROR", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--log-level=org.keycloak:error", "--log-level-org.keycloak=trace");
+        config = createConfig();
+        assertEquals("INFO", config.getConfigValue("quarkus.log.level").getValue());
+        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+    }
+
+    @Test
+    public void unknownCategoryLevelIsResolvedFromRootLevel() {
+        ConfigArgsConfigSource.setCliArgs("--log-level=warn,org.keycloak:error", "--log-level-org.keycloak=trace");
+        SmallRyeConfig config = createConfig();
+        assertEquals("WARN", config.getConfigValue("quarkus.log.level").getValue());
+        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+        assertEquals("WARN", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+    }
 }

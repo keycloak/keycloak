@@ -320,6 +320,10 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+--log-level-<category> <level>
+                     The log level of a category. Takes precedence over the 'log-level' option.
+                       Possible values are (case insensitive): off, fatal, error, warn, info,
+                       debug, trace, all.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.

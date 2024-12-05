@@ -2,9 +2,12 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Option<T> {
+    public static final Pattern WILDCARD_PLACEHOLDER_PATTERN = Pattern.compile("<.+>");
 
     private final Class<T> type;
     private final String key;

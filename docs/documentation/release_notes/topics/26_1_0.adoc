@@ -53,4 +53,8 @@ by the LDAP provider.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}], and the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
 
+= Individual options for category-specific log levels
 
+It is now possible to set category-specific log levels as individual `log-level-category` options.
+
+For more details, see the https://www.keycloak.org/server/logging#_configuring_levels_as_individual_options[Logging guide].
