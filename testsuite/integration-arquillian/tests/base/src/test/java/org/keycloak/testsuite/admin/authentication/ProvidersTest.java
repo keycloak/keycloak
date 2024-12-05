@@ -234,6 +234,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
         addProviderInfo(result, "idp-add-organization-member", "Organization Member Onboard", "Adds a federated user as a member of an organization");
         addProviderInfo(result, "organization", "Organization Identity-First Login", "If organizations are enabled, automatically redirects users to the corresponding identity provider.");
+        addProviderInfo(result, "conditional-sub-flow-executed", "Condition - sub-flow executed", "Condition to evaluate if a sub-flow was executed successfully during the authentication process");
 
         return result;
     }

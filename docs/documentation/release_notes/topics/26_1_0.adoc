@@ -56,3 +56,7 @@ For information on how to migrate, see the link:{upgradingguide_link}[{upgrading
 = OpenShift v3 identity brokering removed
 
 As OpenShift v3 reached end-of-life a while back, support for identity brokering with OpenShift v3 has been removed from Keycloak.
+
+= New conditional authenticator `Condition - sub-flow executed`
+
+The `Condition - sub-flow executed` is a new conditional authenticator in {project_name}. The condition checks if a previous sub-flow was executed (or not executed) successfully during the authentication flow execution. More information about conditions in the link:{adminguide_link}#conditions-in-conditional-flows[server admin guide].
