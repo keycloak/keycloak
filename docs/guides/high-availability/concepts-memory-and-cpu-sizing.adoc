@@ -61,6 +61,62 @@ For every 100 login/logout/refresh requests per second:
 
 The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreases while the response times increase. A lower CPU quota on the database can lead to slower response times during peak loads. Choose a larger CPU quota if fast response times during peak loads are critical. See below for an example.
 
+=== User event metrics:
+
+This section details the use of the user event metrics such as `login` , `refresh_token` ,
+`client_login`  to monitor and analyze activities related to user logins,
+refresh token requests, and client credential grants respectively.
+
+These metrics are crucial for tracking daily and weekly fluctuations in user activity loads,
+identifying emerging trends that may indicate the need to resize the system and
+validating sizing calculations.
+By systematically measuring and evaluating these user event metrics,
+you can ensure your system remains appropriately scaled and responsive to changes in user behavior and demand.
+
+This is a preview feature and can be enabled with a feature flag.
+See the link:{links_observability_event-metrics_url}[{observability_event-metrics_name}] for more information.
+
+==== PromQL queries:
+
+Below is an example
+on how to use the PromQL queries to calculate the User login request rate and User login request error rate.
+These steps can be extrapolated further to measure the other key metrics that are important for your sizing.
+
+NOTE: Please note that, the current user event `login` wouldn't differentiate between password-based logins and cookie-based logins.
+
+===== User Logins
+
+----
+irate(
+  keycloak_user_events_total{
+        namespace="runner-keycloak", <1>
+        realm="realm-0", <2>
+        event="login" <3>
+     }[$__rate_interval]
+  )
+----
+<1> Filter by additional tags to identify namespace of {project_name}
+<2> Filter by the specific realm in which the user logins rate is calculated
+<3> User the `login` event tag in the metric to filter only the login events
+
+===== User Login errors
+
+----
+irate(
+  keycloak_user_events_total{
+        namespace="runner-keycloak", <1>
+        realm="realm-0", <2>
+        event="login", <3>
+        error!="" <4>
+     }[$__rate_interval]
+  )
+----
+<1> Filter by additional tags to identify namespace of {project_name}
+<2> Filter by the specific realm in which the user logins rate is calculated
+<3> User the `login` event tag in the metric to filter only the login events
+<4> Fetch all the events which have error tag filled with a non-empty value
+
+
 === Calculation example (single site)
 
 Target size:
@@ -69,11 +125,6 @@ Target size:
 * 600 client credential grants per second
 * 360 refresh token requests per second (1:8 ratio for logins)
 * 3 Pods
-
-User event metrics:
-
-To measure the specific requests rates, we can use the user event metrics, which is a preview feature and can be enabled with a feature flag.
-See the link:{links_observability_event-metrics_url}[{observability_event-metrics_name}] for more information.
 
 Limits calculated:
 
