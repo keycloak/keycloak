@@ -6,6 +6,7 @@ import {
   ListEmptyState,
   SelectVariant,
   TextControl,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -47,6 +48,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { CellResourceLinkRenderer } from "./ResourceLinks";
+import { EventsBanners } from "../Banners";
 
 import "./events.css";
 
@@ -135,6 +137,7 @@ export const AdminEvents = () => {
   >({});
 
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
+  const [adminEventsEnabled, setAdminEventsEnabled] = useState<boolean>();
   const [representationEvent, setRepresentationEvent] =
     useState<AdminEventRepresentation>();
 
@@ -160,6 +163,14 @@ export const AdminEvents = () => {
     formState: { isDirty },
     control,
   } = form;
+
+  useFetch(
+    () => adminClient.realms.getConfigEvents({ realm }),
+    (events) => {
+      setAdminEventsEnabled(events?.adminEventsEnabled!);
+    },
+    [],
+  );
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
@@ -271,8 +282,8 @@ export const AdminEvents = () => {
           />
         </DisplayDialog>
       )}
+      {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
       <KeycloakDataTable
-        className="keycloak__events_table"
         key={key}
         loader={loader}
         detailColumns={[
