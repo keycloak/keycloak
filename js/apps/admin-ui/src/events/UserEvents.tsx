@@ -1,6 +1,5 @@
 import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
-import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import {
   KeycloakDataTable,
   KeycloakSelect,
@@ -39,6 +38,7 @@ import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
+import useLocaleSort from "../utils/useLocaleSort";
 
 import "./events.css";
 
@@ -120,12 +120,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
+  const localeSort = useLocaleSort();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [selectOpen, setSelectOpen] = useState(false);
-  const [events, setEvents] = useState<RealmEventsConfigRepresentation>();
+  const [events, setEvents] = useState<string[]>();
   const [activeFilters, setActiveFilters] = useState<
     Partial<UserEventSearchForm>
   >({});
@@ -163,7 +164,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
-    (events) => setEvents(events),
+    (events) =>
+      setEvents(localeSort(events?.enabledEventTypes || [], (e) => e)),
     [],
   );
 
@@ -309,7 +311,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                           </ChipGroup>
                         }
                       >
-                        {events?.enabledEventTypes?.map((option) => (
+                        {events?.map((option) => (
                           <SelectOption key={option} value={option}>
                             {t(`eventTypes.${option}.name`)}
                           </SelectOption>
