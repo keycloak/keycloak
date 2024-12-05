@@ -134,7 +134,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @KeepServerAlive
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true"})
     @Order(8)
     void testUnknownQuarkusBuildTimePropertyApplied(CLIResult cliResult) {
         cliResult.assertNoBuild();

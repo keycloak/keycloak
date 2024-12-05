@@ -35,6 +35,7 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +75,7 @@ public final class Build extends AbstractCommand implements Runnable {
         if (org.keycloak.common.util.Environment.getProfile() == null) {
             Environment.setProfile(Environment.PROD_PROFILE_VALUE);
         }
-        exitWithErrorIfDevProfileIsSet();
+        checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");
         PersistedConfigSource.getInstance().runWithDisabled(() -> {
@@ -123,7 +124,7 @@ public final class Build extends AbstractCommand implements Runnable {
         return super.getOptionCategories();
     }
 
-    private void exitWithErrorIfDevProfileIsSet() {
+    private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
             // we allow start-dev, and import|export|bootstrap-admin --profile=dev
@@ -131,6 +132,9 @@ public final class Build extends AbstractCommand implements Runnable {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
+        } else if (Configuration.getConfigValue("kc.db").getConfigSourceOrdinal() == 0) {
+            picocli.getOutWriter().println(Ansi.AUTO.string(
+                    "@|bold Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.|@"));
         }
     }
 

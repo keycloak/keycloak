@@ -3,7 +3,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
@@ -30,7 +29,6 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB)
                         .to("quarkus.datasource.db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
-                        .isRequired(() -> !Environment.isDevMode(), "The db option must be explicitly provided in a non-development profile")
                         .paramLabel("vendor")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL)
