@@ -32,7 +32,8 @@ public interface OrganizationModel {
     String ALIAS = "alias";
 
     enum IdentityProviderRedirectMode {
-        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
+        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches"),
+        EMAIL_MATCH_ANY_ORG_DOMAIN("kc.org.broker.redirect.mode.email-matches-any-org-domain");
 
         private final String key;
 
