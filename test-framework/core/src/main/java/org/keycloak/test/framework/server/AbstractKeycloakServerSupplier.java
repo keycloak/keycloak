@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.server;
 
 import org.jboss.logging.Logger;
+import org.keycloak.test.framework.injection.AbstractInterceptorHelper;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.config.Config;
 import org.keycloak.test.framework.database.TestDatabase;

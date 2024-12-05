@@ -10,6 +10,10 @@ public interface TestFrameworkExtension {
 
     List<Supplier<?, ?>> suppliers();
 
+    default List<Class<?>> alwaysEnabledValueTypes() {
+        return Collections.emptyList();
+    }
+
     default Map<Class<?>, String> valueTypeAliases() {
         return Collections.emptyMap();
     }

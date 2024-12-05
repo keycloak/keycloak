@@ -12,6 +12,11 @@ public class RemoteTestFrameworkExtension implements TestFrameworkExtension {
         return List.of(
                 new TimeOffsetSupplier(),
                 new RemoteProvidersSupplier()
-                );
+        );
+    }
+
+    @Override
+    public List<Class<?>> alwaysEnabledValueTypes() {
+        return List.of(RemoteProviders.class);
     }
 }

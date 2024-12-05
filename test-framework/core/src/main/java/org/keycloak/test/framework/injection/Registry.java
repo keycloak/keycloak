@@ -1,35 +1,34 @@
 package org.keycloak.test.framework.injection;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.keycloak.test.framework.TestFrameworkExtension;
-import org.keycloak.test.framework.config.Config;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry implements ExtensionContext.Store.CloseableResource {
 
-    private RegistryLogger logger;
+    private final RegistryLogger logger;
 
     private ExtensionContext currentContext;
-    private final List<Supplier<?, ?>> suppliers = new LinkedList<>();
+    private final Extensions extensions;
     private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
 
     public Registry() {
-        loadSuppliers();
+        extensions = new Extensions();
+        logger = new RegistryLogger(extensions.getValueTypeAlias());
+    }
+
+    RegistryLogger getLogger() {
+        return logger;
     }
 
     public ExtensionContext getCurrentContext() {
@@ -48,11 +47,11 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             return dependency;
         } else {
             dependency = getRequestedDependency(typeClass, ref, dependent);
-            if(dependency != null) {
+            if (dependency != null) {
                 return dependency;
             } else {
                 dependency = getUnConfiguredDependency(typeClass, ref, dependent);
-                if(dependency != null) {
+                if (dependency != null) {
                     return dependency;
                 }
             }
@@ -100,22 +99,18 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private <T> T getUnConfiguredDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency;
-        Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
-        if (supplied.isPresent()) {
-            Supplier<T, ?> supplier = (Supplier<T, ?>) supplied.get();
-            Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
-            dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
+        Supplier<?, ?> supplier = extensions.findSupplierByType(typeClass);
+        Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+        dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
 
-            dependency.registerDependency(dependent);
-            dependency.setValue(supplier.getValue(dependency));
+        dependency.registerDependency(dependent);
+        dependency.setValue(supplier.getValue(dependency));
 
-            deployedInstances.add(dependency);
+        deployedInstances.add(dependency);
 
-            logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.UN_CONFIGURED);
+        logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.UN_CONFIGURED);
 
-            return (T) dependency.getValue();
-        }
-        return null;
+        return (T) dependency.getValue();
     }
 
     public void beforeEach(Object testInstance) {
@@ -127,6 +122,14 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     private void findRequestedInstances(Object testInstance) {
+        List<Class<?>> alwaysEnabledValueTypes = extensions.getAlwaysEnabledValueTypes();
+        for (Class<?> valueType : alwaysEnabledValueTypes) {
+            RequestedInstance requestedInstance = createRequestedInstance(null, valueType);
+            if (requestedInstance != null) {
+                requestedInstances.add(requestedInstance);
+            }
+        }
+
         Class testClass = testInstance.getClass();
         RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
         if (requestedServerInstance != null) {
@@ -178,7 +181,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private void injectFields(Object testInstance) {
         for (Field f : listFields(testInstance.getClass())) {
             InstanceContext<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
-            if(instance == null) { // a test class might have fields not meant for injection
+            if (instance == null) { // a test class might have fields not meant for injection
                 continue;
             }
             try {
@@ -221,15 +224,22 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     List<Supplier<?, ?>> getSuppliers() {
-        return suppliers;
+        return extensions.getSuppliers();
     }
 
     private RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
-        for (Annotation a : annotations) {
-            for (Supplier s : suppliers) {
-                if (s.getAnnotationClass().equals(a.annotationType())) {
-                    return new RequestedInstance(s, a, valueType);
+        if (annotations != null) {
+            for (Annotation annotation : annotations) {
+                Supplier<?, ?> supplier = extensions.findSupplierByAnnotation(annotation);
+                if (supplier != null) {
+                    return new RequestedInstance(supplier, annotation, valueType);
                 }
+            }
+        } else {
+            Supplier<?, ?> supplier = extensions.findSupplierByType(valueType);
+            if (supplier != null) {
+                Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+                return new RequestedInstance(supplier, defaultAnnotation, valueType);
             }
         }
         return null;
@@ -241,7 +251,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 Supplier supplier = i.getSupplier();
                 if (supplier.getAnnotationClass().equals(a.annotationType())
                         && valueType.isAssignableFrom(i.getValue().getClass())
-                        && Objects.equals(supplier.getRef(a), i.getRef()) ) {
+                        && Objects.equals(supplier.getRef(a), i.getRef())) {
                     return i;
                 }
             }
@@ -264,7 +274,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         String requestedRef = requestedInstance.getRef();
         Class requestedValueType = requestedInstance.getValueType();
         for (InstanceContext<?, ?> i : deployedInstances) {
-            if(!Objects.equals(i.getRef(), requestedRef)) {
+            if (!Objects.equals(i.getRef(), requestedRef)) {
                 continue;
             }
 
@@ -277,47 +287,6 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
         return null;
-    }
-
-    private void loadSuppliers() {
-        Iterator<TestFrameworkExtension> extensions = ServiceLoader.load(TestFrameworkExtension.class).iterator();
-        ValueTypeAlias valueTypeAlias = new ValueTypeAlias();
-        List<Supplier> tmp = new LinkedList<>();
-        while (extensions.hasNext()) {
-            TestFrameworkExtension extension = extensions.next();
-            tmp.addAll(extension.suppliers());
-            valueTypeAlias.addAll(extension.valueTypeAliases());
-        }
-
-        logger = new RegistryLogger(valueTypeAlias);
-
-        Set<Class> loadedValueTypes = new HashSet<>();
-        Set<Supplier> skippedSuppliers = new HashSet<>();
-
-        for (Supplier supplier : tmp) {
-            boolean shouldAdd = false;
-            Class supplierValueType = supplier.getValueType();
-
-            if (!loadedValueTypes.contains(supplierValueType)) {
-                String requestedSupplier = Config.getSelectedSupplier(supplierValueType, valueTypeAlias);
-                if (requestedSupplier != null) {
-                    if (requestedSupplier.equals(supplier.getAlias())) {
-                        shouldAdd = true;
-                    }
-                } else {
-                    shouldAdd = true;
-                }
-            }
-
-            if (shouldAdd) {
-                suppliers.add(supplier);
-                loadedValueTypes.add(supplierValueType);
-            } else {
-                skippedSuppliers.add(supplier);
-            }
-        }
-
-        logger.logSuppliers(suppliers, skippedSuppliers);
     }
 
     private InstanceContext getDeployedInstance(Class typeClass, String ref) {
