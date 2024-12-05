@@ -8,7 +8,12 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import {
+  FormProvider,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -45,8 +50,19 @@ export const LinkIdentityProviderModal = ({
   const { addAlert, addError } = useAlerts();
 
   const form = useForm<LinkRepresentation>({ mode: "onChange" });
-  const { handleSubmit, formState, setValue } = form;
+  const { control, handleSubmit, formState, setValue } = form;
   const { getValues } = useFormContext<OrganizationFormType>();
+
+  const emailMatchAnyOrgDomain: string = useWatch({
+    control,
+    name: convertAttributeNameToForm(
+      "config.kc.org.broker.redirect.mode.email-matches-any-org-domain",
+    ),
+    defaultValue:
+      identityProvider?.config?.[
+        "kc.org.broker.redirect.mode.email-matches-any-org-domain"
+      ] ?? "false",
+  });
 
   useEffect(
     () =>
@@ -77,6 +93,13 @@ export const LinkIdentityProviderModal = ({
         ...config,
       };
       foundIdentityProvider.hideOnLogin = data.hideOnLogin ?? true;
+      if (emailMatchAnyOrgDomain === "true") {
+        delete foundIdentityProvider.config[
+          "kc.org.broker.redirect.mode.email-matches"
+        ];
+        delete foundIdentityProvider.config["kc.org.domain"];
+      }
+
       await adminClient.identityProviders.update(
         { alias: data.alias[0] },
         foundIdentityProvider,
@@ -134,29 +157,41 @@ export const LinkIdentityProviderModal = ({
             isRequired
             isDisabled={!!identityProvider}
           />
-          <SelectControl
-            name={convertAttributeNameToForm("config.kc.org.domain")}
-            label={t("domain")}
-            controller={{ defaultValue: "" }}
-            options={[
-              { key: "", value: t("none") },
-              ...getValues("domains")!.map((d) => ({ key: d, value: d })),
-            ]}
-            menuAppendTo="parent"
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.redirect.mode.email-matches-any-org-domain",
+            )}
+            label={t("redirectWhenEmailMatchesAny")}
+            labelIcon={t("redirectWhenEmailMatchesAnyHelp")}
+            stringify
           />
+          {emailMatchAnyOrgDomain === "false" && (
+            <>
+              <SelectControl
+                name={convertAttributeNameToForm("config.kc.org.domain")}
+                label={t("domain")}
+                controller={{ defaultValue: "" }}
+                options={[
+                  { key: "", value: t("none") },
+                  ...getValues("domains")!.map((d) => ({ key: d, value: d })),
+                ]}
+                menuAppendTo="parent"
+              />
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm(
+                  "config.kc.org.broker.redirect.mode.email-matches",
+                )}
+                label={t("redirectWhenEmailMatches")}
+                labelIcon={t("redirectWhenEmailMatchesHelp")}
+                stringify
+              />
+            </>
+          )}
           <DefaultSwitchControl
             name="hideOnLogin"
             label={t("hideOnLoginPage")}
             labelIcon={t("hideOnLoginPageHelp")}
             defaultValue={true}
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.redirect.mode.email-matches",
-            )}
-            label={t("redirectWhenEmailMatches")}
-            labelIcon={t("redirectWhenEmailMatchesHelp")}
-            stringify
           />
         </Form>
       </FormProvider>

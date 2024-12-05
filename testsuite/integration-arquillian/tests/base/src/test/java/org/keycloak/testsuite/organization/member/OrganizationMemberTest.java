@@ -473,10 +473,20 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         // assign IdP to the org
         idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
         idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         try (Response response = testRealm().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
+
+        //check the federated user is not a member
+        assertThat(testRealm().organizations().get(id).members().list(-1, -1), hasSize(0));
+
+        // assign IdP to the org
+        idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        idpRep.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH_ANY_ORG_DOMAIN.getKey(), Boolean.TRUE.toString());
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         //check the federated user is not a member
         assertThat(testRealm().organizations().get(id).members().list(-1, -1), hasSize(0));
