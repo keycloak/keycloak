@@ -38,32 +38,6 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>install-node-and-pnpm</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>pnpm-install</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
-                                <workingDirectory>${maven.multiModuleProjectDirectory}/js</workingDirectory>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>pnpm-build</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>build</arguments>
-                            </configuration>
-                        </execution>
-                    </executions>
                     <configuration>
                         <nodeVersion>${node.version}</nodeVersion>
                         <pnpmVersion>${pnpm.version}</pnpmVersion>
@@ -73,5 +47,56 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <!-- Clean child modules from parent, as we trigger the build here for parallelization. -->
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>apps/account-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>apps/admin-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>themes-vendor/target</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>${frontend.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install-node-and-pnpm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>pnpm-install</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pnpm-build</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

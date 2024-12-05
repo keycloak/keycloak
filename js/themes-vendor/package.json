@@ -3,8 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rollup --config && pnpm build:rewrite-import",
+    "build": "wireit",
     "build:rewrite-import": "node scripts/rewrite-imports.js"
+  },
+  "wireit": {
+    "build": {
+      "command": "rollup --config && pnpm build:rewrite-import",
+      "files": [
+        "rollup.config.js"
+      ],
+      "output": [
+        "target/classes/theme/keycloak/common/resources/vendor/react",
+        "target/classes/theme/keycloak/common/resources/vendor/react-dom",
+        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim"
+      ]
+    }
   },
   "dependencies": {
     "@noble/hashes": "^1.6.1",
