@@ -70,6 +70,11 @@ Target size:
 * 360 refresh token requests per second (1:8 ratio for logins)
 * 3 Pods
 
+User event metrics:
+
+To measure the specific requests rates, we can use the user event metrics, which is a preview feature and can be enabled with a feature flag.
+See the link:{links_observability_event-metrics_url}[{observability_event-metrics_name}] for more information.
+
 Limits calculated:
 
 * CPU requested per Pod: 3 vCPU
