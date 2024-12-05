@@ -34,6 +34,39 @@ spec:
       anotherAnnotation: anotherValue
   networkPolicy:
     enabled: true
+    http:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    https:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    management:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
   http:
     httpEnabled: true
     httpPort: 123

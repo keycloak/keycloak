@@ -28,15 +28,21 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.awaitility.Awaitility;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -109,19 +115,32 @@ public final class K8sUtils {
     }
 
     public static String inClusterCurl(KubernetesClient k8sclient, String namespace, String url) {
-        return inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-o", "/dev/null", "-w", "%{http_code}", url);
+        return inClusterCurl(k8sclient, namespace, Map.of(), url);
     }
 
-    public static String inClusterCurl(KubernetesClient k8sclient, String namespace, String... args) {
-        var podName = "curl-pod";
+    public static String inClusterCurl(KubernetesClient k8sclient, String namespace, Map<String, String> labels, String url) {
+        return inClusterCurl(k8sclient, namespace, labels, "--insecure", "-s", "-o", "/dev/null", "-w", "%{http_code}", url).stdout();
+    }
+
+    public static String inClusterCurl(KubernetesClient k8sClient, String namespace, String... args) {
+        return inClusterCurl(k8sClient, namespace, Map.of(), args).stdout();
+    }
+
+    public static CurlResult inClusterCurl(KubernetesClient k8sClient, String namespace, Map<String, String> labels, String... args) {
+        Log.infof("Starting cURL in namespace '%s' with labels '%s'", namespace, labels);
+        var podName = "curl-pod-" + UUID.randomUUID();
         try {
             var builder = new PodBuilder();
-            builder.withNewMetadata().withName(podName).endMetadata();
+            builder.withNewMetadata()
+                    .withName(podName)
+                    .withNamespace(namespace)
+                    .withLabels(labels)
+                    .endMetadata();
             createCurlContainer(builder);
             var curlPod = builder.build();
 
             try {
-                k8sclient.resource(curlPod).create();
+                k8sClient.resource(curlPod).create();
             } catch (KubernetesClientException e) {
                 if (e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
                     throw e;
@@ -130,13 +149,14 @@ public final class K8sUtils {
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-            try (ExecWatch watch = k8sclient.pods().resource(curlPod).withReadyWaitTimeout(60000)
+            try (ExecWatch watch = k8sClient.pods().resource(curlPod).withReadyWaitTimeout(60000)
                     .writingOutput(output)
                     .exec(Stream.concat(Stream.of("curl"), Stream.of(args)).toArray(String[]::new))) {
-                watch.exitCode().get(15, TimeUnit.SECONDS);
+                var exitCode = watch.exitCode().get(15, TimeUnit.SECONDS);
+                return new CurlResult(exitCode, output.toString(StandardCharsets.UTF_8));
+            } finally {
+                k8sClient.resource(curlPod).delete();
             }
-
-            return output.toString(StandardCharsets.UTF_8);
         } catch (Exception ex) {
             throw KubernetesClientException.launderThrowable(ex);
         }
@@ -152,4 +172,44 @@ public final class K8sUtils {
                 .endContainer()
                 .endSpec();
     }
+
+    public static void enableNetworkPolicy(Keycloak keycloak) {
+        var builder = new NetworkPolicySpecBuilder();
+        builder.withNetworkPolicyEnabled(true);
+        keycloak.getSpec().setNetworkPolicySpec(builder.build());
+    }
+
+    public static int configureManagement(Keycloak keycloak, boolean randomPort) {
+        if (!randomPort) {
+            return Constants.KEYCLOAK_MANAGEMENT_PORT;
+        }
+        var port = ThreadLocalRandom.current().nextInt(10_000, 10_100);
+        keycloak.getSpec().setHttpManagementSpec(new HttpManagementSpecBuilder().withPort(port).build());
+        return port;
+    }
+
+    public static int enableHttp(Keycloak keycloak, boolean randomPort) {
+        keycloak.getSpec().getHttpSpec().setHttpEnabled(true);
+        if (randomPort) {
+            var port = ThreadLocalRandom.current().nextInt(10_100, 10_200);
+            keycloak.getSpec().getHttpSpec().setHttpPort(port);
+            return port;
+        }
+        return Constants.KEYCLOAK_HTTP_PORT;
+    }
+
+    public static int configureHttps(Keycloak keycloak, boolean randomPort) {
+        if (!randomPort) {
+            return Constants.KEYCLOAK_HTTPS_PORT;
+        }
+        var port = ThreadLocalRandom.current().nextInt(10_200, 10_300);
+        keycloak.getSpec().getHttpSpec().setHttpsPort(port);
+        return port;
+    }
+
+    public static void disableHttps(Keycloak keycloak) {
+        keycloak.getSpec().getHttpSpec().setTlsSecret(null);
+    }
+
+    public record CurlResult(int exitCode, String stdout) {}
 }
