@@ -38,7 +38,6 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -357,7 +356,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--file=file");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test
@@ -414,7 +413,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void failDBRequired() {
+    public void warnDBRequired() {
         // dev profile has a default
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
@@ -422,9 +421,9 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         // prod profiles require db
         nonRunningPicocli = pseudoLaunch("build");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(),
-                containsString("The db option must be explicitly provided in a non-development profile."));
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead."));
     }
 
 }
