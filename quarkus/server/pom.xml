@@ -77,6 +77,7 @@
                     <finalName>keycloak</finalName>
                     <systemProperties>
                         <kc.home.dir>${kc.home.dir}</kc.home.dir>
+                        <kc.db>dev-file</kc.db>
                         <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                     </systemProperties>
                 </configuration>

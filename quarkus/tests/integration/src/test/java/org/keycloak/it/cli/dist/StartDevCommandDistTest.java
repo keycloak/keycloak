@@ -66,7 +66,7 @@ public class StartDevCommandDistTest {
 
     @DryRun
     @Test
-    @Launch({ "build", "--debug" })
+    @Launch({ "build", "--debug", "--db=dev-file" })
     void testBuildMustNotRunTwoJVMs(CLIResult cliResult) {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 1);
         cliResult.assertBuild();

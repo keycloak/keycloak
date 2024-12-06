@@ -18,7 +18,7 @@ public class DatabaseOptions {
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
-            .description("The database vendor.")
+            .description("The database vendor. In production mode the default value of 'dev-file' is deprecated, you should explicitly specify the db instead.")
             .defaultValue("dev-file")
             .expectedValues(Database.getDatabaseAliases())
             .buildTime(true)

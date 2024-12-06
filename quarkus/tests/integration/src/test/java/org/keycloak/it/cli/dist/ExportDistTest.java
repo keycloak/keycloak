@@ -25,7 +25,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @RawDistOnly(reason = "Containers are immutable")
-@DistributionTest
+@DistributionTest(defaultOptions = "--db=dev-file")
 @Tag(DistributionTest.SMOKE)
 public class ExportDistTest {
 
