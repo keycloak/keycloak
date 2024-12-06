@@ -1845,15 +1845,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public boolean isVerifiableCredentialsEnabled() {
-        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, updated.isVerifiableCredentialsEnabled());
-        return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, cached.isVerifiableCredentialsEnabled());
+    public boolean isOid4VciEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, updated.isOid4VciEnabled());
+        return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, cached.isOid4VciEnabled());
     }
 
     @Override
-    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+    public void setOid4VciEnabled(boolean oid4VciEnabled) {
         getDelegateForUpdate();
-        updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+        updated.setOid4VciEnabled(oid4VciEnabled);
     }
 
     private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {

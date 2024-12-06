@@ -76,7 +76,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean editUsernameAllowed;
     protected boolean organizationsEnabled;
     protected boolean adminPermissionsEnabled;
-    protected boolean verifiableCredentialsEnabled;
+    protected boolean oid4VciEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
@@ -195,7 +195,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
         adminPermissionsEnabled = model.isAdminPermissionsEnabled();
-        verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
+        oid4VciEnabled = model.isOid4VciEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
@@ -445,8 +445,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return adminPermissionsEnabled;
     }
 
-    public boolean isVerifiableCredentialsEnabled() {
-        return verifiableCredentialsEnabled;
+    public boolean isOid4VciEnabled() {
+        return oid4VciEnabled;
     }
 
     public String getDefaultSignatureAlgorithm() {

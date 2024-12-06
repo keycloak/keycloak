@@ -1182,12 +1182,12 @@ public class RealmModelDelegate implements RealmModel {
     }
 
     @Override
-    public boolean isVerifiableCredentialsEnabled() {
-        return delegate.isVerifiableCredentialsEnabled();
+    public boolean isOid4VciEnabled() {
+        return delegate.isOid4VciEnabled();
     }
 
     @Override
-    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
-        delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    public void setOid4VciEnabled(boolean oid4VciEnabled) {
+        delegate.setOid4VciEnabled(oid4VciEnabled);
     }
 }

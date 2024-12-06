@@ -1838,12 +1838,12 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public boolean isVerifiableCredentialsEnabled() {
+        public boolean isOid4VciEnabled() {
             return false;
         }
 
         @Override
-        public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        public void setOid4VciEnabled(boolean oid4VciEnabled) {
         }
     }
 }
