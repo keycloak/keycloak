@@ -48,7 +48,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.config.DeprecatedMetadata;
@@ -104,7 +103,7 @@ public class Picocli {
 
     private ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
     private Set<PropertyMapper<?>> allowedMappers;
-    private List<String> uncrecognizedArgs = new ArrayList<>();
+    private List<String> unrecognizedArgs = new ArrayList<>();
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -159,7 +158,7 @@ public class Picocli {
                     @Override
                     public <T> T set(T value) {
                         if (value != null) {
-                            uncrecognizedArgs.addAll(Arrays.asList((String[]) value));
+                            unrecognizedArgs.addAll(Arrays.asList((String[]) value));
                         }
                         return null; // doesn't matter
                     }
@@ -332,15 +331,15 @@ public class Picocli {
      * @param abstractCommand
      */
     public void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
-        uncrecognizedArgs.removeIf(arg -> {
+        unrecognizedArgs.removeIf(arg -> {
             if (arg.contains("=")) {
                 arg = arg.substring(0, arg.indexOf("="));
             }
             PropertyMapper<?> mapper = PropertyMappers.getMapper(arg);
             return mapper != null && mapper.hasWildcard() && allowedMappers.contains(mapper);
         });
-        if (!uncrecognizedArgs.isEmpty()) {
-            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), uncrecognizedArgs);
+        if (!unrecognizedArgs.isEmpty()) {
+            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), unrecognizedArgs);
         }
 
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
@@ -380,69 +379,54 @@ public class Picocli {
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
                 for (PropertyMapper<?> mapper : mappers) {
-                    ConfigValue firstConfigValue;
-                    Map<String, ConfigValue> configValues;
+                    Configuration.getKcConfigValues(mapper).forEach(configValue -> {
+                        String configValueStr = configValue.getValue();
 
-                    if (mapper.hasWildcard()) {
-                        // filter out null values
-                        // this might happen when we're generating some values in wildcardValuesTransformer,
-                        // but mappers are now disabled so such values will be null
-                        // but that's fine, we don't care about these for validation
-                        configValues = Configuration.getKcConfigValues(mapper).entrySet().stream()
-                                .filter(e -> e.getValue().getValue() != null)
-                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                        firstConfigValue = !configValues.isEmpty() ? configValues.values().iterator().next() : ConfigValue.builder().build();
-                    } else {
-                        firstConfigValue = Configuration.getConfigValue(mapper.getFrom());
-                        configValues = Map.of(mapper.getFrom(), firstConfigValue);
-                    }
-
-                    String firstConfigValueStr = firstConfigValue.getValue();
-
-                    // don't consider missing or anything below standard env properties
-                    if (firstConfigValueStr == null) {
-                        if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
-                            handleRequired(missingOption, mapper);
+                        // don't consider missing or anything below standard env properties
+                        if (configValueStr == null) {
+                            if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
+                                handleRequired(missingOption, mapper);
+                            }
+                            return;
                         }
-                        continue;
-                    }
-                    if (!isUserModifiable(firstConfigValue)) {
-                        continue;
-                    }
-
-                    if (disabledMappers.contains(mapper)) {
-                        if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
-                            continue; // we found enabled mapper with the same name
+                        if (!isUserModifiable(configValue)) {
+                            return;
                         }
 
-                        // only check build-time for a rebuild, we'll check the runtime later
-                        if (!mapper.isRunTime() || !isRebuild()) {
-                            if (PropertyMapper.isCliOption(firstConfigValue)) {
-                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                            } else {
-                                handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                        if (disabledMappers.contains(mapper)) {
+                            if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
+                                return; // we found enabled mapper with the same name
+                            }
+
+                            // only check build-time for a rebuild, we'll check the runtime later
+                            if (!mapper.isRunTime() || !isRebuild()) {
+                                if (PropertyMapper.isCliOption(configValue)) {
+                                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
+                                } else {
+                                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                                }
+                            }
+                            return;
+                        }
+
+                        if (mapper.isBuildTime() && !options.includeBuildTime) {
+                            String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
+                            if (!configValueStr.equals(currentValue)) {
+                                ignoredBuildTime.add(mapper.getFrom());
+                                return;
                             }
                         }
-                        continue;
-                    }
-
-                    if (mapper.isBuildTime() && !options.includeBuildTime) {
-                        String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
-                        if (!firstConfigValueStr.equals(currentValue)) {
-                            ignoredBuildTime.add(mapper.getFrom());
-                            continue;
+                        if (mapper.isRunTime() && !options.includeRuntime) {
+                            ignoredRunTime.add(mapper.getFrom());
+                            return;
                         }
-                    }
-                    if (mapper.isRunTime() && !options.includeRuntime) {
-                        ignoredRunTime.add(mapper.getFrom());
-                        continue;
-                    }
 
-                    configValues.forEach((k, v) -> mapper.validate(v));
+                        mapper.validate(configValue);
 
-                    mapper.getDeprecatedMetadata().ifPresent(metadata -> {
-                        handleDeprecated(deprecatedInUse, mapper, firstConfigValueStr, metadata);
-                    });
+                        mapper.getDeprecatedMetadata().ifPresent(metadata -> {
+                            handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata);
+                        });
+                    });;
                 }
             }
 

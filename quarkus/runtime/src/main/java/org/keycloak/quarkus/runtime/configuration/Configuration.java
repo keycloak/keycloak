@@ -19,10 +19,10 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
@@ -114,22 +114,16 @@ public final class Configuration {
     }
 
     /**
-     * Get all Keycloak multivalued config values for the mapper. A multivalued config option is a config option that
+     * Get all Keycloak config values for the mapper. A multivalued config option is a config option that
      * has a wildcard in its name, e.g. log-level-<category>.
      *
      * @return a map of config values where the key is the resolved wildcard (e.g. category) and the value is the config value
      */
-    public static Map<String, ConfigValue> getKcConfigValues(PropertyMapper<?> mapper) {
-        return mapper.getWildcardKeys().stream()
-                .collect(Collectors.toMap(v -> v, v -> getConfigValue(mapper.getFrom(v))));
-    }
-
-    public static Map<String, ConfigValue> getKcConfigValues(String propertyName) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
-        if (mapper == null) {
-            return null;
+    public static List<ConfigValue> getKcConfigValues(PropertyMapper<?> mapper) {
+        if (mapper.hasWildcard()) {
+            return mapper.getWildcardKeys().stream().map(v -> getConfigValue(mapper.getFrom(v))).toList();
         }
-        return getKcConfigValues(mapper);
+        return List.of(Configuration.getConfigValue(mapper.getFrom()));
     }
 
     public static Optional<String> getOptionalValue(String name) {

@@ -386,4 +386,18 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(Integer.MAX_VALUE, nonRunningPicocli.exitCode); // "running" state
     }
 
+    @Test
+    public void wrongLevelForCategory() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info."));
+    }
+
+    @Test
+    public void wildcardLevelForCategory() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=warn");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info."));
+    }
+
 }
