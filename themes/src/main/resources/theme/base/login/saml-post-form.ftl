@@ -3,7 +3,7 @@
     <#if section = "header">
         ${msg("saml.post-form.title")}
     <#elseif section = "form">
-        <script>window.onload = function() {document.forms[0].requestSubmit()};</script>
+        <script>window.onload = function() {document.forms[0].submit()};</script>
         <p>${msg("saml.post-form.message")}</p>
         <form name="saml-post-binding" method="post" action="${samlPost.url}">
             <#if samlPost.SAMLRequest??>
