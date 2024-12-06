@@ -10,4 +10,19 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface InjectAdminClient {
 
+    String ref() default "";
+
+    Mode mode() default Mode.BOOTSTRAP;
+
+    String client() default "";
+
+    String user() default "";
+
+    enum Mode {
+
+        BOOTSTRAP,
+        MANAGED_REALM
+
+    }
+
 }

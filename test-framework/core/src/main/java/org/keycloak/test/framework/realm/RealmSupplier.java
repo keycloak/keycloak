@@ -30,7 +30,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
     @Override
     public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        Keycloak adminClient = instanceContext.getDependency(Keycloak.class);
+        Keycloak adminClient = instanceContext.getDependency(Keycloak.class, "bootstrap-client");
 
         RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
 
