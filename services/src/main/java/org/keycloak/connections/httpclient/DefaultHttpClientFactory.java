@@ -203,7 +203,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                         proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
 
-                    HttpClientBuilder builder = new HttpClientBuilder();
+                    HttpClientBuilder builder = newHttpClientBuilder();
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
@@ -249,6 +249,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 }
             }
         }
+    }
+
+    protected HttpClientBuilder newHttpClientBuilder() {
+        return new HttpClientBuilder();
     }
 
     @Override
