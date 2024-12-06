@@ -18,8 +18,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.Collections;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
@@ -37,6 +35,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -51,7 +50,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.TokenUtil;
 
@@ -111,8 +109,11 @@ public class TokenRevocationEndpoint {
         checkUser();
 
         if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            revokeClient();
+            revokeClientSession();
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
+            event.session(token.getSessionId());
+            event.detail(Details.REFRESH_TOKEN_ID, token.getId());
+            event.detail(Details.REFRESH_TOKEN_TYPE, token.getType());
         } else {
             revokeAccessToken();
             event.detail(Details.TOKEN_ID, token.getId());
@@ -242,26 +243,25 @@ public class TokenRevocationEndpoint {
         }
     }
 
-    private void revokeClient() {
-        UserConsentManager.revokeConsentForClient(session, realm, user, client.getId());
+    private void revokeClientSession() {
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            new UserSessionManager(session).revokeOfflineToken(user, client);
-        }
-        session.sessions().getUserSessionsStream(realm, user)
-                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as dettachClientSession removes the user sessions.
-                .forEach(clientSession -> {
-                    UserSessionModel userSession = clientSession.getUserSession();
+            UserSessionModel userSession = session.sessions().getOfflineUserSession(realm, token.getSessionId());
+            if (userSession != null) {
+                new UserSessionManager(session).removeClientFromOfflineUserSession(realm, userSession, client, user);
+            }
+        } else {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
+            if (userSession != null) {
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                if (clientSession != null) {
                     TokenManager.dettachClientSession(clientSession);
-
-                    if (userSession != null) {
-                        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-                        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-                            session.sessions().removeUserSession(realm, userSession);
-                        }
+                    // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
+                    if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                        session.sessions().removeUserSession(realm, userSession);
                     }
-                });
+                }
+            }
+        }
     }
 
     private void revokeAccessToken() {
