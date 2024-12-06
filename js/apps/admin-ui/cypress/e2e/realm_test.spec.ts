@@ -40,7 +40,7 @@ describe("Realm tests", () => {
   it("should fail creating duplicated or empty name realm", () => {
     sidebarPage.goToCreateRealm();
 
-    createRealmPage.createRealm().verifyRealmNameFieldInvalid();
+    createRealmPage.createRealm(false).verifyRealmNameFieldInvalid();
 
     createRealmPage.fillRealmName("master").createRealm();
 
@@ -124,7 +124,6 @@ describe("Realm tests", () => {
   it("should create realm with special characters", () => {
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(specialCharsName).createRealm();
-    sidebarPage.goToRealm("master");
 
     sidebarPage.goToRealm(specialCharsName);
     sidebarPage.goToClients();
