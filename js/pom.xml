@@ -31,7 +31,6 @@
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
         <maven.build.cache.input.2>public</maven.build.cache.input.2>
         <maven.build.cache.input.3>scripts</maven.build.cache.input.3>
-        <maven.build.cache.input.4>maven-resources-community</maven.build.cache.input.4>
     </properties>
 
     <build>
