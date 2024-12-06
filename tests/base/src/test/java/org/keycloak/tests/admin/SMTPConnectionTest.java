@@ -15,57 +15,94 @@
  * limitations under the License.
  */
 
-package org.keycloak.test.admin;
+package org.keycloak.tests.admin;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  */
-public class SMTPConnectionTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class SMTPConnectionTest {
 
-    public final String SMTP_PASSWORD = setSmtpPassword();
+    @InjectRealm(config = SMTPRealmWithClientAndUser.class)
+    private ManagedRealm managedRealm;
 
-    @Rule
-    public GreenMailRule greenMailRule = new GreenMailRule();
-    private RealmResource realm;
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
+    private Keycloak adminClient;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    @InjectMailServer
+    private MailServer mailServer;
+
+    @Test
+    public void testWithNullSettings() throws Exception {
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings(null, null, null, null, null, null, null, null));
+        assertStatus(response, 500);
     }
 
-    public String setSmtpPassword() {
-        return "admin";
+    @Test
+    public void testWithProperSettings() throws Exception {
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", null, null, null, null, null));
+        assertStatus(response, 204);
+        assertMailReceived();
     }
 
-    @Before
-    public void before() {
-        realm = adminClient.realm("master");
-        List<UserRepresentation> admin = realm.users().search("admin", 0, 1);
-        UserRepresentation user = UserBuilder.edit(admin.get(0)).email("admin@localhost").build();
-        realm.users().get(user.getId()).update(user);
+    @Test
+    public void testWithAuthEnabledCredentialsEmpty() throws Exception {
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null, null, null));
+        assertStatus(response, 500);
+    }
+
+    @Test
+    public void testWithAuthEnabledValidCredentials() throws Exception {
+        String password = "admin";
+
+        mailServer.credentials("admin@localhost", password);
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null, "admin@localhost", password));
+        assertStatus(response, 204);
+    }
+
+    @Test
+    public void testAuthEnabledAndSavedCredentials() throws Exception {
+        String password = "admin";
+        RealmResource realm = adminClient.realms().realm(managedRealm.getName());
+
+        RealmRepresentation realmRep = realm.toRepresentation();
+        realmRep.setSmtpServer(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", password, null, null));
+        managedRealm.updateWithCleanup(r -> r.update(realmRep));
+
+        mailServer.credentials("admin@localhost", password);
+        Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", SECRET_VALUE));
+        assertStatus(response, 204);
     }
 
     private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
-                            String username, String password) throws Exception {
+                                         String username, String password) throws Exception {
         return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
     }
 
@@ -85,71 +122,40 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
         return config;
     }
 
-    @Test
-    public void testWithNullSettings() throws Exception {
-        Response response = realm.testSMTPConnection(settings(null, null, null, null, null, null,
-                null, null));
-        assertStatus(response, 500);
-    }
-
-    @Test
-    public void testWithProperSettings() throws Exception {
-        Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", null, null, null,
-                null, null));
-        assertStatus(response, 204);
-        assertMailReceived();
-    }
-
-    @Test
-    public void testWithAuthEnabledCredentialsEmpty() throws Exception {
-        Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                null, null));
-        assertStatus(response, 500);
-    }
-
-    @Test
-    public void testWithAuthEnabledValidCredentials() throws Exception {
-        greenMailRule.credentials("admin@localhost", "admin");
-        Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                "admin@localhost", SMTP_PASSWORD));
-        assertStatus(response, 204);
-    }
-
-    @Test
-    public void testAuthEnabledAndSavedCredentials() throws Exception {
-        RealmRepresentation realmRep = realm.toRepresentation();
-        Map<String, String> oldSmtp = realmRep.getSmtpServer();
-        try {
-            realmRep.setSmtpServer(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                    "admin@localhost", SMTP_PASSWORD, null, null));
-            realm.update(realmRep);
-
-            greenMailRule.credentials("admin@localhost", "admin");
-            Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                    "admin@localhost", SECRET_VALUE));
-            assertStatus(response, 204);
-        } finally {
-            // Revert SMTP back
-            realmRep.setSmtpServer(oldSmtp);
-            realm.update(realmRep);
-        }
-    }
-
     private void assertStatus(Response response, int status) {
         assertEquals(status, response.getStatus());
         response.close();
     }
 
     private void assertMailReceived() {
-        if (greenMailRule.getReceivedMessages().length == 1) {
+        if (mailServer.getReceivedMessages().length == 1) {
             try {
-                MimeMessage message = greenMailRule.getReceivedMessages()[0];
+                MimeMessage message = mailServer.getReceivedMessages()[0];
                 assertEquals("[KEYCLOAK] - SMTP test message", message.getSubject());
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
             fail("E-mail was not received");
+        }
+    }
+
+    public static class SMTPRealmWithClientAndUser implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.addClient("myclient")
+                    .secret("mysecret")
+                    .directAccessGrants();
+
+            realm.addUser("myadmin")
+                    .name("My", "Admin")
+                    .email("admin@localhost")
+                    .emailVerified()
+                    .password("myadmin")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+
+            return realm;
         }
     }
 }
