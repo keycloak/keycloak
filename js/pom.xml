@@ -27,6 +27,11 @@
     <properties>
         <node.version>v22.11.0</node.version>
         <pnpm.version>9.14.4</pnpm.version>
+        <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
+        <maven.build.cache.input.1>src</maven.build.cache.input.1>
+        <maven.build.cache.input.2>public</maven.build.cache.input.2>
+        <maven.build.cache.input.3>scripts</maven.build.cache.input.3>
+        <maven.build.cache.input.4>maven-resources-community</maven.build.cache.input.4>
     </properties>
 
     <build>

@@ -41,6 +41,8 @@
         <runAlways>
             <plugins>
                 <plugin artifactId="maven-failsafe-plugin"/>
+                <!-- The Maven Frontend plugin will build all JS parts in the subfolders, and has its own caching, therefore, run it always -->
+                <plugin groupId="com.github.eirslett" artifactId="frontend-maven-plugin"/>
             </plugins>
             <goalsLists>
                 <goalsList artifactId="maven-install-plugin">
