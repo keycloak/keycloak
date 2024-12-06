@@ -42,6 +42,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {
@@ -49,8 +51,8 @@ public class KeycloakIngressTest extends BaseOperatorTest {
     @Test
     public void testIngressOnHTTP() {
         var kc = getTestKeycloakDeployment(false);
-        kc.getSpec().getHttpSpec().setTlsSecret(null);
-        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        disableHttps(kc);
+        enableHttp(kc, false);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
@@ -214,9 +216,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         Awaitility.await()
-                .untilAsserted(() -> {
-                    assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
-                });
+                .untilAsserted(() -> assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems()).isEmpty());
     }
 
     @Test
@@ -237,9 +237,9 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     .inNamespace(namespace)
                     .withName(customIngressCreatedManually.getMetadata().getName());
 
-            Awaitility.await().atMost(1, MINUTES).untilAsserted(() -> {
-                assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(1);
-            });
+            Awaitility.await()
+                    .atMost(1, MINUTES)
+                    .untilAsserted(() -> assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(1));
 
             Log.info("Deploying the Keycloak CR with default Ingress disabled");
             defaultKeycloakDeployment.getSpec().setIngressSpec(new IngressSpec());
@@ -256,9 +256,8 @@ public class KeycloakIngressTest extends BaseOperatorTest {
             Log.info("Destroying the Custom Ingress created manually to avoid errors in others Tests methods");
             if (customIngressDeployedManuallySelector != null && customIngressDeployedManuallySelector.isReady()) {
                 assertThat(customIngressDeployedManuallySelector.delete()).isNotNull();
-                Awaitility.await().untilAsserted(() -> {
-                    assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
-                });
+                Awaitility.await()
+                        .untilAsserted(() -> assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems()).isEmpty());
             }
         }
     }
