@@ -103,9 +103,11 @@ public class RegisterPage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        emailInput.clear();
-        if (email != null) {
-            emailInput.sendKeys(email);
+        if (isEmailPresent()) {
+            emailInput.clear();
+            if (email != null) {
+                emailInput.sendKeys(email);
+            }
         }
 
         usernameInput.clear();
@@ -239,6 +241,22 @@ public class RegisterPage extends AbstractPage {
     public boolean isDepartmentPresent() {
         try {
             return driver.findElement(By.name("department")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isEmailPresent() {
+        try {
+            return driver.findElement(By.name("email")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.name("username")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
