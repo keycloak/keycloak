@@ -34,17 +34,26 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class NetworkPolicySpec {
 
+    // Copied from Kubernetes Documentation
+    private static final String RULE_DESCRIPTION = "A list of sources which should be able to access this endpoint. " +
+            "Items in this list are combined using a logical OR operation. " +
+            "If this field is empty or missing, this rule matches all sources (traffic not restricted by source). " +
+            "If this field is present and contains at least one item, this rule allows traffic only if the traffic matches at least one item in the from list.";
+
     @JsonProperty("enabled")
     @JsonPropertyDescription("Enables or disable the ingress traffic control.")
     private boolean networkPolicyEnabled = false;
 
     @JsonProperty("http")
+    @JsonPropertyDescription(RULE_DESCRIPTION)
     private List<NetworkPolicyPeer> httpRules;
 
     @JsonProperty("https")
+    @JsonPropertyDescription(RULE_DESCRIPTION)
     private List<NetworkPolicyPeer> httpsRules;
 
     @JsonProperty("management")
+    @JsonPropertyDescription(RULE_DESCRIPTION)
     private List<NetworkPolicyPeer> managementRules;
 
     public boolean isNetworkPolicyEnabled() {

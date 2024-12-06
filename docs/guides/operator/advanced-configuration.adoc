@@ -349,7 +349,7 @@ NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it 
 
 For more details about tracing, see <@links.observability id="tracing" />.
 
-=== Network Policies (Experimental)
+=== Network Policies (Preview)
 
 NetworkPolicies allow you to specify rules for traffic flow within your cluster, and also between Pods and the outside world.
 Your cluster must use a network plugin that supports NetworkPolicy enforcement.
@@ -369,6 +369,73 @@ spec:
   networkPolicy:
     enabled: true
 ----
+
+The above example allows traffic from all sources.
+The Keycloak CR can be extended to include a list of rules for each of the endpoints exposed by {project_name}.
+These rules specify from where (the source) the traffic are allow to communicate with the {project_name} Pods.
+
+.Extended Network Policy configuration
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  networkPolicy:
+    enabled: true
+    http: <list of rules> #<1>
+    https: <list of rules> #<2>
+    management: <list of rules> #<3>
+----
+<1> It defines the rules for HTTP endpoint (port 8080 by default).
+Due to security reasons, the HTTP endpoint is disabled by default.
+<2> It defines the access rules for HTTPS endpoint (port 8443 by default.
+<3> It defines the access rules for management endpoint (port 9000 by default).
+The management endpoint is used by the Kubernetes Probes and to expose the {project_name} metrics.
+
+The rule syntax is the same as the one used by the Kubernetes Network Policy.
+It makes it easy to migrate your existing rules into your Keycloak CP.
+For more information, check the https://kubernetes.io/docs/concepts/services-networking/network-policies/#behavior-of-to-and-from-selectors[rule syntax].
+
+==== Example with OpenShift
+
+For a concrete example, let's imagine we have a {project_name} deployment running in a OpenShift cluster.
+Users have to access {project_name} to login, so {project_name} must be accessible from the Internet.
+
+To make this example more interesting, let's assume the {project_name} is monitored too.
+The monitoring is enabled as described in the OpenShift documentation page:
+https://docs.openshift.com/container-platform/4.12/observability/monitoring/enabling-monitoring-for-user-defined-projects.html[enabling Monitoring for user defined projects].
+
+Based on those requirements, the Keycloak CR would be like this (most parts are omitted, like DB connection and security):
+
+.Keycloak CR
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ingress:
+    enabled: true #<1>
+  networkPolicy:
+    enabled: true
+    https:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-ingress #<2>
+    management:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring #<3>
+----
+<1> Enables Ingress for outside access.
+<2> The default OpenShift Ingress class pods are running in `openshift-ingress` namespace.
+We allow traffic from these pods to access the {project_name} HTTPS endpoint.
+The traffic from outside the OpenShift cluster goes through these pods.
+<3> Prometheus pods are running in `openshift-user-workload-monitoring`.
+They need to access {project_name} to scrape the available metrics.
 
 Check the https://kubernetes.io/docs/concepts/services-networking/network-policies/[Kubernetes Network Policies documentation] for more information about NetworkPolicies.
 
