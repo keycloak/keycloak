@@ -22,6 +22,8 @@ import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
+import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
+
 /**
  * Abstract base for Freemarker context bean providing information about user profile to render dynamic or crafted forms.  
  * 
@@ -179,6 +181,10 @@ public abstract class AbstractUserProfileBean {
         }
 
         public boolean isReadOnly() {
+            // in context of registration, an attribute cannot be readonly otherwise a user can't provide the attribute during registration
+            if (REGISTRATION.name().equals(getContext())) {
+                return false;
+            }
             return profile.getAttributes().isReadOnly(getName());
         }
         
