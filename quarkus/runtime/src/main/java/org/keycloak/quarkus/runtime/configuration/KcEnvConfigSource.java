@@ -50,13 +50,15 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
                 if (mapper != null) {
+                    mapper = mapper.forEnvKey(key);
+
                     String to = mapper.getTo();
 
                     if (to != null) {
                         properties.put(to, value);
                     }
 
-                    properties.put(mapper.getFrom(mapper.getMappedEnvVarKey(key).orElse(null)), value);
+                    properties.put(mapper.getFrom(), value);
                 }
                 else {
                     // most probably an SPI but could be also something else

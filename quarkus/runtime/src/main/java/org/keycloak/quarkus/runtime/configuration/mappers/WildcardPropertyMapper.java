@@ -37,7 +37,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
             String description, BooleanSupplier required, String requiredWhen, Matcher fromWildcardMatcher, Function<Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
-        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen);
+        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null);
         this.wildcardMapFrom = wildcardMapFrom;
         this.fromWildcardMatcher = fromWildcardMatcher;
         // Includes handling for both "--" prefix for CLI options and "kc." prefix
@@ -139,6 +139,9 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     @Override
     public PropertyMapper<?> forEnvKey(String key) {
         Matcher matcher = envVarNameWildcardPattern.matcher(key);
+        if (!matcher.matches()) {
+            throw new IllegalStateException();
+        }
         String value = matcher.group(1);
         final String wildcardValue = value.toLowerCase().replace("_", "."); // we opiniotatedly convert env var names to CLI format with dots
         return forWildcardValue(wildcardValue);
@@ -147,7 +150,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private PropertyMapper<?> forWildcardValue(final String wildcardValue) {
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
-        return new PropertyMapper<T>(this, to, from, wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
+        return new PropertyMapper<T>(this, from, to, wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
     @Override

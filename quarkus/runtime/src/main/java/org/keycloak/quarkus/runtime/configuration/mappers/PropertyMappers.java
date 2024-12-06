@@ -84,7 +84,7 @@ public final class PropertyMappers {
         if (mapper == null) {
             return context.proceed(name);
         }
-        return mapper.getConfigValue(name, context);
+        return mapper.forKey(name).getConfigValue(name, context);
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
@@ -179,7 +179,7 @@ public final class PropertyMappers {
         return MAPPERS.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
-    public static Set<PropertyMapper<?>> getWildcardMappers() {
+    public static Set<WildcardPropertyMapper<?>> getWildcardMappers() {
         return MAPPERS.getWildcardMappers();
     }
 
@@ -225,7 +225,7 @@ public final class PropertyMappers {
 
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
-        private static final Set<PropertyMapper<?>> wildcardMappers = new HashSet<>();
+        private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
@@ -245,7 +245,7 @@ public final class PropertyMappers {
 
         public void addMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
-                wildcardMappers.add(mapper);
+                wildcardMappers.add((WildcardPropertyMapper<?>)mapper);
             }
             handleMapper(mapper, this::add);
         }
@@ -266,7 +266,7 @@ public final class PropertyMappers {
         public List<PropertyMapper<?>> get(Object key) {
             // First check if the requested option matches any wildcard mappers
             String strKey = (String) key;
-            List<PropertyMapper<?>> ret = wildcardMappers.stream()
+            List ret = wildcardMappers.stream()
                     .filter(m -> m.matchesWildcardOptionName(strKey))
                     .toList();
             if (!ret.isEmpty()) {
@@ -282,7 +282,7 @@ public final class PropertyMappers {
             return super.remove(mapper);
         }
 
-        public Set<PropertyMapper<?>> getWildcardMappers() {
+        public Set<WildcardPropertyMapper<?>> getWildcardMappers() {
             return Collections.unmodifiableSet(wildcardMappers);
         }
 

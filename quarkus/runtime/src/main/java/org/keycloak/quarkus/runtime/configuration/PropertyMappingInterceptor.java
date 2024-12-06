@@ -27,6 +27,7 @@ import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import java.util.Iterator;
 import java.util.List;
@@ -87,7 +88,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             disableAdditionalNames.set(true);
             try {
                 mappedWildcardNames = PropertyMappers.getWildcardMappers().stream()
-                        .map(PropertyMapper::getToWithWildcards)
+                        .map(WildcardPropertyMapper::getToWithWildcards)
                         .flatMap(Set::stream)
                         .toList();
             } finally {
