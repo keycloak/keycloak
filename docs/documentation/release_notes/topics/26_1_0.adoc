@@ -121,6 +121,7 @@ It means the `opentelemetry` feature is enabled by default.
 
 There were made multiple improvements to the tracing capabilities in {project_name} such as:
 
+* *Configuration via Keycloak CR* in {project_name} Operator
 * *Custom spans* for:
 ** Incoming/outgoing HTTP requests including Identity Providers brokerage
 ** Database operations and connections

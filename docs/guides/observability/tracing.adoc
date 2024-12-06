@@ -163,8 +163,11 @@ For more information, see the https://www.w3.org/TR/trace-context/#security-cons
 == Tracing in Kubernetes environment
 When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
 
-NOTE: There is no support for tracing configuration in {project_name} CR yet, so the `additionalOptions` can be used to the `tracing-enabled` property and other tracing options.
+=== Configuration via Keycloak CR
 
+You can change tracing configuration via Keycloak CR. For more information, see the <@links.operator id="advanced-configuration" anchor="_tracing_opentelemetry" />.
+
+=== Filter traces based on Kubernetes attributes
 You can filter out the required traces in your tracing backend based on their tags:
 
 * `service.name` - {project_name} deployment name
@@ -172,5 +175,7 @@ You can filter out the required traces in your tracing backend based on their ta
 * `host.name` - Pod name
 
 {project_name} Operator automatically sets the `KC_TRACING_SERVICE_NAME` and `KC_TRACING_RESOURCE_ATTRIBUTES` environment variables for each {project_name} container included in pods it manages.
+
+NOTE: The `KC_TRACING_RESOURCE_ATTRIBUTES` variable always contains (if not overridden) the `k8s.namespace.name` attribute representing current namespace.
 
 </@tmpl.guide>
