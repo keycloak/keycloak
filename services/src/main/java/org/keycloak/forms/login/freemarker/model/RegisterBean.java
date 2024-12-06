@@ -39,7 +39,7 @@ public class RegisterBean extends AbstractUserProfileBean {
     public RegisterBean(MultivaluedMap<String, String> formData, KeycloakSession session) {
         
         super(formData);
-        init(session, true);
+        init(session, false);
         
         if (formData != null) {
             for (String k : formData.keySet()) {
