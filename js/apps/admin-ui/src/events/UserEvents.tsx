@@ -39,6 +39,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import useLocaleSort from "../utils/useLocaleSort";
+import { EventsBanners } from "../Banners";
 
 import "./events.css";
 
@@ -127,6 +128,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [selectOpen, setSelectOpen] = useState(false);
   const [events, setEvents] = useState<string[]>();
+  const [userEventsEnabled, setUserEventsEnabled] = useState<boolean>();
   const [activeFilters, setActiveFilters] = useState<
     Partial<UserEventSearchForm>
   >({});
@@ -164,8 +166,10 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
-    (events) =>
-      setEvents(localeSort(events?.enabledEventTypes || [], (e) => e)),
+    (events) => {
+      setUserEventsEnabled(events?.eventsEnabled!);
+      setEvents(localeSort(events?.enabledEventTypes || [], (e) => e));
+    },
     [],
   );
 
@@ -429,7 +433,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   };
 
   return (
-    <div className="keycloak__events_table">
+    <>
+      {!userEventsEnabled && <EventsBanners type="userEvents" />}
       <KeycloakDataTable
         key={key}
         loader={loader}
@@ -485,6 +490,6 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
         }
         isSearching={Object.keys(activeFilters).length > 0}
       />
-    </div>
+    </>
   );
 };
