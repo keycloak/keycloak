@@ -58,7 +58,7 @@ public class TruststoreDistTest {
         dist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
         Path keyStore = rawDist.getDistPath().resolve("conf").resolve("self-signed.p12").toAbsolutePath();
 
-        rawDist.run("--verbose", "start", "--http-enabled=true", "--hostname=mykeycloak.org",
+        rawDist.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--truststore-paths=" + paths, "--https-client-auth=required", "--https-key-store-file=" + keyStore);
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
@@ -77,7 +77,7 @@ public class TruststoreDistTest {
         dist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
         Path keyStore = rawDist.getDistPath().resolve("conf").resolve("self-signed.p12").toAbsolutePath();
 
-        rawDist.run("--verbose", "start", "--http-enabled=true", "--hostname=mykeycloak.org",
+        rawDist.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--https-client-auth=required", "--https-key-store-file=" + keyStore);
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)

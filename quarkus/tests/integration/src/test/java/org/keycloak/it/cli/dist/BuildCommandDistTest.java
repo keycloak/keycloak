@@ -39,7 +39,7 @@ import java.nio.file.Paths;
 class BuildCommandDistTest {
 
     @Test
-    @Launch({ "build" })
+    @Launch({ "build", "--db=dev-file" })
     void resetConfig(CLIResult result) {
         assertTrue(result.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");

@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -366,14 +367,8 @@ public class Picocli {
                     ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
                     String configValueStr = configValue.getValue();
 
-                    // don't consider missing or anything below standard env properties
-                    if (configValueStr == null) {
-                        if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
-                            handleRequired(missingOption, mapper);
-                        }
-                        continue;
-                    }
-                    if (!isUserModifiable(configValue)) {
+                    // don't consider anything below standard env properties
+                    if (configValueStr != null && !isUserModifiable(configValue)) {
                         continue;
                     }
 
@@ -383,7 +378,7 @@ public class Picocli {
                         }
 
                         // only check build-time for a rebuild, we'll check the runtime later
-                        if (!mapper.isRunTime() || !isRebuild()) {
+                        if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
                             if (PropertyMapper.isCliOption(configValue)) {
                                 throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
                             } else {
@@ -395,13 +390,22 @@ public class Picocli {
 
                     if (mapper.isBuildTime() && !options.includeBuildTime) {
                         String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
-                        if (!configValueStr.equals(currentValue)) {
+                        if (!Objects.equals(configValueStr, currentValue)) {
                             ignoredBuildTime.add(mapper.getFrom());
                             continue;
                         }
                     }
                     if (mapper.isRunTime() && !options.includeRuntime) {
-                        ignoredRunTime.add(mapper.getFrom());
+                        if (configValueStr != null) {
+                            ignoredRunTime.add(mapper.getFrom());
+                        }
+                        continue;
+                    }
+
+                    if (configValueStr == null) {
+                        if (mapper.isRequired()) {
+                            handleRequired(missingOption, mapper);
+                        }
                         continue;
                     }
 
@@ -570,7 +574,7 @@ public class Picocli {
                 // only persist build options resolved from config sources and not default values
                 return;
             }
-            // since we're presisting all quarkus values, this may leak some runtime information - we don't want
+            // since we're persisting all quarkus values, this may leak some runtime information - we don't want
             // to capture expanded expressions that may be referencing environment variables
             String stringValue = value.getValue();
             if (quarkus && value.getRawValue() != null) {

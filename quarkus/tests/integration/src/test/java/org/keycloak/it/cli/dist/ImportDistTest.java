@@ -32,7 +32,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-@DistributionTest
+@DistributionTest(defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(DistributionTest.SMOKE)
