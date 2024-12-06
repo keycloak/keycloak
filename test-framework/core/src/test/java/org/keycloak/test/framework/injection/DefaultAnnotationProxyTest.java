@@ -16,7 +16,7 @@ public class DefaultAnnotationProxyTest {
 
     @Test
     public void testGetField() {
-        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class);
+        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, "");
         Assertions.assertEquals(LifeCycle.CLASS, proxy.lifecycle());
         Assertions.assertEquals(LinkedList.class, proxy.config());
         Assertions.assertEquals("", proxy.ref());
@@ -24,8 +24,14 @@ public class DefaultAnnotationProxyTest {
     }
 
     @Test
+    public void testCustomRef() {
+        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, "myref");
+        Assertions.assertEquals("myref", proxy.ref());
+    }
+
+    @Test
     public void testAnnotationReflection() {
-        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class);
+        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, "");
         Assertions.assertEquals(LifeCycle.CLASS, SupplierHelpers.getAnnotationField(proxy, "lifecycle"));
         Assertions.assertEquals(LinkedList.class, SupplierHelpers.getAnnotationField(proxy, "config"));
         Assertions.assertEquals("", SupplierHelpers.getAnnotationField(proxy, "ref"));
