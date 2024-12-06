@@ -95,10 +95,18 @@ public class UserProfileResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
     public Response update(UPConfig config) {
         auth.realm().requireManageRealm();
-        UserProfileProvider t = session.getProvider(UserProfileProvider.class);
+        return Response.ok(setAndGetConfiguration(config)).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    public UPConfig setAndGetConfiguration(UPConfig config) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
+        if (config != null && provider.getConfiguration().equals(config)) {
+            return config;
+        }
 
         try {
-            t.setConfiguration(config);
+            provider.setConfiguration(config);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
@@ -109,6 +117,6 @@ public class UserProfileResource {
                 .representation(config)
                 .success();
 
-        return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
+        return provider.getConfiguration();
     }
 }
