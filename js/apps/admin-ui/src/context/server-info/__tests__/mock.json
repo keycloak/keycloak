@@ -291,7 +291,6 @@
     { "groupName": "Social", "name": "BitBucket", "id": "bitbucket" },
     { "groupName": "Social", "name": "Twitter", "id": "twitter" },
     { "groupName": "Social", "name": "Openshift v4", "id": "openshift-v4" },
-    { "groupName": "Social", "name": "Openshift v3", "id": "openshift-v3" },
     { "groupName": "Social", "name": "GitLab", "id": "gitlab" },
     { "groupName": "Social", "name": "PayPal", "id": "paypal" },
     { "groupName": "Social", "name": "StackOverflow", "id": "stackoverflow" }
@@ -317,7 +316,6 @@
     { "groupName": "Social", "name": "BitBucket", "id": "bitbucket" },
     { "groupName": "Social", "name": "Twitter", "id": "twitter" },
     { "groupName": "Social", "name": "Openshift v4", "id": "openshift-v4" },
-    { "groupName": "Social", "name": "Openshift v3", "id": "openshift-v3" },
     { "groupName": "Social", "name": "GitLab", "id": "gitlab" },
     { "groupName": "Social", "name": "PayPal", "id": "paypal" },
     { "groupName": "Social", "name": "StackOverflow", "id": "stackoverflow" }
@@ -956,7 +954,6 @@
         "microsoft": { "order": 0 },
         "twitter": { "order": 0 },
         "openshift-v4": { "order": 0 },
-        "openshift-v3": { "order": 0 },
         "gitlab": { "order": 0 },
         "paypal": { "order": 0 },
         "stackoverflow": { "order": 0 }

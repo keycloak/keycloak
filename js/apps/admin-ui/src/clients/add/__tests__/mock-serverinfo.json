@@ -299,11 +299,6 @@
      },
      {
         "groupName":"Social",
-        "name":"Openshift v3",
-        "id":"openshift-v3"
-     },
-     {
-        "groupName":"Social",
         "name":"GitLab",
         "id":"gitlab"
      },
@@ -378,11 +373,6 @@
         "groupName":"Social",
         "name":"Openshift v4",
         "id":"openshift-v4"
-     },
-     {
-        "groupName":"Social",
-        "name":"Openshift v3",
-        "id":"openshift-v3"
      },
      {
         "groupName":"Social",
@@ -1585,9 +1575,6 @@
               "order":0
            },
            "openshift-v4":{
-              "order":0
-           },
-           "openshift-v3":{
               "order":0
            },
            "gitlab":{
