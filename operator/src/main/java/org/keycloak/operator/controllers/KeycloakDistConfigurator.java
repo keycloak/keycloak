@@ -22,7 +22,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.quarkus.logging.Log;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -35,6 +35,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.ArrayList;
@@ -47,8 +48,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
@@ -68,6 +67,7 @@ public class KeycloakDistConfigurator {
         // register the configuration mappers for the various parts of the keycloak cr
         configureHostname();
         configureFeatures();
+        configureTracing();
         configureTransactions();
         configureHttp();
         configureDatabase();
@@ -122,6 +122,18 @@ public class KeycloakDistConfigurator {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getFeatureSpec())
                 .mapOptionFromCollection("features", FeatureSpec::getEnabledFeatures)
                 .mapOptionFromCollection("features-disabled", FeatureSpec::getDisabledFeatures);
+    }
+
+    void configureTracing() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getTracingSpec())
+                .mapOption("tracing-enabled", TracingSpec::getEnabled)
+                .mapOption("tracing-service-name", TracingSpec::getServiceName)
+                .mapOption("tracing-endpoint", TracingSpec::getEndpoint)
+                .mapOption("tracing-protocol", TracingSpec::getProtocol)
+                .mapOption("tracing-sampler-type", TracingSpec::getSamplerType)
+                .mapOption("tracing-sampler-ratio", TracingSpec::getSamplerRatio)
+                .mapOption("tracing-compression", TracingSpec::getCompression)
+                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString);
     }
 
     void configureTransactions() {

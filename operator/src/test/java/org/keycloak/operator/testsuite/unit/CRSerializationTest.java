@@ -27,6 +27,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -37,6 +38,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -173,6 +175,29 @@ public class CRSerializationTest {
         assertThat(limitMemQuantity, notNullValue());
         assertThat(limitMemQuantity.getAmount(), is("1500"));
         assertThat(limitMemQuantity.getFormat(), is("M"));
+    }
+
+    @Test
+    public void tracingSpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+
+        TracingSpec tracing = keycloak.getSpec().getTracingSpec();
+        assertThat(tracing, notNullValue());
+
+        assertThat(tracing.getEnabled(), is(true));
+        assertThat(tracing.getEndpoint(), is("http://my-tracing:4317"));
+        assertThat(tracing.getServiceName(), is("my-best-keycloak"));
+        assertThat(tracing.getProtocol(), is("http/protobuf"));
+        assertThat(tracing.getSamplerType(), is("parentbased_traceidratio"));
+        assertThat(tracing.getSamplerRatio(), is(0.01));
+        assertThat(tracing.getCompression(), is("gzip"));
+
+        var attributes = tracing.getResourceAttributes();
+        assertThat(attributes, notNullValue());
+
+        assertThat(attributes.size(), is(2));
+        assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace"));
+        assertThat(attributes, hasEntry("service.name", "custom-service-name"));
     }
 
     @Test
