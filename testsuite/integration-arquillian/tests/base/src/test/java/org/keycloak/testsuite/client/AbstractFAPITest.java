@@ -62,6 +62,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.util.TokenUtil;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -145,7 +146,6 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        System.out.println("KKKKK response = " + oauth.getCurrentQuery().get("response"));
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.getCurrentQuery().get("response"));
         String code = (String)responseToken.getOtherClaims().get("code");
         Assert.assertNotNull(code);
@@ -224,6 +224,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
             HttpPost post = new HttpPost(requestUrl);
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
+            if (oauth.getDpopProof() != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, oauth.getDpopProof() );
+            }
             return client.execute(post);
         } finally {
             oauth.closeClient(client);
