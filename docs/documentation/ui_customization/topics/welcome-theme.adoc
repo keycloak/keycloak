@@ -1,0 +1,4 @@
+[[_welcome_theme]]
+== Customizing the Welcome Theme
+
+blah blah
