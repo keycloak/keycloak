@@ -47,7 +47,13 @@ describe("Partial realm export", () => {
   it("Exports the realm", () => {
     modal.includeGroupsAndRolesSwitch().click({ force: true });
     modal.includeClientsSwitch().click({ force: true });
+    cy.intercept(
+      "POST",
+      "/admin/realms/Partial-export-test-realm/partial-export*",
+    ).as("export");
     modal.exportButton().click();
+    cy.wait("@export");
+
     cy.readFile(
       Cypress.config("downloadsFolder") + "/realm-export.json",
     ).should("exist");
