@@ -379,7 +379,7 @@ public class Picocli {
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
                 for (PropertyMapper<?> mapper : mappers) {
-                    Configuration.getKcConfigValues(mapper).forEach(configValue -> {
+                    mapper.getKcConfigValues().forEach(configValue -> {
                         String configValueStr = configValue.getValue();
 
                         // don't consider missing or anything below standard env properties

@@ -112,7 +112,7 @@ public final class LoggingPropertyMappers {
                         .validator(LoggingPropertyMappers::validateCategoryLogLevel)
                         .wildcardKeysTransformer(LoggingPropertyMappers::getConfiguredLogCategories)
                         .transformer((v,c) -> toLevel(v).getName())
-                        .mapFrom(LoggingOptions.LOG_LEVEL, LoggingPropertyMappers::resolveCategoryLogLevelFromParentLogLevelOption) // a fallback to log-level
+                        .wildcardMapFrom(LoggingOptions.LOG_LEVEL, LoggingPropertyMappers::resolveCategoryLogLevelFromParentLogLevelOption) // a fallback to log-level
                         .paramLabel("level")
                         .build(),
                 // Syslog
