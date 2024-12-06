@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import chalk from "chalk";
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import fs from "fs-extra";
 import Mustache from "mustache";
 import { mkdtemp } from "node:fs";
@@ -26,12 +26,22 @@ function main() {
     .option(
       "-t, --type <name>",
       "the type of ui to be created either `account` or `admin` ",
-      "account",
+      (value) => {
+        if (value !== "account" && value !== "admin") {
+          throw new InvalidArgumentError(
+            "It should be either account or admin",
+          );
+        }
+        return value;
+      },
     )
     .action(async (name, options) => {
-      console.log(`Creating a new ${chalk.green(name)} project`);
+      const type = options.type || "account";
+      console.log(
+        `Creating a new ${chalk.green(name)} project of type ${chalk.green(type)}`,
+      );
 
-      await createProject(name, options.type);
+      await createProject(name, type);
       done(name);
     })
     .on("--help", () => {
@@ -48,7 +58,7 @@ function main() {
     .parse(process.argv);
 }
 
-function cloneQuickstart() {
+function cloneQuickstart(type) {
   return new Promise((resolve, reject) => {
     mkdtemp(join(tmpdir(), "template-"), async (err, dir) => {
       if (err) return reject(err);
@@ -58,14 +68,14 @@ function cloneQuickstart() {
           "--branch": "main",
         })
         .then(() =>
-          resolve(join(dir, "extension/extend-account-console-node")),
+          resolve(join(dir, `extension/extend-${type}-console-node`)),
         );
     });
   });
 }
 
 async function createProject(name, type) {
-  const templateProjectDir = await cloneQuickstart();
+  const templateProjectDir = await cloneQuickstart(type);
   const projectDir = join(resolve(), name);
   await fs.mkdir(projectDir);
   await fs.copy(templateProjectDir, projectDir);
