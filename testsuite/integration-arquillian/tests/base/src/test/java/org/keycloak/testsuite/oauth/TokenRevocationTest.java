@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.AssertEvents.isUUID;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.io.IOException;
@@ -54,6 +55,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -71,6 +74,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -280,6 +284,40 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(revokeResponse, OAuth2ErrorRepresentation.class);
         assertEquals("duplicated parameter", errorRep.getErrorDescription());
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+    }
+
+    @Test
+    public void testRevokeSingleNormalSession() throws Exception {
+        testRevokeSingleSession(TokenUtil.TOKEN_TYPE_REFRESH);
+    }
+
+    @Test
+    public void testRevokeSingleOfflineSession() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        testRevokeSingleSession(TokenUtil.TOKEN_TYPE_OFFLINE);
+    }
+
+    private void testRevokeSingleSession(String expectedTokenType) throws Exception {
+        oauth.clientId("test-app");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+                "password");
+        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+                "password");
+
+        isTokenEnabled(tokenResponse, "test-app");
+        isTokenEnabled(tokenResponse2, "test-app");
+
+        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        events.expect(EventType.REVOKE_GRANT)
+                .session(tokenResponse.getSessionState())
+                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
+                .client("test-app")
+                .assertEvent(true);
+
+        isTokenDisabled(tokenResponse, "test-app");
+        isTokenEnabled(tokenResponse2, "test-app");
     }
 
     private AccessTokenResponse login(String clientId, String username, String password) {
