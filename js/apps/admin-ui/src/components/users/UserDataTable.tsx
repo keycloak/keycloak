@@ -203,7 +203,10 @@ export function UserDataTable() {
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmUsers",
+    titleKey: t("deleteConfirmUsers", {
+      count: selectedRows.length,
+      name: selectedRows[0]?.username,
+    }),
     messageKey: t("deleteConfirmDialog", { count: selectedRows.length }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,

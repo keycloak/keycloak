@@ -235,7 +235,7 @@ export default function EditUser() {
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirm",
+    titleKey: "deleteConfirmUsers",
     messageKey: "deleteConfirmCurrentUser",
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
