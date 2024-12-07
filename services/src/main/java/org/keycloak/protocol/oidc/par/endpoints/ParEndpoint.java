@@ -24,13 +24,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
@@ -202,6 +202,11 @@ public class ParEndpoint extends AbstractParEndpoint {
             if (parameterValues.isEmpty()) {
                 // We emit the empty parameter as a marker, but only if it does not exist yet. This prevents "accidental" value overrides.
                 params.putIfAbsent(parameterName, null);
+            } if (AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS.contains(parameterName)) {
+                // Some parameters can be used multiple times, e.g. the resource param from
+                // RFC 8707 Resource Indicators for OAuth 2.0
+                String encodedParams = String.join(Constants.CFG_DELIMITER, parameterValues);
+                params.put(parameterName, encodedParams);
             } else {
                 // We flatten the MultivaluedMap values list by emitting the first value only.
                 // We override potential empty parameters that were added to the params map before.
