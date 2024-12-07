@@ -57,6 +57,10 @@ export const ExtendedNonDiscoverySettings = () => {
         />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         <SwitchField field="config.disableNonce" label="disableNonce" />
+        <SwitchField
+          field="config.disableTypeClaimCheck"
+          label="disableTypeClaimCheck"
+        />
         <TextField field="config.defaultScope" label="scopes" />
         <FormGroupField label="prompt">
           <Controller
