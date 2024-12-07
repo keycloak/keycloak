@@ -23,6 +23,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -49,38 +50,54 @@ public abstract class AuthzEndpointRequestParser {
     public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
     public static final String AUTHZ_REQUEST_OBJECT_ENCRYPTED = "EncryptedRequestObject";
 
-    /** Set of known protocol GET params not to be stored into additionalReqParams} */
-    public static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();
+    /**
+     * Set of known protocol request params that support repeated parameters.
+     */
+    public static final Set<String> KNOWN_MULTI_PARAMS;
+
+    /** Set of known protocol GET params not to be stored into {@code additionalReqParams} */
+    public static final Set<String> KNOWN_REQ_PARAMS;
     static {
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
-        KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
-        KNOWN_REQ_PARAMS.add(Constants.KC_ACTION);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.MAX_AGE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLAIMS_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.ACR_PARAM);
+        Set<String> knownReqParams = new HashSet<>();
+        knownReqParams.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.STATE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.SCOPE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.PROMPT_PARAM);
+        knownReqParams.add(AdapterConstants.KC_IDP_HINT);
+        knownReqParams.add(Constants.KC_ACTION);
+        knownReqParams.add(OIDCLoginProtocol.NONCE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.MAX_AGE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.REQUEST_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.CLAIMS_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.ACR_PARAM);
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
+        knownReqParams.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
 
         // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.DPOP_JKT);
+        knownReqParams.add(OIDCLoginProtocol.DPOP_JKT);
 
         // Those are not OAuth/OIDC parameters, but they should never be added to the additionalRequestParameters
-        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
-        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
-        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
+        knownReqParams.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        knownReqParams.add(OAuth2Constants.CLIENT_ASSERTION);
+        knownReqParams.add(OAuth2Constants.CLIENT_SECRET);
+
+        // https://www.rfc-editor.org/rfc/rfc8707#section-2
+        knownReqParams.add(OAuth2Constants.RESOURCE);
+
+        KNOWN_REQ_PARAMS = Collections.unmodifiableSet(knownReqParams);
+
+        Set<String> knownMultiReqParams= new HashSet<>();
+        knownMultiReqParams.add(OAuth2Constants.RESOURCE);
+
+        KNOWN_MULTI_PARAMS = Collections.unmodifiableSet(knownMultiReqParams);
     }
 
     public void parseRequest(AuthorizationEndpointRequest request) {
@@ -119,6 +136,8 @@ public abstract class AuthzEndpointRequestParser {
 
         request.dpopJkt = replaceIfNotNull(request.dpopJkt, getParameter(OIDCLoginProtocol.DPOP_JKT));
 
+        request.resources = replaceIfNotNull(request.resources, getMultiParameter(OAuth2Constants.RESOURCE));
+
         extractAdditionalReqParams(request.additionalReqParams);
     }
 
@@ -153,6 +172,8 @@ public abstract class AuthzEndpointRequestParser {
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         return newVal==null ? previousVal : newVal;
     }
+
+    protected abstract Set<String> getMultiParameter(String paramName);
 
     protected abstract String getParameter(String paramName);
 
