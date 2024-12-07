@@ -60,6 +60,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
     public Response processFlow() {
         List<AuthenticationExecutionModel> executions = findExecutionsToRun();
 
+        // if there is only one execution, we can only use that, otherwise fallback to use the default client authenticator
+        String defaultClientAuthenticatorType = executions.size() == 1 ? executions.get(0).getAuthenticator() : KeycloakModelUtils.getDefaultClientAuthenticatorType();
+
         for (AuthenticationExecutionModel model : executions) {
             ClientAuthenticatorFactory factory = (ClientAuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, model.getAuthenticator());
             if (factory == null) {
@@ -69,6 +72,18 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             logger.debugv("client authenticator: {0}", factory.getId());
 
             AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
+
+            String clientAuthenticatorType = defaultClientAuthenticatorType;
+            if (context.getClient() != null && context.getClient().getClientAuthenticatorType() != null) {
+                // if a client has an explicit client authenticator set, use it instead of default authenticator type
+                clientAuthenticatorType = context.getClient().getClientAuthenticatorType();
+            }
+
+            if (!model.getAuthenticator().equals(clientAuthenticatorType)) {
+                // if the current authenticator is not configured for the client, try next
+                continue;
+            }
+
             authenticator.authenticateClient(context);
 
             ClientModel client = processor.getClient();
@@ -81,7 +96,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                     if (expectedClientAuthType == null) {
                         ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
                     }
-                    expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+                    expectedClientAuthType = defaultClientAuthenticatorType;
                 }
 
                 // Check if client authentication matches
@@ -107,7 +122,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             processor.getEvent().error(Errors.INVALID_CLIENT);
             return alternativeChallenge;
         }
-        
+
         throw new AuthenticationFlowException("Invalid client or Invalid client credentials", AuthenticationFlowError.CLIENT_NOT_FOUND);
     }
 
