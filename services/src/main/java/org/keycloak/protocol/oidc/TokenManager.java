@@ -69,6 +69,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -406,12 +407,27 @@ public class TokenManager {
 
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
+
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
         // validate authorizedClient is same as validated client
         if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
+        }
+
+        List<String> resourceParamValues = request.getDecodedFormParameters().get(OAuth2Constants.RESOURCE);
+        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
+            Set<String> requestedResourceIndicators = Set.copyOf(resourceParamValues);
+            for (String resource : requestedResourceIndicators) {
+                if (!ResourceIndicators.isResourceIndicatorAllowed(validation.clientSessionCtx.getClientSession(), authorizedClient, resource)) {
+                    String errorMessage = "Auth error: Found invalid resource indicator: " + resource;
+                    event.detail(Details.REASON, errorMessage);
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid resource");
+                }
+            }
+            validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, requestedResourceIndicators);
         }
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);

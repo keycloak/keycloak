@@ -59,6 +59,9 @@ public class OAuthErrorException extends Exception {
     // DPoP
     public static final String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
+    // RFC 8707 Resource Indicators for OAuth 2.0
+    public static final String INVALID_TARGET = "invalid_target";
+
     // Others
     public static final String INVALID_CLIENT = "invalid_client";
     public static final String INVALID_GRANT = "invalid_grant";

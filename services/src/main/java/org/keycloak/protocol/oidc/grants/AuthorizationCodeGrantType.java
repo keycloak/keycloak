@@ -19,6 +19,8 @@ package org.keycloak.protocol.oidc.grants;
 
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -40,7 +42,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.representations.dpop.DPoP;
+import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -135,6 +137,21 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
 
+        List<String> resourceParamValues = formParams.get(OAuth2Constants.RESOURCE);
+        Set<String> requestedResourceIndicators = null;
+        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
+            requestedResourceIndicators = Set.copyOf(resourceParamValues);
+            for (String resource : requestedResourceIndicators) {
+                if (!ResourceIndicators.isResourceIndicatorAllowed(clientSession, client, resource)) {
+                    logger.debugf("Invalid resource indicator '%s'", resource);
+                    String errorMessage = "Invalid resource indicator: " + resource;
+                    event.detail(Details.REASON, errorMessage);
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid resource", Response.Status.BAD_REQUEST);
+                }
+            }
+        }
+
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             String errorMessage = "Auth error: Found different client_id in clientSession";
             event.detail(Details.REASON, errorMessage);
@@ -204,6 +221,11 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
+
+        // Store requested resource indicators in ClientSessionContext for usage in token generation
+        if (requestedResourceIndicators != null) {
+            clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, requestedResourceIndicators);
+        }
 
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
     }
