@@ -122,6 +122,9 @@ public class RoleResolveUtil {
 
         } else {
             ClientModel app = (ClientModel) role.getContainer();
+            if (app == null) {
+                return;
+            }
             access = token.getResourceAccess(app.getClientId());
             if (access == null) {
                 access = token.addAccess(app.getClientId());
