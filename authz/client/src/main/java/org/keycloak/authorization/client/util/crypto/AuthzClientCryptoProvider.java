@@ -43,6 +43,8 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.SSLSocketFactory;
+
+import org.keycloak.common.crypto.CRLProvider;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
@@ -222,5 +224,10 @@ public class AuthzClientCryptoProvider implements CryptoProvider {
     @Override
     public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public CRLProvider getCrlProvider() {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 }
