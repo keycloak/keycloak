@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
@@ -100,7 +101,25 @@ public class OID4VCClientRegistrationProviderTest {
                                                 .setScope("MyType")
                                                 .setProofTypesSupported(new ProofTypesSupported().setJwt(new ProofTypeJWT().setProofSigningAlgValuesSupported(Arrays.asList("ES256"))))),
                                 null, null)
-                }
+                },
+                {
+                        "Single Supported Credential with credential build config.",
+                        Map.of(
+                                "vc.credential-id.format", Format.JWT_VC,
+                                "vc.credential-id.scope", "VerifiableCredential",
+                                "vc.credential-id.credential_build_config.token_jws_type", "JWT"
+                        ),
+                        new OID4VCClient(null, "did:web:test.org",
+                                List.of(new SupportedCredentialConfiguration()
+                                        .setId("credential-id")
+                                        .setFormat(Format.JWT_VC)
+                                        .setScope("VerifiableCredential")
+                                        .setCredentialBuildConfig(
+                                                new CredentialBuildConfig()
+                                                        .setCredentialId("credential-id")
+                                                        .setTokenJwsType("JWT"))),
+                                null, null)
+                },
         });
     }
 

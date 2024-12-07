@@ -41,7 +41,6 @@ public interface VerifiableCredentialsSigningService<T> extends Provider {
     /**
      * Returns the identifier of this service instance, can be either the format alone,
      * or the combination between format, credential type and credential configuration id.
-     * @return
      */
     String locator();
 

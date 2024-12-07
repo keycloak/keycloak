@@ -47,7 +47,10 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
+import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -75,6 +78,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -265,19 +269,34 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
+        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(
+                TEST_DID.toString(),
+                new StaticTimeProvider(1000));
+
         JwtSigningService jwtSigningService = new JwtSigningService(
                 session,
                 getKeyFromSession(session).getKid(),
-                Algorithm.RS256,
-                "JWT",
-                "did:web:issuer.org",
-                TIME_PROVIDER);
+                Algorithm.RS256);
+
+        return prepareIssuerEndpoint(
+                session,
+                authenticator,
+                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder),
+                Map.of(jwtSigningService.locator(), jwtSigningService)
+        );
+    }
+
+    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator,
+            Map<String, CredentialBuilder> credentialBuilders,
+            Map<String, VerifiableCredentialsSigningService> signingServices
+    ) {
         return new OID4VCIssuerEndpoint(
                 session,
-                "did:web:issuer.org",
-                Map.of(jwtSigningService.locator(), jwtSigningService),
+                credentialBuilders,
+                signingServices,
                 authenticator,
-                JsonSerialization.mapper,
                 TIME_PROVIDER,
                 30,
                 true);
@@ -312,15 +331,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        if (testRealm.getComponents() != null) {
-            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
-            testRealm.getComponents().addAll("org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", getSigningProviders());
-        } else {
-            testRealm.setComponents(new MultivaluedHashMap<>(
-                    Map.of("org.keycloak.keys.KeyProvider", List.of(getKeyProvider()),
-                            "org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", getSigningProviders()
-                    )));
+        if (testRealm.getComponents() == null) {
+            testRealm.setComponents(new MultivaluedHashMap<>());
         }
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
+        testRealm.getComponents().addAll("org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", getSigningProviders());
+        testRealm.getComponents().addAll("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProviders());
+
         ClientRepresentation clientRepresentation = getTestClient("did:web:test.org");
         if (testRealm.getClients() != null) {
             testRealm.getClients().add(clientRepresentation);
@@ -339,11 +357,13 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         } else {
             testRealm.setUsers(List.of(getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole")))));
         }
-        if (testRealm.getAttributes() != null) {
-            testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
-        } else {
-            testRealm.setAttributes(Map.of("issuerDid", TEST_DID.toString()));
+
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
         }
+
+        testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
+        testRealm.getAttributes().putAll(getCredentialDefinitionAttributes());
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {
@@ -363,6 +383,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected List<ComponentExportRepresentation> getSigningProviders() {
         return List.of(getJwtSigningProvider(RSA_KEY));
+    }
+
+    protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
+        return List.of(getCredentialBuilderProvider(Format.JWT_VC));
+    }
+
+    protected Map<String, String> getCredentialDefinitionAttributes() {
+        return getTestCredentialDefinitionAttributes();
     }
 
     protected static class CredentialResponseHandler {

@@ -31,8 +31,11 @@ import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
+import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
@@ -56,7 +59,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
 
     private static final Logger LOGGER = Logger.getLogger(JwtSigningServiceTest.class);
 
-    private static KeyWrapper rsaKey = getRsaKey();
+    private static final KeyWrapper rsaKey = getRsaKey();
 
     @Before
     public void setup() {
@@ -73,10 +76,8 @@ public class JwtSigningServiceTest extends OID4VCTest {
                             new JwtSigningService(
                                     session,
                                     getKeyFromSession(session).getKid(),
-                                    "unsupported-algorithm",
-                                    "JWT",
-                                    "did:web:test.org",
-                                    new StaticTimeProvider(1000)));
+                                    "unsupported-algorithm")
+                    );
         } catch (RunOnServerException ros) {
             throw ros.getCause();
         }
@@ -92,10 +93,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
                             new JwtSigningService(
                                     session,
                                     "no-such-key",
-                                    Algorithm.RS256,
-                                    "JWT",
-                                    "did:web:test.org",
-                                    new StaticTimeProvider(1000)));
+                                    Algorithm.RS256));
         } catch (RunOnServerException ros) {
             throw ros.getCause();
         }
@@ -147,14 +145,20 @@ public class JwtSigningServiceTest extends OID4VCTest {
         JwtSigningService jwtSigningService = new JwtSigningService(
                 session,
                 keyWrapper.getKid(),
-                algorithm,
-                "JWT",
-                "did:web:test.org",
-                new StaticTimeProvider(1000));
+                algorithm);
 
         VerifiableCredential testCredential = getTestCredential(claims);
+        JwtCredentialBuilder builder = new JwtCredentialBuilder(
+                TEST_DID.toString(),
+                new StaticTimeProvider(1000)
+        );
+        CredentialBody credentialBody = builder.buildCredentialBody(
+                testCredential,
+                new CredentialBuildConfig().setTokenJwsType("JWT")
+        );
 
-        String jwtCredential = jwtSigningService.signCredential(new VCIssuanceContext().setVerifiableCredential(testCredential));
+        VCIssuanceContext context = new VCIssuanceContext().setCredentialBody(credentialBody);
+        String jwtCredential = jwtSigningService.signCredential(context);
 
         SignatureVerifierContext verifierContext = null;
         switch (algorithm) {
