@@ -18,6 +18,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +45,7 @@ import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPageException;
@@ -396,6 +398,22 @@ public class AuthorizationEndpointChecker {
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+        }
+    }
+
+    public void checkResourceIndicatorParams() throws AuthorizationCheckException{
+        Set<String> resources = request.getResources();
+        if (resources == null || resources.isEmpty()) {
+            return;
+        }
+
+        // explicit resource indicates were provided in the authorize request, check if all resource identifiers are allowed
+        for (String resource : resources) {
+            // check if given resource is a known valid resource, e.g. known clientId / URI
+            if (!ResourceIndicators.isResourceIndicatorAllowed(null, client, resource)) {
+                logger.debugf("Invalid resource indicator '%s'", resource);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, "Requested resource not supported");
+            }
         }
     }
 

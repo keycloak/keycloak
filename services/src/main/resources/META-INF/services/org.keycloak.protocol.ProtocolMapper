@@ -57,4 +57,5 @@ org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCContextMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper
 org.keycloak.protocol.oidc.mappers.SessionStateMapper
 org.keycloak.protocol.oidc.mappers.SubMapper
+org.keycloak.protocol.oidc.mappers.ResourceIndicatorMapper
 org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper
