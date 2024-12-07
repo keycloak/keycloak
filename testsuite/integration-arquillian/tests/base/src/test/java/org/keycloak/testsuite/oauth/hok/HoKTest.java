@@ -133,7 +133,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             }
         }
     }
-    
+
     private void configTestRealmForTokenIntrospection(RealmRepresentation testRealm) {
         ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, "confidential-cli");
         confApp.setSecret("secret1");
@@ -176,8 +176,8 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
         clientResource.update(clientRep);
     }
-    
-    // Authorization Code Flow 
+
+    // Authorization Code Flow
     // Bind HoK Token
 
     @Test
@@ -199,7 +199,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         expectSuccessfulResponseFromTokenEndpoint(sessionId, codeId, response);
         verifyHoKTokenDefaultCertThumbPrint(response);
     }
-    
+
     @Test
     public void accessTokenRequestWithoutClientCertificate() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
@@ -233,7 +233,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
-        assertEquals("JWT", header.getType());
+        assertEquals("at+jwt", header.getType());
         assertEquals(expectedKid, header.getKeyId());
         assertNull(header.getContentType());
 
@@ -395,7 +395,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     private void expectSuccessfulResponseFromTokenEndpoint(AccessTokenResponse response, String sessionId, AccessToken token, RefreshToken refreshToken, EventRepresentation tokenEvent) {
         expectSuccessfulResponseFromTokenEndpoint(oauth, "test-user@localhost", response, sessionId, token, refreshToken, tokenEvent);
     }
-    
+
     private void expectSuccessfulResponseFromTokenEndpoint(OAuthClient oauth, String username, AccessTokenResponse response, String sessionId, AccessToken token, RefreshToken refreshToken, EventRepresentation tokenEvent) {
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
@@ -567,7 +567,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
     // Hybrid Code Flow : response_type = code id_token
     // Bind HoK Token
-    
+
     @Test
     public void accessTokenRequestWithClientCertificateInHybridFlowWithCodeIDToken() throws Exception {
         String nonce = "ckw938gnspa93dj";
