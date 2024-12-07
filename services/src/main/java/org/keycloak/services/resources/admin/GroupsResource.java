@@ -76,7 +76,7 @@ public class GroupsResource {
     }
 
     /**
-     * Get group hierarchy.  Only name and ids are returned.
+     * Get group hierarchy.  Only name and ids are returned.  subGroups are not returned by default.
      *
      * @return
      */
@@ -84,9 +84,9 @@ public class GroupsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.")
-    public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
-                                                 @QueryParam("q") String searchQuery,
+    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.  subGroups are not returned by default.")
+    public Stream<GroupRepresentation> getGroups(@Parameter(description = "populates subGroups") @QueryParam("search") String search,
+                                                 @Parameter(description = "populates subGroups") @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
