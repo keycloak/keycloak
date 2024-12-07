@@ -76,17 +76,17 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         } else if (config.isUseJwksString()) {
             JSONWebKeySet jwks = JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class);
             return JWKSUtils.getKeyWrappersForUse(jwks, keyUse);
-        } else if (keyUse == JWK.Use.SIG) {
+        } else if (keyUse == JWK.Use.SIG || keyUse == JWK.Use.ENCRYPTION) {
             try {
                 CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, JWTClientAuthenticator.ATTR_PREFIX);
                 KeyWrapper publicKey = getSignatureValidationKey(certInfo);
                 return new PublicKeysWrapper(Collections.singletonList(publicKey));
             } catch (ModelException me) {
-                logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());
+                logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s or encrypt token' . Error details: %s", client.getClientId(), me.getMessage());
                 return PublicKeysWrapper.EMPTY;
             }
         } else {
-            logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature", client.getClientId());
+            logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature or encryption of token", client.getClientId());
             return PublicKeysWrapper.EMPTY;
         }
     }
