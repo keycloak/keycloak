@@ -17,8 +17,11 @@
 package org.keycloak.admin.client;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * A Utility class that parses the Response object into the underlying ID attribute
@@ -39,9 +42,24 @@ public class CreatedResponseUtil {
         URI location = response.getLocation();
         if (!response.getStatusInfo().equals(Response.Status.CREATED)) {
             Response.StatusType statusInfo = response.getStatusInfo();
-            throw new WebApplicationException("Create method returned status " +
-                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); " +
-                    "expected status: Created (201)", response);
+            String contentType = response.getHeaderString(HttpHeaders.CONTENT_TYPE);
+            String errorMessage = "Create method returned status " +
+                                  statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); " +
+                                  "expected status: Created (201).";
+            if (MediaType.APPLICATION_JSON.equals(contentType)) {
+                // try to add actual server error message to the exception message
+                try {
+                    @SuppressWarnings("raw")
+                    Map responseBody = response.readEntity(Map.class);
+                    if (responseBody != null && responseBody.containsKey("errorMessage")) {
+                        errorMessage += " ErrorMessage: " + responseBody.get("errorMessage");
+                    }
+                } catch(Exception ignored) {
+                    // ignore if we couldn't parse the response
+                }
+            }
+
+            throw new WebApplicationException(errorMessage, response);
         }
         if (location == null) {
             return null;
