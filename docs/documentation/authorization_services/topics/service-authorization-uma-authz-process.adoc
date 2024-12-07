@@ -19,8 +19,8 @@ of a {project_name} server to where the ticket should be sent in order to obtain
 [source,bash,subs="attributes+"]
 ----
 HTTP/1.1 401 Unauthorized
-WWW-Authenticate: UMA realm="${realm}",
-    as_uri="https://${host}:${port}{kc_realms_path}/${realm}",
+WWW-Authenticate: UMA realm="${realm-name}",
+    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
     ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 ----
 
@@ -34,7 +34,7 @@ to obtain the location of the token endpoint and send an authorization request.
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "ticket=${permission_ticket}

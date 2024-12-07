@@ -187,8 +187,8 @@ See below for some examples.
 [source]
 ----
 http_server_active_requests 1.0
-http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 1.0
-http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 0.048717142
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm-name}/protocol/{protocol}/auth"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm-name}/protocol/{protocol}/auth"} 0.048717142
 ----
 
 Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).

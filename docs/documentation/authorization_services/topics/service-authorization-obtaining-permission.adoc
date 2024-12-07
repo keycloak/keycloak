@@ -105,7 +105,7 @@ Example of an authorization request when a client is seeking access to two resou
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "audience={resource_server_client_id}" \
@@ -120,7 +120,7 @@ and explicitly granted to the requesting user by other owners are evaluated.
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "audience={resource_server_client_id}"
@@ -132,7 +132,7 @@ the resource server as part of the authorization process:
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "ticket=${permission_ticket}
