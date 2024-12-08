@@ -169,7 +169,7 @@ public abstract class CacheManager {
                 return;
             }
             if (rev.equals(object.getRevision())) {
-                cache.putForExternalRead(id, object);
+                put(id, object, lifespan);
                 return;
             }
             if (rev > object.getRevision()) { // revision is ahead, don't cache
@@ -178,8 +178,7 @@ public abstract class CacheManager {
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             revisions.put(id, object.getRevision());
-            if (lifespan < 0) cache.putForExternalRead(id, object);
-            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+            put(id, object, lifespan);
         } finally {
             endRevisionBatch();
         }
@@ -195,6 +194,14 @@ public abstract class CacheManager {
         Iterator<Map.Entry<String, Revisioned>> it = getEntryIterator(predicate);
         while (it.hasNext()) {
             invalidations.add(it.next().getKey());
+        }
+    }
+
+    private void put(String id, Revisioned object, long lifespan) {
+        if (lifespan < 0) {
+            cache.putForExternalRead(id, object);
+        } else {
+            cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         }
     }
 
