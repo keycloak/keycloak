@@ -26,12 +26,16 @@ public class ManagedUser {
     }
 
     public String getPassword() {
-        Optional<CredentialRepresentation> password = createdRepresentation.getCredentials().stream().filter(c -> c.getType().equals(CredentialRepresentation.PASSWORD)).findFirst();
-        return password.map(CredentialRepresentation::getValue).orElse(null);
+        return getPassword(createdRepresentation);
     }
 
     public UserResource admin() {
         return userResource;
+    }
+
+    public static String getPassword(UserRepresentation userRepresentation) {
+        Optional<CredentialRepresentation> password = userRepresentation.getCredentials().stream().filter(c -> c.getType().equals(CredentialRepresentation.PASSWORD)).findFirst();
+        return password.map(CredentialRepresentation::getValue).orElse(null);
     }
 
 }

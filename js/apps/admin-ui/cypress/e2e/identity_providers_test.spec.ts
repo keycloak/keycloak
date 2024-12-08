@@ -89,11 +89,6 @@ describe("Identity provider test", () => {
         },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
         {
-          testName: "Openshift-v3",
-          displayName: "Openshift v3",
-          alias: "openshift-v3",
-        },
-        {
           testName: "Openshift-v4",
           displayName: "Openshift v4",
           alias: "openshift-v4",

@@ -2,12 +2,17 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.test.framework.annotations.InjectAdminClient;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.realm.ManagedRealm;
@@ -17,14 +22,31 @@ import org.keycloak.test.framework.realm.RealmConfigBuilder;
 import java.util.List;
 
 @KeycloakIntegrationTest
-public class RealmWithClientAndUserTest {
+public class RealmSpecificAdminClientTest {
 
     @InjectRealm(config = RealmWithClientAndUser.class)
     ManagedRealm realm;
 
+    @InjectAdminClient(ref = "bootstrap-client")
+    Keycloak bootstrapAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
+    Keycloak realmAdminClient;
+
+    @Test
+    public void testAdminClientIssuers() throws JWSInputException {
+        AccessToken bootstrapAccessToken = new JWSInput(bootstrapAdminClient.tokenManager().getAccessToken().getToken()).readJsonContent(AccessToken.class);
+        Assertions.assertTrue(bootstrapAccessToken.getIssuer().endsWith("/realms/master"));
+
+        AccessToken realmAccessToken = new JWSInput(realmAdminClient.tokenManager().getAccessToken().getToken()).readJsonContent(AccessToken.class);
+        Assertions.assertTrue(realmAccessToken.getIssuer().endsWith("/realms/" + realm.getName()));
+    }
+
     @Test
     public void testRealmWithClientAndUser() {
-        List<ClientRepresentation> clients = realm.admin().clients().findByClientId("myclient");
+        RealmResource realmResource = realmAdminClient.realms().realm(realm.getName());
+
+        List<ClientRepresentation> clients = realmResource.clients().findByClientId("myclient");
         Assertions.assertEquals(1, clients.size());
 
         ClientRepresentation client = clients.get(0);
@@ -42,7 +64,7 @@ public class RealmWithClientAndUserTest {
         Assertions.assertEquals("myadmin@localhost", user.getEmail());
         Assertions.assertTrue(user.isEmailVerified());
 
-        MappingsRepresentation roles = realm.admin().users().get(user.getId()).roles().getAll();
+        MappingsRepresentation roles = realmResource.users().get(user.getId()).roles().getAll();
         Assertions.assertEquals(1, roles.getClientMappings().get(Constants.REALM_MANAGEMENT_CLIENT_ID).getMappings().size());
     }
 

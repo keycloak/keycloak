@@ -100,7 +100,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private <T> T getUnConfiguredDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency;
         Supplier<?, ?> supplier = extensions.findSupplierByType(typeClass);
-        Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+        Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), ref);
         dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
 
         dependency.registerDependency(dependent);
@@ -238,7 +238,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         } else {
             Supplier<?, ?> supplier = extensions.findSupplierByType(valueType);
             if (supplier != null) {
-                Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass());
+                Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), "");
                 return new RequestedInstance(supplier, defaultAnnotation, valueType);
             }
         }

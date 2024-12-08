@@ -100,7 +100,7 @@
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
-    "i18next": "^24.0.2",
+    "i18next": "^24.0.5",
     "i18next-http-backend": "^3.0.1",
     "jszip": "^3.10.1",
     "keycloak-js": "workspace:*",
@@ -120,7 +120,7 @@
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.0.1",
+    "@testing-library/react": "^16.1.0",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
     "@types/lodash-es": "^4.17.12",
@@ -136,9 +136,9 @@
     "lightningcss": "^1.28.2",
     "ts-node": "^10.9.2",
     "uuid": "^11.0.3",
-    "vite": "^6.0.1",
+    "vite": "^6.0.3",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.6"
+    "vitest": "^2.1.8"
   }
 }

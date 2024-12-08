@@ -40,6 +40,10 @@ public class ManagedRealm extends ManagedTestResource {
         return realmResource;
     }
 
+    public RealmRepresentation getCreatedRepresentation() {
+        return createdRepresentation;
+    }
+
     public void updateWithCleanup(RealmUpdate... updates) {
         RealmRepresentation rep = admin().toRepresentation();
         cleanup().resetToOriginalRepresentation(rep);

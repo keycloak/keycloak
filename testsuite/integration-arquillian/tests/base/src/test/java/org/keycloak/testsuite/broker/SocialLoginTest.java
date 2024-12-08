@@ -86,7 +86,6 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
@@ -131,7 +130,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         MICROSOFT_SINGLE_TENANT("microsoft", "microsoft-single-tenant", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
-        OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         OPENSHIFT4("openshift-v4", OpenShiftLoginPage.class),
         OPENSHIFT4_KUBE_ADMIN("openshift-v4", "openshift-v4-admin", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
@@ -244,16 +242,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             management.idps().setPermissionsEnabled(idp, true);
             management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
         });
-    }
-
-    @Test
-    @UncaughtServerErrorExpected
-    public void openshiftLogin() {
-        setTestProvider(OPENSHIFT);
-        performLogin();
-        assertUpdateProfile(true, true, true);
-        appPage.assertCurrent();
-        testTokenExchange();
     }
 
     @Test
@@ -460,7 +448,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
-        if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
+        if (provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
         }
         if (provider == MICROSOFT_SINGLE_TENANT) {

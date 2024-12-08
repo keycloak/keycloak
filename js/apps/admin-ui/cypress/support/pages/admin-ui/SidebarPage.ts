@@ -48,6 +48,9 @@ export default class SidebarPage extends CommonElements {
 
   goToRealm(realmName: string) {
     this.waitForPageLoad();
+    cy.intercept("GET", "/admin/realms/master/ui-ext/realms/names/*").as(
+      "getRealms",
+    );
     cy.findByTestId(this.#realmsDrpDwn).click();
     cy.get(this.realmsElements).contains("Loading realms…").should("not.exist");
     cy.get(this.realmsElements).contains(realmName).click();

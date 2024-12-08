@@ -24,8 +24,14 @@ export default class CreateRealmPage {
     return this;
   }
 
-  createRealm() {
-    cy.get(this.#createBtn).click();
+  createRealm(wait = true) {
+    if (wait) {
+      cy.intercept("POST", "/admin/realms").as("createRealm");
+      cy.get(this.#createBtn).click();
+      cy.wait("@createRealm");
+    } else {
+      cy.get(this.#createBtn).click();
+    }
 
     return this;
   }

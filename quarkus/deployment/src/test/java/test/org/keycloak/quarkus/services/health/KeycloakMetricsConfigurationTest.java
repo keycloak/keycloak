@@ -20,7 +20,9 @@ import io.quarkus.test.QuarkusUnitTest;
 import io.restassured.RestAssured;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -28,8 +30,18 @@ import static io.restassured.RestAssured.given;
 
 class KeycloakMetricsConfigurationTest {
 
+    @BeforeAll
+    static void setUpAll() {
+        System.setProperty("KC_CACHE", "local");
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        System.clearProperty("KC_CACHE");
+    }
+
     @BeforeEach
-    void setUpPort() {
+    void setUp() {
         RestAssured.port = 9001;
     }
 

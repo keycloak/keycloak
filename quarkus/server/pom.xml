@@ -20,6 +20,10 @@
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-server-deployment</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
@@ -86,15 +90,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>snyk-quarkus</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-quarkus-server-deployment</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>

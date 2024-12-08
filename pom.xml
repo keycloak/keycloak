@@ -281,7 +281,6 @@
         <module>core</module>
         <module>crypto</module>
         <module>dependencies</module>
-        <module>docs</module>
         <module>server-spi</module>
         <module>server-spi-private</module>
         <module>saml-core-api</module>
@@ -293,7 +292,6 @@
         <module>util</module>
         <module>rest</module>
         <module>integration</module>
-        <module>adapters</module>
         <module>authz</module>
         <module>js</module>
         <module>test-framework</module>
@@ -1506,6 +1504,28 @@
             </activation>
             <modules>
                 <module>testsuite</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>adapters</id>
+            <activation>
+                <property>
+                    <name>!skipAdapters</name>
+                </property>
+            </activation>
+            <modules>
+                <module>adapters</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>docs</id>
+            <activation>
+                <property>
+                    <name>!skipDocs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>docs</module>
             </modules>
         </profile>
 
