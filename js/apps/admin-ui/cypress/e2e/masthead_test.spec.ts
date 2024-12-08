@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -67,8 +66,8 @@ describe("Masthead tests", () => {
   });
 
   describe("Login works for unprivileged users", () => {
-    const realmName = `test-realm-${uuid()}`;
-    const username = `test-user-${uuid()}`;
+    const realmName = `test-realm-${crypto.randomUUID()}`;
+    const username = `test-user-${crypto.randomUUID()}`;
 
     before(async () => {
       await adminClient.createRealm(realmName, { enabled: true });

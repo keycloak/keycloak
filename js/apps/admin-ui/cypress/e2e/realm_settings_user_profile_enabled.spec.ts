@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
 import UserProfile from "../support/pages/admin-ui/manage/realm_settings/UserProfile";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -28,7 +27,7 @@ const usernameAttributeName = "username";
 const emailAttributeName = "email";
 
 describe("User profile tabs", () => {
-  const realmName = "Realm_" + uuid();
+  const realmName = "Realm_" + crypto.randomUUID();
   const attributeName = "Test";
   const attributeDisplayName = "Test display name";
 
@@ -100,7 +99,7 @@ describe("User profile tabs", () => {
   });
 
   describe("Attribute groups sub tab tests", () => {
-    const group = "Test" + uuid();
+    const group = "Test" + crypto.randomUUID();
 
     before(() => adminClient.addGroupToProfile(realmName, group));
 
@@ -135,7 +134,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeFieldExists(attrName, false)
-        .setUsername(`testuser7-${uuid()}`)
+        .setUsername(`testuser7-${crypto.randomUUID()}`)
         .create()
         .assertNotificationCreated()
         .assertAttributeFieldExists(attrName, false);
@@ -168,7 +167,10 @@ describe("User profile tabs", () => {
       sidebarPage.goToUsers();
       createUserPage
         .goToCreateUser()
-        .setAttributeValue(emailAttributeName, `testuser8-${uuid()}@gmail.com`)
+        .setAttributeValue(
+          emailAttributeName,
+          `testuser8-${crypto.randomUUID()}@gmail.com`,
+        )
         .assertAttributeFieldExists(attrName, false)
         .create()
         .assertNotificationCreated();
@@ -176,7 +178,10 @@ describe("User profile tabs", () => {
       // Edit user
       createUserPage
         .assertAttributeFieldExists(attrName, false)
-        .setAttributeValue(emailAttributeName, `testuser9-${uuid()}@gmail.com`)
+        .setAttributeValue(
+          emailAttributeName,
+          `testuser9-${crypto.randomUUID()}@gmail.com`,
+        )
         .update()
         .assertNotificationUpdated();
 
@@ -205,7 +210,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeFieldExists(attrName, true)
-        .setUsername(`testuser10-${uuid()}`)
+        .setUsername(`testuser10-${crypto.randomUUID()}`)
         .create()
         .assertNotificationCreated()
         .assertAttributeFieldExists(attrName, true);
@@ -226,7 +231,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeLabel(attrName, attrName)
-        .setUsername(`testuser11-${uuid()}`)
+        .setUsername(`testuser11-${crypto.randomUUID()}`)
         .create()
         .assertValidationErrorRequired(attrName);
 
@@ -251,7 +256,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeLabel(attrName, attrName)
-        .setUsername(`testuser12-${uuid()}`)
+        .setUsername(`testuser12-${crypto.randomUUID()}`)
         .setAttributeValue(attrName, "MyAttribute")
         .create()
         .assertNotificationCreated();
@@ -281,7 +286,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertGroupDisplayName(group, group)
-        .setUsername(`testuser14-${uuid()}`)
+        .setUsername(`testuser14-${crypto.randomUUID()}`)
         .create()
         .assertNotificationCreated();
 
@@ -323,7 +328,7 @@ describe("User profile tabs", () => {
         .goToCreateUser()
         .assertGroupDisplayName(group, group)
         .assertAttributeLabel(attrName, attrName)
-        .setUsername(`testuser13-${uuid()}`)
+        .setUsername(`testuser13-${crypto.randomUUID()}`)
         .setAttributeValue(attrName, initialAttrValue)
         .create()
         .assertNotificationCreated()
@@ -350,7 +355,7 @@ describe("User profile tabs", () => {
     });
 
     it("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
-      const userName = `select-test-user-${uuid()}`;
+      const userName = `select-test-user-${crypto.randomUUID()}`;
       const attrName = "select-test-attr";
       const opt1 = "opt1";
       const opt2 = "opt2";

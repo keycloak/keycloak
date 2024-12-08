@@ -1,5 +1,3 @@
-import { v4 as uuid } from "uuid";
-
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -43,7 +41,7 @@ describe("User creation", () => {
 
   before(async () => {
     for (let i = 0; i <= 2; i++) {
-      groupName += "_" + uuid();
+      groupName += "_" + crypto.randomUUID();
       await adminClient.createGroup(groupName);
       groupsList = [...groupsList, groupName];
     }
@@ -67,7 +65,7 @@ describe("User creation", () => {
   });
 
   it("Create user test", () => {
-    itemId += "_" + uuid();
+    itemId += "_" + crypto.randomUUID();
     // Create
     createUserPage.goToCreateUser();
 
@@ -95,7 +93,7 @@ describe("User creation", () => {
   });
 
   it("Create user with groups test", () => {
-    itemIdWithGroups += uuid();
+    itemIdWithGroups += crypto.randomUUID();
     // Add user from search bar
     createUserPage.goToCreateUser();
 
@@ -117,7 +115,7 @@ describe("User creation", () => {
   });
 
   it("Create user with credentials test", () => {
-    itemIdWithCred += "_" + uuid();
+    itemIdWithCred += "_" + crypto.randomUUID();
 
     // Add user from search bar
     createUserPage.goToCreateUser();

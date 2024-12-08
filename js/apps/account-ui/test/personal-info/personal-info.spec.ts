@@ -8,12 +8,11 @@ import {
 } from "../admin-client";
 import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };
-import { randomUUID } from "crypto";
 
 const realm = "user-profile";
 
 test.describe("Personal info page", () => {
-  const user = "user-" + randomUUID();
+  const user = "user-" + crypto.randomUUID();
 
   test.beforeAll(() => createRandomUserWithPassword(user, "pwd", realm));
   test.afterAll(async () => deleteUser(user, realm));
@@ -36,7 +35,7 @@ test.describe("Personal info with userprofile enabled", () => {
   test.beforeAll(async () => {
     await importUserProfile(userProfileConfig as UserProfileConfig, realm);
     user = await createRandomUserWithPassword(
-      "user-" + randomUUID(),
+      "user-" + crypto.randomUUID(),
       "jdoe",
       realm,
       {
@@ -121,7 +120,7 @@ test.describe("Realm localization", () => {
   test.beforeAll(() => enableLocalization());
   test("change locale", async ({ page }) => {
     const user = await createRandomUserWithPassword(
-      "user-" + randomUUID(),
+      "user-" + crypto.randomUUID(),
       "pwd",
       realm,
     );

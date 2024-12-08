@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import ListingPage, {
   Filter,
@@ -34,7 +33,7 @@ const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
 const realmSettings = new RealmSettingsPage();
 
 describe("Clients test", () => {
-  const realmName = `clients-realm-${uuid()}`;
+  const realmName = `clients-realm-${crypto.randomUUID()}`;
 
   before(() => adminClient.createRealm(realmName));
 
@@ -428,7 +427,7 @@ describe("Clients test", () => {
     });
 
     it("Client CRUD test", () => {
-      itemId += "_" + uuid();
+      itemId += "_" + crypto.randomUUID();
 
       // Create
       commonPage.tableUtils().checkRowItemExists(itemId, false);
@@ -602,8 +601,8 @@ describe("Clients test", () => {
 
   describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
-    const client = "client_" + uuid();
-    const createRealmRoleName = `create-realm-${uuid()}`;
+    const client = "client_" + crypto.randomUUID();
+    const createRealmRoleName = `create-realm-${crypto.randomUUID()}`;
 
     before(async () => {
       await adminClient.inRealm(realmName, () =>
@@ -825,7 +824,7 @@ describe("Clients test", () => {
       keycloakBefore();
       commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
-      client = "client_" + uuid();
+      client = "client_" + crypto.randomUUID();
       commonPage.tableToolbarUtils().createClient();
       createClientPage
         .selectClientType("OpenID Connect")
@@ -959,7 +958,7 @@ describe("Clients test", () => {
   describe("Service account tab test", () => {
     const serviceAccountTab = new RoleMappingTab("user");
     const serviceAccountName = "service-account-client";
-    const createRealmRoleName = `create-realm-${uuid()}`;
+    const createRealmRoleName = `create-realm-${crypto.randomUUID()}`;
     const createRealmRoleType = `roles`;
 
     before(async () => {

@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
@@ -47,7 +46,7 @@ describe("Realm roles test", () => {
   });
 
   it("Realm role CRUD test", () => {
-    itemId += "_" + uuid();
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -70,7 +69,7 @@ describe("Realm roles test", () => {
   });
 
   it("should delete role from details action", () => {
-    itemId += "_" + uuid();
+    itemId += "_" + crypto.randomUUID();
     listingPage.goToCreateItem();
     createRealmRolePage.fillRealmRoleData(itemId).save();
     masthead.checkNotificationMessage("Role created", true);
@@ -90,7 +89,7 @@ describe("Realm roles test", () => {
   });
 
   it("Add associated roles test", () => {
-    itemId += "_" + uuid();
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -201,7 +200,7 @@ describe("Realm roles test", () => {
 
   it("Should delete associated roles from list test", () => {
     itemId = "realm_role_crud";
-    itemId += "_" + uuid();
+    itemId += "_" + crypto.randomUUID();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();

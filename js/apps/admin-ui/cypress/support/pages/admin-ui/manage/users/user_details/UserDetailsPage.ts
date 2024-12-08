@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import PageObject from "../../../components/PageObject";
 
@@ -22,7 +21,8 @@ export default class UserDetailsPage extends PageObject {
     this.saveBtn = "user-creation-save";
     this.cancelBtn = "cancel-create-user";
     this.emailInput = "email";
-    this.emailValue = () => "example" + "_" + uuid() + "@example.com";
+    this.emailValue = () =>
+      "example" + "_" + crypto.randomUUID() + "@example.com";
     this.firstNameInput = "firstName";
     this.firstNameValue = "firstname";
     this.lastNameInput = "lastName";

@@ -1,7 +1,6 @@
 import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { Page, expect, test } from "@playwright/test";
-import { randomUUID } from "node:crypto";
 
 import {
   createClient,
@@ -23,7 +22,7 @@ test.describe("Account linking", () => {
   // Tests for keycloak account console, section Account linking in Account security
   test.beforeAll(async () => {
     user = await createRandomUserWithPassword(
-      "user-" + randomUUID(),
+      "user-" + crypto.randomUUID(),
       "pwd",
       realm,
     );

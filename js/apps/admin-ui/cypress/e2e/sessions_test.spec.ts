@@ -6,7 +6,6 @@ import ListingPage from "../support/pages/admin-ui/ListingPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import PageObject from "../support/pages/admin-ui/components/PageObject";
 import adminClient from "../support/util/AdminClient";
-import { v4 as uuid } from "uuid";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
@@ -42,8 +41,8 @@ describe("Sessions test", () => {
   });
 
   describe("Offline sessions", () => {
-    const clientId = "offline-client-" + uuid();
-    const username = "user-" + uuid();
+    const clientId = "offline-client-" + crypto.randomUUID();
+    const username = "user-" + crypto.randomUUID();
 
     beforeEach(async () => {
       await Promise.all([

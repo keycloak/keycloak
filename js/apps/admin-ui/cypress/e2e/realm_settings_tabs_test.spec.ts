@@ -1,5 +1,3 @@
-import { v4 as uuid } from "uuid";
-
 import FormValidation from "../support/forms/FormValidation";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -20,7 +18,7 @@ const keysTab = new KeysTab();
 const modalUtils = new ModalUtils();
 
 describe("Realm settings tabs tests", () => {
-  const realmName = "Realm_" + uuid();
+  const realmName = "Realm_" + crypto.randomUUID();
 
   beforeEach(() => {
     loginPage.logIn();

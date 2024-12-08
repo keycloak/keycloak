@@ -1,5 +1,3 @@
-import { v4 as uuid } from "uuid";
-
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
@@ -100,7 +98,7 @@ const ldapTestFailMsg =
   "Error when trying to connect to LDAP: 'CommunicationError'";
 
 describe("User Federation LDAP tests", () => {
-  const realmName = `ldap-realm-${uuid()}`;
+  const realmName = `ldap-realm-${crypto.randomUUID()}`;
 
   before(() => adminClient.createRealm(realmName));
 

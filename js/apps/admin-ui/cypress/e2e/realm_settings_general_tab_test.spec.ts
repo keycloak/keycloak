@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import { SERVER_URL } from "../support/constants";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -13,7 +12,7 @@ const masthead = new Masthead();
 const realmSettingsPage = new RealmSettingsPage();
 
 describe("Realm settings general tab tests", () => {
-  const realmName = "Realm_" + uuid();
+  const realmName = "Realm_" + crypto.randomUUID();
 
   beforeEach(() => {
     loginPage.logIn();
