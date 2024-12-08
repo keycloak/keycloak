@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -226,7 +227,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             adapter = cacheUser(realm, delegate, loaded);
         } else {
-            adapter = validateCache(realm, cached);
+            adapter = validateCache(realm, cached, () -> getDelegate().getUserById(realm, id));
         }
         managedUsers.put(id, adapter);
         return adapter;
@@ -307,11 +308,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached == null) {
             return cacheUser(realm, delegate, loaded);
         } else {
-            return validateCache(realm, cached);
+            return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
         }
     }
 
-    protected UserModel validateCache(RealmModel realm, CachedUser cached) {
+    protected UserModel validateCache(RealmModel realm, CachedUser cached, Supplier<UserModel> supplier) {
         if (!realm.getId().equals(cached.getRealm())) {
             return null;
         }
@@ -330,9 +331,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
                 registerUserInvalidation(cached);
-                return getDelegate().getUserById(realm, cached.getId());
+                return supplier.get();
             }
         }
+
         return new UserAdapter(cached, this, session, realm);
     }
 
@@ -589,29 +591,47 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return getDelegate().getUsersCount(realm, params, groupIds);
     }
 
+    private UserModel returnFromCacheIfPresent(RealmModel realm, UserModel delegate) {
+        if (delegate == null || delegate instanceof CachedUserModel || isRegisteredForInvalidation(realm, delegate.getId())) {
+            return delegate;
+        }
+
+        if (managedUsers.containsKey(delegate.getId())) {
+            return managedUsers.get(delegate.getId());
+        }
+
+        CachedUser cached = cache.get(delegate.getId(), CachedUser.class);
+        if (cached == null) {
+            return delegate;
+        }
+
+        UserModel cachedUserModel = validateCache(realm, cached, () -> delegate);
+        return cachedUserModel != null? cachedUserModel : delegate;
+    }
+
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
-        return getDelegate().searchForUserStream(realm, search);
+        return getDelegate().searchForUserStream(realm, search).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return getDelegate().searchForUserStream(realm, search, firstResult, maxResults);
+        return getDelegate().searchForUserStream(realm, search, firstResult, maxResults).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes) {
-        return getDelegate().searchForUserStream(realm, attributes);
+        return getDelegate().searchForUserStream(realm, attributes).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        return getDelegate().searchForUserStream(realm, attributes, firstResult, maxResults);
+        return getDelegate().searchForUserStream(realm, attributes, firstResult, maxResults).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue);
+        return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
