@@ -94,6 +94,12 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean isReadOnly(String name) {
+        if (context.equals(UserProfileContext.REGISTRATION) && isRequired(name)) {
+            // in context of registration, username or email (email as username) cannot be readonly otherwise registration is not possible
+            if (UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name)) {
+                return false;
+            }
+        }
         if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
             return true;
         }

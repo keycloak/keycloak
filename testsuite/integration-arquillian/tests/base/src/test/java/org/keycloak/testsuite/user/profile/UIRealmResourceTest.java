@@ -28,11 +28,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
@@ -53,6 +55,9 @@ import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
@@ -76,6 +81,15 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
     private static Client httpClient;
     private static Keycloak keycloakAdminClientViewUsers;
     private static Keycloak keycloakAdminClientWithoutAdminRoles;
+
+    @Page
+    protected RegisterPage registerPage;
+
+    @Page
+    protected AppPage appPage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
@@ -184,6 +198,72 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(rep, upConfig));
         assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
         assertAdminEvents.assertEmpty();
+    }
+
+    @Test
+    public void testRegistrationFormWithReadonlyRequiredEmail() throws IOException {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> {
+            testRealm.setRegistrationEmailAsUsername(false);
+            testRealm().update(testRealm);
+        });
+        testRealm().update(testRealm);
+
+        // set email as readonly for a user
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.addOrReplaceAttribute(new UPAttribute("email",
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+        updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
+
+        // open the registration form
+        driver.navigate().to(oauth.getLoginFormUrl());
+        loginPage.form().register();
+        registerPage.assertCurrent();
+
+        Assert.assertTrue("Email is missing on the registration page.", registerPage.isEmailPresent());
+
+        registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        String userId = events.expectRegister("tbrady@email.com", "tbrady@email.com").assertEvent().getUserId();
+        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        assertEquals("Tom", user.getFirstName());
+        assertEquals("Brady", user.getLastName());
+    }
+
+    @Test
+    public void testRegistrationFormWithReadonlyUsernameAndEmail() throws IOException {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+
+        // set username and email as readonly for a user
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.addOrReplaceAttribute(new UPAttribute("username",
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+        upConfig.addOrReplaceAttribute(new UPAttribute("email",
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
+        updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
+
+        // open the registration form
+        driver.navigate().to(oauth.getLoginFormUrl());
+        loginPage.form().register();
+        registerPage.assertCurrent();
+
+        Assert.assertTrue("Username is missing on the registration page.", registerPage.isUsernamePresent());
+        Assert.assertFalse("Email should not be present on the registration page.", registerPage.isEmailPresent());
+
+        registerPage.register("Tom", "Brady",  null, "tbrady", "password", "password");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        String userId = events.expectRegister("tbrady", null).removeDetail("email").assertEvent().getUserId();
+        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        assertEquals("tbrady", user.getUsername());
+        assertEquals("Tom", user.getFirstName());
+        assertEquals("Brady", user.getLastName());
     }
 
     @Test
