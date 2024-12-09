@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -13,7 +12,7 @@ const modalUtils = new ModalUtils();
 const masthead = new Masthead();
 
 describe("Realm settings client policies tab tests", () => {
-  const realmName = "Realm_" + uuid();
+  const realmName = "Realm_" + crypto.randomUUID();
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {

@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import Form from "../support/forms/Form";
 import FormValidation from "../support/forms/FormValidation";
 import Select from "../support/forms/Select";
@@ -12,7 +11,7 @@ const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 
 describe("Authentication - Policies - CIBA", () => {
-  const realmName = uuid();
+  const realmName = crypto.randomUUID();
 
   before(() => adminClient.createRealm(realmName));
 
