@@ -32,7 +32,7 @@ Under the {project_name} install root there exists a number of folders:
 * *data/* - directory for the server to store runtime information, such as transaction logs
 ** *logs/* - default directory for file logging - see <@links.server id="logging"/>
 * *lib/* - used internally
-* *providers/* - directory for user provided dependencies - see <@links.server id="configuration-provider"/> for extending the server and <@links.server id="db"/> for an example of add a JDBC driver.
+* *providers/* - directory for user provided dependencies - see <@links.server id="configuration-provider"/> for extending the server and <@links.server id="db"/> for an example of adding a JDBC driver.
 * *themes/* - directory for customizations to the Admin Console - see https://www.keycloak.org/docs/latest/server_development/#_themes[Developing Themes]
 
 </@tmpl.guide>
