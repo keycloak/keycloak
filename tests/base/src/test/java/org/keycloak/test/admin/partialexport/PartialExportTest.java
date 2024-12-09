@@ -46,7 +46,7 @@ public class PartialExportTest {
 
     @BeforeEach
     public void initializeRealm() {
-        RealmRepresentation realmRepresentation = loadJson(PartialExportTest.class.getResourceAsStream("/export/partialexport-testrealm.json"), RealmRepresentation.class);
+        RealmRepresentation realmRepresentation = loadJson(PartialExportTest.class.getResourceAsStream("partialexport-testrealm.json"), RealmRepresentation.class);
         adminClient.realms().create(realmRepresentation);
     }
 
