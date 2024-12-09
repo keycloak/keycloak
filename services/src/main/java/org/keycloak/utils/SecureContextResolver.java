@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 public class SecureContextResolver {
 
     private static final Pattern LOCALHOST_IPV4 = Pattern.compile("127.\\d{1,3}.\\d{1,3}.\\d{1,3}");
+    private static final Pattern LOCALHOST_IPV6 = Pattern.compile("\\[(0{0,4}:){1,7}0{0,3}1\\]");
+
 
     /**
      * Determines if a session is within a 'secure context', meaning its origin is considered potentially trustworthy by user-agents.
@@ -78,15 +80,15 @@ public class SecureContextResolver {
             return false;
         }
         // The host matches a CIDR notation of ::1/128
-        if (address.equals("[::1]") || address.equals("[0000:0000:0000:0000:0000:0000:0000:0001]")) {
-            return true;
+        if (address.startsWith("[")) {
+            return LOCALHOST_IPV6.matcher(address).matches();
         }
 
         // The host matches a CIDR notation of 127.0.0.0/8
         if (LOCALHOST_IPV4.matcher(address).matches()) {
             return true;
         }
-        
+
         return false;
     }
 }
