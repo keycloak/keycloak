@@ -61,6 +61,24 @@ For every 100 login/logout/refresh requests per second:
 
 The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreases while the response times increase. A lower CPU quota on the database can lead to slower response times during peak loads. Choose a larger CPU quota if fast response times during peak loads are critical. See below for an example.
 
+=== Measuring the activity of a running {project_name} instance
+
+Sizing of a {project_name} instance depends on the actual and forecasted numbers for password-based user logins, refresh token requests, and client credential grants as described in the previous section.
+
+To retrieve the actual numbers of a running {project_name} instance for these three key inputs, use the metrics {project_name} provides:
+
+* The user event metric `keycloak_user_events_total` for event type `login` includes both password-based logins and cookie-based logins, still it can serve as a first approximate input for this sizing guide.
+If you are using a standard username and password form and want to retrieve only the number of password-based logins, use the metric `http_server_requests_seconds_count` with method `POST` and URI `+/realms/{realm}/login-actions/authenticate+` instead.
+* Use the user event metric `keycloak_user_events_total` for the event types `refresh_token` and `client_login` for refresh token requests and client credential grants respectively.
+
+See the <@links.observability id="event-metrics"/> and <@links.observability id="metrics-for-troubleshooting-http"/> {sections} for more information.
+
+These metrics are crucial for tracking daily and weekly fluctuations in user activity loads,
+identifying emerging trends that may indicate the need to resize the system and
+validating sizing calculations.
+By systematically measuring and evaluating these user event metrics,
+you can ensure your system remains appropriately scaled and responsive to changes in user behavior and demand.
+
 === Calculation example (single site)
 
 Target size:

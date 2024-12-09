@@ -21,6 +21,7 @@ Spikes or increases in the processing time may be an early sign that some node i
 ====
 *Tags*
 
+`method`:: HTTP method.
 `outcome`:: A more general outcome tag.
 `status`:: The HTTP status code.
 `uri`:: The requested URI.
