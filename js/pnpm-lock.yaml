@@ -229,6 +229,9 @@ importers:
       '@4tw/cypress-drag-drop':
         specifier: ^2.3.0
         version: 2.3.0(cypress@14.1.0)
+      '@playwright/test':
+        specifier: ^1.49.0
+        version: 1.49.0
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.1.0)
