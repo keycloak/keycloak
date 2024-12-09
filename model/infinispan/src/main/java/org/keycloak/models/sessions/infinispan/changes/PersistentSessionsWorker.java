@@ -91,23 +91,17 @@ public class PersistentSessionsWorker {
                     TracingProvider tracing = outerSession.getProvider(TracingProvider.class);
                     Tracer process = tracing.getTracer("PersistentSessionsWorker");
                     SpanBuilder spanBuilder = process.spanBuilder("PersistentSessionsWorker.process");
-                    if (batch.size() > 1) {
-                        batch.stream().map(update -> update.getSpan().getSpanContext()).forEach(spanBuilder::addLink);
-                    } else {
-                        spanBuilder.setParent(Context.current().with(batch.get(0).getSpan()));
-                    }
+                    batch.stream().map(update -> update.getSpan().getSpanContext()).forEach(spanBuilder::addLink);
                     Span span = tracing.startSpan(spanBuilder);
                     List<Span> batchSpans = new LinkedList<>();
                     try {
-                        if (batch.size() > 1) {
-                            batch.forEach(persistentUpdate -> {
-                                // This adds another span to the parent span to avoid updating span links after span creation as suggested by the API
-                                SpanBuilder sb = process.spanBuilder("PersistentSessionsWorker.batch");
-                                sb.setParent(Context.current().with(persistentUpdate.getSpan()));
-                                sb.addLink(span.getSpanContext());
-                                batchSpans.add(sb.startSpan());
-                            });
-                        }
+                        batch.forEach(persistentUpdate -> {
+                            // This adds another span to the parent span to avoid updating span links after span creation as suggested by the API
+                            SpanBuilder sb = process.spanBuilder("PersistentSessionsWorker.batch");
+                            sb.setParent(Context.current().with(persistentUpdate.getSpan()));
+                            sb.addLink(span.getSpanContext());
+                            batchSpans.add(sb.startSpan());
+                        });
                         LOG.debugf("Processing %d deferred session updates.", batch.size());
                         Retry.executeWithBackoff(iteration -> {
                                     if (iteration < 2) {
