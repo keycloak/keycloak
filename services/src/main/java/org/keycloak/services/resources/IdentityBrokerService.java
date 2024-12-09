@@ -1176,7 +1176,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response checkAccountManagementFailedLinking(AuthenticationSessionModel authSession, String error, Object... parameters) {
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (userSession != null && authSession.getClient() != null && authSession.getClient().getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+        if (userSession != null && authSession.getClient() != null) {
 
             this.event.event(EventType.FEDERATED_IDENTITY_LINK);
             UserModel user = userSession.getUser();
