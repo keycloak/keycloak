@@ -191,6 +191,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         List<SessionChangesPerformer<K, V>> changesPerformers = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
+            if (sessionUpdates.getUpdateTasks().isEmpty()) {
+                continue;
+            }
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
             V entity = sessionWrapper.getEntity();
             boolean isOffline = entity.isOffline();
