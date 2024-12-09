@@ -113,6 +113,7 @@ const ToolbarItems = () => {
     <>
       <ToolbarItem>
         <Button
+          data-testid="createClient"
           component={(props) => <Link {...props} to={toAddClient({ realm })} />}
         >
           {t("createClient")}

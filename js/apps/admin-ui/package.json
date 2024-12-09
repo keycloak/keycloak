@@ -116,6 +116,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.3.0",
+    "@playwright/test": "^1.49.0",
     "@testing-library/cypress": "^10.0.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

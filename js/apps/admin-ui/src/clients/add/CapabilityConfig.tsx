@@ -61,7 +61,7 @@ export const CapabilityConfig = ({
               render={({ field }) => (
                 <Switch
                   data-testid="authentication"
-                  id="kc-authentication-switch"
+                  id="kc-authentication"
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={!field.value}
