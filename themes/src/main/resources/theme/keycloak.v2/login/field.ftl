@@ -41,8 +41,8 @@
   </#if>
 </#macro>
 
-<#macro input name label value="" required=false autocomplete="off" fieldName=name autofocus=false>
-  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
+<#macro input name label value="" required=false autocomplete="off" fieldName=name autofocus=false displayError=true>
+  <#if displayError><#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc><#else><#assign error=""></#if>
   <@group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
@@ -52,8 +52,8 @@
   </@group>
 </#macro>
 
-<#macro password name label value="" required=false forgotPassword=false fieldName=name autocomplete="off" autofocus=false>
-  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
+<#macro password name label value="" required=false forgotPassword=false fieldName=name autocomplete="off" autofocus=false displayError=true>
+  <#if displayError><#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc><#else><#assign error=""></#if>
   <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
