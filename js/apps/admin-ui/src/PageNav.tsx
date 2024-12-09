@@ -38,10 +38,12 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
     return null;
   }
 
+  const name = "nav-item" + path.replace("/", "-");
   return (
     <li>
       <NavLink
-        id={"nav-item" + path.replace("/", "-")}
+        id={name}
+        data-testid={name}
         to={`/${encodedRealm}${path}`}
         className={({ isActive }) =>
           `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
