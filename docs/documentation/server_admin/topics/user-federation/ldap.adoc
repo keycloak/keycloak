@@ -175,6 +175,8 @@ The LDAP connection pool configuration is configured using the following system 
 | `com.sun.jndi.ldap.connect.pool.debug` | A string that indicates the level of debug output to produce. Valid values are "fine" (trace connection creation and removal) and "all" (all debugging information)
 |===
 
+By default, connection pooling is enabled for both `plain` and `ssl` protocols.
+
 For more details, see the link:https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/config.html[Java LDAP Connection Pooling Configuration] documentation.
 
 To set any of these properties, you can set the `JAVA_OPTS_APPEND` environment variable:
