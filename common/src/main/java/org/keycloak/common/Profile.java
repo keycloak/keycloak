@@ -116,7 +116,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
-        OPENTELEMETRY("OpenTelemetry Tracing", Type.PREVIEW),
+        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 

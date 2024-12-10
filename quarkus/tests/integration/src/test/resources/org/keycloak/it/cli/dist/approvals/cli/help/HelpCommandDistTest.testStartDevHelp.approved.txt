@@ -309,6 +309,12 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
+Tracing:
+
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
+
 Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>

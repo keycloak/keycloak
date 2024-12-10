@@ -32,11 +32,9 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.tracing.NoopTracingProvider;
 import org.keycloak.tracing.TracingProvider;
@@ -52,7 +50,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.UNDERTOW)
-@EnableFeature(value = Profile.Feature.OPENTELEMETRY, skipRestart = true)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 

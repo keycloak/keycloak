@@ -15,7 +15,7 @@ public enum OptionCategory {
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
-    TRACING("Tracing", 111, ConfigSupportLevel.PREVIEW),
+    TRACING("Tracing", 111, ConfigSupportLevel.SUPPORTED),
     EVENTS("Events", 112, ConfigSupportLevel.PREVIEW),
     TRUSTSTORE("Truststore", 115, ConfigSupportLevel.SUPPORTED),
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),

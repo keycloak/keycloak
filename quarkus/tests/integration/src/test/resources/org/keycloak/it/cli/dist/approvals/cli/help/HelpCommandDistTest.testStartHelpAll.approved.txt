@@ -405,43 +405,42 @@ Logging:
                      Set the Syslog type used to format the sent message. Possible values are:
                        rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
 
-Tracing (Preview):
+Tracing:
 
 --tracing-compression <method>
-                     Preview: OpenTelemetry compression method used to compress payloads. If unset,
+                     OpenTelemetry compression method used to compress payloads. If unset,
                        compression is disabled. Possible values are: gzip, none. Default: none.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                       Available only when Tracing is enabled.
 --tracing-enabled <true|false>
-                     Preview: Enables the OpenTelemetry tracing. Default: false. Available only
-                       when 'opentelemetry' feature is enabled.
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
 --tracing-endpoint <url>
-                     Preview: OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when Tracing is enabled.
 --tracing-jdbc-enabled <true|false>
-                     Preview: Enables the OpenTelemetry JDBC tracing. Default: true. Available only
-                       when 'opentelemetry' feature and Tracing is enabled.
+                     Enables the OpenTelemetry JDBC tracing. Default: true. Available only when
+                       Tracing is enabled.
 --tracing-protocol <protocol>
-                     Preview: OpenTelemetry protocol used for the telemetry data. Possible values
-                       are: grpc, http/protobuf. Default: grpc. Available only when 'opentelemetry'
-                       feature and Tracing is enabled.
+                     OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
+                       http/protobuf. Default: grpc. Available only when Tracing is enabled.
 --tracing-resource-attributes <attributes>
-                     Preview: OpenTelemetry resource attributes present in the exported trace to
+                     OpenTelemetry resource attributes present in the exported trace to
                        characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
-                       For more information, check the Tracing guide. Available only when
-                       'opentelemetry' feature and Tracing is enabled.
+                       For more information, check the Tracing guide. Available only when Tracing
+                       is enabled.
 --tracing-sampler-ratio <ratio>
-                     Preview: OpenTelemetry sampler ratio. Probability that a span will be sampled.
-                       Expected double value in interval <0,1). Default: 1.0. Available only when
-                       'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
+                       double value in interval <0,1). Default: 1.0. Available only when Tracing is
+                       enabled.
 --tracing-sampler-type <type>
-                     Preview: OpenTelemetry sampler to use for tracing. Possible values are:
-                       always_on, always_off, traceidratio, parentbased_always_on,
-                       parentbased_always_off, parentbased_traceidratio. Default: traceidratio.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry sampler to use for tracing. Possible values are: always_on,
+                       always_off, traceidratio, parentbased_always_on, parentbased_always_off,
+                       parentbased_traceidratio. Default: traceidratio. Available only when Tracing
+                       is enabled.
 --tracing-service-name <name>
-                     Preview: OpenTelemetry service name. Takes precedence over 'service.name'
-                       defined in the 'tracing-resource-attributes' property. Default: keycloak.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'tracing-resource-attributes' property. Default: keycloak. Available
+                       only when Tracing is enabled.
 
 Events (Preview):
 
