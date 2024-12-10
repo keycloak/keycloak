@@ -151,16 +151,16 @@ public class OrganizationsResource {
     /**
      * Base path for the admin REST API for one particular organization.
      */
-    @Path("{id}")
-    public OrganizationResource get(@PathParam("id") String id) {
+    @Path("{org-id}")
+    public OrganizationResource get(@PathParam("org-id") String orgId) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
 
-        if (StringUtil.isBlank(id)) {
+        if (StringUtil.isBlank(orgId)) {
             throw ErrorResponse.error("Id cannot be null.", Response.Status.BAD_REQUEST);
         }
 
-        OrganizationModel organizationModel = provider.getById(id);
+        OrganizationModel organizationModel = provider.getById(orgId);
 
         if (organizationModel == null) {
             throw ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND);
@@ -171,13 +171,13 @@ public class OrganizationsResource {
         return new OrganizationResource(session, organizationModel, adminEvent);
     }
 
-    @Path("members/{id}/organizations")
+    @Path("members/{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(id);
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
     }
 }
