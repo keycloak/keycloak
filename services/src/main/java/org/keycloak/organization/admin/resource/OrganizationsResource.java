@@ -151,8 +151,8 @@ public class OrganizationsResource {
     /**
      * Base path for the admin REST API for one particular organization.
      */
-    @Path("{id}")
-    public OrganizationResource get(@PathParam("id") String id) {
+    @Path("{orgId}")
+    public OrganizationResource get(@PathParam("orgId") String id) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
 
@@ -171,13 +171,13 @@ public class OrganizationsResource {
         return new OrganizationResource(session, organizationModel, adminEvent);
     }
 
-    @Path("members/{id}/organizations")
+    @Path("members/{memberId}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("memberId") String id) {
         return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(id);
     }
 }
