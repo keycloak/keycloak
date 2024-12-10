@@ -37,7 +37,6 @@ import org.keycloak.storage.UserStorageProviderModel;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
@@ -96,22 +95,12 @@ public class UIRealmResource {
     }
 
     private void updateUserProfileConfiguration(UIRealmRepresentation rep) {
-        UPConfig upConfig = rep.getUpConfig();
-
-        if (upConfig == null) {
+        UserProfileResource userProfileResource = new UserProfileResource(session, auth, adminEvent);
+        UPConfig config = rep.getUpConfig();
+        if (config == null) {
             return;
         }
-
-        UserProfileResource userProfileResource = new UserProfileResource(session, auth, adminEvent);
-        if (!upConfig.equals(userProfileResource.getConfiguration())) {
-            Response response = userProfileResource.update(upConfig);
-
-            if (isSuccessful(response)) {
-                return;
-            }
-
-            throw new InternalServerErrorException("Failed to update user profile configuration");
-        }
+        userProfileResource.setAndGetConfiguration(config);
     }
 
     private boolean isSuccessful(Response response) {
