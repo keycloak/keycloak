@@ -145,16 +145,6 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
-    @RawDistOnly(reason = "Containers are immutable")
-    void testFastStartOptimized(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run("build", "--db=dev-file");
-        cliResult.assertBuild();
-        dist.setEnvVar("KC_HOSTNAME", "localhost");
-        dist.setEnvVar("KC_HTTP_ENABLED", "true");
-        cliResult = dist.run("start", "--optimized");
-        cliResult.assertStarted();
-    }
-
     @DryRun
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })

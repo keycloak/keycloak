@@ -18,13 +18,13 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
+import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import io.quarkus.runtime.LaunchMode;
 
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -35,9 +35,7 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 
-import java.util.List;
 import java.util.Optional;
 
 @Command(name = Build.NAME,
@@ -118,12 +116,6 @@ public final class Build extends AbstractCommand implements Runnable {
         return true;
     }
 
-    @Override
-    public List<OptionCategory> getOptionCategories() {
-        // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
-        return super.getOptionCategories();
-    }
-
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
@@ -132,9 +124,8 @@ public final class Build extends AbstractCommand implements Runnable {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
-        } else if (Configuration.getConfigValue("kc.db").getConfigSourceOrdinal() == 0) {
-            picocli.getOutWriter().println(Ansi.AUTO.string(
-                    "@|bold Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.|@"));
+        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+            picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }
 

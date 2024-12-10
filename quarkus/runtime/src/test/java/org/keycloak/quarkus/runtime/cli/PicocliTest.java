@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
@@ -95,14 +96,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         protected void initProfile(List<String> cliArgs, String currentCommandName) {
             super.initProfile(cliArgs, currentCommandName);
             config = createConfig();
-        }
-
-        @Override
-        public void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
-            if (abstractCommand.getName().equals(Build.NAME)) {
-                //PersistedConfigSource.getInstance().getConfigValueProperties().clear();
-            }
-            super.validateConfig(cliArgs, abstractCommand);
         }
 
         @Override
@@ -350,13 +343,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertFalse(nonRunningPicocli.reaug);
     }
 
+    @Ignore("Not valid until db is required for production")
     @Test
     public void testDBRequiredAutoBuild() {
         build("build", "--db=dev-file");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
 
     @Test

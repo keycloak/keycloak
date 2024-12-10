@@ -27,7 +27,6 @@ import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -102,7 +101,7 @@ public abstract class AbstractConfigurationTest {
     }
 
     @BeforeClass
-    public static void resetConfigruation() {
+    public static void resetConfiguration() {
         System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
 
         for (String name : new HashMap<>(System.getenv()).keySet()) {
@@ -126,7 +125,7 @@ public abstract class AbstractConfigurationTest {
 
     @After
     public void onAfter() {
-        resetConfigruation();
+        resetConfiguration();
     }
 
     protected Config.Scope initConfig(String... scope) {

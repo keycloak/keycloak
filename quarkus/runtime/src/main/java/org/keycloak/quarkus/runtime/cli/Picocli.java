@@ -536,6 +536,10 @@ public class Picocli {
         messages.add(sb.toString());
     }
 
+    public void warn(String text) {
+        warn(text, getOutWriter());
+    }
+
     private static void warn(String text, PrintWriter outwriter) {
         ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
         outwriter.println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
