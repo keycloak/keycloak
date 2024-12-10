@@ -3,7 +3,6 @@ import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { useAdminClient } from "../admin-client";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { PermissionsResources } from "./PermissionsResources";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -18,8 +17,9 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { PermissionsEvaluate } from "../permissions/PermissionsEvaluate";
-import { PermissionsPolicies } from "../permissions/PermissionsPolicies";
+import { AuthorizationResources } from "../clients/authorization/Resources";
+import { AuthorizationPolicies } from "../clients/authorization/Policies";
+import { AuthorizationEvaluate } from "../clients/authorization/AuthorizationEvaluate";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAccess } from "../context/access/Access";
 import { useTranslation } from "react-i18next";
@@ -188,7 +188,7 @@ export default function PermissionsSection() {
                 title={<TabTitleText>{t("resources")}</TabTitleText>}
                 {...permissionsResourcesTab}
               >
-                <PermissionsResources clientId={adminPermissionsClient.id!} />
+                <AuthorizationResources clientId={adminPermissionsClient.id!} />
               </Tab>
               <Tab
                 id="policies"
@@ -196,7 +196,7 @@ export default function PermissionsSection() {
                 title={<TabTitleText>{t("policies")}</TabTitleText>}
                 {...permissionsPoliciesTab}
               >
-                <PermissionsPolicies
+                <AuthorizationPolicies
                   clientId={adminPermissionsClient.id!}
                   isDisabled={!hasManageAuthorization}
                 />
@@ -208,7 +208,7 @@ export default function PermissionsSection() {
                   title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                   {...permissionsEvaluateTab}
                 >
-                  <PermissionsEvaluate
+                  <AuthorizationEvaluate
                     client={adminPermissionsClient}
                     save={save}
                   />
