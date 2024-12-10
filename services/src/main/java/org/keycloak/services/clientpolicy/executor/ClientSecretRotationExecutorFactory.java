@@ -37,7 +37,7 @@ public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutor
     static {
         ProviderConfigProperty secretExpirationPeriod = new ProviderConfigProperty(
             SECRET_EXPIRATION_PERIOD, "Secret expiration",
-            "When the secret is rotated. The time frequency for generating a new secret. (In seconds)",
+            "When the secret is rotated. The time frequency for generating a new secret. When this is set to 0, the new secret will have no expiration (In seconds)",
             ProviderConfigProperty.STRING_TYPE, DEFAULT_SECRET_EXPIRATION_PERIOD);
         configProperties.add(secretExpirationPeriod);
 
