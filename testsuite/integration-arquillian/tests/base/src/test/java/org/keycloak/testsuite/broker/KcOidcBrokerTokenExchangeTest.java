@@ -188,6 +188,63 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
         }
     }
 
+    @Test
+    public void testIgnoredTokenTypesValidationWhenExplicitlyConfigured() throws Exception {
+        testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
+        RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
+        ClientsResource clients = providerRealm.clients();
+        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        brokerApp.setDirectAccessGrantsEnabled(true);
+        ClientResource brokerAppResource = providerRealm.clients().get(brokerApp.getId());
+        brokerAppResource.update(brokerApp);
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.getConfig().put("disableUserInfo", "true");
+        idpRep.getConfig().put("disableTypeClaimCheck", "true");
+        identityProviderResource.update(idpRep);
+        getCleanup().addCleanup(() -> {
+            idpRep.getConfig().put("disableUserInfo", "false");
+            idpRep.getConfig().put("disableTypeClaimCheck", "false");
+            identityProviderResource.update(idpRep);
+        });
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), null, brokerApp.getClientId(), brokerApp.getSecret());
+        assertThat(tokenResponse.getIdToken(), notNullValue());
+        String idTokenString = tokenResponse.getIdToken();
+        oauth.realm(bc.providerRealmName());
+        String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+            .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
+        driver.navigate().to(logoutUrl);
+        String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+        Assert.assertNotNull(logoutToken);
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+        try {
+            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                    .path("/realms")
+                    .path(bc.consumerRealmName())
+                    .path("protocol/openid-connect/token");
+            // test user info validation.
+            try (Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
+                            "test-app", "secret"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, logoutToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
+                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+
+                    ))) {
+                assertThat(response.getStatus(), equalTo(200));
+            }
+        } finally {
+            httpClient.close();
+        }
+    }
+
     private static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         IdentityProviderModel idp = session.identityProviders().getByAlias(IDP_OIDC_ALIAS);
