@@ -73,6 +73,7 @@ import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { getProtocolName, isRealmClient } from "./utils";
 import { UserEvents } from "../events/UserEvents";
+import { useIsAdminPermissionsClient } from "../utils/useIsAdminPermissionsClient";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -212,6 +213,8 @@ export default function ClientDetails() {
   const form = useForm<FormFields>();
   const { clientId } = useParams<ClientParams>();
   const [key, setKey] = useState(0);
+
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
   const clientAuthenticatorType = useWatch({
     control: form.control,
@@ -547,6 +550,7 @@ export default function ClientDetails() {
               </Tab>
             )}
             {client!.authorizationServicesEnabled &&
+              !isAdminPermissionsClient &&
               (hasManageAuthorization || hasViewAuthorization) && (
                 <Tab
                   id="authorization"
