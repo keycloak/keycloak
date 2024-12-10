@@ -87,7 +87,7 @@ sn: Duke
 mail: jduke@keycloak.org
 uid: jduke
 userPassword: theduke
-krb5PrincipalName: jduke@KEYCLOAK.ORG
+krb5PrincipalName: jdukekeycloak@KC2.COM
 krb5KeyVersionNumber: 0
 
 dn: uid=jduke2,ou=People,dc=kc2,dc=com
