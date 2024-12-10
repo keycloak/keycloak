@@ -11,7 +11,8 @@
     "./authz": {
       "types": "./lib/keycloak-authz.d.ts",
       "default": "./lib/keycloak-authz.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "lib"
