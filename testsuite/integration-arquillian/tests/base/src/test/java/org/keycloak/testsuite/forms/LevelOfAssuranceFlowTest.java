@@ -908,7 +908,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
             setupRecoveryAuthnCodesPage.assertCurrent();
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).assertEvent();
             assertLoggedInWithAcr("gold");
 
             // Removing recovery-code credential. User required to authenticate with 2nd-factor. He can choose between OTP or recovery-codes
