@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.util;
+package org.keycloak.testsuite;
 
 import org.keycloak.config.ConfigProviderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,9 +28,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.util.JsonSerialization;
 
-public abstract class JsonConfigProviderFactory implements ConfigProviderFactory {
+public class JsonConfigProviderFactory implements ConfigProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(JsonConfigProviderFactory.class);
 
