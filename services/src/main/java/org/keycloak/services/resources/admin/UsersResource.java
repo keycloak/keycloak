@@ -89,6 +89,7 @@ public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
+    private static final String USER_ID_DELIMITER = ",";
 
     protected final RealmModel realm;
 
@@ -245,6 +246,7 @@ public class UsersResource {
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param ids List of comma separated user ids, in the format 'id1,id2'
      * @return a non-null {@code Stream} of users
      */
     @GET
@@ -266,7 +268,8 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "List of comma separated user ids, in the format 'id1,id2'") @QueryParam("ids") String ids) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -279,7 +282,21 @@ public class UsersResource {
                 : SearchQueryUtils.getFields(searchQuery);
 
         Stream<UserModel> userModels = Stream.empty();
-        if (search != null) {
+
+        if (ids != null) {
+            String[] userIds = ids.split(USER_ID_DELIMITER);
+            if (userIds.length > Constants.DEFAULT_MAX_RESULTS) {
+                logger.warnf("Number of user id's exceed the max limit");
+                throw ErrorResponse.error("Number of user id's exceed the max limit", Response.Status.BAD_REQUEST);
+            }
+            for (String userId : userIds) {
+                UserModel userModel = session.users().getUserById(realm, userId);
+                if (userModel != null) {
+                    userModels = Stream.concat(userModels, Stream.of(userModel));
+                }
+            }
+            userModels = userModels.distinct();
+        } else if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel =
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
