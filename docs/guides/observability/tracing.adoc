@@ -179,13 +179,9 @@ spec:
   tracing:
     enabled: true                             # default 'false'
     endpoint: http://my-tracing:4317          # default 'http://localhost:4317'
-    serviceName: my-best-keycloak             # default 'keycloak'
-    protocol: http/protobuf                   # default 'grpc'
     samplerType: parentbased_traceidratio     # default 'traceidratio'
     samplerRatio: 0.01                        # default '1'
-    compression: gzip                         # default 'none'
     resourceAttributes:
-      service.namespace: keycloak-namespace
       some.attribute: something
   additionalOptions:
     - name: tracing-jdbc-enabled
