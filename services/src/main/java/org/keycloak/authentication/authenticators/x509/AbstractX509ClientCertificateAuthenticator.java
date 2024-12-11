@@ -117,7 +117,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     .revocation()
                         .cRLEnabled(config.getCRLEnabled())
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
-                        .cRLrelativePath(config.getCRLRelativePath())
+                        .cRLRelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
                         .oCSPFailOpen(config.getOCSPFailOpen())
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
