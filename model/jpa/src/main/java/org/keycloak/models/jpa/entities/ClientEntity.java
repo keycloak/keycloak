@@ -60,8 +60,10 @@ import java.util.Set;
 })
 public class ClientEntity {
 
+    public static final int ID_MAX_LENGTH = 36;
+
     @Id
-    @Column(name="ID", length = 36)
+    @Column(name="ID", length = ID_MAX_LENGTH)
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
     @Nationalized

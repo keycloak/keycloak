@@ -62,6 +62,7 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
@@ -786,6 +787,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         if (id == null) {
             id = KeycloakModelUtils.generateId();
+        } else if (id.length() > ClientEntity.ID_MAX_LENGTH){
+            throw new ModelValidationException("Client ID must not exceed 36 characters");
         }
 
         if (clientId == null) {
