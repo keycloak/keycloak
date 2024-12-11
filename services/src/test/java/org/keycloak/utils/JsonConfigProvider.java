@@ -15,27 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.util;
+package org.keycloak.utils;
+
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.Config;
 import org.keycloak.common.util.StringPropertyReplacer;
-
-import java.util.Properties;
-import java.util.Set;
+import org.keycloak.common.util.SystemEnvProperties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JsonConfigProvider implements Config.ConfigProvider {
 
-    private Properties properties;
-
     private JsonNode config;
 
-    public JsonConfigProvider(JsonNode config, Properties properties) {
+    public JsonConfigProvider(JsonNode config) {
         this.config = config;
-        this.properties = properties;
     }
 
     @Override
@@ -70,7 +67,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
     }
 
     private String replaceProperties(String value) {
-        return StringPropertyReplacer.replaceProperties(value, properties);
+        return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
     public class JsonScope implements Config.Scope {

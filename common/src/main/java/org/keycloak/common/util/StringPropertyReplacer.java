@@ -17,22 +17,20 @@
 package org.keycloak.common.util;
 
 import java.io.File;
-import java.util.Properties;
+import java.util.Optional;
 
 /**
- * A utility class for replacing properties in strings. 
+ * A utility class for replacing properties in strings.
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @author <a href="Scott.Stark@jboss.org">Scott Stark</a>
  * @author <a href="claudio.vesco@previnet.it">Claudio Vesco</a>
  * @author <a href="mailto:adrian@jboss.com">Adrian Brock</a>
  * @author <a href="mailto:dimitris@jboss.org">Dimitris Andreadis</a>
- * @version <tt>$Revision: 2898 $</tt> 
+ * @version <tt>$Revision: 2898 $</tt>
  */
 public final class StringPropertyReplacer
 {
-    /** New line string constant */
-    public static final String NEWLINE = System.getProperty("line.separator", "\n");
 
     /** File separator value */
     private static final String FILE_SEPARATOR = File.separator;
@@ -51,7 +49,12 @@ public final class StringPropertyReplacer
     private static final int SEEN_DOLLAR = 1;
     private static final int IN_BRACKET = 2;
 
-    private static final Properties systemEnvProperties = new SystemEnvProperties();
+    private static final PropertyResolver NULL_RESOLVER = property -> null;
+    private static PropertyResolver DEFAULT_PROPERTY_RESOLVER;
+
+    public static void setDefaultPropertyResolver(PropertyResolver systemVariables) {
+        DEFAULT_PROPERTY_RESOLVER = systemVariables;
+    }
 
     /**
      * Go through the input string and replace any occurrence of ${p} with
@@ -72,14 +75,13 @@ public final class StringPropertyReplacer
      * @return the input string with all property references replaced if any.
      *    If there are no valid references the input string will be returned.
      */
-    public static String replaceProperties(final String string)
-    {
-        return replaceProperties(string, (Properties) null);
+    public static String replaceProperties(final String string) {
+        return replaceProperties(string, getDefaultPropertyResolver());
     }
 
     /**
      * Go through the input string and replace any occurrence of ${p} with
-     * the props.getProperty(p) value. If there is no such property p defined,
+     * the value resolves from {@code resolver}. If there is no such property p defined,
      * then the ${p} reference will remain unchanged.
      *
      * If the property reference is of the form ${p:v} and there is no such property p,
@@ -93,17 +95,10 @@ public final class StringPropertyReplacer
      * value and the property ${:} is replaced with System.getProperty("path.separator").
      *
      * @param string - the string with possible ${} references
-     * @param props - the source for ${x} property ref values, null means use System.getProperty()
+     * @param resolver - the property resolver
      * @return the input string with all property references replaced if any.
      *    If there are no valid references the input string will be returned.
      */
-    public static String replaceProperties(final String string, final Properties props) {
-        if (props == null) {
-            return replaceProperties(string, (PropertyResolver) null);
-        }
-        return replaceProperties(string, props::getProperty);
-    }
-
     public static String replaceProperties(final String string, PropertyResolver resolver)
     {
         if(string == null) {
@@ -171,10 +166,7 @@ public final class StringPropertyReplacer
                     else
                     {
                         // check from the properties
-                        if (resolver != null)
-                            value = resolver.resolve(key);
-                        else
-                            value = systemEnvProperties.getProperty(key);
+                        value = resolveValue(resolver, key);
 
                         if (value == null)
                         {
@@ -183,10 +175,7 @@ public final class StringPropertyReplacer
                             if (colon > 0)
                             {
                                 String realKey = key.substring(0, colon);
-                                if (resolver != null)
-                                    value = resolver.resolve(realKey);
-                                else
-                                    value = systemEnvProperties.getProperty(realKey);
+                                value = resolveValue(resolver, realKey);
 
                                 if (value == null)
                                 {
@@ -239,7 +228,7 @@ public final class StringPropertyReplacer
                 throw new IllegalStateException("Infinite recursion happening when replacing properties on '" + buffer + "'");
             }
         }
-        
+
         // Done
         return buffer.toString();
     }
@@ -257,26 +246,32 @@ public final class StringPropertyReplacer
             {
                 // Check the first part
                 String key1 = key.substring(0, comma);
-                if (resolver != null)
-                    value = resolver.resolve(key1);
-                else
-                    value = systemEnvProperties.getProperty(key1);
+                value = resolveValue(resolver, key1);
             }
             // Check the second part, if there is one and first lookup failed
             if (value == null && comma < key.length() - 1)
             {
                 String key2 = key.substring(comma + 1);
-                if (resolver != null)
-                    value = resolver.resolve(key2);
-                else
-                    value = systemEnvProperties.getProperty(key2);
+                value = resolveValue(resolver, key2);
             }
         }
         // Return whatever we've found or null
         return value;
     }
-    
+
     public interface PropertyResolver {
         String resolve(String property);
+    }
+
+    private static String resolveValue(PropertyResolver resolver, String key) {
+        if (resolver == null) {
+            return getDefaultPropertyResolver().resolve(key);
+        }
+
+        return resolver.resolve(key);
+    }
+
+    private static PropertyResolver getDefaultPropertyResolver() {
+        return Optional.ofNullable(DEFAULT_PROPERTY_RESOLVER).orElse(NULL_RESOLVER);
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.config.parsers;
 
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 
@@ -60,20 +61,24 @@ public class KeyParser extends AbstractKeycloakSamlAdapterV1Parser<Key> {
             case CERTIFICATE_PEM:
                 StaxParserUtil.advance(xmlEventReader);
                 value = StaxParserUtil.getElementText(xmlEventReader);
-                target.setCertificatePem(StringPropertyReplacer.replaceProperties(value));
+                target.setCertificatePem(replaceProperties(value));
                 break;
 
             case PUBLIC_KEY_PEM:
                 StaxParserUtil.advance(xmlEventReader);
                 value = StaxParserUtil.getElementText(xmlEventReader);
-                target.setPublicKeyPem(StringPropertyReplacer.replaceProperties(value));
+                target.setPublicKeyPem(replaceProperties(value));
                 break;
 
             case PRIVATE_KEY_PEM:
                 StaxParserUtil.advance(xmlEventReader);
                 value = StaxParserUtil.getElementText(xmlEventReader);
-                target.setPrivateKeyPem(StringPropertyReplacer.replaceProperties(value));
+                target.setPrivateKeyPem(replaceProperties(value));
                 break;
         }
+    }
+
+    private String replaceProperties(String value) {
+        return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 }
