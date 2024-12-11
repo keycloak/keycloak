@@ -266,6 +266,20 @@ https-certificate-file
 
 You can achieve most optimizations to startup and runtime behavior by using the `build` command. Also, by using the `keycloak.conf` file as a configuration source, you avoid some steps at startup that would otherwise require command line parameters, such as initializing the CLI itself. As a result, the server starts up even faster.
 
+== Using system variables in the realm configuration
+
+Some of the realm capabilities allow administrators to reference system variables such as environment variables and system properties when configuring
+the realm and its components.
+
+By default, {project_name} disallow using system variables but only those explicitly specified through the `spi-admin-allowed-system-variables` configuration
+option. This option allows you to specify a comma-separated list of keys that will eventually resolve to values from system variables with the same key.
+
+. Start the server and expose a set of system variables to the server runtime
++
+    <@kc.start parameters="--spi-admin-allowed-system-variables=FOO,BAR"/>
+
+In future releases, this capability will be removed in favor of preventing any usage of system variables in the realm configuration.
+
 == Underlying concepts
 This section gives an overview of the underlying concepts {project_name} uses, especially when it comes to optimizing the startup.
 

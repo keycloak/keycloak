@@ -21,9 +21,9 @@ import org.keycloak.Config.Scope;
 import org.keycloak.Config.SystemPropertiesScope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
  * @author hmlnarik
  */
 public class Config implements ConfigProvider {
-
-    private final Properties systemProperties = new SystemEnvProperties();
 
     private final Map<String, String> defaultProperties = new ConcurrentHashMap<>();
     private final ThreadLocal<Map<String, String>> properties = new ThreadLocal<Map<String, String>>() {
@@ -157,7 +155,7 @@ public class Config implements ConfigProvider {
     }
 
     private String replaceProperties(String value) {
-        return StringPropertyReplacer.replaceProperties(value, systemProperties);
+        return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
     @Override

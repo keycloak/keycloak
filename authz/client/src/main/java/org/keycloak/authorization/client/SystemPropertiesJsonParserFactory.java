@@ -15,7 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.util;
+package org.keycloak.authorization.client;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.io.IOContext;
@@ -24,19 +28,12 @@ import com.fasterxml.jackson.databind.MappingJsonFactory;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.Properties;
-
 /**
  * Provides replacing of system properties for parsed values
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
-
-    private static final Properties properties = new SystemEnvProperties();
+class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
 
     @Override
     protected JsonParser _createParser(InputStream in, IOContext ctxt) throws IOException {
@@ -71,7 +68,7 @@ public class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
         @Override
         public String getText() throws IOException {
             String orig = super.getText();
-            return StringPropertyReplacer.replaceProperties(orig, properties);
+            return StringPropertyReplacer.replaceProperties(orig, SystemEnvProperties.UNFILTERED::getProperty);
         }
     }
 }

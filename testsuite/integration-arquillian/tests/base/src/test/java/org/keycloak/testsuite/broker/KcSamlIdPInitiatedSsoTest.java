@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -97,8 +98,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         InputStream is = KcSamlIdPInitiatedSsoTest.class.getResourceAsStream(fileName);
         try {
             String template = StreamUtil.readString(is, Charset.defaultCharset());
-            String realmString = StringPropertyReplacer.replaceProperties(template, properties);
-            return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes("UTF-8")));
+            String realmString = StringPropertyReplacer.replaceProperties(template, properties::getProperty);
+            return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes(StandardCharsets.UTF_8)));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -139,7 +140,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         p.put("url.realm.provider", urlRealmProvider);
         p.put("url.realm.consumer", urlRealmConsumer);
         p.put("url.realm.consumer-2", urlRealmConsumer2);
-        
+
         testRealms.add(loadFromClasspath("kc3731-provider-realm.json", p));
         testRealms.add(loadFromClasspath("kc3731-broker-realm.json", p));
     }
@@ -399,7 +400,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         assertThat(fed.getUserId(), is(PROVIDER_REALM_USER_NAME));
         assertThat(fed.getUserName(), is(PROVIDER_REALM_USER_NAME));
     }
-    
+
     @Test
     public void testProviderTransientIdpInitiatedLogin() throws Exception {
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
@@ -426,7 +427,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
                 nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()));
                 nameId.setValue("subjectId1" );
                 resp.getAssertions().get(0).getAssertion().getSubject().getSubType().addBaseID(nameId);
-                
+
                 Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
 
                 AttributeStatementType attributeType = (AttributeStatementType) statements.stream()
@@ -448,7 +449,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
           // Login in provider realm
           .login().sso(true).build()
-          
+
           .processSamlResponse(Binding.POST)
           .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -460,7 +461,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
               nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()));
               nameId.setValue("subjectId2" );
               resp.getAssertions().get(0).getAssertion().getSubject().getSubType().addBaseID(nameId);
-              
+
               Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
 
               AttributeStatementType attributeType = (AttributeStatementType) statements.stream()
@@ -487,7 +488,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         ResponseType resp = (ResponseType) samlResponse.getSamlObject();
         assertThat(resp.getDestination(), is(urlRealmConsumer + "/app/auth2/saml"));
         assertAudience(resp, urlRealmConsumer + "/app/auth2");
-        
+
         UsersResource users = adminClient.realm(REALM_CONS_NAME).users();
         List<UserRepresentation> userList= users.search(CONSUMER_CHOSEN_USERNAME);
         assertEquals(1, userList.size());
@@ -495,7 +496,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         FederatedIdentityRepresentation fed = users.get(id).getFederatedIdentity().get(0);
         assertThat(fed.getUserId(), is(PROVIDER_REALM_USER_NAME));
         assertThat(fed.getUserName(), is(PROVIDER_REALM_USER_NAME));
-        
+
         //check that no user with sent subject-id was sent
         userList = users.search("subjectId1");
         assertTrue(userList.isEmpty());
