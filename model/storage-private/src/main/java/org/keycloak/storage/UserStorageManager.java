@@ -51,7 +51,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -115,6 +114,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     protected UserModel importValidation(RealmModel realm, UserModel user) {
 
         if (isReadOnlyOrganizationMember(user)) {
+            if (user instanceof CachedUserModel cachedUserModel) {
+                cachedUserModel.invalidate();
+            }
             return new ReadOnlyUserModelDelegate(user, false);
         }
 
@@ -129,7 +131,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         if (!model.isEnabled()) {
+            if (user instanceof CachedUserModel cachedUserModel) {
+                cachedUserModel.invalidate();
+            }
             return new ReadOnlyUserModelDelegate(user, false);
+        }
+
+        if (user instanceof CachedUserModel) {
+            // if the user is cached do not validate import for the cached configured time
+            return user;
         }
 
         ImportedUserValidation importedUserValidation = getStorageProviderInstance(model, ImportedUserValidation.class, true);
