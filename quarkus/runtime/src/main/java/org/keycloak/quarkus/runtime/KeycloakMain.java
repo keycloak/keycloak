@@ -52,16 +52,11 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 public class KeycloakMain implements QuarkusApplication {
 
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
-    private static final String LDAP_CONNECTION_POOL_PROTOCOL = "com.sun.jndi.ldap.connect.pool.protocol";
 
     static {
         // enable Infinispan and JGroups virtual threads by default
         if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null) {
             System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
-        }
-        // set connection pooling for plain and tls protocols by default
-        if (System.getProperty(LDAP_CONNECTION_POOL_PROTOCOL) == null) {
-            System.setProperty(LDAP_CONNECTION_POOL_PROTOCOL, "plain ssl");
         }
     }
 
