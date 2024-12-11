@@ -36,11 +36,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
  */
 public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService>, OID4VCEnvironmentProviderFactory {
 
-    /**
-     * Key for the realm attribute providing the issuerDidy.
-     */
-    String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
-
     static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 // I do believe the ALGORITHM_TYPE need to be mandatory instead. As the keyId might change with key rotation.
