@@ -2101,7 +2101,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
         assertEquals(expectedAccessAlg, header.getAlgorithm().name());
-        assertEquals("JWT", header.getType());
+        assertEquals("at+jwt", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(tokenResponse.getIdToken()).getHeader();
