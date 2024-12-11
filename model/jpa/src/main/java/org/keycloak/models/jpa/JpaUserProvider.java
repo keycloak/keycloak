@@ -1027,7 +1027,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                                 builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
-                        if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
+                        if (Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.TRUE.toString()))) {
                             attributePredicates.add(builder.and(
                                 builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
