@@ -921,8 +921,12 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("username", "user", "test", "test1", "attr", "common", "test1", "test1")));
         assertThat(users, hasSize(1));
 
-        //custom user attribute should use wildcard search by default
+        //custom user attribute should not use wildcard search by default
         users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("username", "user", "test", "est", "attr", "mm", "test1", "test1")));
+        assertThat(users, hasSize(0));
+
+        //custom user attribute should use wildcard
+        users = realm.users().searchByAttributes(mapToSearchQuery(Map.of("username", "user", "test", "est", "attr", "mm", "test1", "test1")), false);
         assertThat(users, hasSize(1));
 
         //with exact=true the user shouldn't be returned
