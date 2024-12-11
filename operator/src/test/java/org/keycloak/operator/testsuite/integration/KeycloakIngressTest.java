@@ -52,8 +52,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         kc.getSpec().getHttpSpec().setTlsSecret(null);
         kc.getSpec().getHttpSpec().setHttpEnabled(true);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
-                .withStrict(false)
-                .withStrictBackchannel(false);
+                .withStrict(false);
         if (isOpenShift) {
             kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
         }
@@ -78,8 +77,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
     public void testIngressOnHTTPSAndProxySettings() {
         var kc = getTestKeycloakDeployment(false);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
-                .withStrict(false)
-                .withStrictBackchannel(false);
+                .withStrict(false);
         if (isOpenShift) {
             kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
         }
