@@ -248,7 +248,7 @@ public class WelcomeResource {
     }
 
     protected String getAdminCreationMessage() {
-        return "or set the environment variables KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD before starting the server";
+        return "or use a bootstrap-admin command";
     }
 
     private boolean shouldBootstrap() {

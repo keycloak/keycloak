@@ -122,6 +122,8 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
 
         REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();

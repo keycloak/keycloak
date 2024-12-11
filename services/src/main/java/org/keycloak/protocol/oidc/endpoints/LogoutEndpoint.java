@@ -231,7 +231,7 @@ public class LogoutEndpoint {
             }
         }
 
-        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true);
+        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
             logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);

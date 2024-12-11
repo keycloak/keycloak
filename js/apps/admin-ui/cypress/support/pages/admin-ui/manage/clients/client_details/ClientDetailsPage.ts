@@ -19,6 +19,7 @@ export enum ClientsDetailsTab {
   ServiceAccountsRoles = "Service accounts roles",
   Advanced = "Advanced",
   Scope = "Scope",
+  UserEvents = "Events",
 }
 
 export default class ClientDetailsPage extends CommonPage {

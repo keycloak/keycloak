@@ -112,7 +112,7 @@
                     </div>
                   </form>
                 <#else>
-                  <p>To create the temporary administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KC_BOOTSTRAP_ADMIN_USERNAME</code> and <code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> when starting the server.</p>
+                  <p>To create the temporary administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or use a <code>bootstrap-admin</code> command.</p>
                 </#if>
               </#if>
             </div>

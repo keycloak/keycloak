@@ -442,7 +442,7 @@ export const AdminEvents = () => {
                     />
                     <TextControl name="authRealm" label={t("realm")} />
                     <TextControl name="authClient" label={t("client")} />
-                    <TextControl name="authUser" label={t("user")} />
+                    <TextControl name="authUser" label={t("userId")} />
                     <TextControl name="authIpAddress" label={t("ipAddress")} />
                     <FormGroup
                       label={t("dateFrom")}
