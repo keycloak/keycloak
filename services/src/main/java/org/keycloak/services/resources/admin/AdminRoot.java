@@ -41,7 +41,6 @@ import org.keycloak.urls.UrlType;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -203,9 +202,6 @@ public class AdminRoot {
 
     /**
      * Base Path to realm admin REST interface
-     *
-     * @param headers
-     * @return
      */
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin() {
@@ -213,10 +209,6 @@ public class AdminRoot {
 
         if (!isAdminApiEnabled()) {
             throw new NotFoundException();
-        }
-
-        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -231,8 +223,19 @@ public class AdminRoot {
         return new RealmsAdminResource(session, auth, tokenManager);
     }
 
-    @Path("{any:.*}")
     @OPTIONS
+    @Path("realms")
+    @Operation(hidden = true)
+    public RealmsAdminResourcePreflight getRealmsAdminPreFlight() {
+        if (!isAdminApiEnabled()) {
+            throw new NotFoundException();
+        }
+
+        return new RealmsAdminResourcePreflight(session, null, tokenManager, getHttpRequest());
+    }
+
+    @OPTIONS
+    @Path("{any:.*}")
     @Operation(hidden = true)
     public Object preFlight() {
         if (!isAdminApiEnabled()) {
@@ -244,21 +247,11 @@ public class AdminRoot {
 
     /**
      * General information about the server
-     *
-     * @param headers
-     * @return
      */
     @Path("serverinfo")
     public Object getServerInfo() {
-
         if (!isAdminApiEnabled()) {
             throw new NotFoundException();
-        }
-
-        HttpRequest request = getHttpRequest();
-
-        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService();
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
