@@ -85,7 +85,14 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.authorization.AdminPermissionsAuthorizationSchema;
+import org.keycloak.representations.idm.authorization.AuthorizationSchema;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceType;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -1192,7 +1199,21 @@ public final class KeycloakModelUtils {
     public static void setupAdminPermissionsClient(KeycloakSession session, RealmModel realm) {
         ClientModel client = session.clients().addClient(realm, Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         realm.setAdminPermissionsClient(client);
-        RepresentationToModel.createResourceServer(client, session, false);
+
+        ResourceServer resourceServer = RepresentationToModel.createResourceServer(client, session, false);
+        ResourceServerRepresentation resourceServerRep = ModelToRepresentation.toRepresentation(resourceServer, client);
+
+        AuthorizationSchema schema = AdminPermissionsAuthorizationSchema.INSTANCE;
+
+        //there is no way how to map scopes to the resourceType, we need to collect all scopes from all resourceTypes 
+        Set<ScopeRepresentation> scopes = schema.getResourceTypes().stream()
+                .flatMap((resourceType) -> resourceType.getScopes().stream())
+                .map(scope -> new ScopeRepresentation(scope))
+                .collect(Collectors.toSet());//collecting to set to get rid of duplicities
+
+        resourceServerRep.setScopes(List.copyOf(scopes));
+
+        RepresentationToModel.toModel(resourceServerRep, session.getProvider(AuthorizationProvider.class), client);
     }
 
 }
