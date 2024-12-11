@@ -26,7 +26,7 @@
     "patternfly": "^3.59.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "rfc4648": "^1.5.3",
+    "rfc4648": "^1.5.4",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
