@@ -22,6 +22,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -90,6 +92,9 @@ public class AdminPermissionsTest extends AbstractTestRealmKeycloakTest {
 
             authorizationSettings = testRealm().clients().get(adminPermissionsClient.getId()).authorization().getSettings();
             assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
+
+            List<String> scopeNames = testRealm().clients().get(adminPermissionsClient.getId()).authorization().scopes().scopes().stream().map((rep) -> rep.getName()).collect(Collectors.toList());
+            assertThat(scopeNames, Matchers.hasItem("manage"));
         }
     }
 
