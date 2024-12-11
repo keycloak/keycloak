@@ -94,6 +94,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean isReadOnly(String name) {
+        if (isReadableOrWritableDuringRegistration(name)) {
+            return false;
+        }
         if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
             return true;
         }
@@ -103,6 +106,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return getMetadata(name) == null;
+    }
+
+    private boolean isReadableOrWritableDuringRegistration(String name) {
+        if (context.equals(UserProfileContext.REGISTRATION) && isRequired(name)) {
+            // in context of registration, username or email (email as username) cannot be readonly otherwise registration is not possible
+            return UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name);
+        }
+        return false;
     }
 
     private boolean isAllowEditUnmanagedAttribute() {
@@ -284,10 +295,12 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 continue;
             }
 
-            AttributeContext attributeContext = createAttributeContext(metadata);
+            if (!isReadableOrWritableDuringRegistration(name)) {
+                AttributeContext attributeContext = createAttributeContext(metadata);
 
-            if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
-                attributes.remove(name);
+                if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
+                    attributes.remove(name);
+                }
             }
         }
 
