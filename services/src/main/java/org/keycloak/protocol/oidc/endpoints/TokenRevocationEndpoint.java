@@ -249,16 +249,16 @@ public class TokenRevocationEndpoint {
             if (userSession != null) {
                 new UserSessionManager(session).removeClientFromOfflineUserSession(realm, userSession, client, user);
             }
-        } else {
-            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
-            if (userSession != null) {
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-                if (clientSession != null) {
-                    TokenManager.dettachClientSession(clientSession);
-                    // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-                    if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-                        session.sessions().removeUserSession(realm, userSession);
-                    }
+        }
+        // Always remove "online" session as well if exists to make sure that issued access-tokens are revoked as well
+        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
+        if (userSession != null) {
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+            if (clientSession != null) {
+                TokenManager.dettachClientSession(clientSession);
+                // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
+                if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                    session.sessions().removeUserSession(realm, userSession);
                 }
             }
         }
