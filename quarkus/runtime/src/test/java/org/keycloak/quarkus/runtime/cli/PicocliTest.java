@@ -411,9 +411,11 @@ public class PicocliTest extends AbstractConfigurationTest {
         // dev profile has a default
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                not(containsString("Usage of the default value for the db option")));
         onAfter();
 
-        // prod profiles require db
+        // prod profiles warn about db
         nonRunningPicocli = pseudoLaunch("build");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(),
