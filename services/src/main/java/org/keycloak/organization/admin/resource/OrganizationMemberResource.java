@@ -154,7 +154,7 @@ public class OrganizationMemberResource {
         return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
     }
 
-    @Path("{id}")
+    @Path("{memberId}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -162,7 +162,7 @@ public class OrganizationMemberResource {
     @Operation( summary = "Returns the member of the organization with the specified id", description = "Searches for a" +
             "user with the given id. If one is found, and is currently a member of the organization, returns it. Otherwise," +
             "an error response with status NOT_FOUND is returned")
-    public MemberRepresentation get(@PathParam("id") String id) {
+    public MemberRepresentation get(@PathParam("memberId") String id) {
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
@@ -170,13 +170,13 @@ public class OrganizationMemberResource {
         return toRepresentation(getMember(id));
     }
 
-    @Path("{id}")
+    @Path("{memberId}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Removes the user with the specified id from the organization", description = "Breaks the association " +
             "between the user and organization. The user itself is deleted in case the membership is managed, otherwise the user is not deleted. " +
             "If no user is found, or if they are not a member of the organization, an error response is returned")
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@PathParam("memberId") String id) {
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
@@ -196,13 +196,13 @@ public class OrganizationMemberResource {
         throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
-    @Path("{id}/organizations")
+    @Path("{memberId}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("memberId") String id) {
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
