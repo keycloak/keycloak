@@ -22,12 +22,16 @@ import io.smallrye.config.ConfigValue;
 
 import io.smallrye.config.Priorities;
 import jakarta.annotation.Priority;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
@@ -49,7 +53,8 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 @Priority(Priorities.APPLICATION - 10)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
-    private static ThreadLocal<Boolean> disable = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> disableAdditionalNames = new ThreadLocal<>();
 
     public static void disable() {
         disable.set(true);
@@ -73,7 +78,26 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
-        return filterRuntime(context.iterateNames());
+        // We need to iterate through names to get wildcard option names.
+        // Additionally, wildcardValuesTransformer might also trigger iterateNames.
+        // Hence we need to disable this to prevent infinite recursion.
+        // But we don't want to disable the whole interceptor, as wildcardValuesTransformer
+        // might still need mappers to work.
+        List<String> mappedWildcardNames = List.of();
+        if (!Boolean.TRUE.equals(disableAdditionalNames.get())) {
+            disableAdditionalNames.set(true);
+            try {
+                mappedWildcardNames = PropertyMappers.getWildcardMappers().stream()
+                        .map(WildcardPropertyMapper::getToWithWildcards)
+                        .flatMap(Set::stream)
+                        .toList();
+            } finally {
+                disableAdditionalNames.remove();
+            }
+        }
+
+        // this could be optimized by filtering the wildcard names in the stream above
+        return filterRuntime(IteratorUtils.chainedIterator(mappedWildcardNames.iterator(), context.iterateNames()));
     }
 
     @Override

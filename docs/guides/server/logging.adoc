@@ -69,6 +69,25 @@ This example sets the following log levels:
 * The hibernate log level in general is set to debug.
 * To keep SQL abstract syntax trees from creating verbose log output, the specific subcategory `org.hibernate.hql.internal.ast` is set to info. As a result, the SQL abstract syntax trees are omitted instead of appearing at the `debug` level.
 
+==== Configuring levels as individual options
+When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
+This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
+
+.Example
+If you start the server as:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\""/>
+
+you can then set an environmental variable `KC_LOG_LEVEL_ORG_KEYCLOAK=trace` to change the log level for the `org.keycloak` category.
+
+The `log-level-<category>` options take precedence over `log-level`. This allows you to override what was set in the `log-level` option.
+For instance if you set `KC_LOG_LEVEL_ORG_HIBERNATE=trace` for the CLI example above, the  `org.hibernate` category will use the `trace` level instead of `debug`.
+
+Bear in mind that when using the environmental variables, the category name must be in uppercase and the dots must be replaced with underscores.
+When using other config sources, the category name must be specified "as is", for example:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\" --log-level-org.keycloak=trace"/>
+
 == Enabling log handlers
 To enable log handlers, enter the following command:
 

@@ -61,6 +61,12 @@ See the Javadoc for a detailed description.
 In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
 expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.
 
+= Individual options for category-specific log levels
+
+It is now possible to set category-specific log levels as individual `log-level-category` options.
+
+For more details, see the https://www.keycloak.org/server/logging#_configuring_levels_as_individual_options[Logging guide].
+
 = Infinispan default XML configuration location
 
 Previous releases ignored any change  to `conf/cache-ispn.xml` if the `--cache-config-file` option was not provided.

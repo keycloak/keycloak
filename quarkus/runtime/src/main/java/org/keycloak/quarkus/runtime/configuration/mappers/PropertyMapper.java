@@ -17,6 +17,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.ofNullable;
+import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
@@ -27,10 +28,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -38,23 +41,22 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
 import io.smallrye.config.Expressions;
-
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.utils.StringUtil;
 
 public class PropertyMapper<T> {
 
-    private final Option<T> option;
+    protected final Option<T> option;
     private final String to;
     private BooleanSupplier enabled;
     private String enabledWhen;
@@ -69,13 +71,21 @@ public class PropertyMapper<T> {
     private final String description;
     private final BooleanSupplier required;
     private final String requiredWhen;
+    private final String from;
+
+    PropertyMapper(PropertyMapper<T> mapper, String from, String to, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper) {
+        this(mapper.option, to, mapper.enabled, mapper.enabledWhen, mapper.mapper, mapper.mapFrom, parentMapper,
+                mapper.paramLabel, mapper.mask, mapper.validator, mapper.description, mapper.required,
+                mapper.requiredWhen, from);
+    }
 
     PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
                    BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
                    String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
                    String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-                   String description, BooleanSupplier required, String requiredWhen) {
+                   String description, BooleanSupplier required, String requiredWhen, String from) {
         this.option = option;
+        this.from = from == null ? MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + this.option.getKey() : from;
         this.to = to == null ? getFrom() : to;
         this.enabled = enabled;
         this.enabledWhen = enabledWhen;
@@ -173,7 +183,7 @@ public class PropertyMapper<T> {
     }
 
     public String getFrom() {
-        return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + this.option.getKey();
+        return from;
     }
 
     public String getDescription() {
@@ -234,6 +244,14 @@ public class PropertyMapper<T> {
         return option.getDeprecatedMetadata();
     }
 
+    /**
+     * An option is considered a wildcard option if its key contains a wildcard placeholder (e.g. log-level-<category>).
+     * The placeholder must be denoted by the '<' and '>' characters.
+     */
+    public boolean hasWildcard() {
+        return false;
+    }
+
     private ConfigValue transformValue(String name, ConfigValue configValue, ConfigSourceInterceptorContext context, boolean parentValue) {
         String value = configValue.getValue();
         String mappedValue = value;
@@ -261,7 +279,7 @@ public class PropertyMapper<T> {
         }
 
         // by unsetting the ordinal this will not be seen as directly modified by the user
-        return configValue.from().withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
+        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {
@@ -270,6 +288,11 @@ public class PropertyMapper<T> {
         }
 
         return configValue.withValue(ofNullable(configValue.getValue()).map(String::trim).orElse(null));
+    }
+
+    @FunctionalInterface
+    public interface ValueMapper {
+        String map(String name, String value, ConfigSourceInterceptorContext context);
     }
 
     private final class ContextWrapper implements ConfigSourceInterceptorContext {
@@ -315,6 +338,8 @@ public class PropertyMapper<T> {
         private String description;
         private BooleanSupplier isRequired = () -> false;
         private String requiredWhen = "";
+        private Function<Set<String>, Set<String>> wildcardKeysTransformer;
+        private ValueMapper wildcardMapFrom;
 
         public Builder(Option<T> option) {
             this.option = option;
@@ -439,11 +464,30 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        public Builder<T> wildcardKeysTransformer(Function<Set<String>, Set<String>> wildcardValuesTransformer) {
+            this.wildcardKeysTransformer = wildcardValuesTransformer;
+            return this;
+        }
+
+        public Builder<T> wildcardMapFrom(Option<?> mapFrom, ValueMapper function) {
+            this.mapFrom = mapFrom.getKey();
+            this.wildcardMapFrom = function;
+            return this;
+        }
+
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen);
+            // The wildcard pattern (e.g. log-level-<category>) is matching only a-z, 0-0 and dots. For env vars, dots are replaced by underscores.
+            var fromWildcardMatcher = WILDCARD_PLACEHOLDER_PATTERN.matcher(option.getKey());
+            if (fromWildcardMatcher.find()) {
+                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, fromWildcardMatcher, wildcardKeysTransformer, wildcardMapFrom);
+            }
+            if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
+                throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
+            }
+            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null);
         }
     }
 
@@ -523,6 +567,34 @@ public class PropertyMapper<T> {
         }
         return String.format("'%s' in %s", getFrom(),
                 KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
+    }
+
+    /**
+     * Get all Keycloak config values for the mapper. A multivalued config option is a config option that
+     * has a wildcard in its name, e.g. log-level-<category>.
+     *
+     * @return a list of config values where the key is the resolved wildcard (e.g. category) and the value is the config value
+     */
+    public List<ConfigValue> getKcConfigValues() {
+        return List.of(Configuration.getConfigValue(getFrom()));
+    }
+
+    /**
+     * Returns a new PropertyMapper tailored for the given env var key.
+     * This is currently useful in {@link WildcardPropertyMapper} where "to" and "from" fields need to include a specific
+     * wildcard key.
+     */
+    public PropertyMapper<?> forEnvKey(String key) {
+        return this;
+    }
+
+    /**
+     * Returns a new PropertyMapper tailored for the given key.
+     * This is currently useful in {@link WildcardPropertyMapper} where "to" and "from" fields need to include a specific
+     * wildcard key.
+     */
+    public PropertyMapper<?> forKey(String key) {
+        return this;
     }
 
 }

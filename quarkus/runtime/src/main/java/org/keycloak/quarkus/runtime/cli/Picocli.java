@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.config.DeprecatedMetadata;
@@ -101,16 +102,12 @@ public class Picocli {
     }
 
     private ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+    private Set<PropertyMapper<?>> allowedMappers;
+    private List<String> unrecognizedArgs = new ArrayList<>();
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
-        CommandLine cmd = createCommandLine(spec -> spec
-                .addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
-                    @Override
-                    public <T> T set(T value) throws Exception {
-                        return null; // just ignore
-                    }
-                })));
+        CommandLine cmd = createCommandLine(spec -> {}).setUnmatchedArgumentsAllowed(true);
         String[] argArray = cliArgs.toArray(new String[0]);
 
         try {
@@ -156,6 +153,16 @@ public class Picocli {
                 }
 
                 currentSpec = subCommand.getCommandSpec();
+
+                currentSpec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
+                    @Override
+                    public <T> T set(T value) {
+                        if (value != null) {
+                            unrecognizedArgs.addAll(Arrays.asList((String[]) value));
+                        }
+                        return null; // doesn't matter
+                    }
+                }));
 
                 addHelp(currentSpec);
             }
@@ -326,6 +333,17 @@ public class Picocli {
      * @param abstractCommand
      */
     public void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
+        unrecognizedArgs.removeIf(arg -> {
+            if (arg.contains("=")) {
+                arg = arg.substring(0, arg.indexOf("="));
+            }
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(arg);
+            return mapper != null && mapper.hasWildcard() && allowedMappers.contains(mapper);
+        });
+        if (!unrecognizedArgs.isEmpty()) {
+            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), unrecognizedArgs);
+        }
+
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
@@ -363,53 +381,54 @@ public class Picocli {
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
                 for (PropertyMapper<?> mapper : mappers) {
-                    ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
-                    String configValueStr = configValue.getValue();
+                    mapper.getKcConfigValues().forEach(configValue -> {
+                        String configValueStr = configValue.getValue();
 
-                    // don't consider missing or anything below standard env properties
-                    if (configValueStr == null) {
-                        if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
-                            handleRequired(missingOption, mapper);
+                        // don't consider missing or anything below standard env properties
+                        if (configValueStr == null) {
+                            if (Environment.isRuntimeMode() && mapper.isEnabled() && mapper.isRequired()) {
+                                handleRequired(missingOption, mapper);
+                            }
+                            return;
                         }
-                        continue;
-                    }
-                    if (!isUserModifiable(configValue)) {
-                        continue;
-                    }
-
-                    if (disabledMappers.contains(mapper)) {
-                        if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
-                            continue; // we found enabled mapper with the same name
+                        if (!isUserModifiable(configValue)) {
+                            return;
                         }
 
-                        // only check build-time for a rebuild, we'll check the runtime later
-                        if (!mapper.isRunTime() || !isRebuild()) {
-                            if (PropertyMapper.isCliOption(configValue)) {
-                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                            } else {
-                                handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                        if (disabledMappers.contains(mapper)) {
+                            if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
+                                return; // we found enabled mapper with the same name
+                            }
+
+                            // only check build-time for a rebuild, we'll check the runtime later
+                            if (!mapper.isRunTime() || !isRebuild()) {
+                                if (PropertyMapper.isCliOption(configValue)) {
+                                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
+                                } else {
+                                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                                }
+                            }
+                            return;
+                        }
+
+                        if (mapper.isBuildTime() && !options.includeBuildTime) {
+                            String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
+                            if (!configValueStr.equals(currentValue)) {
+                                ignoredBuildTime.add(mapper.getFrom());
+                                return;
                             }
                         }
-                        continue;
-                    }
-
-                    if (mapper.isBuildTime() && !options.includeBuildTime) {
-                        String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
-                        if (!configValueStr.equals(currentValue)) {
-                            ignoredBuildTime.add(mapper.getFrom());
-                            continue;
+                        if (mapper.isRunTime() && !options.includeRuntime) {
+                            ignoredRunTime.add(mapper.getFrom());
+                            return;
                         }
-                    }
-                    if (mapper.isRunTime() && !options.includeRuntime) {
-                        ignoredRunTime.add(mapper.getFrom());
-                        continue;
-                    }
 
-                    mapper.validate(configValue);
+                        mapper.validate(configValue);
 
-                    mapper.getDeprecatedMetadata().ifPresent(metadata -> {
-                        handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata);
-                    });
+                        mapper.getDeprecatedMetadata().ifPresent(metadata -> {
+                            handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata);
+                        });
+                    });;
                 }
             }
 
@@ -641,7 +660,7 @@ public class Picocli {
         }
     }
 
-    private static IncludeOptions getIncludeOptions(List<String> cliArgs, AbstractCommand abstractCommand, String commandName) {
+    private IncludeOptions getIncludeOptions(List<String> cliArgs, AbstractCommand abstractCommand, String commandName) {
         IncludeOptions result = new IncludeOptions();
         if (abstractCommand == null) {
             return result;
@@ -659,7 +678,7 @@ public class Picocli {
         return result;
     }
 
-    private static void addCommandOptions(List<String> cliArgs, CommandLine command) {
+    private void addCommandOptions(List<String> cliArgs, CommandLine command) {
         if (command != null && command.getCommand() instanceof AbstractCommand) {
             IncludeOptions options = getIncludeOptions(cliArgs, command.getCommand(), command.getCommandName());
 
@@ -671,7 +690,7 @@ public class Picocli {
         }
     }
 
-    private static void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
+    private void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
         final Map<OptionCategory, List<PropertyMapper<?>>> mappers = new EnumMap<>(OptionCategory.class);
 
         // Since we can't run sanitizeDisabledMappers sooner, PropertyMappers.getRuntime|BuildTimeMappers() at this point
@@ -685,6 +704,8 @@ public class Picocli {
         }
 
         addMappedOptionsToArgGroups(commandLine, mappers);
+
+        allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
     }
 
     private static <T extends Map<OptionCategory, List<PropertyMapper<?>>>> void combinePropertyMappers(T origMappers, T additionalMappers) {
