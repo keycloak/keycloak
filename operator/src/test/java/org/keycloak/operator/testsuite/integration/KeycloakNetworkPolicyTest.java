@@ -19,37 +19,24 @@ package org.keycloak.operator.testsuite.integration;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
-import io.quarkus.logging.Log;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
@@ -62,89 +49,90 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testDefaults() {
+    public void testHttpAndHttps() {
         var kc = create();
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-        CRAssert.awaitClusterSize(k8sclient, kc, 2);
-        assertNull(networkPolicy(kc), "Expects no network policies deployed");
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testHttpOnly(boolean randomPort) {
-        var kc = create();
-        enableNetworkPolicy(kc);
-        disableHttps(kc);
-        var httpPort = enableHttp(kc, randomPort);
-        var mngtPort = configureManagement(kc, randomPort);
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-        CRAssert.awaitClusterSize(k8sclient, kc, 2);
-
-        assertIngressRules(kc, httpPort, -1, mngtPort);
-
-        CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, false, httpPort);
-        CRAssert.assertManagementInterfaceAccessibleViaService(k8sclient, kc, false, mngtPort);
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testHttpsOnly(boolean randomPort) {
-        var kc = create();
-        enableNetworkPolicy(kc);
-        var httpsPort = configureHttps(kc, randomPort);
-        var mngtPort = configureManagement(kc, randomPort);
+        K8sUtils.enableNetworkPolicy(kc);
+        var httpPort = K8sUtils.enableHttp(kc, false);
+        var httpsPort = K8sUtils.configureHttps(kc, false);
+        var mngtPort = K8sUtils.configureManagement(kc, false);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
 
-        assertIngressRules(kc, -1, httpsPort, mngtPort);
-
-        CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, true, httpsPort);
-        CRAssert.assertManagementInterfaceAccessibleViaService(k8sclient, kc, true, mngtPort);
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testHttpAndHttps(boolean randomPort) {
-        var kc = create();
-        enableNetworkPolicy(kc);
-        var httpPort = enableHttp(kc, randomPort);
-        var httpsPort = configureHttps(kc, randomPort);
-        var mngtPort = configureManagement(kc, randomPort);
-
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-        CRAssert.awaitClusterSize(k8sclient, kc, 2);
-
-        assertIngressRules(kc, httpPort, httpsPort, mngtPort);
+        CRAssert.assertIngressRules(networkPolicy(kc), kc, httpPort, httpsPort, mngtPort);
 
         CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, false, httpPort);
         CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, true, httpsPort);
         CRAssert.assertManagementInterfaceAccessibleViaService(k8sclient, kc, true, mngtPort);
     }
 
-    @ParameterizedTest()
-    @ValueSource(booleans = {true, false})
-    public void testManagementDisabled(boolean legacyOption) {
+    @Test
+    public void testServiceConnectivity() {
         var kc = create();
-        disableProbes(kc);
-        enableNetworkPolicy(kc);
-        disableManagement(kc, legacyOption);
+        K8sUtils.enableNetworkPolicy(kc);
+        var httpsPort = K8sUtils.configureHttps(kc, false);
 
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-        CRAssert.awaitClusterSize(k8sclient, kc, 2);
+        var allowNamespace = getNewRandomNamespaceName();
+        var notAllowNamespace = getNewRandomNamespaceName();
+        var anotherNamespace = getNewRandomNamespaceName();
+        var allowLabels = Map.of("allowed", "true");
+        var notAllowLabels = Map.of("allowed", "false");
+        try {
+            k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(allowNamespace).endMetadata().build()).create();
+            k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(notAllowNamespace).endMetadata().build()).create();
+            k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(anotherNamespace).endMetadata().build()).create();
 
-        assertIngressRules(kc, -1, Constants.KEYCLOAK_HTTPS_PORT, -1);
-        CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, true, Constants.KEYCLOAK_HTTPS_PORT);
+            // allow access from:
+            // * pods from namespace 'allowNamespace' AND with label 'allowLabels'
+            // OR
+            // * pods from namespace 'anotherNamespace' (labels do not matter)
+            kc.getSpec().getNetworkPolicySpec().setHttpsRules(
+                    List.of(
+                            createRule(allowNamespace, allowLabels),
+                            createRule(anotherNamespace, null)
+                    )
+            );
+
+            K8sUtils.deployKeycloak(k8sclient, kc, true);
+            CRAssert.awaitClusterSize(k8sclient, kc, 2);
+
+            CRAssert.assertIngressRules(networkPolicy(kc), kc, -1, httpsPort, Constants.KEYCLOAK_MANAGEMENT_PORT);
+
+            // 1st rule have access
+            CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, allowNamespace, allowLabels, true, httpsPort);
+            // 2nd rule (pod labels do not matter)
+            CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, anotherNamespace, allowLabels, true, httpsPort);
+            CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, anotherNamespace, notAllowLabels, true, httpsPort);
+            CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, anotherNamespace, Map.of(), true, httpsPort);
+
+            // correct namespace but wrong label's value.
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, allowNamespace, notAllowLabels, httpsPort);
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, allowNamespace, Map.of(), httpsPort);
+
+            // wrong namespace but correct label.
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, notAllowNamespace, allowLabels, httpsPort);
+
+            // everything is wrong.
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, notAllowNamespace, notAllowLabels, httpsPort);
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, notAllowNamespace, Map.of(), httpsPort);
+
+            // Pods in the same namespace should not be allowed.
+            CRAssert.assertKeycloakServiceBlocked(k8sclient, kc, namespaceOf(kc), allowLabels, httpsPort);
+        } finally {
+            k8sclient.namespaces().withName(allowNamespace).delete();
+            k8sclient.namespaces().withName(notAllowNamespace).delete();
+            k8sclient.namespaces().withName(anotherNamespace).delete();
+        }
     }
 
     @Test
     public void testJGroupsConnectivity() {
         var kc = create();
-        enableNetworkPolicy(kc);
+        K8sUtils.enableNetworkPolicy(kc);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
-        assertIngressRules(kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
+        CRAssert.assertIngressRules(networkPolicy(kc), kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
 
         var namespace = namespaceOf(kc);
         var podIp = k8sclient.pods().inNamespace(namespace).list().getItems().get(0).getStatus().getPodIP();
@@ -169,11 +157,11 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     @Test
     public void testUpdate() {
         var kc = create();
-        enableNetworkPolicy(kc);
+        K8sUtils.enableNetworkPolicy(kc);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
-        assertIngressRules(kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
+        CRAssert.assertIngressRules(networkPolicy(kc), kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
 
         // disable should remove the network policy
         kc.getSpec().getNetworkPolicySpec().setNetworkPolicyEnabled(false);
@@ -185,140 +173,7 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         kc.getSpec().getNetworkPolicySpec().setNetworkPolicyEnabled(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
-        assertIngressRules(kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
-    }
-
-    private static void assertPodSelectorAndPolicy(Keycloak keycloak, NetworkPolicy networkPolicy) {
-        assertNotNull(networkPolicy, "Expects a network policy");
-        assertEquals(Utils.allInstanceLabels(keycloak), networkPolicy.getSpec().getPodSelector().getMatchLabels(), "Expects same pod match labels");
-        assertTrue(networkPolicy.getSpec().getPolicyTypes().contains("Ingress"), "Expect ingress polity type present");
-    }
-
-    private static void assertManagementRulePresent(NetworkPolicy networkPolicy, int mgmtPort) {
-        var rule = findIngressRuleWithPort(networkPolicy, mgmtPort);
-        assertTrue(rule.isPresent(), "Management Ingress Rule is missing");
-        assertTrue(rule.get().getFrom().isEmpty());
-        var ports = portAndProtocol(rule.get());
-        assertEquals(Map.of(mgmtPort, Constants.KEYCLOAK_SERVICE_PROTOCOL), ports);
-    }
-
-    private static void assertApplicationRulePresent(NetworkPolicy networkPolicy, int applicationPort) {
-        var rule = findIngressRuleWithPort(networkPolicy, applicationPort);
-        assertTrue(rule.isPresent(), "Application Ingress Rule is missing");
-        assertTrue(rule.get().getFrom().isEmpty());
-        var ports = portAndProtocol(rule.get());
-        assertEquals(Map.of(applicationPort, Constants.KEYCLOAK_SERVICE_PROTOCOL), ports);
-    }
-
-    private static void assertJGroupsRulePresent(Keycloak keycloak, NetworkPolicy networkPolicy) {
-        var rule = findIngressRuleWithPort(networkPolicy, Constants.KEYCLOAK_JGROUPS_DATA_PORT);
-        assertTrue(rule.isPresent(), "JGroups Ingress Rule is missing");
-
-        var from = rule.get().getFrom();
-        assertEquals(1, from.size(), "Incorrect 'from' list size");
-        assertEquals(Utils.allInstanceLabels(keycloak), from.get(0).getPodSelector().getMatchLabels());
-
-        var ports = portAndProtocol(rule.get());
-        assertEquals(Map.of(
-                Constants.KEYCLOAK_JGROUPS_DATA_PORT, Constants.KEYCLOAK_JGROUPS_PROTOCOL,
-                Constants.KEYCLOAK_JGROUPS_FD_PORT, Constants.KEYCLOAK_JGROUPS_PROTOCOL
-        ), ports);
-    }
-
-    private static void assertIngressRules(Keycloak keycloak, int httpPort, int httpsPort, int mgntPort) {
-        var networkPolicy = networkPolicy(keycloak);
-        Log.info(networkPolicy);
-        var expectedNumberOfRules = IntStream.of(httpPort, httpsPort, mgntPort)
-                .filter(value -> value > 0)
-                .count();
-
-        // +1 for JGRP
-        ++expectedNumberOfRules;
-
-        long numberOfRules = Optional.ofNullable(networkPolicy.getSpec())
-                .map(io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicySpec::getIngress)
-                .map(List::size)
-                .orElse(0);
-
-        assertEquals(expectedNumberOfRules, numberOfRules);
-
-        // Check selector
-        assertPodSelectorAndPolicy(keycloak, networkPolicy);
-
-        // JGroups is always present
-        assertJGroupsRulePresent(keycloak, networkPolicy);
-
-        if (httpPort > 0) {
-            assertApplicationRulePresent(networkPolicy, httpPort);
-        }
-        if (httpsPort > 0) {
-            assertApplicationRulePresent(networkPolicy, httpsPort);
-        }
-        if (mgntPort > 0) {
-            assertManagementRulePresent(networkPolicy, mgntPort);
-        }
-    }
-
-    private static Map<Integer, String> portAndProtocol(NetworkPolicyIngressRule rule) {
-        return rule.getPorts().stream()
-                .collect(Collectors.toMap(port -> port.getPort().getIntVal(), NetworkPolicyPort::getProtocol));
-    }
-
-    private static Optional<NetworkPolicyIngressRule> findIngressRuleWithPort(NetworkPolicy networkPolicy, int rulePort) {
-        return networkPolicy.getSpec().getIngress().stream()
-                .filter(rule -> rule.getPorts().stream().anyMatch(port -> port.getPort().getIntVal() == rulePort))
-                .findFirst();
-    }
-
-    private static void enableNetworkPolicy(Keycloak keycloak) {
-        var builder = new NetworkPolicySpecBuilder();
-        builder.withNetworkPolicyEnabled(true);
-        keycloak.getSpec().setNetworkPolicySpec(builder.build());
-    }
-
-    private static int configureManagement(Keycloak keycloak, boolean randomPort) {
-        if (!randomPort) {
-            return Constants.KEYCLOAK_MANAGEMENT_PORT;
-        }
-        var port = ThreadLocalRandom.current().nextInt(10_000, 10_100);
-        keycloak.getSpec().setHttpManagementSpec(new HttpManagementSpecBuilder().withPort(port).build());
-        return port;
-    }
-
-    private static int enableHttp(Keycloak keycloak, boolean randomPort) {
-        keycloak.getSpec().getHttpSpec().setHttpEnabled(true);
-        if (randomPort) {
-            var port = ThreadLocalRandom.current().nextInt(10_100, 10_200);
-            keycloak.getSpec().getHttpSpec().setHttpPort(port);
-            return port;
-        }
-        return Constants.KEYCLOAK_HTTP_PORT;
-    }
-
-    private static void disableHttps(Keycloak keycloak) {
-        keycloak.getSpec().getHttpSpec().setTlsSecret(null);
-    }
-
-    private static int configureHttps(Keycloak keycloak, boolean randomPort) {
-        if (randomPort) {
-            var port = ThreadLocalRandom.current().nextInt(10_200, 10_300);
-            keycloak.getSpec().getHttpSpec().setHttpsPort(port);
-            return port;
-        }
-        return Constants.KEYCLOAK_HTTPS_PORT;
-    }
-
-    private static void disableManagement(Keycloak keycloak, boolean legacyOption) {
-        if (legacyOption) {
-            keycloak.getSpec().getAdditionalOptions().add(new ValueOrSecret("legacy-observability-interface", "true"));
-        } else {
-            keycloak.getSpec().getAdditionalOptions().add(new ValueOrSecret("health-enabled", "false"));
-        }
-        // The custom image from GitHub Actions is optimized and does not allow to change the build time attributes
-        // Fallback to the default/nightly image.
-        if (getTestCustomImage() != null) {
-            keycloak.getSpec().setImage(null);
-        }
+        CRAssert.assertIngressRules(networkPolicy(kc), kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
     }
 
     private static Keycloak create() {
@@ -332,6 +187,21 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         }
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
         return kc;
+    }
+
+    private static NetworkPolicyPeer createRule(String namespace, Map<String, String> labels) {
+        var builder = new NetworkPolicyPeerBuilder();
+        if (labels != null) {
+            builder.withNewPodSelector()
+                    .withMatchLabels(labels)
+                    .endPodSelector();
+        }
+        if (namespace != null) {
+            builder.withNewNamespaceSelector()
+                    .addToMatchLabels("kubernetes.io/metadata.name", namespace)
+                    .endNamespaceSelector();
+        }
+        return builder.build();
     }
 
 }

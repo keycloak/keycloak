@@ -16,12 +16,16 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyFluent;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -60,7 +64,7 @@ public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDepend
     }
 
     @Override
-    protected NetworkPolicy desired(Keycloak primary, Context<Keycloak> context) {
+    public NetworkPolicy desired(Keycloak primary, Context<Keycloak> context) {
         var builder = new NetworkPolicyBuilder();
         addMetadata(builder, primary);
 
@@ -97,31 +101,32 @@ public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDepend
                 .map(HttpSpec::getHttpEnabled)
                 .orElse(false);
         if (!tlsEnabled || httpEnabled) {
-            var httpIngressBuilder = builder.addNewIngress();
-            httpIngressBuilder.addNewPort()
-                    .withPort(new IntOrString(HttpSpec.httpPort(keycloak)))
-                    .withProtocol(KEYCLOAK_SERVICE_PROTOCOL)
-                    .endPort();
-            httpIngressBuilder.endIngress();
+            addIngress(builder, HttpSpec.httpPort(keycloak), NetworkPolicySpec.httpRules(keycloak));
         }
 
         if (tlsEnabled) {
-            var httpsIngressBuilder = builder.addNewIngress();
-            httpsIngressBuilder.addNewPort()
-                    .withPort(new IntOrString(HttpSpec.httpsPort(keycloak)))
-                    .withProtocol(KEYCLOAK_SERVICE_PROTOCOL)
-                    .endPort();
-            httpsIngressBuilder.endIngress();
+            addIngress(builder, HttpSpec.httpsPort(keycloak), NetworkPolicySpec.httpsRules(keycloak));
         }
     }
 
     private static void addManagementPorts(NetworkPolicyFluent<NetworkPolicyBuilder>.SpecNested<NetworkPolicyBuilder> builder, Keycloak keycloak) {
-        var ingressBuilder = builder.addNewIngress();
-        ingressBuilder.addNewPort()
-                .withPort(new IntOrString(HttpManagementSpec.managementPort(keycloak)))
+        addIngress(builder, HttpManagementSpec.managementPort(keycloak), NetworkPolicySpec.managementRules(keycloak));
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static void addIngress(NetworkPolicyFluent<NetworkPolicyBuilder>.SpecNested<NetworkPolicyBuilder> builder,
+                                   int port,
+                                   Optional<List<NetworkPolicyPeer>> networkPolicyPeers) {
+        var ingress = builder.addNewIngress();
+        ingress.addNewPort()
+                .withPort(new IntOrString(port))
                 .withProtocol(KEYCLOAK_SERVICE_PROTOCOL)
                 .endPort();
-        ingressBuilder.endIngress();
+
+        networkPolicyPeers
+                .filter(Predicate.not(Collection::isEmpty))
+                .ifPresent(ingress::addAllToFrom);
+        ingress.endIngress();
     }
 
     private static void addJGroupsPorts(NetworkPolicyFluent<NetworkPolicyBuilder>.SpecNested<NetworkPolicyBuilder> builder, Keycloak keycloak) {
