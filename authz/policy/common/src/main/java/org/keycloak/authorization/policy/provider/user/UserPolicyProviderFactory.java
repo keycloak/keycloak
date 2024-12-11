@@ -166,10 +166,11 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         KeycloakSession session = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
         UserProvider userProvider = session.users();
-        UserModel user = userProvider.getUserByUsername(realm, userId);
+        UserModel user = userProvider.getUserById(realm, userId);
 
         if (user == null) {
-            user = userProvider.getUserById(realm, userId);
+            // fallback - userId is possibly a username
+            user = userProvider.getUserByUsername(realm, userId);
         }
 
         return user;
