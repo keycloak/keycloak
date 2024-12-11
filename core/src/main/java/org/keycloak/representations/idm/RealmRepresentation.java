@@ -219,7 +219,7 @@ public class RealmRepresentation {
     protected Boolean organizationsEnabled;
     private List<OrganizationRepresentation> organizations;
 
-    protected Boolean verifiableCredentialsEnabled;
+    protected Boolean oid4VciEnabled;
 
     protected Boolean adminPermissionsEnabled;
 
@@ -1461,12 +1461,12 @@ public class RealmRepresentation {
         this.adminPermissionsEnabled = adminPermissionsEnabled;
     }
 
-    public Boolean isVerifiableCredentialsEnabled() {
-        return verifiableCredentialsEnabled;
+    public Boolean isOid4VciEnabled() {
+        return oid4VciEnabled;
     }
 
-    public void setVerifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
-        this.verifiableCredentialsEnabled = verifiableCredentialsEnabled;
+    public void setOid4VciEnabled(Boolean oid4VciEnabled) {
+        this.oid4VciEnabled = oid4VciEnabled;
     }
 
     @JsonIgnore
