@@ -213,6 +213,26 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testRevokeOfflineTokenWithOnlineSSOSession() throws Exception {
+        OAuthClient.AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
+
+        // Offline login of same client in same SSO session as previous login
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        OAuthClient.AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
+
+        // Session IDs of "offline" and online session are same for now. This may change in the future
+        Assert.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
+
+        isTokenEnabled(tokenResponse2, "test-app");
+
+        // Disable both offline and refresh
+        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password");
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+
+        isTokenDisabled(tokenResponse2, "test-app");
+    }
+
+    @Test
     public void testTokenTypeHint() throws Exception {
         // different token_type_hint
         oauth.clientId("test-app");
