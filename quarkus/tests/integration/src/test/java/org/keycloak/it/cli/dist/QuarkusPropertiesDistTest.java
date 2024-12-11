@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER, defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @TestMethodOrder(OrderAnnotation.class)
@@ -134,7 +134,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @KeepServerAlive
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true"})
     @Order(8)
     void testUnknownQuarkusBuildTimePropertyApplied(CLIResult cliResult) {
         cliResult.assertNoBuild();

@@ -104,6 +104,10 @@ public final class Configuration {
         return getConfig().getPropertyNames();
     }
 
+    public static ConfigValue getConfigValue(Option<?> option) {
+        return getKcConfigValue(option.getKey());
+    }
+
     public static ConfigValue getConfigValue(String propertyName) {
         return getConfig().getConfigValue(propertyName);
     }
