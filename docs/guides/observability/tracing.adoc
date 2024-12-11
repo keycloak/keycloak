@@ -196,7 +196,7 @@ These fields should reflect 1:1 association with `tracing-*` options that contai
 
 NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it might not be well managed in the future, so it needs to be set via the `additionalOptions` field.
 
-=== Filter traces based on k8s attributes
+=== Filter traces based on Kubernetes attributes
 You can filter out the required traces in your tracing backend based on their tags:
 
 * `service.name` - {project_name} deployment name
