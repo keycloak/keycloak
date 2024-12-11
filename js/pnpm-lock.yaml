@@ -266,8 +266,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(axe-core@4.10.2)(cypress@13.16.1)
       cypress-split:
-        specifier: ^1.24.6
-        version: 1.24.6(@babel/core@7.26.0)
+        specifier: ^1.24.7
+        version: 1.24.7(@babel/core@7.26.0)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -2474,8 +2474,8 @@ packages:
       axe-core: ^3 || ^4
       cypress: ^10 || ^11 || ^12 || ^13
 
-  cypress-split@1.24.6:
-    resolution: {integrity: sha512-1/qyie/fh632msYuIw2IqKuhst0dPptV16iFNnmri/OeRzpAuFhYg2Qc/Jacj907b2a4+FGfh8UF9PgwAnptkw==}
+  cypress-split@1.24.7:
+    resolution: {integrity: sha512-JOxWgCQHi/JMOwznm6VF7V1GHYEM9Mxz6EipZu9WgQtqnRjk3QX6lBXJMjRXOPqArguL9S49OSFUQXDiC19hBg==}
     hasBin: true
 
   cypress@13.16.1:
@@ -7356,7 +7356,7 @@ snapshots:
       axe-core: 4.10.2
       cypress: 13.16.1
 
-  cypress-split@1.24.6(@babel/core@7.26.0):
+  cypress-split@1.24.7(@babel/core@7.26.0):
     dependencies:
       '@actions/core': 1.11.1
       arg: 5.0.2
