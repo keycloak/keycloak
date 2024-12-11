@@ -5,7 +5,6 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide title="Enabling Tracing"
-preview="true"
 summary="Learn how to enable distributed tracing in {project_name}"
 includedOptions="tracing-* log-*-include-trace">
 
@@ -17,15 +16,17 @@ It also provides valuable insights into performance bottlenecks and can help opt
 
 == Enable tracing
 
-It is possible to enable exposing traces using the build time option `tracing-enabled`, and enabling `opentelemetry` feature as follows:
+It is possible to enable exposing traces using the build time option `tracing-enabled` as follows:
 
-<@kc.start parameters="--tracing-enabled=true --features=opentelemetry"/>
+<@kc.start parameters="--tracing-enabled=true"/>
 
 By default, the trace exporters send out data in batches, using the `gRPC` protocol and endpoint `+http://localhost:4317+`.
 
 The default service name is `keycloak`, specified via the `tracing-service-name` property, which takes precedence over `service.name` defined in the `tracing-resource-attributes` property.
 
 For more information about resource attributes that can be provided via the `tracing-resource-attributes` property, see the https://quarkus.io/guides/opentelemetry#resource[Quarkus OpenTelemetry Resource] guide.
+
+NOTE: Tracing can be enabled only when the `opentelemetry` feature is *enabled* (by default).
 
 For more tracing settings, see all possible configurations below.
 
@@ -117,7 +118,7 @@ The format of the log records may start as follows:
 You can hide trace IDs in specific log handlers by specifying their associated {project_name} option `log-<handler-name>-include-trace`, where `<handler-name>` is the name of the log handler.
 For instance, to disable trace info in the `console` log, you can turn it off as follows:
 
-<@kc.start parameters="--tracing-enabled=true --features=opentelemetry --log=console --log-console-include-trace=false"/>
+<@kc.start parameters="--tracing-enabled=true --log=console --log-console-include-trace=false"/>
 
 NOTE: When you explicitly override the log format for the particular log handlers, the `*-include-trace` options do not have any effect, and no tracing is included.
 

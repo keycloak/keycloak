@@ -320,6 +320,12 @@ Logging:
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
 
+Tracing:
+
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
+
 Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>

@@ -78,6 +78,12 @@ Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 
+Tracing:
+
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
+
 Security:
 
 --fips-mode <mode>   Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on

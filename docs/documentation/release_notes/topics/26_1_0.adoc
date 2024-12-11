@@ -114,6 +114,21 @@ The key providers that allow to import externally generated keys (`rsa` and `jav
 
 The default `generated` key providers generate a certificate valid for 10 years (the types that have or can have an associated certificate). Because of the long validity and the recommendation to rotate keys frequently, the generated providers do not perform this check.
 
+= OpenTelemetry Tracing supported
+
+In the previous release, the OpenTelemetry Tracing feature was preview and is *fully supported* now.
+It means the `opentelemetry` feature is enabled by default.
+
+There were made multiple improvements to the tracing capabilities in {project_name} such as:
+
+* *Custom spans* for:
+** Incoming/outgoing HTTP requests including Identity Providers brokerage
+** Database operations and connections
+** LDAP requests
+** Time-consuming operations (passwords hashing, persistent sessions operations, ...)
+
+For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
+
 = Sign out all active sessions in admin console now effectively removes all sessions
 
 In previous versions, clicking on *Sign out all active sessions* in the admin console resulted in the removal of regular sessions only. Offline sessions would still be displayed despite being effectively invalidated.
