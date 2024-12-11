@@ -661,7 +661,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         events.expect(EventType.INTROSPECT_TOKEN).client(clientId).user((String)null).clearDetails().assertEvent();
     }
 
-    protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, boolean isOfflineAccess) throws IOException {
+    protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, String sessionId, boolean isOfflineAccess) throws IOException {
         oauth.clientId(clientId);
         oauth.doTokenRevoke(refreshToken, "refresh_token", clientSecret);
 
@@ -672,7 +672,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         if (isOfflineAccess) assertEquals("Offline user session not found", tokenRes.getErrorDescription());
         else assertEquals("Session not active", tokenRes.getErrorDescription());
 
-        events.expect(EventType.REVOKE_GRANT).clearDetails().client(clientId).user(userId).assertEvent();
+        events.expect(EventType.REVOKE_GRANT).clearDetails()
+                .client(clientId)
+                .user(userId)
+                .session(sessionId)
+                .assertEvent();
     }
 
     // Client CRUD operation by Admin REST API primitives
@@ -1532,7 +1536,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         doIntrospectAccessToken(refreshResponse, userName, clientId, clientSecret);
 
-        doTokenRevoke(refreshResponse.getRefreshToken(), clientId, clientSecret, userId, false);
+        doTokenRevoke(refreshResponse.getRefreshToken(), clientId, clientSecret, userId, sessionId, false);
     }
 
     protected void failLoginByNotFollowingPKCE(String clientId) {

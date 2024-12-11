@@ -512,7 +512,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, true);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, true);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -614,7 +614,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -678,7 +678,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -2888,7 +2888,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
         RefreshToken rt = oauth.parseRefreshToken(refreshToken);
-        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(rt.getSubject()).assertEvent();
+        return events.expect(EventType.REVOKE_GRANT).clearDetails()
+                .client(TEST_CLIENT_NAME)
+                .user(rt.getSubject())
+                .session(sessionId)
+                .assertEvent();
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {
