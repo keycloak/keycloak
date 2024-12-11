@@ -19,6 +19,7 @@
 package org.keycloak.authentication;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,7 @@ class AuthenticationSelectionResolver {
                         .distinct()
                         .filter(typeAuthExecMap::containsKey)
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
+                        .sorted(Comparator.comparingInt(option -> option.getAuthenticationExecution().getPriority()))
                         .collect(Collectors.toList());
             }
             else {
