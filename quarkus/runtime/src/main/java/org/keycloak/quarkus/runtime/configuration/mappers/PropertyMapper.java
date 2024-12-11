@@ -183,7 +183,7 @@ public class PropertyMapper<T> {
     }
 
     public String getFrom() {
-        return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + this.option.getKey();
+        return from;
     }
 
     public String getDescription() {

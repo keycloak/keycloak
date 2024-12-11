@@ -81,7 +81,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         // this is not optimal
         // TODO find an efficient way to get all values that match the wildcard
         Set<String> values = StreamSupport.stream(Configuration.getPropertyNames().spliterator(), false)
-                .map(n -> getMappedKey(n, true, false))
+                .map(n -> getMappedKey(n, false))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet());
@@ -99,16 +99,14 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      * E.g. for the option "log-level-<category>" and the option name "log-level-io.quarkus",
      * the wildcard value would be "io.quarkus".
      */
-    private Optional<String> getMappedKey(String originalKey, boolean tryFrom, boolean tryTo) {
-        if (tryFrom) {
-            Matcher matcher = fromWildcardPattern.matcher(originalKey);
-            if (matcher.matches()) {
-                return Optional.of(matcher.group(1));
-            }
+    private Optional<String> getMappedKey(String originalKey, boolean tryTo) {
+        Matcher matcher = fromWildcardPattern.matcher(originalKey);
+        if (matcher.matches()) {
+            return Optional.of(matcher.group(1));
         }
 
         if (tryTo && toWildcardPattern != null) {
-            Matcher matcher = toWildcardPattern.matcher(originalKey);
+            matcher = toWildcardPattern.matcher(originalKey);
             if (matcher.matches()) {
                 return Optional.of(matcher.group(1));
             }
@@ -139,6 +137,9 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     @Override
     public PropertyMapper<?> forEnvKey(String key) {
         Matcher matcher = envVarNameWildcardPattern.matcher(key);
+        if (!matcher.matches()) {
+            throw new IllegalStateException("Env var '" + key + "' does not match the expected pattern '" + envVarNameWildcardPattern + "'");
+        }
         String value = matcher.group(1);
         final String wildcardValue = value.toLowerCase().replace("_", "."); // we opiniotatedly convert env var names to CLI format with dots
         return forWildcardValue(wildcardValue);
@@ -152,7 +153,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     @Override
     public PropertyMapper<?> forKey(String key) {
-        final String wildcardValue = getMappedKey(key, true, true).orElseThrow();
+        final String wildcardValue = getMappedKey(key, true).orElseThrow();
         return forWildcardValue(wildcardValue);
     }
 
