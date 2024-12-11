@@ -97,14 +97,14 @@ public class UserManagedPermissionService {
 
         checkRequest(getAssociatedResourceId(policyId), representation);
 
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        return PolicyTypeResourceService.class.cast(delegate.getResourceService(policyId)).update(payload);
     }
 
     @Path("{policyId}")
     @DELETE
     public Response delete(@PathParam("policyId") String policyId) {
         checkRequest(getAssociatedResourceId(policyId), null);
-        PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).delete();
+        PolicyTypeResourceService.class.cast(delegate.getResourceService(policyId)).delete();
         return Response.noContent().build();
     }
 
@@ -113,7 +113,7 @@ public class UserManagedPermissionService {
     @Produces("application/json")
     public Response findById(@PathParam("policyId") String policyId) {
         checkRequest(getAssociatedResourceId(policyId), null);
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).findById(null);
+        return PolicyTypeResourceService.class.cast(delegate.getResourceService(policyId)).findById(null);
     }
 
     @GET

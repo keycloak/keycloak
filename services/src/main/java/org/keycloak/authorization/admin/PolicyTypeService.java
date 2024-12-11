@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -36,7 +37,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PolicyTypeService extends PolicyService {
+public class PolicyTypeService extends BasePolicyService {
 
     private final String type;
 
@@ -45,8 +46,15 @@ public class PolicyTypeService extends PolicyService {
         this.type = type;
     }
 
+    @Path("{policy-id}")
+    public PolicyTypeResourceService getResourceService(@PathParam("policy-id") String policyId) {
+        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
+
+        return new PolicyTypeResourceService(policy, resourceServer,authorization, auth, adminEvent);
+    }
+
     @Path("/provider")
-    public Object getPolicyAdminResourceProvider() {
+    public PolicyProviderAdminService getPolicyAdminResourceProvider() {
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(type);
 
         if (resource == null) {
@@ -56,12 +64,6 @@ public class PolicyTypeService extends PolicyService {
         return resource;
     }
 
-    @Override
-    protected Object doCreatePolicyResource(Policy policy) {
-        return new PolicyTypeResourceService(policy, resourceServer,authorization, auth, adminEvent);
-    }
-
-    @Override
     protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
         PolicyProviderFactory provider = getPolicyProviderFactory(type);
         Class<? extends AbstractPolicyRepresentation> representationType = provider.getRepresentationType();
