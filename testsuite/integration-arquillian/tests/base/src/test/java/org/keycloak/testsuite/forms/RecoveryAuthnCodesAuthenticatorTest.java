@@ -156,8 +156,11 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
                     .assertEvent();
         }
 
-        EventRepresentation event2 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
-                .user(event1.getUserId()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(event1.getUserId())
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .assertEvent();
         event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID))
                 .detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
