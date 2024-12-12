@@ -30,8 +30,9 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 
 public class MicrometerUserEventMetricsEventListenerProvider implements EventListenerProvider {
@@ -76,7 +77,7 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
             return;
         }
 
-        LinkedList<Tag> tags = new LinkedList<>();
+        List<Tag> tags = new ArrayList<>(5);
 
         tags.add(Tag.of(EVENT_TAG, eventTag));
         tags.add(Tag.of(ERROR_TAG, getError(event)));
