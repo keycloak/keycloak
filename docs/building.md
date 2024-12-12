@@ -47,6 +47,16 @@ To enable it by default, add it to the `MAVEN_OPTS` environment variable:
 
     export MAVEN_OPTS="-Dmaven.build.cache.enabled=true"
 
+---
+**NOTE**
+
+To ensure that development in a branch does not break compatibility with existing releases, proto-schema-compatibility-maven-plugin checks may be run, which can cause builds to fail in proxy environments.
+To avoid this, you can skip this check by adding the following property:
+
+    -DskipProtoLock=true
+
+---
+
 ### Starting Keycloak
 
 To start Keycloak during development first build as specified above, then run:
