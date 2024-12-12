@@ -49,7 +49,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
             picocli.start();
         }
     }
-    
+
     protected void doBeforeRun() {
 
     }
