@@ -163,8 +163,37 @@ For more information, see the https://www.w3.org/TR/trace-context/#security-cons
 == Tracing in Kubernetes environment
 When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
 
-NOTE: There is no support for tracing configuration in {project_name} CR yet, so the `additionalOptions` can be used to the `tracing-enabled` property and other tracing options.
+=== Configuration via Keycloak CR
 
+You can change tracing configuration via Keycloak CR fields as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+    enabled:
+      - opentelemetry
+  tracing:
+    enabled: true                             # default 'false'
+    endpoint: http://my-tracing:4317          # default 'http://localhost:4317'
+    samplerType: parentbased_traceidratio     # default 'traceidratio'
+    samplerRatio: 0.01                        # default '1'
+    resourceAttributes:
+      some.attribute: something
+  additionalOptions:
+    - name: tracing-jdbc-enabled
+      value: false                            # default 'true'
+----
+
+These fields should reflect 1:1 association with `tracing-*` options that contain more information.
+
+NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it might not be well managed in the future, so it needs to be set via the `additionalOptions` field.
+
+=== Filter traces based on Kubernetes attributes
 You can filter out the required traces in your tracing backend based on their tags:
 
 * `service.name` - {project_name} deployment name
@@ -172,5 +201,7 @@ You can filter out the required traces in your tracing backend based on their ta
 * `host.name` - Pod name
 
 {project_name} Operator automatically sets the `KC_TRACING_SERVICE_NAME` and `KC_TRACING_RESOURCE_ATTRIBUTES` environment variables for each {project_name} container included in pods it manages.
+
+NOTE: The `KC_TRACING_RESOURCE_ATTRIBUTES` variable always contains (if not overridden) the `k8s.namespace.name` attribute representing current namespace.
 
 </@tmpl.guide>
