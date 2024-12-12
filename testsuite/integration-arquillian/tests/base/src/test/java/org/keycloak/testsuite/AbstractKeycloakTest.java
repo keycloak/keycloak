@@ -179,11 +179,6 @@ public abstract class AbstractKeycloakTest {
 
         TestEventsLogger.setDriver(driver);
 
-        // The backend cluster nodes may not be yet started. Password will be updated later for cluster setup.
-        if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
-            updateMasterAdminPassword();
-        }
-
         beforeAbstractKeycloakTestRealmImport();
 
         if (testContext.getTestRealmReps().isEmpty()) {
