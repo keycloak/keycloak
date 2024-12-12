@@ -80,4 +80,8 @@ public abstract class AbstractCommand {
         this.picocli = picocli;
     }
 
+    public boolean isOptimized() {
+        return false;
+    }
+
 }

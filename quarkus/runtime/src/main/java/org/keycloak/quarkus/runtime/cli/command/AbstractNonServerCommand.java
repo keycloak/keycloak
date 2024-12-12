@@ -42,6 +42,11 @@ public abstract class AbstractNonServerCommand extends AbstractStartCommand impl
     }
 
     @Override
+    public boolean isOptimized() {
+        return Boolean.TRUE.equals(optimizedMixin.optimized);
+    }
+
+    @Override
     public List<OptionCategory> getOptionCategories() {
         return super.getOptionCategories().stream().filter(optionCategory ->
                 optionCategory != OptionCategory.HTTP &&

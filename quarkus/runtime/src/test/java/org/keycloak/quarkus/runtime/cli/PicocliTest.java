@@ -411,4 +411,15 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals("WARN", value.getValue());
     }
 
+    @Test
+    public void providerChanged() {
+        build("build");
+
+        addPersistedConfigValues(Map.of(Picocli.KC_PROVIDER_FILE_PREFIX + "fake", "value"));
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.provider.file.fake"));
+    }
+
 }

@@ -68,6 +68,11 @@ public final class Start extends AbstractStartCommand implements Runnable {
         return NAME;
     }
 
+    @Override
+    public boolean isOptimized() {
+        return Boolean.TRUE.equals(optimizedMixin.optimized);
+    }
+
     public static void fastStart(Picocli picocli, boolean dryRun) {
         try {
             Start start = new Start();
