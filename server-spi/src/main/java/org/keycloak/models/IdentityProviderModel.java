@@ -55,6 +55,8 @@ public class IdentityProviderModel implements Serializable {
     public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
     public static final String SEARCH = "search";
     public static final String SYNC_MODE = "syncMode";
+    public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
+    public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
 
@@ -342,6 +344,25 @@ public class IdentityProviderModel implements Serializable {
 
     public void setCaseSensitiveOriginalUsername(boolean caseSensitive) {
         getConfig().put(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.valueOf(caseSensitive).toString());
+    }
+
+    public void setMinValidityToken(int minValidityToken) {
+        getConfig().put(MIN_VALIDITY_TOKEN, Integer.toString(minValidityToken));
+    }
+
+    public int getMinValidityToken() {
+        String minValidityTokenString = getConfig().get(MIN_VALIDITY_TOKEN);
+        if (minValidityTokenString != null) {
+            try {
+                int minValidityToken = Integer.parseInt(minValidityTokenString);
+                if (minValidityToken > 0) {
+                    return minValidityToken;
+                }
+            } catch (NumberFormatException e) {
+                // no-op return default
+            }
+        }
+        return DEFAULT_MIN_VALIDITY_TOKEN;
     }
 
     @Override
