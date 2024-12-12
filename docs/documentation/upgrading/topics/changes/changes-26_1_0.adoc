@@ -10,15 +10,23 @@ Notable changes where an internal behavior changed to prevent common misconfigur
 
 === Offline access removes the associated online session if the `offline_scope` is requested in the initial exchange
 
-Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, with two sessions, one online and one offline.
+Any offline session in {project_name} is created from another online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore any `offline_access` request finished, until now, created two sessions, one online and one offline.
+This leads to buggy behaviour as when just the login with `scope=offline_access` was requested, there could be unused online session created, which is then useless in most cases.
+This caused the unnecessary consumption of resources on server.
 
-Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
+Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today.
+This also means that SSO session is not created in the browser if the login request with `scope=offline_access` is used and user was not already authenticated in the SSO beforehand. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
 
 === New client scope `service_account` for `client_credentials` grant mappers
 
 {project_name} introduces a new client scope at the realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
 
 Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
+
+The behaviour should be effectively the same for most of the {project_name} deployments as claims in the token are effectively same as before. You might be affected just in cases when you are using client credentials grant
+and you are preparing the {project_name} environment by some tooling, which is manually removing or updating the three protocol mappers mentioned above. For instance, if you have some admin CLI script,
+which enables service-account for some client and then removes the built-in service-account protocol mappers, you may adjust your CLI to instead remove the assignment of the `service_account` client scope
+from the client instead of removing protocol mappers.
 
 == Deprecation notices
 
