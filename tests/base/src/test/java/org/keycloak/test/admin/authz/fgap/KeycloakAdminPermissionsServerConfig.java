@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
 
-/**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
- */
-public class ScopePermissionRepresentation extends AbstractPolicyRepresentation {
+package org.keycloak.test.admin.authz.fgap;
+
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.test.framework.server.KeycloakServerConfig;
+import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
+
+public class KeycloakAdminPermissionsServerConfig implements KeycloakServerConfig {
 
     @Override
-    public String getType() {
-        return "scope";
+    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        return config.features(Feature.ADMIN_FINE_GRAINED_AUTHZ_V2);
     }
 }

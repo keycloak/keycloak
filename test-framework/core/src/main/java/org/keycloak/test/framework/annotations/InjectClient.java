@@ -20,4 +20,6 @@ public @interface InjectClient {
     String ref() default "";
 
     String realmRef() default "";
+
+    boolean createClient() default true;
 }

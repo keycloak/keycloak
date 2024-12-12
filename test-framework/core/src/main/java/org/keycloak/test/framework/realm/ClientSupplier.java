@@ -1,6 +1,9 @@
 package org.keycloak.test.framework.realm;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.test.framework.annotations.InjectClient;
@@ -34,11 +37,21 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
             clientRepresentation.setClientId(clientId);
         }
 
-        Response response = realm.admin().clients().create(clientRepresentation);
-        String uuid = ApiUtil.handleCreatedResponse(response);
-        clientRepresentation.setId(uuid);
+        if (instanceContext.getAnnotation().createClient()) {
+            Response response = realm.admin().clients().create(clientRepresentation);
+            if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
+                throw new IllegalStateException("Client already exist with client id: " + clientRepresentation.getClientId());
+            }
+            clientRepresentation.setId(ApiUtil.handleCreatedResponse(response));
+        } else {
+            List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientRepresentation.getClientId());
+            if (clients.isEmpty()) {
+                throw new IllegalStateException("No client found with client id: " + clientRepresentation.getClientId());
+            }
+            clientRepresentation = clients.get(0);
+        }
 
-        ClientResource clientResource = realm.admin().clients().get(uuid);
+        ClientResource clientResource = realm.admin().clients().get(clientRepresentation.getId());
         return new ManagedClient(clientRepresentation, clientResource);
     }
 

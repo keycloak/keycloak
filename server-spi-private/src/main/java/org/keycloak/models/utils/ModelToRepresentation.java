@@ -23,6 +23,7 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
+import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;

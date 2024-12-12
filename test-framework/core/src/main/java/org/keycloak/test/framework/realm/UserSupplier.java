@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.realm;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.test.framework.annotations.InjectUser;
@@ -36,15 +37,19 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             userRepresentation.setUsername(username);
         }
 
-        Response response = realm.admin().users().create(userRepresentation);
-        String uuid = ApiUtil.handleCreatedResponse(response);
+        try (Response response = realm.admin().users().create(userRepresentation)) {
+            if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
+                throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
+            }
+            String uuid = ApiUtil.handleCreatedResponse(response);
 
-        instanceContext.addNote(USER_UUID_KEY, uuid);
+            instanceContext.addNote(USER_UUID_KEY, uuid);
 
-        UserResource userResource = realm.admin().users().get(uuid);
-        userRepresentation.setId(uuid);
+            UserResource userResource = realm.admin().users().get(uuid);
+            userRepresentation.setId(uuid);
 
-        return new ManagedUser(userRepresentation, userResource);
+            return new ManagedUser(userRepresentation, userResource);
+        }
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
@@ -88,10 +89,8 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
-import org.keycloak.representations.idm.authorization.AdminPermissionsAuthorizationSchema;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import static org.keycloak.utils.StreamsUtil.closing;

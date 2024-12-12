@@ -19,6 +19,8 @@ package org.keycloak.authorization;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -295,18 +297,24 @@ public final class AuthorizationProvider implements Provider {
 
                 if (resources != null) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
+                        Resource resource = AdminPermissionsAuthorizationSchema.INSTANCE.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
 
                         if (resource == null) {
-                            resource = storeFactory.getResourceStore().findByName(resourceServer, id);
+                            resource = storeFactory.getResourceStore().findById(resourceServer, id);
+
+                            if (resource == null) {
+                                resource = storeFactory.getResourceStore().findByName(resourceServer, id);
+                            }
+
+                            if (resource == null) {
+                                throw new RuntimeException("Resource [" + id + "] does not exist or is not owned by the resource server.");
+                            }
+
+                            return resource.getId();
                         }
 
-                        if (resource == null) {
-                            throw new RuntimeException("Resource [" + id + "] does not exist or is not owned by the resource server.");
-                        }
-
-                        return resource.getId();
-                    }).collect(Collectors.toSet()));
+                        return Optional.ofNullable(resource).map(Resource::getId).orElse(null);
+                    }).filter(Objects::nonNull).collect(Collectors.toSet()));
                 }
 
                 Set<String> scopes = representation.getScopes();
