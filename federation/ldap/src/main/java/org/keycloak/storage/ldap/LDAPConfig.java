@@ -132,34 +132,6 @@ public class LDAPConfig {
         }
     }
 
-    public String getConnectionPoolingAuthentication() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION);
-    }
-
-    public String getConnectionPoolingDebug() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_DEBUG);
-    }
-
-    public String getConnectionPoolingInitSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_INITSIZE);
-    }
-
-    public String getConnectionPoolingMaxSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_MAXSIZE);
-    }
-
-    public String getConnectionPoolingPrefSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_PREFSIZE);
-    }
-
-    public String getConnectionPoolingProtocol() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_PROTOCOL);
-    }
-
-    public String getConnectionPoolingTimeout() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_TIMEOUT);
-    }
-
     public String getConnectionTimeout() {
         return config.getFirst(LDAPConstants.CONNECTION_TIMEOUT);
     }

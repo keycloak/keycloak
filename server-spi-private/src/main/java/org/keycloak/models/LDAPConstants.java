@@ -20,7 +20,6 @@ package org.keycloak.models;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -68,13 +67,6 @@ public class LDAPConstants {
 
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
-    public static final String CONNECTION_POOLING_AUTHENTICATION = "connectionPoolingAuthentication";
-    public static final String CONNECTION_POOLING_DEBUG = "connectionPoolingDebug";
-    public static final String CONNECTION_POOLING_INITSIZE = "connectionPoolingInitSize";
-    public static final String CONNECTION_POOLING_MAXSIZE = "connectionPoolingMaxSize";
-    public static final String CONNECTION_POOLING_PREFSIZE = "connectionPoolingPrefSize";
-    public static final String CONNECTION_POOLING_PROTOCOL = "connectionPoolingProtocol";
-    public static final String CONNECTION_POOLING_TIMEOUT = "connectionPoolingTimeout";
     public static final String CONNECTION_TIMEOUT = "connectionTimeout";
     public static final String READ_TIMEOUT = "readTimeout";
     // Could be discovered by rootDse supportedControl: 1.2.840.113556.1.4.319
