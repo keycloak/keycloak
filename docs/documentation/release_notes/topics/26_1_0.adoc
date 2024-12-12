@@ -53,7 +53,7 @@ As OpenShift v3 reached end-of-life a while back, support for identity brokering
 
 = New conditional authenticator `Condition - sub-flow executed`
 
-The `Condition - sub-flow executed` is a new conditional authenticator in {project_name}. The condition checks if a previous sub-flow was executed (or not executed) successfully during the authentication flow execution. More information about conditions in the link:{adminguide_link}#conditions-in-conditional-flows[server admin guide].
+The `Condition - sub-flow executed` is a new conditional authenticator in {project_name}. The condition checks if a previous sub-flow was executed (or not executed) successfully during the authentication flow execution. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 
 = Defining dependencies between provider factories
 

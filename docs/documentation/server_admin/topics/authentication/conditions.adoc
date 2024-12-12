@@ -46,7 +46,7 @@ You can negate the output.
 In other words, the attribute should not be present.
 
 `Condition - sub-flow executed`::
-The condition checks if a previous sub-flow was successfully executed (or not executed) in the authentication process. This way, the flow can trigger some other steps depending on a previous sub-flow termination. Configuration fields:
+The condition checks if a previous sub-flow was successfully executed (or not executed) in the authentication process. Therefore, the flow can trigger other steps based on a previous sub-flow termination. These configuration fields exist:
 
 Flow name:::
 The sub-flow name to check if it was executed or not executed. Required.
@@ -105,6 +105,7 @@ The section presents some examples of conditional workflows that integrates 2nd 
 
 The default `browser` flow uses a `Conditional OTP` sub-flow that already gives a 2FA with OTP Form (One Time Password). Following the same idea, different 2FA methods can be integrated with the `Condition - User Configured`.
 
+.2FA all alternative
 image:images/2fa-example1.png[2FA all alternative]
 
 The `forms` sub-flow contains another `2FA` conditional sub-flow with `Condition - user configured`. Three 2FA steps (OTP, Webauthn and Recovery Codes) are allowed as alternative steps. The user will be able to choose one of the three options, if they are configured for the user. As the sub-flow is conditional, the authentication process will complete successfully if no 2FA credential is configured.
@@ -113,10 +114,12 @@ The `forms` sub-flow contains another `2FA` conditional sub-flow with `Condition
 
 The second example continues the previous one. After the `2FA` sub-flow, another flow `Deny access if no 2FA` is used to check if the previous `2FA` was not executed. In that case (the user has no 2FA credential configured) the access is denied.
 
+.2FA all alternative and deny access
 image:images/2fa-example2.png[2FA all alternative and deny access]
 
 The `Condition - sub-flow executed` is configured to detect if the `2FA` sub-flow was not executed previously.
 
+.Configuration for the sub-flow executed
 image:images/2fa-example2-config.png[Configuration for the sub-flow executed]
 
 The step `Deny access` denies the authentication if not executed.
@@ -125,6 +128,7 @@ The step `Deny access` denies the authentication if not executed.
 
 The last example is very similar to the previous one. Instead of denying the access, step `OTP Form` is configured as required.
 
+.2FA all alternative with OTP default
 image:images/2fa-example3.png[2FA all alternative with OTP default]
 
 With this flow, if the user has none of the 2FA methods configured, the OTP setup will be enforced to continue the login.
