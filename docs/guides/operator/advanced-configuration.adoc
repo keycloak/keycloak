@@ -271,6 +271,8 @@ NOTE: If you are using a custom image, the Operator is *unaware* of any configur
 For instance, it may cause that the management interface uses the `https` schema, but the Operator accesses it via `http` when the TLS settings is specified in the custom image.
 To ensure proper TLS configuration, use the `tlsSecret` and `truststores` fields in the Keycloak CR so that the Operator can reflect that.
 
+For more details, see <@links.server id="management-interface" />.
+
 === Truststores
 
 If you need to provide trusted certificates, the Keycloak CR provides a top level feature for configuring the server's truststore as discussed in <@links.server id="keycloak-truststore"/>.
@@ -315,6 +317,37 @@ When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be
 If a master realm has already been created for you cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
 
 For more information on how to bootstrap a temporary admin user or service account and recover lost admin access, refer to the <@links.server id="bootstrap-admin-recovery"/> guide.
+
+=== Tracing (OpenTelemetry)
+
+Tracing allows for detailed monitoring of each request's lifecycle, which helps quickly identify and diagnose issues, leading to more efficient debugging and maintenance.
+
+You can change tracing configuration via Keycloak CR fields as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  tracing:
+    enabled: true                             # default 'false'
+    endpoint: http://my-tracing:4317          # default 'http://localhost:4317'
+    samplerType: parentbased_traceidratio     # default 'traceidratio'
+    samplerRatio: 0.01                        # default '1'
+    resourceAttributes:
+      some.attribute: something
+  additionalOptions:
+    - name: tracing-jdbc-enabled
+      value: false                            # default 'true'
+----
+
+These fields should reflect 1:1 association with `tracing-*` options that contain more information.
+
+NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it might not be well managed in the future, so it needs to be set via the `additionalOptions` field.
+
+For more details about tracing, see <@links.observability id="tracing" />.
 
 === Network Policies (Experimental)
 

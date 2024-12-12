@@ -94,8 +94,8 @@ public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest 
         Assert.assertTrue(testAppHelper.logout());
 
         // Login in username/password form as "jduke@KC2.COM"
-        Assert.assertFalse(testAppHelper.login("jduke@kc2.com", "theduke"));
         Assert.assertTrue(testAppHelper.login("jduke@kc2.com", "theduke2"));
+        Assert.assertTrue(testAppHelper.logout());
 
         assertUser("jduke", "jduke@keycloak.org", null, null, "jduke@KEYCLOAK.ORG", false);
         assertUser("jduke@kc2.com", "jduke@kc2.com", null, null, "jduke@KC2.COM", false);

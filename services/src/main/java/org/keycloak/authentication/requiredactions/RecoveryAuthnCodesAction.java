@@ -14,6 +14,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
@@ -82,6 +84,9 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
     @Override
     public void processAction(RequiredActionContext reqActionContext) {
+        EventBuilder event = reqActionContext.getEvent();
+        event.event(EventType.UPDATE_CREDENTIAL);
+
         CredentialProvider recoveryCodeCredentialProvider;
         MultivaluedMap<String, String> httpReqParamsMap;
         Long generatedAtTime;
@@ -90,7 +95,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
         recoveryCodeCredentialProvider = reqActionContext.getSession().getProvider(CredentialProvider.class,
                 RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
 
-        reqActionContext.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
+        event.detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
 
         httpReqParamsMap = reqActionContext.getHttpRequest().getDecodedFormParameters();
         List<String> generatedCodes = new ArrayList<>(

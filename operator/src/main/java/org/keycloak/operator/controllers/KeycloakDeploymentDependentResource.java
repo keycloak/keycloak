@@ -71,6 +71,7 @@ import java.util.stream.Stream;
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.convertTracingAttributesToString;
 
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
@@ -421,20 +422,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
         varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
-        varMap.putIfAbsent(KC_TRACING_SERVICE_NAME,
-                new EnvVarBuilder().withName(KC_TRACING_SERVICE_NAME)
-                        .withValue(keycloakCR.getMetadata().getName())
-                        .build()
-        );
-
-        // Possible OTel k8s attributes convention can be found here: https://opentelemetry.io/docs/specs/semconv/attributes-registry/k8s/#kubernetes-attributes
-        var tracingAttributes = Map.of("k8s.namespace.name", keycloakCR.getMetadata().getNamespace());
-
-        varMap.putIfAbsent(KC_TRACING_RESOURCE_ATTRIBUTES,
-                new EnvVarBuilder().withName(KC_TRACING_RESOURCE_ATTRIBUTES)
-                        .withValue(tracingAttributes.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
-                        .build()
-        );
+        setTracingEnvVars(keycloakCR, varMap);
 
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
@@ -446,6 +434,37 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
 
         allSecrets.addAll(serverConfigSecretsNames);
+    }
+
+    private static void setTracingEnvVars(Keycloak keycloakCR, Map<String, EnvVar> varMap) {
+        varMap.putIfAbsent(KC_TRACING_SERVICE_NAME,
+                new EnvVarBuilder().withName(KC_TRACING_SERVICE_NAME)
+                        .withValue(keycloakCR.getMetadata().getName())
+                        .build()
+        );
+
+        // Possible OTel k8s attributes convention can be found here: https://opentelemetry.io/docs/specs/semconv/attributes-registry/k8s/#kubernetes-attributes
+        var tracingAttributes = Map.of("k8s.namespace.name", keycloakCR.getMetadata().getNamespace());
+
+        if (varMap.containsKey(KC_TRACING_RESOURCE_ATTRIBUTES)) {
+            // append 'tracingAttributes' to the existing attributes defined in the 'KC_TRACING_RESOURCE_ATTRIBUTES' env var
+            var existingAttributes = convertTracingAttributesToMap(varMap);
+            tracingAttributes.forEach(existingAttributes::putIfAbsent);
+            varMap.get(KC_TRACING_RESOURCE_ATTRIBUTES).setValue(convertTracingAttributesToString(existingAttributes));
+        } else {
+            varMap.put(KC_TRACING_RESOURCE_ATTRIBUTES,
+                    new EnvVarBuilder().withName(KC_TRACING_RESOURCE_ATTRIBUTES)
+                            .withValue(convertTracingAttributesToString(tracingAttributes))
+                            .build()
+            );
+        }
+    }
+
+    private static Map<String, String> convertTracingAttributesToMap(Map<String, EnvVar> envVars) {
+        return Arrays.stream(Optional.ofNullable(envVars.get(KC_TRACING_RESOURCE_ATTRIBUTES).getValue()).orElse("").split(","))
+                .filter(entry -> entry.contains("="))
+                .map(entry -> entry.split("=", 2))
+                .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
     }
 
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {

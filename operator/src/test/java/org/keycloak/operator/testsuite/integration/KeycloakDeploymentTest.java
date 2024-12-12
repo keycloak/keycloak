@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
@@ -48,6 +49,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -58,6 +60,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -768,6 +771,82 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var limits = resources.getLimits();
         assertThat(limits).isNotNull();
         assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
+    }
+
+    @Test
+    public void testTracingSpec() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setStartOptimized(false);
+
+        var tracingSpec = new TracingSpecBuilder()
+                .withEnabled()
+                .withEndpoint("http://0.0.0.0:4317")
+                .withServiceName("my-best-keycloak")
+                .withProtocol("http/protobuf")
+                .withSamplerType("parentbased_traceidratio")
+                .withSamplerRatio(0.01)
+                .withCompression("gzip")
+                .withResourceAttributes(Map.of(
+                        "something.a", "keycloak-rocks",
+                        "something.b", "keycloak-rocks2"))
+                .build();
+
+        kc.getSpec().setTracingSpec(tracingSpec);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var map = pods.get(0).getSpec().getContainers().get(0).getEnv().stream()
+                .filter(Objects::nonNull).filter(f -> f.getName().startsWith("KC_TRACING_"))
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        assertThat(map).isNotNull();
+        assertThat(map).isNotEmpty();
+
+        // assertions
+
+        var enabled = map.get("KC_TRACING_ENABLED");
+        assertThat(enabled).isNotNull();
+        assertThat(enabled).isEqualTo("true");
+
+        var endpoint = map.get("KC_TRACING_ENDPOINT");
+        assertThat(endpoint).isNotNull();
+        assertThat(endpoint).isEqualTo("http://0.0.0.0:4317");
+
+        var serviceName = map.get("KC_TRACING_SERVICE_NAME");
+        assertThat(serviceName).isNotNull();
+        assertThat(serviceName).isEqualTo("my-best-keycloak");
+
+        var protocol = map.get("KC_TRACING_PROTOCOL");
+        assertThat(protocol).isNotNull();
+        assertThat(protocol).isEqualTo("http/protobuf");
+
+        var samplerType = map.get("KC_TRACING_SAMPLER_TYPE");
+        assertThat(samplerType).isNotNull();
+        assertThat(samplerType).isEqualTo("parentbased_traceidratio");
+
+        var samplerRatio = map.get("KC_TRACING_SAMPLER_RATIO");
+        assertThat(samplerRatio).isNotNull();
+        assertThat(samplerRatio).isEqualTo("0.01");
+
+        var compression = map.get("KC_TRACING_COMPRESSION");
+        assertThat(compression).isNotNull();
+        assertThat(compression).isEqualTo("gzip");
+
+        var resourceAttributes = map.get("KC_TRACING_RESOURCE_ATTRIBUTES");
+        assertThat(resourceAttributes).isNotNull();
+        assertThat(resourceAttributes).contains("something.a=keycloak-rocks");
+        assertThat(resourceAttributes).contains("something.b=keycloak-rocks2");
+        assertThat(resourceAttributes).contains(String.format("k8s.namespace.name=%s", namespace));
     }
 
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,

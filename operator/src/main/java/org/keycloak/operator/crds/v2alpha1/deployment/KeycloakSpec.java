@@ -31,6 +31,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -124,6 +125,10 @@ public class KeycloakSpec {
     @JsonProperty("networkPolicy")
     @JsonPropertyDescription("Controls the ingress traffic flow into Keycloak pods.")
     private NetworkPolicySpec networkPolicySpec;
+
+    @JsonProperty("tracing")
+    @JsonPropertyDescription("In this section you can configure OpenTelemetry Tracing for Keycloak.")
+    private TracingSpec tracingSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -289,5 +294,13 @@ public class KeycloakSpec {
 
     public void setNetworkPolicySpec(NetworkPolicySpec networkPolicySpec) {
         this.networkPolicySpec = networkPolicySpec;
+    }
+
+    public TracingSpec getTracingSpec() {
+        return tracingSpec;
+    }
+
+    public void setTracingSpec(TracingSpec tracingSpec) {
+        this.tracingSpec = tracingSpec;
     }
 }
