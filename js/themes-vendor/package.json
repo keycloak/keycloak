@@ -15,7 +15,8 @@
       "output": [
         "target/classes/theme/keycloak/common/resources/vendor/react",
         "target/classes/theme/keycloak/common/resources/vendor/react-dom",
-        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim"
+        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim",
+        "target/classes/theme/keycloak/common/resources/vendor/zxcvbn-ts"
       ]
     }
   },
@@ -23,6 +24,9 @@
     "@noble/hashes": "^1.6.1",
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
     "@patternfly/patternfly": "^4.224.5",
+    "@zxcvbn-ts/core": "^3.0.4",
+    "@zxcvbn-ts/language-common": "^3.0.4",
+    "@zxcvbn-ts/language-en": "^3.0.2",
     "patternfly": "^3.59.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

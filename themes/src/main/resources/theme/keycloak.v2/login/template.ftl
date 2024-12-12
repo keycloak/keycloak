@@ -51,7 +51,10 @@
     <script type="importmap">
         {
             "imports": {
-                "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
+                "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js",
+                "@zxcvbn-ts": "${url.resourcesCommonPath}/vendor/zxcvbn-ts/zxcvbn-ts.js",
+                "@zxcvbn-ts/language-common": "${url.resourcesCommonPath}/vendor/zxcvbn-ts/language-common.js",
+                "@zxcvbn-ts/language-en": "${url.resourcesCommonPath}/vendor/zxcvbn-ts/language-en.js"
             }
         }
     </script>
@@ -85,9 +88,6 @@
         </#list>
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
-    <script src="${url.resourcesPath}/js/zxcvbn-ts-core.js"></script>
-    <script src="${url.resourcesPath}/js/dictionary/language-common.js"></script>
-    <script src="${url.resourcesPath}/js/dictionary/language-en.js"></script>
   </head>
     <script type="module">
         import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";

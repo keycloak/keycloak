@@ -1,3 +1,11 @@
+import { default as zxcvbn } from "@zxcvbn-ts";
+import { default as zxcvbnCommonPackage } from "@zxcvbn-ts/language-common";
+import { default as zxcvbnEnPackage } from "@zxcvbn-ts/language-en";
+
+const zxcvbnts = zxcvbn.zxcvbnts;
+const languageCommon = zxcvbnCommonPackage.zxcvbnts["language-common"];
+const languageEn = zxcvbnEnPackage.zxcvbnts["language-en"];
+
 const policies = {
   length: (policy, value) => {
     if (value.length < policy.value) {
@@ -37,12 +45,12 @@ const policies = {
       return templateError(policy);
     }
   },
-  passwordStrength: (policy, value) => {
+  passwordStrength: (_policy, value) => {
     const options = {
-      graphs: zxcvbnts["language-common"].adjacencyGraphs,
+      graphs: languageCommon.adjacencyGraphs,
       dictionary: {
-        ...zxcvbnts["language-common"].dictionary,
-        ...zxcvbnts["language-en"].dictionary,
+        ...languageCommon.dictionary,
+        ...languageEn.dictionary,
       },
     };
     zxcvbnts.core.zxcvbnOptions.setOptions(options);
