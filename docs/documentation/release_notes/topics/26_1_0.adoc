@@ -51,6 +51,10 @@ by the LDAP provider.
 
 As OpenShift v3 reached end-of-life a while back, support for identity brokering with OpenShift v3 has been removed from Keycloak.
 
+= New conditional authenticator `Condition - sub-flow executed`
+
+The `Condition - sub-flow executed` is a new conditional authenticator in {project_name}. The condition checks if a previous sub-flow was executed (or not executed) successfully during the authentication flow execution. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
+
 = Defining dependencies between provider factories
 
 When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
