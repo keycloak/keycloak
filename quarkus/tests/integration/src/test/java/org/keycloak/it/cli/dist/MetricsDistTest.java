@@ -58,11 +58,53 @@ public class MetricsDistTest {
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
     void testMetricsEndpoint() {
+        // Send one request to populate some of the HTTP metrics that are not available on an instance on startup
+        when().get("/metrics").then()
+                .statusCode(200);
+
         when().get("/metrics").then()
                 .statusCode(200)
-                .body(containsString("jvm_gc_"))
-                .body(containsString("http_server_active_requests"))
-                .body(containsString("vendor_statistics_hit_ratio"))
+
+                // Test metrics used in Observability guides are present
+                // SLIs
+                .body(containsString("TYPE http_server_requests_seconds summary"))
+
+                // JVM metrics
+                .body(containsString("TYPE jvm_info counter"))
+                .body(containsString("TYPE jvm_memory_committed_bytes gauge"))
+                .body(containsString("TYPE jvm_memory_used_bytes gauge"))
+                .body(containsString("TYPE jvm_gc_pause_seconds_max gauge"))
+                .body(containsString("TYPE jvm_gc_pause_seconds summary"))
+                .body(containsString("TYPE jvm_gc_overhead gauge"))
+
+                // Database metrics
+                .body(containsString("TYPE agroal_available_count gauge"))
+                .body(containsString("TYPE agroal_active_count gauge"))
+                .body(containsString("TYPE agroal_awaiting_count gauge"))
+
+                // HTTP metrics
+                .body(containsString("TYPE http_server_active_requests gauge"))
+                .body(containsString("TYPE http_server_bytes_written summary"))
+                .body(containsString("TYPE http_server_bytes_read summary"))
+
+                // Clustering and networking
+                .body(containsString("TYPE vendor_cluster_size gauge"))
+
+                // Embedded Infinispan
+                .body(containsString("TYPE vendor_statistics_approximate_entries gauge"))
+                .body(containsString("TYPE vendor_statistics_approximate_entries_unique gauge"))
+                .body(containsString("TYPE vendor_statistics_store_times_seconds summary"))
+                .body(containsString("TYPE vendor_statistics_hit_times_seconds summary"))
+                .body(containsString("TYPE vendor_statistics_miss_times_seconds summary"))
+                .body(containsString("TYPE vendor_statistics_remove_hit_times_seconds summary"))
+                .body(containsString("TYPE vendor_statistics_remove_miss_times_seconds summary"))
+                .body(containsString("TYPE vendor_statistics_evictions gauge"))
+                .body(containsString("TYPE vendor_lock_manager_number_of_locks_held gauge"))
+                .body(containsString("TYPE vendor_transactions_prepare_times_seconds summary"))
+                .body(containsString("TYPE vendor_transactions_rollback_times_seconds summary"))
+                .body(containsString("TYPE vendor_transactions_commit_times_seconds summary"))
+
+                // Test histograms are not available without explicitly enabling the option
                 .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")));
 
         when().get("/health").then()
