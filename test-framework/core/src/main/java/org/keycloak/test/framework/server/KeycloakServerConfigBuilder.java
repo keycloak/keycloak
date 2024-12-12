@@ -194,7 +194,12 @@ public class KeycloakServerConfigBuilder {
     }
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
-        return Arrays.stream(features).map(f -> f.name().toLowerCase().replace('_', '-')).collect(Collectors.toSet());
+        return Arrays.stream(features).map(f -> {
+            if (f.getVersion() > 1) {
+                return f.getVersionedKey();
+            }
+            return f.name().toLowerCase().replace('_', '-');
+        }).collect(Collectors.toSet());
     }
 
     public enum LogHandlers {

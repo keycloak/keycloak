@@ -67,6 +67,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder adminPermissionsEnabled(boolean enabled) {
+        rep.setAdminPermissionsEnabled(enabled);
+        return this;
+    }
+
     public RealmConfigBuilder eventsListeners(String... eventListeners) {
         if (rep.getEventsListeners() == null) {
             rep.setEventsListeners(new LinkedList<>());

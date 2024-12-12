@@ -14,17 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
 
-import java.util.Arrays;
-import java.util.HashSet;
+package org.keycloak.test.admin.authz.fgap;
 
-public class AdminPermissionsAuthorizationSchema extends AuthorizationSchema {
+import org.keycloak.test.framework.realm.RealmConfig;
+import org.keycloak.test.framework.realm.RealmConfigBuilder;
 
-    public static final AdminPermissionsAuthorizationSchema INSTANCE = new AdminPermissionsAuthorizationSchema();
+public class RealmAdminPermissionsConfig implements RealmConfig {
 
-    private AdminPermissionsAuthorizationSchema() {
-        super(new ResourceType("Users", new HashSet<>(Arrays.asList("manage"))));
+    @Override
+    public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        return realm.adminPermissionsEnabled(true);
     }
-
 }
