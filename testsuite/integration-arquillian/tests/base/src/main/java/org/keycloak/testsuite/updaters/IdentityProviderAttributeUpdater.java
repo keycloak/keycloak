@@ -44,6 +44,11 @@ public class IdentityProviderAttributeUpdater {
         return this;
     }
 
+    public IdentityProviderAttributeUpdater setStoreToken(boolean storeToken) {
+        rep.setStoreToken(storeToken);
+        return this;
+    }
+
     public Closeable update() {
         identityProviderResource.update(rep);
 

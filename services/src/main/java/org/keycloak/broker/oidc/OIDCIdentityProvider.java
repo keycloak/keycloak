@@ -203,7 +203,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             String modelTokenString = model.getToken();
             AccessTokenResponse tokenResponse = JsonSerialization.readValue(modelTokenString, AccessTokenResponse.class);
             Integer exp = (Integer) tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if (exp != null && exp < Time.currentTime()) {
+            final int currentTime = Time.currentTime();
+            if (exp != null && exp < currentTime + getConfig().getMinValidityToken()) {
                 if (tokenResponse.getRefreshToken() == null) {
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
@@ -219,7 +220,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
                 AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
                 if (newResponse.getExpiresIn() > 0) {
-                    int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                    int accessTokenExpiration = currentTime + (int) newResponse.getExpiresIn();
                     newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
                 }
 
@@ -231,7 +232,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                 String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
                 if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
-                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + (int) newResponse.getExpiresIn() : 0;
+                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + (int) newResponse.getExpiresIn() : 0;
                     tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
                     tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
                     tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
@@ -241,7 +242,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 model.setToken(response);
                 tokenResponse = newResponse;
             } else if (exp != null) {
-                tokenResponse.setExpiresIn(exp - Time.currentTime());
+                tokenResponse.setExpiresIn(exp - currentTime);
             }
             tokenResponse.setIdToken(null);
             tokenResponse.setRefreshToken(null);
@@ -275,7 +276,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
-        String idToken = tokenUserSession.getNote(FEDERATED_ID_TOKEN);
 
         if (accessToken == null) {
             event.detail(Details.REASON, "requested_issuer is not linked");
@@ -284,9 +284,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
-            if (expiration == 0 || expiration > Time.currentTime()) {
+            final int currentTime = Time.currentTime();
+            if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
                 AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setExpiresIn(expiration);
+                tokenResponse.setExpiresIn(expiration > 0? expiration - currentTime : 0);
                 tokenResponse.setToken(accessToken);
                 tokenResponse.setIdToken(null);
                 tokenResponse.setRefreshToken(null);
@@ -304,7 +305,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
             }
             AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
+            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
             tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
             tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
             tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
