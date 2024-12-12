@@ -11,6 +11,11 @@ darkMode=false
 
 Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the "Dark mode" setting under the "Theme" tab in the realm settings.
 
+= Dedicated release cycle for the Node.js adapter and Javascript adapter
+
+From this release, the {project_name} javascript adapter and {project_name} Node.js adapter will have release cycle independent of the {project_name} server release cycle. The 26.1.0 release may be the last one
+when those adapters are released together with the {project_name} server. But from now on, the adapters may be released at a different time than the {project_name} server.
+
 = Authorization Code Binding to a DPoP Key
 
 Support now exists for https://datatracker.ietf.org/doc/html/rfc9449#section-10[Authorization Code Binding to a DPoP Key] including support for the DPoP with Pushed Authorization Requests.
