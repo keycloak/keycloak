@@ -18,10 +18,8 @@
 package org.keycloak.quarkus.runtime.services.metrics.events;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.binder.BaseUnits;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -33,6 +31,7 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Locale;
 
 public class MicrometerUserEventMetricsEventListenerProvider implements EventListenerProvider {
@@ -44,10 +43,6 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
-    private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
-    // Micrometer naming convention that separates lowercase words with a . (dot) character.
-    private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak.";
-    private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
     private final boolean withIdp;
     private final boolean withRealm;
@@ -56,12 +51,14 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(null, this::countEvent);
+    private final Meter.MeterProvider<Counter> meterProvider;
 
-    public MicrometerUserEventMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events) {
+    public MicrometerUserEventMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events, Meter.MeterProvider<Counter> meterProvider) {
         this.withIdp = withIdp;
         this.withRealm = withRealm;
         this.withClientId = withClientId;
         this.events = events;
+        this.meterProvider = meterProvider;
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
@@ -79,26 +76,24 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
             return;
         }
 
-        Counter.Builder counterBuilder = Counter.builder(USER_EVENTS_METER_NAME)
-                .description(DESCRIPTION_OF_EVENT_METER)
-                .tags(Tags.of(Tag.of(EVENT_TAG, eventTag),
-                        Tag.of(ERROR_TAG, getError(event))))
-                .baseUnit(BaseUnits.EVENTS);
+        LinkedList<Tag> tags = new LinkedList<>();
+
+        tags.add(Tag.of(EVENT_TAG, eventTag));
+        tags.add(Tag.of(ERROR_TAG, getError(event)));
 
         if (withRealm) {
-            counterBuilder.tag(REALM_TAG, nullToEmpty(event.getRealmName()));
+            tags.add(Tag.of(REALM_TAG, nullToEmpty(event.getRealmName())));
         }
 
         if (withIdp) {
-            counterBuilder.tag(IDP_TAG, getIdentityProvider(event));
+            tags.add(Tag.of(IDP_TAG, getIdentityProvider(event)));
         }
 
         if (withClientId) {
-            counterBuilder.tag(CLIENT_ID_TAG, getClientId(event));
+            tags.add(Tag.of(CLIENT_ID_TAG, getClientId(event)));
         }
 
-        counterBuilder.register(Metrics.globalRegistry)
-                .increment();
+        meterProvider.withTags(tags).increment();
     }
 
     @Override

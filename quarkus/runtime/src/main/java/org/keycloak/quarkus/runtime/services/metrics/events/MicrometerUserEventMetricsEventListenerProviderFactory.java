@@ -17,6 +17,10 @@
 
 package org.keycloak.quarkus.runtime.services.metrics.events;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.BaseUnits;
 import org.bouncycastle.util.Strings;
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
@@ -32,18 +36,27 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
     private static final String ID = "micrometer-user-event-metrics";
     private static final String TAGS_OPTION = "tags";
     private static final String EVENTS_OPTION = "events";
+    private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
+    // Micrometer naming convention that separates lowercase words with a . (dot) character.
+    private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak.";
+    private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
     private boolean withIdp, withRealm, withClientId;
 
     private HashSet<String> events;
+    private Meter.MeterProvider<Counter> meterProvider;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new MicrometerUserEventMetricsEventListenerProvider(session, withIdp, withRealm, withClientId, events);
+        return new MicrometerUserEventMetricsEventListenerProvider(session, withIdp, withRealm, withClientId, events, meterProvider);
     }
 
     @Override
     public void init(Config.Scope config) {
+        meterProvider = Counter.builder(USER_EVENTS_METER_NAME)
+                .description(DESCRIPTION_OF_EVENT_METER)
+                .baseUnit(BaseUnits.EVENTS).withRegistry(Metrics.globalRegistry);
+
         String tagsConfig = config.get(TAGS_OPTION);
         if (tagsConfig != null) {
             for (String s : Strings.split(tagsConfig, ',')) {
