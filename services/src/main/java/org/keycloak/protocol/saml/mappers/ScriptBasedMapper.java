@@ -1,5 +1,6 @@
 package org.keycloak.protocol.saml.mappers;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -141,19 +142,17 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
                 bindings.put("userSession", userSession);
                 bindings.put("keycloakSession", session);
             });
-            //If the result is a an array or is iterable, get all values
-            if (attributeValue.getClass().isArray()){
-                attributeValue = Arrays.asList((Object[])attributeValue);
-            }
-            if (attributeValue instanceof Iterable) {
+            //If the result is an array, get all values
+            if (attributeValue instanceof ScriptObjectMirror && ((ScriptObjectMirror) attributeValue).isArray()) {
+                final Collection<Object> values = ((ScriptObjectMirror) attributeValue).values();
                 if (singleAttribute) {
                     AttributeType singleAttributeType = AttributeStatementHelper.createAttributeType(mappingModel);
                     attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(singleAttributeType));
-                    for (Object value : (Iterable)attributeValue) {
+                    for (Object value : values) {
                         singleAttributeType.addAttributeValue(value);
                     }
                 } else {
-                    for (Object value : (Iterable)attributeValue) {
+                    for (Object value : values) {
                         AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, value.toString());
                     }
                 }
