@@ -29,6 +29,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -93,8 +94,8 @@ public class AdminPermissionsTest extends AbstractTestRealmKeycloakTest {
             authorizationSettings = testRealm().clients().get(adminPermissionsClient.getId()).authorization().getSettings();
             assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
 
-            List<String> scopeNames = testRealm().clients().get(adminPermissionsClient.getId()).authorization().scopes().scopes().stream().map((rep) -> rep.getName()).collect(Collectors.toList());
-            assertThat(scopeNames, Matchers.hasItem("manage"));
+            List<String> scopeNames = testRealm().clients().get(adminPermissionsClient.getId()).authorization().scopes().scopes().stream().map(ScopeRepresentation::getName).collect(Collectors.toList());
+            assertThat(scopeNames, Matchers.containsInAnyOrder("manage", "manage-members", "manage-membership", "view", "view-members"));
         }
     }
 
