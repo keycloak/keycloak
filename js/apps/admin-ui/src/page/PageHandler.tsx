@@ -1,6 +1,10 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSpinner,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -76,6 +80,9 @@ export const PageHandler = ({
     }
   };
 
+  if (!id) {
+    return <KeycloakSpinner />;
+  }
   return (
     <PageSection variant="light">
       <Form
