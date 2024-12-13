@@ -47,16 +47,13 @@ describe("Partial realm export", () => {
   it("Exports the realm", () => {
     modal.includeGroupsAndRolesSwitch().click({ force: true });
     modal.includeClientsSwitch().click({ force: true });
-    cy.intercept(
-      "POST",
-      "/admin/realms/Partial-export-test-realm/partial-export*",
-    ).as("export");
+    cy.intercept("POST", `/admin/realms/${REALM_NAME}/partial-export*`).as(
+      "export",
+    );
     modal.exportButton().click();
     cy.wait("@export");
 
-    cy.readFile(
-      Cypress.config("downloadsFolder") + "/realm-export.json",
-    ).should("exist");
+    cy.readFile(Cypress.config("downloadsFolder") + "/realm-export.json");
     modal.exportButton().should("not.exist");
   });
 });
