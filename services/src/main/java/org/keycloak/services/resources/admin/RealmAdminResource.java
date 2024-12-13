@@ -418,8 +418,14 @@ public class RealmAdminResource {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
 
-        ReservedCharValidator.validate(rep.getRealm());
-        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+        try {
+            ReservedCharValidator.validate(rep.getRealm());
+            ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
+        } catch (ReservedCharValidator.ReservedCharException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        }
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
