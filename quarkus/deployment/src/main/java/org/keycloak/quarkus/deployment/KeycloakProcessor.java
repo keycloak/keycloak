@@ -44,6 +44,8 @@ import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
+import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
+import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
@@ -302,7 +304,11 @@ class KeycloakProcessor {
     // Inspired by AgroalProcessor
     @BuildStep
     @Produce(CheckMultipleDatasourcesBuildStep.class)
-    void checkMultipleDatasourcesUseXA(DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+    void checkMultipleDatasourcesUseXA(TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+        if (transactionManagerConfig.unsafeMultipleLastResources
+                .orElse(UnsafeMultipleLastResourcesMode.DEFAULT) != UnsafeMultipleLastResourcesMode.FAIL) {
+            return;
+        }
         long nonXADatasourcesCount = dataSourcesConfig.dataSources().keySet().stream()
                 .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
                 .filter(jdbc -> jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA)
