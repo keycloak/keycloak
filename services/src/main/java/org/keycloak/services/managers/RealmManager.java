@@ -536,6 +536,7 @@ public class RealmManager {
             session.getContext().setRealm(realm);
             ReservedCharValidator.validate(rep.getRealm());
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
             realm.setName(rep.getRealm());
 
             // setup defaults
