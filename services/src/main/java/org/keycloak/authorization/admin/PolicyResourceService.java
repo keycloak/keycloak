@@ -27,9 +27,16 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -45,13 +52,15 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class PolicyResourceService {
 
     private final Policy policy;
@@ -69,9 +78,10 @@ public class PolicyResourceService {
     }
 
     @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponse(responseCode = "201", description = "Created")
     public Response update(String payload) {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
@@ -94,6 +104,7 @@ public class PolicyResourceService {
     }
 
     @DELETE
+    @APIResponse(responseCode = "204", description = "No Content")
     public Response delete() {
         if (auth != null) {
             this.auth.realm().requireManageAuthorization();
@@ -122,8 +133,12 @@ public class PolicyResourceService {
     }
 
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PolicyRepresentation.class))),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Response findById(@QueryParam("fields") String fields) {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
@@ -146,8 +161,9 @@ public class PolicyResourceService {
 
     @Path("/dependentPolicies")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PolicyRepresentation.class, type = SchemaType.ARRAY)))
     public Response getDependentPolicies() {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
@@ -172,8 +188,9 @@ public class PolicyResourceService {
 
     @Path("/scopes")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ScopeRepresentation.class, type = SchemaType.ARRAY)))
     public Response getScopes() {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
@@ -195,8 +212,9 @@ public class PolicyResourceService {
 
     @Path("/resources")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ResourceRepresentation.class, type = SchemaType.ARRAY)))
     public Response getResources() {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
@@ -218,8 +236,9 @@ public class PolicyResourceService {
 
     @Path("/associatedPolicies")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PolicyRepresentation.class, type = SchemaType.ARRAY)))
     public Response getAssociatedPolicies() {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
