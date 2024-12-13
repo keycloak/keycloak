@@ -21,6 +21,10 @@ public class MailServer extends ManagedTestResource {
         greenMail.stop();
     }
 
+    public void credentials(String username, String password) {
+        greenMail.setUser(username, password);
+    }
+
     public MimeMessage[] getReceivedMessages() {
         return greenMail.getReceivedMessages();
     }
