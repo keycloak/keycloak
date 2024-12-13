@@ -27,7 +27,6 @@ import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -93,6 +92,7 @@ public abstract class AbstractConfigurationTest {
 
     public static void setSystemProperty(String key, String value, Runnable runnable) {
         System.setProperty(key, value);
+        createConfig();
         try {
             runnable.run();
         } finally {
@@ -100,32 +100,32 @@ public abstract class AbstractConfigurationTest {
         }
     }
 
-    @AfterClass
-    public static void resetConfigruation() {
-        ConfigurationTest.createConfig(); // onAfter doesn't actually reset the config
-    }
-
-    @After
-    public void onAfter() {
-        Properties current = System.getProperties();
-
-        for (String name : current.stringPropertyNames()) {
-            if (!SYSTEM_PROPERTIES.containsKey(name)) {
-                current.remove(name);
-            }
-        }
+    @BeforeClass
+    public static void resetConfiguration() {
+        System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
 
         for (String name : new HashMap<>(System.getenv()).keySet()) {
             if (!ENVIRONMENT_VARIABLES.containsKey(name)) {
                 removeEnvVar(name);
             }
         }
+        ENVIRONMENT_VARIABLES.forEach((key, value) -> {
+            if (!System.getenv(key).equals(value)) {
+                putEnvVar(key, value);
+            }
+        });
 
         SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
         Profile.reset();
+        ConfigProviderResolver.setInstance(null);
+    }
+
+    @After
+    public void onAfter() {
+        resetConfiguration();
     }
 
     protected Config.Scope initConfig(String... scope) {
@@ -169,6 +169,9 @@ public abstract class AbstractConfigurationTest {
 
     protected static void addPersistedConfigValues(Map<String, String> values) {
         var configValueProps = PersistedConfigSource.getInstance().getConfigValueProperties();
-        values.forEach((k, v) -> configValueProps.put(k, new ConfigValueBuilder().withName(k).withValue(v).build()));
+        values.forEach((k, v) -> configValueProps.put(k,
+                new ConfigValueBuilder().withName(k).withValue(v).withRawValue(v)
+                        .withConfigSourceName(PersistedConfigSource.getInstance().getName())
+                        .withConfigSourceOrdinal(PersistedConfigSource.getInstance().getOrdinal()).build()));
     }
 }

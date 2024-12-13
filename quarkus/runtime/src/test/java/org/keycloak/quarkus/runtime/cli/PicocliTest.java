@@ -27,10 +27,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
@@ -89,6 +91,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
+        protected void initProfile(List<String> cliArgs, String currentCommandName) {
+            super.initProfile(cliArgs, currentCommandName);
+            config = createConfig();
+        }
+
+        @Override
         public void build() throws Throwable {
             reaug = true;
             this.buildProps = getNonPersistedBuildTimeOptions();
@@ -99,7 +107,6 @@ public class PicocliTest extends AbstractConfigurationTest {
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
         ConfigArgsConfigSource.setCliArgs(args);
-        // TODO: this needs refined, otherwise profile handling will not be correct
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
@@ -255,14 +262,14 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void spiRuntimeAllowedWithStart() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--spi-something-pass=changeme");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--http-enabled=true", "--spi-something-pass=changeme");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.spi-something-pass")));
     }
 
     @Test
     public void spiRuntimeWarnWithBuild() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--spi-something-pass=changeme");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--spi-something-pass=changeme");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("The following run time options were found, but will be ignored during build time: kc.spi-something-pass"));
     }
@@ -290,7 +297,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testReaugFromProdToDev() {
-        build("build");
+        build("build", "--db=dev-file");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
@@ -309,13 +316,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
     }
 
     @Test
     public void testReaugFromProdToDevExport() {
-        build("build");
+        build("build", "--db=dev-file");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
@@ -325,12 +333,22 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testNoReaugFromProdToExport() {
-        build("build");
+        build("build", "--db=dev-file");
+
+        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.reaug);
+    }
+
+    @Ignore("Not valid until db is required for production")
+    @Test
+    public void testDBRequiredAutoBuild() {
+        build("build", "--db=dev-file");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.reaug);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
 
     @Test
@@ -338,7 +356,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=name", "--http-enabled=true");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--hostname=name", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
     }
@@ -358,7 +376,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--file=file");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));;
@@ -366,10 +384,10 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testOptimizedReaugmentationMessage() {
-        build("build");
+        build("build", "--db=dev-file");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--features=docker", "--hostname=name", "--http-enabled=true");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--features=docker", "--hostname=name", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("features=<unset> > features=docker"));
         assertTrue(nonRunningPicocli.reaug);
@@ -377,7 +395,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void fastStartOptimizedSucceeds() {
-        build("build");
+        build("build", "--db=dev-file");
 
         System.setProperty("kc.http-enabled", "true");
         System.setProperty("kc.hostname-strict", "false");
@@ -409,6 +427,22 @@ public class PicocliTest extends AbstractConfigurationTest {
         var value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak\".level");
         assertEquals("quarkus.log.category.\"org.keycloak\".level", value.getName());
         assertEquals("WARN", value.getValue());
+    }
+
+    @Test
+    public void warnDBRequired() {
+        // dev profile has a default
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                not(containsString("Usage of the default value for the db option")));
+        onAfter();
+
+        // prod profiles warn about db
+        nonRunningPicocli = pseudoLaunch("build");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead."));
     }
 
 }
