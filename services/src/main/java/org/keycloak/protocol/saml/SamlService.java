@@ -914,8 +914,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
         try {
-            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            List<KeyWrapper> keys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
                     .sorted(SamlService::compareKeys)
+                    .collect(Collectors.toList());
+            List<Element> signingKeys = keys.stream()
                     .map(key -> {
                         try {
                             return IDPMetadataDescriptor
@@ -927,6 +929,8 @@ public class SamlService extends AuthorizationEndpointBase {
                     .collect(Collectors.toList());
 
             return IDPMetadataDescriptor.getIDPDescriptor(
+                keys.isEmpty()? null : keys.iterator().next(),
+                realm.getAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.class, null),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),

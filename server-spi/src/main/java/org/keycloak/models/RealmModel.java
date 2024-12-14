@@ -149,6 +149,17 @@ public interface RealmModel extends RoleContainerModel {
         String v = getAttribute(name);
         return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
+    default <V extends Enum<V>> V getAttribute(String name, Class<V> enumClass, V defaultValue) {
+        String value = getAttribute(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
+    }
     Map<String, String> getAttributes();
 
     //--- brute force settings
