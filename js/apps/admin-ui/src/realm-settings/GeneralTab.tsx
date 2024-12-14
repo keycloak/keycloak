@@ -36,6 +36,7 @@ import {
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
+import { SIGNATURE_ALGORITHMS } from "../clients/add/SamlSignature";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
@@ -255,6 +256,20 @@ function RealmSettingsGeneralTabForm({
               key: policy,
               value: t(`unmanagedAttributePolicy.${policy}`),
             }))}
+          />
+          <SelectControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.signature.algorithm",
+            )}
+            label={t("signatureAlgorithmIdentityProviderMetadata")}
+            labelIcon={t("signatureAlgorithmIdentityProviderMetadataHelp")}
+            controller={{
+              defaultValue: "",
+            }}
+            options={[
+              { key: "", value: t("choose") },
+              ...SIGNATURE_ALGORITHMS.map((v) => ({ key: v, value: v })),
+            ]}
           />
           <FormGroup
             label={t("endpoints")}
