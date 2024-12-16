@@ -110,6 +110,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PROMPT_VALUE_NONE = "none";
     public static final String PROMPT_VALUE_LOGIN = "login";
     public static final String PROMPT_VALUE_CONSENT = "consent";
+    public static final String PROMPT_VALUE_CREATE = "create";
     public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
 
     // Client authentication methods

@@ -80,7 +80,9 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -123,6 +125,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Page
     protected AppPage appPage;
+
+    @Page
+    protected RegisterPage registerPage;
 
     @Page
     protected LoginPage loginPage;
@@ -404,6 +409,35 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert userSession didn't change
         Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
+    }
+
+    // prompt=create
+    @Test
+    public void promptCreate() {
+
+        // Assert registration page with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=create");
+        registerPage.assertCurrent();
+    }
+
+    // prompt=create
+    @Test
+    public void promptCreateShouldFailWhenRegistrationsAreDisabled() {
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        Boolean registrationAllowed = realmRep.isRegistrationAllowed();
+        realmRep.setRegistrationAllowed(false);
+        adminClient.realm("test").update(realmRep);
+
+        // Assert registration page with prompt=login
+        try {
+            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=create");
+            errorPage.assertCurrent();
+            assertTrue(errorPage.getError().contains("Registration not allowed"));
+        } finally {
+            realmRep.setRegistrationAllowed(registrationAllowed);
+            adminClient.realm("test").update(realmRep);
+        }
     }
 
     // prompt=consent

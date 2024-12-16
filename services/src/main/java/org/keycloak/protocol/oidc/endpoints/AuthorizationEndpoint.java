@@ -204,6 +204,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader(session);
+
+        // Add support for Initiating User Registration via OpenID Connect 1.0 via prompt=create
+        // see: https://openid.net/specs/openid-connect-prompt-create-1_0.html#section-4.1
+        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(params.getFirst(OAuth2Constants.PROMPT))) {
+            if (!Organizations.isRegistrationAllowed(session, realm)) {
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
+            }
+            return buildRegister();
+        }
+
         switch (action) {
             case REGISTER:
                 return buildRegister();
