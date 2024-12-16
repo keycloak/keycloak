@@ -27,7 +27,6 @@ import java.util.Optional;
 import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.CREDENTIAL_BUILD_CONFIG_KEY;
 import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.DOT_SEPARATOR;
 import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.VERIFIABLE_CREDENTIAL_TYPE_KEY;
-import static org.keycloak.provider.ProviderConfigProperty.MULTIVALUED_STRING_SEPARATOR;
 
 /**
  * Define credential-specific configurations for its builder.
@@ -35,6 +34,8 @@ import static org.keycloak.provider.ProviderConfigProperty.MULTIVALUED_STRING_SE
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class CredentialBuildConfig {
+
+    public static final String MULTIVALUED_STRING_SEPARATOR = ",";
 
     private static final String TOKEN_JWS_TYPE_KEY = "token_jws_type";
     private static final String HASH_ALGORITHM_KEY = "hash_algorithm";

@@ -34,7 +34,6 @@ public class ProviderConfigProperty {
      * Possibility to configure multiple String values of any value (something like "redirect_uris" for clients)
      */
     public static final String MULTIVALUED_STRING_TYPE="MultivaluedString";
-    public static final String MULTIVALUED_STRING_SEPARATOR = ",";
 
     public static final String SCRIPT_TYPE="Script";
     public static final String FILE_TYPE="File";
