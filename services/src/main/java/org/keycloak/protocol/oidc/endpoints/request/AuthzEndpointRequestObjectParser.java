@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.endpoints.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -64,6 +65,29 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
         } else {
             return val.toString();
         }
+    }
+
+    @Override
+    protected Set<String> getMultiParameter(String paramName) {
+
+        JsonNode paramNode = this.requestParams.get(paramName);
+        if (paramNode == null) {
+            return null;
+        }
+
+        if (paramNode.isTextual()) {
+            return Set.of(paramNode.asText());
+        }
+
+        if (paramNode.isArray()) {
+            Set<String> result = new LinkedHashSet<>();
+            for(int i = 0; i < paramNode.size(); i++) {
+                result.add(paramNode.get(i).asText());
+            }
+            return result;
+        }
+
+        return null;
     }
 
     @Override
