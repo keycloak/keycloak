@@ -18,7 +18,8 @@ import { ReactNode, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { label, useAlerts } from "ui-shared";
+import { label } from "ui-shared";
+import { useAlerts } from "../alert/Alerts";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { UserAttribute, UserFilter } from "./UserDataTable";
 
