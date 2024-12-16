@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
@@ -121,7 +122,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        context.attempted();
+        if (isSSOAuthentication(context.getAuthenticationSession())) {
+            // if re-authenticating in the scope of an organization
+            context.success();
+        } else {
+            context.attempted();
+        }
     }
 
     @Override
@@ -134,9 +140,17 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         HttpRequest request = context.getHttpRequest();
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (alias.isEmpty()) {
-            return Organizations.resolveOrganization(session, user, domain);
+            OrganizationModel organization = Organizations.resolveOrganization(session, user, domain);
+
+            if (organization != null) {
+                // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
+                authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+            }
+
+            return organization;
         }
 
         OrganizationProvider provider = getOrganizationProvider();
@@ -146,7 +160,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return null;
         }
 
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
         // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
         authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
 
@@ -160,6 +173,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationScope scope = OrganizationScope.valueOfScope(rawScope);
 
         if (!OrganizationScope.ANY.equals(scope) || user == null) {
+            return false;
+        }
+
+        if (authSession.getClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE) != null) {
+            // organization already selected
             return false;
         }
 
@@ -274,20 +292,31 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         context.challenge(form.createLoginUsername());
     }
 
-    private void initialChallenge(AuthenticationFlowContext context){
-        // the default challenge won't show any broker but just the identity-first login page and the option to try a different authentication mechanism
-        LoginFormsProvider form = context.form()
-                .setAttributeMapper(attributes -> {
-                    attributes.computeIfPresent("social",
-                            (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
-                    );
-                    attributes.computeIfPresent("auth",
-                            (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
-                    );
-                    return attributes;
-                });
+    private void initialChallenge(AuthenticationFlowContext context) {
+        UserModel user = context.getUser();
 
-        context.challenge(form.createLoginUsername());
+        if (user == null) {
+            // the default challenge won't show any broker but just the identity-first login page and the option to try a different authentication mechanism
+            LoginFormsProvider form = context.form()
+                    .setAttributeMapper(attributes -> {
+                        attributes.computeIfPresent("social",
+                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
+                        );
+                        attributes.computeIfPresent("auth",
+                                (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                        );
+                        return attributes;
+                    });
+
+            context.challenge(form.createLoginUsername());
+        } else if (isSSOAuthentication(context.getAuthenticationSession())) {
+            if (shouldUserSelectOrganization(context, user)) {
+                return;
+            }
+
+            // user is re-authenticating and there are no organizations to select
+            context.success();
+        }
     }
 
     private boolean hasPublicBrokers(OrganizationModel organization) {
