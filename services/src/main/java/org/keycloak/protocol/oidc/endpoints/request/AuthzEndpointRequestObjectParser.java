@@ -41,6 +41,7 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
     private final JsonNode requestParams;
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) {
+        super(session);
         this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class);
 
         if (this.requestParams == null) {

@@ -53,7 +53,7 @@ public class AuthorizationEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
             boolean isResponseTypeParameterRequired = isResponseTypeParameterRequired(requestParams, endpointType);
-            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams, isResponseTypeParameterRequired);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(session, requestParams, isResponseTypeParameterRequired);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
