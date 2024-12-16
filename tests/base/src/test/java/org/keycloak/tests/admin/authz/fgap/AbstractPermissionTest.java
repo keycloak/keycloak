@@ -20,12 +20,14 @@ package org.keycloak.tests.admin.authz.fgap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 import java.util.Set;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -77,6 +79,10 @@ public abstract class AbstractPermissionTest {
         ScopePermissionRepresentation build() {
             return permission;
         }
+        PermissionBuilder name(String name) {
+            permission.setName(name);
+            return this;
+        }
         PermissionBuilder resourceType(String resourceType) {
             permission.setResourceType(resourceType);
             return this;
@@ -87,6 +93,10 @@ public abstract class AbstractPermissionTest {
         }
         PermissionBuilder resources(Set<String> resources) {
             permission.setResources(resources);
+            return this;
+        }
+        PermissionBuilder addPolicies(List<String> policies) {
+            policies.forEach(policy -> permission.addPolicy(policy));
             return this;
         }
     }

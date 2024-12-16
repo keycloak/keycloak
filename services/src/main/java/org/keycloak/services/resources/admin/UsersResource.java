@@ -71,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -453,7 +454,7 @@ public class UsersResource {
             }
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);
+        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults).filter(usersEvaluator::canView);
         return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
     }
 

@@ -1055,20 +1055,9 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
-        server.setAuthorizationSchema(getAuthorizationSchema(client));
+        server.setAuthorizationSchema(AdminPermissionsSchema.SCHEMA.getAuthorizationSchema(client));
 
         return server;
-    }
-
-    private static AuthorizationSchema getAuthorizationSchema(ClientModel client) {
-        if (!KeycloakModelUtils.isAdminPermissionsEnabled(client.getRealm())) {
-            return null;
-        }
-        ClientModel adminPermissionsClient = client.getRealm().getAdminPermissionsClient();
-        if (adminPermissionsClient == null || ! client.getClientId().equals(adminPermissionsClient.getClientId())) {
-            return null;
-        }
-        return AdminPermissionsSchema.SCHEMA;
     }
 
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {

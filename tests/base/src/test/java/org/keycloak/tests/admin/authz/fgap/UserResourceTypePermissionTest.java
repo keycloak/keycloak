@@ -17,11 +17,12 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -73,7 +73,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         ScopePermissionRepresentation permissionRep = result.get(0);
         ScopePermissionResource permission = getScopePermissionsResource().findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
-        assertEquals(1, permission.scopes().size());
+        assertEquals(AdminPermissionsSchema.USERS.getScopes().size(), permission.scopes().size());
         assertEquals(3, permission.associatedPolicies().size());
     }
 
@@ -85,7 +85,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         ScopePermissionRepresentation permissionRep = result.get(0);
         ScopePermissionResource permission = getScopePermissionsResource().findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
-        assertEquals(1, permission.scopes().size());
+        assertEquals(AdminPermissionsSchema.USERS.getScopes().size(), permission.scopes().size());
         assertEquals(1, permission.resources().size());
         assertEquals(3, permission.associatedPolicies().size());
     }
@@ -109,20 +109,19 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         assertEquals(1, existing.size());
         getScopePermissionsResource().findById(existing.get(0).getId()).remove();
         existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
-        assertEquals(0, existing.size());
+        assertThat(existing, nullValue());
 
         existing = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
         assertEquals(1, existing.size());
     }
 
     private ScopePermissionRepresentation createUserPermission(ManagedUser... users) {
-        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
-
-        permission.setName(KeycloakModelUtils.generateId());
-        permission.setResourceType(AdminPermissionsSchema.USERS.getType());
-        permission.setResources(Arrays.stream(users).map(ManagedUser::getUsername).collect(Collectors.toSet()));
-        permission.setScopes(AdminPermissionsSchema.USERS.getScopes());
-        permission.setPolicies(Set.of("User Policy 0", "User Policy 1", "User Policy 2"));
+        ScopePermissionRepresentation permission = PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Arrays.stream(users).map(ManagedUser::getUsername).collect(Collectors.toSet()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .addPolicies(List.of("User Policy 0", "User Policy 1", "User Policy 2"))
+                .build();
 
         createPermission(permission);
 
@@ -130,12 +129,11 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     }
 
     private ScopePermissionRepresentation createAllUserPermission() {
-        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
-
-        permission.setName(KeycloakModelUtils.generateId());
-        permission.setResourceType(AdminPermissionsSchema.USERS.getType());
-        permission.setScopes(AdminPermissionsSchema.USERS.getScopes());
-        permission.setPolicies(Set.of("User Policy 0", "User Policy 1", "User Policy 2"));
+        ScopePermissionRepresentation permission = PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .addPolicies(List.of("User Policy 0", "User Policy 1", "User Policy 2"))
+                .build();
 
         createPermission(permission);
 
