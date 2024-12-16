@@ -145,3 +145,9 @@ In previous versions, clicking on *Sign out all active sessions* in the admin co
 
 This has been changed. Now all sessions, regular and offline, are removed when signing out of all active sessions.
 
+= Network Policy support added to the {project_name} Operator
+
+NOTE: Preview feature.
+
+To improve the security of your Kubernetes deployment, https://kubernetes.io/docs/concepts/services-networking/network-policies/[Network Policies] can be specified in your {project_name} CR.
+The {project_name} Operator accepts the ingress rules, which define from where the traffic is allowed to come from, and automatically creates the necessary Network Policies.

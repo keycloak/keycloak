@@ -372,7 +372,7 @@ spec:
 
 The above example allows traffic from all sources.
 The Keycloak CR can be extended to include a list of rules for each of the endpoints exposed by {project_name}.
-These rules specify from where (the source) the traffic are allow to communicate with the {project_name} Pods.
+These rules specify from where (the source) the traffic is allowed and it's possible to communicate with the {project_name} Pods.
 
 .Extended Network Policy configuration
 [source,yaml]
