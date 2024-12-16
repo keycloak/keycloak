@@ -41,7 +41,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.RealmManager;
@@ -82,7 +81,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         this.session = session;
         this.realm = realm;
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
-        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
             this.authz = factory.create(session, realm);
         }
@@ -148,23 +147,18 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     @Override
-    public ClientModel getRealmManagementClient() {
-        ClientModel client = null;
+    public ClientModel getRealmPermissionsClient() {
         if (realm.getName().equals(Config.getAdminRealm())) {
-            client = realm.getClientByClientId(Config.getAdminRealm() + "-realm");
+            return realm.getClientByClientId(Config.getAdminRealm() + "-realm");
         } else {
-            client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-
+            return realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
         }
-        return client;
     }
 
     @Override
     public AuthorizationProvider authz() {
         return authz;
     }
-
-
 
     @Override
     public void requireAnyAdminRole() {
@@ -182,7 +176,6 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean hasOneAdminRole(String... adminRoles) {
-        RealmModel realm = this.realm;
         return hasOneAdminRole(realm, adminRoles);
     }
 
@@ -239,7 +232,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     @Override
     public RealmPermissions realm() {
         if (realmPermissions != null) return realmPermissions;
-        realmPermissions = new RealmPermissions(session, realm, authz, this);
+        realmPermissions = new RealmPermissions(this);
         return realmPermissions;
     }
 
@@ -276,7 +269,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     public ResourceServer realmResourceServer() {
         if (authz == null) return null;
         if (realmResourceServer != null) return realmResourceServer;
-        ClientModel client = getRealmManagementClient();
+        ClientModel client = getRealmPermissionsClient();
         if (client == null) return null;
         realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
         return realmResourceServer;
@@ -286,7 +279,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     public ResourceServer initializeRealmResourceServer() {
         if (authz == null) return null;
         if (realmResourceServer != null) return realmResourceServer;
-        ClientModel client = getRealmManagementClient();
+        ClientModel client = getRealmPermissionsClient();
         if (client == null) return null;
         realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
         if (realmResourceServer == null) {

@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 
@@ -24,6 +26,15 @@ public class RealmAdminPermissionsConfig implements RealmConfig {
 
     @Override
     public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        realm.addUser("myadmin")
+                .name("My", "Admin")
+                .email("myadmin@localhost")
+                .emailVerified()
+                .password("password")
+                .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_USERS);
+        realm.addClient("myclient")
+                .secret("mysecret")
+                .directAccessGrants();
         return realm.adminPermissionsEnabled(true);
     }
 }

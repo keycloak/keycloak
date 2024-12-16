@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import jakarta.ws.rs.ForbiddenException;
+import java.util.LinkedList;
 
 /**
  * Manages default policies for all users.
@@ -73,9 +74,9 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     private final KeycloakSession session;
     private final AuthorizationProvider authz;
-    private final MgmtPermissions root;
+    protected final MgmtPermissions root;
     private final PolicyStore policyStore;
-    private final ResourceStore resourceStore;
+    protected final ResourceStore resourceStore;
     private boolean grantIfNoPermission = false;
 
     UserPermissions(KeycloakSession session, AuthorizationProvider authz, MgmtPermissions root) {
@@ -487,7 +488,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     }
 
-    private boolean hasPermission(String... scopes) {
+    protected boolean hasPermission(String... scopes) {
         return hasPermission(null, scopes);
     }
 
@@ -583,12 +584,12 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         return evaluateHierarchy(eval, group.getParent(), visited);
     }
 
-    private boolean canManageByGroup(UserModel user) {
+    protected boolean canManageByGroup(UserModel user) {
         if (authz == null) return false;
         return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
 
     }
-    private boolean canViewByGroup(UserModel user) {
+    protected boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
         return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
     }

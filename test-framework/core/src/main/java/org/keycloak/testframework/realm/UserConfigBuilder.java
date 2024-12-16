@@ -25,6 +25,11 @@ public class UserConfigBuilder {
         return new UserConfigBuilder(rep);
     }
 
+    public UserConfigBuilder id(String id) {
+        rep.setId(id);
+        return this;
+    }
+
     public UserConfigBuilder enabled(boolean enabled) {
         rep.setEnabled(enabled);
         return this;

@@ -121,7 +121,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         RoleModel exampleRole = realm.getRole("example");
 
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
-        RoleModel impersonateRole = management.getRealmManagementClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
+        RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
 
         ClientModel clientExchanger = realm.addClient("client-exchanger");
         clientExchanger.setClientId("client-exchanger");

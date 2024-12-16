@@ -16,35 +16,20 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.jboss.logging.Logger;
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-
 import jakarta.ws.rs.ForbiddenException;
 
 /**
- * Manages default policies for all users.
- *
- *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 class RealmPermissions implements RealmPermissionEvaluator {
-    private static final Logger logger = Logger.getLogger(RealmPermissions.class);
-    protected final KeycloakSession session;
-    protected final RealmModel realm;
-    protected final AuthorizationProvider authz;
-    protected final MgmtPermissions root;
 
-    public RealmPermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
-        this.session = session;
-        this.realm = realm;
-        this.authz = authz;
+    private final MgmtPermissions root;
+
+    public RealmPermissions(MgmtPermissions root) {
         this.root = root;
     }
-
 
     public boolean canManageRealmDefault() {
         return root.hasOneAdminRole(AdminRoles.MANAGE_REALM);
@@ -87,7 +72,6 @@ class RealmPermissions implements RealmPermissionEvaluator {
             throw new ForbiddenException();
         }
     }
-
 
     @Override
     public boolean canManageRealm() {

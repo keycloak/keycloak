@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientProvider;
@@ -26,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributes;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 
 import jakarta.persistence.EntityManager;
@@ -73,7 +73,7 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
 
                         if (realm.getAdminPermissionsClient() != null) return;
 
-                        KeycloakModelUtils.setupAdminPermissionsClient(keycloakSession, realm);
+                        AdminPermissionsSchema.SCHEMA.init(keycloakSession, realm);
                     }
                 }
             });
