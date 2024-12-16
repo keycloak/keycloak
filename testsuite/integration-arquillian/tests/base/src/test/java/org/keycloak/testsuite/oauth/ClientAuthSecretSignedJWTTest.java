@@ -43,7 +43,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -127,6 +129,41 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testCodeToTokenRequestSuccessHS512() throws Exception {
         testCodeToTokenRequestSuccess(Algorithm.HS512);
+    }
+
+
+    // Issue 34547
+    @Test
+    public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() throws Exception {
+        // Test when client has public/private keys generated despite the fact that it uses client-secret for the client authentication (and not those keys)
+        ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").getCertficateResource("jwt.credential").generate();
+
+        testCodeToTokenRequestSuccess(Algorithm.HS256);
+    }
+
+    @Test
+    public void testCodeToTokenRequestFailureWhenClientHasPrivateKeyJWT() throws Exception {
+        // Setup client for "private_key_jwt" authentication
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        client.getCertficateResource("jwt.credential").generate();
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+        client.update(clientRep);
+
+        // Client should not be able to authenticate with "client_secret_jwt"
+        try {
+            oauth.clientId("test-app");
+            oauth.doLogin("test-user@localhost", "password");
+            events.expectLogin().client("test-app").assertEvent();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+        } finally {
+            clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+            client.update(clientRep);
+        }
     }
 
     @Test
