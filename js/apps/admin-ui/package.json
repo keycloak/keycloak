@@ -137,6 +137,7 @@
     "vite": "^6.0.7",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.4.0",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "uuid": "^11.0.3"
   }
 }
