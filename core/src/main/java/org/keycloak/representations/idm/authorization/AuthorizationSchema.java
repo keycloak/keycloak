@@ -18,21 +18,52 @@ package org.keycloak.representations.idm.authorization;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Arrays;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.io.IOException;
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AuthorizationSchema {
 
-    private final Set<ResourceType> resourceTypes;
+    @JsonDeserialize(using = ResourceTypeDeserializer.class)
+    private final Map<String, ResourceType> resourceTypes;
 
     @JsonCreator
-    public AuthorizationSchema(@JsonProperty("resourceTypes") ResourceType... resourceTypes) {
-        this.resourceTypes = Arrays.stream(resourceTypes).collect(Collectors.toSet());
+    public AuthorizationSchema(@JsonProperty("resourceTypes") Map<String, ResourceType> resourceTypes) {
+        this.resourceTypes = resourceTypes;
     }
 
-    public Set<ResourceType> getResourceTypes() {
-        return Collections.unmodifiableSet(resourceTypes);
+    public Map<String, ResourceType> getResourceTypes() {
+        return Collections.unmodifiableMap(resourceTypes);
+    }
+
+    // Custom deserializer to handle both arrays and maps
+    public static class ResourceTypeDeserializer extends JsonDeserializer<Map<String, ResourceType>> {
+        @Override
+        public Map<String, ResourceType> deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            // Check if the input is an array or an object
+            if (parser.isExpectedStartArrayToken()) {
+                // Deserialize array of ResourceType and convert to Map
+                List<ResourceType> resourceTypeList = parser.readValueAs(new TypeReference<List<ResourceType>>() {});
+                return resourceTypeList.stream()
+                        .collect(Collectors.toMap(ResourceType::getType, Function.identity()));
+            } else if (parser.isExpectedStartObjectToken()) {
+                // Deserialize directly as a Map
+                return parser.readValueAs(new TypeReference<Map<String, ResourceType>>() {});
+            } else {
+                // Throw JsonMappingException for unexpected formats
+                throw JsonMappingException.from(parser, "Expected an array or object for resourceTypes");
+            }
+        }
     }
 }
+

@@ -50,6 +50,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder authorizationServices() {
+        rep.setAuthorizationServicesEnabled(true);
+        return this;
+    }
+
     public ClientRepresentation build() {
         return rep;
     }

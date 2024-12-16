@@ -17,10 +17,16 @@
 
 package org.keycloak.test.admin.authz.fgap;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import jakarta.ws.rs.core.Response;
+import java.util.Set;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.test.framework.annotations.InjectClient;
 import org.keycloak.test.framework.annotations.InjectRealm;
 import org.keycloak.test.framework.realm.ManagedClient;
@@ -44,5 +50,44 @@ public abstract class AbstractPermissionTest {
 
     protected ScopePermissionsResource getScopePermissionsResource() {
         return getPermissionsResource().scope();
+    }
+
+    protected void createPermission(ScopePermissionRepresentation permission) {
+        this.createPermission(permission, Response.Status.CREATED);
+    }
+
+    protected void createPermission(ScopePermissionRepresentation permission, Response.Status expected) {
+        try (Response response = getScopePermissionsResource().create(permission)) {
+            assertEquals(expected.getStatusCode(), response.getStatus());
+        }
+    }
+
+    protected static class PermissionBuilder {
+        private final ScopePermissionRepresentation permission;
+
+        static PermissionBuilder create() {
+            ScopePermissionRepresentation rep = new ScopePermissionRepresentation();
+            rep.setName(KeycloakModelUtils.generateId());
+            return new PermissionBuilder(rep);
+        }
+
+        private PermissionBuilder(ScopePermissionRepresentation rep) {
+            this.permission = rep;
+        }
+        ScopePermissionRepresentation build() {
+            return permission;
+        }
+        PermissionBuilder resourceType(String resourceType) {
+            permission.setResourceType(resourceType);
+            return this;
+        }
+        PermissionBuilder scopes(Set<String> scopes) {
+            permission.setScopes(scopes);
+            return this;
+        }
+        PermissionBuilder resources(Set<String> resources) {
+            permission.setResources(resources);
+            return this;
+        }
     }
 }
