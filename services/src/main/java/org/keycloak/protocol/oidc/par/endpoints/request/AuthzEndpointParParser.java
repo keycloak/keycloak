@@ -48,6 +48,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     private String invalidRequestMessage = null;
 
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
+        super(session);
         this.session = session;
         this.client = client;
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
