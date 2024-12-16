@@ -28,6 +28,17 @@ import java.util.List;
  */
 public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
+
+    /**
+     * Integral Value
+     */
+    public static final String INTEGER_TYPE="Integer";
+
+    /**
+     * Arbitrary number, e.g. integral, floating-point.
+     */
+    public static final String NUMBER_TYPE="Number";
+
     public static final String STRING_TYPE="String";
 
     /**

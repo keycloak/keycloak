@@ -68,6 +68,8 @@ export default class RoleMappingTab {
     cy.findByTestId(this.#filterTypeDropdown).click();
     cy.findByTestId(option).click();
 
+    cy.get('[role="progressbar"]').should("not.exist");
+
     return this;
   }
 

@@ -35,7 +35,6 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Config;
@@ -47,7 +46,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
@@ -74,8 +72,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES;
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
@@ -388,53 +384,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, false, httpPort);
-    }
-
-    @Test
-    @Disabled
-    public void testPodNamePropagation() {
-        var kc = getTestKeycloakDeployment(true);
-        var featureSpec = new FeatureSpec();
-        featureSpec.setEnabledFeatures(List.of("opentelemetry"));
-        kc.getSpec().setFeatureSpec(featureSpec);
-        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("tracing-enabled", "true"));
-        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("log-level", "io.opentelemetry:fine"));
-        deployKeycloak(k8sclient, kc, true);
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .untilAsserted(() ->
-                        assertThat(k8sclient
-                                .pods()
-                                .inNamespace(namespace)
-                                .withLabel("app", "keycloak")
-                                .list()
-                                .getItems()
-                                .size()).isNotZero());
-
-        var pods = k8sclient
-                .pods()
-                .inNamespace(namespace)
-                .withLabels(Constants.DEFAULT_LABELS)
-                .list()
-                .getItems();
-
-        var envVars = pods.get(0).getSpec().getContainers().get(0).getEnv();
-        assertThat(envVars).isNotNull();
-        assertThat(envVars).isNotEmpty();
-
-        var serviceNameEnv = envVars.stream().filter(f -> f.getName().equals(KC_TRACING_SERVICE_NAME)).findAny().orElse(null);
-        assertThat(serviceNameEnv).isNotNull();
-        assertThat(serviceNameEnv.getValue()).isEqualTo(kc.getMetadata().getName());
-
-        var resourceAttributesEnv = envVars.stream().filter(f -> f.getName().equals(KC_TRACING_RESOURCE_ATTRIBUTES)).findAny().orElse(null);
-        assertThat(resourceAttributesEnv).isNotNull();
-
-        var expectedAttributes = Map.of(
-                "k8s.namespace.name", kc.getMetadata().getNamespace()
-        ).entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","));
-
-        assertThat(resourceAttributesEnv.getValue()).isEqualTo(expectedAttributes);
     }
 
     @Test
