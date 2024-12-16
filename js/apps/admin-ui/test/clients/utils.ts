@@ -58,3 +58,7 @@ export async function continueNext(page: Page) {
 export async function save(page: Page) {
   await page.getByRole("button", { name: "Save" }).click();
 }
+
+export async function cancel(page: Page) {
+  await page.getByRole("button", { name: "Cancel" }).click();
+}
