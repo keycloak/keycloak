@@ -65,11 +65,10 @@ export default class RoleMappingTab {
     // Invert the filter because the testid of the DropdownItem is the current filter
     const option = filter == "roles" ? "clients" : "roles";
 
-    cy.intercept("/admin/realms/*/ui-ext/available-roles/**").as("realm-roles");
     cy.findByTestId(this.#filterTypeDropdown).click();
     cy.findByTestId(option).click();
 
-    cy.wait("@realm-roles");
+    cy.get('[role="progressbar"]').should("not.exist");
 
     return this;
   }
