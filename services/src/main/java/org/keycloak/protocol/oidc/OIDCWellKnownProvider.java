@@ -91,7 +91,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
 
-    public static final List<String> DEFAULT_PROMPT_VALUES_SUPPORTED = list(OIDCLoginProtocol.PROMPT_VALUE_NONE, OIDCLoginProtocol.PROMPT_VALUE_CREATE, OIDCLoginProtocol.PROMPT_VALUE_LOGIN, OIDCLoginProtocol.PROMPT_VALUE_CONSENT);
+    // See: GH-10701, note that the supported prompt value "create" is only added if the realm supports registrations.
+    public static final List<String> DEFAULT_PROMPT_VALUES_SUPPORTED = list(OIDCLoginProtocol.PROMPT_VALUE_NONE /*, OIDCLoginProtocol.PROMPT_VALUE_CREATE*/, OIDCLoginProtocol.PROMPT_VALUE_LOGIN, OIDCLoginProtocol.PROMPT_VALUE_CONSENT);
 
     private final KeycloakSession session;
     private final Map<String, Object> openidConfigOverride;
@@ -168,7 +169,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
         config.setGrantTypesSupported(DEFAULT_GRANT_TYPES_SUPPORTED);
         config.setAcrValuesSupported(getAcrValuesSupported(realm));
-        config.setPromptValuesSupported(DEFAULT_PROMPT_VALUES_SUPPORTED);
+
+        config.setPromptValuesSupported(getPromptValuesSupported(realm));
 
         config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
         config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
@@ -236,6 +238,14 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config = checkConfigOverride(config);
         return config;
+    }
+
+    protected List<String> getPromptValuesSupported(RealmModel realm) {
+        List<String> prompts = new ArrayList<>(DEFAULT_PROMPT_VALUES_SUPPORTED);
+        if (realm.isRegistrationAllowed()) {
+            prompts.add(OIDCLoginProtocol.PROMPT_VALUE_CREATE);
+        }
+        return prompts;
     }
 
     @Override
