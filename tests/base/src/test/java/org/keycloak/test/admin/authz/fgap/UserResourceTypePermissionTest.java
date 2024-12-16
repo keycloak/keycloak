@@ -19,16 +19,16 @@ package org.keycloak.test.admin.authz.fgap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
-import jakarta.ws.rs.core.Response;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
-import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -92,8 +92,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
 
     @Test
     public void testFindByResourceObject() {
-        createUserPermission(userAlice);
-        createUserPermission(userBob);
+        createUserPermission(userAlice, userBob);
 
         List<ScopePermissionRepresentation> existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
         assertEquals(1, existing.size());
@@ -116,13 +115,13 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         assertEquals(1, existing.size());
     }
 
-    private ScopePermissionRepresentation createUserPermission(ManagedUser user) {
+    private ScopePermissionRepresentation createUserPermission(ManagedUser... users) {
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
         permission.setName(KeycloakModelUtils.generateId());
-        permission.setResourceType(AdminPermissionsAuthorizationSchema.USERS.getType());
-        permission.setResources(Set.of(user.getUsername()));
-        permission.setScopes(AdminPermissionsAuthorizationSchema.USERS.getScopes());
+        permission.setResourceType(AdminPermissionsSchema.USERS.getType());
+        permission.setResources(Arrays.stream(users).map(ManagedUser::getUsername).collect(Collectors.toSet()));
+        permission.setScopes(AdminPermissionsSchema.USERS.getScopes());
         permission.setPolicies(Set.of("User Policy 0", "User Policy 1", "User Policy 2"));
 
         createPermission(permission);
@@ -134,19 +133,12 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
         permission.setName(KeycloakModelUtils.generateId());
-        permission.setResourceType(AdminPermissionsAuthorizationSchema.USERS.getType());
-        permission.setScopes(AdminPermissionsAuthorizationSchema.USERS.getScopes());
+        permission.setResourceType(AdminPermissionsSchema.USERS.getType());
+        permission.setScopes(AdminPermissionsSchema.USERS.getScopes());
         permission.setPolicies(Set.of("User Policy 0", "User Policy 1", "User Policy 2"));
 
         createPermission(permission);
 
         return permission;
     }
-
-    private void createPermission(ScopePermissionRepresentation permission) {
-        try (Response response = getScopePermissionsResource().create(permission)) {
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        }
-    }
-
 }

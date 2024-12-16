@@ -23,7 +23,7 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
-import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -1068,7 +1068,7 @@ public class ModelToRepresentation {
         if (adminPermissionsClient == null || ! client.getClientId().equals(adminPermissionsClient.getClientId())) {
             return null;
         }
-        return AdminPermissionsAuthorizationSchema.INSTANCE;
+        return AdminPermissionsSchema.SCHEMA;
     }
 
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {

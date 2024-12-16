@@ -42,11 +42,14 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationSchema;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
@@ -293,11 +296,12 @@ public final class AuthorizationProvider implements Provider {
 
             @Override
             public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
+                AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(keycloakSession, resourceServer, representation);
                 Set<String> resources = representation.getResources();
 
                 if (resources != null) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = AdminPermissionsAuthorizationSchema.INSTANCE.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
+                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
 
                         if (resource == null) {
                             resource = storeFactory.getResourceStore().findById(resourceServer, id);
@@ -320,21 +324,10 @@ public final class AuthorizationProvider implements Provider {
                 Set<String> scopes = representation.getScopes();
 
                 if (scopes != null) {
-                    representation.setScopes(scopes.stream().map(id -> {
-                        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
-
-                        if (scope == null) {
-                            scope = storeFactory.getScopeStore().findByName(resourceServer, id);
-                        }
-
-                        if (scope == null) {
-                            throw new RuntimeException("Scope [" + id + "] does not exist");
-                        }
-
-                        return scope.getId();
-                    }).collect(Collectors.toSet()));
+                    representation.setScopes(scopes.stream()
+                        .map(id -> AdminPermissionsSchema.SCHEMA.getScope(keycloakSession, resourceServer, representation.getResourceType(), id).getId())
+                        .collect(Collectors.toSet()));
                 }
-
 
                 Set<String> policies = representation.getPolicies();
 

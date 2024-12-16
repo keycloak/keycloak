@@ -20,7 +20,7 @@ package org.keycloak.models.utils;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
-import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
@@ -89,7 +89,7 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
-import org.keycloak.representations.idm.authorization.AuthorizationSchema;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
@@ -1202,15 +1202,19 @@ public final class KeycloakModelUtils {
         ResourceServer resourceServer = RepresentationToModel.createResourceServer(client, session, false);
         ResourceServerRepresentation resourceServerRep = ModelToRepresentation.toRepresentation(resourceServer, client);
 
-        AuthorizationSchema schema = AdminPermissionsAuthorizationSchema.INSTANCE;
-
+        //create all scopes defined in the schema
         //there is no way how to map scopes to the resourceType, we need to collect all scopes from all resourceTypes 
-        Set<ScopeRepresentation> scopes = schema.getResourceTypes().stream()
+        Set<ScopeRepresentation> scopes = AdminPermissionsSchema.SCHEMA.getResourceTypes().values().stream()
                 .flatMap((resourceType) -> resourceType.getScopes().stream())
                 .map(scope -> new ScopeRepresentation(scope))
                 .collect(Collectors.toSet());//collecting to set to get rid of duplicities
 
         resourceServerRep.setScopes(List.copyOf(scopes));
+
+        //create 'all-resource' resources defined in the schema
+        resourceServerRep.setResources(AdminPermissionsSchema.SCHEMA.getResourceTypes().keySet().stream()
+                .map(type -> new ResourceRepresentation(type))
+                .collect(Collectors.toList()));
 
         RepresentationToModel.toModel(resourceServerRep, session.getProvider(AuthorizationProvider.class), client);
     }

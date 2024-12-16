@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
@@ -34,7 +35,6 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
@@ -49,7 +49,10 @@ public class PermissionClientTest extends AbstractPermissionTest {
 
     @Test
     public void testSupportedPolicyTypes() {
-        assertSupportForPolicyType("scope", () -> getPermissionsResource().scope().create(new ScopePermissionRepresentation()), true);
+        assertSupportForPolicyType("scope", () -> getPermissionsResource().scope().create(PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build()), true);
         assertSupportForPolicyType("user", () -> getPolicies().user().create(new UserPolicyRepresentation()), true);
         assertSupportForPolicyType("client", () -> getPolicies().client().create(new ClientPolicyRepresentation()), true);
         assertSupportForPolicyType("group", () -> getPolicies().group().create(new GroupPolicyRepresentation()), true);

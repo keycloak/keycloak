@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -44,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsAuthorizationSchema;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -358,7 +357,7 @@ public class PolicyService {
     }
 
     private void checkIfSupportedPolicyType(String type) throws BadRequestException {
-        if (AdminPermissionsAuthorizationSchema.INSTANCE.isSupportedPolicyType(authorization.getKeycloakSession(), resourceServer, type)) {
+        if (AdminPermissionsSchema.SCHEMA.isSupportedPolicyType(authorization.getKeycloakSession(), resourceServer, type)) {
             return;
         }
 
