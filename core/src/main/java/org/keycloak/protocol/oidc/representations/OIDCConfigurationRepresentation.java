@@ -73,6 +73,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("subject_types_supported")
     private List<String> subjectTypesSupported;
 
+    @JsonProperty("prompt_values_supported")
+    private List<String> promptValuesSupported;
+
     @JsonProperty("id_token_signing_alg_values_supported")
     private List<String> idTokenSigningAlgValuesSupported;
 
@@ -655,4 +658,11 @@ public class OIDCConfigurationRepresentation {
         this.authorizationResponseIssParameterSupported = authorizationResponseIssParameterSupported;
     }
 
+    public List<String> getPromptValuesSupported() {
+        return promptValuesSupported;
+    }
+
+    public void setPromptValuesSupported(List<String> promptValuesSupported) {
+        this.promptValuesSupported = promptValuesSupported;
+    }
 }
