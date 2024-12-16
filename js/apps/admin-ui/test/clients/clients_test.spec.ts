@@ -14,6 +14,7 @@ import {
   selectRowKebab,
 } from "../utils/table";
 import {
+  cancel,
   clientCapabilityConfig,
   continueNext,
   createClient,
@@ -45,11 +46,7 @@ test.describe("Clients test", () => {
   });
 
   test("Cancel create should return to clients", async ({ page }) => {
-    await createClient(
-      page,
-      { clientId },
-      async () => await page.getByRole("button", { name: "Cancel" }).click(),
-    );
+    await createClient(page, { clientId }, () => cancel(page));
 
     await expect(page).not.toHaveURL("add-client");
   });

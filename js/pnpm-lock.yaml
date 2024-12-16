@@ -231,7 +231,7 @@ importers:
         version: 2.3.0(cypress@14.1.0)
       '@playwright/test':
         specifier: ^1.49.0
-        version: 1.49.0
+        version: 1.49.1
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.1.0)
@@ -283,6 +283,9 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.10)(typescript@5.8.2)
+      uuid:
+        specifier: ^11.0.3
+        version: 11.0.3
       vite:
         specifier: ^6.2.1
         version: 6.2.1(@types/node@22.13.10)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
