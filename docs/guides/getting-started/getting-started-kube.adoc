@@ -50,7 +50,7 @@ Now create an Ingress for {project_name} by entering the following command:
 
 [source,bash,subs="attributes+"]
 ----
-wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak-ingress.yaml | \
+wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/kubernetes/keycloak-ingress.yaml | \
 sed "s/KEYCLOAK_HOST/keycloak.$(minikube ip).nip.io/" | \
 kubectl create -f -
 ----
