@@ -55,7 +55,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context);
+        JWTClientValidator validator = new JWTClientValidator(context, getId());
         if (!validator.clientAssertionParametersValidation()) return;
 
         try {

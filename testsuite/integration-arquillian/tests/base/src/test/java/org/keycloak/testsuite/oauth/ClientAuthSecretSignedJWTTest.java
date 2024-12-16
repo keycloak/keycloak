@@ -129,6 +129,16 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         testCodeToTokenRequestSuccess(Algorithm.HS512);
     }
 
+
+    // Issue 34547
+    @Test
+    public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() throws Exception {
+        // Test when client has public/private keys generated despite the fact that it uses client-secret for the client authentication (and not those keys)
+        ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").getCertficateResource("jwt.credential").generate();
+
+        testCodeToTokenRequestSuccess(Algorithm.HS256);
+    }
+
     @Test
     public void testInvalidIssuer() throws Exception {
         oauth.clientId("test-app");
