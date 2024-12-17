@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -180,9 +180,10 @@ export const RealmSettingsTabs = () => {
   const [tableData, setTableData] = useState<
     Record<string, string>[] | undefined
   >(undefined);
-  const { control, setValue, getValues } = useForm({
+  const form = useForm({
     mode: "onChange",
   });
+  const { control, setValue, getValues } = form;
   const [key, setKey] = useState(0);
   const refreshHeader = () => {
     setKey(key + 1);
@@ -304,7 +305,7 @@ export const RealmSettingsTabs = () => {
   const clientPoliciesPoliciesTab = useClientPoliciesTab("policies");
 
   return (
-    <>
+    <FormProvider {...form}>
       <Controller
         name="enabled"
         defaultValue={true}
@@ -464,6 +465,6 @@ export const RealmSettingsTabs = () => {
           )}
         </RoutableTabs>
       </PageSection>
-    </>
+    </FormProvider>
   );
 };
