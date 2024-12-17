@@ -30,21 +30,21 @@ Recommendations:
 
 * The base memory usage for a Pod including caches of Realm data and 10,000 cached sessions is 1250 MB of RAM.
 
-* In containers, Keycloak allocates 70% of the memory limit for heap based memory. It will also use approximately 300 MB of non-heap-based memory.
+* In containers, Keycloak allocates 70% of the memory limit for heap-based memory. It will also use approximately 300 MB of non-heap-based memory.
 To calculate the requested memory, use the calculation above. As memory limit, subtract the non-heap memory from the value above and divide the result by 0.7.
 
-* For each 15 password-based user logins per second, allocate 1 vCPU to the cluster (tested with up to 300 per second).
+* For each 30 password-based user logins per second, allocate 1 vCPU to the cluster (tested with up to 300 per second).
 +
 {project_name} spends most of the CPU time hashing the password provided by the user, and it is proportional to the number of hash iterations.
 
-* For each 200 client credential grants per second, 1 vCPU to the cluster (tested with up to 2000 per second).
+* For each 235 client credential grants per second, 1 vCPU to the cluster (tested with up to 2000 per second).
 +
 Most CPU time goes into creating new TLS connections, as each client runs only a single request.
 
 * For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).
 
 * Leave 150% extra head-room for CPU usage to handle spikes in the load.
-This ensures a fast startup of the node, and sufficient capacity to handle failover tasks.
+This ensures a fast startup of the node, and enough capacity to handle failover tasks.
 Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
 
 * When performing requests with more than 2500 different clients concurrently, not all client information will fit into {project_name}'s caches when those are using the standard cache sizes of 10000 entries each.
@@ -83,16 +83,16 @@ you can ensure your system remains appropriately scaled and responsive to change
 
 Target size:
 
-* 45 logins and logouts per seconds
-* 600 client credential grants per second
-* 360 refresh token requests per second (1:8 ratio for logins)
+* 90 logins and logouts per seconds
+* 705 client credential grants per second (CPU architecture used for compute will influence this value by a factor of 2)
+* 360 refresh token requests per second (1:4 ratio for logins)
 * 3 Pods
 
 Limits calculated:
 
 * CPU requested per Pod: 3 vCPU
 +
-(45 logins per second = 3 vCPU, 600 client credential grants per second = 3 vCPU, 345 refresh token = 3 vCPU. This sums up to 9 vCPU total. With 3 Pods running in the cluster, each Pod then requests 3 vCPU)
+(100 logins per second = 3 vCPU, 705 client credential grants per second = 3 vCPU, 345 refresh token = 3 vCPU. This sums up to 9 vCPU total. With 3 Pods running in the cluster, each Pod then requests 3 vCPU)
 
 * CPU limit per Pod: 7.5 vCPU
 +
@@ -149,7 +149,7 @@ The benefit of this setup is that the number of Pods does not need to scale duri
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
 
 * OpenShift 4.16.x deployed on AWS via ROSA.
-* Machine pool with `m5.2xlarge` instances.
+* Machine pool with `c7g.2xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
 * OpenShift's reverse proxy runs in the passthrough mode where the TLS connection of the client is terminated at the Pod.
 * Database Amazon Aurora PostgreSQL in a multi-AZ setup.
