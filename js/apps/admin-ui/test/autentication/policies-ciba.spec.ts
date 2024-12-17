@@ -22,7 +22,7 @@ import {
   setBackchannelTokenDeliveryMode,
   setExpiresInput,
   setIntervalInput,
-} from "./utils";
+} from "./policies-ciba";
 
 test.describe("Authentication - Policies - CIBA", () => {
   const realmName = `authentication-policies-${uuidv4()}`;
