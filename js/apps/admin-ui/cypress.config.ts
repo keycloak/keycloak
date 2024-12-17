@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { isAsyncFunction } from "node:util/types";
 
 const isCI = process.env.CI === "true";
+const retryCount = parseInt(process.env.RETRY_COUNT || "0");
 
 export default defineConfig({
   video: isCI,
@@ -16,7 +17,7 @@ export default defineConfig({
   experimentalMemoryManagement: true,
 
   retries: {
-    runMode: 3,
+    runMode: retryCount,
   },
 
   e2e: {

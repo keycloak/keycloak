@@ -11,6 +11,7 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  RETRY_COUNT: 3
 
 concurrency:
   # Only cancel jobs for PR updates
