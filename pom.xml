@@ -1098,7 +1098,12 @@
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-wildfly-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-quarkus-dist</artifactId>
