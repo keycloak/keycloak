@@ -3,7 +3,7 @@ name: "PR Description Validation"
 on:
   pull_request:
     branches:
-      - vugrafana
+      - main
       - release/*
     types: [opened, edited, synchronize, unlabeled, labeled]
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
     if: ${{ github.repository_owner == 'vunetsystems' && !github.event.pull_request.draft }}
     steps:
       - name: Checkout Cairo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if PR has Labels
         id: check_pr_labels
@@ -41,13 +41,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMENT="🚨 **Missing Labels** 🚨\n\nPlease add one or more of the following labels to your PR:\n\n- **bug**: For bug fixes\n- **feat**: For new features\n- **chore**: For maintenance tasks\n- **enhancement**: For improvements\n\n**Note:** This is a required step before we can proceed with the PR validation. 😅"
-          
+
           curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
                -H "Content-Type: application/json" \
                -X POST -d "{\"body\": \"$COMMENT\"}" \
                "${{ github.event.pull_request.comments_url }}"
           exit 1
-  
+
   pr_title_check:
     name: Validate PR Title
     needs: check_labels
@@ -55,7 +55,7 @@ jobs:
 
     steps:
       - name: Checkout Cairo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Validate PR Title for Jira Ticket ID
         id: validate_title
@@ -85,8 +85,6 @@ jobs:
               "${{ github.event.pull_request.comments_url }}"
           exit 1
 
-
-
   pr_description_check:
     name: Validate PR Description
     needs: pr_title_check
@@ -94,7 +92,7 @@ jobs:
 
     steps:
       - name: Checkout Cairo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Determine PR Type Based on Labels
         id: set_pr_type
@@ -129,7 +127,7 @@ jobs:
 
           echo "Final PR Type(s): $PR_TYPE"
           echo "::set-output name=pr_type::$PR_TYPE"
-    
+
       - name: Process PR Type
         id: process_pr_type
         env:
@@ -173,7 +171,7 @@ jobs:
               "Any Similar Instances Found",
               "Root Cause Analysis",
           ]
-          
+
           # Feature specific sections
           FEATURE_SECTIONS = [
               "Design Document",
@@ -212,9 +210,9 @@ jobs:
               
               missing_sections = ",".join(missing_sections)
               return missing_sections, all_sections_present
-          
+
           missing_sections, all_sections_present = validate_pr_body(PR_TYPE, PR_BODY)
-          
+
           if all_sections_present:
               print("PR Description is valid.")
               pr_desc_valid = "true"
@@ -265,5 +263,3 @@ jobs:
               -X POST -d "{\"body\": $ESCAPED_BODY}" \
               "${{ github.event.pull_request.comments_url }}"
           exit 1
-
-
