@@ -75,6 +75,8 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
                     builder.down();
                     Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
                     builder.withData("Failing since", DATE_FORMATTER.format(failingTime));
+                } else {
+                    failingSince.set(null);
                 }
                 return builder.build();
             });
