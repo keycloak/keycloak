@@ -33,7 +33,6 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
 
     public static final String ISSUER_CLAIM = "iss";
     public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
-    public static final String CREDENTIAL_ID_CLAIM = "jti";
 
     private final String credentialIssuer;
 
@@ -78,9 +77,8 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // Populate configured fields (necessarily visible)
         claimSet.put(ISSUER_CLAIM, credentialIssuer);
         claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
-        claimSet.put(CREDENTIAL_ID_CLAIM, CredentialBuilderUtils.createCredentialId(verifiableCredential));
 
-        // nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed
+        // jti, nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed.
         // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
 
         // Add the configured number of decoys

@@ -245,7 +245,6 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
             JsonWebToken theToken = verifier.getToken();
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
-            assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
             List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
             if (sds != null && !sds.isEmpty()){

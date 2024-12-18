@@ -34,7 +34,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.CREDENTIAL_ID_CLAIM;
 import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
 import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
 import static org.keycloak.sdjwt.IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM;
@@ -109,10 +108,6 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         assertEquals("The issuer should be set in the token.",
                 issuerDid,
                 jwt.getPayload().get(ISSUER_CLAIM).asText());
-
-        assertEquals("The credential ID should be set as the token ID.",
-                testCredential.getId().toString(),
-                jwt.getPayload().get(CREDENTIAL_ID_CLAIM).asText());
 
         assertEquals("The type should be included",
                 credentialBuildConfig.getCredentialType(),
