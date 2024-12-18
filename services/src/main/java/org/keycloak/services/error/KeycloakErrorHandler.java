@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
@@ -182,7 +183,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static Map<String, Object> initAttributes(KeycloakSession session, RealmModel realm, Theme theme, Locale locale, Response.Status responseStatus) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
-        Properties messagesBundle = theme.getMessages(locale);
+        Properties messagesBundle = theme.getEnhancedMessages(realm, locale);
 
         final var localeBean =  new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
         final var lang = realm.isInternationalizationEnabled() ? localeBean.getCurrentLanguageTag() : Locale.ENGLISH.toLanguageTag();
@@ -201,11 +202,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         // Default fallback in case an error occurs determining the dark mode later on.
         attributes.put("darkMode", true);
 
-        try {
-            attributes.put("msg", new MessageFormatterMethod(locale, theme.getMessages(locale)));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+        attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
 
         try {
             Properties properties = theme.getProperties();
