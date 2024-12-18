@@ -37,6 +37,8 @@ export const PageHandler = ({
   const [id, setId] = useState(idAttribute);
   const params = useParams();
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useFetch(
     async () =>
       await Promise.all([
@@ -49,6 +51,7 @@ export const PageHandler = ({
       const tab = (tabs || []).find((t) => t.providerId === providerId);
       form.reset(data || tab || {});
       if (tab) setId(tab.id);
+      setIsLoading(false);
     },
     [],
   );
@@ -80,9 +83,10 @@ export const PageHandler = ({
     }
   };
 
-  if (!id) {
+  if (isLoading) {
     return <KeycloakSpinner />;
   }
+
   return (
     <PageSection variant="light">
       <Form
