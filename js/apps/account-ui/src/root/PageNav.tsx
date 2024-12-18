@@ -29,6 +29,7 @@ import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 type RootMenuItem = {
+  id?: string;
   label: TFuncKey;
   path: string;
   isVisible?: keyof Feature;
