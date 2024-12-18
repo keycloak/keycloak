@@ -31,7 +31,7 @@
     "eslint-plugin-playwright": "^2.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-compiler": "19.0.0-beta-37ed2a7-20241206",
+    "eslint-plugin-react-compiler": "19.0.0-beta-201e55d-20241215",
     "eslint-plugin-react-hooks": "^5.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
