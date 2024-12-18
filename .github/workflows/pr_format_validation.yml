@@ -1,0 +1,269 @@
+name: "PR Description Validation"
+
+on:
+  pull_request:
+    branches:
+      - vugrafana
+      - release/*
+    types: [opened, edited, synchronize, unlabeled, labeled]
+  workflow_dispatch:
+
+jobs:
+  check_labels:
+    name: Check PR Labels
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'vunetsystems' && !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout Cairo
+        uses: actions/checkout@v3
+
+      - name: Check if PR has Labels
+        id: check_pr_labels
+        env:
+          GITHUB_EVENT_LABELS: "${{ toJson(github.event.pull_request.labels) }}"
+        shell: python
+        run: |
+          import json
+          import os
+
+          labels = json.loads(os.getenv("GITHUB_EVENT_LABELS", "[]"))
+
+          if not labels:
+              print("No labels found. Failing the check.")
+              print("::set-output name=labels_found::false")
+          else:
+              print(f"Labels found. {labels}")
+              print("::set-output name=labels_found::true")
+
+      - name: Comment on PR if No Labels Are Found
+        if: steps.check_pr_labels.outputs.labels_found == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT="🚨 **Missing Labels** 🚨\n\nPlease add one or more of the following labels to your PR:\n\n- **bug**: For bug fixes\n- **feat**: For new features\n- **chore**: For maintenance tasks\n- **enhancement**: For improvements\n\n**Note:** This is a required step before we can proceed with the PR validation. 😅"
+          
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+               -H "Content-Type: application/json" \
+               -X POST -d "{\"body\": \"$COMMENT\"}" \
+               "${{ github.event.pull_request.comments_url }}"
+          exit 1
+  
+  pr_title_check:
+    name: Validate PR Title
+    needs: check_labels
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Cairo
+        uses: actions/checkout@v3
+
+      - name: Validate PR Title for Jira Ticket ID
+        id: validate_title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "Validating PR Title: $PR_TITLE"
+
+          JIRA_REGEX="(VUQA-[0-9]+|NCS-[0-9]+|CCBD-[0-9]+)"
+
+          if [[ "$PR_TITLE" =~ $JIRA_REGEX ]]; then
+            echo "PR Title is valid."
+            echo "::set-output name=title_valid::true"
+          else
+            echo "PR Title is invalid. It must include a JIRA ticket ID (VUQA-####, NCS-###, or CCBD-####)."
+            echo "::set-output name=title_valid::false"
+          fi
+
+      - name: Comment on PR if Title is Invalid
+        if: steps.validate_title.outputs.title_valid == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "PR Title is invalid. Please include a valid Jira ticket ID."
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -X POST -d "{\"body\": \"❌ The PR title is invalid. It should include a valid Jira ticket ID. Please ensure your title contains a JIRA ticket in the following format: \n🔹 VUQA-####\n🔹 NCS-###\n🔹 CCBD-####\n\n✅ Update the PR title and try again!\"}" \
+              "${{ github.event.pull_request.comments_url }}"
+          exit 1
+
+
+
+  pr_description_check:
+    name: Validate PR Description
+    needs: pr_title_check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Cairo
+        uses: actions/checkout@v3
+
+      - name: Determine PR Type Based on Labels
+        id: set_pr_type
+        run: |
+          PR_TYPE=""
+
+          if ${{contains(github.event.pull_request.labels.*.name, 'chore')}}; then
+            echo "This PR has a 'chore' label."
+            PR_TYPE="${PR_TYPE}chore,"
+          fi
+
+          if ${{contains(github.event.pull_request.labels.*.name, 'bug')}}; then
+            echo "This PR has a 'bug' label."
+            PR_TYPE="${PR_TYPE}bug-fix,"
+          fi
+
+          if ${{contains(github.event.pull_request.labels.*.name, 'feat')}}; then
+            echo "This PR has a 'feat' label."
+            PR_TYPE="${PR_TYPE}feature,"
+          fi
+
+          if ${{contains(github.event.pull_request.labels.*.name, 'enhancement')}}; then
+            echo "This PR has an 'enhancement' label."
+            PR_TYPE="${PR_TYPE}enhancement,"
+          fi
+
+          if [[ "$PR_TYPE" != "" ]]; then
+            PR_TYPE="${PR_TYPE%, }"
+          else
+            PR_TYPE="feature"
+          fi
+
+          echo "Final PR Type(s): $PR_TYPE"
+          echo "::set-output name=pr_type::$PR_TYPE"
+    
+      - name: Process PR Type
+        id: process_pr_type
+        env:
+          PR_TYPE: "${{ steps.set_pr_type.outputs.pr_type }}"
+        run: |
+          import os
+          pr_type = os.getenv("PR_TYPE", "")
+          types = [t.strip() for t in pr_type.split(',') if t.strip()]
+          if "chore" in types and len(types) > 1:
+              types.remove("chore")
+          types = types or ["feature"]
+          types = ",".join(types)
+          print(f"Processed PR Type: {types}")
+          print(f"::set-output name=pr_type::{types}")
+        shell: python
+
+      - name: Check PR Description for Validity
+        id: check_desc
+        env:
+          PR_TYPE: "${{ steps.process_pr_type.outputs.pr_type }}"
+          PR_BODY: "${{ github.event.pull_request.body }}"
+        run: |
+          import re
+          import os
+
+          PR_TYPE = os.getenv("PR_TYPE")
+          PR_BODY = os.getenv("PR_BODY")
+
+          # Base sections common to all PR types
+          BASE_SECTIONS = [
+              "Description of Changes",
+              "Linked Issues",
+              "Impact Analysis",
+              "Files Changed",
+              "Tests Conducted",
+              "Checklist",
+          ]
+
+          # Bug-fix specific sections
+          BUG_FIX_SECTIONS = [
+              "Any Similar Instances Found",
+              "Root Cause Analysis",
+          ]
+          
+          # Feature specific sections
+          FEATURE_SECTIONS = [
+              "Design Document",
+              "Requirements Document",
+          ]
+
+          # Sections for different PR types
+          REQUIRED_SECTIONS = {
+              "feature": BASE_SECTIONS + FEATURE_SECTIONS,
+              "bug-fix": BASE_SECTIONS + BUG_FIX_SECTIONS,
+              "enhancement": BASE_SECTIONS,
+              "bug-fix,feature": BASE_SECTIONS + BUG_FIX_SECTIONS + FEATURE_SECTIONS,
+              "feature,enhancement": BASE_SECTIONS + FEATURE_SECTIONS,
+              "bug-fix,enhancement": BASE_SECTIONS + BUG_FIX_SECTIONS,
+              "bug-fix,feature,enhancement": BASE_SECTIONS + BUG_FIX_SECTIONS + FEATURE_SECTIONS,
+          }
+
+          def validate_pr_body(pr_type, pr_body):
+              required_sections = REQUIRED_SECTIONS.get(pr_type)
+
+              if not required_sections:
+                  print("Unknown PR Type. Skipping validation.")
+                  return [], True
+
+              all_sections_present = True
+              missing_sections = []
+              for section in required_sections:
+                  section_pattern = f"## {section}\\b[^#]*"
+                  match = re.search(section_pattern, pr_body, re.DOTALL | re.IGNORECASE)
+                  if match:
+                      print(f"✓ Found section: {section}")
+                  else:
+                      print(f"✗ Missing section: {section}")
+                      missing_sections.append(section)
+                      all_sections_present = False
+              
+              missing_sections = ",".join(missing_sections)
+              return missing_sections, all_sections_present
+          
+          missing_sections, all_sections_present = validate_pr_body(PR_TYPE, PR_BODY)
+          
+          if all_sections_present:
+              print("PR Description is valid.")
+              pr_desc_valid = "true"
+          else:
+              print("PR Description is invalid.")
+              pr_desc_valid = "false"
+
+          print(f"::set-output name=pr_desc_valid::{pr_desc_valid}")
+          print(f"::set-output name=missing_sections::{missing_sections}")
+        shell: python
+
+      - name: Generate Invalid PR Comment Body
+        if: steps.check_desc.outputs.pr_desc_valid == 'false'
+        id: generate_comment
+        env:
+          PR_TYPE: "${{ steps.process_pr_type.outputs.pr_type }}"
+          MISSING_SECTIONS: "${{ steps.check_desc.outputs.missing_sections }}"
+        run: |
+          import os
+          pr_type = os.getenv("PR_TYPE")
+          sections = os.getenv("MISSING_SECTIONS")
+          def generate_comment_body(pr_type, sections):
+              pr_body = f"### 🚨 **PR Description Validation Failed** 🚨\nThe description for a **{pr_type}** PR is missing some required sections.\nPlease ensure your PR contains the following sections as well.\n"
+              for section in sections.split(','):
+                  section_details = f"- **{section}**\n"
+                  pr_body += section_details
+              pr_body += "\nPlease have a look [here](https://github.com/vunetsystems/cairo/blob/vugrafana/.github/pull_request_template.md) for more details."
+              return pr_body
+          final_comment_body = generate_comment_body(pr_type, sections)
+          print(final_comment_body)
+
+          with open("/tmp/pr_comment_body.txt", "w") as f:
+              f.write(final_comment_body)
+
+          print(f"Comment saved to /tmp/pr_comment_body.txt")
+        shell: python
+
+      - name: Comment on PR if Description is Invalid
+        if: steps.check_desc.outputs.pr_desc_valid == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_BODY=$(cat /tmp/pr_comment_body.txt)
+          echo "Posting the PR validation comment."
+          ESCAPED_BODY=$(echo "$PR_BODY" | jq -Rs .)
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -X POST -d "{\"body\": $ESCAPED_BODY}" \
+              "${{ github.event.pull_request.comments_url }}"
+          exit 1
+
+
