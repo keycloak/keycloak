@@ -157,7 +157,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
             realm.setFailureFactor(30);
             adminClient.realm("test").update(realm);
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -420,7 +419,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+            setTimeOffset(5);
 
             loginInvalidPassword();
             loginSuccess();
@@ -441,7 +440,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+            setTimeOffset(5);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -465,13 +464,12 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
+        setTimeOffset(21);
         // should be unlocked now
         loginSuccess();
         clearUserFailures();
         clearAllUserFailures();
         loginSuccess();
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
     }
 
     @Test
@@ -697,11 +695,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
+            setTimeOffset(21);
 
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(42)));
+            setTimeOffset(42);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -726,7 +724,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(21)));
+            setTimeOffset(21);
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
             Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
             assertEquals(1, status.get("numTemporaryLockouts"));
