@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -104,15 +103,6 @@ public class ProtocolMapperUtils {
             }
             ACCESSORS.put(getLowerCasedProperty(propertyName), method);
         }
-    }
-
-    public static ProtocolMapperModel findFirstProtocolMapperByProviderId(ClientModel client, String mapperProviderId) {
-        if (client == null) {
-            return null;
-        }
-        return client.getProtocolMappersStream() //
-                .filter(mapper -> mapperProviderId.equals(mapper.getProtocolMapper())) //
-                .findFirst().orElse(null);
     }
 
     public static String getUserModelValue(UserModel user, String propertyName) {

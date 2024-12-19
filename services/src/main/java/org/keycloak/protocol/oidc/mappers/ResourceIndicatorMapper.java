@@ -19,14 +19,9 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapperConfigException;
-import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -49,26 +44,14 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
-    public static final String RESOURCES_PROPERTY = "resourceIndicators";
-
-    public static final String RESOURCES_LABEL = "resourceIndicators.label";
-
-    public static final String RESOURCES_HELP_TEXT = "resourceIndicators.tooltip";
-
-    public static final String ERROR_INVALID_RESOURCE_INDICATOR = "invalidResourceIndicatorError";
-
-    public static final String ERROR_INVALID_RESOURCE_INDICATOR_URI = "invalidResourceIndicatorUriError";
-
-    public static final String ERROR_INVALID_RESOURCE_INDICATOR_FRAGMENT = "invalidResourceIndicatorFragmentError";
-
     static {
         List<ProviderConfigProperty> props = ProviderConfigurationBuilder.create()
-                .property()
-                .name(RESOURCES_PROPERTY)
-                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
-                .label(RESOURCES_LABEL)
-                .helpText(RESOURCES_HELP_TEXT)
-                .add()
+//                .property()
+//                .name(RESOURCES_PROPERTY)
+//                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+//                .label(RESOURCES_LABEL)
+//                .helpText(RESOURCES_HELP_TEXT)
+//                .add()
                 .build();
 
         configProperties.addAll(props);
@@ -109,29 +92,6 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
 
         for (Object resourceIndicator : resourceIndicators) {
             token.addAudience(String.valueOf(resourceIndicator));
-        }
-    }
-
-    @Override
-    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
-
-        Map<String, String> config = mapperModel.getConfig();
-        if (config == null || config.isEmpty()) {
-            return;
-        }
-
-        String allowedResourceIndicators = config.get(RESOURCES_PROPERTY);
-        if (allowedResourceIndicators != null) {
-            for (String resourceIndicator : Constants.CFG_DELIMITER_PATTERN.split(allowedResourceIndicators)) {
-
-                if (resourceIndicator.contains("#")) {
-                    throw new ProtocolMapperConfigException(ERROR_INVALID_RESOURCE_INDICATOR_FRAGMENT, ERROR_INVALID_RESOURCE_INDICATOR, resourceIndicator);
-                }
-
-                if (!ResourceIndicators.isValidResourceIndicatorFormat(resourceIndicator)) {
-                    throw new ProtocolMapperConfigException(ERROR_INVALID_RESOURCE_INDICATOR_URI, ERROR_INVALID_RESOURCE_INDICATOR, resourceIndicator);
-                }
-            }
         }
     }
 
