@@ -17,6 +17,7 @@
 
 package org.keycloak.credential;
 
+import io.opentelemetry.api.trace.StatusCode;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,6 +30,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.tracing.TracingProvider;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -252,7 +254,18 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     private void validate(RealmModel realm, UserModel user, List<CredentialInput> toValidate, CredentialInputValidator validator) {
-        toValidate.removeIf(input -> validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input));
+        toValidate.removeIf(input -> {
+            if(validator.supportsCredentialType(input.getType())) {
+                return session.getProvider(TracingProvider.class).trace(validator.getClass(), "isValid", span -> {
+                    boolean valid = validator.isValid(realm, user, input);
+                    if (!valid) {
+                        span.setStatus(StatusCode.ERROR);
+                    }
+                    return valid;
+                });
+            }
+            return false;
+        });
     }
 
     private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {

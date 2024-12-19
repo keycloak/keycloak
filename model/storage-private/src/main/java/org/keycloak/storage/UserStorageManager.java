@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -75,6 +76,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
@@ -171,7 +173,21 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         for (CredentialAuthentication credentialAuthentication : credentialAuthenticationStream
                 .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
                 .collect(Collectors.toList())) {
-            CredentialValidationOutput validationOutput = credentialAuthentication.authenticate(realm, input);
+            CredentialValidationOutput validationOutput = session.getProvider(TracingProvider.class).trace(credentialAuthentication.getClass(), "authenticate",
+                    span -> {
+                        CredentialValidationOutput output = credentialAuthentication.authenticate(realm, input);
+                        if (span.isRecording()) {
+                            if (output != null) {
+                                CredentialValidationOutput.Status status = output.getAuthStatus();
+                                span.setAttribute("kc.validationStatus", status.name());
+                                if (status == CredentialValidationOutput.Status.FAILED) {
+                                    span.setStatus(StatusCode.ERROR);
+                                }
+                            }
+                        }
+                        return output;
+                    }
+            );
             if (Objects.nonNull(validationOutput)) {
                 CredentialValidationOutput.Status status = validationOutput.getAuthStatus();
                 if (status == CredentialValidationOutput.Status.AUTHENTICATED || status == CredentialValidationOutput.Status.CONTINUE || status == CredentialValidationOutput.Status.FAILED) {
