@@ -16,6 +16,10 @@ final class MetricsPropertyMappers {
         return new PropertyMapper[] {
                 fromOption(MetricsOptions.METRICS_ENABLED)
                         .to("quarkus.micrometer.enabled")
+                        .build(),
+                fromOption(MetricsOptions.PASSWORD_VALIDATION_COUNTER_ENABLED)
+                        .to("kc.spi-credential-keycloak-password-metrics-enabled")
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, "metrics are enabled")
                         .build()
         };
     }
