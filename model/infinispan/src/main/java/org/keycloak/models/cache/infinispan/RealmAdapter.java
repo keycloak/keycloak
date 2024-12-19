@@ -17,6 +17,8 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
+
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
@@ -917,27 +919,30 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return session.identityProviders().getAllStream();
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream());
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        return session.identityProviders().getByAlias(alias);
+        return runOnRealm(session, this, (session) -> session.identityProviders().getByAlias(alias));
     }
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        session.identityProviders().create(identityProvider);
+        runOnRealm(session, this, (session) -> session.identityProviders().create(identityProvider));
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        session.identityProviders().update(identityProvider);
+        runOnRealm(session, this, (session) -> {
+            session.identityProviders().update(identityProvider);
+            return null;
+        });
     }
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        session.identityProviders().remove(alias);
+        runOnRealm(session, this, (session) -> session.identityProviders().remove(alias));
     }
 
     @Override
