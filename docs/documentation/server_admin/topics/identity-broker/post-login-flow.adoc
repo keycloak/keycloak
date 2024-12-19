@@ -1,0 +1,44 @@
+[[_identity_broker_post_login_flow]]
+
+=== Post login flow
+
+Post login flow is useful for the situations, when you want to trigger some additional authentication actions after every login with the particular identity provider.
+For example you may want to trigger 2-factor authentication after every login of {project_name} to `Facebook` because `Facebook` does not provide 2-factor authentication during their login.
+
+Once you setup the authentication flow with the needed steps, it is needed to set it as `Post login flow` when configuring the identity provider.
+
+==== Post login flow examples
+
+===== Requesting 2-factor authentication after identity provider login
+
+The easiest way is to enforce authentication with one particular 2-factor method. For example when requesting OTP, the flow can look like this with only single authenticator configured.
+Such flow will ask user to configure his OTP during first login with the identity provider for the case when user does not have OTP set on his account.
+
+.2FA post login flow with OTP
+image:images/post-login-flow-otp.png[Post login OTP]
+
+The more complex setup can include multiple 2-factor authentication methods configured as `ALTERNATIVE`. In this case it may be needed to make sure that user is requested to setup one of
+the methods if he does not yet have any 2-factor authentication configured on his account. This could be done by:
+
+* Make sure that one of the 2-factor methods is configured as `REQUIRED` in the <<_identity_broker_first_login, First login flow>>. This can work in the case when you expect all your users to be registered by
+the identity provider login.
+
+* Wrap the 2-factor methods as `ALTERNATIVE` into conditional subflow called for example `2FA` and create another conditional subflow (called for example `OTP if no 2FA`),
+which will be triggered just if previous subflow was not executed and will ask user to add one of the 2-factor methods (EG. OTP). The example of a similar flow configuration is provided
+in the <<_conditional-2fa-otp-default, Conditions section of the Authentication flows chapter>>.
+
+==== Requesting additional authentication steps for the dedicated clients
+
+In some cases, it may be requested that client (or group of clients), which need to perform some additional steps after identity provider login.
+This is the example of the flow, which prescribes that when client scope `foo` is requested, user will be required to authenticate with the OTP after identity provider login.
+
+.2FA post login flow with client scope and OTP
+image:images/post-login-flow-client-scope.png[Post login with client scope and OTP]
+
+It is needed to configure the `Condition - client scope` for requesting the specified client scope.
+
+.2FA post login flow client scope configuration
+image:images/post-login-flow-client-scope-config.png[Post login flow client scope configuration]
+
+It is also needed to make sure that requested clients have this client scope set on them either
+as default or as optional. In the latter case the flow is executed just if client scope is requested by the client (For example by the `scope` parameter in the case of OIDC/OAuth2 client logins).
