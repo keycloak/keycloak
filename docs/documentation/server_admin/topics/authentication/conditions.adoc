@@ -58,7 +58,7 @@ When the condition evaluates to true. If `executed` returns true when the config
 The condition to evaluate if a configured client scope is present as a client scope of the client requesting authentication. These configuration fields exist:
 
 Client scope name:::
-The name of the client scope, which should be present as a client scope of the client, which is requesting authentication. If requested client scope is default client scope of the client requesting login, the condition will be evaluated to true. If requested client scope is optional client scope of the client requesting login, condition will be evaluated to true if client scope is sent by the client in the login request (EG. by the `scope` parameter in case of OIDC/OAuth2 client login). Required.
+The name of the client scope, which should be present as a client scope of the client, which is requesting authentication. If requested client scope is default client scope of the client requesting login, the condition will be evaluated to true. If requested client scope is optional client scope of the client requesting login, condition will be evaluated to true if client scope is sent by the client in the login request (for example, by the `scope` parameter in case of OIDC/OAuth2 client login). Required.
 
 Negate output:::
 Apply a NOT to the check result. When this is true, then the condition will evaluate to true just if configured client scope is not present.
