@@ -241,6 +241,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
                 model.setToken(response);
                 tokenResponse = newResponse;
+                session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
             } else if (exp != null) {
                 tokenResponse.setExpiresIn(exp - currentTime);
             }
