@@ -89,6 +89,7 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
+    "@axe-core/playwright": "^4.10.1",
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.2",
