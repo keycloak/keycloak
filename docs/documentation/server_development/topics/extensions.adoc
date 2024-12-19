@@ -1,4 +1,4 @@
-ExampleSpi[[_extensions]]
+[[_extensions]]
 
 == Extending the server
 
