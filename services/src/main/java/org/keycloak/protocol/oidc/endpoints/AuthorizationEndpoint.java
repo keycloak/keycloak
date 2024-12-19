@@ -33,6 +33,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -42,7 +43,6 @@ import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -330,7 +330,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         if (request.getResources() != null && !request.getResources().isEmpty()) {
             // encode requested OAuth resource indicators to authentication session for validation during token / refresh requests
-            authenticationSession.setClientNote(OAuth2Constants.RESOURCE, ResourceIndicators.encodeResourceIndicators(request.getResources()));
+            authenticationSession.setClientNote(OAuth2Constants.RESOURCE, ResourceIndicatorsUtil.encodeResourceIndicators(request.getResources()));
         }
 
         performActionOnParameters(request, (paramName, paramValue) -> {if (paramValue != null) authenticationSession.setClientNote(paramName, paramValue);});
