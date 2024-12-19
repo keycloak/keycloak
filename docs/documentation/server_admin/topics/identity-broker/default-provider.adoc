@@ -14,3 +14,6 @@
 If {project_name} does not find the configured default identity provider, the login form is displayed.
 
 This authenticator is responsible for processing the `kc_idp_hint` query parameter. See the <<_client_suggested_idp, client suggested identity provider>> section for more information.
+
+NOTE: The authenticator will redirect to the identity provider and authentication is delegated to the identity provider. The `browser` authentication flow will not continue after the login with the identity provider
+is successfully finished. If you want to perform additional steps after the identity provider login (for example 2-factor authentication), it may be needed to configure <<_identity_broker_post_login_flow, Post login flow>>.
