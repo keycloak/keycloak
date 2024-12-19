@@ -240,7 +240,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         if (accessToken != null) {
             header = new JWSInput(accessToken).getHeader();
             verifySignatureAlgorithm(header, expectedAccessAlg);
-            assertEquals("JWT", header.getType());
+            assertEquals("at+jwt", header.getType());
             assertNull(header.getContentType());
         }
 

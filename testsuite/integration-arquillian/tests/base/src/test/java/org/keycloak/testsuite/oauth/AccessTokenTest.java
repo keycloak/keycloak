@@ -213,7 +213,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
-        assertEquals("JWT", header.getType());
+        assertEquals("at+jwt", header.getType());
         assertEquals(expectedKid, header.getKeyId());
         assertNull(header.getContentType());
 
@@ -1421,7 +1421,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         verifySignatureAlgorithm(header, expectedAccessAlg);
-        assertEquals("JWT", header.getType());
+        assertEquals("at+jwt", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
