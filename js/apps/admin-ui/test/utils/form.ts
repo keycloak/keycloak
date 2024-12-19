@@ -14,7 +14,7 @@ export async function assertFieldError(
 
 export async function selectItem(page: Page, field: Locator, value: string) {
   await field.click();
-  await page.getByRole("option", { name: value }).click();
+  await page.getByRole("option", { name: value, exact: true }).click();
 }
 
 export async function clickSaveButton(page: Page) {
