@@ -44,11 +44,11 @@ public class CachingOptions {
             .build();
 
     public enum Stack {
+        jdbc_ping,
+        kubernetes,
+        jdbc_ping_udp,
         tcp,
         udp,
-        jdbc_ping,
-        jdbc_ping_udp,
-        kubernetes,
         ec2,
         azure,
         google;

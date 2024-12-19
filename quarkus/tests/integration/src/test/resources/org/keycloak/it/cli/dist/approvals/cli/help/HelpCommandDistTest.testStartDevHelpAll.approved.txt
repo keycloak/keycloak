@@ -89,10 +89,10 @@ Cache:
                        only when remote host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       Possible values are: tcp (deprecated), udp (deprecated), jdbc-ping,
-                       jdbc-ping-udp (deprecated), kubernetes, ec2 (deprecated), azure
-                       (deprecated), google (deprecated), or a custom one. Default: jdbc-ping.
-                       Available only when 'cache' type is set to 'ispn'.
+                       Possible values are: jdbc-ping, kubernetes, jdbc-ping-udp (deprecated), tcp
+                       (deprecated), udp (deprecated), ec2 (deprecated), azure (deprecated), google
+                       (deprecated), or a custom one. Default: jdbc-ping. Available only when
+                       'cache' type is set to 'ispn'.
 
 Config:
 
