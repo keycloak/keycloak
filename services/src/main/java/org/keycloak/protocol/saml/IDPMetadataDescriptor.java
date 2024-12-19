@@ -24,17 +24,20 @@ import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 
-import java.io.StringWriter;
 import java.net.URI;
+import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.stream.XMLStreamWriter;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
-import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -55,13 +58,16 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class IDPMetadataDescriptor {
 
     public static String getIDPDescriptor(URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
-        URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
-        throws ProcessingException
-    {
-      
-        StringWriter sw = new StringWriter();
-        XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
-        SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
+            URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
+            throws ProcessingException {
+        return getIDPDescriptor(null, null, loginPostEndpoint, loginRedirectEndpoint, logoutEndpoint,
+                artifactResolutionService, entityId, wantAuthnRequestsSigned, signingCerts);
+    }
+
+    public static String getIDPDescriptor(KeyWrapper keyWrapper, SignatureAlgorithm sigAlg,
+            URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
+            URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
+            throws ProcessingException {
 
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
 
@@ -94,10 +100,18 @@ public class IDPMetadataDescriptor {
         }
 
         entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spIDPDescriptor))));
-      
-        metadataWriter.writeEntityDescriptor(entityDescriptor);
 
-        return sw.toString();
+        if (sigAlg != null && keyWrapper != null && keyWrapper.getCertificate() != null && keyWrapper.getPrivateKey() != null) {
+            try {
+                return SAMLMetadataUtil.signEntityDescriptorType(entityDescriptor, sigAlg, keyWrapper.getKid(),
+                        keyWrapper.getCertificate(),
+                        new KeyPair(keyWrapper.getCertificate().getPublicKey(), (PrivateKey) keyWrapper.getPrivateKey()));
+            } catch (ConfigurationException | ParsingException e) {
+                throw new ProcessingException("Cannot sign IDP metadata with key " + keyWrapper.getKid(), e);
+            }
+        } else {
+            return SAMLMetadataUtil.writeEntityDescriptorType(entityDescriptor);
+        }
     }
 
     public static Element buildKeyInfoElement(String keyName, String pemEncodedCertificate)

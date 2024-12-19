@@ -6,7 +6,7 @@ import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
 
-const SIGNATURE_ALGORITHMS = [
+export const SIGNATURE_ALGORITHMS = [
   "RSA_SHA1",
   "RSA_SHA256",
   "RSA_SHA256_MGF1",
