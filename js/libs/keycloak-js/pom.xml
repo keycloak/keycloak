@@ -78,6 +78,83 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>do-package-scope</id>
+            <activation>
+                <property>
+                    <name>keycloak-js-adapter.package.scope</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>package-scope-prefix</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <configuration>
+                                    <name>keycloak-js-adapter.package.scope.file-prefix</name>
+                                    <regex>^(@)(.*)$</regex>
+                                    <value>${keycloak-js-adapter.package.scope}</value>
+                                    <replacement>$2-</replacement>
+                                    <toLowerCase>true</toLowerCase>
+                                    <failIfNoMatch>false</failIfNoMatch>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.google.code.maven-replacer-plugin</groupId>
+                        <artifactId>maven-replacer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>apply-package-scope</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>replace</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <ignoreMissingFile>false</ignoreMissingFile>
+                            <file>package.json</file>
+                            <replacements>
+                                <replacement>
+                                    <token>"keycloak-js"</token>
+                                    <value>"${keycloak-js-adapter.package.scope}/keycloak-js"</value>
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>rename-artifact</id>
+                                <!-- Artifact file name is using prefix redhat- due to added package scope. It has to be removed. -->
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <move file="target/${keycloak-js-adapter.package.scope.file-prefix}keycloak-js-${project.version.npm}.tgz" tofile="target/keycloak-js-${project.version.npm}.tgz"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+
+
+            </build>
+        </profile>
     </profiles>
 
     <build>
