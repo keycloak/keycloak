@@ -77,14 +77,14 @@ public class GroupsResource {
 
     /**
      * Get group hierarchy.  Only {@code name} and {@code id} are returned.  {@code subGroups} are only returned when using the {@code search} or {@code q} parameter.
-     * If these parameters are empty, the top-level groups are returned without `{@code subGroups} being filled.
+     * If none of these parameters is provided, the top-level groups are returned without `{@code subGroups} being filled.
      * @return
      */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If these parameters are empty, the top-level groups are returned without `subGroups` being filled.")
+    @Operation( summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being filled.")
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
