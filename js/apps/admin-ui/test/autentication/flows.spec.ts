@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
-import { assertRequiredFieldError } from "../utils/form";
+import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { goToAuthentication, goToRealm } from "../utils/sidebar";
@@ -14,13 +14,21 @@ import {
 } from "../utils/table";
 import {
   addExecution,
+  addPolicy,
+  assertAxeViolations,
   assertDefaultSwitchPolicyEnabled,
   assertExecutionExists,
   assertSwitchPolicyChecked,
   clickDefaultSwitchPolicy,
   clickSwitchPolicy,
+  fillCreateForm,
   fillDuplicateFlowModal,
+  goToCIBAPolicyTab,
+  goToCreateItem,
+  goToOTPPolicyTab,
+  goToPoliciesTab,
   goToRequiredActions,
+  goToWebAuthnTab,
 } from "./flow";
 
 test.describe("Authentication test", () => {
@@ -53,7 +61,7 @@ test.describe("Authentication test", () => {
   });
 
   test("Should fail duplicate with empty flow name", async ({ page }) => {
-    await selectRowKebab(page, "Browser");
+    await selectRowKebab(page, "Direct grant");
     await clickRowKebabItem(page, "Duplicate");
     await fillDuplicateFlowModal(page, "");
 
@@ -61,7 +69,7 @@ test.describe("Authentication test", () => {
   });
 
   test("Should fail duplicate with duplicated name", async ({ page }) => {
-    await selectRowKebab(page, "Browser");
+    await selectRowKebab(page, "Direct grant");
     await clickRowKebabItem(page, "Duplicate");
     await fillDuplicateFlowModal(page, "browser");
 
@@ -73,10 +81,11 @@ test.describe("Authentication test", () => {
 
   test.describe("Flow details", () => {
     let flowId: string | undefined;
+    const flowName = "Copy of browser test";
     test.beforeAll(() =>
       adminClient.inRealm(realmName, async () => {
-        await adminClient.copyFlow("browser", "Copy of browser");
-        flowId = (await adminClient.getFlow("Copy of browser"))!.id!;
+        await adminClient.copyFlow("browser", flowName);
+        flowId = (await adminClient.getFlow(flowName))!.id!;
       }),
     );
     test.afterAll(() =>
@@ -84,10 +93,10 @@ test.describe("Authentication test", () => {
     );
 
     test("Should add a execution", async ({ page }) => {
-      await clickTableRowItem(page, "Copy of browser");
+      await clickTableRowItem(page, flowName);
       await addExecution(
         page,
-        "Copy of browser forms",
+        flowName + " forms",
         "reset-credentials-choose-user",
       );
 
@@ -153,55 +162,106 @@ test.describe("Password policies tab", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToAuthentication(page);
-    await page.click("text=Password Policy");
+    await goToPoliciesTab(page);
   });
 
   test("should add password policies", async ({ page }) => {
     await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
-    await page.selectOption(
-      '[data-testid="policy-select"]',
-      "Not Recently Used",
-    );
-    await page.click('[data-testid="save"]');
+    await addPolicy(page, "Not Recently Used");
+    await clickSaveButton(page);
     await assertNotificationMessage(
       page,
       "Password policies successfully updated",
     );
   });
-
-  // Additional password policy tests...
 });
 
-// // Note: For accessibility tests, you would use the @axe-core/playwright package
-// test.describe("Accessibility tests for authentication", () => {
-//   const realmName = "a11y-realm";
+test.describe("Accessibility tests for authentication", () => {
+  const realmName = "a11y-realm";
+  const flowName = `Flow-${uuidv4()}`;
 
-//   test.beforeAll(async ({ request }) => {
-//     await request.post("/admin/realms", {
-//       data: { realm: realmName },
-//     });
-//   });
+  test.beforeAll(() => adminClient.createRealm(realmName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
-//   test.beforeEach(async ({ page }) => {
-//     await login(page);
-//     await goToRealm(page, realmName);
-//     await goToAuthentication(page);
-//   });
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToAuthentication(page);
+  });
 
-//   test.afterAll(async ({ request }) => {
-//     await request.delete(`/admin/realms/${realmName}`);
-//   });
+  test("should pass accessibility checks on main page", async ({ page }) => {
+    await assertAxeViolations(page);
+  });
 
-//   test("should pass accessibility checks on main page", async ({ page }) => {
-//     // Assuming you've configured axe-core
-//     const violations = await page.evaluate(async () => {
-//       // @ts-ignore
-//       const { axe } = window;
-//       const results = await axe.run();
-//       return results.violations;
-//     });
-//     expect(violations.length).toBe(0);
-//   });
+  test("Check a11y violations on load/ authentication tab/ flows sub tab/ creating flow form", async ({
+    page,
+  }) => {
+    await goToCreateItem(page);
 
-//   // Additional accessibility tests...
-// });
+    await assertAxeViolations(page);
+    await page.getByTestId("cancel").click();
+  });
+
+  test("Check a11y violations on load/ authentication tab/ flows sub tab/ creating flow", async ({
+    page,
+  }) => {
+    await goToCreateItem(page);
+    await fillCreateForm(
+      page,
+      flowName,
+      "Some nice description about what this flow does",
+      "Client flow",
+    );
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ authentication tab/ flows sub tab/ creating", async ({
+    page,
+  }) => {
+    await clickTableRowItem(page, "reset credentials");
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ authentication tab/ required actions sub tab", async ({
+    page,
+  }) => {
+    await goToRequiredActions(page);
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ policies tab/ password policy sub tab", async ({
+    page,
+  }) => {
+    await goToPoliciesTab(page);
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ authentication tab/ policies sub tab/ adding policy", async ({
+    page,
+  }) => {
+    await goToPoliciesTab(page);
+    await addPolicy(page, "Not Recently Used");
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ policies tab/ otp policy sub tab", async ({
+    page,
+  }) => {
+    await goToOTPPolicyTab(page);
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ policies tab/ WebAuthn Policies sub tab", async ({
+    page,
+  }) => {
+    await goToWebAuthnTab(page);
+    await assertAxeViolations(page);
+  });
+
+  test("Check a11y violations on load/ policies tab/ CIBA Policy sub tab", async ({
+    page,
+  }) => {
+    await goToCIBAPolicyTab(page);
+    await assertAxeViolations(page);
+  });
+});

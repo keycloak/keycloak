@@ -150,6 +150,9 @@ importers:
 
   apps/admin-ui:
     dependencies:
+      '@axe-core/playwright':
+        specifier: ^4.10.1
+        version: 4.10.1(playwright-core@1.49.1)
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
@@ -176,7 +179,7 @@ importers:
         version: 3.1.0(@babel/runtime@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.0)(@types/react@18.3.13)(typescript@5.7.2)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.0)(@types/react@18.3.13)(playwright-core@1.49.1)(typescript@5.7.2)'
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -573,6 +576,11 @@ packages:
   '@ast-grep/napi@0.32.2':
     resolution: {integrity: sha512-VHgEqKBJH1wZH3GHI09Io4TySi8IpEi3s0EOtKAvvyixUxpqMNw+vx6a4sJDQUrLSGPeQ5e0ZokQi2GOGovY1g==}
     engines: {node: '>= 10'}
+
+  '@axe-core/playwright@4.10.1':
+    resolution: {integrity: sha512-EV5t39VV68kuAfMKqb/RL+YjYKhfuGim9rgIaQ6Vntb2HgaCaau0h98Y3WEUqW1+PbdzxDtDNjFAipbtZuBmEA==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.26.2':
     resolution: {integrity: sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ==}
@@ -5801,6 +5809,11 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.32.2
       '@ast-grep/napi-win32-x64-msvc': 0.32.2
 
+  '@axe-core/playwright@4.10.1(playwright-core@1.49.1)':
+    dependencies:
+      axe-core: 4.10.2
+      playwright-core: 1.49.1
+
   '@babel/code-frame@7.26.2':
     dependencies:
       '@babel/helper-validator-identifier': 7.25.9
@@ -6319,8 +6332,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.0)(@types/react@18.3.13)(typescript@5.7.2)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.0)(@types/react@18.3.13)(playwright-core@1.49.1)(typescript@5.7.2)':
     dependencies:
+      '@axe-core/playwright': 4.10.1(playwright-core@1.49.1)
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:libs/ui-shared
       '@patternfly/patternfly': 5.4.2
@@ -6350,6 +6364,7 @@ snapshots:
       - '@types/react'
       - encoding
       - immer
+      - playwright-core
       - react-native
       - typescript
 
