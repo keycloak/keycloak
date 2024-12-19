@@ -17,19 +17,16 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,29 +44,15 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
         String keyId = model.get(SigningProperties.KEY_ID.getKey());
         String algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
-        String tokenType = model.get(SigningProperties.TOKEN_TYPE.getKey());
-        String hashAlgorithm = model.get(SigningProperties.HASH_ALGORITHM.getKey());
         Optional<String> kid = Optional.ofNullable(model.get(SigningProperties.KID_HEADER.getKey()));
-        int decoys = Integer.parseInt(model.get(SigningProperties.DECOYS.getKey()));
+
         // Store vct as a conditional attribute of the signing service.
         // But is vcConfigId is provided, vct must be provided as well.
         String vct = model.get(SigningProperties.VC_VCT.getKey());
         String vcConfigId = model.get(SigningProperties.VC_CONFIG_ID.getKey());
 
-        List<String> visibleClaims = Optional.ofNullable(model.get(SigningProperties.VISIBLE_CLAIMS.getKey()))
-                .map(vsbleClaims -> vsbleClaims.split(","))
-                .map(Arrays::asList)
-                .orElse(List.of());
-
-        String issuerDid = Optional.ofNullable(
-                        session
-                                .getContext()
-                                .getRealm()
-                                .getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
-                .orElseThrow(() -> new VCIssuerException("No issuerDid configured."));
-
-        return new SdJwtSigningService(session, new ObjectMapper(), keyId, algorithmType, tokenType, hashAlgorithm,
-                issuerDid, decoys, visibleClaims, kid, VerifiableCredentialType.from(vct), CredentialConfigId.from(vcConfigId));
+        return new SdJwtSigningService(session, keyId, algorithmType, kid,
+                VerifiableCredentialType.from(vct), CredentialConfigId.from(vcConfigId));
     }
 
     @Override
@@ -81,10 +64,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
     public List<ProviderConfigProperty> getConfigProperties() {
         return VCSigningServiceProviderFactory.configurationBuilder()
                 .property(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
-                .property(SigningProperties.TOKEN_TYPE.asConfigProperty())
-                .property(SigningProperties.DECOYS.asConfigProperty())
                 .property(SigningProperties.KID_HEADER.asConfigProperty())
-                .property(SigningProperties.HASH_ALGORITHM.asConfigProperty())
                 .property(SigningProperties.VC_VCT.asConfigProperty())
                 .property(SigningProperties.VC_CONFIG_ID.asConfigProperty())
                 .build();
@@ -98,10 +78,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
     @Override
     public void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper helper = ConfigurationValidationHelper.check(model)
-                .checkRequired(SigningProperties.HASH_ALGORITHM.asConfigProperty())
-                .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
-                .checkRequired(SigningProperties.TOKEN_TYPE.asConfigProperty())
-                .checkInt(SigningProperties.DECOYS.asConfigProperty(), true);
+                .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty());
         // Make sure VCT is set if vc config id is set.
         if (model.get(SigningProperties.VC_CONFIG_ID.getKey()) != null) {
             helper.checkRequired(SigningProperties.VC_VCT.asConfigProperty());

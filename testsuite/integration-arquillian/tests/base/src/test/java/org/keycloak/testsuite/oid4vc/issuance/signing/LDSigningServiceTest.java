@@ -24,8 +24,11 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.LDCredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.LDCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.signing.LDSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
+import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
@@ -151,8 +154,11 @@ public class LDSigningServiceTest extends OID4VCTest {
                 kid);
 
         VerifiableCredential testCredential = getTestCredential(claims);
+        LDCredentialBody ldCredentialBody = new LDCredentialBuilder(TEST_DID.toString())
+                .buildCredentialBody(testCredential, new CredentialBuildConfig());
 
-        VerifiableCredential verifiableCredential = ldSigningService.signCredential(new VCIssuanceContext().setVerifiableCredential(testCredential));
+        VCIssuanceContext context = new VCIssuanceContext().setCredentialBody(ldCredentialBody);
+        VerifiableCredential verifiableCredential = ldSigningService.signCredential(context);
 
         assertEquals("The types should be included", TEST_TYPES, verifiableCredential.getType());
         assertEquals("The issuer should be included", TEST_DID, verifiableCredential.getIssuer());

@@ -17,9 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
@@ -30,20 +27,15 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
-import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
-import org.keycloak.sdjwt.DisclosureSpec;
-import org.keycloak.sdjwt.SdJwt;
-import org.keycloak.sdjwt.SdJwtUtils;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 /**
  * {@link VerifiableCredentialsSigningService} implementing the SD_JWT_VC format. It returns a String, containing
@@ -58,19 +50,9 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
 
     private static final Logger LOGGER = Logger.getLogger(SdJwtSigningService.class);
 
-    private static final String ISSUER_CLAIM = "iss";
-    private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
-    private static final String CREDENTIAL_ID_CLAIM = "jti";
-    private static final String CNF_CLAIM = "cnf";
     private static final String JWK_CLAIM = "jwk";
 
-    private final ObjectMapper objectMapper;
     private final SignatureSignerContext signatureSignerContext;
-    private final String tokenType;
-    private final String hashAlgorithm;
-    private final int decoys;
-    private final List<String> visibleClaims;
-    protected final String issuerDid;
 
     private final CredentialConfigId vcConfigId;
 
@@ -78,14 +60,8 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
     // vct sort of additional category for sd-jwt.
     private final VerifiableCredentialType vct;
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {
+    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, Optional<String> kid, VerifiableCredentialType credentialType, CredentialConfigId vcConfigId) {
         super(keycloakSession, keyId, Format.SD_JWT_VC, algorithmType);
-        this.objectMapper = objectMapper;
-        this.issuerDid = issuerDid;
-        this.tokenType = tokenType;
-        this.hashAlgorithm = hashAlgorithm;
-        this.decoys = decoys;
-        this.visibleClaims = visibleClaims;
         this.vcConfigId = vcConfigId;
         this.vct = credentialType;
 
@@ -118,7 +94,12 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
     @Override
     public String signCredential(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
 
-        JWK jwk = null;
+        CredentialBody credentialBody = vcIssuanceContext.getCredentialBody();
+        if (!(credentialBody instanceof SdJwtCredentialBody sdJwtCredentialBody)) {
+            throw new VCIssuerException("Credential body unexpectedly not of type SdJwtCredentialBody");
+        }
+
+        JWK jwk;
         try {
             // null returned is a valid result. Means no key binding will be included.
             jwk = validateProof(vcIssuanceContext);
@@ -126,54 +107,12 @@ public class SdJwtSigningService extends JwtProofBasedSigningService<String> {
             throw new VCIssuerException("Can not verify proof", e);
         }
 
-        VerifiableCredential verifiableCredential = vcIssuanceContext.getVerifiableCredential();
-        DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
-        CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
-        JsonNode claimSet = objectMapper.valueToTree(credentialSubject);
-        // put all claims into the disclosure spec, except the one to be kept visible
-        credentialSubject.getClaims()
-                .entrySet()
-                .stream()
-                .filter(entry -> !visibleClaims.contains(entry.getKey()))
-                .forEach(entry -> {
-                    if (entry instanceof List<?> listValue) {
-                        IntStream.range(0, listValue.size())
-                                .forEach(i -> disclosureSpecBuilder.withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt()));
-                    } else {
-                        disclosureSpecBuilder.withUndisclosedClaim(entry.getKey(), SdJwtUtils.randomSalt());
-                    }
-                });
-
-        // add the configured number of decoys
-        if (decoys != 0) {
-            IntStream.range(0, decoys)
-                    .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
-        }
-
-        ObjectNode rootNode = claimSet.withObject("");
-        rootNode.put(ISSUER_CLAIM, issuerDid);
-
-        // nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed
-        // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
-
-        // Use vct as type for sd-jwt.
-        rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, vct.getValue());
-        rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
-
         // add the key binding if any
         if (jwk != null) {
-            rootNode.putPOJO(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
+            sdJwtCredentialBody.addCnfClaim(Map.of(JWK_CLAIM, jwk));
         }
 
-        SdJwt sdJwt = SdJwt.builder()
-                .withDisclosureSpec(disclosureSpecBuilder.build())
-                .withClaimSet(claimSet)
-                .withSigner(signatureSignerContext)
-                .withHashAlgorithm(hashAlgorithm)
-                .withJwsType(tokenType)
-                .build();
-
-        return sdJwt.toSdJwtString();
+        return sdJwtCredentialBody.sign(signatureSignerContext);
     }
 
     @Override

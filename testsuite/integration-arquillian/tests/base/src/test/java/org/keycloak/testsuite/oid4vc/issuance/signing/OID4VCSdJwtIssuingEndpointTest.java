@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.collections4.map.HashedMap;
@@ -40,6 +39,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -54,6 +55,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -217,43 +219,35 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
+        String issuerDid = "did:web:issuer.org";
+        SdJwtCredentialBuilder testSdJwtCredentialBuilder = new SdJwtCredentialBuilder(issuerDid);
+
         SdJwtSigningService testCredentialSigningService = new SdJwtSigningService(
                 session,
-                JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
-                Format.SD_JWT_VC,
-                "sha-256",
-                "did:web:issuer.org",
-                2,
-                List.of("iat", "nbf"),
                 Optional.empty(),
                 VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
                 CredentialConfigId.from("test-credential"));
 
         SdJwtSigningService identityCredentialSigningService = new SdJwtSigningService(
                 session,
-                JsonSerialization.mapper,
                 getKeyFromSession(session).getKid(),
                 Algorithm.ES256,
-                Format.SD_JWT_VC,
-                "sha-256",
-                "did:web:issuer.org",
-                0,
-                List.of("given_name", "iat", "nbf"),
                 Optional.empty(),
                 VerifiableCredentialType.from("https://credentials.example.com/identity_credential"),
                 CredentialConfigId.from("IdentityCredential"));
 
         return new OID4VCIssuerEndpoint(
                 session,
-                "did:web:issuer.org",
+                Map.of(
+                        testSdJwtCredentialBuilder.getSupportedFormat(), testSdJwtCredentialBuilder
+                ),
                 Map.of(
                         testCredentialSigningService.locator(), testCredentialSigningService,
                         identityCredentialSigningService.locator(), identityCredentialSigningService
                 ),
                 authenticator,
-                new ObjectMapper(),
                 TIME_PROVIDER,
                 30,
                 true);
@@ -268,12 +262,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "algorithmType", List.of("ES256"),
-                        "tokenType", List.of(Format.SD_JWT_VC),
-                        "issuerDid", List.of(TEST_DID.toString()),
-                        "hashAlgorithm", List.of("sha-256"),
-                        "decoys", List.of("0"),
                         "vct", List.of("https://credentials.example.com/identity_credential"),
-                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("IdentityCredential")
                 )
         ));
@@ -289,12 +278,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "algorithmType", List.of("ES256"),
-                        "tokenType", List.of(Format.SD_JWT_VC),
-                        "issuerDid", List.of(TEST_DID.toString()),
-                        "hashAlgorithm", List.of("sha-256"),
-                        "decoys", List.of("2"),
                         "vct", List.of("https://credentials.example.com/test-credential"),
-                        "visibleClaims", List.of("iat,nbf"),
                         "vcConfigId", List.of("test-credential")
                 )
         ));
@@ -307,35 +291,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         clientRepresentation.setClientId(clientId);
         clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         clientRepresentation.setEnabled(true);
-        Map<String, String> testCredentialAttributes = Map.of(
-                "vc.test-credential.expiry_in_s", "1800",
-                "vc.test-credential.format", Format.SD_JWT_VC,
-                "vc.test-credential.scope", "test-credential",
-                "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
-                "vc.test-credential.vct", "https://credentials.example.com/test-credential",
-                "vc.test-credential.display.0", "{\n  \"name\": \"Test Credential\"\n}"
-        );
-        Map<String, String> identityCredentialAttributes = Map.of(
-                "vc.IdentityCredential.expiry_in_s", "31536000",
-                "vc.IdentityCredential.format", Format.SD_JWT_VC,
-                "vc.IdentityCredential.scope", "identity_credential",
-                "vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential",
-                "vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk",
-                "vc.IdentityCredential.claims", "{\"given_name\":{\"display\":[{\"name\":\"الاسم الشخصي\",\"locale\":\"ar\"},{\"name\":\"Vorname\",\"locale\":\"de\"},{\"name\":\"Given Name\",\"locale\":\"en\"},{\"name\":\"Nombre\",\"locale\":\"es\"},{\"name\":\"نام\",\"locale\":\"fa\"},{\"name\":\"Etunimi\",\"locale\":\"fi\"},{\"name\":\"Prénom\",\"locale\":\"fr\"},{\"name\":\"पहचानी गई नाम\",\"locale\":\"hi\"},{\"name\":\"Nome\",\"locale\":\"it\"},{\"name\":\"名\",\"locale\":\"ja\"},{\"name\":\"Овог нэр\",\"locale\":\"mn\"},{\"name\":\"Voornaam\",\"locale\":\"nl\"},{\"name\":\"Nome Próprio\",\"locale\":\"pt\"},{\"name\":\"Förnamn\",\"locale\":\"sv\"},{\"name\":\"مسلمان نام\",\"locale\":\"ur\"}]},\"family_name\":{\"display\":[{\"name\":\"اسم العائلة\",\"locale\":\"ar\"},{\"name\":\"Nachname\",\"locale\":\"de\"},{\"name\":\"Family Name\",\"locale\":\"en\"},{\"name\":\"Apellido\",\"locale\":\"es\"},{\"name\":\"نام خانوادگی\",\"locale\":\"fa\"},{\"name\":\"Sukunimi\",\"locale\":\"fi\"},{\"name\":\"Nom de famille\",\"locale\":\"fr\"},{\"name\":\"परिवार का नाम\",\"locale\":\"hi\"},{\"name\":\"Cognome\",\"locale\":\"it\"},{\"name\":\"姓\",\"locale\":\"ja\"},{\"name\":\"өөрийн нэр\",\"locale\":\"mn\"},{\"name\":\"Achternaam\",\"locale\":\"nl\"},{\"name\":\"Sobrenome\",\"locale\":\"pt\"},{\"name\":\"Efternamn\",\"locale\":\"sv\"},{\"name\":\"خاندانی نام\",\"locale\":\"ur\"}]},\"birthdate\":{\"display\":[{\"name\":\"تاريخ الميلاد\",\"locale\":\"ar\"},{\"name\":\"Geburtsdatum\",\"locale\":\"de\"},{\"name\":\"Date of Birth\",\"locale\":\"en\"},{\"name\":\"Fecha de Nacimiento\",\"locale\":\"es\"},{\"name\":\"تاریخ تولد\",\"locale\":\"fa\"},{\"name\":\"Syntymäaika\",\"locale\":\"fi\"},{\"name\":\"Date de naissance\",\"locale\":\"fr\"},{\"name\":\"जन्म की तारीख\",\"locale\":\"hi\"},{\"name\":\"Data di nascita\",\"locale\":\"it\"},{\"name\":\"生年月日\",\"locale\":\"ja\"},{\"name\":\"төрсөн өдөр\",\"locale\":\"mn\"},{\"name\":\"Geboortedatum\",\"locale\":\"nl\"},{\"name\":\"Data de Nascimento\",\"locale\":\"pt\"},{\"name\":\"Födelsedatum\",\"locale\":\"sv\"},{\"name\":\"تاریخ پیدائش\",\"locale\":\"ur\"}]}}",
-                "vc.IdentityCredential.display.0", "{\"name\": \"Identity Credential\"}",
-                "vc.IdentityCredential.proof_types_supported", "{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"
-        );
-        HashedMap<String, String> allAttributes = new HashedMap<>();
-        allAttributes.putAll(testCredentialAttributes);
-        allAttributes.putAll(identityCredentialAttributes);
-        clientRepresentation.setAttributes(allAttributes);
         clientRepresentation.setProtocolMappers(
                 List.of(
                         getRoleMapper(clientId, "test-credential"),
                         getUserAttributeMapper("email", "email", "test-credential"),
                         getUserAttributeMapper("firstName", "firstName", "test-credential"),
                         getUserAttributeMapper("lastName", "lastName", "test-credential"),
-                        getIdMapper("test-credential"),
+                        getJtiGeneratedIdMapper("test-credential"),
                         getStaticClaimMapper("test-credential", "test-credential"),
                         getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE", "test-credential"),
                         getIssuedAtTimeMapper("nbf", null, "COMPUTE", "test-credential"),
@@ -349,8 +311,23 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         return clientRepresentation;
     }
 
+    private static final String JTI_KEY = "jti";
+
+    public static ProtocolMapperRepresentation getJtiGeneratedIdMapper(String supportedCredentialTypes) {
+        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+        protocolMapperRepresentation.setName("generated-id-mapper");
+        protocolMapperRepresentation.setProtocol("oid4vc");
+        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+        protocolMapperRepresentation.setProtocolMapper("oid4vc-generated-id-mapper");
+        protocolMapperRepresentation.setConfig(Map.of(
+                OID4VCGeneratedIdMapper.SUBJECT_PROPERTY_CONFIG_KEY, JTI_KEY,
+                "supportedCredentialTypes", supportedCredentialTypes
+        ));
+        return protocolMapperRepresentation;
+    }
+
     @Override
-    protected ComponentExportRepresentation getKeyProvider(){
+    protected ComponentExportRepresentation getKeyProvider() {
         return getEcKeyProvider();
     }
 
@@ -359,11 +336,55 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         return List.of(getIdCredentialSigningProvider(), getTestCredentialSigningProvider());
     }
 
+    @Override
+    protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
+        return List.of(getCredentialBuilderProvider(Format.SD_JWT_VC));
+    }
+
+    @Override
+    protected Map<String, String> getCredentialDefinitionAttributes() {
+        Map<String, String> testCredentialAttributes = Map.ofEntries(
+                Map.entry("vc.test-credential.expiry_in_s", "1800"),
+                Map.entry("vc.test-credential.format", Format.SD_JWT_VC),
+                Map.entry("vc.test-credential.scope", "test-credential"),
+                Map.entry("vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }"),
+                Map.entry("vc.test-credential.vct", "https://credentials.example.com/test-credential"),
+                Map.entry("vc.test-credential.display.0", "{\n  \"name\": \"Test Credential\"\n}"),
+                Map.entry("vc.test-credential.credential_build_config.token_jws_type", "example+sd-jwt"),
+                Map.entry("vc.test-credential.credential_build_config.hash_algorithm", "sha-256"),
+                Map.entry("vc.test-credential.credential_build_config.visible_claims", "iat,nbf,jti"),
+                Map.entry("vc.test-credential.credential_build_config.decoys", "2")
+        );
+
+        Map<String, String> identityCredentialAttributes = Map.ofEntries(
+                Map.entry("vc.IdentityCredential.expiry_in_s", "31536000"),
+                Map.entry("vc.IdentityCredential.format", Format.SD_JWT_VC),
+                Map.entry("vc.IdentityCredential.scope", "identity_credential"),
+                Map.entry("vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential"),
+                Map.entry("vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk"),
+                Map.entry("vc.IdentityCredential.claims", "{\"given_name\":{\"display\":[{\"name\":\"الاسم الشخصي\",\"locale\":\"ar\"},{\"name\":\"Vorname\",\"locale\":\"de\"},{\"name\":\"Given Name\",\"locale\":\"en\"},{\"name\":\"Nombre\",\"locale\":\"es\"},{\"name\":\"نام\",\"locale\":\"fa\"},{\"name\":\"Etunimi\",\"locale\":\"fi\"},{\"name\":\"Prénom\",\"locale\":\"fr\"},{\"name\":\"पहचानी गई नाम\",\"locale\":\"hi\"},{\"name\":\"Nome\",\"locale\":\"it\"},{\"name\":\"名\",\"locale\":\"ja\"},{\"name\":\"Овог нэр\",\"locale\":\"mn\"},{\"name\":\"Voornaam\",\"locale\":\"nl\"},{\"name\":\"Nome Próprio\",\"locale\":\"pt\"},{\"name\":\"Förnamn\",\"locale\":\"sv\"},{\"name\":\"مسلمان نام\",\"locale\":\"ur\"}]},\"family_name\":{\"display\":[{\"name\":\"اسم العائلة\",\"locale\":\"ar\"},{\"name\":\"Nachname\",\"locale\":\"de\"},{\"name\":\"Family Name\",\"locale\":\"en\"},{\"name\":\"Apellido\",\"locale\":\"es\"},{\"name\":\"نام خانوادگی\",\"locale\":\"fa\"},{\"name\":\"Sukunimi\",\"locale\":\"fi\"},{\"name\":\"Nom de famille\",\"locale\":\"fr\"},{\"name\":\"परिवार का नाम\",\"locale\":\"hi\"},{\"name\":\"Cognome\",\"locale\":\"it\"},{\"name\":\"姓\",\"locale\":\"ja\"},{\"name\":\"өөрийн нэр\",\"locale\":\"mn\"},{\"name\":\"Achternaam\",\"locale\":\"nl\"},{\"name\":\"Sobrenome\",\"locale\":\"pt\"},{\"name\":\"Efternamn\",\"locale\":\"sv\"},{\"name\":\"خاندانی نام\",\"locale\":\"ur\"}]},\"birthdate\":{\"display\":[{\"name\":\"تاريخ الميلاد\",\"locale\":\"ar\"},{\"name\":\"Geburtsdatum\",\"locale\":\"de\"},{\"name\":\"Date of Birth\",\"locale\":\"en\"},{\"name\":\"Fecha de Nacimiento\",\"locale\":\"es\"},{\"name\":\"تاریخ تولد\",\"locale\":\"fa\"},{\"name\":\"Syntymäaika\",\"locale\":\"fi\"},{\"name\":\"Date de naissance\",\"locale\":\"fr\"},{\"name\":\"जन्म की तारीख\",\"locale\":\"hi\"},{\"name\":\"Data di nascita\",\"locale\":\"it\"},{\"name\":\"生年月日\",\"locale\":\"ja\"},{\"name\":\"төрсөн өдөр\",\"locale\":\"mn\"},{\"name\":\"Geboortedatum\",\"locale\":\"nl\"},{\"name\":\"Data de Nascimento\",\"locale\":\"pt\"},{\"name\":\"Födelsedatum\",\"locale\":\"sv\"},{\"name\":\"تاریخ پیدائش\",\"locale\":\"ur\"}]}}"),
+                Map.entry("vc.IdentityCredential.display.0", "{\"name\": \"Identity Credential\"}"),
+                Map.entry("vc.IdentityCredential.proof_types_supported", "{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"),
+                Map.entry("vc.IdentityCredential.credential_build_config.token_jws_type", "example+sd-jwt"),
+                Map.entry("vc.IdentityCredential.credential_build_config.hash_algorithm", "sha-256"),
+                Map.entry("vc.IdentityCredential.credential_build_config.visible_claims", "iat,nbf,jti"),
+                Map.entry("vc.IdentityCredential.credential_build_config.decoys", "0")
+        );
+
+        HashedMap<String, String> allAttributes = new HashedMap<>();
+        allAttributes.putAll(testCredentialAttributes);
+        allAttributes.putAll(identityCredentialAttributes);
+
+        return allAttributes;
+    }
+
     static class TestCredentialResponseHandler extends CredentialResponseHandler {
         final String vct;
-        TestCredentialResponseHandler(String vct){
+
+        TestCredentialResponseHandler(String vct) {
             this.vct = vct;
         }
+
         @Override
         protected void handleCredentialResponse(CredentialResponse credentialResponse) throws VerificationException {
             // SDJWT have a special format.
@@ -371,6 +392,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().toJws(), JsonWebToken.class).getToken();
 
             assertNotNull("A valid credential string should have been responded", jsonWebToken);
+            assertNotNull("The credentials should include the id claim", jsonWebToken.getId());
             assertNotNull("The credentials should be included at the vct-claim.", jsonWebToken.getOtherClaims().get("vct"));
             assertEquals("The credentials should be included at the vct-claim.", vct, jsonWebToken.getOtherClaims().get("vct").toString());
 
@@ -390,14 +412,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
             assertEquals("lastName claim incorrectly mapped.", disclosureMap.get("lastName").get(2).asText(), "Doe");
             assertTrue("The credentials should include the roles claim.", disclosureMap.containsKey("roles"));
-            assertTrue("The credentials should include the id claim", disclosureMap.containsKey("id"));
             assertTrue("The credentials should include the test-credential claim.", disclosureMap.containsKey("test-credential"));
             assertTrue("lastName claim incorrectly mapped.", disclosureMap.get("test-credential").get(2).asBoolean());
             assertTrue("The credentials should include the email claim.", disclosureMap.containsKey("email"));
             assertEquals("email claim incorrectly mapped.", disclosureMap.get("email").get(2).asText(), "john@email.cz");
 
             assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
-            assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());        }
+            assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());
+        }
     }
 }
-

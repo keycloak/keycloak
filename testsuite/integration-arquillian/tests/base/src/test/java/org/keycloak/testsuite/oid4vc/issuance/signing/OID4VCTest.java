@@ -185,7 +185,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         clientRepresentation.setClientId(clientId);
         clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         clientRepresentation.setEnabled(true);
-        clientRepresentation.setAttributes(getTestCredentialDefinitionAttributes());
         clientRepresentation.setProtocolMappers(
                 List.of(
                         getRoleMapper(clientId, "VerifiableCredential"),
@@ -205,7 +204,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 "vc.test-credential.format", Format.JWT_VC,
                 "vc.test-credential.scope", "VerifiableCredential",
                 "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
-                "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}"
+                "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}",
+                "vc.test-credential.credential_build_config.token_jws_type", "JWT"
                 // Moved sd-jwt specific attributes to: org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getTestCredentialSigningProvider
         );
     }
@@ -303,11 +303,18 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "keyId", List.of(keyWrapper.getKid()),
-                        "algorithmType", List.of(keyWrapper.getAlgorithm()),
-                        "tokenType", List.of("JWT"),
-                        "issuerDid", List.of(TEST_DID.toString())
+                        "algorithmType", List.of(keyWrapper.getAlgorithm())
                 )
         ));
+        return componentExportRepresentation;
+    }
+
+    public static ComponentExportRepresentation getCredentialBuilderProvider(String vcFormat) {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("credential-builder-" + vcFormat);
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId(vcFormat);
+
         return componentExportRepresentation;
     }
 
@@ -340,10 +347,10 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return role;
     }
 
-    static class StaticTimeProvider implements TimeProvider {
+    public static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
-        StaticTimeProvider(int currentTimeInS) {
+        public StaticTimeProvider(int currentTimeInS) {
             this.currentTimeInS = currentTimeInS;
         }
 
