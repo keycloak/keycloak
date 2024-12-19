@@ -42,15 +42,50 @@ public class CredentialBuildConfig {
     private static final String VISIBLE_CLAIMS_KEY = "visible_claims";
     private static final String NUMBER_OF_DECOYS_KEY = "decoys";
 
+    private static final String SIGNING_KEY_ID_KEY = "signing_key_id";
+    private static final String OVERRIDE_KEY_ID_KEY = "override_key_id";
+    private static final String SIGNING_ALGORITHM_KEY = "signing_algorithm";
+    private static final String LDP_PROOF_TYPE_KEY = "ldp_proof_type";
 
     // This is saved here to facilitate dot notation reconstruction
     private String credentialId;
 
+    //-- Proper building configuration fields --//
+
+    // The vct field to be used for the SD-JWT.
     private String credentialType;
+
+    // The type of the token to be created.
+    // Will be used as `typ` claim in the JWT-Header.
     private String tokenJwsType;
+
+    // The hash algorithm to be used for the SD-JWTs.
     private String hashAlgorithm;
+
+    // List of claims to stay disclosed in the SD-JWT.
     private List<String> visibleClaims;
+
+    // The number of decoys to be added to the SD-JWT.
     private Integer numberOfDecoys;
+
+    //-- Signing configuration fields --//
+
+    // The id of the key to be used for signing credentials.
+    // The key needs to be provided as a realm key.
+    private String signingKeyId;
+
+    // An alternative kid to take precedence.
+    // Depending on the did-schema, the above signingKeyId
+    // might not be enough and can be overwritten here.
+    private String overrideKeyId;
+
+    // The type of the algorithm to be used for signing.
+    // Needs to fit the provided signing key.
+    private String signingAlgorithm;
+
+    // The type of LD-Proofs to be created.
+    // Needs to fit the provided signing key.
+    private String ldpProofType;
 
     public String getCredentialId() {
         return credentialId;
@@ -106,6 +141,42 @@ public class CredentialBuildConfig {
         return this;
     }
 
+    public String getSigningKeyId() {
+        return signingKeyId;
+    }
+
+    public CredentialBuildConfig setSigningKeyId(String signingKeyId) {
+        this.signingKeyId = signingKeyId;
+        return this;
+    }
+
+    public String getOverrideKeyId() {
+        return overrideKeyId;
+    }
+
+    public CredentialBuildConfig setOverrideKeyId(String overrideKeyId) {
+        this.overrideKeyId = overrideKeyId;
+        return this;
+    }
+
+    public String getSigningAlgorithm() {
+        return signingAlgorithm;
+    }
+
+    public CredentialBuildConfig setSigningAlgorithm(String signingAlgorithm) {
+        this.signingAlgorithm = signingAlgorithm;
+        return this;
+    }
+
+    public String getLdpProofType() {
+        return ldpProofType;
+    }
+
+    public CredentialBuildConfig setLdpProofType(String ldpProofType) {
+        this.ldpProofType = ldpProofType;
+        return this;
+    }
+
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
 
@@ -125,6 +196,15 @@ public class CredentialBuildConfig {
         Optional.ofNullable(visibleClaims)
                 .ifPresent(claims -> dotNotation.put(prefix + VISIBLE_CLAIMS_KEY,
                         String.join(MULTIVALUED_STRING_SEPARATOR, claims)));
+
+        Optional.ofNullable(signingKeyId)
+                .ifPresent(signingKeyId -> dotNotation.put(prefix + SIGNING_KEY_ID_KEY, signingKeyId));
+        Optional.ofNullable(overrideKeyId)
+                .ifPresent(overrideKeyId -> dotNotation.put(prefix + OVERRIDE_KEY_ID_KEY, overrideKeyId));
+        Optional.ofNullable(signingAlgorithm)
+                .ifPresent(signingAlgorithm -> dotNotation.put(prefix + SIGNING_ALGORITHM_KEY, signingAlgorithm));
+        Optional.ofNullable(ldpProofType)
+                .ifPresent(ldpProofType -> dotNotation.put(prefix + LDP_PROOF_TYPE_KEY, ldpProofType));
 
         return dotNotation;
     }
@@ -161,6 +241,15 @@ public class CredentialBuildConfig {
                 .map(Arrays::asList)
                 .ifPresent(credentialBuildConfig::setVisibleClaims);
 
+        Optional.ofNullable(dotNotated.get(prefix + SIGNING_KEY_ID_KEY))
+                .ifPresent(credentialBuildConfig::setSigningKeyId);
+        Optional.ofNullable(dotNotated.get(prefix + OVERRIDE_KEY_ID_KEY))
+                .ifPresent(credentialBuildConfig::setOverrideKeyId);
+        Optional.ofNullable(dotNotated.get(prefix + SIGNING_ALGORITHM_KEY))
+                .ifPresent(credentialBuildConfig::setSigningAlgorithm);
+        Optional.ofNullable(dotNotated.get(prefix + LDP_PROOF_TYPE_KEY))
+                .ifPresent(credentialBuildConfig::setLdpProofType);
+
         return credentialBuildConfig;
     }
 
@@ -173,11 +262,11 @@ public class CredentialBuildConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CredentialBuildConfig that = (CredentialBuildConfig) o;
-        return Objects.equals(credentialId, that.credentialId) && Objects.equals(credentialType, that.credentialType) && Objects.equals(tokenJwsType, that.tokenJwsType) && Objects.equals(hashAlgorithm, that.hashAlgorithm) && Objects.equals(visibleClaims, that.visibleClaims) && Objects.equals(numberOfDecoys, that.numberOfDecoys);
+        return Objects.equals(credentialId, that.credentialId) && Objects.equals(credentialType, that.credentialType) && Objects.equals(tokenJwsType, that.tokenJwsType) && Objects.equals(hashAlgorithm, that.hashAlgorithm) && Objects.equals(visibleClaims, that.visibleClaims) && Objects.equals(numberOfDecoys, that.numberOfDecoys) && Objects.equals(signingKeyId, that.signingKeyId) && Objects.equals(overrideKeyId, that.overrideKeyId) && Objects.equals(signingAlgorithm, that.signingAlgorithm) && Objects.equals(ldpProofType, that.ldpProofType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialType, tokenJwsType, hashAlgorithm, visibleClaims, numberOfDecoys, credentialId);
+        return Objects.hash(credentialId, credentialType, tokenJwsType, hashAlgorithm, visibleClaims, numberOfDecoys, signingKeyId, overrideKeyId, signingAlgorithm, ldpProofType);
     }
 }

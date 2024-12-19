@@ -17,7 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import org.jboss.logging.Logger;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSBuilder;
 
 /**
@@ -25,10 +27,16 @@ import org.keycloak.jose.jws.JWSBuilder;
  */
 public class JwtCredentialBody implements CredentialBody {
 
+    private static final Logger LOGGER = Logger.getLogger(JwtCredentialBody.class);
+
     private final JWSBuilder.EncodingBuilder jwsEncodingBuilder;
 
     public JwtCredentialBody(JWSBuilder.EncodingBuilder jwsEncodingBuilder) {
         this.jwsEncodingBuilder = jwsEncodingBuilder;
+    }
+
+    public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
+        LOGGER.warnf("Key binding is not yet implemented for JWT credentials");
     }
 
     public String sign(SignatureSignerContext signatureSignerContext) {

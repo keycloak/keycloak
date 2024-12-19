@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.jose.jwk.JWK;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 
-/**
- * Incomplete representations of format-specific credentials.
- *
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
- */
-public interface CredentialBody {
+public class JwtProofValidatorFactory implements ProofValidatorFactory {
 
-    /**
-     * Bind the credential to a public key prior to signing.
-     */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    @Override
+    public String getId() {
+        return ProofType.JWT;
+    }
+
+    @Override
+    public ProofValidator create(KeycloakSession session) {
+        return new JwtProofValidator(session);
+    }
 }

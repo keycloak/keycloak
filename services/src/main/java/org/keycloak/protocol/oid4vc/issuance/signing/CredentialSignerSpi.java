@@ -18,16 +18,15 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
 /**
- * Spi implementation of the creation of {@link  VerifiableCredentialsSigningService}
+ * Spi implementation of the creation of {@link CredentialSigner}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class VCSigningServiceSpi implements Spi {
-    private static final String NAME = "vcSigningService";
+public class CredentialSignerSpi implements Spi {
+    private static final String NAME = "credentialSigner";
 
     @Override
     public boolean isInternal() {
@@ -41,11 +40,12 @@ public class VCSigningServiceSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return VerifiableCredentialsSigningService.class;
+        return CredentialSigner.class;
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return VCSigningServiceProviderFactory.class;
+    public Class<CredentialSignerFactory> getProviderFactoryClass() {
+        return CredentialSignerFactory.class;
     }
 }
+
