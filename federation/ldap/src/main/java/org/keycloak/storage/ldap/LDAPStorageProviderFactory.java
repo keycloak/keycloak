@@ -361,7 +361,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
                     mapperModel = KeycloakModelUtils.createComponentModel("username-cn", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
                             UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
-                            UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
+                            UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
                             UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
                             UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
                             UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
