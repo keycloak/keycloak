@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.AdminPermissionsUtils;
 
 import java.util.Collections;
 
@@ -77,6 +78,7 @@ public class ResourceServerService {
     }
 
     public ResourceServer create(boolean newClient) {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, client.getId());
         this.auth.realm().requireManageAuthorization();
 
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
@@ -99,6 +101,7 @@ public class ResourceServerService {
     @Produces(MediaType.APPLICATION_JSON)
     @APIResponse(responseCode = "204", description = "No Content")
     public Response update(ResourceServerRepresentation server) {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, client.getId());
         this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
@@ -108,6 +111,7 @@ public class ResourceServerService {
     }
 
     public void delete() {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, client.getId());
         this.auth.realm().requireManageAuthorization();
         //need to create representation before the object is deleted to be able to get lazy loaded fields
         ResourceServerRepresentation rep = ModelToRepresentation.toRepresentation(resourceServer, client);
@@ -126,6 +130,7 @@ public class ResourceServerService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ResourceServerRepresentation exportSettings() {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, client.getId());
         this.auth.realm().requireManageAuthorization();
         return ModelToRepresentation.toResourceServerRepresentation(session, client);
     }
@@ -135,6 +140,7 @@ public class ResourceServerService {
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponse(responseCode = "204", description = "No Content")
     public Response importSettings(ResourceServerRepresentation rep) {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, client.getId());
         this.auth.realm().requireManageAuthorization();
 
         rep.setClientId(client.getId());
@@ -153,6 +159,7 @@ public class ResourceServerService {
 
     @Path("/scope")
     public ScopeService getScopeResource() {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, resourceServer.getId());
         return new ScopeService(this.session, this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 

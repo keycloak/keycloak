@@ -18,6 +18,7 @@ package org.keycloak.authorization;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -31,11 +32,13 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 
 public class AdminPermissionsAuthorizationSchema extends AuthorizationSchema {
 
-    public static final ResourceType USERS = new ResourceType("Users", new HashSet<>(Arrays.asList("manage")));
+    private static final String USERS_RESOURCE_TYPE = "Users";
+
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, new HashSet<>(Arrays.asList("manage")));
     public static final AdminPermissionsAuthorizationSchema INSTANCE = new AdminPermissionsAuthorizationSchema();
 
     private AdminPermissionsAuthorizationSchema() {
-        super(USERS);
+        super(Map.of(USERS_RESOURCE_TYPE, USERS));
     }
 
     public Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String type, String id) {
