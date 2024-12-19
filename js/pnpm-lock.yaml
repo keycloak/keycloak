@@ -150,6 +150,9 @@ importers:
 
   apps/admin-ui:
     dependencies:
+      '@axe-core/playwright':
+        specifier: ^4.10.1
+        version: 4.10.1(playwright-core@1.50.1)
       '@dagrejs/dagre':
         specifier: ^1.1.4
         version: 1.1.4
@@ -179,7 +182,7 @@ importers:
         version: 3.1.0(@babel/runtime@7.26.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.8.2)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(playwright-core@1.50.1)(typescript@5.8.2)'
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -231,7 +234,7 @@ importers:
         version: 2.3.0(cypress@14.1.0)
       '@playwright/test':
         specifier: ^1.49.0
-        version: 1.49.1
+        version: 1.50.1
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.1.0)
@@ -285,7 +288,7 @@ importers:
         version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.10)(typescript@5.8.2)
       uuid:
         specifier: ^11.0.3
-        version: 11.0.3
+        version: 11.1.0
       vite:
         specifier: ^6.2.1
         version: 6.2.1(@types/node@22.13.10)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
@@ -574,6 +577,11 @@ packages:
   '@ast-grep/napi@0.32.3':
     resolution: {integrity: sha512-EdgX3gnDGkKMeofSYQlmPccjnxmGGQoEKL7pVQUmenLrsUBXXcjY//6J0LJApfIzNCknjQkfWpj1IbWDkl66Iw==}
     engines: {node: '>= 10'}
+
+  '@axe-core/playwright@4.10.1':
+    resolution: {integrity: sha512-EV5t39VV68kuAfMKqb/RL+YjYKhfuGim9rgIaQ6Vntb2HgaCaau0h98Y3WEUqW1+PbdzxDtDNjFAipbtZuBmEA==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.26.2':
     resolution: {integrity: sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ==}
@@ -5232,6 +5240,11 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.32.3
       '@ast-grep/napi-win32-x64-msvc': 0.32.3
 
+  '@axe-core/playwright@4.10.1(playwright-core@1.50.1)':
+    dependencies:
+      axe-core: 4.10.2
+      playwright-core: 1.50.1
+
   '@babel/code-frame@7.26.2':
     dependencies:
       '@babel/helper-validator-identifier': 7.25.9
@@ -5644,8 +5657,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.8.2)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(playwright-core@1.50.1)(typescript@5.8.2)':
     dependencies:
+      '@axe-core/playwright': 4.10.1(playwright-core@1.50.1)
       '@dagrejs/dagre': 1.1.4
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:libs/ui-shared
@@ -5674,6 +5688,7 @@ snapshots:
       - '@babel/runtime'
       - '@types/react'
       - immer
+      - playwright-core
       - react-native
       - typescript
 
