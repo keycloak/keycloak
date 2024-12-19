@@ -171,6 +171,23 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testInvalidLengthClientIdValidation() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setId("test-long-invalid-client-id-validation-400-bad-request");
+        rep.setClientId("invalid-client-id-app");
+        rep.setDescription("invalid-client-id-app description");
+        rep.setEnabled(true);
+        rep.setPublicClient(true);
+        try (Response response = realm.clients().create(rep)) {
+            if (response.getStatus() != 400) {
+                response.bufferEntity();
+                String body = response.readEntity(String.class);
+                fail("expect 400 Bad request response code but receive: " + response.getStatus() + "\n" + body);
+            }
+        }
+    }
+
+    @Test
     public void testInvalidUrlClientValidation() {
         testClientUriValidation("Root URL is not a valid URL",
                 "Base URL is not a valid URL",
