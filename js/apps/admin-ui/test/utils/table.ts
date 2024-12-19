@@ -27,3 +27,7 @@ export function selectRowKebab(page: Page, itemName: string) {
     .getByLabel("Kebab toggle")
     .click();
 }
+
+export function clickRowKebabItem(page: Page, itemName: string) {
+  return page.getByRole("menuitem", { name: itemName }).click();
+}

@@ -387,6 +387,25 @@ class AdminClient {
     const { id } = (await this.#client.organizations.find({ search: name }))[0];
     await this.#client.organizations.delById({ id: id! });
   }
+
+  async copyFlow(name: string, newName: string) {
+    await this.#login();
+    await this.#client.authenticationManagement.copyFlow({
+      flow: name,
+      newName: newName,
+    });
+  }
+
+  async getFlow(name: string) {
+    await this.#login();
+    const flows = await this.#client.authenticationManagement.getFlows();
+    return flows.find((flow) => flow.alias === name);
+  }
+
+  async deleteFlow(name: string) {
+    await this.#login();
+    await this.#client.authenticationManagement.deleteFlow({ flowId: name });
+  }
 }
 
 const adminClient = new AdminClient();

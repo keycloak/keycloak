@@ -7,3 +7,7 @@ export function checkModalTitle(page: Page, title: string) {
 export function confirmModal(page: Page) {
   return page.getByTestId("confirm").click();
 }
+
+export async function cancelModal(page: Page) {
+  await page.click('[data-testid="cancel"]');
+}
