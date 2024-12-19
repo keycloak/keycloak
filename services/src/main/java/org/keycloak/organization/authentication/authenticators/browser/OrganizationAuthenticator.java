@@ -41,6 +41,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
@@ -208,6 +209,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         List<IdentityProviderModel> brokers = organization.getIdentityProviders().toList();
 
+        // first attempt to redirect using idps that have the domain assigned
         for (IdentityProviderModel broker : brokers) {
             if (IdentityProviderRedirectMode.EMAIL_MATCH.isSet(broker)) {
                 String idpDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
@@ -216,6 +218,19 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                     // redirect the user using the broker that matches the email domain
                     redirect(context, broker.getAlias(), username);
                     return true;
+                }
+            }
+        }
+
+        // next attempt to redirect using idps, if any, that match any domain
+        for (IdentityProviderModel broker : brokers) {
+            if (IdentityProviderRedirectMode.EMAIL_MATCH_ANY_ORG_DOMAIN.isSet(broker)) {
+                for (OrganizationDomainModel domainModel : organization.getDomains().toList()) {
+                    if (domain.equals(domainModel.getName())) {
+                        // redirect the user using the broker that matches any of the organizations domains
+                        redirect(context, broker.getAlias(), username);
+                        return true;
+                    }
                 }
             }
         }
