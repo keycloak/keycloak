@@ -17,7 +17,13 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -32,10 +38,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.hasEntry;
@@ -48,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CRSerializationTest {
 
@@ -97,9 +100,6 @@ public class CRSerializationTest {
         HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
         assertNotNull(managementSpec);
         assertEquals(9003, managementSpec.getPort());
-
-        assertNotNull(keycloak.getSpec().getNetworkPolicySpec());
-        assertTrue(keycloak.getSpec().getNetworkPolicySpec().isNetworkPolicyEnabled());
     }
 
     @Test
@@ -240,6 +240,41 @@ public class CRSerializationTest {
         assertThat(limitMemQuantity, notNullValue());
         assertThat(limitMemQuantity.getAmount(), is("8"));
         assertThat(limitMemQuantity.getFormat(), is("Gi"));
+    }
+
+    @Test
+    public void testNetworkPolicy() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        var networkPolicySpec = keycloak.getSpec().getNetworkPolicySpec();
+        assertNotNull(networkPolicySpec);
+        assertTrue(networkPolicySpec.isNetworkPolicyEnabled());
+        assertNetworkPolicyRules(networkPolicySpec.getHttpRules());
+        assertNetworkPolicyRules(networkPolicySpec.getHttpsRules());
+        assertNetworkPolicyRules(networkPolicySpec.getManagementRules());
+    }
+
+    private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {
+        assertNotNull(rules);
+        assertEquals(3, rules.size());
+        for (var peer : rules) {
+            assertNotNull(peer);
+            if (peer.getPodSelector() != null) {
+                assertEquals("frontend", peer.getPodSelector().getMatchLabels().get("role"));
+                continue;
+            }
+            if (peer.getNamespaceSelector() != null) {
+                assertEquals("myproject", peer.getNamespaceSelector().getMatchLabels().get("project"));
+                continue;
+            }
+            if (peer.getIpBlock() != null) {
+                assertEquals("172.17.0.0/16", peer.getIpBlock().getCidr());
+                var except = peer.getIpBlock().getExcept();
+                assertEquals(1, except.size());
+                assertEquals("172.17.1.0/24", except.get(0));
+                continue;
+            }
+            fail();
+        }
     }
 
 }

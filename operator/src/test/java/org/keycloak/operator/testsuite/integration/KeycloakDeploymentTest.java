@@ -74,6 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
@@ -177,9 +179,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 Constants.DEFAULT_DIST_CONFIG_LIST.stream()
                                                   .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretHealthProp.getName()))
                                                   .findFirst()
-                                                  .get()
-                                                  .getValue()
-        ).isEqualTo("true"); // just a sanity check default values did not change
+                                                  .map(ValueOrSecret::getValue)
+                )
+                .isPresent()
+                .contains("true");
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -287,8 +290,8 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testTlsDisabled() {
         var kc = getTestKeycloakDeployment(true);
-        kc.getSpec().getHttpSpec().setTlsSecret(null);
-        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        disableHttps(kc);
+        enableHttp(kc, false);
         deployKeycloak(k8sclient, kc, true);
 
         CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, false, Constants.KEYCLOAK_HTTP_PORT);
@@ -298,7 +301,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testHttpEnabledWithTls() {
         var kc = getTestKeycloakDeployment(true);
-        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        enableHttp(kc, false);
         deployKeycloak(k8sclient, kc, true);
 
         CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, false, Constants.KEYCLOAK_HTTP_PORT);
@@ -350,11 +353,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
     @Test
     public void testHttpsPort() {
-        final int httpsPort = 8543;
-        final int httpPort = 8180;
         var kc = getTestKeycloakDeployment(true);
-        kc.getSpec().getHttpSpec().setHttpsPort(httpsPort);
-        kc.getSpec().getHttpSpec().setHttpPort(httpPort);
+        var httpsPort = K8sUtils.configureHttps(kc, true);
+        enableHttp(kc, true);
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
@@ -368,13 +369,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
     @Test
     public void testHttpPort() {
-        final int httpsPort = 8543;
-        final int httpPort = 8180;
         var kc = getTestKeycloakDeployment(true);
-        kc.getSpec().getHttpSpec().setHttpsPort(httpsPort);
-        kc.getSpec().getHttpSpec().setHttpPort(httpPort);
-        kc.getSpec().getHttpSpec().setTlsSecret(null);
-        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        K8sUtils.configureHttps(kc, true);
+        disableHttps(kc);
+        var httpPort = enableHttp(kc, true);
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)

@@ -17,35 +17,41 @@
 
 package org.keycloak.operator.testsuite.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.net.HttpURLConnection;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.assertj.core.api.ObjectAssert;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -112,44 +118,30 @@ public final class CRAssert {
                 .await()
                 .pollInterval(1, TimeUnit.SECONDS)
                 .timeout(Duration.ofMinutes(5))
-                .untilAsserted(() -> {
-                    client.pods()
-                            .inNamespace(namespaceOf(keycloak))
-                            .withLabels(org.keycloak.operator.Utils.allInstanceLabels(keycloak))
-                            .resources()
-                            .forEach(pod -> {
-                                var logs = pod.getLog();
-                                var matcher = CLUSTER_SIZE_PATTERN.matcher(logs);
-                                int size = 0;
-                                // We want the last view change.
-                                // The other alternative is to reverse the string.
-                                while (matcher.find()) {
-                                    size = Integer.parseInt(matcher.group(1));
-                                }
-                                Assertions.assertEquals(expectedSize, size, "Wrong cluster size in pod " + pod);
-                            });
-                });
+                .untilAsserted(() -> client.pods()
+                        .inNamespace(namespaceOf(keycloak))
+                        .withLabels(Utils.allInstanceLabels(keycloak))
+                        .resources()
+                        .forEach(pod -> {
+                            var logs = pod.getLog();
+                            var matcher = CLUSTER_SIZE_PATTERN.matcher(logs);
+                            int size = 0;
+                            // We want the last view change.
+                            // The other alternative is to reverse the string.
+                            while (matcher.find()) {
+                                size = Integer.parseInt(matcher.group(1));
+                            }
+                            Assertions.assertEquals(expectedSize, size, "Wrong cluster size in pod " + pod);
+                        }));
     }
 
     public static void assertKeycloakAccessibleViaService(KubernetesClient client, Keycloak keycloak, boolean https, int port) {
-        Awaitility.await()
-                .ignoreExceptions()
-                .untilAsserted(() -> {
-                    String protocol = https ? "https" : "http";
-                    var namespace = namespaceOf(keycloak);
+        assertKeycloakAccessibleViaService(client, keycloak, null, Map.of(), https, port);
+    }
 
-                    String serviceName = KeycloakServiceDependentResource.getServiceName(keycloak);
-                    assertThat(client.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
-                            .stream().map(ServicePort::getName).anyMatch(protocol::equals)).isTrue();
-
-                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
-                    Log.info("Checking url: " + url);
-
-                    var curlOutput = K8sUtils.inClusterCurl(client, namespace, url);
-                    Log.info("Curl Output: " + curlOutput);
-
-                    assertEquals("200", curlOutput);
-                });
+    public static void assertKeycloakAccessibleViaService(KubernetesClient client, Keycloak keycloak, String podNamespace, Map<String, String> labels, boolean https, int port) {
+        var protocol = https ? "https" : "http";
+        assertServiceAccessible(client, keycloak, podNamespace, labels, protocol, protocol, port, "/admin/master/console/");
     }
 
     public static void assertManagementInterfaceAccessibleViaService(KubernetesClient client, Keycloak kc, boolean https) {
@@ -157,82 +149,139 @@ public final class CRAssert {
     }
 
     public static void assertManagementInterfaceAccessibleViaService(KubernetesClient client, Keycloak keycloak, boolean https, int port) {
+        assertManagementInterfaceAccessibleViaService(client, keycloak, null, Map.of(), https, port);
+    }
+
+    public static void assertManagementInterfaceAccessibleViaService(KubernetesClient client, Keycloak keycloak, String podNamespace, Map<String, String> labels, boolean https, int port) {
+        assertServiceAccessible(client, keycloak, podNamespace, labels, https ? "https" : "http", Constants.KEYCLOAK_MANAGEMENT_PORT_NAME, port, null);
+    }
+
+    private static void assertServiceAccessible(KubernetesClient client, Keycloak keycloak, String podNamespace, Map<String, String> labels, String protocol, String portName, int port, String path) {
         Awaitility.await()
+                .timeout(30, TimeUnit.SECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    String serviceName = KeycloakServiceDependentResource.getServiceName(keycloak);
+                    var serviceName = KeycloakServiceDependentResource.getServiceName(keycloak);
                     var namespace = namespaceOf(keycloak);
                     assertThat(client.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
-                            .stream().map(ServicePort::getName).anyMatch(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME::equals)).isTrue();
+                            .stream().map(ServicePort::getName).anyMatch(portName::equals)).isTrue();
 
-                    String protocol = https ? "https" : "http";
-                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
+                    var url = protocol + "://" + serviceName + "." + namespace + ":" + port;
+                    if (path != null) {
+                        url += path;
+                    }
                     Log.info("Checking url: " + url);
 
-                    var curlOutput = K8sUtils.inClusterCurl(client, namespace, url);
+                    var curlOutput = K8sUtils.inClusterCurl(client, podNamespace == null ? namespace : podNamespace, labels == null ? Map.of() : labels, url);
                     Log.info("Curl Output: " + curlOutput);
 
                     assertEquals("200", curlOutput);
                 });
     }
 
+    public static void assertKeycloakServiceBlocked(KubernetesClient client, Keycloak keycloak, String podNamespace, Map<String, String> labels, int port) {
+        var serviceName = KeycloakServiceDependentResource.getServiceName(keycloak);
+        var namespace = namespaceOf(keycloak);
+        assertConnection(client, "%s.%s".formatted(serviceName, namespace), port, podNamespace, labels, false);
+    }
+
     public static void assertJGroupsConnection(KubernetesClient client, String podIp, String namespace, Map<String, String> labels, boolean connects) {
         // Send a bogus command to JGroups port
-        // relevant exit codes:
+        assertConnection(client, podIp ,7800, namespace, labels, connects);
+    }
+
+    public static void assertConnection(KubernetesClient client, String hostname, int port, String namespace, Map<String, String> labels, boolean connects) {
+        // Send a bogus command to the port
+        var result = K8sUtils.inClusterCurl(client, namespace, labels, "--telnet-option",
+                "'BOGUS=1'",
+                "--connect-timeout",
+                "2",
+                "-s",
+                "telnet://%s:%s".formatted(hostname, port));
+        // Relevant exit codes:
         // 28-Operation timeout.
-        // 48-Unknown option specified to libcurl.
-        int expectedExitCode = connects ? 48 : 28;
-        int exitCode;
-        try {
-            var builder = new PodBuilder();
-            builder.withNewMetadata()
-                    .withName("curl-telnet-" + UUID.randomUUID())
-                    .withNamespace(namespace)
-                    .withLabels(labels)
-                    .endMetadata();
-            builder.withNewSpec()
-                    .addNewContainer()
-                    .withImage("curlimages/curl:8.1.2")
-                    .withCommand("sh")
-                    .withName("curl")
-                    .withStdin()
-                    .endContainer()
-                    .endSpec();
-
-            var curlPod = builder.build();
-            try {
-                client.resource(curlPod).create();
-            } catch (KubernetesClientException e) {
-                if (e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
-                    throw e;
-                }
-            }
-
-            var args = new String[]{
-                    "curl",
-                    "--telnet-option",
-                    "'BOGUS=1'",
-                    "--connect-timeout",
-                    "2",
-                    "-s",
-                    "telnet://%s:7800".formatted(podIp)
-            };
-
-            Log.infof("Run telnet: %s", String.join(" ", args));
-
-            try (ExecWatch watch = client.pods().resource(curlPod).withReadyWaitTimeout(60000)
-                    .writingOutput(new ByteArrayOutputStream())
-                    .exec(args)) {
-                exitCode = watch.exitCode().get(15, TimeUnit.SECONDS);
-            }
-
-        } catch (Exception ex) {
-            throw KubernetesClientException.launderThrowable(ex);
-        }
-        assertEquals(expectedExitCode, exitCode);
+        // 48-Unknown option specified to libcurl (BOGUS=1 is not a valid option, but the connection is successful).
+        assertEquals(connects ? 48 : 28, result.exitCode());
     }
 
     private static String namespaceOf(Keycloak keycloak) {
         return keycloak.getMetadata().getNamespace();
+    }
+
+    public static void assertIngressRules(NetworkPolicy networkPolicy, Keycloak keycloak, int httpPort, int httpsPort, int mgntPort) {
+        Log.info(networkPolicy);
+        var expectedNumberOfRules = IntStream.of(httpPort, httpsPort, mgntPort)
+                .filter(value -> value > 0)
+                .count();
+
+        // +1 for JGRP
+        ++expectedNumberOfRules;
+
+        long numberOfRules = Optional.ofNullable(networkPolicy.getSpec())
+                .map(io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicySpec::getIngress)
+                .map(List::size)
+                .orElse(0);
+
+        assertEquals(expectedNumberOfRules, numberOfRules);
+
+        // Check selector
+        assertPodSelectorAndPolicy(keycloak, networkPolicy);
+
+        // JGroups is always present
+        assertJGroupsRulePresent(keycloak, networkPolicy);
+
+        if (httpPort > 0) {
+            assertKeycloakEndpointRulePresent("HTTP", networkPolicy, NetworkPolicySpec.httpRules(keycloak).orElse(null), httpPort);
+        }
+        if (httpsPort > 0) {
+            assertKeycloakEndpointRulePresent("HTTPS", networkPolicy, NetworkPolicySpec.httpsRules(keycloak).orElse(null), httpsPort);
+        }
+        if (mgntPort > 0) {
+            assertKeycloakEndpointRulePresent("Management", networkPolicy, NetworkPolicySpec.managementRules(keycloak).orElse(null), mgntPort);
+        }
+    }
+
+    private static void assertPodSelectorAndPolicy(Keycloak keycloak, NetworkPolicy networkPolicy) {
+        assertNotNull(networkPolicy, "Expects a network policy");
+        assertEquals(Utils.allInstanceLabels(keycloak), networkPolicy.getSpec().getPodSelector().getMatchLabels(), "Expects same pod match labels");
+        assertTrue(networkPolicy.getSpec().getPolicyTypes().contains("Ingress"), "Expect ingress polity type present");
+    }
+
+    private static void assertKeycloakEndpointRulePresent(String name, NetworkPolicy networkPolicy, List<NetworkPolicyPeer> from, int mgmtPort) {
+        var rule = findIngressRuleWithPort(networkPolicy, mgmtPort);
+        assertTrue(rule.isPresent(), name + " Ingress Rule is missing");
+        if (from == null || from.isEmpty()) {
+            assertTrue(rule.get().getFrom().isEmpty());
+        } else {
+            assertEquals(from, rule.get().getFrom());
+        }
+        var ports = portAndProtocol(rule.get());
+        assertEquals(Map.of(mgmtPort, Constants.KEYCLOAK_SERVICE_PROTOCOL), ports);
+    }
+
+    private static void assertJGroupsRulePresent(Keycloak keycloak, NetworkPolicy networkPolicy) {
+        var rule = findIngressRuleWithPort(networkPolicy, Constants.KEYCLOAK_JGROUPS_DATA_PORT);
+        assertTrue(rule.isPresent(), "JGroups Ingress Rule is missing");
+
+        var from = rule.get().getFrom();
+        assertEquals(1, from.size(), "Incorrect 'from' list size");
+        assertEquals(Utils.allInstanceLabels(keycloak), from.get(0).getPodSelector().getMatchLabels());
+
+        var ports = portAndProtocol(rule.get());
+        assertEquals(Map.of(
+                Constants.KEYCLOAK_JGROUPS_DATA_PORT, Constants.KEYCLOAK_JGROUPS_PROTOCOL,
+                Constants.KEYCLOAK_JGROUPS_FD_PORT, Constants.KEYCLOAK_JGROUPS_PROTOCOL
+        ), ports);
+    }
+
+    private static Map<Integer, String> portAndProtocol(NetworkPolicyIngressRule rule) {
+        return rule.getPorts().stream()
+                .collect(Collectors.toMap(port -> port.getPort().getIntVal(), NetworkPolicyPort::getProtocol));
+    }
+
+    private static Optional<NetworkPolicyIngressRule> findIngressRuleWithPort(NetworkPolicy networkPolicy, int rulePort) {
+        return networkPolicy.getSpec().getIngress().stream()
+                .filter(rule -> rule.getPorts().stream().anyMatch(port -> port.getPort().getIntVal() == rulePort))
+                .findFirst();
     }
 }
