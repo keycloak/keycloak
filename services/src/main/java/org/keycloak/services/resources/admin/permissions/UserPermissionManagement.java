@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import java.util.Map;
