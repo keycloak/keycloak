@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.RSA_KEY;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.TEST_DID;
-import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getJwtSigningProvider;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getCredentialBuilderProvider;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getRsaKeyProvider;
 
 @RunWith(Enclosed.class)
@@ -150,16 +150,13 @@ public class OID4VCIssuerWellKnownProviderTest {
     }
 
     public static void extendConfigureTestRealm(RealmRepresentation testRealm, ClientRepresentation clientRepresentation) {
-        if (testRealm.getComponents() != null) {
-            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
-            testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", getJwtSigningProvider(RSA_KEY));
-        } else {
-            testRealm.setComponents(new MultivaluedHashMap<>(
-                    Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(RSA_KEY)),
-                            "org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", List.of(getJwtSigningProvider(RSA_KEY))
-                    ))
-            );
+        if (testRealm.getComponents() == null) {
+            testRealm.setComponents(new MultivaluedHashMap<>());
         }
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
+        testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProvider(Format.JWT_VC));
+
 
         if (testRealm.getClients() != null) {
             testRealm.getClients().add(clientRepresentation);

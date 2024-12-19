@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.provider.Provider;
 
-/**
- * Incomplete representations of format-specific credentials.
- *
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
- */
-public interface CredentialBody {
+public interface ProofValidator extends Provider {
+
+    @Override
+    default void close() {
+    }
 
     /**
-     * Bind the credential to a public key prior to signing.
+     * Validates a client-provided key binding proof.
+     *
+     * @param vcIssuanceContext the issuance context with credential request and config
+     * @return the JWK to bind to the credential
      */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    JWK validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
 }

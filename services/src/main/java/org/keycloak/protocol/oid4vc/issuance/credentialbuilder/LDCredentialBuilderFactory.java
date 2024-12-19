@@ -30,7 +30,7 @@ import java.util.List;
 public class LDCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
-    public String getId() {
+    public String getSupportedFormat() {
         return Format.LDP_VC;
     }
 
