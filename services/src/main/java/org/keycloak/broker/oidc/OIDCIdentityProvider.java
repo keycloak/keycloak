@@ -204,7 +204,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             AccessTokenResponse tokenResponse = JsonSerialization.readValue(modelTokenString, AccessTokenResponse.class);
             Integer exp = (Integer) tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
             final int currentTime = Time.currentTime();
-            if (exp != null && exp < currentTime + getConfig().getMinValidityToken()) {
+            if (exp != null && exp <= currentTime + getConfig().getMinValidityToken()) {
                 if (tokenResponse.getRefreshToken() == null) {
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
