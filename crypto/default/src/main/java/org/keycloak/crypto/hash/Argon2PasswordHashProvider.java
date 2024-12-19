@@ -101,6 +101,12 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return encoded.equals(secretData.getValue());
     }
 
+    @Override
+    public String credentialHashingStrength(PasswordCredentialModel credential) {
+        MultivaluedHashMap<String, String> parameters = credential.getPasswordCredentialData().getAdditionalParameters();
+        return String.format("Argon2%s-%s[m=%s,t=%d,p=%s]", parameters.getFirst(TYPE_KEY), parameters.getFirst(VERSION_KEY), parameters.getFirst(MEMORY_KEY), credential.getPasswordCredentialData().getHashIterations(), parameters.getFirst(PARALLELISM_KEY));
+    }
+
     private String encode(String rawPassword, byte[] salt, String version, String type, int hashLength, int parallelism, int memory, int iterations) {
         var tracing = TracingProviderUtil.getTracingProvider();
         try {

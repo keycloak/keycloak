@@ -42,6 +42,21 @@ public interface PasswordHashProvider extends Provider {
     boolean verify(String rawPassword, PasswordCredentialModel credential);
 
     /**
+     * Returns a string that denotes a hashing strength for a password (do not confuse with strength of the password itself!)
+     * <p />
+     * The default implementation is returning the number of iterations used for hashing password.
+     * Another example could be memory and parallelism configuration for the Argon2 algorithm.
+     * <p />
+     * This can be used for example in a metric showing how many hashes were performed with what configuration
+     *
+     * @param credential The credential for which we want to obtain the string
+     * @return string identifying hashing strength
+     */
+    default String credentialHashingStrength(PasswordCredentialModel credential) {
+        return String.valueOf(credential.getPasswordCredentialData().getHashIterations());
+    }
+
+    /**
      * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #policyCheck(PasswordPolicy, PasswordCredentialModel)}
      */
     @Deprecated
