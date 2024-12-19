@@ -37,12 +37,13 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.protocol.oauth2.ResourceIndicators;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -138,17 +139,15 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         List<String> resourceParamValues = formParams.get(OAuth2Constants.RESOURCE);
-        Set<String> requestedResourceIndicators = null;
+        CheckedResourceIndicators checkedResourceIndicators = null;
         if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
-            requestedResourceIndicators = Set.copyOf(resourceParamValues);
-            for (String resource : requestedResourceIndicators) {
-                if (!ResourceIndicators.isResourceIndicatorAllowed(clientSession, client, resource)) {
-                    logger.debugf("Invalid resource indicator '%s'", resource);
-                    String errorMessage = "Invalid resource indicator: " + resource;
-                    event.detail(Details.REASON, errorMessage);
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid resource", Response.Status.BAD_REQUEST);
-                }
+            checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, clientSession, Set.copyOf(resourceParamValues));
+            if (checkedResourceIndicators.hasUnsupported()) {
+                logger.debugf("Unsupported resource indicator(s) found: '%s'", checkedResourceIndicators.getUnsupported());
+                String errorMessage = "Unsupported resource indicator(s): " + checkedResourceIndicators.getUnsupported();
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid resource", Response.Status.BAD_REQUEST);
             }
         }
 
@@ -222,9 +221,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        // Store requested resource indicators in ClientSessionContext for usage in token generation
-        if (requestedResourceIndicators != null) {
-            clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, requestedResourceIndicators);
+        // Store checked requested resource indicators in ClientSessionContext for usage in token generation
+        if (checkedResourceIndicators != null && checkedResourceIndicators.hasSupported()) {
+            clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, checkedResourceIndicators.getSupported());
         }
 
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
