@@ -1215,4 +1215,30 @@ public final class KeycloakModelUtils {
         RepresentationToModel.toModel(resourceServerRep, session.getProvider(AuthorizationProvider.class), client);
     }
 
+    /**
+     * <p>Runs the given {@code operation} within the scope of the given @{target} realm.
+     *
+     * <p>Only use this method when you need to execute operations in a {@link RealmModel} object that is different
+     * than the one associated with the {@code session}.
+     *
+     * @param session the session
+     * @param target the target realm
+     * @param operation the operation
+     * @return the result from the supplier
+     */
+    public static <T> T runOnRealm(KeycloakSession session, RealmModel target, Function<KeycloakSession, T> operation) {
+        KeycloakContext context = session.getContext();
+        RealmModel currentRealm = context.getRealm();
+
+        if (currentRealm.equals(target)) {
+            return operation.apply(session);
+        }
+
+        try {
+            context.setRealm(target);
+            return operation.apply(session);
+        } finally {
+            context.setRealm(currentRealm);
+        }
+    }
 }
