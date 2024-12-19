@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import org.jboss.logging.Logger;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
 /**
@@ -24,10 +26,15 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
  */
 public class LDCredentialBody implements CredentialBody {
 
+    private static final Logger LOGGER = Logger.getLogger(LDCredentialBody.class);
     private final VerifiableCredential verifiableCredential;
 
     public LDCredentialBody(VerifiableCredential verifiableCredential) {
         this.verifiableCredential = verifiableCredential;
+    }
+
+    public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
+        LOGGER.warnf("Key binding is not yet implemented for LDP credentials");
     }
 
     public VerifiableCredential getVerifiableCredential() {

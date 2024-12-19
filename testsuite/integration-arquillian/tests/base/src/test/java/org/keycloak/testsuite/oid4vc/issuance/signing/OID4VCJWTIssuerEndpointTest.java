@@ -288,7 +288,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         authenticator.setTokenString(token);
 
                         // Prepare the issue endpoint with no credential builders.
-                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of(), Map.of());
+                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
                         issuerEndpoint.requestCredential(new CredentialRequest()
                                 .setFormat(Format.JWT_VC)

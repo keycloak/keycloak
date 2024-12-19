@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
+package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.keycloak.jose.jwk.JWK;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
+import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
-/**
- * Incomplete representations of format-specific credentials.
- *
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
- */
-public interface CredentialBody {
+public class LDCredentialSignerFactory implements CredentialSignerFactory {
 
-    /**
-     * Bind the credential to a public key prior to signing.
-     */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    @Override
+    public String getSupportedFormat() {
+        return Format.LDP_VC;
+    }
+
+    @Override
+    public CredentialSigner<VerifiableCredential> create(KeycloakSession session) {
+        return new LDCredentialSigner(session, new OffsetTimeProvider());
+    }
 }
