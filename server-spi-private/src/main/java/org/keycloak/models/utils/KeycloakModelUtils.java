@@ -1205,7 +1205,7 @@ public final class KeycloakModelUtils {
         AuthorizationSchema schema = AdminPermissionsAuthorizationSchema.INSTANCE;
 
         //there is no way how to map scopes to the resourceType, we need to collect all scopes from all resourceTypes 
-        Set<ScopeRepresentation> scopes = schema.getResourceTypes().stream()
+        Set<ScopeRepresentation> scopes = schema.getResourceTypes().values().stream()
                 .flatMap((resourceType) -> resourceType.getScopes().stream())
                 .map(scope -> new ScopeRepresentation(scope))
                 .collect(Collectors.toSet());//collecting to set to get rid of duplicities

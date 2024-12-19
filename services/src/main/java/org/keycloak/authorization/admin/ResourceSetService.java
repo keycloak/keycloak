@@ -77,6 +77,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.AdminPermissionsUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -87,8 +88,8 @@ public class ResourceSetService {
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
-    private KeycloakSession session;
-    private ResourceServer resourceServer;
+    private final KeycloakSession session;
+    private final ResourceServer resourceServer;
 
     public ResourceSetService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -122,6 +123,7 @@ public class ResourceSetService {
     }
 
     public ResourceRepresentation create(ResourceRepresentation resource) {
+        AdminPermissionsUtils.checkIsAdminPermissionClient(session, resourceServer.getId());
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
@@ -157,6 +159,7 @@ public class ResourceSetService {
     })
     public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         requireManage();
+        AdminPermissionsUtils.resourceRepresentationValidation(session.getContext().getRealm(), resourceServer, resource);
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();

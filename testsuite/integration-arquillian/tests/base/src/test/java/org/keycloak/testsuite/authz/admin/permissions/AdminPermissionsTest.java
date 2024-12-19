@@ -16,18 +16,27 @@
  */
 package org.keycloak.testsuite.authz.admin.permissions;
 
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -92,10 +101,71 @@ public class AdminPermissionsTest extends AbstractTestRealmKeycloakTest {
 
             authorizationSettings = testRealm().clients().get(adminPermissionsClient.getId()).authorization().getSettings();
             assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
-
-            List<String> scopeNames = testRealm().clients().get(adminPermissionsClient.getId()).authorization().scopes().scopes().stream().map((rep) -> rep.getName()).collect(Collectors.toList());
-            assertThat(scopeNames, Matchers.hasItem("manage"));
         }
     }
 
+    @Test
+    @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)
+    public void adminPermissionRESTCheck() throws Exception {
+        reconnectAdminClient();
+
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setAdminPermissionsEnabled(Boolean.TRUE).update()) {
+            //get the admin-permissions client
+            ClientRepresentation adminPermissionsClient = testRealm().toRepresentation().getAdminPermissionsClient();
+            AuthorizationResource authorization = testRealm().clients().get(adminPermissionsClient.getId()).authorization();
+
+            ResourceServerRepresentation rep = new ResourceServerRepresentation();
+            rep.setPolicyEnforcementMode(PolicyEnforcementMode.DISABLED);
+            rep.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+
+            try {
+                authorization.update(rep);
+            } catch (Exception ex) {
+                assertThat(ex, instanceOf(BadRequestException.class));
+            }
+
+            try {
+                authorization.exportSettings();
+            } catch (Exception ex) {
+                assertThat(ex, instanceOf(BadRequestException.class));
+            }
+
+            try {
+                authorization.importSettings(rep);
+            } catch (Exception ex) {
+                assertThat(ex, instanceOf(BadRequestException.class));
+            }
+
+            try {
+                authorization.scopes();
+            } catch (Exception ex) {
+                assertThat(ex, instanceOf(BadRequestException.class));
+            }
+
+            ResourcesResource resources = authorization.resources();
+            try {
+                ResourceRepresentation resourceRep = new ResourceRepresentation("resource-1", "manage");
+                resourceRep.setType("Users");
+                //it is not allowed to create resources directly
+                resources.create(resourceRep);
+            } catch (Exception ex) {
+                assertThat(ex, instanceOf(BadRequestException.class));
+            }
+
+            // test update of the resource according to Ad minPermissionsUtils.resourceRepresentationValidation
+            // fisrt it's needed to be able to create permission in context of FGAP: https://github.com/keycloak/keycloak/pull/35880
+//            try {
+//                //todo: create permission with a resource here
+//                ResourceRepresentation resourceRep = new ResourceRepresentation();//get the resourceRep from 
+//                resourceRep.setType("nonExistentType");
+//                resources.resource("idOfExistingResource").update(resourceRep);
+//            } catch (Exception ex) {
+//                assertThat(ex, instanceOf(NotFoundException.class));
+//            }
+//
+//            // test owner
+//            // test non-existent scope
+//            // test empty attributes, displayName, iconUri, uris??
+        }
+    }
 }
