@@ -137,7 +137,7 @@ export const NavLink = ({
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const menuItemPath = getFullUrl(path) + `?${location.search}`;
+  const menuItemPath = getFullUrl(path) + location.search;
   const href = useHref(menuItemPath);
   const handleClick = useLinkClickHandler(menuItemPath);
 
