@@ -460,8 +460,8 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isInternationalizationEnabled() != null) {
             newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
-        if (rep.isVerifiableCredentialsEnabled() != null) {
-            newRealm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
+        if (rep.isOid4VciEnabled() != null) {
+            newRealm.setOid4VciEnabled(rep.isOid4VciEnabled());
         }
         if (rep.getSupportedLocales() != null) {
             newRealm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
@@ -781,7 +781,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) realm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
         if (rep.isAdminPermissionsEnabled() != null) realm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
-        if (rep.isVerifiableCredentialsEnabled() != null) realm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
+        if (rep.isOid4VciEnabled() != null) realm.setOid4VciEnabled(rep.isOid4VciEnabled());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
