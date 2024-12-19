@@ -1,7 +1,7 @@
 <#macro expectedValues option>
     <#assign optionObj = ctx.options.getOption(option) />
     <#list optionObj.expectedValues as expectedValue>
-        * ${expectedValue} <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if>
+        * `+${expectedValue}+` <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if> <#if optionObj.deprecated?has_content && optionObj.deprecated.deprecatedValues?seq_contains(expectedValue)> (deprecated)</#if>
     </#list>
 </#macro>
 
