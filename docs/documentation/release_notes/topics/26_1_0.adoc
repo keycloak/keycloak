@@ -16,6 +16,12 @@ Alternatively, you can disable dark mode support for the built-in Keycloak theme
 From this release onwards, the {project_name} JavaScript adapter and {project_name} Node.js adapter will have a release cycle independent of the {project_name} server release cycle. The 26.1.0 release may be the last one
 where these adapters are released together with the {project_name} server, but from now on, these adapters may be released at a different time than the {project_name} server.
 
+= Updates in quickstarts
+
+The {project_name} quickstarts are now using branch `main` as the base branch. The branch `latest`, which was previously used, was removed. The `main` branch is now having dependency on the
+last released version of {project_name} server, {project_name} client libraries and adapters. This update allows that contributions to the quickstarts are directly visible to the quickstart
+consumers without a need to wait for the {project_name} server release.
+
 = Authorization Code Binding to a DPoP Key
 
 Support now exists for https://datatracker.ietf.org/doc/html/rfc9449#section-10[Authorization Code Binding to a DPoP Key] including support for the DPoP with Pushed Authorization Requests.
@@ -43,6 +49,39 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/sonOfRa[Simon Levermann] for the contribution.
 endif::[]
 
+= Support for prompt=create
+
+There is a support for the https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating user registration standard], which allows OIDC client to initiate the login request with
+the parameter `prompt=create` to notify {project_name} that new user should be registered rather than existing user authenticated. Initiating user registration was already supported in {project_name} with the use of dedicated endpoint `/realms/<realm>/protocol/openid-connect/registrations`
+however this endpoint is now deprecated in favor of the standard way as it was proprietary solution specific to {project_name}.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
+
+= Maximum count and length for additional parameters sent to OIDC authentication request
+
+The OIDC authentication request supports limited amount of additional custom parameters of maximum length. The additional parameters can be
+used for the custom purposes (EG. adding the claims into the token with the use of the protocol mappers). In the previous versions, the maximum count of
+the parameters was hardcoded to 5 and the maximum length of the parameters was hardcoded to 2000. Now both values are configurable. Additionally it can be possible to configure
+if additional parameters will cause request to fail or if parameters will be ignored.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/mschallar[Manuel Schallar] and https://github.com/patrick-primesign[Patrick Weiner] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) is still an experimental feature in {project_name}, but there was an amount of great improvements in this release.
+There was lots of the work on polishing of existing configuration and making things more dynamic and customizable.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+
+Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/Captain-P-Goldfish[Pascal Knüppel],
+https://github.com/thomasdarimont[Thomas Darimont], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/tnorimat[Takashi Norimatsu].
+endif::[]
 
 = LDAP users are created as enabled by default when using Microsoft Active Directory
 

@@ -418,9 +418,9 @@ click `Forget password` on the login screen, which triggers the `Reset credentia
 Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the
 user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
 
-* When the client wants the user to be redirected directly to the registration, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL
-might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`. As an alternative to using the `/registrations` endpoint, clients can use the OIDC
-`prompt` parameter with `prompt=create` to redirect the user to the registration.
+* When the client wants the user to be redirected directly to the registration, the OIDC client should add parameter `prompt=create` to the login request. As a deprecated alternative, clients can replace the very last
+snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`.
+The `prompt=create` is recommended as it is https://openid.net/specs/openid-connect-prompt-create-1_0.html[a specification standard].
 
 * When the client wants a user to be redirected directly to the `Reset credentials` flow, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/forgot-credentials` .
 
