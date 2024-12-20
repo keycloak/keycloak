@@ -74,6 +74,10 @@ public final class LDAPContextManager implements AutoCloseable {
                 }
             }
 
+            if (ldapConfig.isConnectionTrace()) {
+                connProp.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
+            }
+
             ldapContext = new InitialLdapContext(connProp, null);
             if (ldapConfig.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
