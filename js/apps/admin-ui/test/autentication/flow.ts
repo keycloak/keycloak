@@ -13,19 +13,61 @@ export async function fillDuplicateFlowModal(
   await confirmModal(page);
 }
 
+async function clickEditDropdownForFlow(page: Page, flowName: string) {
+  await page.getByTestId(`${flowName}-edit-dropdown`).click();
+}
+
+async function selectExecutionTestId(page: Page, executionTestId: string) {
+  await page.getByTestId(executionTestId).click();
+  await page.getByTestId("modal-add").click();
+}
+
 export async function addExecution(
   page: Page,
   subFlowName: string,
   executionTestId: string,
 ) {
-  await page.getByTestId(`${subFlowName}-edit-dropdown`).click();
+  await clickEditDropdownForFlow(page, subFlowName);
   await page.getByRole("menuitem", { name: "Add step" }).click();
-  await page.getByTestId(executionTestId).click();
+  await selectExecutionTestId(page, executionTestId);
+}
+
+export async function addCondition(
+  page: Page,
+  subFlowName: string,
+  executionTestId: string,
+) {
+  await clickEditDropdownForFlow(page, subFlowName);
+  await page.getByRole("menuitem", { name: "Add condition" }).click();
+  await selectExecutionTestId(page, executionTestId);
+}
+
+export async function addSubFlow(
+  page: Page,
+  subFlowName: string,
+  name: string,
+) {
+  await clickEditDropdownForFlow(page, subFlowName);
+  await page.getByRole("menuitem", { name: "Add sub-flow" }).click();
+  await page.getByTestId("name").fill(name);
   await page.getByTestId("modal-add").click();
 }
 
-export async function assertExecutionExists(page: Page, name: string) {
-  expect(page.getByTestId(name)).toBeVisible();
+export async function clickDeleteRow(page: Page, flowName: string) {
+  await page.getByTestId(`${flowName}-delete`).click();
+}
+
+export async function assertRowExists(page: Page, name: string, exists = true) {
+  const locator = page.getByTestId(name);
+  if (exists) {
+    await expect(locator).toBeVisible();
+  } else {
+    await expect(locator).not.toBeVisible();
+  }
+}
+
+export async function fillBindFlowModal(page: Page, flowName: string) {
+  await selectItem(page, page.locator("#chooseBindingType"), flowName);
 }
 
 export async function goToRequiredActions(page: Page) {
