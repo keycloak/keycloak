@@ -46,8 +46,7 @@ These APIs are no longer needed as initialization is done automatically on deman
 
 === Deprecated endpoint for initiate registration from OIDC client
 
-The endpoint `/realms/<realm>/protocol/openid-connect/registrations` used for initiating registration by OIDC client is now deprecated as there is standard way for initiating registration from OIDC client,
-which is now supported by {project_name}. The standard way uses the parameter `prompt=create`.
+The `/realms/<realm>/protocol/openid-connect/registrations` endpoint, which was used for initiating registration by OIDC client, is now deprecated because a standard way exists to initiate registration from the OIDC client. This way is now supported by {project_name}. It uses the parameter `prompt=create`.
 
 === Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
 
