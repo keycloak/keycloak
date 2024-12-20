@@ -8,4 +8,5 @@ public interface KeycloakServer {
 
     String getBaseUrl();
 
+    String getManagementBaseUrl();
 }

@@ -8,9 +8,11 @@ import java.net.URL;
 public class KeycloakUrls {
 
     private final String baseUrl;
+    private final String managementBaseUrl;
 
-    public KeycloakUrls(String baseUrl) {
+    public KeycloakUrls(String baseUrl, String managementBaseUrl) {
         this.baseUrl = baseUrl;
+        this.managementBaseUrl = managementBaseUrl;
     }
 
     public String getBase() {
@@ -39,6 +41,10 @@ public class KeycloakUrls {
 
     public KeycloakUriBuilder getAdminBuilder() {
         return toBuilder(getAdmin());
+    }
+
+    public String getMetric() {
+        return managementBaseUrl + "/metrics";
     }
 
     private URL toUrl(String url) {

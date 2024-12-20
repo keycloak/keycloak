@@ -20,7 +20,7 @@ public class KeycloakUrlsSupplier implements Supplier<KeycloakUrls, InjectKeyclo
     @Override
     public KeycloakUrls getValue(InstanceContext<KeycloakUrls, InjectKeycloakUrls> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        return new KeycloakUrls(server.getBaseUrl());
+        return new KeycloakUrls(server.getBaseUrl(), server.getManagementBaseUrl());
     }
 
     @Override
