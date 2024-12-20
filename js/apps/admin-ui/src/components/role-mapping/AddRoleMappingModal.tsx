@@ -211,9 +211,9 @@ export const AddRoleMappingModal = ({
             instructions={t("noRealmRolesToAssign")}
             secondaryActions={[
               {
-                text: t("filterByClients"),
+                text: t("filterByRoles"),
                 onClick: () => {
-                  setFilterType("clients");
+                  setFilterType("roles");
                   refresh();
                 },
               },
