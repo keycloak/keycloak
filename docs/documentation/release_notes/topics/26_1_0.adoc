@@ -56,9 +56,11 @@ by the LDAP provider.
 
 As OpenShift v3 reached end-of-life a while back, support for identity brokering with OpenShift v3 has been removed from Keycloak.
 
-= New conditional authenticator `Condition - sub-flow executed`
+= New conditional authenticators `Condition - sub-flow executed` and `Condition - client scope`
 
-The `Condition - sub-flow executed` is a new conditional authenticator in {project_name}. The condition checks if a previous sub-flow was executed (or not executed) successfully during the authentication flow execution. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
+The `Condition - sub-flow executed` and `Condition - client scope` are new conditional authenticators in {project_name}. The condition `Condition - sub-flow executed` checks if a previous sub-flow was
+executed (or not executed) successfully during the authentication flow execution. The condition `Condition - client scope` checks if a configured client scope is present as a client scope of the
+client requesting authentication. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 
 = Defining dependencies between provider factories
 
