@@ -552,10 +552,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.clients().get(foo.getId()).toRepresentation();
             }
         }, Resource.CLIENT, false);
-        invoke(new InvocationWithResponse() {
-            public void invoke(RealmResource realm, AtomicReference<Response> responseRef) {
-                Response response = realm.clients().get(foo.getId()).getInstallationProvider("nosuch");
-                responseRef.set(response);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.clients().get(foo.getId()).getInstallationProvider("nosuch");
             }
         }, Resource.CLIENT, false);
         invoke(new Invocation() {

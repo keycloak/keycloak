@@ -108,8 +108,9 @@ public interface OrganizationsResource {
      *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
-     * @param briefRepresentation if {@code true} the full representation is to be returned. Otherwise, only the basic fields are returned.
+     * @param briefRepresentation if {@code true} the full representation is to be returned. Otherwise, only the basic fields are returned. The parameter is supported since Keycloak 26.1
      * @return a list containing the matched organizations.
+     * @since Keycloak 26.1. Use method {@link #search(String, Boolean, Integer, Integer)} for the older versions of the Keycloak server
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
