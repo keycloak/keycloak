@@ -329,7 +329,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
         if (request.getResources() != null && !request.getResources().isEmpty()) {
-            // encode requested OAuth resource indicators to authentication session for validation during token / refresh requests
+            // encode validated requested OAuth Resource Indicators to authentication session for validation during token / refresh requests
             authenticationSession.setClientNote(OAuth2Constants.RESOURCE, ResourceIndicatorsUtil.encodeResourceIndicators(request.getResources()));
         }
 
