@@ -3,7 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
 import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
+import {
+  assertNotificationMessage,
+  selectActionToggleItem,
+} from "../utils/masthead";
 import { goToAuthentication, goToRealm } from "../utils/sidebar";
 import {
   clickRowKebabItem,
@@ -13,14 +16,18 @@ import {
   selectRowKebab,
 } from "../utils/table";
 import {
+  addCondition,
   addExecution,
   addPolicy,
+  addSubFlow,
   assertAxeViolations,
   assertDefaultSwitchPolicyEnabled,
-  assertExecutionExists,
+  assertRowExists,
   assertSwitchPolicyChecked,
   clickDefaultSwitchPolicy,
+  clickDeleteRow,
   clickSwitchPolicy,
+  fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
   goToCIBAPolicyTab,
@@ -30,6 +37,7 @@ import {
   goToRequiredActions,
   goToWebAuthnTab,
 } from "./flow";
+import { confirmModal } from "../utils/modal";
 
 test.describe("Authentication test", () => {
   const realmName = `test${uuidv4()}`;
@@ -82,15 +90,26 @@ test.describe("Authentication test", () => {
   test.describe("Flow details", () => {
     let flowId: string | undefined;
     const flowName = "Copy of browser test";
-    test.beforeAll(() =>
+    test.beforeEach(() =>
       adminClient.inRealm(realmName, async () => {
         await adminClient.copyFlow("browser", flowName);
         flowId = (await adminClient.getFlow(flowName))!.id!;
       }),
     );
-    test.afterAll(() =>
+    test.afterEach(() =>
       adminClient.inRealm(realmName, () => adminClient.deleteFlow(flowId!)),
     );
+
+    test("Should edit flow details", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+
+      await selectActionToggleItem(page, "Edit info");
+
+      const newName = "New flow name";
+      await fillDuplicateFlowModal(page, newName, "Other description");
+      await assertNotificationMessage(page, "Flow successfully updated");
+      await expect(page.locator(`text="${newName}"`)).toBeVisible();
+    });
 
     test("Should add a execution", async ({ page }) => {
       await clickTableRowItem(page, flowName);
@@ -101,7 +120,76 @@ test.describe("Authentication test", () => {
       );
 
       await assertNotificationMessage(page, "Flow successfully updated");
-      await assertExecutionExists(page, "Choose User");
+      await assertRowExists(page, "Choose User");
+    });
+
+    test("should add a condition", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+
+      await addCondition(
+        page,
+        flowName + " Browser - Conditional OTP",
+        "conditional-user-role",
+      );
+
+      await assertNotificationMessage(page, "Flow successfully updated");
+    });
+
+    test("Should add a sub-flow", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+
+      const name = "SubFlow";
+      await addSubFlow(page, flowName + " Browser - Conditional OTP", name);
+
+      await assertNotificationMessage(page, "Flow successfully updated");
+      await assertRowExists(page, name);
+    });
+
+    test("Should remove an execution", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+
+      const name = "Cookie";
+      await assertRowExists(page, name);
+
+      await clickDeleteRow(page, name);
+      await confirmModal(page);
+      await assertRowExists(page, "Cookie", false);
+    });
+
+    test("Should set as default in action menu", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+      await selectActionToggleItem(page, "Bind flow");
+
+      // set as default
+      await fillBindFlowModal(page, "Direct grant flow");
+      await clickSaveButton(page);
+      await assertNotificationMessage(page, "Flow successfully updated");
+      await expect(page.getByText("Default")).toBeVisible();
+
+      // unset as default
+      await goToAuthentication(page);
+      await clickTableRowItem(page, "direct grant");
+      await selectActionToggleItem(page, "Bind flow");
+      await fillBindFlowModal(page, "Direct grant flow");
+      await clickSaveButton(page);
+    });
+
+    test("Drag and drop execution", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+      const source = page.getByText("Identity Provider Redirector");
+      const target = page.getByText("Kerberos");
+
+      // execute mouse movement twice to trigger dragover event
+      await source.hover();
+      await source.hover();
+
+      await page.mouse.down();
+      await target.hover();
+      await target.hover();
+
+      await page.mouse.up();
+
+      await assertNotificationMessage(page, "Flow successfully updated");
     });
   });
 });
