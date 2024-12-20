@@ -91,10 +91,11 @@ public interface OrganizationMembersResource {
      * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
      *              at least one of the username main attributes must match exactly the {@code search} param. If false,
      *              the method returns all members with at least one main attribute partially matching the {@code search} param.
-     * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}.
+     * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}. The parameter is supported since Keycloak 26.1
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
      * @return a list containing the matched organization members.
+     * @since Keycloak 26.1. Use method {@link #search(String, Boolean, Integer, Integer)} for the older versions of the Keycloak server
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)

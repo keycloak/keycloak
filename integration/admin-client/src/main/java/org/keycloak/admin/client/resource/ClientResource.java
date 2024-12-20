@@ -114,9 +114,25 @@ public interface ClientResource {
     @Path("certificates/{attr}")
     ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
 
+    /**
+     * Return installation provider as a String. String is typically XML format specific to the requested provider
+     *
+     * @param providerId installation provider ID
+     * @return response as a string
+     */
     @GET
     @Path("installation/providers/{providerId}")
-    Response getInstallationProvider(@PathParam("providerId") String providerId);
+    String getInstallationProvider(@PathParam("providerId") String providerId);
+
+    /**
+     * Return installation provider as a response
+     *
+     * @param providerId installation provider ID
+     * @return Jakarta response
+     */
+    @GET
+    @Path("installation/providers/{providerId}")
+    Response getInstallationProviderAsResponse(@PathParam("providerId") String providerId);
 
     @Path("session-count")
     @GET
