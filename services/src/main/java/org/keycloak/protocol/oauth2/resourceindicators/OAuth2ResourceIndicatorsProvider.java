@@ -37,4 +37,8 @@ public interface OAuth2ResourceIndicatorsProvider extends Provider {
      * @return Set of the resource indicators that are supported by the given client.
      */
     Set<String> narrowResourceIndicators(ClientModel client, Set<String> resourceIndicatorCandidates);
+
+    @Override
+    default void close() {
+    }
 }
