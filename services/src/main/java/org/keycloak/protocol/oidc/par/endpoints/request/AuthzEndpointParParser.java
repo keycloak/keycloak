@@ -108,7 +108,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     protected Set<String> getMultiParameter(String paramName) {
         String multiParamString = this.requestParams.get(paramName);
 
-        if (multiParamString != null) {
+        if (multiParamString == null) {
             return null;
         }
 

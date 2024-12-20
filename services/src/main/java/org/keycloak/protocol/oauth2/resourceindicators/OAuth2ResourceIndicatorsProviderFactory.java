@@ -16,10 +16,24 @@
  */
 package org.keycloak.protocol.oauth2.resourceindicators;
 
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * Factory for {@link OAuth2ResourceIndicatorsProvider OAuth2ResourceIndicatorsProvider's}.
  */
 public interface OAuth2ResourceIndicatorsProviderFactory extends ProviderFactory<OAuth2ResourceIndicatorsProvider> {
+
+    @Override
+    default void init(Config.Scope config) {
+    }
+
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    default void close() {
+    }
 }
