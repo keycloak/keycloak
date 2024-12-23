@@ -74,6 +74,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.truststore.TruststoreProvider;
@@ -279,7 +280,12 @@ public class CertificateValidator {
         }
 
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
-            X509CRL crl = loadCRL();
+            CrlStorageProvider crlCache = session.getProvider(CrlStorageProvider.class);
+            X509CRL crl = null;
+            if (cRLPath != null) {
+                crl = crlCache.get(cRLPath, this::loadCRL);
+            }
+
             if (crl == null) {
                 throw new GeneralSecurityException(String.format("Unable to load CRL from \"%s\"", cRLPath));
             }
