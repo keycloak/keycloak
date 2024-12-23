@@ -38,7 +38,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.1",
     "react-i18next": "^15.2.0",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.1"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
