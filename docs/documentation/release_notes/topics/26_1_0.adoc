@@ -192,3 +192,24 @@ NOTE: Preview feature.
 
 To improve the security of your Kubernetes deployment, https://kubernetes.io/docs/concepts/services-networking/network-policies/[Network Policies] can be specified in your {project_name} CR.
 The {project_name} Operator accepts the ingress rules, which define from where the traffic is allowed to come from, and automatically creates the necessary Network Policies.
+
+= Password validations counter metric
+
+There is a new counter metric available counting how many password validations were performed by Keycloak.
+Available tags are:
+
+* `realm`
+* `algorithm` - algorithm used for hashing password
+* `hashing_strength` - string denoting strength of hashing algorithm, for example, number of iterations
+* `outcome` - outcome of password validation
+** `valid` - password was correct
+** `invalid` - password was incorrect
+** `error` - error when creating hash of the password
+
+To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential-keycloak-password-validations-counter-tags`.
+By default all tags are enabled.
+
+Example of the metric:
+----
+keycloak_credentials_password_hashing_validations_total{algorithm="argon2",hashing_strength="Argon2id-1.3[m=7168,t=5,p=1]",outcome="valid",realm="master",} 3.0
+----
