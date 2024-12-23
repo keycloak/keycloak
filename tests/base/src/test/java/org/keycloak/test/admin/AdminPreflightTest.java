@@ -26,7 +26,16 @@ public class AdminPreflightTest {
 
     @Test
     public void testPreflight() throws IOException {
-        HttpOptions options = new HttpOptions(keycloakUrls.getAdminBuilder().path("/realms/master/users").build());
+        testPreflightForAdminPath("/realms/master/users");
+    }
+
+    @Test
+    public void testPreflightServerInfo() throws IOException {
+        testPreflightForAdminPath("/serverinfo");
+    }
+
+    private void testPreflightForAdminPath(String path) throws IOException {
+        HttpOptions options = new HttpOptions(keycloakUrls.getAdminBuilder().path(path).build());
         options.setHeader("Origin", "http://test");
 
         HttpResponse response = client.execute(options);
