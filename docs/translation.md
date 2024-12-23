@@ -41,9 +41,8 @@ While were in the transitioning process towards Weblate, the following translati
 
 - German
 - Dutch
-- French
-- Catalan
 - Japanese
+- Spanish
 
 For all other translations, look for the `messages_*.properties` files in the main repository and create a pull request with your translations. 
 
@@ -53,9 +52,8 @@ If you have any questions or need assistance, feel free to reach out to the lang
 
 * German: [Robin Meese](https://github.com/robson90)
 * Dutch: [Jon Koops](https://github.com/jonkoops)
-* French: [Dimitri](https://github.com/DimitriDR) && [Gilbert Fernandes](https://github.com/gilbert-fernandes)
-* Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
 * Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro)
+* Japanese: [herver1971](https://github.com/herver1971) && [anthieni](https://github.com/anthieni)
 
 ### Steps to Add a New Language
 
