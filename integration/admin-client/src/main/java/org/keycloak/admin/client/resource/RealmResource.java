@@ -293,6 +293,10 @@ public interface RealmResource {
     @POST
     void clearKeysCache();
 
+    @Path("clear-crl-cache")
+    @POST
+    void clearCrlCache();
+
     @Path("push-revocation")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
