@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.jose.jwk.JWK;
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
+import org.keycloak.provider.ProviderFactory;
 
-/**
- * Incomplete representations of format-specific credentials.
- *
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
- */
-public interface CredentialBody {
+public interface ProofValidatorFactory extends ProviderFactory<ProofValidator>, OID4VCEnvironmentProviderFactory {
 
-    /**
-     * Bind the credential to a public key prior to signing.
-     */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    @Override
+    default void init(Config.Scope config) {
+    }
+
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    default void close() {
+    }
 }
