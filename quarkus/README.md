@@ -59,7 +59,7 @@ For development purposes, you can run the server in development mode instead usi
 This spins up Keycloak using a development database (h2-file) and with insecure HTTP enabled.
 
 ### Running from your IDE
-Alternatively, you can run the server in development mode from your IDE. For that, run the `org.keycloak.quarkus._private.IDELauncher` main class in the `server` directory.
+Alternatively, you can run the server in development mode from your IDE. For that, run the `org.keycloak.Keycloak` main class in the `tests/junit5` directory.
 
 ## Contributing
 Please make sure to read our [Contribution Guidelines](../CONTRIBUTING.md) before contributing.

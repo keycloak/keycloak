@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Keycloak" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="MAIN_CLASS_NAME" value="org.keycloak.Keycloak" />
+    <module name="keycloak-junit5" />
+    <option name="VM_PARAMETERS" value="-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.keycloak.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
