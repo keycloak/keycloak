@@ -40,6 +40,7 @@ You configure these caches in `conf/cache-ispn.xml`:
 |users|Local|Cache persisted user data
 |authorization|Local|Cache persisted authorization data
 |keys|Local|Cache external public keys
+|crl|Local|Cache for X.509 authenticator CRLs
 |work|Replicated|Propagate invalidation messages across nodes
 |authenticationSessions|Distributed|Caches authentication sessions, created/destroyed/expired during the authentication process
 |sessions|Distributed|Cache persisted user session data

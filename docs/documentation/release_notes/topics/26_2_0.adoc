@@ -8,3 +8,9 @@ A `direction` query parameter was also added, allowing controlling the order of 
 
 Finally, the returned event representations now also include the `id`, which provides a unique identifier for
 an event.
+
+= New cache for CRLs loaded for the X.509 authenticator
+
+Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.
+
+Check the `crl-storage` section in the link:https://www.keycloak.org/server/all-provider-config[All provider configuration] {section} to know the options for the new cache provider.
