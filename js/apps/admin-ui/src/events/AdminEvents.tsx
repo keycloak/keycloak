@@ -67,18 +67,6 @@ type AdminEventSearchForm = {
   authIpAddress: string;
 };
 
-const defaultValues: AdminEventSearchForm = {
-  resourceTypes: [],
-  operationTypes: [],
-  resourcePath: "",
-  dateFrom: "",
-  dateTo: "",
-  authClient: "",
-  authUser: "",
-  authRealm: "",
-  authIpAddress: "",
-};
-
 const DisplayDialog = ({
   titleKey,
   onClose,
@@ -115,7 +103,11 @@ const DetailCell = (event: AdminEventRepresentation) => (
   </DescriptionList>
 );
 
-export const AdminEvents = () => {
+type AdminEventsProps = {
+  resourcePath?: string;
+};
+
+export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -133,6 +125,18 @@ export const AdminEvents = () => {
   const [activeFilters, setActiveFilters] = useState<
     Partial<AdminEventSearchForm>
   >({});
+
+  const defaultValues: AdminEventSearchForm = {
+    resourceTypes: [],
+    operationTypes: [],
+    resourcePath: resourcePath ? resourcePath : "",
+    dateFrom: "",
+    dateTo: "",
+    authClient: "",
+    authUser: "",
+    authRealm: "",
+    authIpAddress: "",
+  };
 
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
   const [representationEvent, setRepresentationEvent] =
@@ -165,6 +169,7 @@ export const AdminEvents = () => {
     return adminClient.realms.findAdminEvents({
       // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
       ...(activeFilters as any),
+      resourcePath,
       realm,
       first,
       max,
@@ -436,10 +441,12 @@ export const AdminEvents = () => {
                         )}
                       />
                     </FormGroup>
-                    <TextControl
-                      name="resourcePath"
-                      label={t("resourcePath")}
-                    />
+                    {!resourcePath && (
+                      <TextControl
+                        name="resourcePath"
+                        label={t("resourcePath")}
+                      />
+                    )}
                     <TextControl name="authRealm" label={t("realm")} />
                     <TextControl name="authClient" label={t("client")} />
                     <TextControl name="authUser" label={t("userId")} />
@@ -509,12 +516,15 @@ export const AdminEvents = () => {
                         string | string[],
                       ];
 
+                      if (key === "resourcePath" && !!resourcePath) {
+                        return null;
+                      }
+
                       return (
                         <ChipGroup
                           className="pf-v5-u-mt-md pf-v5-u-mr-md"
                           key={key}
                           categoryName={filterLabels[key]}
-                          isClosable
                           onClick={() => removeFilter(key)}
                         >
                           {typeof value === "string" ? (
