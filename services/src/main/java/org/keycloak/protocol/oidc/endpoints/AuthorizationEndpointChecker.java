@@ -18,6 +18,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -396,6 +399,21 @@ public class AuthorizationEndpointChecker {
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+        }
+    }
+
+    public void checkResourceIndicatorParams() throws AuthorizationCheckException{
+        Set<String> requestedResourceIndicators = request.getResources();
+        if (requestedResourceIndicators == null || requestedResourceIndicators.isEmpty()) {
+            return;
+        }
+
+        // explicit resource indicates were provided in the authorize request, check if all resource identifiers are allowed
+        CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(
+                session, client, null, requestedResourceIndicators);
+        if (checkedResourceIndicators.hasUnsupported()) {
+            logger.debugf("Unsupported resource indicator(s) '%s'", checkedResourceIndicators.getUnsupported());
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, "Requested resource not supported");
         }
     }
 
