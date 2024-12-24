@@ -108,8 +108,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: ^7.54.1
-        version: 7.54.1(react@18.3.1)
+        specifier: ^7.54.2
+        version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.2.0
         version: 15.2.0(i18next@24.1.2(typescript@5.7.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -211,8 +211,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: ^7.54.1
-        version: 7.54.1(react@18.3.1)
+        specifier: ^7.54.2
+        version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.2.0
         version: 15.2.0(i18next@24.1.2(typescript@5.7.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -404,8 +404,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: 7.54.1
-        version: 7.54.1(react@18.3.1)
+        specifier: 7.54.2
+        version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.2.0
         version: 15.2.0(i18next@24.1.2(typescript@5.7.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4416,8 +4416,8 @@ packages:
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
 
-  react-hook-form@7.54.1:
-    resolution: {integrity: sha512-PUNzFwQeQ5oHiiTUO7GO/EJXGEtuun2Y1A59rLnZBBj+vNEOWt/3ERTiG1/zt7dVeJEM+4vDX/7XQ/qanuvPMg==}
+  react-hook-form@7.54.2:
+    resolution: {integrity: sha512-eHpAUgUjWbZocoQYUHposymRb4ZP6d0uwUnooL2uOybA9/3tPUvoAKqEWK1WaSiTxxOfTpffNZP7QwlnM3/gEg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -6109,7 +6109,7 @@ snapshots:
       p-debounce: 4.0.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      react-hook-form: 7.54.1(react@18.3.1)
+      react-hook-form: 7.54.2(react@18.3.1)
       react-i18next: 15.2.0(i18next@24.1.2(typescript@5.7.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9682,7 +9682,7 @@ snapshots:
       prop-types: 15.8.1
       react: 18.3.1
 
-  react-hook-form@7.54.1(react@18.3.1):
+  react-hook-form@7.54.2(react@18.3.1):
     dependencies:
       react: 18.3.1
 
