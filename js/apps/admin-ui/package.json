@@ -110,7 +110,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "react-i18next": "^15.2.0",
-    "react-router-dom": "^6.28.0",
+    "react-router-dom": "^6.28.1",
     "reactflow": "^11.11.4",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
