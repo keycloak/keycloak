@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.security.auth.x500.X500Principal;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.truststore.TruststoreProvider;
 
@@ -74,12 +73,11 @@ public final class CRLUtils {
         // Try to find the CRL issuer certificate in the truststore
         if (crlSignatureCertificate == null) {
             log.tracef("Not found CRL issuer '%s' in the CA chain of the certificate. Fallback to lookup CRL issuer in the truststore", crlIssuerPrincipal);
-            crlSignatureCertificate = findCRLSignatureCertificateInTruststore(session, certs, crl);
+            findCRLSignatureCertificateInTruststore(session, certs, crl);
+        } else {
+            // Verify signature on CRL with the previous found certificate
+            crl.verify(crlSignatureCertificate.getPublicKey());
         }
-
-        // Verify signature on CRL
-        // TODO: It will be nice to cache CRLs and also verify their signatures just once at the time when CRL is loaded, rather than in every request
-        crl.verify(crlSignatureCertificate.getPublicKey());
 
         // Finally check if
         if (crl.isRevoked(certs[0])) {
