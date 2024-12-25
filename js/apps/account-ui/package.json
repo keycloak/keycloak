@@ -30,7 +30,7 @@
     "@patternfly/react-core": "^5.4.10",
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-table": "^5.4.12",
-    "i18next": "^24.1.2",
+    "i18next": "^24.2.0",
     "i18next-http-backend": "^3.0.1",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
