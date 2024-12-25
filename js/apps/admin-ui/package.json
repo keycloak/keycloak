@@ -100,7 +100,7 @@
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
-    "i18next": "^24.1.2",
+    "i18next": "^24.2.0",
     "i18next-http-backend": "^3.0.1",
     "jszip": "^3.10.1",
     "keycloak-js": "workspace:*",
