@@ -16,6 +16,9 @@ include::topics/templates/release-header.adoc[]
 == {project_name_full} 26.2.0
 include::topics/26_2_0.adoc[leveloffset=2]
 
+== {project_name_full} 26.1.1
+include::topics/26_1_1.adoc[leveloffset=2]
+
 == {project_name_full} 26.1.0
 include::topics/26_1_0.adoc[leveloffset=2]
 
