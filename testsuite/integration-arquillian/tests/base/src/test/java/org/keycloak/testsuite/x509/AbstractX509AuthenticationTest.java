@@ -105,6 +105,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
+    public static final String EMPTY_EXPIRED_CRL_PATH = "empty-expired.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
     public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
     public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import javax.security.auth.x500.X500Principal;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.truststore.TruststoreProvider;
 
