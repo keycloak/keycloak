@@ -66,6 +66,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String TIMESTAMP_VALIDATION = "x509-cert-auth.timestamp-validation-enabled";
     public static final String SERIALNUMBER_HEX = "x509-cert-auth.serialnumber-hex-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
+    public static final String CRL_ABORT_IF_NON_UPDATED = "x509-cert-auth-crl-abort-if-non-updated";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
     public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
@@ -115,6 +116,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .mode(config.getCertificatePolicyMode().getMode())
                         .parse(config.getCertificatePolicy())
                     .revocation()
+                        .crlAbortIfNonUpdated(config.getCrlAbortIfNonUpdated())
                         .cRLEnabled(config.getCRLEnabled())
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
