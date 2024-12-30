@@ -170,6 +170,11 @@ Client certificate lookup via a proxy header for X.509 authentication is conside
 * If passthrough is not an option, implement the following security measures:
 ** Configure your network so that {project_name} is isolated and can accept connections only from the proxy.
 ** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup-<provider>-ssl-client-cert` option.
+** As an additional layer of security, the header name used should be difficult to guess and differ from common default example `SSL_CLIENT_CERT`, rather `SECRET_HEADER_NAME_FOR_SSL_CLIENT_CERT`
+   This can mitigate the case, where the proxy will not reliably overwrite user provided header.
+   Example Setup with Apache:
+      RequestHeader set SECRET_HEADER_NAME_FOR_SSL_CLIENT_CERT "%{SSL_CLIENT_CERT}s"
+      RequestHeader set SECRET_HEADER_NAME_FOR_SSL_CLIENT_CERT_CHAIN_0 "%{SSL_CLIENT_CERT_CHAIN_0}s"
 ** Keep in mind that any of the `spi-x509cert-*` options don't reflect the `proxy-trusted-addresses` option.
 ** Pay extra attention to the `spi-x509cert-lookup-<provider>-trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
    Setting `spi-x509cert-lookup-<provider>-trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
@@ -198,7 +203,7 @@ To configure how client certificates are retrieved from the requests you need to
 <@kc.build parameters="--spi-x509cert-lookup-provider=<provider>"/>
 
 .Configure the HTTP headers
-<@kc.start parameters="--spi-x509cert-lookup-<provider>-ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup-<provider>-ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup-<provider>-certificate-chain-length=10"/>
+<@kc.start parameters="--spi-x509cert-lookup-<provider>-ssl-client-cert=SECRET_HEADER_NAME_FOR_SSL_CLIENT_CERT --spi-x509cert-lookup-<provider>-ssl-cert-chain-prefix=SECRET_HEADER_NAME_FOR_SSL_CLIENT_CERT_CHAIN --spi-x509cert-lookup-<provider>-certificate-chain-length=10"/>
 
 When configuring the HTTP headers, you need to make sure the values you are using correspond to the name of the headers
 forwarded by the proxy with the client certificate information.
