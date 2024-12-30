@@ -1237,13 +1237,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
-    public boolean isVerifiableCredentialsEnabled() {
-        return getAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, Boolean.FALSE);
+    public boolean isOid4VciEnabled() {
+        return getAttribute(RealmAttributes.OID4VCI_ENABLED, Boolean.FALSE);
     }
 
     @Override
-    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
-        setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
+    public void setOid4VciEnabled(boolean oid4VciEnabled) {
+        setAttribute(RealmAttributes.OID4VCI_ENABLED, oid4VciEnabled);
     }
 
     @Override

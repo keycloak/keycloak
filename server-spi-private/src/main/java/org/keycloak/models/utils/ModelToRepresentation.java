@@ -125,7 +125,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
 
         REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
-        REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("oid4VciEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
     }
@@ -412,7 +412,7 @@ public class ModelToRepresentation {
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
         rep.setAdminPermissionsEnabled(realm.isAdminPermissionsEnabled());
-        rep.setVerifiableCredentialsEnabled(realm.isVerifiableCredentialsEnabled());
+        rep.setOid4VciEnabled(realm.isOid4VciEnabled());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());
