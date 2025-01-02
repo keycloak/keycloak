@@ -15,6 +15,7 @@ import {
   Label,
   PageSection,
   Tab,
+  Tabs,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
@@ -60,6 +61,7 @@ import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
 
 import "./user-section.css";
+import { AdminEvents } from "../events/AdminEvents";
 
 export default function EditUser() {
   const { adminClient } = useAdminClient();
@@ -102,6 +104,8 @@ export default function EditUser() {
       tab,
     });
 
+  const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
+
   const settingsTab = useRoutableTab(toTab("settings"));
   const attributesTab = useRoutableTab(toTab("attributes"));
   const credentialsTab = useRoutableTab(toTab("credentials"));
@@ -113,7 +117,7 @@ export default function EditUser() {
     toTab("identity-provider-links"),
   );
   const sessionsTab = useRoutableTab(toTab("sessions"));
-  const userEventsTab = useRoutableTab(toTab("user-events"));
+  const eventsTab = useRoutableTab(toTab("events"));
 
   useFetch(
     async () =>
@@ -426,15 +430,38 @@ export default function EditUser() {
               >
                 <UserSessions />
               </Tab>
-              {hasAccess("view-events") && realm?.eventsEnabled && (
-                <Tab
-                  data-testid="user-events-tab"
-                  title={<TabTitleText>{t("events")}</TabTitleText>}
-                  {...userEventsTab}
-                >
-                  <UserEvents user={user.id} />
-                </Tab>
-              )}
+              {hasAccess("view-events") &&
+                (realm?.adminEventsEnabled || realm?.eventsEnabled) && (
+                  <Tab
+                    data-testid="events-tab"
+                    title={<TabTitleText>{t("events")}</TabTitleText>}
+                    {...eventsTab}
+                  >
+                    <Tabs
+                      activeKey={activeEventsTab}
+                      onSelect={(_, key) => setActiveEventsTab(key as string)}
+                    >
+                      {realm.eventsEnabled && (
+                        <Tab
+                          eventKey="userEvents"
+                          title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                        >
+                          <UserEvents user={user.id} />
+                        </Tab>
+                      )}
+                      {realm.adminEventsEnabled && (
+                        <Tab
+                          eventKey="adminEvents"
+                          title={
+                            <TabTitleText>{t("adminEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`users/${user.id}`} />
+                        </Tab>
+                      )}
+                    </Tabs>
+                  </Tab>
+                )}
             </RoutableTabs>
           </FormProvider>
         </UserProfileProvider>

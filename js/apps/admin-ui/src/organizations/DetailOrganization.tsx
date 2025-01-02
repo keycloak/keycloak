@@ -8,6 +8,7 @@ import {
   Button,
   PageSection,
   Tab,
+  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
@@ -35,12 +36,15 @@ import {
   OrganizationTab,
   toEditOrganization,
 } from "./routes/EditOrganization";
+import { useAccess } from "../context/access/Access";
+import { AdminEvents } from "../events/AdminEvents";
+import { useState } from "react";
 
 export default function DetailOrganization() {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { id } = useParams<EditOrganizationParams>();
   const { t } = useTranslation();
 
@@ -84,6 +88,10 @@ export default function DetailOrganization() {
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
   const identityProvidersTab = useTab("identityProviders");
+  const eventsTab = useTab("events");
+
+  const { hasAccess } = useAccess();
+  const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
@@ -161,6 +169,32 @@ export default function DetailOrganization() {
           >
             <IdentityProviders />
           </Tab>
+          {realmRepresentation?.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <Tabs
+                  activeKey={activeEventsTab}
+                  onSelect={(_, key) => setActiveEventsTab(key as string)}
+                >
+                  <Tab
+                    eventKey="adminEvents"
+                    title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                  >
+                    <AdminEvents resourcePath={`organizations/${id}`} />
+                  </Tab>
+                  <Tab
+                    eventKey="membershipEvents"
+                    title={<TabTitleText>{t("membershipEvents")}</TabTitleText>}
+                  >
+                    <AdminEvents resourcePath={`organizations/${id}/members`} />
+                  </Tab>
+                </Tabs>
+              </Tab>
+            )}
         </RoutableTabs>
       </FormProvider>
     </PageSection>
