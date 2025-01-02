@@ -41,18 +41,22 @@
         </local-cache>
         <local-cache name="sessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="authenticationSessions">
             <expiration lifespan="-1"/>
         </local-cache>
         <local-cache name="offlineSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="clientSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="offlineClientSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="loginFailures">
             <expiration lifespan="-1"/>
