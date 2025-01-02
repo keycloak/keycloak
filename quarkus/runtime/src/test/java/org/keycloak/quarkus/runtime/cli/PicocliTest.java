@@ -296,6 +296,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void optimizedExport() {
+        build("build", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
     public void testReaugFromProdToDev() {
         build("build", "--db=dev-file");
 
@@ -443,6 +451,42 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(),
                 containsString("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead."));
+    }
+    
+    @Test
+    public void providerChanged() {
+        build("build", "--db=dev-file");
+
+        addPersistedConfigValues(Map.of(Picocli.KC_PROVIDER_FILE_PREFIX + "fake", "value"));
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.provider.file.fake"));
+    }
+
+    @Test
+    public void buildOptionChangedWithOptimized() {
+        build("build", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Build time option: '--db' not usable with pre-built image and --optimized"));
+    }
+
+    @Test
+    public void buildOptionWithOptimized() {
+        build("build", "--metrics-enabled=true", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=keycloak");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void buildDBWithOptimized() {
+        build("build", "--db=mariadb");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("import", "--optimized", "--dir=./", "--override=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
 }
