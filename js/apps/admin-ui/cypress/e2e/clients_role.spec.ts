@@ -169,7 +169,7 @@ describe("Roles tab test", () => {
 
     commonPage
       .masthead()
-      .checkNotificationMessage("Scope mapping successfully removed", true);
+      .checkNotificationMessage("Role mapping updated", true);
 
     commonPage.tableUtils().selectRowItemAction("manage-consent", "Unassign");
     commonPage.sidebar().waitForPageLoad();
@@ -197,7 +197,7 @@ describe("Roles tab test", () => {
 
     commonPage
       .masthead()
-      .checkNotificationMessage("Scope mapping successfully removed", true);
+      .checkNotificationMessage("Role mapping updated", true);
   });
 
   it("Should delete client role test", () => {
