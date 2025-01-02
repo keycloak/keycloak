@@ -150,7 +150,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             if (root.admin().hasRole(role)) return true;
 
-            ClientModel adminClient = root.getRealmManagementClient();
+            ClientModel adminClient = root.getRealmPermissionsClient();
             // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
                 // if this is realm admin role, then check to see if admin has similar permissions
@@ -514,20 +514,20 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (role.getContainer() instanceof ClientModel) {
             client = (ClientModel)role.getContainer();
         } else {
-            client = root.getRealmManagementClient();
+            client = root.getRealmPermissionsClient();
         }
         return client;
     }
 
     @Override
     public Policy manageUsersPolicy(ResourceServer server) {
-        RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_USERS);
+        RoleModel role = root.getRealmPermissionsClient().getRole(AdminRoles.MANAGE_USERS);
         return rolePolicy(server, role);
     }
 
     @Override
     public Policy viewUsersPolicy(ResourceServer server) {
-        RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.VIEW_USERS);
+        RoleModel role = root.getRealmPermissionsClient().getRole(AdminRoles.VIEW_USERS);
         return rolePolicy(server, role);
     }
 
