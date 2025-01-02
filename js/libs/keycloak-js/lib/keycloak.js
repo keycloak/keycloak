@@ -1261,7 +1261,7 @@ function Keycloak (config) {
                         "[KEYCLOAK] Your browser is blocking access to 3rd-party cookies, this means:\n\n" +
                         " - It is not possible to retrieve tokens without redirecting to the Keycloak server (a.k.a. no support for silent authentication).\n" +
                         " - It is not possible to automatically detect changes to the session status (such as the user logging out in another tab).\n\n" +
-                        "For more information see: https://www.keycloak.org/docs/latest/securing_apps/#_modern_browsers"
+                        "For more information see: https://www.keycloak.org/securing-apps/javascript-adapter#_modern_browsers"
                     );
 
                     loginIframe.enable = false;
