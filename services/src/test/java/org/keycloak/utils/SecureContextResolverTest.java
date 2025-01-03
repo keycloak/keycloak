@@ -46,8 +46,10 @@ public class SecureContextResolverTest {
     @Test
     public void testIp6() {
         assertSecureContext("http://[::1]", true);
+        assertTrue(SecureContextResolver.isLocalAddress("::1"));
         assertSecureContext("http://[0000:0000:0000:0000:0000:0000:0000:0001]", true);
         assertSecureContext("http://[0:0:0:0:0:0:0:1]", true);
+        assertTrue(SecureContextResolver.isLocalAddress("0:0:0:0:0:0:0:1"));
         assertSecureContext("http://[0:0:0::1]", true);
         assertSecureContext("http://[::2]", false);
         assertSecureContext("http://[2001:0000:130F:0000:0000:09C0:876A:130B]", false);
