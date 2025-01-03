@@ -59,6 +59,8 @@ public class LDAPConstants {
     public static final String USE_TRUSTSTORE_ALWAYS = "always";
     public static final String USE_TRUSTSTORE_NEVER = "never";
 
+    public static final String CONNECTION_TRACE_BER = "com.sun.jndi.ldap.trace.ber";
+
     /**
      * @deprecated Use {@link #USE_TRUSTSTORE_ALWAYS} instead.
      */
@@ -140,6 +142,8 @@ public class LDAPConstants {
     public static final String LDAP_MATCHING_RULE_IN_CHAIN = ":1.2.840.113556.1.4.1941:";
 
     public static final String REFERRAL = "referral";
+
+    public static final String CONNECTION_TRACE = "connectionTrace";
 
     public static String getUuidAttributeName(String vendor) {
         if (vendor != null) {

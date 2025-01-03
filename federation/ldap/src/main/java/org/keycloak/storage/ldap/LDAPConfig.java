@@ -252,6 +252,9 @@ public class LDAPConfig {
         return binaryAttributeNames;
     }
 
+    public boolean isConnectionTrace() {
+        return Boolean.parseBoolean(config.getFirstOrDefault(LDAPConstants.CONNECTION_TRACE, Boolean.FALSE.toString()));
+    }
 
     @Override
     public boolean equals(Object obj) {

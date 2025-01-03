@@ -151,6 +151,35 @@ export const LdapSettingsAdvanced = ({
             )}
           ></Controller>
         </FormGroup>
+        <FormGroup
+          label={t("connectionTrace")}
+          labelIcon={
+            <HelpItem
+              helpText={t("connectionTraceHelp")}
+              fieldLabelId="connectionTrace"
+            />
+          }
+          fieldId="kc-connection-trace"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.connectionTrace"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id={"kc-connection-trace"}
+                data-testid="connection-trace"
+                isDisabled={false}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("connectionTrace")}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
         <FormGroup fieldId="query-extensions">
           <Button
             variant="secondary"
