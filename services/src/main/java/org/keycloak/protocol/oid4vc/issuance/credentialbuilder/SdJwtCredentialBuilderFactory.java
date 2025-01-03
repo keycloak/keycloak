@@ -31,7 +31,7 @@ import java.util.List;
 public class SdJwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
-    public String getId() {
+    public String getSupportedFormat() {
         return Format.SD_JWT_VC;
     }
 
