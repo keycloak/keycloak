@@ -43,20 +43,14 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
     @Override
     public void login(String user, String password) {
         try {
+            performSaveInfo();
             usernameInput.clear();
             usernameInput.sendKeys(user);
             passwordInput.sendKeys(password);
             passwordInput.sendKeys(Keys.RETURN);
             pause(3000);
+            performSaveInfo();
 
-            try {
-                saveInfoBtn.click();
-                pause(3000);
-            }
-            catch (NoSuchElementException e) {
-                log.info("'Save info' button not found, ignoring");
-                pause(3000);
-            }
         }
         catch (NoSuchElementException e) {
             log.info("Instagram is already logged in, just confirmation is expected");
@@ -67,6 +61,17 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
             allowBtn.click();
         } catch (NoSuchElementException e) {
             log.info("'Allow' button not found, ignoring");
+        }
+    }
+
+    private void performSaveInfo(){
+        try {
+            saveInfoBtn.click();
+            pause(3000);
+        }
+        catch (NoSuchElementException e) {
+            log.info("'Save info' button not found, ignoring");
+            pause(3000);
         }
     }
 }
