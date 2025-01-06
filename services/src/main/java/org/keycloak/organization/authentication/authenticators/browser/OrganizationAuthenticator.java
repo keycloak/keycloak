@@ -314,8 +314,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
-            // user is re-authenticating and there are no organizations to select
+            // user is re-authenticating, and there are no organizations to select
             context.success();
+        } else {
+            // user is re-authenticating, there is no organization to process
+            context.attempted();
         }
     }
 
