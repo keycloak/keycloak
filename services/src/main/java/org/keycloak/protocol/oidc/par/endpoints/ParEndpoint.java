@@ -202,7 +202,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             if (parameterValues.isEmpty()) {
                 // We emit the empty parameter as a marker, but only if it does not exist yet. This prevents "accidental" value overrides.
                 params.putIfAbsent(parameterName, null);
-            } if (AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS.contains(parameterName)) {
+            } else if (AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS.contains(parameterName)) {
                 // Some parameters can be used multiple times, e.g. the resource param from
                 // RFC 8707 Resource Indicators for OAuth 2.0
                 String encodedParams = String.join(Constants.CFG_DELIMITER, parameterValues);

@@ -24,7 +24,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
