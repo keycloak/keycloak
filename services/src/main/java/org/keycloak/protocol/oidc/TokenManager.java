@@ -1550,7 +1550,7 @@ public class TokenManager {
                             OIDCIdentityProviderConfig.ISSUER, logoutToken.getIssuer()
                     ), -1, -1)
                     .map(model -> {
-                        var idp = IdentityBrokerService.getIdentityProviderFactory(session, model).create(session, model);
+                        var idp = IdentityBrokerService.getIdentityProvider(session, model.getAlias());
 
                         if (idp instanceof OIDCIdentityProvider oidcIdp) {
                             return oidcIdp;

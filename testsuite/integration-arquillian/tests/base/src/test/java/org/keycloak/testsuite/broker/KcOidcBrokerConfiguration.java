@@ -201,6 +201,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         config.put("clientId", CLIENT_ID);
         config.put("clientSecret", CLIENT_SECRET);
         config.put("prompt", "login");
+        config.put(OIDCIdentityProviderConfig.ISSUER, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME);
         config.put("authorizationUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/auth");
         config.put("tokenUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/token");
         config.put("logoutUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/logout");
