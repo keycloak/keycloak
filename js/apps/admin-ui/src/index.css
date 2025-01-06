@@ -33,6 +33,14 @@ input[type="checkbox"] {
 
 #app {
   overflow: hidden;
+  grid-column-start: banners;
+    "banners banners"
+    "header header"
+    "nav main";
+}
+
+.pf-v5-c-page__sidebar {
+  grid-row-start: 3;
 }
 
 div.w-tc-editor {
