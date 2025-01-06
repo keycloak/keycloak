@@ -22,7 +22,7 @@ import org.keycloak.provider.Provider;
 import java.util.Set;
 
 /**
- * Provider to customize OAuth2 Resource Indicators validations.
+ * Provider to customize OAuth2 Resource Indicators resolving.
  *
  * @link <a href="https://www.rfc-editor.org/rfc/rfc8707">RFC 8707 OAuth2 Resource Indicators</a>
  */
