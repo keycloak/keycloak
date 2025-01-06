@@ -68,9 +68,8 @@ Sizing of a {project_name} instance depends on the actual and forecasted numbers
 To retrieve the actual numbers of a running {project_name} instance for these three key inputs, use the metrics {project_name} provides:
 
 * The user event metric `keycloak_user_events_total` for event type `login` includes both password-based logins and cookie-based logins, still it can serve as a first approximate input for this sizing guide.
-If you are using a standard username and password form and want to retrieve only the number of password-based logins, use the metric `http_server_requests_seconds_count` with method `POST` and URI `+/realms/{realm}/login-actions/authenticate+` instead.
 * To find out number of password validations performed by {project_name} use the metric `keycloak_credentials_password_hashing_validations_total`.
-The metric also contains tags providing some details about hashing algorithm used and outcome of the validation.
+The metric also contains tags providing some details about the hashing algorithm used and the outcome of the validation.
 Here is the list of available tags: `realm`, `algorithm`, `hashing_strength`, `outcome`.
 * Use the user event metric `keycloak_user_events_total` for the event types `refresh_token` and `client_login` for refresh token requests and client credential grants respectively.
 
