@@ -81,6 +81,17 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
 
     @Test
     public void testExternalInternalTokenExchange() throws Exception {
+        assertExternalToInternalExchange(bc.getIDPAlias());
+    }
+
+    @Test
+    public void testExternalInternalTokenExchangeUsingIssuer() throws Exception {
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderRepresentation broker = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        assertExternalToInternalExchange(broker.getConfig().get(OIDCIdentityProviderConfigRep.ISSUER));
+    }
+
+    private void assertExternalToInternalExchange(String subjectIssuer) throws Exception {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
         ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
@@ -125,7 +136,7 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                     .param(OAuth2Constants.SUBJECT_TOKEN, tokenResponse.getIdToken())
                                     .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer)
                                     .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
 
                     ))) {
