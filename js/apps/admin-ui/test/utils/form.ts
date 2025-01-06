@@ -17,6 +17,23 @@ export async function selectItem(page: Page, field: Locator, value: string) {
   await page.getByRole("option", { name: value, exact: true }).click();
 }
 
+export async function assertSelectValue(field: Locator, value: string) {
+  const text = await field.textContent();
+  expect(text).toBe(value);
+}
+
+export async function switchOn(page: Page, id: string) {
+  const switchElement = page.locator(id);
+  await switchElement.click({ force: true });
+  await expect(switchElement).toBeChecked();
+}
+
+export async function switchOff(page: Page, id: string) {
+  const switchElement = page.locator(id);
+  await expect(switchElement).toBeChecked();
+  await page.locator(id).click({ force: true });
+}
+
 export async function clickSaveButton(page: Page) {
   await page.getByTestId("save").click();
 }
