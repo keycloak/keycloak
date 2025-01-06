@@ -301,9 +301,7 @@ describe("Clients test", () => {
 
       commonPage.sidebar().waitForPageLoad();
       commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
-      commonPage
-        .masthead()
-        .checkNotificationMessage("Scope mapping successfully removed");
+      commonPage.masthead().checkNotificationMessage("Role mapping updated");
 
       //cy.intercept(`/admin/realms/${realmName}/users`).as("assignRoles");
       serviceAccountTab

@@ -173,10 +173,7 @@ describe("Realm roles test", () => {
     modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
-    masthead.checkNotificationMessage(
-      "Scope mapping successfully removed",
-      true,
-    );
+    masthead.checkNotificationMessage("Role mapping updated", true);
   });
 
   it("Should delete all roles from search bar", () => {
@@ -192,10 +189,7 @@ describe("Realm roles test", () => {
     modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
-    masthead.checkNotificationMessage(
-      "Scope mapping successfully removed",
-      true,
-    );
+    masthead.checkNotificationMessage("Role mapping updated", true);
   });
 
   it("Should delete associated roles from list test", () => {
@@ -223,19 +217,13 @@ describe("Realm roles test", () => {
     modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
-    masthead.checkNotificationMessage(
-      "Scope mapping successfully removed",
-      true,
-    );
+    masthead.checkNotificationMessage("Role mapping updated", true);
     listingPage.removeItem("offline_access");
     sidebarPage.waitForPageLoad();
     modalUtils.checkModalTitle("Remove role?").confirmModal();
     sidebarPage.waitForPageLoad();
 
-    masthead.checkNotificationMessage(
-      "Scope mapping successfully removed",
-      true,
-    );
+    masthead.checkNotificationMessage("Role mapping updated", true);
   });
 
   describe("edit role details", () => {

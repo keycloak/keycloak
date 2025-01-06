@@ -58,7 +58,7 @@ describe("Realm settings - User registration tab", () => {
       .checkModalMessage("Are you sure you want to remove this role?")
       .checkConfirmButtonText("Remove")
       .confirmModal();
-    masthead.checkNotificationMessage("Scope mapping successfully removed");
+    masthead.checkNotificationMessage("Role mapping updated");
   });
 
   it("Add default group", () => {
