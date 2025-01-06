@@ -39,6 +39,3 @@ https://stackapps.com/apps/oauth/register
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
-# Remove following lines once KC26 is released
-https://www.keycloak.org/server/bootstrap-admin-recovery
-https://www.keycloak.org/server/tracing
