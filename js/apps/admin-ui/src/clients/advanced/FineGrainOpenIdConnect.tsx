@@ -237,10 +237,20 @@ export const FineGrainOpenIdConnect = ({
         options={prependEmpty(contentEncryptionProviders!)}
       />
       <ActionGroup>
-        <Button variant="secondary" id="fineGrainSave" onClick={save}>
+        <Button
+          variant="secondary"
+          id="fineGrainSave"
+          data-testid="fineGrainSave"
+          onClick={save}
+        >
           {t("save")}
         </Button>
-        <Button id="fineGrainRevert" variant="link" onClick={reset}>
+        <Button
+          id="fineGrainRevert"
+          data-testid="fineGrainRevert"
+          variant="link"
+          onClick={reset}
+        >
           {t("revert")}
         </Button>
       </ActionGroup>
