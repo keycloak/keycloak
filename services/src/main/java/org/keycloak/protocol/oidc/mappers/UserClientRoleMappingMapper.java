@@ -30,6 +30,7 @@ import org.keycloak.utils.RoleResolveUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Allows mapping of user client role mappings to an ID and Access Token claim.
@@ -125,8 +126,12 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
                 if (access == null) {
                     continue;
                 }
+                String augmentedRolePrefix = Objects.nonNull(rolePrefix)
+                        && !rolePrefix.trim().isEmpty()
+                        ? rolePrefix.replaceAll(CLIENT_ID_PATTERN.toString(), currClientId)
+                        : rolePrefix;
 
-                AbstractUserRoleMappingMapper.setClaim(token, mappingModel, access.getRoles(), currClientId, rolePrefix);
+                AbstractUserRoleMappingMapper.setClaim(token, mappingModel, access.getRoles(), currClientId, augmentedRolePrefix);
             }
         }
     }
