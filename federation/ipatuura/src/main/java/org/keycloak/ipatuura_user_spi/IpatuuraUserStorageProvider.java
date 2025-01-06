@@ -296,6 +296,11 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
     public boolean supportsCredentialAuthenticationFor(String type) {
         return UserCredentialModel.KERBEROS.equals(type);
     }

@@ -141,6 +141,15 @@ public interface UserQueryMethodsProvider {
     Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults);
 
     /**
+     * Obtains users that have a connection to a federation link
+     *
+     * @param realm          a reference to the realm
+     * @param federationLink a link to the ldap federation
+     * @return a non-null {@link Stream} of users that have a federation link
+     */
+    Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults);
+
+    /**
      * Obtains users that belong to a specific group.
      *
      * @param realm a reference to the realm.

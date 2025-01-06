@@ -565,6 +565,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByLink", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("federationLink", federationLink);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(user -> new UserAdapter(session, realm, em, user));
+    }
+
+    @Override
     public UserModel getServiceAccount(ClientModel client) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByServiceAccount", UserEntity.class);
         query.setParameter("realmId", client.getRealm().getId());

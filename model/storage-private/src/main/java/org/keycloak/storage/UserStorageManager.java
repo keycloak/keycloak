@@ -551,6 +551,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return localStorage().getUsersByLinkStream(realm, federationLink, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
@@ -892,8 +897,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!(factory instanceof UserStorageProviderFactory)) return;
         UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
         UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
-        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
-                || old.isImportEnabled() != newP.isImportEnabled()) {
+        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod()
+                || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
+                || old.isImportEnabled() != newP.isImportEnabled()
+                || old.isRemovalEnabled() != newP.isRemovalEnabled()
+                || old.getRemovalPageSize() != newP.getRemovalPageSize()) {
             UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
         }
 

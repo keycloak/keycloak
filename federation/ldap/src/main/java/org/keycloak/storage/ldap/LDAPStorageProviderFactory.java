@@ -34,6 +34,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -66,12 +67,16 @@ import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -498,14 +503,20 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getName());
 
+        SynchronizationResult result = new SynchronizationResult();
         try (LDAPQuery userQuery = createQuery(sessionFactory, realmId, model)) {
             SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
-
-            // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
-
+            result.add(syncResult);
             logger.infof("Sync all users finished: %s", syncResult.getStatus());
-            return syncResult;
         }
+
+        if (model.isRemovalEnabled()) {
+            SynchronizationResult removeResult = removeNonExistingUsers(sessionFactory, realmId, model);
+            result.add(removeResult);
+            logger.infof("Remove non existing users finished: %s", removeResult.getStatus());
+        }
+
+        return result;
     }
 
     @Override
@@ -520,13 +531,21 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         Condition modifyCondition = conditionsBuilder.greaterThanOrEqualTo(LDAPConstants.MODIFY_TIMESTAMP, lastSync);
         Condition orCondition = conditionsBuilder.orCondition(createCondition, modifyCondition);
 
+        SynchronizationResult result = new SynchronizationResult();
         try (LDAPQuery userQuery = createQuery(sessionFactory, realmId, model)) {
             userQuery.addWhereCondition(orCondition);
-            SynchronizationResult result = syncImpl(sessionFactory, userQuery, realmId, model);
-
-            logger.infof("Sync changed users finished: %s", result.getStatus());
-            return result;
+            SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
+            result.add(syncResult);
+            logger.infof("Sync changed users finished: %s", syncResult.getStatus());
         }
+
+        if (model.isRemovalEnabled()) {
+            SynchronizationResult removeResult = removeNonExistingUsers(sessionFactory, realmId, model);
+            result.add(removeResult);
+            logger.infof("Remove non existing users finished: %s", removeResult.getStatus());
+        }
+
+        return result;
     }
 
     protected void syncMappers(KeycloakSessionFactory sessionFactory, final String realmId, final ComponentModel model) {
@@ -705,6 +724,54 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         }
 
         return syncResult;
+    }
+
+    public static SynchronizationResult removeNonExistingUsers(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
+            SynchronizationResult syncResult = new SynchronizationResult();
+
+            RealmModel realm = session.realms().getRealm(realmId);
+            UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
+            LDAPStorageProvider ldapProvider = (LDAPStorageProvider) session.getProvider(UserStorageProvider.class, model);
+
+            int first = 0;
+            int max = model.getRemovalPageSize();
+
+            List<UserModel> users = userProvider.getUsersByLinkStream(realm, model.getId(), first, max).toList();
+
+            while (!users.isEmpty()) {
+                Map<String, List<UserModel>> usersByLdapId = users.stream().collect(groupingBy(
+                        user -> user.getFirstAttribute(LDAPConstants.LDAP_ID)
+                ));
+
+                // 1. query ldap
+                Set<String> ldapIds = usersByLdapId.keySet();
+                List<String> ldapIdsFound = ldapProvider.loadLDAPUsersByUuids(realm, ldapIds).stream()
+                        .map(ldapObject -> ldapObject.getUuid())
+                        .toList();
+
+                List<String> ldapIdsNotFound = new ArrayList<>(ldapIds);
+                ldapIdsNotFound.removeAll(ldapIdsFound);
+
+                // 2. delete not found users
+                ldapIdsNotFound.forEach(ldapId -> {
+                    usersByLdapId.get(ldapId).forEach(user -> {
+                        UserCache userCache = UserStorageUtil.userCache(session);
+                        if (userCache != null) {
+                            userCache.evict(realm, user);
+                        }
+                        userProvider.removeUser(realm, user);
+                        syncResult.increaseRemoved();
+                    });
+                });
+
+                // 3. load next page
+                first = first + max;
+                users = userProvider.getUsersByLinkStream(realm, model.getId(), first, max).toList();
+            }
+
+            return syncResult;
+        });
     }
 
     protected SPNEGOAuthenticator createSPNEGOAuthenticator(String spnegoToken, CommonKerberosConfig kerberosConfig) {

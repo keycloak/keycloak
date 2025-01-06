@@ -53,6 +53,7 @@ import java.util.LinkedList;
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndLongValue", query="select u from UserEntity u join u.attributes attr " +
                 "where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash"),
+        @NamedQuery(name= "getRealmUsersByLink", query="select u from UserEntity u where u.federationLink = :federationLink and u.realmId = :realmId order by id"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
         @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")

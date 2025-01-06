@@ -245,6 +245,11 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         return Stream.empty();
     }

@@ -395,6 +395,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? DEFAULT_MAX_RESULTS : maxResults;
@@ -1066,10 +1071,24 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
             String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
-            Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, uuid);
-            ldapQuery.addWhereCondition(usernameCondition);
+            Condition uuidCondition = conditionsBuilder.equal(uuidLDAPAttributeName, uuid);
+            ldapQuery.addWhereCondition(uuidCondition);
 
             return ldapQuery.getFirstResult();
+        }
+    }
+
+    public List<LDAPObject> loadLDAPUsersByUuids(RealmModel realm, Collection<String> uuids) {
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
+
+            final LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            final Condition[] conditions = uuids.stream()
+                    .map(uuid -> conditionsBuilder.equal(uuidLDAPAttributeName, uuid))
+                    .toArray(Condition[]::new);
+            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions));
+
+            return ldapQuery.getResultList();
         }
     }
 

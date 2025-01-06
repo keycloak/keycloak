@@ -41,6 +41,8 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
@@ -638,6 +640,87 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "username");
             mapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute());
             ctx.getRealm().updateComponent(mapperModel);
+        });
+    }
+
+    @Test
+    public void test10LDAPSyncWithUserRemoval() {
+        WaitUtils.pause(getLDAPRule().getSleepTime());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            ldapModel.put(UserStorageProviderModel.REMOVAL_ENABLED, "true");
+            ldapModel.put(UserStorageProviderModel.REMOVAL_PAGE_SIZE, "2");
+            appRealm.updateComponent(ldapModel);
+        });
+
+        // Sync 5 users from LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, ctx.getRealm().getId(), ctx.getLdapModel());
+
+            LDAPTestAsserts.assertSyncEquals(syncResult, 5, 0, 0, 0);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            LDAPConfig config = new LDAPConfig(ctx.getLdapModel().getConfig());
+
+            LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, ctx.getRealm(), config, "user1");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, ctx.getRealm().getId(), ctx.getLdapModel());
+
+            LDAPTestAsserts.assertSyncEquals(syncResult, 0, 4, 1, 0);
+        });
+    }
+
+    @Test
+    public void test11LDAPSyncWithUserRemovalNotEnabled() {
+        WaitUtils.pause(getLDAPRule().getSleepTime());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            ldapModel.put(UserStorageProviderModel.REMOVAL_ENABLED, "false");
+            appRealm.updateComponent(ldapModel);
+        });
+
+        // Sync 5 users from LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, ctx.getRealm().getId(), ctx.getLdapModel());
+
+            LDAPTestAsserts.assertSyncEquals(syncResult, 5, 0, 0, 0);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            LDAPConfig config = new LDAPConfig(ctx.getLdapModel().getConfig());
+
+            LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, ctx.getRealm(), config, "user1");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, ctx.getRealm().getId(), ctx.getLdapModel());
+
+            LDAPTestAsserts.assertSyncEquals(syncResult, 0, 4, 0, 0);
         });
     }
 }

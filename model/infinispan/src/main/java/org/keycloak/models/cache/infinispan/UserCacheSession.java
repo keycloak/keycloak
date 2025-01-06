@@ -630,6 +630,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return getDelegate().getUsersByLinkStream(realm, federationLink, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue).map(u -> returnFromCacheIfPresent(realm, u));
     }

@@ -81,6 +81,10 @@ public class UserStorageProviderSpi implements Spi {
                 .name("evictionDay").type(ProviderConfigProperty.STRING_TYPE).add()
                 .property()
                 .name("cacheInvalidBefore").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("removalEnabled").type(ProviderConfigProperty.BOOLEAN_TYPE).defaultValue("false").add()
+                .property()
+                .name("removalPageSize").type(ProviderConfigProperty.STRING_TYPE).add()
                 .build();
         commonConfig = Collections.unmodifiableList(config);
     }
