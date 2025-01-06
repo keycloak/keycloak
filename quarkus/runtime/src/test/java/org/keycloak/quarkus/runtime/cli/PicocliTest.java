@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -205,4 +206,19 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "Option: '--db postgres' is not expected to contain whitespace, please remove any unnecessary quoting/escaping"));
     }
 
+    @Test
+    public void syslogMaxLengthMemorySize() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=60k");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("60k", nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.max-length").getValue());
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.max-length").getValue(), nullValue());
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+    }
 }
