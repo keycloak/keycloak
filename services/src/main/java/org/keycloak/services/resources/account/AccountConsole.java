@@ -198,7 +198,7 @@ public class AccountConsole implements AccountResourceProvider {
 
         map.put("isViewGroupsEnabled", isViewGroupsEnabled);
         map.put("isViewOrganizationsEnabled", realm.isOrganizationsEnabled());
-        map.put("isOid4VciEnabled", realm.isVerifiableCredentialsEnabled());
+        map.put("isOid4VciEnabled", realm.isOid4VciEnabled());
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
         RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
