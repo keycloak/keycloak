@@ -17,14 +17,17 @@
 
 package org.keycloak.testsuite.organization.authentication;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.IOException;
 
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
@@ -100,6 +103,35 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             // the member should be able to log in using the credentials
             loginPage.login(member.getEmail(), memberPassword);
             appPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void testForceReAuthenticationBeforeRequiredAction() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        UserRepresentation member = addMember(organization);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
+
+        try {
+            setTimeOffset(10);
+            oauth.maxAge("1");
+            oauth.kcAction(RequiredAction.UPDATE_PASSWORD.name());
+            loginPage.open(bc.consumerRealmName());
+            loginPage.assertCurrent();
+            Matcher<String> expectedInfo = is("Please re-authenticate to continue");
+            assertThat(loginPage.getInfoMessage(), expectedInfo);
+            loginPage.login(memberPassword);
+            updatePasswordPage.updatePasswords(memberPassword, memberPassword);
+            appPage.assertCurrent();
+        } finally {
+            resetTimeOffset();
+            oauth.kcAction(null);
+            oauth.maxAge(null);
         }
     }
 }
