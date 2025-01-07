@@ -4,15 +4,14 @@ import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
 
+import io.netty.util.NetUtil;
+
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 public class SecureContextResolver {
-
-    private static final Pattern LOCALHOST_IPV4 = Pattern.compile("127.\\d{1,3}.\\d{1,3}.\\d{1,3}");
-    private static final Pattern LOCALHOST_IPV6 = Pattern.compile("\\[(0{0,4}:){1,7}0{0,3}1\\]");
-
 
     /**
      * Determines if a session is within a 'secure context', meaning its origin is considered potentially trustworthy by user-agents.
@@ -79,16 +78,15 @@ public class SecureContextResolver {
         if (address == null) {
             return false;
         }
-        // The host matches a CIDR notation of ::1/128
-        if (address.startsWith("[")) {
-            return LOCALHOST_IPV6.matcher(address).matches();
-        }
 
-        // The host matches a CIDR notation of 127.0.0.0/8
-        if (LOCALHOST_IPV4.matcher(address).matches()) {
-            return true;
+        if (NetUtil.isValidIpV4Address(address) || NetUtil.isValidIpV6Address(address)) {
+            try {
+                return InetAddress.getByName(address).isLoopbackAddress();
+            } catch (UnknownHostException e) {
+            }
         }
 
         return false;
     }
+
 }
