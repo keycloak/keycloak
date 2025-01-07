@@ -26,7 +26,14 @@ import java.util.Set;
  *
  * @link <a href="https://www.rfc-editor.org/rfc/rfc8707">RFC 8707 OAuth2 Resource Indicators</a>
  */
-public interface OAuth2ResourceIndicatorsProvider extends Provider {
+public interface OAuth2ResourceIndicatorResolver extends Provider {
+
+    /**
+     * Returns a client associated with the given {@code resourceIndicator} or {@literal null} if no client could be found.
+     * @param resourceIndicator
+     * @return client model
+     */
+    ClientModel findClientByResourceIndicator(String resourceIndicator);
 
     /**
      * Filters the given resource indicators to the supported resource indicators by the given {@link ClientModel client}.

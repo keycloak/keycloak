@@ -23,7 +23,7 @@ import org.keycloak.provider.Spi;
 /**
  * SPI for customizing RFC 8707 OAuth2 Resource Indicators lookup.
  */
-public class OAuth2ResourceIndicatorsSpi implements Spi {
+public class OAuth2ResourceIndicatorResolverSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -32,16 +32,16 @@ public class OAuth2ResourceIndicatorsSpi implements Spi {
 
     @Override
     public String getName() {
-        return "resource-indicators";
+        return "resource-indicator-resolver";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return OAuth2ResourceIndicatorsProvider.class;
+        return OAuth2ResourceIndicatorResolver.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return OAuth2ResourceIndicatorsProviderFactory.class;
+        return OAuth2ResourceIndicatorResolverFactory.class;
     }
 }

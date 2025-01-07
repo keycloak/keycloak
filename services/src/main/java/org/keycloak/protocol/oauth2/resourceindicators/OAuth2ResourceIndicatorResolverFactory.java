@@ -21,9 +21,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
- * Factory for {@link OAuth2ResourceIndicatorsProvider OAuth2ResourceIndicatorsProvider's}.
+ * Factory for {@link OAuth2ResourceIndicatorResolver OAuth2ResourceIndicatorsProvider's}.
  */
-public interface OAuth2ResourceIndicatorsProviderFactory extends ProviderFactory<OAuth2ResourceIndicatorsProvider> {
+public interface OAuth2ResourceIndicatorResolverFactory extends ProviderFactory<OAuth2ResourceIndicatorResolver> {
 
     @Override
     default void init(Config.Scope config) {
