@@ -289,6 +289,8 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) newRealm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
         if (rep.isAdminPermissionsEnabled() != null) newRealm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
+        if (rep.getAutoUpdatedIdPsInterval() != null) newRealm.setAutoUpdatedIdPsInterval(rep.getAutoUpdatedIdPsInterval());
+        if (rep.getAutoUpdatedIdPsLastRefreshTime() != null) newRealm.setAutoUpdatedIdPsLastRefreshTime(rep.getAutoUpdatedIdPsLastRefreshTime());
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
@@ -782,6 +784,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isOrganizationsEnabled() != null) realm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
         if (rep.isAdminPermissionsEnabled() != null) realm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
         if (rep.isVerifiableCredentialsEnabled() != null) realm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
+        if (rep.getAutoUpdatedIdPsInterval() != null) realm.setAutoUpdatedIdPsInterval(rep.getAutoUpdatedIdPsInterval());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)

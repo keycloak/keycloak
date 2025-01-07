@@ -413,6 +413,8 @@ public class ModelToRepresentation {
         rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
         rep.setAdminPermissionsEnabled(realm.isAdminPermissionsEnabled());
         rep.setVerifiableCredentialsEnabled(realm.isVerifiableCredentialsEnabled());
+        rep.setAutoUpdatedIdPsInterval(realm.getAutoUpdatedIdPsInterval());
+        rep.setAutoUpdatedIdPsLastRefreshTime(realm.getAutoUpdatedIdPsLastRefreshTime());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());

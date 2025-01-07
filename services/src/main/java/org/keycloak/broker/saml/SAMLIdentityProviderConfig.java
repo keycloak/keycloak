@@ -428,6 +428,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         return Boolean.parseBoolean(getConfig().get(USE_METADATA_DESCRIPTOR_URL));
     }
 
+    public boolean isAutoUpdate() {
+        return Boolean.valueOf(getConfig().get(AUTO_UPDATE));
+    }
+
+    public void setAutoUpdate(boolean autoUpdate) {
+        getConfig().put(AUTO_UPDATE, String.valueOf(autoUpdate));
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();

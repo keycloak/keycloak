@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -329,6 +330,11 @@ public class RealmBuilder {
 
     public RealmBuilder organizationEnabled(boolean enabled) {
         rep.setOrganizationsEnabled(enabled);
+        return this;
+    }
+
+    public RealmBuilder setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        rep.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
         return this;
     }
 }

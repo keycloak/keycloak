@@ -212,4 +212,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
         return this;
     }
+
+    public RealmAttributeUpdater setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        rep.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
+        return this;
+    }
 }

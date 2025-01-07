@@ -17,6 +17,7 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.Config;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -49,7 +50,7 @@ public abstract class AbstractIdentityProviderFactory<T extends IdentityProvider
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, String config) {
-        return new HashMap<>();
+    public IdentityProviderModel parseConfig(KeycloakSession session, String config, IdentityProviderModel model) {
+        return new IdentityProviderModel();
     }
 }

@@ -1190,4 +1190,24 @@ public class RealmModelDelegate implements RealmModel {
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
+
+    @Override
+    public Long getAutoUpdatedIdPsInterval() {
+        return delegate.getAutoUpdatedIdPsInterval();
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        delegate.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
+    }
+
+    @Override
+    public Long getAutoUpdatedIdPsLastRefreshTime() {
+        return delegate.getAutoUpdatedIdPsLastRefreshTime();
+    }
+
+    @Override
+    public void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) {
+        delegate.setAutoUpdatedIdPsLastRefreshTime(autoUpdatedIdPsLastRefreshTime);
+    }
 }

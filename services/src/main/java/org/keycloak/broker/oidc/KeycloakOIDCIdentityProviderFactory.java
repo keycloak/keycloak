@@ -45,8 +45,8 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, String config) {
-        return OIDCIdentityProviderFactory.parseOIDCConfig(session, config);
+    public IdentityProviderModel parseConfig(KeycloakSession session, String config, IdentityProviderModel model) {
+        return OIDCIdentityProviderFactory.parseOIDCConfig(session, config, model);
     }
 
     @Override
