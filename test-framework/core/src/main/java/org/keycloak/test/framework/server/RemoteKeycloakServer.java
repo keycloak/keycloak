@@ -26,6 +26,11 @@ public class RemoteKeycloakServer implements KeycloakServer {
         return "http://localhost:8080";
     }
 
+    @Override
+    public String getManagementBaseUrl() {
+        return "http://localhost:9000";
+    }
+
     private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         StringBuilder sb = new StringBuilder();
 

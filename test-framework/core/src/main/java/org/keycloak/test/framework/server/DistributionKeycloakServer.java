@@ -42,6 +42,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
         return "http://localhost:8080";
     }
 
+    @Override
+    public String getManagementBaseUrl() {
+        return "http://localhost:9000";
+    }
+
     private static final class LoggingOutputConsumer implements OutputConsumer {
 
         private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
