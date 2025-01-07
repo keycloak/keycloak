@@ -48,6 +48,7 @@ bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
 The server's root `themes` directory does not contain any themes by default, but it contains a README file with some additional details about the default themes.
 To simplify upgrading, do not edit the bundled themes directly. Instead create your own theme that extends one of the bundled themes.
 
+[[_creating-a-theme]]
 === Creating a theme
 
 A theme consists of:
