@@ -42,6 +42,9 @@ public class JpaUpdate25_0_0_MySQL_ConsentConstraints extends CustomKeycloakTask
                         " max_dates ON uc.CLIENT_ID = max_dates.CLIENT_ID" +
                         " AND uc.USER_ID = max_dates.USER_ID AND uc.LAST_UPDATED_DATE = max_dates.MAX_UPDATED_DATE"
         ));
+        statements.add(new RawSqlStatement(
+                "ALTER TABLE TEMP_USER_CONSENT_IDS ADD PRIMARY KEY (ID)"
+        ));
         statements.add(new DeleteStatement(null, null, database.correctObjectName("USER_CONSENT", Table.class))
                 .setWhere("ID IN (SELECT ID FROM TEMP_USER_CONSENT_IDS)"));
         statements.add(new RawSqlStatement("DROP TABLE IF EXISTS TEMP_USER_CONSENT_IDS"));
@@ -61,6 +64,9 @@ public class JpaUpdate25_0_0_MySQL_ConsentConstraints extends CustomKeycloakTask
                         " FROM "+userConsentTable+" GROUP BY CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID HAVING COUNT(*) > 1 )" +
                         " max_dates ON uc.CLIENT_STORAGE_PROVIDER = max_dates.CLIENT_STORAGE_PROVIDER" +
                         " AND uc.EXTERNAL_CLIENT_ID = max_dates.EXTERNAL_CLIENT_ID AND uc.USER_ID = max_dates.USER_ID AND uc.LAST_UPDATED_DATE = max_dates.MAX_UPDATED_DATE;"
+        ));
+        statements.add(new RawSqlStatement(
+                "ALTER TABLE TEMP_USER_CONSENT_IDS2 ADD PRIMARY KEY (ID)"
         ));
         statements.add(new DeleteStatement(null, null, database.correctObjectName("USER_CONSENT", Table.class))
                 .setWhere("ID IN (SELECT ID FROM TEMP_USER_CONSENT_IDS2)"));
