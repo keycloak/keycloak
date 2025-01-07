@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.protocol.oauth2.resourceindicators.DefaultOAuth2ResourceIndicatorsProviderFactory
+org.keycloak.protocol.oauth2.resourceindicators.DefaultOAuth2ResourceIndicatorResolverFactory

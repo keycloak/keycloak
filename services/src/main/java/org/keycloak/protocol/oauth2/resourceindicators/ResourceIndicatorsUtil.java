@@ -96,18 +96,18 @@ public class ResourceIndicatorsUtil {
         return new CheckedResourceIndicators(clientResourceIndicators, resourceIndicatorCandidates);
     }
 
-    private static OAuth2ResourceIndicatorsProvider resolveProvider(KeycloakSession session, ClientModel client) {
+    private static OAuth2ResourceIndicatorResolver resolveProvider(KeycloakSession session, ClientModel client) {
 
-        // check if the current client wants to use a custom provider version
+        // check if the current client wants to use a custom provider implementation
         String providerId = client.getAttribute(OAUTH_2_RESOURCE_INDICATORS_PROVIDER_ATTRIBUTE);
         if (providerId == null) {
             // fallback to the default provider
             providerId = DEFAULT_PROVIDER_ID;
         }
 
-        var provider = session.getProvider(OAuth2ResourceIndicatorsProvider.class, providerId);
+        var provider = session.getProvider(OAuth2ResourceIndicatorResolver.class, providerId);
         if (provider == null) {
-            LOG.debug("No resource indicators provider found for providerId: " + providerId);
+            LOG.debugf("No resource indicators provider found. providerId=%s", providerId);
         }
         return provider;
     }
