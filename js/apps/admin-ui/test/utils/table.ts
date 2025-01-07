@@ -1,4 +1,4 @@
-import { Locator, Page } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 export async function searchItem(
   page: Page,
@@ -30,4 +30,8 @@ export function selectRowKebab(page: Page, itemName: string) {
 
 export function clickRowKebabItem(page: Page, itemName: string) {
   return page.getByRole("menuitem", { name: itemName }).click();
+}
+
+export async function assertRowExists(page: Page, itemName: string) {
+  await expect(page.getByRole("row", { name: itemName })).toBeVisible();
 }
