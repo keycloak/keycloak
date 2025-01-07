@@ -37,3 +37,7 @@ export async function switchOff(page: Page, id: string) {
 export async function clickSaveButton(page: Page) {
   await page.getByTestId("save").click();
 }
+
+export async function clickCancelButton(page: Page) {
+  await page.getByTestId("cancel").click();
+}
