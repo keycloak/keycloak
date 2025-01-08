@@ -331,7 +331,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!containerBuilder.hasStartupProbe()) {
             containerBuilder.withNewStartupProbe()
                 .withPeriodSeconds(1)
-                .withFailureThreshold(600)
+                .withFailureThreshold(3600)
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
