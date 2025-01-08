@@ -24,6 +24,7 @@ import io.opentelemetry.context.Context;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.tracing.TracingProvider;
 
@@ -119,8 +120,20 @@ public class PersistentSessionsWorker {
                                                         change::perform);
                                                 change.complete();
                                                 performedChanges.add(change);
+                                            } catch (ModelDuplicateException ex) {
+                                                // duplicate exceptions are unlikely to succeed on a retry,
+                                                tracing.error(ex);
+                                                change.fail(ex);
+                                                performedChanges.add(change);
                                             } catch (Throwable ex) {
-                                                throwables.add(ex);
+                                                if (iteration > 20) {
+                                                    // never retry more than 20 times
+                                                    tracing.error(ex);
+                                                    change.fail(ex);
+                                                    performedChanges.add(change);
+                                                } else {
+                                                    throwables.add(ex);
+                                                }
                                             }
                                         });
                                         batch.removeAll(performedChanges);
