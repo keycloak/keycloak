@@ -147,7 +147,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private boolean passwordAgePredicate(CredentialModel credential, long passwordMaxAgeMillis) {
-        return credential.getCreatedDate() < passwordMaxAgeMillis;
+        long createdDate = credential.getCreatedDate() == null ? Long.MIN_VALUE : credential.getCreatedDate();
+        return createdDate < passwordMaxAgeMillis;
     }
 
     @Override
