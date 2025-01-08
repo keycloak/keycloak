@@ -195,6 +195,7 @@ export default function ClientsSection() {
       <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
+          unmountOnExit
           isBox
           defaultLocation={toClients({
             realm,

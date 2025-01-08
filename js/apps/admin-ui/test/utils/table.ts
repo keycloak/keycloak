@@ -48,6 +48,7 @@ export async function clickTableToolbarItem(page: Page, itemName: string) {
 
 export async function getTableData(page: Page) {
   const tableData: string[][] = [];
+  await page.locator("tbody").waitFor();
   const rowCount = await page.locator("tbody tr").count();
   const columnCount = await page.locator("tbody tr:first-child td").count();
 
