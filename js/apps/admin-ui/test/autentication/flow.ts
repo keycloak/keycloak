@@ -1,7 +1,6 @@
 import { Page, expect } from "@playwright/test";
-import { confirmModal } from "../utils/modal";
-import AxeBuilder from "@axe-core/playwright";
 import { selectItem } from "../utils/form";
+import { confirmModal } from "../utils/modal";
 
 export async function fillDuplicateFlowModal(
   page: Page,
@@ -133,11 +132,6 @@ export async function assertDefaultSwitchPolicyEnabled(
 
 export async function goToCreateItem(page: Page) {
   await page.getByRole("link", { name: "Create flow" }).click();
-}
-
-export async function assertAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).analyze();
-  expect(violations.length, violations.map((v) => v.help).join("\n")).toBe(0);
 }
 
 export async function fillCreateForm(
