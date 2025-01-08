@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.common.Profile;
+
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
@@ -36,6 +36,7 @@ import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 
 import static org.keycloak.models.IdentityProviderStorageProvider.LoginFilter.getLoginPredicate;
 
@@ -430,7 +431,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     }
 
     private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
+        if (!OrganizationUtil.isOrganizationsFeatureEnabled(getRealm())) return idp;
         return new IdentityProviderModel(idp) {
             @Override
             public boolean isEnabled() {

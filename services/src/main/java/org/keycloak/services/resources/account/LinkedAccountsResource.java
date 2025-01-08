@@ -54,6 +54,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
@@ -293,7 +294,7 @@ public class LinkedAccountsResource {
             throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_NOT_ACTIVE), Response.Status.BAD_REQUEST);
         }
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
             if (Organizations.resolveHomeBroker(session, user).stream()
                     .map(IdentityProviderModel::getAlias)
                     .anyMatch(providerAlias::equals)) {

@@ -29,6 +29,7 @@ import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -242,7 +243,7 @@ public class IdentityProviderBean {
     }
 
     private static boolean organizationsDisabled(RealmModel realm) {
-        return !Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) || !realm.isOrganizationsEnabled();
+        return !OrganizationUtil.isOrganizationsFeatureEnabled(realm);
     }
 
     public static class IdentityProvider implements OrderedModel {
