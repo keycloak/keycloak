@@ -844,7 +844,7 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get Single Execution")
     public AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId) {
     	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
-        auth.realm().requireManageRealm();
+        auth.realm().requireViewRealm();
 
         final Optional<AuthenticationExecutionModel> model = Optional.ofNullable(realm.getAuthenticationExecutionById(executionId));
         if (!model.isPresent()) {
