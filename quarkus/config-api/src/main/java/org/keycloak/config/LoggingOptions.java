@@ -182,7 +182,7 @@ public class LoggingOptions {
             .defaultValue(SyslogHandler.SyslogType.RFC5424.toString().toLowerCase())
             .build();
 
-    public static final Option<MemorySize> LOG_SYSLOG_MAX_LENGTH = new OptionBuilder<>("log-syslog-max-length", MemorySize.class)
+    public static final Option<String> LOG_SYSLOG_MAX_LENGTH = new OptionBuilder<>("log-syslog-max-length", String.class)
             .category(OptionCategory.LOGGING)
             // based on the 'quarkus.log.syslog.max-length' property
             .description("Set the maximum length, in bytes, of the message allowed to be sent. The length includes the header and the message. " +
