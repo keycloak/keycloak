@@ -15,7 +15,6 @@ import {
   clickTableRowItem,
   getRowByCellText,
   searchItem,
-  selectRowKebab,
 } from "../utils/table";
 import {
   addCondition,
@@ -60,8 +59,7 @@ test.describe("Authentication test", () => {
   });
 
   test("should create duplicate of existing flow", async ({ page }) => {
-    await selectRowKebab(page, "browser");
-    await clickRowKebabItem(page, "Duplicate");
+    await clickRowKebabItem(page, "browser", "Duplicate");
     await fillDuplicateFlowModal(page, "Copy of browser");
 
     await assertNotificationMessage(page, "Flow successfully duplicated");
@@ -69,16 +67,14 @@ test.describe("Authentication test", () => {
   });
 
   test("Should fail duplicate with empty flow name", async ({ page }) => {
-    await selectRowKebab(page, "Direct grant");
-    await clickRowKebabItem(page, "Duplicate");
+    await clickRowKebabItem(page, "Direct grant", "Duplicate");
     await fillDuplicateFlowModal(page, "");
 
     await assertRequiredFieldError(page, "alias");
   });
 
   test("Should fail duplicate with duplicated name", async ({ page }) => {
-    await selectRowKebab(page, "Direct grant");
-    await clickRowKebabItem(page, "Duplicate");
+    await clickRowKebabItem(page, "Direct grant", "Duplicate");
     await fillDuplicateFlowModal(page, "browser");
 
     await assertNotificationMessage(

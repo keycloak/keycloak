@@ -1,11 +1,7 @@
 import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import { Page, expect } from "@playwright/test";
-import {
-  clickRowKebabItem,
-  getRowByCellText,
-  selectRowKebab,
-} from "../utils/table";
+import { clickRowKebabItem, getRowByCellText } from "../utils/table";
 import { confirmModal } from "../utils/modal";
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 
@@ -89,8 +85,7 @@ export async function createPolicy(
 }
 
 export async function deletePolicy(page: Page, policyName: string) {
-  await selectRowKebab(page, policyName);
-  await clickRowKebabItem(page, "Delete");
+  await clickRowKebabItem(page, policyName, "Delete");
   await confirmModal(page);
 }
 
