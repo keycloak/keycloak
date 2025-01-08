@@ -17,6 +17,7 @@
 package org.keycloak.quarkus.runtime.services.health;
 
 import io.agroal.api.AgroalDataSource;
+import io.agroal.api.AgroalDataSourceMetrics;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
 import io.smallrye.health.api.AsyncHealthCheck;
@@ -46,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @ApplicationScoped
 public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
 
+    public static final String FAILING_SINCE = "Failing since";
+
     /**
      * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
      * by the probe with the logs.
@@ -66,15 +69,18 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     @Override
     public Uni<HealthCheckResponse> call() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
-        long activeCount = agroalDataSource.getMetrics().activeCount();
-        long invalidCount = agroalDataSource.getMetrics().invalidCount();
+        AgroalDataSourceMetrics metrics = agroalDataSource.getMetrics();
+        long activeCount = metrics.activeCount();
+        long invalidCount = metrics.invalidCount();
         if (activeCount < 1 || invalidCount > 0) {
             return healthCheckFactory.callSync(() -> {
                 HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
                 if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
                     builder.down();
                     Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
-                    builder.withData("Failing since", DATE_FORMATTER.format(failingTime));
+                    builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
+                } else {
+                    failingSince.set(null);
                 }
                 return builder.build();
             });

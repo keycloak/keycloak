@@ -16,41 +16,23 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
-import io.quarkus.test.QuarkusUnitTest;
-import io.restassured.RestAssured;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-
 import static io.restassured.RestAssured.given;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import io.restassured.RestAssured;
+
+@QuarkusTest
+@TestProfile(MetricsEnabledProfile.class)
 class KeycloakMetricsConfigurationTest {
-
-    @BeforeAll
-    static void setUpAll() {
-        System.setProperty("KC_CACHE", "local");
-    }
-
-    @AfterAll
-    static void tearDownAll() {
-        System.clearProperty("KC_CACHE");
-    }
 
     @BeforeEach
     void setUp() {
         RestAssured.port = 9001;
     }
-
-    @RegisterExtension
-    static final QuarkusUnitTest test = new QuarkusUnitTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
-            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics")
-            .overrideConfigKey("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
 
     @Test
     void testMetrics() {
