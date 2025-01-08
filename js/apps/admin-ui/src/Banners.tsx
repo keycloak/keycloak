@@ -16,11 +16,10 @@ const WarnBanner = ({ msg, className }: WarnBannerProps) => {
   const { t } = useTranslation();
 
   return (
-    <Banner screenReaderText={t(msg)} variant="gold" className={className + " " + style.banner}>
+    <Banner
       screenReaderText={t(msg)}
       variant="gold"
-      className={className}
-      isSticky
+      className={className || style.banner}
     >
       <Flex
         spaceItems={{ default: "spaceItemsSm" }}

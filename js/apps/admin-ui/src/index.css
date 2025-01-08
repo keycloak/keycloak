@@ -31,9 +31,10 @@ input[type="checkbox"] {
   width: fit-content;
 }
 
-#app {
-  overflow: hidden;
+div.pf-v5-c-page {
   grid-column-start: banners;
+  grid-template-rows: max-content max-content 1fr;
+  grid-template-areas:
     "banners banners"
     "header header"
     "nav main";
