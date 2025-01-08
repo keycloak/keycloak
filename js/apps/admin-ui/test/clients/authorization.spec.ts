@@ -2,7 +2,10 @@ import { test } from "@playwright/test";
 import adminClient from "../../cypress/support/util/AdminClient";
 import { clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
+import {
+  assertAxeViolations,
+  assertNotificationMessage,
+} from "../utils/masthead";
 import { goToClients, goToRealm } from "../utils/sidebar";
 import { assertRowExists, clickTableRowItem, searchItem } from "../utils/table";
 import {
@@ -28,9 +31,9 @@ import {
   setPolicy,
 } from "./authorization";
 
-const clientId = `client-authentication-${crypto.randomUUID()}`;
-
 test.describe("Client authentication subtab", () => {
+  const clientId = `client-authentication-${crypto.randomUUID()}`;
+
   test.beforeAll(async () => {
     await adminClient.createClient({
       protocol: "openid-connect",
@@ -212,5 +215,35 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
     await goToScopesSubTab(page);
     await goToPoliciesSubTab(page);
     await goToPermissionsSubTab(page);
+  });
+});
+
+test.describe("Accessibility tests for client authorization", () => {
+  const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
+  test.beforeAll(() =>
+    adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    }),
+  );
+
+  test.afterAll(() => adminClient.deleteClient(clientId));
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+  });
+
+  test("Check a11y violations on load/ client authorization", async ({
+    page,
+  }) => {
+    await assertAxeViolations(page);
   });
 });

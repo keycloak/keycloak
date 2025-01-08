@@ -4,9 +4,11 @@ import adminClient from "../../cypress/support/util/AdminClient";
 import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
 import {
+  assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
 } from "../utils/masthead";
+import { confirmModal } from "../utils/modal";
 import { goToAuthentication, goToRealm } from "../utils/sidebar";
 import {
   clickRowKebabItem,
@@ -20,7 +22,6 @@ import {
   addExecution,
   addPolicy,
   addSubFlow,
-  assertAxeViolations,
   assertDefaultSwitchPolicyEnabled,
   assertRowExists,
   assertSwitchPolicyChecked,
@@ -37,7 +38,6 @@ import {
   goToRequiredActions,
   goToWebAuthnTab,
 } from "./flow";
-import { confirmModal } from "../utils/modal";
 
 test.describe("Authentication test", () => {
   const realmName = `test${uuidv4()}`;
