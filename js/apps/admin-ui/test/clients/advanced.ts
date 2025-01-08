@@ -6,7 +6,7 @@ import {
   switchOn,
 } from "../utils/form";
 import { confirmModal } from "../utils/modal";
-import { clickRowKebabItem, selectRowKebab } from "../utils/table";
+import { clickRowKebabItem } from "../utils/table";
 
 export async function goToAdvancedTab(page: Page) {
   await page.getByTestId("advancedTab").click();
@@ -35,8 +35,7 @@ export async function assertTestClusterAvailability(
 }
 
 export async function deleteClusterNode(page: Page, host: string) {
-  await selectRowKebab(page, host);
-  await clickRowKebabItem(page, "Delete");
+  await clickRowKebabItem(page, host, "Delete");
   await confirmModal(page);
 }
 

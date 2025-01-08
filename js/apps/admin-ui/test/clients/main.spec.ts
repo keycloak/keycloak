@@ -5,13 +5,12 @@ import adminClient from "../../cypress/support/util/AdminClient";
 import { assertRequiredFieldError } from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
-import { checkModalTitle, confirmModal } from "../utils/modal";
+import { assertModalTitle, confirmModal } from "../utils/modal";
 import { goToClients, goToRealm } from "../utils/sidebar";
 import {
+  clickRowKebabItem,
   getRowByCellText,
   searchItem,
-  selectRowAction,
-  selectRowKebab,
 } from "../utils/table";
 import {
   cancel,
@@ -103,9 +102,8 @@ test.describe("Clients test", () => {
     await assertNotificationMessage(page, "Client created successfully");
 
     await goToClients(page);
-    await selectRowKebab(page, clientId);
-    await selectRowAction(page, "Delete");
-    await checkModalTitle(page, `Delete ${clientId} ?`);
+    await clickRowKebabItem(page, clientId, "Delete");
+    await assertModalTitle(page, `Delete ${clientId} ?`);
     await confirmModal(page);
     await assertNotificationMessage(page, "The client has been deleted");
   });
