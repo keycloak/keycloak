@@ -64,11 +64,13 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -406,12 +408,30 @@ public class TokenManager {
 
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
+
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
         // validate authorizedClient is same as validated client
         if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
+        }
+
+        List<String> resourceParamValues = request.getDecodedFormParameters().get(OAuth2Constants.RESOURCE);
+        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
+            Set<String> requestedResourceIndicators = Set.copyOf(resourceParamValues);
+
+            CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, authorizedClient, clientSession, requestedResourceIndicators);
+            if (checkedResourceIndicators.hasUnsupported()) {
+                String errorMessage = "Unsupported resource indicators: " + checkedResourceIndicators.getUnsupported();
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid resource");
+            }
+
+            if (checkedResourceIndicators.hasSupported()) {
+                validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, checkedResourceIndicators.getSupported());
+            }
         }
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);
