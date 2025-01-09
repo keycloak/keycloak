@@ -334,7 +334,7 @@ The Keycloak JS library is no longer served statically from the Keycloak server.
 - `/js/{version}/keycloak.js`
 - `/js/{version}/keycloak.min.js`
 
-Additionally, the `keycloakJsUrl` property that linked to the library on these URLs has been removed from the the admin console theme. If your custom theme was using this property to include the library, you should update your theme to include the library using a different method.
+Additionally, the `keycloakJsUrl` property that linked to the library on these URLs has been removed from the admin console theme. If your custom theme was using this property to include the library, you should update your theme to include the library using a different method.
 
 If you are not already you should include the library in your project using a package manager like link:https://nodejs.org/en/learn/getting-started/an-introduction-to-the-npm-package-manager[NPM]. The library is available on the NPM registry as link:https://www.npmjs.com/package/keycloak-js[`keycloak-js`]. You can install it using the following command:
 
