@@ -288,7 +288,7 @@ importers:
         version: 10.9.2(@swc/core@1.9.3)(@types/node@22.10.5)(typescript@5.7.2)
       uuid:
         specifier: ^11.0.3
-        version: 11.0.3
+        version: 11.0.4
       vite:
         specifier: ^6.0.7
         version: 6.0.7(@types/node@22.10.5)(lightningcss@1.28.2)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1)
