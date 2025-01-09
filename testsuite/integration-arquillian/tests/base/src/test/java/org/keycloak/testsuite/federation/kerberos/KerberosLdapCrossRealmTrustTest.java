@@ -75,6 +75,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
 
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
+
+        // Logout
+        oauth.openLogout();
+        events.poll();
     }
 
 
@@ -96,6 +100,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
+
+        // Logout
+        oauth.openLogout();
+        events.poll();
     }
 
     // Issue 20045 - username/password form login
@@ -109,6 +117,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
 
         // User jduke@KEYCLOAK.ORG
         Assert.assertTrue(testAppHelper.login("jduke", "theduke"));
+
+        // Logout
+        oauth.openLogout();
+        events.poll();
     }
 
     // Test with "Kerberos Principal attribute name" set to empty value (backwards compatibility).
@@ -132,6 +144,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");
+
+        // Logout
+        oauth.openLogout();
+        events.poll();
     }
 
     @Test
