@@ -356,8 +356,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         LDAPObject ldapObject = loadAndValidateUser(realm, user);
         if (ldapObject == null) {
-            logger.warnf("User '%s' can't be deleted from LDAP as it doesn't exist here", user.getUsername());
-            return false;
+            if (model.isRemoveInvalidUsersEnabled()) {
+                logger.warnf("User '%s' can't be deleted from LDAP as it doesn't exist here", user.getUsername());
+                return false;
+            }
+            return true;
         }
 
         ldapIdentityStore.remove(ldapObject);
