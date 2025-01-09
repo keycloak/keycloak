@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Utility for comparing JSON objects
@@ -78,6 +79,14 @@ public class JsonTestUtils {
             assertJsonEquals(o1Object, o2Object);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        }
+    }
+
+    public static <T> T loadJson(InputStream is, Class<T> type) {
+        try {
+            return JsonSerialization.readValue(is, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse json", e);
         }
     }
 }
