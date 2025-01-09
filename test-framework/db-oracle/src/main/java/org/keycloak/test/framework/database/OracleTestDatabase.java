@@ -3,6 +3,7 @@ package org.keycloak.test.framework.database;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.oracle.OracleContainer;
+import org.testcontainers.utility.DockerImageName;
 
 class OracleTestDatabase extends AbstractContainerTestDatabase {
 
@@ -12,7 +13,7 @@ class OracleTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new OracleContainer(DatabaseProperties.getContainerImageName(NAME));
+        return new OracleContainer(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor("gvenzl/oracle-free"));
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.keycloak.test.framework.database;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 class PostgresTestDatabase extends AbstractContainerTestDatabase {
 
@@ -12,7 +13,7 @@ class PostgresTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new PostgreSQLContainer<>(DatabaseProperties.getContainerImageName(NAME));
+        return new PostgreSQLContainer<>(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME));
     }
 
     @Override

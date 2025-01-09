@@ -3,6 +3,7 @@ package org.keycloak.test.framework.database;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
 class MariaDBTestDatabase extends AbstractContainerTestDatabase {
 
@@ -12,7 +13,7 @@ class MariaDBTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new MariaDBContainer<>(DatabaseProperties.getContainerImageName(NAME));
+        return new MariaDBContainer<>(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME));
     }
 
     @Override

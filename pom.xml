@@ -156,22 +156,22 @@
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.4</mysql.version>
-        <mysql.container>mysql:${mysql.version}</mysql.container>
+        <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>17</postgresql.version>
-        <postgresql.container>postgres:${postgresql.version}</postgresql.container>
+        <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.4</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
-        <mariadb.container>mariadb:${mariadb.version}</mariadb.container>
+        <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
         <mssql-jdbc.version>12.8.1.jre11</mssql-jdbc.version>
         <oracledb.version>23.5</oracledb.version>
-        <oracledb.container>gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
+        <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
         <oracle-jdbc.version>23.5.0.24.07</oracle-jdbc.version>
 
