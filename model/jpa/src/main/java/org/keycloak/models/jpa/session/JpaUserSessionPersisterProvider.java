@@ -460,7 +460,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setMaxResults(1);
 
         return closing(query.getResultStream())
-                .map(entity -> toAdapter(realm, userSession, entity))
+                .map(entity -> toAdapter(realm, client, userSession, entity))
                 .findFirst()
                 .orElse(null);
     }
@@ -556,7 +556,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private boolean addClientSessionToAuthenticatedClientSessionsIfPresent(OfflineUserSessionModel userSession, PersistentClientSessionEntity clientSessionEntity) {
 
-        AuthenticatedClientSessionModel clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSessionEntity);
+        AuthenticatedClientSessionModel clientSessAdapter = toAdapter(userSession.getRealm(), null, userSession, clientSessionEntity);
 
         if (clientSessAdapter.getClient() == null) {
             logger.tracef("Not adding client session %s / %s since client is null", userSession, clientSessAdapter);
@@ -654,13 +654,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return new PersistentUserSessionAdapter(session, model, realm, entity.getUserId(), clientSessions);
     }
 
-    private AuthenticatedClientSessionModel toAdapter(RealmModel realm, UserSessionModel userSession, PersistentClientSessionEntity entity) {
-        String clientId = entity.getClientId();
-        if (isExternalClient(entity)) {
-            clientId = getExternalClientId(entity);
+    private AuthenticatedClientSessionModel toAdapter(RealmModel realm, ClientModel client, UserSessionModel userSession, PersistentClientSessionEntity entity) {
+        if (client == null) {
+            String clientId = entity.getClientId();
+            if (isExternalClient(entity)) {
+                clientId = getExternalClientId(entity);
+            }
+            // can be null if client is not found anymore
+            client = realm.getClientById(clientId);
         }
-        // can be null if client is not found anymore
-        ClientModel client = realm.getClientById(clientId);
 
         PersistentClientSessionModel model = new PersistentClientSessionModel() {
             @Override
