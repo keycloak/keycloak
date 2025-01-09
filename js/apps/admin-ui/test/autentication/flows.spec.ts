@@ -11,6 +11,7 @@ import {
 import { confirmModal } from "../utils/modal";
 import { goToAuthentication, goToRealm } from "../utils/sidebar";
 import {
+  assertEmptyTable,
   clickRowKebabItem,
   clickTableRowItem,
   getRowByCellText,
@@ -250,7 +251,7 @@ test.describe("Password policies tab", () => {
   });
 
   test("should add password policies", async ({ page }) => {
-    await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
+    await assertEmptyTable(page);
     await addPolicy(page, "Not Recently Used");
     await clickSaveButton(page);
     await assertNotificationMessage(

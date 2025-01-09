@@ -23,8 +23,10 @@ import {
   goToCreateFromEmptyList,
   goToInitialAccessTokenTab,
 } from "./initial-access";
+import adminClient from "../../cypress/support/util/AdminClient";
 
 test.describe("Client initial access tokens", () => {
+  const tableName = "Initial access token";
   const placeHolder = "Search token";
   const countCellNumber = 3;
   const remainingCountCellNumber = 4;
@@ -33,6 +35,8 @@ test.describe("Client initial access tokens", () => {
     await login(page);
     await goToClients(page);
   });
+
+  test.afterAll(async () => adminClient.deleteAllTokens());
 
   test("Initial access token can't be created with 0 days and count", async ({
     page,
@@ -68,7 +72,7 @@ test.describe("Client initial access tokens", () => {
     await assertNoResults(page);
     await searchItem(page, placeHolder, "");
 
-    let data = (await getTableData(page))[0];
+    let data = (await getTableData(page, tableName))[0];
     expect(data[countCellNumber]).toBe("4");
     expect(data[remainingCountCellNumber]).toBe("4");
 
@@ -87,7 +91,7 @@ test.describe("Client initial access tokens", () => {
       "Initial access token deleted successfully",
     );
     await assertInitialAccessTokensIsNotEmpty(page);
-    data = (await getTableData(page))[0];
+    data = (await getTableData(page, tableName))[0];
 
     await clickRowKebabItem(page, data[0], "Delete");
     await confirmModal(page);

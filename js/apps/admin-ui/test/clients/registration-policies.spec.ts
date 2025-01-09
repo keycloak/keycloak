@@ -25,6 +25,7 @@ import {
 } from "./registration-policies";
 
 test.describe("Client registration policies tab", () => {
+  const tabName = "Client registration";
   const realmName = `clients-details-realm-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -42,7 +43,7 @@ test.describe("Client registration policies tab", () => {
     const policyNameUpdated = "policy2";
 
     test("check anonymous clients list is not empty", async ({ page }) => {
-      const rows = await getTableData(page);
+      const rows = await getTableData(page, tabName);
       expect(rows.length).toBeGreaterThan(1);
     });
 
@@ -94,7 +95,7 @@ test.describe("Client registration policies tab", () => {
     });
 
     test("check authenticated clients list is not empty", async ({ page }) => {
-      const rows = await getTableData(page);
+      const rows = await getTableData(page, tabName);
       expect(rows.length).toBeGreaterThan(1);
     });
 
