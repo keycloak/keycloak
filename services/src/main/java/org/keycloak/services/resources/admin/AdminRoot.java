@@ -99,7 +99,7 @@ public class AdminRoot {
         }
 
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
-        return Response.status(302).location(
+        return Response.status(Response.Status.FOUND).location(
                 session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
         ).build();
     }

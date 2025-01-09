@@ -285,7 +285,7 @@ public class AccountConsole implements AccountResourceProvider {
 
         URI url = uriBuilder.build();
 
-        return Response.status(302).location(url).build();
+        return Response.status(Response.Status.FOUND).location(url).build();
     }
 
     private Map<String, String> supportedLocales(Properties messages) {
@@ -333,7 +333,7 @@ public class AccountConsole implements AccountResourceProvider {
     @GET
     @Path("index.html")
     public Response getIndexHtmlRedirect() {
-        return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
+        return Response.status(Response.Status.FOUND).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
     }
 
     private String[] getReferrer() {

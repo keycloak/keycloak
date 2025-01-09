@@ -121,7 +121,7 @@ public abstract class AbstractSecuredLocalService {
                 redirect.queryParam("referrer", referrer);
             }
 
-            return Response.status(302).location(redirect.build()).build();
+            return Response.status(Response.Status.FOUND).location(redirect.build()).build();
         } finally {
         }
     }
@@ -185,7 +185,7 @@ public abstract class AbstractSecuredLocalService {
             NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
             logger.debugf("NewCookie: %s", cookie);
             logger.debugf("Oauth Redirect to: %s", url);
-            return Response.status(302)
+            return Response.status(Response.Status.TEMPORARY_REDIRECT)
                     .location(url)
                     .cookie(cookie).build();
         }
@@ -194,8 +194,5 @@ public abstract class AbstractSecuredLocalService {
             if (stateCookiePath != null) return stateCookiePath;
             return uriInfo.getBaseUri().getRawPath();
         }
-
     }
-
-
 }

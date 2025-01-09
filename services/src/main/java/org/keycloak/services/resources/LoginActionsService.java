@@ -263,7 +263,7 @@ public class LoginActionsService {
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
         event.success();
-        return Response.status(Response.Status.FOUND).location(redirectUri).build();
+        return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirectUri).build();
     }
 
     /**
@@ -977,7 +977,7 @@ public class LoginActionsService {
                 Urls.identityProviderAfterPostBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getOrGenerateCode(), clientId, tabId, clientData) ;
         logger.debugf("Redirecting to '%s' ", redirect);
 
-        return Response.status(302).location(redirect).build();
+        return Response.status(Response.Status.FOUND).location(redirect).build();
     }
 
     /**

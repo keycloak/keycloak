@@ -186,7 +186,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     .path(OIDCEndpoint.class, "logoutResponse")
                     .build(realm.getName(), getConfig().getAlias()).toString();
             logoutUri.queryParam("post_logout_redirect_uri", redirect);
-            Response response = Response.status(302).location(logoutUri.build()).build();
+            Response response = Response.status(Response.Status.FOUND).location(logoutUri.build()).build();
             return response;
         }
     }

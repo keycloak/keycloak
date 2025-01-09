@@ -161,7 +161,7 @@ public abstract class BrowserHistoryHelper {
                         logger.tracef("Saved response challenge and redirect to %s", lastExecutionURL);
                     }
 
-                    return Response.status(302).location(lastExecutionURL).build();
+                    return Response.status(Response.Status.FOUND).location(lastExecutionURL).build();
                 }
             }
 

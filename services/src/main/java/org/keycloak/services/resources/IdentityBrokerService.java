@@ -239,7 +239,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     .queryParam(errorParam, Errors.NOT_LOGGED_IN)
                     .queryParam("nonce", nonce);
 
-            return Response.status(302).location(builder.build()).build();
+            return Response.status(Response.Status.FOUND).location(builder.build()).build();
         }
 
         cookieResult.getSession();
@@ -287,7 +287,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     UriBuilder builder = UriBuilder.fromUri(redirectUri)
                             .queryParam(errorParam, Errors.NOT_ALLOWED)
                             .queryParam("nonce", nonce);
-                    return Response.status(302).location(builder.build()).build();
+                    return Response.status(Response.Status.FOUND).location(builder.build()).build();
                 }
             }
         }
@@ -299,7 +299,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             UriBuilder builder = UriBuilder.fromUri(redirectUri)
                     .queryParam(errorParam, Errors.UNKNOWN_IDENTITY_PROVIDER)
                     .queryParam("nonce", nonce);
-            return Response.status(302).location(builder.build()).build();
+            return Response.status(Response.Status.FOUND).location(builder.build()).build();
 
         }
 
@@ -624,7 +624,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
                     .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
                     .build(realmModel.getName());
-            return Response.status(302).location(redirect).build();
+            return Response.status(Response.Status.FOUND).location(redirect).build();
 
         } else {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, federatedUser.getUsername());
@@ -803,7 +803,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     .queryParam(Constants.TAB_ID, authSession.getTabId())
                     .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession))
                     .build(realmModel.getName());
-            return Response.status(302).location(redirect).build();
+            return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirect).build();
         }
     }
 
@@ -1019,7 +1019,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
         }
 
-        return Response.status(302).location(UriBuilder.fromUri(authSession.getRedirectUri()).build()).build();
+        return Response.status(Response.Status.FOUND).location(UriBuilder.fromUri(authSession.getRedirectUri()).build()).build();
     }
 
 
@@ -1266,7 +1266,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         URI accountServiceUri = UriBuilder.fromUri(authSession.getRedirectUri()).queryParam(Constants.TAB_ID, authSession.getTabId()).build();
-        return Response.status(302).location(accountServiceUri).build();
+        return Response.status(Response.Status.FOUND).location(accountServiceUri).build();
     }
 
 

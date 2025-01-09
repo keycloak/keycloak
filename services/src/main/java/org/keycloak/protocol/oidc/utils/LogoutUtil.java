@@ -41,7 +41,7 @@ public class LogoutUtil {
         String redirectUri = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
         if (redirectUri != null) {
             URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
-            return Response.status(302).location(finalRedirectUri).build();
+            return Response.status(Response.Status.FOUND).location(finalRedirectUri).build();
         }
 
         SystemClientUtil.checkSkipLink(session, logoutSession);

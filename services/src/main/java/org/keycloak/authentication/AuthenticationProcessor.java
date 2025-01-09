@@ -940,7 +940,7 @@ public class AuthenticationProcessor {
 
         logger.debugf("Redirecting to URL: %s", redirect.toString());
 
-        return Response.status(302).location(redirect).build();
+        return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirect).build();
 
     }
 
