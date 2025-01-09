@@ -3,12 +3,11 @@ import { v4 as uuidv4 } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
 import { login } from "../utils/login";
 import { goToClients, goToRealm } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
+import { assertEmptyTable, clickTableRowItem } from "../utils/table";
 import {
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
   assertBrowserFlowInput,
-  assertEmptyClusterNode,
   assertKeyForCodeExchangeInput,
   assertOnExcludeSessionStateSwitch,
   assertTestClusterAvailability,
@@ -54,11 +53,11 @@ test.describe("Advanced tab test", () => {
   test("Clustering", async ({ page }) => {
     const host = "localhost";
     await expandClusterNode(page);
-    await assertEmptyClusterNode(page);
+    await assertEmptyTable(page);
     await registerNodeManually(page, host);
     await assertTestClusterAvailability(page, true);
     await deleteClusterNode(page, host);
-    await assertEmptyClusterNode(page);
+    await assertEmptyTable(page);
   });
 
   test("Fine grain OpenID connect configuration", async ({ page }) => {

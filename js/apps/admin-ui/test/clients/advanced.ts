@@ -16,10 +16,6 @@ export async function expandClusterNode(page: Page) {
   await page.getByRole("button", { name: "Registered cluster nodes" }).click();
 }
 
-export async function assertEmptyClusterNode(page: Page) {
-  expect(page.getByTestId("empty-state")).toBeVisible();
-}
-
 export async function registerNodeManually(page: Page, host: string) {
   await page.getByTestId("no-nodes-registered-empty-action").click();
   await page.getByTestId("node").fill(host);

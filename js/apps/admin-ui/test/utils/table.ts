@@ -29,8 +29,16 @@ export async function clickRowKebabItem(
   await page.getByRole("menuitem", { name: action }).click();
 }
 
-export async function assertRowExists(page: Page, itemName: string) {
-  await expect(page.getByRole("row", { name: itemName })).toBeVisible();
+export async function assertRowExists(
+  page: Page,
+  itemName: string,
+  exist = true,
+) {
+  if (exist) {
+    await expect(page.getByRole("row", { name: itemName })).toBeVisible();
+  } else {
+    await expect(page.getByRole("row", { name: itemName })).not.toBeVisible();
+  }
 }
 
 export async function assertNoResults(page: Page) {
@@ -39,24 +47,35 @@ export async function assertNoResults(page: Page) {
   ).toBeVisible();
 }
 
-export async function clickTableToolbarItem(page: Page, itemName: string) {
+export async function clickTableToolbarItem(
+  page: Page,
+  itemName: string,
+  kebab = false,
+) {
+  if (kebab) {
+    await page.getByTestId("kebab").click();
+  }
   return page
     .locator(`[data-testid="table-toolbar"]`)
-    .getByRole("link", { name: itemName })
+    .getByText(itemName)
     .click();
 }
 
-export async function getTableData(page: Page) {
+export async function getTableData(page: Page, name: string) {
   const tableData: string[][] = [];
-  await page.locator("tbody").waitFor();
-  const rowCount = await page.locator("tbody tr").count();
-  const columnCount = await page.locator("tbody tr:first-child td").count();
+  await page.getByLabel(name).locator("tbody").waitFor();
+  const rowCount = await page.getByLabel(name).locator("tbody tr").count();
+  const columnCount = await page
+    .getByLabel(name)
+    .locator("tbody tr:first-child td")
+    .count();
 
   for (let i = 0; i < rowCount; i++) {
     tableData.push([]);
     for (let j = 0; j < columnCount; j++) {
       tableData[i].push(
         await page
+          .getByLabel(name)
           .locator("tbody")
           .locator("tr")
           .nth(i)
@@ -67,4 +86,30 @@ export async function getTableData(page: Page) {
     }
   }
   return tableData;
+}
+
+export async function clickNextPageButton(page: Page) {
+  await page
+    .getByLabel("Pagination bottom")
+    .getByLabel("Go to next page")
+    .click();
+}
+
+export async function assertEmptyTable(page: Page) {
+  await expect(page.getByTestId("empty-state")).toBeVisible();
+}
+
+export async function clickSelectRow(
+  page: Page,
+  tableName: string,
+  row: number | string,
+) {
+  if (typeof row === "string") {
+    const rows = await getTableData(page, tableName);
+    row = rows.findIndex((r) => r.includes(row as string));
+    if (row === -1) {
+      throw new Error(`Row ${row} not found`);
+    }
+  }
+  await page.getByLabel(tableName).getByLabel(`Select row ${row}`).click();
 }
