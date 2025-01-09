@@ -8,7 +8,7 @@
     "delete-server": "rm -r ./server"
   },
   "dependencies": {
-    "@octokit/rest": "^21.0.2",
+    "@octokit/rest": "^21.1.0",
     "@types/gunzip-maybe": "^1.4.2",
     "@types/tar-fs": "^2.0.4",
     "gunzip-maybe": "^1.4.2",
