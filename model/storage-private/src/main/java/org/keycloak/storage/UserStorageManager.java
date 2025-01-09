@@ -153,11 +153,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             deleteInvalidUserCache(realm, user);
             if (model.isRemoveInvalidUsersEnabled()) {
                 deleteInvalidUser(realm, user);
+                return null;
             }
-            return null;
-        } else {
-            return validated;
+
+            return new ReadOnlyUserModelDelegate(user, false);
         }
+
+        return validated;
     }
 
     private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {

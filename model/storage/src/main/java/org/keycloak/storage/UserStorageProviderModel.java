@@ -33,7 +33,7 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
     public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
     public static final String LAST_SYNC = "lastSync";
-    public static final String REMOVE_INVALID_USERS_ENABELD = "removeInvalidUsersEnabled";
+    public static final String REMOVE_INVALID_USERS_ENABLED = "removeInvalidUsersEnabled";
 
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
@@ -120,7 +120,7 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     public boolean isRemoveInvalidUsersEnabled() {
         if (removeInvalidUsersEnabled == null) {
-            String val = getConfig().getFirst(REMOVE_INVALID_USERS_ENABELD);
+            String val = getConfig().getFirst(REMOVE_INVALID_USERS_ENABLED);
             if (val == null) {
                 removeInvalidUsersEnabled = true;
             } else {
