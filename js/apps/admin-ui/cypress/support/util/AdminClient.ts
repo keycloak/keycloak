@@ -18,14 +18,12 @@ class AdminClient {
   });
 
   #login() {
-    return this.inRealm("master", () =>
-      this.#client.auth({
-        username: "admin",
-        password: "admin",
-        grantType: "password",
-        clientId: "admin-cli",
-      }),
-    );
+    return this.#client.auth({
+      username: "admin",
+      password: "admin",
+      grantType: "password",
+      clientId: "admin-cli",
+    });
   }
 
   async auth(credentials: Credentials) {
@@ -117,11 +115,14 @@ class AdminClient {
     }
   }
 
-  async createUser(user: UserRepresentation) {
+  async createUser(user: UserRepresentation & { realm?: string }) {
     await this.#login();
 
     const { id } = await this.#client.users.create(user);
-    const createdUser = await this.#client.users.findOne({ id });
+    const createdUser = await this.#client.users.findOne({
+      id,
+      realm: user.realm,
+    });
 
     if (!createdUser) {
       throw new Error(
@@ -205,7 +206,9 @@ class AdminClient {
     await this.#client.users.del({ id: foundUsers[0].id! });
   }
 
-  async createClientScope(scope: ClientScopeRepresentation) {
+  async createClientScope(
+    scope: ClientScopeRepresentation & { realm?: string },
+  ) {
     await this.#login();
     return await this.#client.clientScopes.create(scope);
   }
@@ -230,13 +233,19 @@ class AdminClient {
   async addDefaultClientScopeInClient(
     clientScopeName: string,
     clientId: string,
+    realm: string = "master",
   ) {
     await this.#login();
     const scope = await this.#client.clientScopes.findOneByName({
+      realm,
       name: clientScopeName,
     });
-    const client = await this.#client.clients.find({ clientId: clientId });
+    const client = await this.#client.clients.find({
+      clientId: clientId,
+      realm,
+    });
     return await this.#client.clients.addDefaultClientScope({
+      realm,
       id: client[0]?.id!,
       clientScopeId: scope?.id!,
     });
@@ -405,6 +414,17 @@ class AdminClient {
   async deleteFlow(name: string) {
     await this.#login();
     await this.#client.authenticationManagement.deleteFlow({ flowId: name });
+  }
+
+  async deleteAllTokens(realm: string = "master") {
+    await this.#login();
+    const tokens = await this.#client.realms.getClientsInitialAccess({ realm });
+    for (const token of tokens) {
+      await this.#client.realms.delClientsInitialAccess({
+        realm: realm,
+        id: token.id!,
+      });
+    }
   }
 }
 
