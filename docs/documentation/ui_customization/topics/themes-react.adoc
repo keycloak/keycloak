@@ -40,7 +40,7 @@ import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
 === Translating the pages
 
 The pages are translated using the `i18next` library.
-You can set it up as described on their [website](https://react.i18next.com/).
+You can set it up as described on the https://react.i18next.com/[react-i18next Website].
 If you want to use the translations that are provided then you need to add i18next-http-backend to your project and add:
 
 [source,javascript]
