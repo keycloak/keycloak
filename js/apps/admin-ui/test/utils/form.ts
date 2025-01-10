@@ -31,11 +31,31 @@ export async function switchOn(page: Page, id: string) {
 export async function switchOff(page: Page, id: string) {
   const switchElement = page.locator(id);
   await expect(switchElement).toBeChecked();
-  await page.locator(id).click({ force: true });
+  await switchElement.click({ force: true });
+}
+
+export async function assertSwitchIsChecked(
+  page: Page,
+  id: string,
+  not = false,
+) {
+  if (not) {
+    await expect(page.locator(id)).not.toBeChecked();
+  } else {
+    await expect(page.locator(id)).toBeChecked();
+  }
+}
+
+function getSaveButton(page: Page) {
+  return page.getByTestId("save");
 }
 
 export async function clickSaveButton(page: Page) {
-  await page.getByTestId("save").click();
+  await getSaveButton(page).click();
+}
+
+export async function assertSaveButtonIsDisabled(page: Page) {
+  await expect(getSaveButton(page)).toBeDisabled();
 }
 
 export async function clickCancelButton(page: Page) {
