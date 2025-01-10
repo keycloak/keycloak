@@ -55,7 +55,7 @@ locales=en,no
 ----
 
 . Make the same changes to the `account` and `email` theme types. To make these changes, create `themes/mytheme/account/messages/messages_no.properties` and
-`themes/mytheme/email/messages/messages_no.properties`. Leaving these files empty will result in the English messages being used.
+`themes/mytheme/email/messages/messages_no.properties`. If you leave these files empty, English messages are used.
 
 . Copy `themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
 
