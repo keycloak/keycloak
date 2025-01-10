@@ -89,8 +89,8 @@ CAUTION: Using realm overrides is not the typical way to do localization in {pro
 . Click *Realm Settings* from the menu.
 . Click on the *Localization* tab.
 . Click on the *Realm overrides* subtab.
-. Select a language from the dropdown
-. Click on *Add translation*
-. Create a key/value pair from the modal dialog
+. Select a language from the option list.
+. Click *Add translation*.
+. Create a key/value pair from the modal dialog.
 
 Note that there is another subtab called *Effective message bundles*.  This subtab provides a tool to query key/value pairs for a combination of theme, language, and theme type.  You can use this tool to test and make sure your realm overrides have taken effect.
