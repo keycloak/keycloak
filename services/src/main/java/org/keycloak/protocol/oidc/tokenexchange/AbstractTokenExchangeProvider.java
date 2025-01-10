@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  *  and other contributors as indicated by the @author tags.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,11 +11,12 @@
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
-package org.keycloak.protocol.oidc;
+package org.keycloak.protocol.oidc.tokenexchange;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -50,6 +51,11 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.TokenExchangeProvider;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -93,13 +99,13 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Default token exchange implementation
+ * Base token exchange implementation. For now for both V1 and V2 token exchange (may change in the follow-up commits)
  *
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
  */
-public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
+public abstract class AbstractTokenExchangeProvider implements TokenExchangeProvider {
 
-    private static final Logger logger = Logger.getLogger(DefaultTokenExchangeProvider.class);
+    private static final Logger logger = Logger.getLogger(AbstractTokenExchangeProvider.class);
 
     private TokenExchangeContext.Params params;
     private MultivaluedMap<String, String> formParams;
@@ -112,11 +118,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     private HttpHeaders headers;
     private TokenManager tokenManager;
     private Map<String, String> clientAuthAttributes;
-
-    @Override
-    public boolean supports(TokenExchangeContext context) {
-        return true;
-    }
+    protected TokenExchangeContext context;
 
     @Override
     public Response exchange(TokenExchangeContext context) {
@@ -131,6 +133,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         this.headers = context.getHeaders();
         this.tokenManager = (TokenManager)context.getTokenManager();
         this.clientAuthAttributes = context.getClientAuthAttributes();
+        this.context = context;
         return tokenExchange();
     }
 
@@ -138,127 +141,47 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     public void close() {
     }
 
-    protected Response tokenExchange() {
+    protected abstract Response tokenExchange();
 
-        UserModel tokenUser = null;
-        UserSessionModel tokenSession = null;
-        AccessToken token = null;
+    /**
+     * Is it the request for external-internal token exchange?
+     */
+    protected boolean isExternalInternalTokenExchangeRequest(TokenExchangeContext context) {
+        String subjectToken = context.getParams().getSubjectToken();
+        KeycloakSession session = context.getSession();
+        RealmModel realm = context.getRealm();
+        EventBuilder event = context.getEvent();
 
-        String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken != null) {
-            String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+            String subjectTokenType = context.getParams().getSubjectTokenType();
             String realmIssuerUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
-            String subjectIssuer = formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER);
-
-            if (subjectIssuer == null && OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType)) {
-                try {
-                    JWSInput jws = new JWSInput(subjectToken);
-                    JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
-                    subjectIssuer = jwt.getIssuer();
-                } catch (JWSInputException e) {
-                    event.detail(Details.REASON, "unable to parse jwt subject_token");
-                    event.error(Errors.INVALID_TOKEN);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
-
-                }
-            }
+            String subjectIssuer = getSubjectIssuer(context, subjectToken, subjectTokenType);
 
             if (subjectIssuer != null && !realmIssuerUrl.equals(subjectIssuer)) {
                 event.detail(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer);
-                return exchangeExternalToken(subjectIssuer, subjectToken);
-
+                return true;
             }
-
-            if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
-                event.detail(Details.REASON, "subject_token supports access tokens only");
-                event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
-
-            }
-
-            AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, headers);
-            if (authResult == null) {
-                event.detail(Details.REASON, "subject_token validation failure");
-                event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token", Response.Status.BAD_REQUEST);
-            }
-
-            tokenUser = authResult.getUser();
-            tokenSession = authResult.getSession();
-            token = authResult.getToken();
         }
+        return false;
+    }
 
-        String requestedSubject = formParams.getFirst(OAuth2Constants.REQUESTED_SUBJECT);
-        boolean disallowOnHolderOfTokenMismatch = true;
+    protected String getSubjectIssuer(TokenExchangeContext context, String subjectToken, String subjectTokenType) {
+        String subjectIssuer = context.getFormParams().getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        if (subjectIssuer != null) return subjectIssuer;
 
-        if (requestedSubject != null) {
-            event.detail(Details.REQUESTED_SUBJECT, requestedSubject);
-            UserModel requestedUser = session.users().getUserByUsername(realm, requestedSubject);
-            if (requestedUser == null) {
-                requestedUser = session.users().getUserById(realm, requestedSubject);
-            }
-
-            if (requestedUser == null) {
-                // We always returned access denied to avoid username fishing
-                event.detail(Details.REASON, "requested_subject not found");
-                event.error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-
-            }
-
-            if (token != null) {
-                event.detail(Details.IMPERSONATOR, tokenUser.getUsername());
-                // for this case, the user represented by the token, must have permission to impersonate.
-                AdminAuth auth = new AdminAuth(realm, token, tokenUser, client);
-                if (!AdminPermissions.evaluator(session, realm, auth).users().canImpersonate(requestedUser, client)) {
-                    event.detail(Details.REASON, "subject not allowed to impersonate");
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-                }
-            } else {
-                // no token is being exchanged, this is a direct exchange.  Client must be authenticated, not public, and must be allowed
-                // to impersonate
-                if (client.isPublicClient()) {
-                    event.detail(Details.REASON, "public clients not allowed");
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-
-                }
-                if (!AdminPermissions.management(session, realm).users().canClientImpersonate(client, requestedUser)) {
-                    event.detail(Details.REASON, "client not allowed to impersonate");
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-                }
-
-                // see https://issues.redhat.com/browse/KEYCLOAK-5492
-                disallowOnHolderOfTokenMismatch = false;
-            }
-
-            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
-            if (tokenUser != null) {
-                tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
-                tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
-            }
-
-            tokenUser = requestedUser;
-        }
-
-        String requestedIssuer = formParams.getFirst(OAuth2Constants.REQUESTED_ISSUER);
-        if (requestedIssuer == null) {
-            return exchangeClientToClient(tokenUser, tokenSession, token, disallowOnHolderOfTokenMismatch);
-        } else {
+        if (OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType)) {
             try {
-                return exchangeToIdentityProvider(tokenUser, tokenSession, requestedIssuer);
-            } finally {
-                if (subjectToken == null) { // we are naked! So need to clean up user session
-                    try {
-                        session.sessions().removeUserSession(realm, tokenSession);
-                    } catch (Exception ignore) {
-
-                    }
-                }
+                JWSInput jws = new JWSInput(subjectToken);
+                JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
+                return jwt.getIssuer();
+            } catch (JWSInputException e) {
+                context.getEvent().detail(Details.REASON, "unable to parse jwt subject_token");
+                context.getEvent().error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(context.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
             }
-         }
+        } else {
+            return null;
+        }
     }
 
     protected Response exchangeToIdentityProvider(UserModel targetUser, UserSessionModel targetUserSession, String requestedIssuer) {

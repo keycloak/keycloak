@@ -45,7 +45,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -64,15 +63,15 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
-@EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
-public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
+/**
+ * Test for identity-provider token exchange scenarios. Base for tests of token-exchange V1 as well as token-exchange-federated V2
+ */
+public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
