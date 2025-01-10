@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
@@ -336,7 +337,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
             File testRealm = new File(url.getFile());
             assertThat(testRealm, Matchers.notNullValue());
 
-            File newFile = new File("target", "test-new-realm.json");
+            File newFile = new File("target", "test-realm-realm.json");
 
             try {
                 FileUtils.copyFile(testRealm, newFile);
@@ -357,6 +358,45 @@ public class ExportImportTest extends AbstractKeycloakTest {
             } catch (Exception e) {
                 Assert.fail("Error with realm importing twice. Details: " + e.getMessage());
             }
+        } finally {
+            DirExportProvider.recursiveDeleteDir(dest);
+        }
+    }
+
+    @UncaughtServerErrorExpected
+    public void testImportNameMismatch() {
+        TestingExportImportResource resource = testingClient.testing().exportImport();
+
+        resource.setStrategy(Strategy.IGNORE_EXISTING);
+        resource.setProvider(DirExportProviderFactory.PROVIDER_ID);
+
+        String targetDirPath = resource.getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        File dest = new File(targetDirPath);
+        try {
+            DirExportProvider.recursiveDeleteDir(dest);
+            resource.setDir(targetDirPath);
+
+            resource.setAction(ExportImportConfig.ACTION_EXPORT);
+
+            URL url = ExportImportTest.class.getResource("/model/testrealm.json");
+            File testRealm = new File(url.getFile());
+            assertThat(testRealm, Matchers.notNullValue());
+
+            File newFile = new File("target", "test-new-realm.json");
+
+            try {
+                FileUtils.copyFile(testRealm, newFile);
+                FileUtils.copyFileToDirectory(newFile, dest);
+            } catch (IOException e) {
+                Assert.fail("Cannot copy file. Details: " + e.getMessage());
+            }
+
+            File existingFile = FileUtils.getFile(dest, newFile.getName());
+            assertThat(existingFile, Matchers.notNullValue());
+
+            resource.setAction(ExportImportConfig.ACTION_IMPORT);
+
+            resource.runImport();
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
         }

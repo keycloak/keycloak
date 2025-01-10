@@ -138,6 +138,9 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         // Import realm first
         InputStream is = parseFile(realmFile);
         final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        if (!realmRep.getRealm().equals(realmName)) {
+            throw new IllegalStateException(String.format("File name / realm name mismatch. %s, contains realm %s. File name should be %s", realmFile.getName(), realmRep.getRealm(), realmRep.getRealm() + "-realm.json"));
+        }
         final AtomicBoolean realmImported = new AtomicBoolean();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
