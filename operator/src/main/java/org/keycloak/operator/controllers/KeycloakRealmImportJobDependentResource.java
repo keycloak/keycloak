@@ -93,8 +93,6 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         // The Job should not connect to the cache
         envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
-        // The Job doesn't need health to be enabled
-        envvars.add(new EnvVarBuilder().withName(healthEnvVarName).withValue("false").build());
 
         if (replacePlaceholders) {
             for (Map.Entry<String, Placeholder> secret : primary.getSpec().getPlaceholders().entrySet()) {
@@ -147,7 +145,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var override = "--override=false";
 
-        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
+        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build --health-enabled=false && " : "";
 
         var commandArgs = List.of("-c",
                 runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json' " + override);
