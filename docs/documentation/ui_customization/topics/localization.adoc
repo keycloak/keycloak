@@ -78,7 +78,7 @@ Previous versions of {project_name} supported specifying the encoding in the fir
 
 === Overriding localized text for an entire realm
 
-Occasionally, you wish to declare translations that take effect for an entire realm.  This is done by specifying key/value pairs in the realm settings.  Any key specified in this way will override key/value pairs deployed with a theme.
+You also have the option to declare translations that take effect for an entire realm.  You specify key/value pairs in the realm settings.  Any key specified in this way overrides the key/value pairs deployed with a theme.
 
 CAUTION: Using realm overrides is not the typical way to do localization in {project_name}.  Consider carefully if you want every theme in your realm to use these key/value pairs.
 
