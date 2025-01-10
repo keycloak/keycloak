@@ -84,8 +84,8 @@ CAUTION: Using realm overrides is not the typical way to do localization in {pro
 
 .Procedure to add a realm override
 
-. Log into the Admin Console
-. Select your realm
+. Log into the Admin Console.
+. Select your realm.
 . Click *Realm Settings* from the menu.
 . Click on the *Localization* tab.
 . Click on the *Realm overrides* subtab.
