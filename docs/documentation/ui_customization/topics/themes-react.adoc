@@ -20,7 +20,7 @@ pnpm install @keycloak/keycloak-account-ui
 
 === Using the packages
 
-To use these pages you'll need to add KeycloakProvider in your component hierarchy to setup what client, realm and url to use.
+To use these pages, you add KeycloakProvider in your component hierarchy to choose the client, realm and url to use.
 
 [source,javascript]
 ----
