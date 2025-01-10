@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -39,6 +40,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -101,6 +103,17 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             }
             // request does not map to any organization, go to the next step/sub-flow
             context.attempted();
+            return;
+        }
+
+        if (user != null && isRequiresMembership(context) && !organization.isMember(user)) {
+            String errorMessage = "notMemberOfOrganization";
+            // do not show try another way
+            context.setAuthenticationSelections(List.of());
+            Response challenge = context.form()
+                    .setError(errorMessage, organization.getName())
+                    .createErrorPage(Response.Status.FORBIDDEN);
+            context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, "User " + user.getUsername() + " not a member of organization " + organization.getAlias(), errorMessage);
             return;
         }
 
@@ -328,5 +341,13 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private OrganizationProvider getOrganizationProvider() {
         return session.getProvider(OrganizationProvider.class);
+    }
+
+    private boolean isRequiresMembership(AuthenticationFlowContext context) {
+        return Boolean.parseBoolean(getConfig(context).getOrDefault(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString()));
+    }
+
+    private Map<String, String> getConfig(AuthenticationFlowContext context) {
+        return Optional.ofNullable(context.getAuthenticatorConfig()).map(AuthenticatorConfigModel::getConfig).orElse(Map.of());
     }
 }

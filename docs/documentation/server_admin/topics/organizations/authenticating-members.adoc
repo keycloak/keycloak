@@ -106,6 +106,18 @@ Change the *first broker login* flow by following these steps:
 .Organizations first broker flow
 image:images/organizations-first-broker-flow.png[alt="Organizations first broker flow"]
 
-
 You should now be able to authenticate using any identity provider associated with an organization
 and have the user joining the organization as a member as soon as they complete the first browser login flow.
+
+== Configuring how users authenticate
+
+If the flow supports organizations, you can configure some of the steps to change how users authenticate to the realm.
+
+For example, some use cases will require users to authenticate to a realm only if they are a member of any or a specific organization in the realm.
+
+To enable this behavior, you need to enable the `Requires user membership` setting on the `Organization Identity-First Login` execution step by clicking on its settings.
+
+If enabled, and after the user provides the username or email in the identity-first login page, the server will
+try to resolve a organization where the user is a member by looking at any existing membership or based on the semantics of the <<_mapping_organization_claims_,organization>> scope,
+if requested by the client. If not a member of an organization, an error page will be shown.
+
