@@ -12,3 +12,7 @@ export async function goToClients(page: Page) {
 export async function goToAuthentication(page: Page) {
   await page.getByTestId("nav-item-authentication").click();
 }
+
+export async function goToClientScopes(page: Page) {
+  await page.getByTestId("nav-item-client-scopes").click();
+}

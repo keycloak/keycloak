@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
+import { selectChangeType } from "../client-scope/main";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { assertModalTitle, confirmModal } from "../utils/modal";
@@ -29,7 +30,6 @@ import {
   goToClientScopeEvaluateTab,
   goToClientScopesTab,
   goToGenerateAccessTokenTab,
-  selectChangeType,
   selectUser,
 } from "./scope";
 
