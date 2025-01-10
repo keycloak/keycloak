@@ -48,17 +48,17 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return null;
         }
 
-        String resourceName = null;
+        String resourceId = null;
 
         if (USERS.getType().equals(type)) {
-            resourceName = resolveUser(session, id);
+            resourceId = resolveUser(session, id);
         }
 
-        if (resourceName == null) {
+        if (resourceId == null) {
             throw new IllegalStateException("Could not map resource object with type [" + type + "] and id [" + id + "]");
         }
 
-        return getOrCreateResource(session, resourceServer, resourceName);
+        return getOrCreateResource(session, resourceServer, resourceId);
     }
 
     public boolean isSupportedPolicyType(KeycloakSession session, ResourceServer resourceServer, String type) {

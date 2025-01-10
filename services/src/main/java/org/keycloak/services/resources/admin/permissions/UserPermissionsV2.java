@@ -20,12 +20,36 @@ import java.util.Map;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 
 class UserPermissionsV2 extends UserPermissions {
 
     UserPermissionsV2(KeycloakSession session, AuthorizationProvider authz, MgmtPermissionsV2 root) {
         super(session, authz, root);
+    }
+
+    @Override
+    public boolean canManage(UserModel user) {
+        if (canManageDefault()) {
+            return true;
+        }
+
+        if (!root.isAdminSameRealm()) {
+            return false;
+        }
+
+        ResourceServer server = root.realmResourceServer();
+        Resource findByName = resourceStore.findByName(server, user.getId(), server.getClientId());
+
+        return super.canManage() || 
+    }
+
+    
+    private boolean hasPermission(Resource resource, EvaluationContext context, String... scopes) {
+        ResourceServer realmResourceServer = root.realmResourceServer();
+        
     }
 
     @Override
