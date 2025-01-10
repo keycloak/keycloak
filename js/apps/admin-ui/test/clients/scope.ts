@@ -87,11 +87,3 @@ export async function assertNoUserInfoGenerated(page: Page) {
 export async function selectUser(page: Page, username: string) {
   await selectItem(page, page.getByTestId("user"), username);
 }
-
-export async function selectChangeType(page: Page, value: string) {
-  await selectItem(
-    page,
-    page.getByRole("button", { name: "Change type to" }),
-    value,
-  );
-}
