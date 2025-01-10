@@ -12,7 +12,6 @@ import {
   ErrorBoundaryProvider,
   KeycloakSpinner,
 } from "@keycloak/keycloak-ui-shared";
-import { Banners } from "./Banners";
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { AdminClientContext, initAdminClient } from "./admin-client";
@@ -59,7 +58,6 @@ export const App = () => {
   return (
     <AdminClientContext.Provider value={{ keycloak, adminClient }}>
       <AppContexts>
-        <Banners />
         <Page
           header={<Header />}
           isManagedSidebar

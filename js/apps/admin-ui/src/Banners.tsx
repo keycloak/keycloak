@@ -3,6 +3,8 @@ import { ExclamationTriangleIcon } from "@patternfly/react-icons";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { useTranslation } from "react-i18next";
 
+import style from "./banners.module.css";
+
 type WarnBannerProps = {
   msg: string;
   className?: string;
@@ -17,8 +19,7 @@ const WarnBanner = ({ msg, className }: WarnBannerProps) => {
     <Banner
       screenReaderText={t(msg)}
       variant="gold"
-      className={className}
-      isSticky
+      className={className || style.banner}
     >
       <Flex
         spaceItems={{ default: "spaceItemsSm" }}
