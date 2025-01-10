@@ -1,9 +1,9 @@
 [[_theme_react]]
 == Themes based on React
 
-The admin console and account console are based on React.
-To fully customize these you can use the React based npm packages.
-There are two packages:
+The Admin Console and Account Console are based on React.
+To fully customize these consoles, you can use the React based npm packages.
+Two packages exist:
 
 * `@keycloak/keycloak-admin-ui`: This is the base theme for the admin console.
 * `@keycloak/keycloak-account-ui`: This is the base theme for the account console.
