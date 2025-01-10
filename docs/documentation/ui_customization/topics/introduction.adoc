@@ -1,6 +1,6 @@
 == Introduction
 
-{project_name} includes user interfaces (UIs) for login, administration console, and acount console.  It also has a "welcome" screen used for initial setup.
+{project_name} includes user interfaces (UIs) for login, Admin Console, and Account Console.  It also has a "welcome" screen used for initial setup.
 
 These UIs are intended to be customized, extended, and modified to accomodate the myriad of use cases encountered in production systems.  At the very least, most will need to change logos and colors to match a corporate identity.  Often, new functionality is desired for these UIs as well.
 
