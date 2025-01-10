@@ -70,7 +70,7 @@ locale_no=Norsk
 By default, message properties files should be encoded using UTF-8.
 {project_name} falls back to ISO-8859-1 handling if it cannot read the contents as UTF-8.
 Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
-Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported.
+Previous versions of {project_name} supported specifying the encoding in the first line with a comment such as `# encoding: UTF-8`, which is no longer supported.
 
 [role="_additional-resources"]
 .Additional resources
