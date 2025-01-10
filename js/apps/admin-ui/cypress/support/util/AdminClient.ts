@@ -2,6 +2,7 @@ import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
+import ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
@@ -211,6 +212,11 @@ class AdminClient {
   ) {
     await this.#login();
     return await this.#client.clientScopes.create(scope);
+  }
+
+  async addMapping(id: string, mapping: ProtocolMapperRepresentation) {
+    await this.#login();
+    return this.#client.clientScopes.addProtocolMapper({ id }, mapping);
   }
 
   async deleteClientScope(clientScopeName: string) {

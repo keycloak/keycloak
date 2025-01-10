@@ -9,8 +9,8 @@ export async function searchItem(
   await page.keyboard.press("Enter");
 }
 
-export function clickTableRowItem(page: Page, itemName: string) {
-  return page.getByRole("link", { name: itemName }).click();
+export async function clickTableRowItem(page: Page, itemName: string) {
+  await page.getByRole("link", { name: itemName }).click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {

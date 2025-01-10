@@ -2,7 +2,12 @@ import ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import { useAlerts, useFetch, useHelp } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSpinner,
+  useAlerts,
+  useFetch,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   AlertVariant,
@@ -23,7 +28,6 @@ import {
   changeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 import {
   RoutableTabs,
@@ -35,11 +39,7 @@ import { convertFormValuesToObject } from "../util";
 import { useParams } from "../utils/useParams";
 import { MapperList } from "./details/MapperList";
 import { ScopeForm } from "./details/ScopeForm";
-import {
-  ClientScopeParams,
-  ClientScopeTab,
-  toClientScope,
-} from "./routes/ClientScope";
+import { ClientScopeParams, toClientScope } from "./routes/ClientScope";
 import { toClientScopes } from "./routes/ClientScopes";
 import { toMapper } from "./routes/Mapper";
 import { useAccess } from "../context/access/Access";
@@ -99,18 +99,13 @@ export default function EditClientScope() {
     return hasOptionalScope ? ClientScope.optional : AllClientScopes.none;
   }
 
-  const useTab = (tab: ClientScopeTab) =>
-    useRoutableTab(
-      toClientScope({
-        realm,
-        id,
-        tab,
-      }),
-    );
-
-  const settingsTab = useTab("settings");
-  const mappersTab = useTab("mappers");
-  const scopeTab = useTab("scope");
+  const settingsTab = useRoutableTab(
+    toClientScope({ realm, id, tab: "settings" }),
+  );
+  const mappersTab = useRoutableTab(
+    toClientScope({ realm, id, tab: "mappers" }),
+  );
+  const scopeTab = useRoutableTab(toClientScope({ realm, id, tab: "scope" }));
   const eventsTab = useTab("events");
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
@@ -239,7 +234,7 @@ export default function EditClientScope() {
       />
 
       <PageSection variant="light" className="pf-v5-u-p-0">
-        <RoutableTabs isBox>
+        <RoutableTabs isBox mountOnEnter unmountOnExit>
           <Tab
             id="settings"
             data-testid="settings"
