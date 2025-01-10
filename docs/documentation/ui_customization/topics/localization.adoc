@@ -20,7 +20,7 @@ For example, to replace `Username` on the login form with `Your Username` for th
 usernameOrEmail=Your Username
 ----
 
-Within a message values like `{0}` and `{1}` are replaced with arguments when the message is used. For example {0} in `Log in to {0}` is replaced with the name
+Within a message, values like `{0}` and `{1}` are replaced with arguments when the message is used. For example {0} in `Log in to {0}` is replaced with the name
 of the realm.
 
 Texts of these message bundles can be overwritten by realm-specific values. The realm-specific values are manageable via UI and API.
