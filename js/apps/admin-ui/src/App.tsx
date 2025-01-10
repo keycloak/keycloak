@@ -3,7 +3,7 @@ import {
   mainPageContentId,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
-import { Page } from "@patternfly/react-core";
+import { Flex, FlexItem, Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 
@@ -59,22 +59,33 @@ export const App = () => {
   return (
     <AdminClientContext.Provider value={{ keycloak, adminClient }}>
       <AppContexts>
-        <Banners />
-        <Page
-          header={<Header />}
-          isManagedSidebar
-          sidebar={<PageNav />}
-          breadcrumb={<PageBreadCrumbs />}
-          mainContainerId={mainPageContentId}
+        <Flex
+          direction={{ default: "column" }}
+          flexWrap={{ default: "nowrap" }}
+          spaceItems={{ default: "spaceItemsNone" }}
+          style={{ height: "100%" }}
         >
-          <ErrorBoundaryFallback fallback={ErrorRenderer}>
-            <Suspense fallback={<KeycloakSpinner />}>
-              <AuthWall>
-                <Outlet />
-              </AuthWall>
-            </Suspense>
-          </ErrorBoundaryFallback>
-        </Page>
+          <FlexItem>
+            <Banners />
+          </FlexItem>
+          <FlexItem grow={{ default: "grow" }} style={{ minHeight: 0 }}>
+            <Page
+              header={<Header />}
+              isManagedSidebar
+              sidebar={<PageNav />}
+              breadcrumb={<PageBreadCrumbs />}
+              mainContainerId={mainPageContentId}
+            >
+              <ErrorBoundaryFallback fallback={ErrorRenderer}>
+                <Suspense fallback={<KeycloakSpinner />}>
+                  <AuthWall>
+                    <Outlet />
+                  </AuthWall>
+                </Suspense>
+              </ErrorBoundaryFallback>
+            </Page>
+          </FlexItem>
+        </Flex>
       </AppContexts>
     </AdminClientContext.Provider>
   );
