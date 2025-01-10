@@ -9,7 +9,7 @@
 
 === Localizing mesages in a theme
 
-Text in the templates is loaded from message bundles. A theme that extends another theme will inherit all messages from the parent's message bundle and you can
+Text in the templates is loaded from message bundles. A theme that extends another theme inherits all messages from the parent's message bundle. You can
 override individual messages by adding `<THEME TYPE>/messages/messages_en.properties` to your theme.
 
 For example to replace `Username` on the login form with `Your Username` for the `mytheme` create the file
