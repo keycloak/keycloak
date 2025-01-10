@@ -1,7 +1,7 @@
 [[_localization]]
 == Internationalization and Localization
 
-Keycloak supports localized text throughout all user interfaces.
+{project_name} supports localized text throughout all user interfaces.
 
 .Prerequisites
 
