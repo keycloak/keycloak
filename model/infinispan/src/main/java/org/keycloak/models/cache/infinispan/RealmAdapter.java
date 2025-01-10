@@ -1376,7 +1376,11 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutionsStream(flowId);
-        return cached.getAuthenticationExecutions().get(flowId).stream();
+        List<AuthenticationExecutionModel> executions = cached.getAuthenticationExecutions().get(flowId);
+        if (executions == null) {
+            return Stream.empty();
+        }
+        return executions.stream();
     }
 
     @Override
