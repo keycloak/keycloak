@@ -73,7 +73,10 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ), // TODO: Switch v2 token exchanges to depend admin-fine-grained-authz-v2
+        TOKEN_EXCHANGE_FEDERATED_V2("Federated Token Exchange for external-internal and internal-external token exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
+        TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2("Subject impersonation Token Exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
