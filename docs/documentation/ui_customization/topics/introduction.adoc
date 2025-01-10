@@ -4,4 +4,4 @@
 
 You can customize, extend, and modify these UIs to accommodate many use cases on your production systems.  At a minimum, you will need to change logos and colors to match your corporate identity.  Also, you may modify the UIs to implement new functionality.
 
-This document is intended to provide the reader with all the information needed to fully leverage the flexibility built into the {project_name} UIs.
+This guide provides all the information needed to customize the {project_name} UIs for your needs.
