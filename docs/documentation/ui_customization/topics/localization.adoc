@@ -59,7 +59,7 @@ locales=en,no
 
 . Copy `themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
 
-. Add a translation for the language selector. This is done by adding a message to the English translation. To do this add the following to
+. Add a translation for the language selector by adding a message to the English translation. Add the following to
 `themes/mytheme/account/messages/messages_en.properties` and `themes/mytheme/login/messages/messages_en.properties`:
 +
 [source]
