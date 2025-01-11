@@ -107,8 +107,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 setupTruststore(props);
             }
 
-            props.setProperty("mail.smtp.timeout", "10000");
-            props.setProperty("mail.smtp.connectiontimeout", "10000");
+            props.setProperty("mail.smtp.timeout", config.getOrDefault("timeout", "10000"));
+            props.setProperty("mail.smtp.connectiontimeout", config.getOrDefault("connectionTimeout", "10000"));
 
             String from = config.get("from");
             if (from == null) {
