@@ -114,6 +114,9 @@ public class Keycloak {
             }
 
             List<String> args = new ArrayList<>(rawArgs);
+            if (args.isEmpty()) {
+                args.add("start-dev");
+            }
 
             addOptionIfNotSet(args, HttpOptions.HTTP_ENABLED, true);
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
