@@ -906,6 +906,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return credentialStore.moveCredentialTo(realm, user, id, newPreviousCredentialId);
     }
 
+    @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByLink", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("federationLink", federationLink);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(user -> new UserAdapter(session, realm, em, user));
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);

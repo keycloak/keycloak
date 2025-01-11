@@ -908,11 +908,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!(factory instanceof UserStorageProviderFactory)) return;
         UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
         UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
-        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
-                || old.isImportEnabled() != newP.isImportEnabled()) {
+        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod()
+                || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
+                || old.isImportEnabled() != newP.isImportEnabled()
+                || old.isRemovalEnabled() != newP.isRemovalEnabled()
+                || old.getRemovalPageSize() != newP.getRemovalPageSize()) {
             UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
         }
-
     }
 
     @Override
