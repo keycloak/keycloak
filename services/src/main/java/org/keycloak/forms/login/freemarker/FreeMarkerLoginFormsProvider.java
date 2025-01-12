@@ -196,6 +196,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_EMAIL:
                 UpdateProfileContext userBasedContext1 = new UserUpdateProfileContext(realm, user);
                 attributes.put("user", new ProfileBean(userBasedContext1, formData));
+                if (authenticationSession.getAuthNote(Constants.VERIFY_EMAIL_KEY) != null) {
+                    attributes.put("verifyEmail", authenticationSession.getAuthNote(Constants.VERIFY_EMAIL_KEY));
+                }
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
