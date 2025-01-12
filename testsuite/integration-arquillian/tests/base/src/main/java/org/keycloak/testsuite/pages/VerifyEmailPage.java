@@ -33,6 +33,9 @@ public class VerifyEmailPage extends AbstractPage {
     @FindBy(linkText = "Click here")
     private WebElement resendEmailLink;
 
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
+
     @Override
     public void open() {
     }
@@ -47,6 +50,10 @@ public class VerifyEmailPage extends AbstractPage {
 
     public String getResendEmailLink() {
         return resendEmailLink.getAttribute("href");
+    }
+
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
 }
