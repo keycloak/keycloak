@@ -72,6 +72,8 @@ public class SecureContextResolverTest {
         assertFalse(SecureContextResolver.isLocalAddress("not.an.ip"));
         assertFalse(SecureContextResolver.isLocalAddress(null));
         assertFalse(SecureContextResolver.isLocalAddress(""));
+        assertTrue(SecureContextResolver.isLocalAddress("::1"));
+        assertTrue(SecureContextResolver.isLocalAddress("0:0:0:0:0:0:0:1"));
     }
 
     @Test
