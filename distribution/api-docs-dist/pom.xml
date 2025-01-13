@@ -130,7 +130,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>snapshots</skip>
                 </configuration>
             </plugin>
         </plugins>
