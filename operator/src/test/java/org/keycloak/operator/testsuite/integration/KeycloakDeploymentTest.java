@@ -36,7 +36,6 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Config;
@@ -390,9 +389,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    @Disabled
     public void testPodNamePropagation() {
-        var kc = getTestKeycloakDeployment(true);
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setStartOptimized(false);
+
         var featureSpec = new FeatureSpec();
         featureSpec.setEnabledFeatures(List.of("opentelemetry"));
         kc.getSpec().setFeatureSpec(featureSpec);
