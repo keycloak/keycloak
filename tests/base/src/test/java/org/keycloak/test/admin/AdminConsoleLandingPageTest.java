@@ -5,10 +5,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.test.framework.annotations.InjectHttpClient;
-import org.keycloak.test.framework.annotations.InjectKeycloakUrls;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.server.KeycloakUrls;
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakUrls;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import java.util.List;
 

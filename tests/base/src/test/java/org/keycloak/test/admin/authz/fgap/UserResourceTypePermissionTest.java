@@ -32,9 +32,9 @@ import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.test.framework.annotations.InjectUser;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.realm.ManagedUser;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedUser;
 
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
 public class UserResourceTypePermissionTest extends AbstractPermissionTest {

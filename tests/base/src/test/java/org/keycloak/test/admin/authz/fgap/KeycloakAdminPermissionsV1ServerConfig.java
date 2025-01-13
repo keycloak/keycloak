@@ -18,8 +18,8 @@
 package org.keycloak.test.admin.authz.fgap;
 
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.test.framework.server.KeycloakServerConfig;
-import org.keycloak.test.framework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 public class KeycloakAdminPermissionsV1ServerConfig implements KeycloakServerConfig {
 

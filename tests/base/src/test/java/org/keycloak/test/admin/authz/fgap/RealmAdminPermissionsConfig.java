@@ -17,8 +17,8 @@
 
 package org.keycloak.test.admin.authz.fgap;
 
-import org.keycloak.test.framework.realm.RealmConfig;
-import org.keycloak.test.framework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 public class RealmAdminPermissionsConfig implements RealmConfig {
 
