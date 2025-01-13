@@ -21,6 +21,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 
@@ -43,13 +44,15 @@ class UserPermissionsV2 extends UserPermissions {
         ResourceServer server = root.realmResourceServer();
         Resource findByName = resourceStore.findByName(server, user.getId(), server.getClientId());
 
-        return super.canManage() || 
+        // TODO: how we are going to enforce access for a specific user as we don't support this today
+        return super.canManage();
     }
 
     
     private boolean hasPermission(Resource resource, EvaluationContext context, String... scopes) {
         ResourceServer realmResourceServer = root.realmResourceServer();
-        
+        // TODO: what to do here?
+        return false;
     }
 
     @Override
