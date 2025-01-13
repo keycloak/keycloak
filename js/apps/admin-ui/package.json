@@ -74,7 +74,7 @@
       ]
     },
     "test": {
-      "command": "vitest",
+      "command": "vitest && playwright test",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
