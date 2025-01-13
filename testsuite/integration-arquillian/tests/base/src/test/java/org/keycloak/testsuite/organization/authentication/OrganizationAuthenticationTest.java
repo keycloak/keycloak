@@ -27,11 +27,17 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.FlowUtil;
 
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
@@ -133,5 +139,44 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             oauth.kcAction(null);
             oauth.maxAge(null);
         }
+    }
+
+    @Test
+    public void testRequiresUserMembership() {
+        runOnServer(setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString()));
+
+        try {
+            OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+            UserRepresentation member = addMember(organization);
+            organization.members().member(member.getId()).delete().close();
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            // user is not a member of any organization
+            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + organization.toRepresentation().getName()));
+
+            organization.members().addMember(member.getId()).close();
+            OrganizationRepresentation orgB = createOrganization("org-b");
+            oauth.clientId("broker-app");
+            oauth.scope("organization:org-b");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            // user is not a member of the organization selected by the client
+            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + orgB.getName()));
+            errorPage.assertTryAnotherWayLinkAvailability(false);
+        } finally {
+            runOnServer(setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString()));
+        }
+    }
+
+    private void runOnServer(RunOnServer function) {
+        testingClient.server(bc.consumerRealmName()).run(function);
+    }
+
+    public static RunOnServer setAuthenticatorConfig(String key, String value) {
+        return session -> {
+            RealmModel realm = session.getContext().getRealm();
+            FlowUtil.setAuthenticatorConfig(session, realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW).getId(), OrganizationAuthenticatorFactory.ID, key, value);
+        };
     }
 }
