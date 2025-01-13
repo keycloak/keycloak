@@ -42,13 +42,15 @@ import {
 } from "./routes/ClientScope";
 import { toClientScopes } from "./routes/ClientScopes";
 import { toMapper } from "./routes/Mapper";
+import { useAccess } from "../context/access/Access";
+import { AdminEvents } from "../events/AdminEvents";
 
 export default function EditClientScope() {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { id } = useParams<ClientScopeParams>();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();
@@ -56,6 +58,7 @@ export default function EditClientScope() {
     useState<ClientScopeDefaultOptionalType>();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const { hasAccess } = useAccess();
 
   useFetch(
     async () => {
@@ -108,6 +111,7 @@ export default function EditClientScope() {
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
   const scopeTab = useTab("scope");
+  const eventsTab = useTab("events");
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
     const clientScope = convertFormValuesToObject({
@@ -289,6 +293,16 @@ export default function EditClientScope() {
               save={assignRoles}
             />
           </Tab>
+          {realmRepresentation?.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents resourcePath={`*client-scopes/${id}`} />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </>
