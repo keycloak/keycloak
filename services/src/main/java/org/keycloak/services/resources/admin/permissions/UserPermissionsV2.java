@@ -16,19 +16,42 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.Permission;
 
 class UserPermissionsV2 extends UserPermissions {
 
     UserPermissionsV2(KeycloakSession session, AuthorizationProvider authz, MgmtPermissionsV2 root) {
         super(session, authz, root);
+    }
+
+    @Override
+    public boolean canView(UserModel user) {
+        if (root.hasOneAdminRole(AdminRoles.ADMIN, AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
+            return true;
+        }
+
+        boolean result = hasPermission(user, null, MgmtPermissions.VIEW_SCOPE, MgmtPermissions.MANAGE_SCOPE);
+
+        if (!result) {
+            return canViewByGroup(user);
+        }
+
+        return result;
     }
 
     @Override
@@ -49,9 +72,36 @@ class UserPermissionsV2 extends UserPermissions {
     }
 
     
-    private boolean hasPermission(Resource resource, EvaluationContext context, String... scopes) {
-        ResourceServer realmResourceServer = root.realmResourceServer();
-        // TODO: what to do here?
+    private boolean hasPermission(UserModel user, EvaluationContext context, String... scopes) {
+        ResourceServer server = root.realmResourceServer();
+
+        if (server == null) {
+            return false;
+        }
+
+        Resource resource =  resourceStore.findByName(server, user.getId());
+
+        if (resource == null) {
+            resource = resourceStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE, server.getId());
+        }
+
+        Collection<Permission> permissions;
+        List<String> expectedScopes = Arrays.asList(scopes);
+
+        if (context == null) {
+            permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        } else {
+            permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server, context);
+        }
+
+        for (Permission permission : permissions) {
+            for (String scope : permission.getScopes()) {
+                if (expectedScopes.contains(scope)) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

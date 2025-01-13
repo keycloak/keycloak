@@ -488,7 +488,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     }
 
-    private boolean hasPermission(String... scopes) {
+    protected boolean hasPermission(String... scopes) {
         return hasPermission(null, scopes);
     }
 
@@ -589,7 +589,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
 
     }
-    private boolean canViewByGroup(UserModel user) {
+    protected boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
         return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
     }

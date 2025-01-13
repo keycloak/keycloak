@@ -19,10 +19,13 @@ package org.keycloak.authorization;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
@@ -58,7 +61,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             throw new IllegalStateException("Could not map resource object with type [" + type + "] and id [" + id + "]");
         }
 
-        return getOrCreateResource(session, resourceServer, resourceId);
+        return getOrCreateResourceObject(session, resourceServer, resourceId, type);
     }
 
     public boolean isSupportedPolicyType(KeycloakSession session, ResourceServer resourceServer, String type) {
@@ -89,12 +92,20 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
     }
 
-    private Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String id) {
+    private Resource getOrCreateResourceObject(KeycloakSession session, ResourceServer resourceServer, String id, String type) {
         StoreFactory storeFactory = getStoreFactory(session);
         Resource resource = storeFactory.getResourceStore().findByName(resourceServer, id);
 
         if (resource == null) {
-            return storeFactory.getResourceStore().create(resourceServer, id, resourceServer.getClientId());
+            resource = storeFactory.getResourceStore().create(resourceServer, id, resourceServer.getClientId());
+            ScopeStore scopeStore = storeFactory.getScopeStore();
+            resource.updateScopes(getResourceTypes().get(type).getScopes().stream().map(new Function<String, Scope>() {
+                @Override
+                public Scope apply(String name) {
+                    return scopeStore.findByName(resourceServer, name);
+                }
+            }).collect(Collectors.toSet()));
+            return resource;
         }
 
         return resource;
