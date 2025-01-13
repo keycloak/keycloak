@@ -1,9 +1,16 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { assertModalTitle, confirmModal } from "../utils/modal";
+import {
+  changeRoleTypeFilter,
+  clickHideInheritedRoles,
+  clickUnassign,
+  confirmModalAssign,
+  pickRole,
+} from "../utils/roles";
 import { goToClientScopes } from "../utils/sidebar";
 import {
   assertEmptyTable,
@@ -13,19 +20,11 @@ import {
   getTableData,
   searchItem,
 } from "../utils/table";
-import {
-  assignRole,
-  changeRoleTypeFilter,
-  confirmModalAssign,
-  goToScopeTab,
-  clickHideInheritedRoles,
-  clickUnassign,
-} from "./scope";
+import { assignRole, goToScopeTab } from "./scope";
 
 test.describe("Scope tab test", () => {
   const scopeName = `client-scope-mapper-${uuidv4()}`;
   const tableName = "Client scopes";
-  const rolePickTableName = "Roles";
 
   test.beforeAll(async () =>
     adminClient.createClientScope({
@@ -50,7 +49,7 @@ test.describe("Scope tab test", () => {
 
     await assignRole(page);
     await changeRoleTypeFilter(page, "roles");
-    await clickSelectRow(page, rolePickTableName, role);
+    await pickRole(page, role);
     await confirmModalAssign(page);
 
     await assertNotificationMessage(page, "Role mapping updated");
