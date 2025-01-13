@@ -14,8 +14,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.utils.Assert;
 
 import java.io.IOException;

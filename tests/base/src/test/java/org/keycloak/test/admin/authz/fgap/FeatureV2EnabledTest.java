@@ -28,11 +28,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.test.framework.annotations.InjectClient;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.realm.ManagedClient;
-import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
 public class FeatureV2EnabledTest {

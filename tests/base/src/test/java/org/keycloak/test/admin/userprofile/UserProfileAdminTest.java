@@ -9,10 +9,10 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.test.utils.JsonTestUtils;
 import org.keycloak.userprofile.config.UPConfigUtils;
 

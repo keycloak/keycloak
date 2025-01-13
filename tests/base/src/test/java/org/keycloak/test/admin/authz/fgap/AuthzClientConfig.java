@@ -16,8 +16,8 @@
  */
 package org.keycloak.test.admin.authz.fgap;
 
-import org.keycloak.test.framework.realm.ClientConfig;
-import org.keycloak.test.framework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 
 public class AuthzClientConfig implements ClientConfig {
 
