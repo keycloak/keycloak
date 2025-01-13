@@ -361,6 +361,20 @@ public class LoginPageTest extends AbstractI18NTest {
         assertThat(driver.getPageSource(), not(containsString(realmLocalizationMessageValue)));
     }
 
+    @Test
+    public void realmLocalizationMessagesUsedDuringErrorHandling() {
+        final String locale = Locale.ENGLISH.toLanguageTag();
+
+        final String realmLocalizationMessageKey = "errorTitle";
+        final String realmLocalizationMessageValue = "We are really sorry...";
+
+        saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
+        String nonExistingUrl = oauth.getLoginFormUrl().split("protocol")[0] + "incorrect-path";
+        driver.navigate().to(nonExistingUrl);
+
+        assertThat(driver.getPageSource(), containsString(realmLocalizationMessageValue));
+    }
+
     private void saveLocalizationText(String locale, String key, String value) {
         testRealm().localization().saveRealmLocalizationText(locale, key, value);
         getCleanup().addLocalization(locale);
