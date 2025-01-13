@@ -648,10 +648,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
+        /*
+        // disabled to prevent 429 rate limiting on GitHub actions for LinkedIn's
+        // https://www.linkedin.com/oauth/.well-known/openid-configuration discovery URL
         create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
         provider = realm.identityProviders().get("linkedin-openid-connect");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
+        */
 
         create(createRep("microsoft", "microsoft"));
         provider = realm.identityProviders().get("microsoft");
