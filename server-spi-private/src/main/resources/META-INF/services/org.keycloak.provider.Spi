@@ -80,6 +80,7 @@ org.keycloak.transaction.TransactionManagerLookupSpi
 org.keycloak.credential.hash.PasswordHashSpi
 org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
+org.keycloak.crl.CrlStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.DatastoreSpi
 org.keycloak.storage.role.RoleStorageProviderSpi

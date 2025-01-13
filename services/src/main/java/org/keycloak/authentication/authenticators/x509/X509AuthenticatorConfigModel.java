@@ -161,6 +161,19 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public boolean getCrlContinueIfNonUpdated() {
+        return Boolean.parseBoolean(getConfig().get(CRL_CONTINUE_IF_NON_UPDATED));
+    }
+
+    public X509AuthenticatorConfigModel setCrlContinueIfNonUpdated(boolean crlContinueIfNonUpdated) {
+        if (crlContinueIfNonUpdated) {
+            getConfig().put(CRL_CONTINUE_IF_NON_UPDATED, Boolean.TRUE.toString());
+        } else {
+            getConfig().remove(CRL_CONTINUE_IF_NON_UPDATED);
+        }
+        return this;
+    }
+
     public String getOCSPResponder() {
         return getConfig().getOrDefault(OCSPRESPONDER_URI, null);
     }

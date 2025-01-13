@@ -28,6 +28,7 @@ import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
@@ -71,6 +72,24 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
     }
 
+    @Test
+    public void loginFailureWithEmptyRevocationListFromFileButExpired() {
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exist
+        ContainerAssume.assumeNotAuthServerUndertow();
+
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(EMPTY_EXPIRED_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        assertLoginFailedDueRevokedCertificate();
+    }
 
     @Test
     public void loginFailedWithIntermediateRevocationListFromFile() {
@@ -104,6 +123,62 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
     }
 
+    @Test
+    public void loginFailureWithEmptyRevocationListFromHttpButExpired() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + EMPTY_EXPIRED_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        assertLoginFailedDueRevokedCertificate();
+    }
+
+    @Test
+    public void loginTestCRLCaching() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCrlContinueIfNonUpdated(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/cached-crl")
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        try {
+            // change CRL to the empty but expired, it should login OK
+            crlRule.addHandler("cached-crl", EMPTY_EXPIRED_CRL_PATH);
+            x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
+            AccountHelper.logout(testRealm(), "test-user@localhost");
+            Assert.assertEquals(1, crlRule.getCounter("cached-crl"));
+
+            // change the CRL to the new one but it is cached the min time
+            crlRule.setCrlForHandler("cached-crl", INTERMEDIATE_CA_CRL_PATH);
+            x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
+            AccountHelper.logout(testRealm(), "test-user@localhost");
+            Assert.assertEquals(1, crlRule.getCounter("cached-crl"));
+
+            // wait the min time and it should be refreshed now and fail
+            setTimeOffset(10);
+            assertLoginFailedDueRevokedCertificate();
+            Assert.assertEquals(2, crlRule.getCounter("cached-crl"));
+
+            // now it's cached until next update 50 years
+            setTimeOffset(3600);
+            assertLoginFailedDueRevokedCertificate();
+            Assert.assertEquals(2, crlRule.getCounter("cached-crl"));
+        } finally {
+            crlRule.removeHandler("cached-crl");
+        }
+    }
 
     @Test
     public void loginFailedWithIntermediateRevocationListFromHttp() {
@@ -145,6 +220,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlContinueIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_3_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -182,6 +258,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlContinueIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INVALID_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)

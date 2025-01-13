@@ -173,6 +173,16 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 "Multiple CRLs can be included, however it can affect performance as the certificate will be checked against all listed CRLs."
         );
 
+        ProviderConfigProperty cRLContinueIfNonUpdated = new ProviderConfigProperty();
+        cRLRelativePath.setType(BOOLEAN_TYPE);
+        cRLRelativePath.setName(CRL_CONTINUE_IF_NON_UPDATED);
+        cRLRelativePath.setDefaultValue(Boolean.FALSE.toString());
+        cRLRelativePath.setLabel("CRL continue if non updated");
+        cRLRelativePath.setHelpText("A CRL conforming RFC 5280 must include a next update time that marks when the CRL will be updated. " +
+                "If this option is true the authentication continues if the CRL cannot be updated after the next update time. " +
+                "If false the authentication fails because the certificate cannot be validated with an outdated CRL."
+        );
+
         ProviderConfigProperty oCspCheckingEnabled = new ProviderConfigProperty();
         oCspCheckingEnabled.setType(BOOLEAN_TYPE);
         oCspCheckingEnabled.setName(ENABLE_OCSP);
@@ -248,6 +258,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 crlCheckingEnabled,
                 crlDPEnabled,
                 cRLRelativePath,
+                cRLContinueIfNonUpdated,
                 oCspCheckingEnabled,
                 ocspFailOpen,
                 ocspResponderUri,
