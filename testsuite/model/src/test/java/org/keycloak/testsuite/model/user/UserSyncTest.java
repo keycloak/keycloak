@@ -50,6 +50,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import javax.naming.directory.BasicAttribute;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -58,6 +59,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeThat;
+import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 @RequireProvider(UserProvider.class)
 @RequireProvider(ClusterProvider.class)
@@ -249,5 +251,98 @@ public class UserSyncTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void testInvalidUsersAreDeleted() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // create user1 in LDAP
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            int i = 1;
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "my-street 9", "12" + i);
+            return null;
+        });
+
+        // import user
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            user1.setSingleAttribute("LDAP_ID", "WRONG");
+            return user1;
+        });
+
+        // validate imported user
+        withRealm(realmId, (session, realm) -> {
+            assertThat(session.users().getUserByUsername(realm, "user1"), is(nullValue()));;
+            UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
+            assertThat(deletedUser, is(nullValue()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testInvalidUsersAreNotDeleted() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            providerModel.getConfig().putSingle(REMOVE_INVALID_USERS_ENABLED, "false"); // prevent local delete
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // create user1 in LDAP
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            int i = 1;
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "my-street 9", "12" + i);
+            return null;
+        });
+
+        AtomicReference<String> ldapId = new AtomicReference<>();
+
+        // import user
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            ldapId.set(user1.getFirstAttribute(LDAPConstants.LDAP_ID));
+            user1.setSingleAttribute(LDAPConstants.LDAP_ID, "WRONG");
+            return user1;
+        });
+
+        // validate imported user
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            assertThat(user, is(notNullValue()));
+            assertThat(user.isEnabled(), is(false));
+            UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
+            assertThat(deletedUser, is(notNullValue()));
+            return deletedUser;
+        });
+
+
+        // remove user1 from LDAP
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
+            user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapId.get());
+            assertThat(ldapFedProvider.removeUser(realm, user), is(true));
+            return null;
+        });
+
+        // can delete the local user
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            assertThat(session.users().removeUser(realm, user), is(true));
+            user = session.users().getUserByUsername(realm, "user1");
+            assertThat(user, is(nullValue()));
+            return null;
+        });
+    }
 }
 
