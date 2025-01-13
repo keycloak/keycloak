@@ -87,15 +87,13 @@ test.describe("Authentication test", () => {
   test.describe("Flow details", () => {
     let flowId: string | undefined;
     const flowName = "Copy of browser test";
-    test.beforeEach(() =>
-      adminClient.inRealm(realmName, async () => {
-        await adminClient.copyFlow("browser", flowName);
-        flowId = (await adminClient.getFlow(flowName))!.id!;
-      }),
-    );
-    test.afterEach(() =>
-      adminClient.inRealm(realmName, () => adminClient.deleteFlow(flowId!)),
-    );
+
+    test.beforeEach(async () => {
+      await adminClient.copyFlow("browser", flowName, realmName);
+      flowId = (await adminClient.getFlow(flowName, realmName))!.id!;
+    });
+
+    test.afterEach(() => adminClient.deleteFlow(flowId!, realmName));
 
     test("Should edit flow details", async ({ page }) => {
       await clickTableRowItem(page, flowName);

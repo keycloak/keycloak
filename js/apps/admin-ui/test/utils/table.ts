@@ -5,6 +5,7 @@ export async function searchItem(
   placeHolder: string,
   itemName: string,
 ) {
+  await page.locator("table tbody").waitFor();
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
 }
