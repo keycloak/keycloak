@@ -63,19 +63,16 @@ export async function clickTableToolbarItem(
 
 export async function getTableData(page: Page, name: string) {
   const tableData: string[][] = [];
-  await page.getByLabel(name).locator("tbody").waitFor();
-  const rowCount = await page.getByLabel(name).locator("tbody tr").count();
-  const columnCount = await page
-    .getByLabel(name)
-    .locator("tbody tr:first-child td")
-    .count();
+  const table = page.getByLabel(name, { exact: true });
+  await table.locator("tbody").waitFor();
+  const rowCount = await table.locator("tbody tr").count();
+  const columnCount = await table.locator("tbody tr:first-child td").count();
 
   for (let i = 0; i < rowCount; i++) {
     tableData.push([]);
     for (let j = 0; j < columnCount; j++) {
       tableData[i].push(
-        await page
-          .getByLabel(name)
+        await table
           .locator("tbody")
           .locator("tr")
           .nth(i)
@@ -106,10 +103,11 @@ export async function clickSelectRow(
 ) {
   if (typeof row === "string") {
     const rows = await getTableData(page, tableName);
-    row = rows.findIndex((r) => r.includes(row as string));
-    if (row === -1) {
+    const rowIndex = rows.findIndex((r) => r.includes(row as string));
+    if (rowIndex === -1) {
       throw new Error(`Row ${row} not found`);
     }
+    row = rowIndex;
   }
   await page.getByLabel(tableName).getByLabel(`Select row ${row}`).click();
 }

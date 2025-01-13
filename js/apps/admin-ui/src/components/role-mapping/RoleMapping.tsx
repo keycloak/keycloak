@@ -192,7 +192,7 @@ export const RoleMapping = ({
         canSelectAll
         onSelect={(rows) => setSelected(rows)}
         searchPlaceholderKey="searchByName"
-        ariaLabelKey="clientScopeList"
+        ariaLabelKey="associatedRolesText"
         isRowDisabled={(value) =>
           (value.role as CompositeRole).isInherited || false
         }
