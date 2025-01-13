@@ -99,3 +99,8 @@ hr {
         grid-template-columns: 70% 30%;
     }
 }
+
+.kc-password-strength-bar {
+    --pf-v5-c-progress__bar--Height: var(--pf-v5-global--spacer--sm);
+    grid-gap: 0;
+}

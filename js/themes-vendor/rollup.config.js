@@ -42,6 +42,21 @@ export default defineConfig([
     external: ["react"],
     plugins,
   },
+  ...[
+    ["node_modules/@zxcvbn-ts/core/dist/zxcvbn-ts.js", "zxcvbn-ts.js"],
+    [
+      "node_modules/@zxcvbn-ts/language-common/dist/zxcvbn-ts.js",
+      "language-common.js",
+    ],
+    ["node_modules/@zxcvbn-ts/language-en/dist/zxcvbn-ts.js", "language-en.js"],
+  ].map((input) => ({
+    input: input[0],
+    output: {
+      file: path.join(targetDir, "zxcvbn-ts", input[1]),
+      format: "es",
+    },
+    plugins,
+  })),
   {
     input: "src/main/js/web-crypto-shim.js",
     output: {

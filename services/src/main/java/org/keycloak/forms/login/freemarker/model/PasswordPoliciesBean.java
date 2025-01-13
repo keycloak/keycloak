@@ -13,6 +13,7 @@ public class PasswordPoliciesBean {
   private final Integer forceExpiredPasswordChange;
   private final boolean notUsername;
   private final boolean notEmail;
+  private final boolean passwordStrength;
 
   public PasswordPoliciesBean(PasswordPolicy policy) {
     this.length = policy.getPolicyConfig("length");
@@ -25,6 +26,7 @@ public class PasswordPoliciesBean {
     this.forceExpiredPasswordChange = policy.getPolicyConfig("forceExpiredPasswordChange");
     this.notUsername = policy.getPolicies().contains("notUsername");
     this.notEmail = policy.getPolicies().contains("notEmail");
+    this.passwordStrength = policy.getPolicies().contains("passwordStrength");
   }
 
   public Integer getLength() {
@@ -65,5 +67,9 @@ public class PasswordPoliciesBean {
 
   public boolean isNotEmail() {
     return notEmail;
+  }
+
+  public boolean isPasswordStrength() {
+    return passwordStrength;
   }
 }
