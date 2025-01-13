@@ -10,9 +10,6 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
-  expect: {
-    timeout: 20 * 1000,
-  },
 
   use: {
     baseURL: "http://localhost:8080",
