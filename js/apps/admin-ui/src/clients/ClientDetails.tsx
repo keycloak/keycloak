@@ -8,6 +8,7 @@ import {
   Label,
   PageSection,
   Tab,
+  Tabs,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
@@ -74,6 +75,7 @@ import { ServiceAccount } from "./service-account/ServiceAccount";
 import { getProtocolName, isRealmClient } from "./utils";
 import { UserEvents } from "../events/UserEvents";
 import { useIsAdminPermissionsClient } from "../utils/useIsAdminPermissionsClient";
+import { AdminEvents } from "../events/AdminEvents";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -246,7 +248,9 @@ export default function ClientDetails() {
   const sessionsTab = useRoutableTab(tab("sessions"));
   const permissionsTab = useRoutableTab(tab("permissions"));
   const advancedTab = useRoutableTab(tab("advanced"));
-  const userEventsTab = useRoutableTab(tab("user-events"));
+  const eventsTab = useRoutableTab(tab("events"));
+
+  const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
 
   const clientScopesTabRoute = (tab: ClientScopesTab) =>
     toClientScopesTab({
@@ -679,15 +683,37 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
-            {hasAccess("view-events") && realmRepresentation?.eventsEnabled && (
-              <Tab
-                data-testid="user-events-tab"
-                title={<TabTitleText>{t("events")}</TabTitleText>}
-                {...userEventsTab}
-              >
-                <UserEvents client={client.clientId} />
-              </Tab>
-            )}
+            {hasAccess("view-events") &&
+              (realmRepresentation?.adminEventsEnabled ||
+                realmRepresentation?.eventsEnabled) && (
+                <Tab
+                  data-testid="events-tab"
+                  title={<TabTitleText>{t("events")}</TabTitleText>}
+                  {...eventsTab}
+                >
+                  <Tabs
+                    activeKey={activeEventsTab}
+                    onSelect={(_, key) => setActiveEventsTab(key as string)}
+                  >
+                    {realmRepresentation?.eventsEnabled && (
+                      <Tab
+                        eventKey="userEvents"
+                        title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                      >
+                        <UserEvents client={client.clientId} />
+                      </Tab>
+                    )}
+                    {realmRepresentation?.adminEventsEnabled && (
+                      <Tab
+                        eventKey="adminEvents"
+                        title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                      >
+                        <AdminEvents resourcePath={`clients/${client.id}`} />
+                      </Tab>
+                    )}
+                  </Tabs>
+                </Tab>
+              )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>
