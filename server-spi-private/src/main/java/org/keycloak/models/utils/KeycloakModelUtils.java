@@ -1213,7 +1213,11 @@ public final class KeycloakModelUtils {
 
         //create 'all-resource' resources defined in the schema
         resourceServerRep.setResources(AdminPermissionsSchema.SCHEMA.getResourceTypes().keySet().stream()
-                .map(type -> new ResourceRepresentation(type))
+                .map(type -> {
+                    ResourceRepresentation resource = new ResourceRepresentation(type, AdminPermissionsSchema.SCHEMA.getResourceTypes().get(type).getScopes().toArray(new String[0]));
+                    resource.setType(type);
+                    return resource;
+                })
                 .collect(Collectors.toList()));
 
         RepresentationToModel.toModel(resourceServerRep, session.getProvider(AuthorizationProvider.class), client);
