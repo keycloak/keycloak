@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import io.quarkus.runtime.configuration.MemorySizeConverter;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -135,6 +136,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_MAX_LENGTH)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.max-length")
+                        .validator(LoggingPropertyMappers::validateSyslogMaxLength)
                         .paramLabel("max-length")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_PROTOCOL)
@@ -257,5 +259,14 @@ public final class LoggingPropertyMappers {
         }
 
         return Optional.of(LoggingOptions.DEFAULT_LOG_TRACING_FORMAT);
+    }
+
+    private static void validateSyslogMaxLength(String value) {
+        var converter = new MemorySizeConverter();
+        try {
+            converter.convert(value);
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException(String.format("Invalid value for option '--log-syslog-max-length': %s", e.getMessage()));
+        }
     }
 }
