@@ -330,6 +330,24 @@ The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.
 
 NOTE: Use `-D<property>=<value` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
+[#network-bind-address]
+== Network bind address
+
+To ensure a healthy {project_name} clustering, the network port must be bound on an interface that is accessible from all other nodes of the cluster.
+
+By default, it picks a site local (non-routable) IP address, for example, from the 192.168.0.0 or 10.0.0.0 address range.
+
+To override the address, set the `jgroups.bind.address` property.
+
+NOTE: Use `-D<property>=<value` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
+
+To set up for IPv6 only and have {project_name} pick the bind address automatically, use the following settings:
+
+[source,bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
 == Exposing metrics from caches
 
 Metrics from caches are automatically exposed when the metrics are enabled.
