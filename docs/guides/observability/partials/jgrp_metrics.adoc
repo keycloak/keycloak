@@ -7,6 +7,13 @@ If metrics from multiple clusters are being collected, this tag helps identify w
 `node=<node>`:: The name of the node reporting the metric.
 ====
 
+[WARNING]
+====
+All metric names prefixed with `vendor_jgroups_` are provided for troubleshooting and debugging purposes only.
+The metric names can change in upcoming releases of {project_name} without further notice.
+Therefore, we advise not using them in dashboards or in monitoring and alerting.
+====
+
 == Response Time
 
 The following metrics expose the response time for the remote requests.
