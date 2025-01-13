@@ -66,7 +66,7 @@ class AdminClient {
     },
   ) {
     await this.#login();
-    await this.#client.clients.create(client);
+    return await this.#client.clients.create(client);
   }
 
   async deleteClient(clientName: string) {
@@ -296,10 +296,22 @@ class AdminClient {
     });
   }
 
-  async createRealmRole(payload: RoleRepresentation) {
+  async createRealmRole(payload: RoleRepresentation & { realm?: string }) {
     await this.#login();
 
     return await this.#client.roles.create(payload);
+  }
+
+  async createClientRole(
+    id: string,
+    payload: RoleRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+
+    return await this.#client.clients.createRole({
+      id,
+      ...payload,
+    });
   }
 
   async deleteRealmRole(name: string) {
