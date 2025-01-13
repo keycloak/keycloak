@@ -232,7 +232,7 @@ public class SamlProtocol implements LoginProtocol {
                     params.put("protocol", LOGIN_PROTOCOL);
                     params.put("client", client.getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
                     URI redirect = builder.buildFromMap(params);
-                    return Response.status(302).location(redirect).build();
+                    return Response.status(Response.Status.FOUND).location(redirect).build();
                 } else {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, errorMessage != null ? errorMessage : translateErrorToIdpInitiatedErrorMessage(error));
                 }
@@ -1072,7 +1072,7 @@ public class SamlProtocol implements LoginProtocol {
         }
 
         URI uri = builder.build();
-        return Response.status(302).location(uri)
+        return Response.status(Response.Status.FOUND).location(uri)
                 .header("Pragma", "no-cache")
                 .header("Cache-Control", "no-cache, no-store").build();
     }

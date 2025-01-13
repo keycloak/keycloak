@@ -195,7 +195,7 @@ public class WelcomeResource {
 
             // Redirect to the Administration Console if the administrative user already exists.
             if (redirectToAdmin && !bootstrap && adminConsoleEnabled && successMessage == null) {
-                return Response.status(302).location(adminUrl).build();
+                return Response.status(Response.Status.FOUND).location(adminUrl).build();
             }
 
             Map<String, Object> map = new HashMap<>();

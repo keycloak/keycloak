@@ -318,7 +318,7 @@ public class AdminConsole {
     public Response logout() {
         URI redirect = AdminRoot.adminConsoleUrl(session.getContext().getUri(UrlType.ADMIN)).build(realm.getName());
 
-        return Response.status(302).location(
+        return Response.status(Response.Status.FOUND).location(
                 OIDCLoginProtocolService.logoutUrl(session.getContext().getUri(UrlType.ADMIN)).queryParam("post_logout_redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
@@ -338,7 +338,7 @@ public class AdminConsole {
 
         // Redirect to a URL with a trailing slash if the current URL doesn't have one.
         if (!adminUriInfo.getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(adminUriInfo.getRequestUriBuilder().path("/").build()).build();
+            return Response.status(Response.Status.FOUND).location(adminUriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
             // Get the base URLs of the server and admin console.
             final var serverBaseUri = baseUriInfo.getBaseUri();
@@ -406,7 +406,7 @@ public class AdminConsole {
     @GET
     @Path("{indexhtml: index.html}") // this expression is a hack to get around jaxdoclet generation bug.  Doesn't like index.html
     public Response getIndexHtmlRedirect() {
-        return Response.status(302).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("../").build()).build();
+        return Response.status(Response.Status.FOUND).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("../").build()).build();
     }
 
     @GET

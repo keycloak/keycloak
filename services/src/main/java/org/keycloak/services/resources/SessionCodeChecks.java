@@ -200,7 +200,7 @@ public class SessionCodeChecks {
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
 
         // if restart from cookie was not found check if the user is already authenticated
-        if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
+        if (response.getStatus() != Response.Status.TEMPORARY_REDIRECT.getStatusCode()) {
             AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
             if (authResult != null && authResult.getSession() != null) {
@@ -321,7 +321,7 @@ public class SessionCodeChecks {
 
                         logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
                         authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
-                        response = Response.status(Response.Status.FOUND).location(redirectUri).build();
+                        response = Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirectUri).build();
                         return false;
                     }
                 }
@@ -382,7 +382,7 @@ public class SessionCodeChecks {
             String clientData = AuthenticationProcessor.getClientData(session, authSession);
             URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, tabId, clientData);
             logger.debugf("Flow restart after timeout. Redirecting to %s", redirectUri);
-            response = Response.status(Response.Status.FOUND).location(redirectUri).build();
+            response = Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirectUri).build();
             return false;
         }
         return true;
@@ -451,7 +451,7 @@ public class SessionCodeChecks {
             String clientData = AuthenticationProcessor.getClientData(session, authSession);
             URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getTabId(), clientData);
             logger.debugf("Authentication session restart from cookie succeeded. Redirecting to %s", redirectUri);
-            return Response.status(Response.Status.FOUND).location(redirectUri).build();
+            return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirectUri).build();
         } else {
             // Finally need to show error as all the fallbacks failed
             event.error(Errors.INVALID_CODE);
@@ -474,7 +474,7 @@ public class SessionCodeChecks {
                 .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession));
 
         URI redirect = uriBuilder.build(realm.getName());
-        return Response.status(302).location(redirect).build();
+        return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirect).build();
     }
 
 

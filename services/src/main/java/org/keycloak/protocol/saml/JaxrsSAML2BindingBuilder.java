@@ -89,7 +89,7 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
             logger.tracef("redirect-binding uri: %s", uri);
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
-            return Response.status(302).location(uri)
+            return Response.status(Response.Status.FOUND).location(uri)
                     .header("Pragma", "no-cache")
                     .header("Cache-Control", "no-cache, no-store").build();
         }

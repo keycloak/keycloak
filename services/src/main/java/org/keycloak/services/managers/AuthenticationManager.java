@@ -1019,7 +1019,7 @@ public class AuthenticationManager {
         }
 
         URI redirect = uriBuilder.build(realm.getName());
-        return Response.status(302).location(redirect).build();
+        return Response.status(Response.Status.TEMPORARY_REDIRECT).location(redirect).build();
 
     }
 

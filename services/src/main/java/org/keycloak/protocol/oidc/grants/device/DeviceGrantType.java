@@ -110,7 +110,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
                 errorType = OAuthErrorException.ACCESS_DENIED;
             }
         }
-        return Response.status(302).location(
+        return Response.status(Response.Status.FOUND).location(
                 uriBuilder.queryParam(OAuth2Constants.ERROR, errorType)
                         .build(realm.getName())
         ).build();
@@ -126,7 +126,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         String userSessionId = clientSession.getUserSession().getId();
         if (!approveUserCode(session, realm, verifiedUserCode, userSessionId, null)) {
             // Already expired and removed in the store
-            return Response.status(302).location(
+            return Response.status(Response.Status.FOUND).location(
                     uriBuilder.queryParam(OAuth2Constants.ERROR, OAuthErrorException.EXPIRED_TOKEN)
                             .build(realm.getName())
             ).build();
@@ -135,7 +135,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         // Now, remove the verified user code
         removeDeviceByUserCode(session, realm, verifiedUserCode);
 
-        return Response.status(302).location(
+        return Response.status(Response.Status.FOUND).location(
                 uriBuilder.build(realm.getName())
         ).build();
     }

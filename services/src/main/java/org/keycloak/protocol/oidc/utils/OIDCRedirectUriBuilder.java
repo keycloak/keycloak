@@ -89,7 +89,7 @@ public abstract class OIDCRedirectUriBuilder {
         @Override
         public Response build() {
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
+            Response.ResponseBuilder location = Response.status(Response.Status.FOUND).location(redirectUri);
             return location.build();
         }
     }
@@ -127,7 +127,7 @@ public abstract class OIDCRedirectUriBuilder {
             }
             URI redirectUri = uriBuilder.build();
 
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
+            Response.ResponseBuilder location = Response.status(Response.Status.FOUND).location(redirectUri);
             return location.build();
         }
 
@@ -242,14 +242,14 @@ public abstract class OIDCRedirectUriBuilder {
         private Response buildQueryResponse() {
             uriBuilder.queryParam("response", session.tokens().encodeAndEncrypt(responseJWT));
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
+            Response.ResponseBuilder location = Response.status(Response.Status.FOUND).location(redirectUri);
             return location.build();
         }
 
         private Response buildFragmentResponse() {
             uriBuilder.encodedFragment("response=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
             URI redirectUri = uriBuilder.build();
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri);
+            Response.ResponseBuilder location = Response.status(Response.Status.FOUND).location(redirectUri);
             return location.build();
         }
 
