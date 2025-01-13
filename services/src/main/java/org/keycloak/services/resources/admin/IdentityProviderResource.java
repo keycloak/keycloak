@@ -490,8 +490,7 @@ public class IdentityProviderResource {
     @Operation(summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.")
     public boolean reloadKeys() {
         this.auth.realm().requireManageIdentityProviders();
-        IdentityProviderFactory<?> providerFactory = IdentityBrokerService.getIdentityProviderFactory(session, identityProviderModel);
-        IdentityProvider provider = providerFactory.create(session, identityProviderModel);
+        IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
     }
 }
