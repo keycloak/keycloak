@@ -987,6 +987,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return List.of();
     }
 
+    @Override
+    public Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return getDelegate().getUsersByLinkStream(realm, federationLink, firstResult, maxResults);
+    }
+
     public UserCacheManager getCache() {
         return cache;
     }

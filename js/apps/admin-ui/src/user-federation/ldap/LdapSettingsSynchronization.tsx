@@ -20,6 +20,7 @@ export const LdapSettingsSynchronization = ({
 
   const watchPeriodicSync = form.watch("config.periodicFullSync", false);
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
+  const watchRemovalEnabled = form.watch("config.removalEnabled", false);
 
   return (
     <FormProvider {...form}>
@@ -173,6 +174,45 @@ export const LdapSettingsSynchronization = ({
             type="number"
             min={-1}
             defaultValue={86400}
+          />
+        )}
+        <FormGroup
+          label={t("removalEnabled")}
+          labelIcon={
+            <HelpItem
+              helpText={t("removalEnabledHelp")}
+              fieldLabelId="removalEnabled"
+            />
+          }
+          fieldId="kc-removal-enabled"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.removalEnabled"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-removal-enabled"
+                data-testid="removal-enabled"
+                isDisabled={false}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("removalEnabled")}
+              />
+            )}
+          />
+        </FormGroup>
+        {watchRemovalEnabled && (
+          <TextControl
+            name="config.removalPageSize.0"
+            label={t("removalPageSize")}
+            labelIcon={t("removalPageSizeHelp")}
+            type="number"
+            min={1000}
+            defaultValue={1000}
           />
         )}
       </FormAccess>

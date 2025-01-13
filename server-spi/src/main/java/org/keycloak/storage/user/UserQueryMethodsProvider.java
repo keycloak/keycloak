@@ -234,4 +234,15 @@ public interface UserQueryMethodsProvider {
      * @return a non-null {@link Stream} of users that match the search criteria.
      */
     Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue);
+
+    /**
+     * Obtains users that have a connection to a federation provider
+     *
+     * @param realm          a reference to the realm
+     * @param federationLink a link to the ldap federation
+     * @return a non-null {@link Stream} of users that have a federation link
+     */
+    default Stream<UserModel> getUsersByLinkStream(RealmModel realm, String federationLink, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
 }
