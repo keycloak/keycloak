@@ -102,6 +102,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+        </dependency>
+        <dependency>
             <!-- for MockHttpRequest -->
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-core</artifactId>
