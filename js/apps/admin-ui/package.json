@@ -74,7 +74,7 @@
       ]
     },
     "test": {
-      "command": "vitest",
+      "command": "vitest && playwright test",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
@@ -88,6 +88,7 @@
     }
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.2",
@@ -116,6 +117,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
+    "@playwright/test": "^1.49.1",
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -136,6 +138,7 @@
     "vite": "^6.0.7",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.4.0",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "uuid": "^11.0.3"
   }
 }

@@ -34,7 +34,11 @@ export const AccessTokenDialog = ({
       />
       <Form className="pf-v5-u-mt-md">
         <FormGroup label={t("initialAccessToken")} fieldId="initialAccessToken">
-          <ClipboardCopy id="initialAccessToken" isReadOnly>
+          <ClipboardCopy
+            id="initialAccessToken"
+            data-testid="initialAccessToken"
+            isReadOnly
+          >
             {token}
           </ClipboardCopy>
         </FormGroup>

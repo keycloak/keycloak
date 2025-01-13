@@ -521,6 +521,8 @@ export default function ClientDetails() {
                     clientId,
                     tab: "setup",
                   })}
+                  mountOnEnter
+                  unmountOnExit
                 >
                   <Tab
                     id="setup"

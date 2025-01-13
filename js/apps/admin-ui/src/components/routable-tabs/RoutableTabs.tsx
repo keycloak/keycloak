@@ -93,6 +93,8 @@ export const RoutableTabs = ({
         xl: "insetLg",
         "2xl": "inset2xl",
       }}
+      unmountOnExit
+      mountOnEnter
       {...otherProps}
     >
       {children as any}
