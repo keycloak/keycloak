@@ -326,8 +326,8 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       tar-fs:
-        specifier: ^3.0.6
-        version: 3.0.6
+        specifier: ^3.0.7
+        version: 3.0.7
 
   libs/keycloak-admin-client:
     dependencies:
@@ -5028,8 +5028,8 @@ packages:
     resolution: {integrity: sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==}
     engines: {node: '>=6'}
 
-  tar-fs@3.0.6:
-    resolution: {integrity: sha512-iokBDQQkUyeXhgPYaZxmczGPhnhXZ0CmrqI+MOb/WFGS9DW5wnfrLgtjUJBvz50vQ3qfRwJ62QVoCFu8mPVu5w==}
+  tar-fs@3.0.7:
+    resolution: {integrity: sha512-2sAfoF/zw/2n8goUGnGRZTWTD4INtnScPZvyYBI6BDlJ3wNR5o1dw03EfBvuhG6GBLvC4J+C7j7W+64aZ0ogQA==}
 
   tar-stream@3.1.7:
     resolution: {integrity: sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==}
@@ -10736,7 +10736,7 @@ snapshots:
 
   tapable@2.2.1: {}
 
-  tar-fs@3.0.6:
+  tar-fs@3.0.7:
     dependencies:
       pump: 3.0.2
       tar-stream: 3.1.7
