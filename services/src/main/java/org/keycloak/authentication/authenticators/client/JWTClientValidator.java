@@ -48,6 +48,7 @@ public class JWTClientValidator {
     private final ClientAuthenticationFlowContext context;
     private final RealmModel realm;
     private final int currentTime;
+    private final String clientAuthenticatorProviderId;
 
     private MultivaluedMap<String, String> params;
     private String clientAssertion;
@@ -55,10 +56,11 @@ public class JWTClientValidator {
     private JsonWebToken token;
     private ClientModel client;
 
-    public JWTClientValidator(ClientAuthenticationFlowContext context) {
+    public JWTClientValidator(ClientAuthenticationFlowContext context, String clientAuthenticatorProviderId) {
         this.context = context;
         this.realm = context.getRealm();
         this.currentTime = Time.currentTime();
+        this.clientAuthenticatorProviderId = clientAuthenticatorProviderId;
     }
 
     public boolean clientAssertionParametersValidation() {
@@ -131,6 +133,11 @@ public class JWTClientValidator {
 
         if (!client.isEnabled()) {
             context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+            return false;
+        }
+
+        if (!clientAuthenticatorProviderId.equals(client.getClientAuthenticatorType())) {
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
             return false;
         }
 

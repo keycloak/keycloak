@@ -27,6 +27,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.Algorithm;
@@ -669,6 +670,28 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+    }
+
+    @Test
+    public void testAuthenticationFailsWhenClientSecretJWTAuthenticatorSet() throws Exception {
+        // Set client authenticator to JWT signed by client secret.
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientResource.update(clientRep);
+
+        // It should not be possible to use private_key_jwt for the authentication
+        try {
+            String clientJwt = getClient1SignedJWT();
+
+            OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(clientJwt);
+
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        } finally {
+            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+            clientResource.update(clientRep);
+        }
     }
 
     @Test

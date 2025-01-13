@@ -18,6 +18,7 @@ package org.keycloak.authentication.authenticators.client;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
@@ -41,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
+
 /**
  * Client authentication based on JWT signed by client secret instead of private key .
  * See <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">specs</a> for more details.
@@ -55,7 +58,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context);
+        JWTClientValidator validator = new JWTClientValidator(context, getId());
         if (!validator.clientAssertionParametersValidation()) return;
 
         try {
@@ -85,7 +88,17 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
             boolean signatureValid;
             try {
-                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
+                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, (jose, validatedClient) -> {
+                    DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                    String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                    ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                    if (signatureProvider == null) {
+                        throw new RuntimeException("Algorithm not supported");
+                    }
+                    if (signatureProvider.isAsymmetricAlgorithm()) {
+                        throw new RuntimeException("Algorithm is not symmetric");
+                    }
+                }, JsonWebToken.class);
                 signatureValid = jwt != null;
                 //try authenticate with client rotated secret
                 if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
