@@ -18,18 +18,22 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -285,15 +289,28 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return onFlowExecutionsSuccessful();
             }
 
+
+            List<Response> alternativeResponses = new ArrayList<>();
             //handle alternative elements: the first alternative element to be satisfied is enough
             for (AuthenticationExecutionModel alternative : alternativeList) {
                 try {
                     Response response = processSingleFlowExecutionModel(alternative, true);
-                    if (response != null) {
-                        return response;
-                    }
-                    if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
+                    if (processor.isSuccessful(alternative)) {
                         return onFlowExecutionsSuccessful();
+                    } else {
+                        setExecutionStatus(alternative, AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                    }
+                    alternativeResponses.add(response);
+
+                    // If the last alternative was not successful, generate and return an error object containing error details of all alternatives
+                    if (alternativeList.indexOf(alternative) == alternativeList.size() - 1) {
+                        Map<String, Object> e = new HashMap<>();
+                        e.put(OAuth2Constants.ERROR, "invalid_request");
+                        e.put(OAuth2Constants.ERROR_DESCRIPTION, "Unsatisfied Flow Alternatives");
+                        e.put("error_details", alternativeResponses.stream().map((res) -> res.getEntity()));
+
+                        return Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity(e)
+                                .type(MediaType.APPLICATION_JSON_TYPE).build();
                     }
                 } catch (AuthenticationFlowException afe) {
                     //consuming the error is not good here from an administrative point of view, but the user, since he has alternatives, should be able to go to another alternative and continue
