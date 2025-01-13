@@ -19,6 +19,7 @@
 
 package org.keycloak.admin.ui.rest;
 
+import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -81,6 +82,7 @@ public class UIRealmResource {
     @Operation(summary = "Gets information about the realm, viewable by all realm admins")
     @APIResponse(responseCode = "200", description = "", content = {
             @Content(schema = @Schema(implementation = UIRealmInfo.class, type = SchemaType.OBJECT))})
+    @Produces(MediaType.APPLICATION_JSON)
     public UIRealmInfo getInfo() {
         auth.requireAnyAdminRole();
 
