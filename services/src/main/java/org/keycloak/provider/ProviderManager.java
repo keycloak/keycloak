@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,8 +49,7 @@ public class ProviderManager {
 
         logger.debugv("Provider loaders {0}", factories);
 
-        loaders.add(new DefaultProviderLoader(info, baseClassLoader));
-        loaders.add(new DeploymentProviderLoader(info));
+        addDefaultLoaders(baseClassLoader);
 
         if (resources != null) {
             for (String r : resources) {
@@ -71,6 +71,20 @@ public class ProviderManager {
             }
         }
     }
+
+    public ProviderManager(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, Collection<ProviderLoader> additionalProviderLoaders) {
+        this.info = info;
+        addDefaultLoaders(baseClassLoader);
+        if (additionalProviderLoaders != null) {
+            loaders.addAll(additionalProviderLoaders);
+        }
+    }
+
+    private void addDefaultLoaders(ClassLoader baseClassLoader) {
+        loaders.add(new DefaultProviderLoader(info, baseClassLoader));
+        loaders.add(new DeploymentProviderLoader(info));
+    }
+
     public synchronized List<Spi> loadSpis() {
         // Use a map to prevent duplicates, since the loaders may have overlapping classpaths.
         Map<String, Spi> spiMap = new HashMap<>();

@@ -30,6 +30,7 @@ import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSession;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class FeatureDeployerUtil {
 
             KeycloakDeploymentInfo di = createDeploymentInfo(factories);
 
-            manager = new ProviderManager(di, FeatureDeployerUtil.class.getClassLoader());
+            manager = new ProviderManager(di, FeatureDeployerUtil.class.getClassLoader(), Collections.singleton(new TestsuiteProviderLoader(di)));
             deployersCache.put(feature, manager);
         }
         ProviderManagerRegistry.SINGLETON.deploy(manager);

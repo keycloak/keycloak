@@ -109,7 +109,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
     private static String RESOURCE_SERVER_CLIENT_ID = "resource-server";
@@ -286,6 +285,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void exchangeTest() throws Exception {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
