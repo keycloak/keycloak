@@ -95,6 +95,7 @@ import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;

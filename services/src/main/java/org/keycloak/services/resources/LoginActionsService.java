@@ -72,6 +72,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -781,7 +782,7 @@ public class LoginActionsService {
                                     @QueryParam(Constants.TAB_ID) String tabId,
                                     @QueryParam(Constants.TOKEN) String tokenString) {
         
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm) && tokenString != null) {
             //this call should extract orgId from token and set the organization to the session context
             preHandleActionToken(tokenString);
         }
@@ -951,7 +952,7 @@ public class LoginActionsService {
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
             String organizationId = brokerContext.getIdpConfig().getOrganizationId();
 
             if (organizationId != null) {

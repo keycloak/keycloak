@@ -32,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -57,7 +58,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
 
     @Override
     public Response render(FormContext context, LoginFormsProvider form) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(context.getRealm())) {
             try {
                 InviteOrgActionToken token = Organizations.parseInvitationToken(context.getHttpRequest());
 

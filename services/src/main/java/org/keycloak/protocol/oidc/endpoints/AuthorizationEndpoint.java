@@ -31,6 +31,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -230,7 +231,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.event(EventType.REGISTER);
         action = Action.REGISTER;
 
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm) && tokenString != null) {
             //this call should extract orgId from token and set the organization to the session context
             Response errorResponse = new LoginActionsService(session, event).preHandleActionToken(tokenString);
             if (errorResponse != null) {
