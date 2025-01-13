@@ -415,23 +415,29 @@ class AdminClient {
     await this.#client.organizations.delById({ id: id! });
   }
 
-  async copyFlow(name: string, newName: string) {
+  async copyFlow(name: string, newName: string, realmName: string = "master") {
     await this.#login();
     await this.#client.authenticationManagement.copyFlow({
       flow: name,
       newName: newName,
+      realm: realmName,
     });
   }
 
-  async getFlow(name: string) {
+  async getFlow(name: string, realmName: string = "master") {
     await this.#login();
-    const flows = await this.#client.authenticationManagement.getFlows();
+    const flows = await this.#client.authenticationManagement.getFlows({
+      realm: realmName,
+    });
     return flows.find((flow) => flow.alias === name);
   }
 
-  async deleteFlow(name: string) {
+  async deleteFlow(name: string, realmName: string = "master") {
     await this.#login();
-    await this.#client.authenticationManagement.deleteFlow({ flowId: name });
+    await this.#client.authenticationManagement.deleteFlow({
+      flowId: name,
+      realm: realmName,
+    });
   }
 
   async deleteAllTokens(realm: string = "master") {
