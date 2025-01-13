@@ -129,7 +129,7 @@
     "cypress": "^13.17.0",
     "cypress-axe": "^1.5.0",
     "cypress-split": "^1.24.7",
-    "jsdom": "^25.0.1",
+    "jsdom": "^26.0.0",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.28.2",
     "ts-node": "^10.9.2",
