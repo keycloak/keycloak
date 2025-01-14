@@ -43,19 +43,6 @@ The following example limits the events collected to `LOGIN` and `LOGOUT` events
 
 <@kc.start parameters="... --event-metrics-user-events=login,logout ..."/>
 
-All error events will be collected with the primary event type and will have the `error` tag filled with the error code.
-
-The snippet below is an example of a response provided by the metric endpoint:
-
-[source]
-----
-# HELP keycloak_user_events_total Keycloak user events
-# TYPE keycloak_user_events_total counter
-keycloak_user_events_total{client_id="security-admin-console",error="",event="code_to_token",idp="",realm="master",} 1.0
-keycloak_user_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master",} 1.0
-keycloak_user_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master",} 1.0
-keycloak_user_events_total{client_id="security-admin-console",error="invalid_user_credentials",event="login",idp="",realm="master",} 1.0
-----
-
+See <@links.observability id="metrics-for-troubleshooting-keycloak"/> for a description of the metrics collected.
 
 </@tmpl.guide>

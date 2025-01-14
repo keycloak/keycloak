@@ -41,6 +41,7 @@ You should always confirm the configuration change by conducting a performance t
 
 == List of {project_name} key metrics
 
+* <@links.observability id="metrics-for-troubleshooting-keycloak"/>
 * <@links.observability id="metrics-for-troubleshooting-jvm"/>
 * <@links.observability id="metrics-for-troubleshooting-database"/>
 * <@links.observability id="metrics-for-troubleshooting-http"/>
