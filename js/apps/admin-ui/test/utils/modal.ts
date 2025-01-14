@@ -1,11 +1,11 @@
 import { expect, Page } from "@playwright/test";
 
-export function assertModalTitle(page: Page, title: string) {
-  return expect(page.getByText(title)).toBeVisible();
+export async function assertModalTitle(page: Page, title: string) {
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
-export function confirmModal(page: Page) {
-  return page.getByTestId("confirm").click();
+export async function confirmModal(page: Page) {
+  await page.getByTestId("confirm").click();
 }
 
 export async function cancelModal(page: Page) {
