@@ -14,7 +14,7 @@ export class NetworkError extends Error {
 }
 
 export async function fetchWithError(
-  input: RequestInfo | URL,
+  input: Request | string | URL,
   init?: RequestInit,
 ) {
   const response = await fetch(input, init);
