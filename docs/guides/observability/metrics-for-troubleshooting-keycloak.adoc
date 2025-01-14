@@ -76,7 +76,14 @@ Possible values:
 To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential-keycloak-password-validations-counter-tags`.
 By default, all tags are enabled.
 
+The snippet below is an example of a response provided by the metric endpoint:
 
+[source]
+----
+# HELP keycloak_credentials_password_hashing_validations_total Password validations
+# TYPE keycloak_credentials_password_hashing_validations_total counter
+keycloak_credentials_password_hashing_validations_total{algorithm="argon2",hashing_strength="Argon2id-1.3[m=7168,t=5,p=1]",outcome="valid",realm="realm-0",} 39949.0
+----
 
 == Next steps
 
