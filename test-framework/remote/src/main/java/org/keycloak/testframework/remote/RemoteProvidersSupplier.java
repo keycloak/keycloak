@@ -43,6 +43,6 @@ public class RemoteProvidersSupplier implements Supplier<RemoteProviders, Inject
 
     @Override
     public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
-        return serverConfig.dependency("org.keycloak.test", "keycloak-test-framework-remote-providers");
+        return serverConfig.dependency("org.keycloak.testframework", "keycloak-test-framework-remote-providers");
     }
 }
