@@ -31,12 +31,13 @@ public interface OrganizationModel {
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String ALIAS = "alias";
 
-    enum IdentityProviderRedirectMode {
-        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
+    enum IdentityProviderMode {
+        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches"),
+        SHOW_ONLY_FOR_MEMBERS("kc.org.broker.mode.show-only-for-members");
 
         private final String key;
 
-        IdentityProviderRedirectMode(String key) {
+        IdentityProviderMode(String key) {
             this.key = key;
         }
 

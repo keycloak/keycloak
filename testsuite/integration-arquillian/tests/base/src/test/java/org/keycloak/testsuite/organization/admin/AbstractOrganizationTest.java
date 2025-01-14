@@ -35,7 +35,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
+import org.keycloak.models.OrganizationModel.IdentityProviderMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -142,7 +142,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         }
         // set the idp domain to the first domain used to create the org.
         broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-        broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        broker.getConfig().put(IdentityProviderMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
@@ -178,10 +178,14 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected MemberRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
+        return addMember(organization, email, email, firstName, lastName);
+    }
+
+    protected MemberRepresentation addMember(OrganizationResource organization, String username, String email, String firstName, String lastName) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
-        expected.setUsername(expected.getEmail());
+        expected.setUsername(username);
         expected.setEnabled(true);
         expected.setFirstName(firstName);
         expected.setLastName(lastName);

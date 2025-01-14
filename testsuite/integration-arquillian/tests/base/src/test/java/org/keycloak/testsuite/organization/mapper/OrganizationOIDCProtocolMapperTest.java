@@ -160,6 +160,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     @Test
     public void testOrganizationScopeMapsSpecificOrganization() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
+        IdentityProviderRepresentation orgABroker = testRealm().organizations().get(orgA.getId()).identityProviders().getIdentityProviders().get(0);
+        orgABroker.getConfig().put(OrganizationModel.IdentityProviderMode.SHOW_ONLY_FOR_MEMBERS.getKey(), Boolean.TRUE.toString());
+        testRealm().identityProviders().get(orgABroker.getAlias()).update(orgABroker);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();

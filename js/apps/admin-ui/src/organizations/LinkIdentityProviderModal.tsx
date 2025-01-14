@@ -152,6 +152,14 @@ export const LinkIdentityProviderModal = ({
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
+              "config.kc.org.broker.mode.show-only-for-members",
+            )}
+            label={t("showOnlyForMembers")}
+            labelIcon={t("showOnlyForMembersHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
               "config.kc.org.broker.redirect.mode.email-matches",
             )}
             label={t("redirectWhenEmailMatches")}

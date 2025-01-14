@@ -20,6 +20,7 @@ package org.keycloak.organization.forms.login.freemarker.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
@@ -75,8 +76,22 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
-        return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
-                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+        Stream<IdentityProviderModel> IDPStream = session.identityProviders().getForLogin(ALL, null)
+                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias()));// re-check isEnabled as idp might have been wrapped.
+
+        // if the organization was resolved, go through available IDPs and check that the IDP is linked to the resolved organization if SHOW_ONLY_FOR_MEMBERS is set
+        if (organization != null) {
+            IDPStream = IDPStream.filter(idp -> {
+                if (!OrganizationModel.IdentityProviderMode.SHOW_ONLY_FOR_MEMBERS.isSet(idp)) {
+                    return true;
+                }
+                else {
+                    return idp.getOrganizationId() != null && idp.getOrganizationId().equals(organization.getId());
+                }
+            });
+        }
+
+        return IDPStream
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }

@@ -42,6 +42,9 @@ The domain from the organization that you want to link with the identity provide
 Hide on login page::
 If this identity provider should be hidden in login pages when the user is authenticating in the scope of the organization.
 
+Show only for organization members::
+If this identity provider should be visible only for the organization members.
+
 Redirect when email domain matches::
 If members should be automatically redirected to the identity provider when their email domain matches the domain set to the identity provider.
 
@@ -50,7 +53,7 @@ Once linked to an organization, the identity provider can be managed just like a
 
 == Editing a linked identity provider
 
-You can edit any of the organization-related settings of a linked identity provider at any time. 
+You can edit any of the organization-related settings of a linked identity provider at any time.
 
 .Procedure
 

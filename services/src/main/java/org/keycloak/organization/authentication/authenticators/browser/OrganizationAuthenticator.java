@@ -46,7 +46,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
+import org.keycloak.models.OrganizationModel.IdentityProviderMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -245,7 +245,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         List<IdentityProviderModel> brokers = organization.getIdentityProviders().toList();
 
         for (IdentityProviderModel broker : brokers) {
-            if (IdentityProviderRedirectMode.EMAIL_MATCH.isSet(broker)) {
+            if (IdentityProviderMode.EMAIL_MATCH.isSet(broker)) {
                 String idpDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
 
                 if (domain.equals(idpDomain)) {
