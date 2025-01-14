@@ -24,18 +24,20 @@ import org.keycloak.exportimport.ImportProviderFactory;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.OverridableProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_STRATEGY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SingleFileImportProviderFactory implements ImportProviderFactory {
+public class SingleFileImportProviderFactory implements ImportProviderFactory, OverridableProviderFactory<ImportProvider> {
 
     public static final String PROVIDER_ID = SingleFileExportProviderFactory.PROVIDER_ID;
 
@@ -47,13 +49,18 @@ public class SingleFileImportProviderFactory implements ImportProviderFactory {
     private Config.Scope config;
 
     @Override
-    public ImportProvider create(KeycloakSession session) {
+    public ImportProvider create(KeycloakSession session, Map<String, String> overrides) {
         Strategy strategy = Enum.valueOf(Strategy.class, System.getProperty(ExportImportConfig.STRATEGY, config.get(STRATEGY, DEFAULT_STRATEGY.toString())));
-        String fileName = System.getProperty(ExportImportConfig.FILE, config.get(FILE));
+        String fileName = overrides.getOrDefault(ExportImportConfig.FILE, System.getProperty(ExportImportConfig.FILE, config.get(FILE)));
         if (fileName == null) {
             throw new IllegalArgumentException("Property " + FILE + " needs to be provided!");
         }
         return new SingleFileImportProvider(session.getKeycloakSessionFactory(), new File(fileName), strategy);
+    }
+
+    @Override
+    public ImportProvider create(KeycloakSession session) {
+        return create(session, Map.of());
     }
 
     @Override
@@ -75,6 +82,7 @@ public class SingleFileImportProviderFactory implements ImportProviderFactory {
         return PROVIDER_ID;
     }
 
+    @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()
