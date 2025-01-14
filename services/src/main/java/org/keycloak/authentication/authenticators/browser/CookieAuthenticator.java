@@ -26,7 +26,10 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -83,7 +86,13 @@ public class CookieAuthenticator implements Authenticator {
                     acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
                     authSession.setAuthNote(AuthenticationManager.SSO_AUTH, "true");
                     context.attachUserSession(authResult.getSession());
-                    context.success();
+
+                    if (isOrganizationContext(context)) {
+                        // if re-authenticating in the scope of an organization, an organization must be resolved prior to authenticating the user
+                        context.attempted();
+                    } else {
+                        context.success();
+                    }
                 }
             }
         }
@@ -107,5 +116,17 @@ public class CookieAuthenticator implements Authenticator {
     @Override
     public void close() {
 
+    }
+
+    private boolean isOrganizationContext(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+
+        if (Organizations.isEnabledAndOrganizationsPresent(session)) {
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            String requestedScopes = authSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+            return OrganizationScope.valueOfScope(requestedScopes) != null;
+        }
+
+        return false;
     }
 }

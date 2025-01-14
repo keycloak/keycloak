@@ -110,18 +110,11 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        String rawScopes = clientSessionCtx.getScopeString();
-        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
-
-        if (scope == null) {
-            return;
-        }
-
         String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         Stream<OrganizationModel> organizations;
 
         if (orgId == null) {
-            organizations = scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
+            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx);
         } else {
             organizations = Stream.of(session.getProvider(OrganizationProvider.class).getById(orgId));
         }
@@ -137,6 +130,18 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         OIDCAttributeMapperHelper.mapClaim(token, effectiveModel, claim);
+    }
+
+    private Stream<OrganizationModel> resolveFromRequestedScopes(KeycloakSession session, UserSessionModel userSession, ClientSessionContext context) {
+        String rawScopes = context.getScopeString();
+        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+
+        if (scope == null) {
+            return Stream.empty();
+        }
+
+        return scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
+
     }
 
     private Object resolveValue(ProtocolMapperModel model, List<OrganizationModel> organizations) {
