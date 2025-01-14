@@ -34,7 +34,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.keycloak.test</groupId>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-bom</artifactId>
                 <version>${project.version}</version>
                 <scope>import</scope>

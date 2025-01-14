@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-test-framework-examples</artifactId>
-        <groupId>org.keycloak.test</groupId>
+        <groupId>org.keycloak.testframework</groupId>
         <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -34,7 +34,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.keycloak.test</groupId>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-bom</artifactId>
                 <version>${project.version}</version>
                 <scope>import</scope>
@@ -45,47 +45,47 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mariadb</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mssql</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mysql</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-oracle</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-postgres</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-email-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-remote</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-example-providers</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

@@ -66,7 +66,7 @@ kc.test.log.level=WARN
 kc.test.log.filter=true
 
 kc.test.log.category."testinfo".level=INFO
-kc.test.log.category."org.keycloak.test".level=INFO
+kc.test.log.category."org.keycloak.testframework".level=INFO
 kc.test.log.category."org.keycloak".level=WARN
 kc.test.log.category."managed.keycloak".level=WARN
 kc.test.log.category."managed.db".level=WARN
