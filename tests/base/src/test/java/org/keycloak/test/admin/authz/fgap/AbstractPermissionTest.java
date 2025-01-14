@@ -27,10 +27,10 @@ import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.test.framework.annotations.InjectClient;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.realm.ManagedClient;
-import org.keycloak.test.framework.realm.ManagedRealm;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 public abstract class AbstractPermissionTest {
 

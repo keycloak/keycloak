@@ -39,8 +39,8 @@ KC_TEST_LOG_CATEGORY__ORG_KEYCLOAK__LEVEL=INFO
 Some useful categories include:
 
 * `testinfo` - Test lifecycle information. This serves two purposes, firstly it tells you when a test class and test method starts, and if the test succeeded or not. Secondly, it breaks up the log output so you can see exactly what is causing logs for instance from the Keycloak server.
-* `org.keycloak.test.framework` - Logging from the test framework itself. Setting this to `DEBUG` can be helpful to debug any issues with the test framework itself, or custom suppliers.
-* `org.keycloak` - Logging from the Keycloak server. If you set this to `DEBUG` for example, but don't want debug from the test framework, also explicitly set `org.keycloak.test.framework` to for example `INFO`
+* `org.keycloak.testframework` - Logging from the test framework itself. Setting this to `DEBUG` can be helpful to debug any issues with the test framework itself, or custom suppliers.
+* `org.keycloak` - Logging from the Keycloak server. If you set this to `DEBUG` for example, but don't want debug from the test framework, also explicitly set `org.keycloak.testframework` to for example `INFO`
 * `managed.keycloak` - Log output from the managed Keycloak server if you are running the server in `distribution` mode (which is the default)
 * `managed.db` - Output from database containers are included in this category. Standard out is logged with `DEBUG` level, while standard error is logged with `WARN` level  
 

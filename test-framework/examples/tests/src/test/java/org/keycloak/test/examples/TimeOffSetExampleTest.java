@@ -2,9 +2,9 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.remote.timeoffset.InjectTimeOffSet;
-import org.keycloak.test.framework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
 @KeycloakIntegrationTest
 public class TimeOffSetExampleTest {

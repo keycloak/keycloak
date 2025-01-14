@@ -37,7 +37,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
 public class PermissionClientTest extends AbstractPermissionTest {

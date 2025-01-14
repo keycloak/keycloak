@@ -21,9 +21,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import org.junit.jupiter.api.Test;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.test.framework.annotations.InjectClient;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.realm.ManagedClient;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
 
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsV1ServerConfig.class)
 public class FeatureV1EnabledTest {
