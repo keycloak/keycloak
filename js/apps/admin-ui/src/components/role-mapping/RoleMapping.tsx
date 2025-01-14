@@ -143,14 +143,6 @@ export const RoleMapping = ({
       )
       .flat();
 
-    const test = [
-      ...mapRoles(
-        [...clientMapping, ...realmRolesMapping],
-        [...effectiveClientRoles, ...effectiveRoles],
-        hide,
-      ),
-    ];
-    console.log(test);
     return [
       ...mapRoles(
         [...clientMapping, ...realmRolesMapping],
