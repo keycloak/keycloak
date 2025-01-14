@@ -19,9 +19,11 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
+        <!-- Only necessary for proper Maven build order - if explicitly added, deployment JARs will not be part of /lib/deployment folder -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server-deployment</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
