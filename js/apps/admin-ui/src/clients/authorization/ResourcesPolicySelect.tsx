@@ -254,7 +254,11 @@ export const ResourcesPolicySelect = ({
               field.onChange([]);
               setSearch("");
             }}
-            selections={field.value}
+            selections={
+              variant === SelectVariant.typeaheadMulti
+                ? field.value
+                : items.find((i) => i.id === field.value?.[0])?.name
+            }
             onSelect={(selectedValue) => {
               const option = selectedValue.toString();
               if (variant === SelectVariant.typeaheadMulti) {
