@@ -39,3 +39,7 @@ https://stackapps.com/apps/oauth/register
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
+# To be removed once KC 26.1 has been released
+https://www.keycloak.org/server/logging#_configuring_levels_as_individual_options
+https://www.keycloak.org/observability/*
+https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing#_measuring_the_activity_of_a_running_keycloak_instance

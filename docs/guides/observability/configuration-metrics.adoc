@@ -53,32 +53,8 @@ system_load_average_1m 4.005859375
 ...
 ----
 
-== Available Metrics
+== Next steps
 
-The table below summarizes the available metrics groups:
-
-[%autowidth]
-|===
-|Metric | Description
-
-|System
-|A set of system-level metrics related to CPU and memory usage.
-
-|JVM
-|A set of metrics from the Java Virtual Machine (JVM) related to GC, and heap.
-
-|Database
-|A set of metrics from the database connection pool, if using a database.
-
-|HTTP
-|A set of global and individual metrics from the HTTP endpoints
-
-|Cache
-|A set of metrics from Infinispan caches. See <@links.server id="caching"/> for more details.
-
-|Keycloak
-|A set of metrics from Keycloak events. See <@links.observability id="event-metrics"/> for more details.
-
-|===
+Read the {sections} <@links.observability id="keycloak-service-level-indicators"/> and <@links.observability id="metrics-for-troubleshooting"/> to see how to use the metrics.
 
 </@tmpl.guide>
