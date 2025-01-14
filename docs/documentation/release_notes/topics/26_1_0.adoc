@@ -53,13 +53,13 @@ This feature benefits from much polishing of the existing configuration and maki
 
 You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
 
-Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
 https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/Captain-P-Goldfish[Pascal Knüppel],
 https://github.com/thomasdarimont[Thomas Darimont], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/tnorimat[Takashi Norimatsu].
 
 = Minimum ACR Value for the client
 
-The option `Minimum ACR value` is added as a configuration option on the realm OIDC clients. This addition is an enhancement related to step-up authentication, which makes it possible
+The option *Minimum ACR value* is added as a configuration option on the realm OIDC clients. This addition is an enhancement related to step-up authentication, which makes it possible
 to enforce minimum ACR level when logging in to the particular client.
 
 Many thanks to https://github.com/sonOfRa[Simon Levermann] for the contribution.
@@ -67,14 +67,14 @@ Many thanks to https://github.com/sonOfRa[Simon Levermann] for the contribution.
 = Support for prompt=create
 
 Support now exists for the https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating user registration standard], which allows OIDC clients to initiate the login request with
-the parameter `prompt=create` to notify {project_name} that a new user should be registered rather than the existing authenticated user. Initiating user registration was already supported in {project_name} with the use of dedicated endpoint `/realms/<realm>/protocol/openid-connect/registrations`,
-however this endpoint is now deprecated in favor of the standard way as it was proprietary solution specific to {project_name}.
+the parameter `prompt=create` to notify {project_name} that a new user should be registered rather than an existing user authenticated. Initiating user registration was already supported in {project_name} with the use of dedicated endpoint `/realms/<realm>/protocol/openid-connect/registrations`.
+However, this endpoint is now deprecated in favor of the standard way as it was a proprietary solution specific to {project_name}.
 
 Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
 
 = Option to create certificates for generated EC keys
 
-A new option, `Generate certificate`, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a
+A new option, *Generate certificate*, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a
 certificate might be generated for this key. The certificate information is available in the Admin Console and in the JWK representation of this key, which is available
 from JWKS endpoint with the realm keys.
 
@@ -88,10 +88,10 @@ Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contributi
 
 = Maximum count and length for additional parameters sent to OIDC authentication request
 
-The OIDC authentication request supports a limited amount of additional custom parameters of maximum length. The additional parameters can be
-used for the custom purposes (for example, adding the claims into the token with the use of the protocol mappers). In the previous versions, the maximum count of
+The OIDC authentication request supports a limited number of additional custom parameters of maximum length. The additional parameters can be
+used for custom purposes (for example, adding the claims into the token with the use of the protocol mappers). In the previous versions, the maximum count of
 the parameters was hardcoded to 5 and the maximum length of the parameters was hardcoded to 2000. Now both values are configurable. Additionally it can be possible to configure
-if additional parameters will cause a request to fail or if parameters will be ignored.
+if additional parameters cause a request to fail or if parameters are ignored.
 
 Many thanks to https://github.com/mschallar[Manuel Schallar] and https://github.com/patrick-primesign[Patrick Weiner] for the contribution.
 
@@ -104,16 +104,16 @@ The {project_name} Operator accepts the ingress rules, which define from where t
 
 = LDAP users are created as enabled by default when using Microsoft Active Directory
 
-If you are using Microsoft AD and creating users through the administrative interfaces, the user will created as enabled by default.
+If you are using Microsoft AD and creating users through the administrative interfaces, the user will be created as enabled by default.
 
 In previous versions, it was only possible to update the user status after setting a (non-temporary) password to the user.
-This behavior was not consistent with other built-in user storages as well as not consistent with others LDAP vendors supported
+This behavior was not consistent with other built-in user storages as well as not consistent with other LDAP vendors supported
 by the LDAP provider.
 
 = New conditional authenticators `Condition - sub-flow executed` and `Condition - client scope`
 
-The `Condition - sub-flow executed` and `Condition - client scope` are new conditional authenticators in {project_name}. The condition `Condition - sub-flow executed` checks if a previous sub-flow was
-executed (or not executed) successfully during the authentication flow execution. The condition `Condition - client scope` checks if a configured client scope is present as a client scope of the
+The *Condition - sub-flow executed* and *Condition - client scope* are new conditional authenticators in {project_name}. The condition *Condition - sub-flow executed* checks if a previous sub-flow was
+executed (or not executed) successfully during the authentication flow execution. The condition *Condition - client scope* checks if a configured client scope is present as a client scope of the
 client requesting authentication. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 
 = Defining dependencies between provider factories
@@ -123,7 +123,7 @@ See the Javadoc for a detailed description.
 
 = Dark mode enabled for the welcome theme
 
-We've now enabled dark mode support for all the `keycloak` themes. This feature was previously present in the admin console, account console and login, and is now also available in the welcome page. If a user indicates their preference through an operating system setting (e.g. light or dark mode) or a user agent setting, the theme will automatically follow these preferences.
+We've now enabled dark mode support for all the `keycloak` themes. This feature was previously present in the admin console, account console and login, and is now also available on the welcome page. If a user indicates their preference through an operating system setting (e.g. light or dark mode) or a user agent setting, the theme will automatically follow these preferences.
 
 If you are using a custom theme that extends any of the `keycloak` themes and are not yet ready to support dark mode, or have styling conflicts that prevent you from implementing dark mode, you can disable support by adding the following property to your theme:
 
@@ -132,7 +132,7 @@ If you are using a custom theme that extends any of the `keycloak` themes and ar
 darkMode=false
 ----
 
-Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the "Dark mode" setting under the "Theme" tab in the realm settings.
+Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the *Dark mode* setting under the *Theme* tab in the realm settings.
 
 = Password validations counter metric
 
@@ -148,7 +148,7 @@ Available tags are:
 ** `error` - error when creating hash of the password
 
 To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential-keycloak-password-validations-counter-tags`.
-By default all tags are enabled.
+By default, all tags are enabled.
 
 Example of the metric:
 ----
