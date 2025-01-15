@@ -112,3 +112,10 @@ export async function clickSelectRow(
   }
   await page.getByLabel(tableName).getByLabel(`Select row ${row}`).click();
 }
+
+export async function expandRow(page: Page, tableName: string, row: number) {
+  await page
+    .getByLabel(tableName)
+    .locator(`button[id="expandable-row-${row}"]`)
+    .click();
+}
