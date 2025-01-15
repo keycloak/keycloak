@@ -75,6 +75,8 @@ import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.co
 
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
+    public static final String POD_IP = "POD_IP";
+
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
     private static final String ZONE_KEY = "topology.kubernetes.io/zone";
@@ -296,6 +298,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
+        containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
         containerBuilder.addToArgs(0, getJGroupsParameter(keycloakCR));
 
         // probes
@@ -499,6 +502,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 envVars.add(new EnvVarBuilder().withName(env).withValue(value).build());
             }
         }
+
+        envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
+                .withFieldPath("status.podIP").endFieldRef().endValueFrom().build());
 
         return envVars;
     }
