@@ -373,7 +373,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 String driver = config.get("driver");
                 url = augmentJdbcUrl(driver, url);
                 Class.forName(driver);
-                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()), config.get("user"), config.get("password"));
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()::getProperty), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);

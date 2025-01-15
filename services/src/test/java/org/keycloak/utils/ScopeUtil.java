@@ -18,15 +18,13 @@
 package org.keycloak.utils;
 
 import org.junit.Assert;
-import org.keycloak.services.util.JsonConfigProvider;
-import org.keycloak.services.util.JsonConfigProvider.JsonScope;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.utils.JsonConfigProvider.JsonScope;
 
 public class ScopeUtil {
 
@@ -34,7 +32,7 @@ public class ScopeUtil {
         ObjectMapper mapper = new ObjectMapper();
         try {
             JsonNode config = mapper.readTree(json(properties));
-            return new JsonConfigProvider(config, new Properties()).new JsonScope(config);
+            return new JsonConfigProvider(config).new JsonScope(config);
         } catch (IOException e) {
             Assert.fail("Could not parse json");
         }
