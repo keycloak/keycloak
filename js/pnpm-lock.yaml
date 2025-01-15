@@ -87,8 +87,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-table':
-        specifier: ^5.4.13
-        version: 5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.14
+        version: 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.2.1
         version: 24.2.1(typescript@5.7.2)
@@ -169,8 +169,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.13
-        version: 5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.14
+        version: 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-textarea-code-editor':
         specifier: ^3.1.0
         version: 3.1.0(@babel/runtime@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -386,8 +386,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
       '@patternfly/react-table':
-        specifier: ^5.4.13
-        version: 5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.14
+        version: 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.2.1
         version: 24.2.1(typescript@5.7.2)
@@ -1378,8 +1378,8 @@ packages:
   '@patternfly/react-styles@5.4.1':
     resolution: {integrity: sha512-XA8PXksD8uiA3RTwxdUwJXOCf+V6sVd+2HKapWAdRLvtSV+Sdk7NgCvalb4IAQncsddLopjPQD8gAHA298+N8w==}
 
-  '@patternfly/react-table@5.4.13':
-    resolution: {integrity: sha512-cYw+pgpZXKGg3dZxudteUURqmj5O0ec7aNE80NLqFTcnI0MAOnfrFzCNApXJErn+MjD0VolMcC+H48eaRkT8TA==}
+  '@patternfly/react-table@5.4.14':
+    resolution: {integrity: sha512-F2EXhn3wURDFs5mOQQtYSQ1ltvPwN1n/5Iv2WgSehCkw9GzpcJlT7h8t+rnf59ZiWsRjhCFqUOU9l8APnM2+rA==}
     peerDependencies:
       react: ^17 || ^18
       react-dom: ^17 || ^18
@@ -6210,7 +6210,7 @@ snapshots:
       '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-table': 5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-table': 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-textarea-code-editor': 3.1.0(@babel/runtime@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dagre: 0.8.5
       file-saver: 2.0.5
@@ -6388,7 +6388,7 @@ snapshots:
 
   '@patternfly/react-styles@5.4.1': {}
 
-  '@patternfly/react-table@5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-table@5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@patternfly/react-core': 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
