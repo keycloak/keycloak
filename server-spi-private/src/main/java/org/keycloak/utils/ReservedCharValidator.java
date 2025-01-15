@@ -19,6 +19,7 @@ package org.keycloak.utils;
 import jakarta.ws.rs.BadRequestException;
 import org.jboss.logging.Logger;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
  */
 public class ReservedCharValidator {
     protected static final Logger logger = Logger.getLogger(ReservedCharValidator.class);
-    
+
     // https://tools.ietf.org/html/rfc3986#section-2.2
     private static final Pattern RESERVED_CHARS_PATTERN = Pattern.compile("[:/?#@!$&()*+,;=\\[\\]\\\\]");
 
@@ -38,32 +39,28 @@ public class ReservedCharValidator {
 
     private ReservedCharValidator() {}
 
-    public static void validate(String str, Pattern pattern) throws ReservedCharException {
+    public static void validate(String str, Pattern pattern) {
+        validate(str, pattern, null);
+    }
+
+    public static void validate(String str, Pattern pattern, String message) throws ReservedCharException {
         if (str == null) return;
 
         Matcher matcher = pattern.matcher(str);
         if (matcher.find()) {
-            String message = "Character '" + matcher.group() + "' not allowed.";
+            if(message == null) {
+                message = "Character '" + matcher.group() + "' not allowed.";
+            }
             logger.warn(message);
             throw new ReservedCharException(message);
         }
     }
-    
+
     public static void validateNoSpace(String str) {
-        if (str == null) return;
-        
-        Pattern pattern = Pattern.compile("\\s");
-        Matcher matcher = pattern.matcher(str);
-        
-        if (matcher.find()) {
-            String message = "Empty Space not allowed.";
-            logger.warn(message);
-            throw new ReservedCharException(message);
-        }
-        
+        validate(str, Pattern.compile("\\s"), "Empty Space not allowed.");
         validate(str, RESERVED_CHARS_PATTERN);
     }
-    
+
     public static void validate(String str) {
         validate(str, RESERVED_CHARS_PATTERN);
     }
@@ -75,7 +72,16 @@ public class ReservedCharValidator {
             validate(str, RESERVED_CHARS_LOCALES_PATTERN);
         }
     }
-    
+
+    public static void validateSecurityHeaders(Map<String, String> headers) {
+        if (headers == null) return;
+
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            validate(entry.getKey(), Pattern.compile("\\n"), "Newline not allowed.");
+            validate(entry.getValue(), Pattern.compile("\\n"), "Newline not allowed.");
+        }
+    }
+
     public static class ReservedCharException extends BadRequestException {
         ReservedCharException(String msg) {
             super(msg);
