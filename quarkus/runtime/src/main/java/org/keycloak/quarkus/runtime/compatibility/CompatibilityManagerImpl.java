@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,20 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.Version;
 
+/**
+ * The default implementation of {@link CompatibilityManager}.
+ * <p>
+ * This implementation uses equality by default. If the metadata represented by {@link ServerInfo} is different, the
+ * configuration is not backwards compatible. It supports installing customer {@link CompatibilityComparator} for
+ * different metadata entries.
+ */
 public class CompatibilityManagerImpl implements CompatibilityManager {
 
     public static final int EPOCH = 0;
 
     private final Map<String, CompatibilityComparator> versionComparators = new HashMap<>();
+    public static final String KEYCLOAK_VERSION_KEY = "keycloak";
+    public static final String INFINISPAN_VERSION_KEY = "infinispan";
 
     @Override
     public ServerInfo current() {
@@ -47,8 +56,8 @@ public class CompatibilityManagerImpl implements CompatibilityManager {
     }
 
     private static void addVersions(ServerInfo info) {
-        info.addVersion("keycloak", Version.VERSION);
-        info.addVersion("infinispan", org.infinispan.commons.util.Version.getVersion());
+        info.addVersion(KEYCLOAK_VERSION_KEY, Version.VERSION);
+        info.addVersion(INFINISPAN_VERSION_KEY, org.infinispan.commons.util.Version.getVersion());
     }
 
     @Override

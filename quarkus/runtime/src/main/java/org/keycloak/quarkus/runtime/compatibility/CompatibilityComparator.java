@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,25 @@ package org.keycloak.quarkus.runtime.compatibility;
 
 import java.util.Objects;
 
+/**
+ * A comparator interface for configuration metadata entries.
+ * <p>
+ * An entry's old and new values are compatible if a Keycloak instance using the old value can make progress (and be
+ * correct) with a Keycloak instance using the new value.
+ */
 public interface CompatibilityComparator {
 
-    CompatibilityComparator EQUALS = (key, oldValue, newValue) -> Objects.equals(oldValue, newValue);
+    CompatibilityComparator EQUALS = (ignored, oldValue, newValue) -> Objects.equals(oldValue, newValue);
 
+    /**
+     * Checks if the metadata entry identified by the {@code key} parameter is compatible.
+     *
+     * @param key      The metadata entry key.
+     * @param oldValue The metadata entry's old value.
+     * @param newValue The metadata entry's new value.
+     * @return {@code true} if the {@code oldValue} is backwards compatible with the {@code newValue} and {@code false}
+     * otherwise.
+     */
     boolean isCompatible(String key, String oldValue, String newValue);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,12 +22,23 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * The required metadata to detect incompatibilities between different configurations.
+ */
 public class ServerInfo {
 
+    /**
+     * The epoch, zero by default. To be incremented when we need to force an incompatible result.
+     */
     @JsonProperty("epoch")
     private int epoch;
+
+    /**
+     * Keycloak and other relevant dependencies versions.
+     */
     @JsonProperty("versions")
     private Map<String, String> versions = new HashMap<>();
+
 
     public int getEpoch() {
         return epoch;

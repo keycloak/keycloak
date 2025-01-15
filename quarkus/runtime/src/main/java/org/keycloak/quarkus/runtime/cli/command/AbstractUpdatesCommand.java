@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,13 +45,13 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
                 .toList();
     }
 
-    static void validateOptionPresent(String value, String option) {
+    static void validateOptionIsPresent(String value, String option) {
         if (value == null || value.isBlank()) {
             throw new PropertyException("Missing required argument: " + option);
         }
     }
 
-    static void validateNotDirectory(File file, String option) {
+    static void validateFileIsNotDirectory(File file, String option) {
         if (file.isDirectory()) {
             throw new PropertyException("Incorrect argument %s. Path '%s' is not a valid file.".formatted(option, file.getAbsolutePath()));
         }

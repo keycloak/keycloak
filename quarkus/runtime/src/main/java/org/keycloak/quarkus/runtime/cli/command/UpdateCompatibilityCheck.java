@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,14 +28,17 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilityCheck.NAME,
-        description = "Does Stuff!")
+        description = "Checks if the metadata is compatible with the current configuration."
+
+)
 public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     public static final String NAME = "check";
     private static final String INPUT_OPTION_NAME = "--input";
 
 
-    @CommandLine.Option(names = {INPUT_OPTION_NAME}, paramLabel = "FILE", description = "Does stuff!")
+    @CommandLine.Option(names = {INPUT_OPTION_NAME}, paramLabel = "FILE",
+            description = "The file path to read the metadata.")
     String inputFile;
 
     @Override
@@ -54,12 +57,12 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     }
 
     private void validateInputFile() {
-        validateOptionPresent(inputFile, INPUT_OPTION_NAME);
+        validateOptionIsPresent(inputFile, INPUT_OPTION_NAME);
         var file = new File(inputFile);
         if (!file.exists()) {
             throw new PropertyException("Incorrect argument %s. Path '%s' not found".formatted(INPUT_OPTION_NAME, file.getAbsolutePath()));
         }
-        validateNotDirectory(file, INPUT_OPTION_NAME);
+        validateFileIsNotDirectory(file, INPUT_OPTION_NAME);
     }
 
     private ServerInfo readServerInfo() {

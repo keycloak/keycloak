@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,9 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import picocli.CommandLine;
 
-@CommandLine.Command(name = UpdateCompatibility.NAME,
-        description = "Does Stuff!",
+@CommandLine.Command(
+        name = UpdateCompatibility.NAME,
+        description = "[Preview] Tool for configuration compatibility.",
         subcommands = {
                 UpdateCompatibilityCheck.class,
                 UpdateCompatibilitySave.class

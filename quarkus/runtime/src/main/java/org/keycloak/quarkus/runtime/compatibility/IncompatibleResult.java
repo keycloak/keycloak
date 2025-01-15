@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,16 @@ package org.keycloak.quarkus.runtime.compatibility;
 
 import java.util.Optional;
 
+/**
+ * A generic {@link CompatibilityResult} implementation to signal an incompatible configuration.
+ * <p>
+ * It returns an error message logging the metadata entry that is no compatible and its values.
+ *
+ * @param type     The group where the metadata entry belongs (versions, cli options, features or other).
+ * @param key      The metadata entry's key.
+ * @param oldValue The metadata entry's old value.
+ * @param newValue The metadata entry's new value.
+ */
 public record IncompatibleResult(String type, String key, String oldValue, String newValue) implements CompatibilityResult {
     @Override
     public int exitCode() {

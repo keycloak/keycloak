@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +27,15 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilitySave.NAME,
-        description = "Does Stuff!")
+        description = "Stores the metadata necessary to determine if a configuration is compatible."
+)
 public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
 
     public static final String NAME = "save";
     private static final String OUTPUT_OPTION_NAME = "--output";
 
-    @CommandLine.Option(names = {OUTPUT_OPTION_NAME}, paramLabel = "FILE", description = "Does stuff!")
+    @CommandLine.Option(names = {OUTPUT_OPTION_NAME}, paramLabel = "FILE",
+            description = "The file path to store the metadata. It is stored in the JSON format.")
     String outputFile;
 
     @Override
@@ -50,12 +52,12 @@ public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
     }
 
     private void validateOutputFile() {
-        validateOptionPresent(outputFile, OUTPUT_OPTION_NAME);
+        validateOptionIsPresent(outputFile, OUTPUT_OPTION_NAME);
         var file = new File(outputFile);
         if (file.getParentFile() != null && !file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
             throw new PropertyException("Incorrect argument %s. Unable to create parent directory: %s".formatted(OUTPUT_OPTION_NAME, file.getParentFile().getAbsolutePath()));
         }
-        validateNotDirectory(file, OUTPUT_OPTION_NAME);
+        validateFileIsNotDirectory(file, OUTPUT_OPTION_NAME);
     }
 
     private void writeServerInfo(ServerInfo info) {

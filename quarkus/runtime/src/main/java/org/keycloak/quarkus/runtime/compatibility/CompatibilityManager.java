@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,34 @@
 
 package org.keycloak.quarkus.runtime.compatibility;
 
+/**
+ * This interface manages the metadata for backwards compatibility checks.
+ */
 public interface CompatibilityManager {
 
+    /**
+     * @return The current metadata.
+     */
     ServerInfo current();
 
+    /**
+     * Adds a custom {@link CompatibilityComparator} to the version identified by {@code versionKey}.
+     *
+     * @param versionKey The version identification.
+     * @param comparator The new {@link CompatibilityComparator}. If {@code null}, this method will do nothing.
+     * @return This instance.
+     */
     CompatibilityManager addVersionComparator(String versionKey, CompatibilityComparator comparator);
 
+    /**
+     * Checks if the metadata is backwards compatible with the current metadata.
+     * <p>
+     * If backwards compatible, it means Keycloak can have instance with the old and the current metadata running on the
+     * same cluster.
+     *
+     * @param other The other metadata.
+     * @return The {@link CompatibilityResult} with the result of comparing the current with the {@code other} metadata.
+     */
     CompatibilityResult isCompatible(ServerInfo other);
 
 }
