@@ -339,7 +339,7 @@ By default, it picks a site local (non-routable) IP address, for example, from t
 
 To override the address, set the `jgroups.bind.address` property.
 
-NOTE: Use `-Djgroups.bind.address=<IP or keyword>` to modify the bind address in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
+NOTE: Use `-Djgroups.bind.address=<IP>` to modify the bind address in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
 To set up for IPv6 only and have {project_name} pick the bind address automatically, use the following settings:
 
