@@ -106,7 +106,7 @@ export default function EditClientScope() {
     toClientScope({ realm, id, tab: "mappers" }),
   );
   const scopeTab = useRoutableTab(toClientScope({ realm, id, tab: "scope" }));
-  const eventsTab = useTab("events");
+  const eventsTab = useRoutableTab(toClientScope({ realm, id, tab: "events" }));
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
     const clientScope = convertFormValuesToObject({

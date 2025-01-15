@@ -21,3 +21,8 @@ export const login = async (
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign In" }).click();
 };
+
+export const logout = async (page: Page, username: string = "admin") => {
+  await page.getByRole("button", { name: username, exact: true }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+};
