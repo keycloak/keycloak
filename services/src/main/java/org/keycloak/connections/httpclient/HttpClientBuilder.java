@@ -274,10 +274,6 @@ public class HttpClientBuilder {
 
             if (disableCookies) builder.disableCookieManagement();
 
-            if (!reuseConnections) {
-                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
-            }
-
             return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);
