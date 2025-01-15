@@ -32,9 +32,7 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         String errorMessage = ex.getMessage();
         String additionalSuggestion = null;
 
-        if (ex instanceof UnmatchedArgumentException) {
-            UnmatchedArgumentException uae = (UnmatchedArgumentException) ex;
-
+        if (ex instanceof UnmatchedArgumentException uae) {
             String[] unmatched = getUnmatchedPartsByOptionSeparator(uae, "=");
 
             String cliKey = unmatched[0];
@@ -72,12 +70,10 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
                     }
                 }
             }
-        } else if (ex instanceof MissingParameterException) {
-            MissingParameterException mpe = (MissingParameterException)ex;
+        } else if (ex instanceof MissingParameterException mpe) {
             if (mpe.getMissing().size() == 1) {
                 ArgSpec spec = mpe.getMissing().get(0);
-                if (spec instanceof OptionSpec) {
-                    OptionSpec option = (OptionSpec)spec;
+                if (spec instanceof OptionSpec option) {
                     errorMessage = getExpectedMessage(option);
                 }
             }
@@ -126,8 +122,11 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
     }
 
     public static String getExpectedValuesMessage(Iterable<String> specCandidates, boolean caseInsensitive) {
-        return specCandidates.iterator().hasNext() ? String.format(" Expected values are%s: %s",
-                caseInsensitive ? " (case insensitive)" : "", String.join(", ", specCandidates)) : "";
+        if (specCandidates == null || !specCandidates.iterator().hasNext()) {
+            return "";
+        }
+        return String.format(" Expected values are%s: %s", caseInsensitive ? " (case insensitive)" : "",
+                String.join(", ", specCandidates));
     }
 
 }
