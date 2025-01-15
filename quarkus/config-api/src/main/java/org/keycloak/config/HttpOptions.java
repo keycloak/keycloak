@@ -79,6 +79,11 @@ public class HttpOptions {
             .description("The file path to a private key in PEM format.")
             .build();
 
+    public static final Option<List<String>> HTTP_CORS_HEADERS = OptionBuilder.listOptionBuilder("http-cors-headers", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The comma-separated list of custom HTTP headers that should be allowed in cross-origin (CORS) requests.")
+            .build();
+
     public static final Option<File> HTTPS_KEY_STORE_FILE = new OptionBuilder<>("https-key-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The key store which holds the certificate information instead of specifying separate files.")

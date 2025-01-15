@@ -133,6 +133,10 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_METRICS_SLOS)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
                         .paramLabel("list of buckets")
+                        .build(),
+                fromOption(HttpOptions.HTTP_CORS_HEADERS)
+                        .to("kc.spi-cors-default-headers")
+                        .paramLabel("headers")
                         .build()
         };
     }
