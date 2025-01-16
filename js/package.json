@@ -29,7 +29,7 @@
     "eslint-plugin-lodash": "^8.0.0",
     "eslint-plugin-mocha": "^10.5.0",
     "eslint-plugin-playwright": "^2.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-prettier": "^5.2.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-compiler": "19.0.0-beta-55955c9-20241229",
     "eslint-plugin-react-hooks": "^5.0.0",
