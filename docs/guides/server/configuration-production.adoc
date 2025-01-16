@@ -72,4 +72,11 @@ For example, to change the IP stack preference to IPv4, set an environment varia
 export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=true"
 ----
 
+To set up the server for IPv6 only, set an environment variable as follows for the distributed caches to form a cluster:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
 </@tmpl.guide>
