@@ -1,9 +1,15 @@
 ## Building from source
 
-Ensure you have JDK 21 (or newer) and Git installed
+Ensure you have **JDK 17** or **JDK 21** and Git installed
 
     java -version
     git --version
+
+Newer versions of the JDK are not supported. If you have multiple JDK versions
+installed, you can specify which one to use during the build by setting the `JAVA_HOME`
+environment variable (this should be the directory containing `/bin/` or `/jre/`).
+
+    JAVA_HOME=/path/to/jdk-21/ ./mvnw clean install
 
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
