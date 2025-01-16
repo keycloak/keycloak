@@ -1058,6 +1058,8 @@ function Keycloak (config) {
 
         if (kc.responseMode === 'query' && queryIndex !== -1) {
             newUrl = url.substring(0, queryIndex);
+			fragmentIndex = url.substring(queryIndex).indexOf('#');
+
             parsed = parseCallbackParams(url.substring(queryIndex + 1, fragmentIndex !== -1 ? fragmentIndex : url.length), supportedParams);
             if (parsed.paramsString !== '') {
                 newUrl += '?' + parsed.paramsString;
