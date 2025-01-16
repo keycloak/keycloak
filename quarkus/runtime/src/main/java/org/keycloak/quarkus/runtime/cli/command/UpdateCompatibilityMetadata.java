@@ -20,19 +20,20 @@ package org.keycloak.quarkus.runtime.cli.command;
 import java.io.File;
 import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = UpdateCompatibilitySave.NAME,
+        name = UpdateCompatibilityMetadata.NAME,
         description = "Stores the metadata necessary to determine if a configuration is compatible."
 )
-public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
+public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
 
-    public static final String NAME = "save";
-    private static final String OUTPUT_OPTION_NAME = "--output";
+    public static final String NAME = "metadata";
+    public static final String OUTPUT_OPTION_NAME = "--file";
 
     @CommandLine.Option(names = {OUTPUT_OPTION_NAME}, paramLabel = "FILE",
             description = "The file path to store the metadata. It is stored in the JSON format.")
@@ -42,8 +43,8 @@ public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
     public void run() {
         validateOutputFile();
         var info = compatibilityManager.current();
-        writeServerInfo(info);
-        writeComplete("written");
+        printToConsole(info);
+        writeToFile(info);
     }
 
     @Override
@@ -52,7 +53,9 @@ public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
     }
 
     private void validateOutputFile() {
-        validateOptionIsPresent(outputFile, OUTPUT_OPTION_NAME);
+        if (noOutputFileSet()) {
+            return;
+        }
         var file = new File(outputFile);
         if (file.getParentFile() != null && !file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
             throw new PropertyException("Incorrect argument %s. Unable to create parent directory: %s".formatted(OUTPUT_OPTION_NAME, file.getParentFile().getAbsolutePath()));
@@ -60,12 +63,28 @@ public class UpdateCompatibilitySave extends AbstractUpdatesCommand {
         validateFileIsNotDirectory(file, OUTPUT_OPTION_NAME);
     }
 
-    private void writeServerInfo(ServerInfo info) {
+    private void printToConsole(ServerInfo info) {
+        try {
+            var json = JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(info);
+            printOut("Metadata:%n%s".formatted(json));
+        } catch (JsonProcessingException e) {
+            throw new PropertyException("Unable to create JSON representation of the metadata", e);
+        }
+    }
+
+    private void writeToFile(ServerInfo info) {
+        if (noOutputFileSet()) {
+            return;
+        }
         var file = new File(outputFile);
         try {
             JsonSerialization.mapper.writeValue(file, info);
         } catch (IOException e) {
             throw new PropertyException("Unable to write file '%s'".formatted(file.getAbsolutePath()), e);
         }
+    }
+
+    private boolean noOutputFileSet() {
+        return outputFile == null || outputFile.isBlank();
     }
 }

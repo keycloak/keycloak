@@ -21,20 +21,19 @@ import java.io.File;
 import java.io.IOException;
 
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityResult;
 import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilityCheck.NAME,
-        description = "Checks if the metadata is compatible with the current configuration."
+        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling upgrade is possible between old and the current metadata"
 
 )
 public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     public static final String NAME = "check";
-    private static final String INPUT_OPTION_NAME = "--input";
+    public static final String INPUT_OPTION_NAME = "--file";
 
 
     @CommandLine.Option(names = {INPUT_OPTION_NAME}, paramLabel = "FILE",
@@ -46,8 +45,8 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
         validateInputFile();
         var info = readServerInfo();
         var result = compatibilityManager.isCompatible(info);
-        writeComplete("read");
-        writeErrorsIfPresent(result);
+        result.errorMessage().ifPresent(this::printError);
+        result.endMessage().ifPresent(this::printOut);
         picocli.exit(result.exitCode());
     }
 
@@ -71,17 +70,6 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
             return JsonSerialization.mapper.readValue(file, ServerInfo.class);
         } catch (IOException e) {
             throw new PropertyException("Unable to read file '%s'".formatted(file.getAbsolutePath()), e);
-        }
-    }
-
-    private void writeErrorsIfPresent(CompatibilityResult result) {
-        var cmd = getCommandLine();
-        if (cmd.isPresent()) {
-            var colorScheme = cmd.get().getColorScheme();
-            var writer = cmd.get().getErr();
-            result.errorMessage().map(colorScheme::errorText).ifPresent(writer::println);
-        } else {
-            result.errorMessage().ifPresent(System.err::println);
         }
     }
 }

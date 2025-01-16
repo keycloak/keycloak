@@ -57,12 +57,22 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         }
     }
 
-    void writeComplete(String action) {
+    void printOut(String message) {
         var cmd = getCommandLine();
         if (cmd.isPresent()) {
-            cmd.get().getOut().printf("Metadata successfully %s.%n", action);
+            cmd.get().getOut().println(message);
         } else {
-            System.out.printf("Metadata successfully %s.%n", action);
+            System.out.println(message);
+        }
+    }
+
+    void printError(String message) {
+        var cmd = getCommandLine();
+        if (cmd.isPresent()) {
+            var colorScheme = cmd.get().getColorScheme();
+            cmd.get().getErr().println(colorScheme.errorText(message));
+        } else {
+            System.err.println(message);
         }
     }
 

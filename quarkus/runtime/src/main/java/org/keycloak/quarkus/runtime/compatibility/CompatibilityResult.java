@@ -22,18 +22,28 @@ import java.util.Optional;
 /**
  * The result of {@link CompatibilityManager#isCompatible(ServerInfo)}.
  * <p>
- * It is composed by the exit code, to help building scripts around this tool and it makes easy to check the exit code
- * than parsing logs, and an optional error message.
+ * It is composed by the exit code (to help building scripts around this tool as is is easier than parsing logs), and an
+ * optional error message.
  */
 public interface CompatibilityResult {
 
-    int COMPATIBLE_EXIT_CODE = 0;
-    int INCOMPATIBLE_EXIT_CODE = 3;
+    int ROLLING_UPGRADE_EXIT_CODE = 0;
+    int RECREATE_UPGRADE_EXIT_CODE = 4;
 
     /**
      * The compatible {@link CompatibilityResult} implementation
      */
-    CompatibilityResult OK = () -> COMPATIBLE_EXIT_CODE;
+    CompatibilityResult OK = new CompatibilityResult() {
+        @Override
+        public int exitCode() {
+            return ROLLING_UPGRADE_EXIT_CODE;
+        }
+
+        @Override
+        public Optional<String> endMessage() {
+            return Optional.of("[OK] Rolling Upgrade is available.");
+        }
+    };
 
     /**
      * @return The exit code to use to signal the compatibility result.
@@ -44,6 +54,13 @@ public interface CompatibilityResult {
      * @return An optional error message explaining what caused the incompatibility.
      */
     default Optional<String> errorMessage() {
+        return Optional.empty();
+    }
+
+    /**
+     * @return An optional message after the check is finished.
+     */
+    default Optional<String> endMessage() {
         return Optional.empty();
     }
 

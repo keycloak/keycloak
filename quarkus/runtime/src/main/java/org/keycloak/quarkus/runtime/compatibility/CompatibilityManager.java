@@ -39,8 +39,8 @@ public interface CompatibilityManager {
     /**
      * Checks if the metadata is backwards compatible with the current metadata.
      * <p>
-     * If backwards compatible, it means Keycloak can have instance with the old and the current metadata running on the
-     * same cluster.
+     * If a server's metadata is backwards compatible, it means that Keycloak can have server instances associated with
+     * the old and current metadata running in the same cluster.
      *
      * @param other The other metadata.
      * @return The {@link CompatibilityResult} with the result of comparing the current with the {@code other} metadata.

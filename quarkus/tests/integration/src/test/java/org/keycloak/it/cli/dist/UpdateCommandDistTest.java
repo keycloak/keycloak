@@ -30,7 +30,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
-import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilitySave;
+import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 import org.keycloak.quarkus.runtime.compatibility.CompatibilityManagerImpl;
 import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
@@ -48,32 +48,32 @@ public class UpdateCommandDistTest {
     }
 
     @Test
-    @Launch({UpdateCompatibility.NAME, UpdateCompatibilitySave.NAME})
+    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME})
     public void testMissingOptionOnSave(CLIResult cliResult) {
-        cliResult.assertError("Missing required argument: --output");
+        cliResult.assertNoMessage("Missing required argument");
     }
 
     @Test
     @Launch({UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME})
     public void testMissingOptionOnCheck(CLIResult cliResult) {
-        cliResult.assertError("Missing required argument: --input");
+        cliResult.assertError("Missing required argument: " + UpdateCompatibilityCheck.INPUT_OPTION_NAME);
     }
 
     @Test
     public void testCompatible(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("compatible");
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilitySave.NAME, "--output", jsonFile.getAbsolutePath());
-        result.assertMessage("Metadata successfully written.");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertMessage("Metadata:");
         assertEquals(0, result.exitCode());
 
         var info = JsonSerialization.mapper.readValue(jsonFile, ServerInfo.class);
         assertEquals(CompatibilityManagerImpl.EPOCH, info.getEpoch());
-        assertEquals(Version.VERSION, info.getVersions().get("keycloak"));
-        assertEquals(org.infinispan.commons.util.Version.getVersion(), info.getVersions().get("infinispan"));
+        assertEquals(Version.VERSION, info.getVersions().get(CompatibilityManagerImpl.KEYCLOAK_VERSION_KEY));
+        assertEquals(org.infinispan.commons.util.Version.getVersion(), info.getVersions().get(CompatibilityManagerImpl.INFINISPAN_VERSION_KEY));
 
-        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--input", jsonFile.getAbsolutePath());
-        result.assertMessage("Metadata successfully read.");
-        result.assertNoError("incompatible");
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertMessage("[OK] Rolling Upgrade is available.");
+        result.assertNoError("Rolling Upgrade is not available.");
     }
 
     @Test
@@ -83,9 +83,8 @@ public class UpdateCommandDistTest {
         info.setEpoch(-1);
 
         JsonSerialization.mapper.writeValue(jsonFile, info);
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--input", jsonFile.getAbsolutePath());
-        result.assertMessage("Metadata successfully read.");
-        result.assertError("[Epoch] Epoch is incompatible: Old=-1, New=%s".formatted(CompatibilityManagerImpl.EPOCH));
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertError("[Epoch] Rolling Upgrade is not available. 'Epoch' is incompatible: Old=-1, New=%s".formatted(CompatibilityManagerImpl.EPOCH));
     }
 
     @Test
@@ -95,23 +94,21 @@ public class UpdateCommandDistTest {
         // incompatible keycloak version
         var info = new ServerInfo();
         info.setEpoch(CompatibilityManagerImpl.EPOCH);
-        info.setVersions(Map.of("keycloak", "0.0.0.Final",
-                "infinispan", org.infinispan.commons.util.Version.getVersion()));
+        info.setVersions(Map.of(CompatibilityManagerImpl.KEYCLOAK_VERSION_KEY, "0.0.0.Final",
+                CompatibilityManagerImpl.INFINISPAN_VERSION_KEY, org.infinispan.commons.util.Version.getVersion()));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--input", jsonFile.getAbsolutePath());
-        result.assertMessage("Metadata successfully read.");
-        result.assertError("[Versions] keycloak is incompatible: Old=0.0.0.Final, New=%s".formatted(Version.VERSION));
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertError("[Versions] Rolling Upgrade is not available. 'keycloak' is incompatible: Old=0.0.0.Final, New=%s".formatted(Version.VERSION));
 
         // incompatible infinispan version
         info.setVersions(Map.of(
-                "keycloak", Version.VERSION,
-                "infinispan", "0.0.0.Final"));
+                CompatibilityManagerImpl.KEYCLOAK_VERSION_KEY, Version.VERSION,
+                CompatibilityManagerImpl.INFINISPAN_VERSION_KEY, "0.0.0.Final"));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--input", jsonFile.getAbsolutePath());
-        result.assertMessage("Metadata successfully read.");
-        result.assertError("[Versions] infinispan is incompatible: Old=0.0.0.Final, New=%s".formatted(org.infinispan.commons.util.Version.getVersion()));
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertError("[Versions] Rolling Upgrade is not available. 'infinispan' is incompatible: Old=0.0.0.Final, New=%s".formatted(org.infinispan.commons.util.Version.getVersion()));
     }
 
     private static File createTempFile(String prefix) throws IOException {

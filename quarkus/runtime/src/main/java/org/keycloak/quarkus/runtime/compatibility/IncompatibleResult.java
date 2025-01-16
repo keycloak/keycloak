@@ -32,11 +32,11 @@ import java.util.Optional;
 public record IncompatibleResult(String type, String key, String oldValue, String newValue) implements CompatibilityResult {
     @Override
     public int exitCode() {
-        return CompatibilityResult.INCOMPATIBLE_EXIT_CODE;
+        return CompatibilityResult.RECREATE_UPGRADE_EXIT_CODE;
     }
 
     @Override
     public Optional<String> errorMessage() {
-        return Optional.of("[%s] %s is incompatible: Old=%s, New=%s".formatted(type, key, oldValue, newValue));
+        return Optional.of("[%s] Rolling Upgrade is not available. '%s' is incompatible: Old=%s, New=%s".formatted(type, key, oldValue, newValue));
     }
 }

@@ -24,7 +24,7 @@ import picocli.CommandLine;
         description = "[Preview] Tool for configuration compatibility.",
         subcommands = {
                 UpdateCompatibilityCheck.class,
-                UpdateCompatibilitySave.class
+                UpdateCompatibilityMetadata.class
         })
 public final class UpdateCompatibility {
 
