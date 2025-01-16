@@ -27,7 +27,7 @@ import { SubGroups } from "./groups/SubGroupsContext";
 import { AuthWall } from "./root/AuthWall";
 import { Banners } from "./Banners";
 
-const AppContexts = ({ children }: PropsWithChildren) => (
+export const AppContexts = ({ children }: PropsWithChildren) => (
   <ErrorBoundaryProvider>
     <ServerInfoProvider>
       <RealmContextProvider>
