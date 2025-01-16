@@ -69,6 +69,7 @@ public class SubjectImpersonationTokenExchangeProviderFactory implements TokenEx
 
     @Override
     public int order() {
+        // Bigger priority than other V2 providers. If parameter "requested_subject" present, we know that it must be subject-impersonation
         return 3;
     }
 }

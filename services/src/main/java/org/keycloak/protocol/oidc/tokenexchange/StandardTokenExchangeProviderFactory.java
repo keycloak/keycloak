@@ -63,4 +63,10 @@ public class StandardTokenExchangeProviderFactory implements TokenExchangeProvid
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2);
     }
+
+    @Override
+    public int order() {
+        // Smaller priority than other V2 providers (due other providers can be detected based on parameters), but bigger than V1, so it has preference if both V1 and V2 enabled
+        return 1;
+    }
 }
