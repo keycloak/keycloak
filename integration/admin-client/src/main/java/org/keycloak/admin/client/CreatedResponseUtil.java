@@ -46,17 +46,22 @@ public class CreatedResponseUtil {
             String errorMessage = "Create method returned status " +
                                   statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); " +
                                   "expected status: Created (201).";
-            if (MediaType.APPLICATION_JSON.equals(contentType)) {
-                // try to add actual server error message to the exception message
-                try {
+            try {
+                if (matches(MediaType.APPLICATION_JSON_TYPE, MediaType.valueOf(contentType))) {
+                    // try to add actual server error message to the exception message
                     @SuppressWarnings("raw")
                     Map responseBody = response.readEntity(Map.class);
-                    if (responseBody != null && responseBody.containsKey("errorMessage")) {
-                        errorMessage += " ErrorMessage: " + responseBody.get("errorMessage");
+                    if (responseBody != null) {
+                        if (responseBody.containsKey("errorMessage")) {
+                            errorMessage += " ErrorMessage: " + responseBody.get("errorMessage");
+                        }
+                        if (responseBody.containsKey("error")) {
+                            errorMessage += " Error: " + responseBody.get("error");
+                        }
                     }
-                } catch(Exception ignored) {
-                    // ignore if we couldn't parse the response
                 }
+            } catch(Exception ignored){
+                // ignore if we couldn't parse the response
             }
 
             throw new WebApplicationException(errorMessage, response);
@@ -66,5 +71,13 @@ public class CreatedResponseUtil {
         }
         String path = location.getPath();
         return path.substring(path.lastIndexOf('/') + 1);
+    }
+
+    private static boolean matches(MediaType a, MediaType b) {
+        if (a == null) {
+            return b == null;
+        } else if (b == null) return false;
+
+        return a.getType().equalsIgnoreCase(b.getType()) && a.getSubtype().equalsIgnoreCase(b.getSubtype());
     }
 }
