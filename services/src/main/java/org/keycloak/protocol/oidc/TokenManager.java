@@ -399,7 +399,7 @@ public class TokenManager {
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
             oldTokenScope = Arrays.stream(oldTokenScope.split(" "))
-                    .map(transformScopes(scopeParamScopes))
+                    .map(transformScopes(session, scopeParamScopes))
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
@@ -444,15 +444,15 @@ public class TokenManager {
         return responseBuilder;
     }
 
-    private Function<String, String> transformScopes(Set<String> requestedScopes) {
+    private Function<String, String> transformScopes(KeycloakSession session, Set<String> requestedScopes) {
         return scope -> {
             if (requestedScopes.contains(scope)) {
                 return scope;
             }
 
             if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-                OrganizationScope oldScope = OrganizationScope.valueOfScope(scope);
-                return oldScope == null ? null : oldScope.resolveName(requestedScopes, scope);
+                OrganizationScope oldScope = OrganizationScope.valueOfScope(session, scope);
+                return oldScope == null ? null : oldScope.resolveName(session, requestedScopes, scope);
             }
 
             return null;
@@ -722,15 +722,15 @@ public class TokenManager {
                                 return scope;
                             }
 
-                            return tryResolveDynamicClientScope(session, scopeParam, client, user, name);
+                            return tryResolveDynamicClientScope(session, scopeParam, user, name);
                         })
                         .filter(Objects::nonNull),
                 clientScopes).distinct();
     }
 
-    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, String name) {
+    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, UserModel user, String name) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            OrganizationScope orgScope = OrganizationScope.valueOfScope(scopeParam);
+            OrganizationScope orgScope = OrganizationScope.valueOfScope(session, scopeParam);
 
             if (orgScope == null) {
                 return null;

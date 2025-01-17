@@ -170,7 +170,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationProvider provider = getOrganizationProvider();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         String rawScope = authSession.getClientNote(OAuth2Constants.SCOPE);
-        OrganizationScope scope = OrganizationScope.valueOfScope(rawScope);
+        OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScope);
 
         if (!OrganizationScope.ANY.equals(scope) || user == null) {
             return false;
