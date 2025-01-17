@@ -27,8 +27,7 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilityCheck.NAME,
-        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling upgrade is possible between old and the current metadata"
-
+        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling upgrade is possible between old and the current metadata."
 )
 public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
@@ -54,6 +53,11 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     @Override
     public String getName() {
         return NAME;
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
     }
 
     private void validateInputFile() {

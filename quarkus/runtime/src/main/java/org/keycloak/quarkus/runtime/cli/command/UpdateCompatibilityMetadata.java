@@ -53,6 +53,11 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
         return NAME;
     }
 
+    @Override
+    public boolean includeRuntime() {
+        return true;
+    }
+
     private void validateOutputFile() {
         if (noOutputFileSet()) {
             return;

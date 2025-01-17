@@ -42,6 +42,9 @@ import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
 import io.quarkus.test.junit.main.Launch;
+import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
+import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
+import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
@@ -130,6 +133,36 @@ public class HelpCommandDistTest {
     @Test
     @Launch({ Import.NAME, "--help-all" })
     void testImportHelpAll(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ UpdateCompatibility.NAME, "--help" })
+    void testUpdateCompatibilityHelp(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, "--help" })
+    void testUpdateCompatibilityMetadataHelp(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, "--help-all" })
+    void testUpdateCompatibilityMetadataHelpAll(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--help" })
+    void testUpdateCompatibilityCheckHelp(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, "--help-all" })
+    void testUpdateCompatibilityCheckHelpAll(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
