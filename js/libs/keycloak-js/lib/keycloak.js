@@ -1058,14 +1058,20 @@ function Keycloak (config) {
 
         if (kc.responseMode === 'query' && queryIndex !== -1) {
             newUrl = url.substring(0, queryIndex);
-			fragmentIndex = url.substring(queryIndex).indexOf('#');
+            var urlObject = new URL(url);
 
-            parsed = parseCallbackParams(url.substring(queryIndex + 1, fragmentIndex !== -1 ? fragmentIndex : url.length), supportedParams);
+            // Probably SPA with hash routes, the urlObject's searchParams has been ignored 
+            if (fragmentIndex < queryIndex) {
+                var paramsString = url.substring(queryIndex);
+                urlObject = new URL(window.location.origin + paramsString)
+            }
+
+            parsed = parseCallbackParams(urlObject.searchParams.toString(), supportedParams);
             if (parsed.paramsString !== '') {
                 newUrl += '?' + parsed.paramsString;
             }
-            if (fragmentIndex !== -1) {
-                newUrl += url.substring(fragmentIndex);
+            if (urlObject.hash) {
+                newUrl += urlObject.hash;
             }
         } else if (kc.responseMode === 'fragment' && fragmentIndex !== -1) {
             newUrl = url.substring(0, fragmentIndex);
@@ -1091,23 +1097,25 @@ function Keycloak (config) {
     }
 
     function parseCallbackParams(paramsString, supportedParams) {
-        var p = paramsString.split('&');
         var result = {
             paramsString: '',
             oauthParams: {}
         }
-        for (var i = 0; i < p.length; i++) {
-            var split = p[i].indexOf("=");
-            var key = p[i].slice(0, split);
-            if (supportedParams.indexOf(key) !== -1) {
-                result.oauthParams[key] = p[i].slice(split + 1);
-            } else {
-                if (result.paramsString !== '') {
-                    result.paramsString += '&';
-                }
-                result.paramsString += p[i];
+
+        var urlSearchParams = new URLSearchParams(paramsString);
+
+        for (var key of supportedParams) {
+            var param = urlSearchParams.get(key);
+
+            if (param) {
+                result.oauthParams[key] = param;
+                urlSearchParams.delete(key);
+
             }
         }
+
+        result.paramsString = urlSearchParams.toString();
+
         return result;
     }
 
