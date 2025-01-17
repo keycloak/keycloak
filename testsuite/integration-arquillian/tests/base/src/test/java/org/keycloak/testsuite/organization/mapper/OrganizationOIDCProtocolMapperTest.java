@@ -67,6 +67,7 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
@@ -824,6 +825,40 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
         assertThat(organizations.contains(orgB.getAlias()), is(true));
+    }
+
+    @Test
+    public void testCustomOrganizationScopeName() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+        orgMapper.setId(null);
+        orgScope.setProtocolMappers(List.of(orgMapper));
+        orgScope.setId(null);
+        orgScope.setName("org");
+        String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
+        testRealm().addDefaultDefaultClientScope(createdId);
+        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        testRealm().clients().get(client.getId()).addDefaultClientScope(createdId);
+        getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
+
+        oauth.clientId("broker-app");
+        String scopeName = "org:" + orgA.getAlias();
+        oauth.scope(scopeName);
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+
+        assertScopeAndClaims(scopeName, orgA);
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {

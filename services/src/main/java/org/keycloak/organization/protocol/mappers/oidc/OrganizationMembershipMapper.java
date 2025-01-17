@@ -134,7 +134,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private Stream<OrganizationModel> resolveFromRequestedScopes(KeycloakSession session, UserSessionModel userSession, ClientSessionContext context) {
         String rawScopes = context.getScopeString();
-        OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+        OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
         if (scope == null) {
             return Stream.empty();
