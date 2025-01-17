@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.13.0
+        uses: manusa/actions-setup-minikube@v2.13.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -111,7 +111,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.13.0
+        uses: manusa/actions-setup-minikube@v2.13.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -154,7 +154,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.13.0
+        uses: manusa/actions-setup-minikube@v2.13.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
