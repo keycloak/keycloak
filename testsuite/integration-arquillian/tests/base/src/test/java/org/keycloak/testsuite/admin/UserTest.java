@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -131,6 +132,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -324,8 +326,13 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(409, response.getStatus());
             assertAdminEvents.assertEmpty();
 
-            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+            // Alternative way of showing underlying error message
+            try {
+                CreatedResponseUtil.getCreatedId(response);
+                Assert.fail("Not expected getCreatedId to success");
+            } catch (WebApplicationException wae) {
+                Assert.assertThat(wae.getMessage(), endsWith("ErrorMessage: User exists with same email"));
+            }
         }
     }
 

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
@@ -61,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -128,6 +130,13 @@ public class FlowTest extends AbstractAuthenticationTest {
     public void testAddFlowWithRestrictedCharInAlias() {
         Response resp = authMgmtResource.createFlow(newFlow("fo]o", "Browser flow", "basic-flow", true, false));
         Assert.assertEquals(400, resp.getStatus());
+
+        try {
+            CreatedResponseUtil.getCreatedId(resp);
+            Assert.fail("Not expected getCreatedId to success");
+        } catch (WebApplicationException wae) {
+            Assert.assertThat(wae.getMessage(), endsWith("Error: Character ']' not allowed."));
+        }
     }
 
     @Test
