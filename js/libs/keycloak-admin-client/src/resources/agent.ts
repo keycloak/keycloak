@@ -223,7 +223,7 @@ export class Agent {
       requestOptions.body = payload as unknown as string;
     } else if (payload instanceof FormData) {
       requestOptions.body = payload;
-    } else {
+    } else if (method !== "DELETE") {
       // Otherwise assume it's JSON and stringify it.
       requestOptions.body =
         payloadKey && typeof payload[payloadKey] === "string"
@@ -231,7 +231,11 @@ export class Agent {
           : JSON.stringify(payloadKey ? payload[payloadKey] : payload);
     }
 
-    if (!requestHeaders.has("content-type") && !(payload instanceof FormData)) {
+    if (
+      requestOptions.body &&
+      !requestHeaders.has("content-type") &&
+      !(payload instanceof FormData)
+    ) {
       requestHeaders.set("content-type", "application/json");
     }
 
