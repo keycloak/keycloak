@@ -310,6 +310,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>com.ibm.icu</groupId>
+                <artifactId>icu4j</artifactId>
+                <version>76.1</version>
+            </dependency>
+            <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-bom</artifactId>
                 <version>${quarkus.version}</version>

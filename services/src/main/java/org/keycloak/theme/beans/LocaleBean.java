@@ -17,14 +17,14 @@
 
 package org.keycloak.theme.beans;
 
+import com.ibm.icu.util.ULocale;
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.models.RealmModel;
 
-import jakarta.ws.rs.core.UriBuilder;
-
 import java.text.Collator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +32,7 @@ import java.util.stream.Collectors;
  */
 public class LocaleBean {
 
-    private static final Set<String> RTL_LANGUAGE_CODES =
-            Set.of("ar", "dv", "fa", "ha", "he", "iw", "ji", "ps", "sd", "ug", "ur", "yi");
+    private static final HashMap<String, Boolean> CACHED_RTL_LANGUAGE_CODES = new HashMap<>();
 
     private String current;
     private String currentLanguageTag;
@@ -43,7 +42,7 @@ public class LocaleBean {
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
-        this.rtl = RTL_LANGUAGE_CODES.contains(current.getLanguage());
+        this.rtl = isRtl(currentLanguageTag);
 
         Collator collator = Collator.getInstance(current);
         collator.setStrength(Collator.PRIMARY); // ignore case and accents
@@ -71,6 +70,18 @@ public class LocaleBean {
      */
     public boolean isRtl() {
         return rtl;
+    }
+
+    public boolean isRtl(String languageTag) {
+        if (CACHED_RTL_LANGUAGE_CODES.containsKey(languageTag)) {
+            return CACHED_RTL_LANGUAGE_CODES.get(languageTag);
+        }
+
+        boolean isRTL = new ULocale(languageTag).isRightToLeft();
+
+        CACHED_RTL_LANGUAGE_CODES.put(languageTag, isRTL);
+
+        return isRTL;
     }
 
     public List<Locale> getSupported() {
