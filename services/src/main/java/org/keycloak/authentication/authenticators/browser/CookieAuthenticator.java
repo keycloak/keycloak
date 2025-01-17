@@ -124,7 +124,7 @@ public class CookieAuthenticator implements Authenticator {
         if (Organizations.isEnabledAndOrganizationsPresent(session)) {
             AuthenticationSessionModel authSession = context.getAuthenticationSession();
             String requestedScopes = authSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
-            return OrganizationScope.valueOfScope(requestedScopes) != null;
+            return OrganizationScope.valueOfScope(session, requestedScopes) != null;
         }
 
         return false;

@@ -200,7 +200,7 @@ public class Organizations {
 
         if (authSession != null) {
             String rawScopes = authSession.getClientNote(OAuth2Constants.SCOPE);
-            OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+            OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
             List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                     .map(provider::getById)
