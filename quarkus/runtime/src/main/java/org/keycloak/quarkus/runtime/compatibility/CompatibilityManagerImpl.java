@@ -33,8 +33,6 @@ import org.keycloak.common.Version;
  */
 public class CompatibilityManagerImpl implements CompatibilityManager {
 
-    public static final int EPOCH = 0;
-
     private final Map<String, CompatibilityComparator> versionComparators = new HashMap<>();
     public static final String KEYCLOAK_VERSION_KEY = "keycloak";
     public static final String INFINISPAN_VERSION_KEY = "infinispan";
@@ -42,7 +40,6 @@ public class CompatibilityManagerImpl implements CompatibilityManager {
     @Override
     public ServerInfo current() {
         var info = new ServerInfo();
-        info.setEpoch(EPOCH);
         addVersions(info);
         return info;
     }
@@ -63,9 +60,6 @@ public class CompatibilityManagerImpl implements CompatibilityManager {
     @Override
     public CompatibilityResult isCompatible(ServerInfo other) {
         var current = current();
-        if (current.getEpoch() != other.getEpoch()) {
-            return new IncompatibleResult("Epoch", "Epoch", Integer.toString(other.getEpoch()), Integer.toString(current.getEpoch()));
-        }
         return compareVersions(current, other);
     }
 

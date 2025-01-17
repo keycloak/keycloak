@@ -42,6 +42,7 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     @Override
     public void run() {
+        printPreviewWarning();
         validateInputFile();
         var info = readServerInfo();
         var result = compatibilityManager.isCompatible(info);

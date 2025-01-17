@@ -41,6 +41,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
 
     @Override
     public void run() {
+        printPreviewWarning();
         validateOutputFile();
         var info = compatibilityManager.current();
         printToConsole(info);

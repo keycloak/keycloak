@@ -76,4 +76,8 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         }
     }
 
+    void printPreviewWarning() {
+        printError("Warning! This command is preview and may output an incorrect outcome. Use with caution!");
+    }
+
 }

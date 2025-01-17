@@ -28,25 +28,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ServerInfo {
 
     /**
-     * The epoch, zero by default. To be incremented when we need to force an incompatible result.
-     */
-    @JsonProperty("epoch")
-    private int epoch;
-
-    /**
      * Keycloak and other relevant dependencies versions.
      */
     @JsonProperty("versions")
     private Map<String, String> versions = new HashMap<>();
-
-
-    public int getEpoch() {
-        return epoch;
-    }
-
-    public void setEpoch(int epoch) {
-        this.epoch = epoch;
-    }
 
     public Map<String, String> getVersions() {
         return versions;

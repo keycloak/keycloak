@@ -67,7 +67,6 @@ public class UpdateCommandDistTest {
         assertEquals(0, result.exitCode());
 
         var info = JsonSerialization.mapper.readValue(jsonFile, ServerInfo.class);
-        assertEquals(CompatibilityManagerImpl.EPOCH, info.getEpoch());
         assertEquals(Version.VERSION, info.getVersions().get(CompatibilityManagerImpl.KEYCLOAK_VERSION_KEY));
         assertEquals(org.infinispan.commons.util.Version.getVersion(), info.getVersions().get(CompatibilityManagerImpl.INFINISPAN_VERSION_KEY));
 
@@ -77,23 +76,11 @@ public class UpdateCommandDistTest {
     }
 
     @Test
-    public void testWrongEpoch(KeycloakDistribution distribution) throws IOException {
-        var jsonFile = createTempFile("wrong-epoch");
-        var info = new ServerInfo();
-        info.setEpoch(-1);
-
-        JsonSerialization.mapper.writeValue(jsonFile, info);
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
-        result.assertError("[Epoch] Rolling Upgrade is not available. 'Epoch' is incompatible: Old=-1, New=%s".formatted(CompatibilityManagerImpl.EPOCH));
-    }
-
-    @Test
     public void testWrongVersions(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("wrong-versions");
 
         // incompatible keycloak version
         var info = new ServerInfo();
-        info.setEpoch(CompatibilityManagerImpl.EPOCH);
         info.setVersions(Map.of(CompatibilityManagerImpl.KEYCLOAK_VERSION_KEY, "0.0.0.Final",
                 CompatibilityManagerImpl.INFINISPAN_VERSION_KEY, org.infinispan.commons.util.Version.getVersion()));
         JsonSerialization.mapper.writeValue(jsonFile, info);
