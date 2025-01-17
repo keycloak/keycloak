@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
-            <scope>provided</scope>
+            <version>76.1</version>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>

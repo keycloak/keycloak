@@ -22,9 +22,9 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.models.RealmModel;
 
 import java.text.Collator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  */
 public class LocaleBean {
 
-    private static final HashMap<String, Boolean> CACHED_RTL_LANGUAGE_CODES = new HashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> CACHED_RTL_LANGUAGE_CODES = new ConcurrentHashMap<>();
 
     private String current;
     private String currentLanguageTag;
@@ -73,15 +73,7 @@ public class LocaleBean {
     }
 
     public boolean isRtl(String languageTag) {
-        if (CACHED_RTL_LANGUAGE_CODES.containsKey(languageTag)) {
-            return CACHED_RTL_LANGUAGE_CODES.get(languageTag);
-        }
-
-        boolean isRTL = new ULocale(languageTag).isRightToLeft();
-
-        CACHED_RTL_LANGUAGE_CODES.put(languageTag, isRTL);
-
-        return isRTL;
+        return CACHED_RTL_LANGUAGE_CODES.computeIfAbsent(languageTag, tag -> new ULocale(languageTag).isRightToLeft());
     }
 
     public List<Locale> getSupported() {
