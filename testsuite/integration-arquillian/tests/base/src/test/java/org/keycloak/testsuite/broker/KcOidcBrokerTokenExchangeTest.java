@@ -66,6 +66,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.BasicAuthHelper;
 
 /**
@@ -110,6 +111,14 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+
+        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+        if (!representation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
+            representation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
+            identityProviderResource.update(representation);
+        }
+
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), null, brokerApp.getClientId(), brokerApp.getSecret());
@@ -122,7 +131,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
         Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
-            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+            WebTarget exchangeUrl = httpClient.target(ServerURLs.getAuthServerContextRoot() + "/auth")
                     .path("/realms")
                     .path(bc.consumerRealmName())
                     .path("protocol/openid-connect/token");
