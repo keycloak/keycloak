@@ -66,7 +66,7 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organization representation")
     public OrganizationRepresentation get() {
-        return ModelToRepresentation.toRepresentation(organization);
+        return ModelToRepresentation.toRepresentation(organization, false);
     }
 
     @DELETE
