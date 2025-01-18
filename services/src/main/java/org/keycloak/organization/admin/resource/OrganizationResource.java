@@ -73,7 +73,7 @@ public class OrganizationResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class)))
     })
     public OrganizationRepresentation get() {
-        return ModelToRepresentation.toRepresentation(organization);
+        return ModelToRepresentation.toRepresentation(organization, false);
     }
 
     @DELETE
