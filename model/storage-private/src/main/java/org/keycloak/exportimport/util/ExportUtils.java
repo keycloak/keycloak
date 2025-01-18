@@ -255,7 +255,7 @@ public class ExportUtils {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             orgProvider.getAllStream().map(model -> {
-                OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model);
+                OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model, false);
 
                 orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
                         .forEach(user -> {
