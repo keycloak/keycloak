@@ -146,7 +146,7 @@ export const AssignedPolicies = ({
             return value.every(({ id }) => id && id.trim().length > 0);
           },
         }}
-        render={({ field }) => (
+        render={() => (
           <>
             {existingPoliciesOpen && (
               <ExistingPoliciesDialog

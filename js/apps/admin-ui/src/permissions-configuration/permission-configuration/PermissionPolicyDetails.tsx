@@ -38,7 +38,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { Link, useParams } from "react-router-dom";
 import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurationTabs";
 import { NewPermissionPolicyDetailsParams } from "../routes/NewPermissionPolicy";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import { capitalize, sortBy } from "lodash-es";
 
 type Policy = Omit<PolicyRepresentation, "roles"> & {
@@ -84,7 +84,7 @@ export const isValidComponentType = (value: string) => value in COMPONENTS;
 export default function PermissionPolicyDetails() {
   const { adminClient } = useAdminClient();
   const { realmRepresentation } = useRealm();
-  const { permissionClientId, realm, resourceType } =
+  const { permissionClientId, realm } =
     useParams<NewPermissionPolicyDetailsParams>();
   const { t } = useTranslation();
   const form = useForm<Policy>({
@@ -144,7 +144,6 @@ export default function PermissionPolicyDetails() {
     policy.roles = policy.roles
       ?.filter((r) => r.id)
       .map((r) => ({ ...r, required: r.required || false }));
-    // policy.resourceType = resourceType;
 
     try {
       await adminClient.clients.createPolicy(

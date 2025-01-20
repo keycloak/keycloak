@@ -6,7 +6,6 @@ import type { AppRouteObject } from "../../routes";
 export type NewPermissionPolicyDetailsParams = {
   realm: string;
   permissionClientId: string;
-  resourceType: string;
 };
 
 const NewPermissionPolicyDetails = lazy(
@@ -14,7 +13,7 @@ const NewPermissionPolicyDetails = lazy(
 );
 
 export const NewPermissionPolicyRoute: AppRouteObject = {
-  path: "/:realm/permissions/:permissionClientId/policy/new/:resourceType",
+  path: "/:realm/permissions/:permissionClientId/policy/new",
   element: <NewPermissionPolicyDetails />,
   breadcrumb: (t) => t("createPolicy"),
   handle: {

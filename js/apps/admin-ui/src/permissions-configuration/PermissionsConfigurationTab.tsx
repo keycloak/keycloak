@@ -37,6 +37,7 @@ import {
 import { NewPermissionConfigurationDialog } from "./NewPermissionConfigurationDialog";
 import { toCreatePermissionConfiguration } from "./routes/NewPermissionConfiguration";
 import "../clients/authorization/permissions.css";
+import { capitalize } from "lodash-es";
 
 type PermissionsConfigurationProps = {
   clientId: string;
@@ -44,6 +45,8 @@ type PermissionsConfigurationProps = {
 
 type ExpandablePolicyRepresentation = PolicyRepresentation & {
   associatedPolicies?: PolicyRepresentation[];
+  associatedResources?: PolicyRepresentation[];
+  associatedScopes?: PolicyRepresentation[];
   isExpanded: boolean;
 };
 
@@ -85,9 +88,23 @@ export const PermissionsConfigurationTab = ({
               permissionId: permission.id!,
             });
 
+          const associatedScopes =
+            await adminClient.clients.getAssociatedScopes({
+              id: clientId,
+              permissionId: permission.id!,
+            });
+
+          const associatedResources =
+            await adminClient.clients.getAssociatedResources({
+              id: clientId,
+              permissionId: permission.id!,
+            });
+
           return {
             ...permission,
             associatedPolicies,
+            associatedScopes,
+            associatedResources,
             isExpanded: false,
           };
         }),
@@ -135,8 +152,6 @@ export const PermissionsConfigurationTab = ({
   if (!permissions) {
     return <KeycloakSpinner />;
   }
-
-  console.log(">>>> permissions ", permissions);
 
   const noData = permissions.length === 0;
   const searching = Object.keys(search).length !== 0;
@@ -237,8 +252,14 @@ export const PermissionsConfigurationTab = ({
                       <Td data-testid={`name-column-${permission.name}`}>
                         {permission.name}
                       </Td>
-                      <Td>{"-"}</Td>
-                      <Td>{"-"}</Td>
+                      <Td>{permission.resourceType}</Td>
+                      {permission.associatedScopes!.map((scope, index) => (
+                        <Td key={index}>
+                          <span style={{ marginLeft: "8px" }}>
+                            {capitalize(scope.name)}
+                          </span>
+                        </Td>
+                      ))}
                       <Td>{permission.description || "—"}</Td>
                       <Td
                         actions={{
@@ -263,10 +284,21 @@ export const PermissionsConfigurationTab = ({
                         <ExpandableRowContent>
                           {permission.isExpanded && (
                             <>
+                              <Th>{t("resources")}</Th>
+                              {permission.associatedResources!.map(
+                                (resource, index) => (
+                                  <Td key={index}>
+                                    <span style={{ marginLeft: "8px" }}>
+                                      {resource.name}
+                                    </span>
+                                  </Td>
+                                ),
+                              )}
+                              <br />
                               <Th>{t("assignedPolicies")}</Th>
                               {permission.associatedPolicies!.map(
                                 (policy, index) => (
-                                  <Td>
+                                  <Td key={index}>
                                     <span style={{ marginLeft: "8px" }}>
                                       {policy.name}
                                     </span>
