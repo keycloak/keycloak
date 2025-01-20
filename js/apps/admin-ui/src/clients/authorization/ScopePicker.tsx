@@ -11,21 +11,29 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
 
 type Scope = {
   id: string;
   name: string;
 };
 
-export const ScopePicker = ({ clientId }: { clientId: string }) => {
-  const { adminClient } = useAdminClient();
+type ScopePickerProps = {
+  clientId: string;
+  resourceTypeScopes?: string[];
+};
 
+export const ScopePicker = ({
+  clientId,
+  resourceTypeScopes,
+}: ScopePickerProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { control } = useFormContext();
-
   const [open, setOpen] = useState(false);
   const [scopes, setScopes] = useState<ScopeRepresentation[]>();
   const [search, setSearch] = useState("");
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
   useFetch(
     () => {
@@ -42,14 +50,20 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
     [search],
   );
 
-  const renderScopes = (scopes: ScopeRepresentation[]) =>
-    scopes.map((option) => (
-      <SelectOption key={option.id} value={option}>
-        {option.name}
+  const renderScopes = (scopes: ScopeRepresentation[] | string[]) =>
+    scopes.map((option, index) => (
+      <SelectOption key={index} value={option}>
+        {typeof option === "string" ? option : option.name}
       </SelectOption>
     ));
 
-  if (!scopes) return <KeycloakSpinner />;
+  if (!scopes && !resourceTypeScopes) return <KeycloakSpinner />;
+
+  const allScopes =
+    isAdminPermissionsClient && resourceTypeScopes
+      ? resourceTypeScopes
+      : scopes?.map((scope) => scope.name!);
+
   return (
     <FormGroup
       label={t("authorizationScopes")}
@@ -62,43 +76,46 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
         name="scopes"
         defaultValue={[]}
         control={control}
-        render={({ field }) => (
-          <KeycloakSelect
-            toggleId="scopes"
-            variant={SelectVariant.typeaheadMulti}
-            chipGroupProps={{
-              numChips: 3,
-              expandedText: t("hide"),
-              collapsedText: t("showRemaining"),
-            }}
-            onToggle={(val) => setOpen(val)}
-            isOpen={open}
-            selections={field.value.map((o: Scope) => o.name)}
-            onFilter={(value) => {
-              setSearch(value);
-              return renderScopes(scopes);
-            }}
-            onSelect={(selectedValue) => {
-              const option =
-                typeof selectedValue === "string"
-                  ? selectedValue
-                  : (selectedValue as Scope).name;
-              const changedValue = field.value.find(
-                (o: Scope) => o.name === option,
-              )
-                ? field.value.filter((item: Scope) => item.name !== option)
-                : [...field.value, selectedValue];
-              field.onChange(changedValue);
-            }}
-            onClear={() => {
-              setSearch("");
-              field.onChange([]);
-            }}
-            typeAheadAriaLabel={t("authorizationScopes")}
-          >
-            {renderScopes(scopes)}
-          </KeycloakSelect>
-        )}
+        render={({ field }) => {
+          const selectedValues = field.value.map((o: Scope) => o.name);
+          return (
+            <KeycloakSelect
+              toggleId="scopes"
+              variant={SelectVariant.typeaheadMulti}
+              chipGroupProps={{
+                numChips: 3,
+                expandedText: t("hide"),
+                collapsedText: t("showRemaining"),
+              }}
+              onToggle={(val) => setOpen(val)}
+              isOpen={open}
+              selections={selectedValues}
+              onFilter={(value) => {
+                setSearch(value);
+                return renderScopes(allScopes || []);
+              }}
+              onSelect={(selectedValue) => {
+                const option =
+                  typeof selectedValue === "string"
+                    ? selectedValue
+                    : (selectedValue as Scope).name;
+                const changedValue = field.value.find(
+                  (o: Scope) => o.name === option,
+                )
+                  ? field.value.filter((item: Scope) => item.name !== option)
+                  : [...field.value, { name: option }];
+                field.onChange(changedValue);
+              }}
+              onClear={() => {
+                setSearch("");
+                field.onChange([]);
+              }}
+              typeAheadAriaLabel={t("authorizationScopes")}
+            >
+              {renderScopes(allScopes || [])}
+            </KeycloakSelect>
+          );
+        }}
       />
     </FormGroup>
   );
