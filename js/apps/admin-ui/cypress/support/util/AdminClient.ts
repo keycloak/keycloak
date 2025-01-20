@@ -122,7 +122,7 @@ class AdminClient {
     const { id } = await this.#client.users.create(user);
     const createdUser = await this.#client.users.findOne({
       id,
-      realm: user.realm,
+      realm: user.realm || this.#client.realmName,
     });
 
     if (!createdUser) {
