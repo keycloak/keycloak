@@ -61,15 +61,12 @@ export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export default function PolicyDetails() {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
   const navigate = useNavigate();
   const form = useForm();
   const { reset, handleSubmit } = form;
-
   const { addAlert, addError } = useAlerts();
-
   const [policy, setPolicy] = useState<PolicyRepresentation>();
   const isDisabled = policyType === "js";
 

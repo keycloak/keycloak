@@ -126,12 +126,12 @@ export const PageNav = () => {
             <NavGroup aria-label={t("configure")} title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />
-              <LeftNav title="identityProviders" path="/identity-providers" />
-              <LeftNav title="userFederation" path="/user-federation" />
               {isFeatureEnabled(Feature.AdminFineGrainedAuthzV2) &&
                 realmRepresentation?.adminPermissionsEnabled && (
                   <LeftNav title="permissions" path="/permissions" />
                 )}
+              <LeftNav title="identityProviders" path="/identity-providers" />
+              <LeftNav title="userFederation" path="/user-federation" />
               {isFeatureEnabled(Feature.DeclarativeUI) &&
                 pages?.map((p) => (
                   <LeftNav

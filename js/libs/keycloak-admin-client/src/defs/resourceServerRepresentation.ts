@@ -10,15 +10,23 @@ export default interface ResourceServerRepresentation {
   clientId?: string;
   name?: string;
   allowRemoteResourceManagement?: boolean;
+  authorizationSchema?: AuthorizationSchemaRepresentation;
   policyEnforcementMode?: PolicyEnforcementMode;
   resources?: ResourceRepresentation[];
   policies?: PolicyRepresentation[];
   scopes?: ScopeRepresentation[];
   decisionStrategy?: DecisionStrategy;
 }
+export interface AuthorizationSchemaRepresentation {
+  resourceTypes?: ResourceTypesRepresentation[];
+}
 export interface ResourceOwnerRepresentation {
   id?: string;
   name?: string;
+}
+export interface ResourceTypesRepresentation {
+  type?: string;
+  scopes?: string[];
 }
 export interface AbstractPolicyRepresentation {
   id?: string;

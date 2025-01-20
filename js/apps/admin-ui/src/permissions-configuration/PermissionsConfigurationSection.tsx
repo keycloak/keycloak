@@ -8,18 +8,18 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import {
-  PermissionsTabs,
-  toPermissionsTabs,
-} from "../permissions/routes/PermissionsTabs";
+  PermissionsConfigurationTabs,
+  toPermissionsConfigurationTabs,
+} from "../permissions-configuration/routes/PermissionsConfigurationTabs";
 import {
   AlertVariant,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { AuthorizationResources } from "../clients/authorization/Resources";
 import { AuthorizationPolicies } from "../clients/authorization/Policies";
 import { AuthorizationEvaluate } from "../clients/authorization/AuthorizationEvaluate";
+import { PermissionsConfigurationTab } from "./PermissionsConfigurationTab";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAccess } from "../context/access/Access";
 import { useTranslation } from "react-i18next";
@@ -34,7 +34,7 @@ import { ConfirmDialogModal } from "../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../components/key-value-form/key-value-convert";
 import useToggle from "../utils/useToggle";
 
-export default function PermissionsSection() {
+export default function PermissionsConfigurationSection() {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -46,9 +46,9 @@ export default function PermissionsSection() {
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
   const form = useForm<FormFields>();
 
-  const usePermissionsTabs = (tab: PermissionsTabs) =>
+  const usePermissionsConfigurationTabs = (tab: PermissionsConfigurationTabs) =>
     useRoutableTab(
-      toPermissionsTabs({
+      toPermissionsConfigurationTabs({
         realm,
         tab,
       }),
@@ -62,9 +62,10 @@ export default function PermissionsSection() {
 
   const hasManageAuthorization = hasAccess("manage-authorization");
   const hasViewUsers = hasAccess("view-users");
-  const permissionsResourcesTab = usePermissionsTabs("resources");
-  const permissionsPoliciesTab = usePermissionsTabs("policies");
-  const permissionsEvaluateTab = usePermissionsTabs("evaluate");
+  const permissionsResourcesTab =
+    usePermissionsConfigurationTabs("permissions");
+  const permissionsPoliciesTab = usePermissionsConfigurationTabs("policies");
+  const permissionsEvaluateTab = usePermissionsConfigurationTabs("evaluate");
 
   useFetch(
     async () => {
@@ -177,18 +178,20 @@ export default function PermissionsSection() {
             <RoutableTabs
               mountOnEnter
               unmountOnExit
-              defaultLocation={toPermissionsTabs({
+              defaultLocation={toPermissionsConfigurationTabs({
                 realm,
-                tab: "resources",
+                tab: "permissions",
               })}
             >
               <Tab
                 id="resources"
                 data-testid="permissionsResources"
-                title={<TabTitleText>{t("resources")}</TabTitleText>}
+                title={<TabTitleText>{t("permissions")}</TabTitleText>}
                 {...permissionsResourcesTab}
               >
-                <AuthorizationResources clientId={adminPermissionsClient.id!} />
+                <PermissionsConfigurationTab
+                  clientId={adminPermissionsClient.id!}
+                />
               </Tab>
               <Tab
                 id="policies"
