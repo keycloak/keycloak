@@ -49,11 +49,9 @@ public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet
 
     @Override
     public void close(InstanceContext<TimeOffSet, InjectTimeOffSet> instanceContext) {
-        if (instanceContext.getLifeCycle() != LifeCycle.METHOD) {
-            TimeOffSet timeOffSet = instanceContext.getValue();
-            if (timeOffSet.hasChanged()) {
-                timeOffSet.set(0);
-            }
+        TimeOffSet timeOffSet = instanceContext.getValue();
+        if (timeOffSet.hasChanged()) {
+            timeOffSet.set(0);
         }
     }
 
