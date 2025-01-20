@@ -87,7 +87,7 @@ public class AuthenticationFlowSelectorExecutor implements ClientPolicyExecutorP
 
     private void executeOnAuthorizationRequest(AuthenticationSessionModel authSession) {
         if (configuration.getAuthFlowAlias() != null) {
-            authSession.setClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW, configuration.getAuthFlowAlias());
+            authSession.setAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW, configuration.getAuthFlowAlias());
             // auth flow selected via acr condition
             if (configuration.getAuthFlowLoa() != null) {
                 authSession.setAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION, String.valueOf(configuration.getAuthFlowLoa()));

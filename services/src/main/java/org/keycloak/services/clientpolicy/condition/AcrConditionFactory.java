@@ -35,7 +35,6 @@ public class AcrConditionFactory extends AbstractClientPolicyConditionProviderFa
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        addCommonConfigProperties(configProperties);
         ProviderConfigProperty property = new ProviderConfigProperty(ACR_PROPERTY, "ACR",
                 "ACR to be requested to satisfy the condition",
                 ProviderConfigProperty.STRING_TYPE, null);

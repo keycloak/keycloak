@@ -43,8 +43,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
-import org.keycloak.services.clientpolicy.condition.ClientCondition;
-import org.keycloak.services.clientpolicy.condition.ClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -61,8 +59,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.apache.log4j.MDC.put;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
@@ -259,8 +255,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      */
     @Test
     public void testAuthFlow() {
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         loginWithAcr(new ArrayList<>(){{
             add("acr-password");
@@ -274,7 +270,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
 
     @Test
     public void testAuthFlowWithoutLoaConfig() {
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-password", PASSWORD_FLOW_ALIAS);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-password", PASSWORD_FLOW_ALIAS);
 
         loginWithAcr(new ArrayList<>(){{
             add("acr-password");
@@ -294,8 +290,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     @Test
     public void testAuthFlowOTP() {
 
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         loginWithAcr(new ArrayList<>(){{
             add("acr-otp");
@@ -307,27 +303,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
 
         logout(userId, tokens);
     }
-
-    /**
-     * Test the ACR auth flow mapping feature with wrong client condition
-     * Expected: ACR = "default"
-     */
-    @Test
-    public void testDefaultFlowWhenWhenDifferentClient() {
-
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "fake", "acr-password", PASSWORD_FLOW_ALIAS, 2);
-
-        loginWithAcr(new ArrayList<>(){{
-            add("acr-password");
-        }});
-
-        authenticatePassword("test-user", PASSWORD);
-        authenticateTOTP(TOTP_SECRET);
-        Tokens tokens = assertLoginWithAcr(userId, "default");
-
-        logout(userId, tokens);
-    }
-
 
     /**
      * Test fallback to default flow when no valid mapping is found. Ensure acr is default value 1
@@ -356,8 +331,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     public void testSessionReAuth() {
         Tokens tokens;
 
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, TEST_REALM_NAME, CLIENT_ID, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, TEST_REALM_NAME, "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         // initial login
         loginWithAcr(new ArrayList<>(){{
@@ -377,11 +352,11 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         logout(userId, tokens);
     }
 
-    private void setAcrClientPolicy(Keycloak adminClient, String realm,  String clientId, String acr, String alias) {
-        setAcrClientPolicy(adminClient, realm, clientId, acr, alias, null);
+    private void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias) {
+        setAcrClientPolicy(adminClient, realm, acr, alias, null);
     }
 
-    public static void setAcrClientPolicy(Keycloak adminClient, String realm, String clientId, String acr, String alias, Integer loa) {
+    public static void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias, Integer loa) {
 
         try {
 
@@ -408,8 +383,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
 
             AcrCondition.Configuration acrConfiguration = new AcrCondition.Configuration();
             acrConfiguration.setAcrProperty(acr);
-            ClientCondition.Configuration clientConfiguration = new ClientCondition.Configuration();
-            clientConfiguration.setClientId(clientId);
 
             // register policies
             ClientPoliciesUtil.ClientPoliciesBuilder clientPoliciesBuilder = new ClientPoliciesUtil.ClientPoliciesBuilder()
@@ -417,8 +390,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
                             (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(alias, "", Boolean.TRUE)
                                     .addCondition(AcrConditionFactory.PROVIDER_ID,
                                             acrConfiguration)
-                                    .addCondition(ClientConditionFactory.PROVIDER_ID,
-                                            clientConfiguration)
                                     .addProfile(alias)
                                     .toRepresentation()
                     );

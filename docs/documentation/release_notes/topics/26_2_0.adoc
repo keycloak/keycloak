@@ -14,3 +14,8 @@ an event.
 Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.
 
 Check the `crl-storage` section in the link:https://www.keycloak.org/server/all-provider-config[All provider configuration] {section} to know the options for the new cache provider.
+
+= Dynamic Authentication Flow selection using Client Policies
+
+Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
+This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-poliy-auth-flow[{adminguide_name}].

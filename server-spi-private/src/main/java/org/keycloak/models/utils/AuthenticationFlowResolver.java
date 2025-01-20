@@ -37,7 +37,7 @@ public class AuthenticationFlowResolver {
         ClientModel client = authSession.getClient();
 
         // check if specific flow has been requested
-        String requestedFlowAlias = authSession.getClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        String requestedFlowAlias = authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
         if (requestedFlowAlias != null){
             flow = authSession.getRealm().getFlowByAlias(requestedFlowAlias);
             // validate flow exists
@@ -64,7 +64,7 @@ public class AuthenticationFlowResolver {
         ClientModel client = authSession.getClient();
 
         // check if specific flow has been requested
-        String requestedFlowAlias = authSession.getClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        String requestedFlowAlias = authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
         if (requestedFlowAlias != null){
             flow = authSession.getRealm().getFlowByAlias(requestedFlowAlias);
             // validate flow exists
