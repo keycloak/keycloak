@@ -39,6 +39,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -252,7 +253,7 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm) && !options.isPartial()) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             orgProvider.getAllStream().map(model -> {
                 OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model);

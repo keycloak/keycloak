@@ -60,6 +60,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -419,7 +421,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public long getGroupsCount() {
         Long result = createCountGroupsQuery().getSingleResult();
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
             if (result > 0) {
                 // remove from the count the organization group membership
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);

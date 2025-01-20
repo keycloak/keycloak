@@ -44,6 +44,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -288,7 +289,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(context.getRealm())) {
             Consumer<List<FormMessage>> error = messages -> {
                 context.error(Errors.INVALID_TOKEN);
                 context.validationError(formData, messages);
@@ -335,7 +336,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private void addOrganizationMember(FormContext context, UserModel user) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(context.getRealm())) {
             InviteOrgActionToken token = (InviteOrgActionToken) context.getSession().getAttribute(InviteOrgActionToken.class.getName());
 
             if (token != null) {

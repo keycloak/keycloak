@@ -61,6 +61,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -399,7 +400,7 @@ public class TokenManager {
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
             oldTokenScope = Arrays.stream(oldTokenScope.split(" "))
-                    .map(transformScopes(scopeParamScopes))
+                    .map(transformScopes(scopeParamScopes, realm))
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
@@ -444,13 +445,13 @@ public class TokenManager {
         return responseBuilder;
     }
 
-    private Function<String, String> transformScopes(Set<String> requestedScopes) {
+    private Function<String, String> transformScopes(Set<String> requestedScopes, RealmModel realm) {
         return scope -> {
             if (requestedScopes.contains(scope)) {
                 return scope;
             }
 
-            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
                 OrganizationScope oldScope = OrganizationScope.valueOfScope(scope);
                 return oldScope == null ? null : oldScope.resolveName(requestedScopes, scope);
             }
@@ -729,7 +730,7 @@ public class TokenManager {
     }
 
     private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, String name) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(session.getContext().getRealm())) {
             OrganizationScope orgScope = OrganizationScope.valueOfScope(scopeParam);
 
             if (orgScope == null) {
@@ -758,7 +759,7 @@ public class TokenManager {
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
         // detect multiple organization scopes
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(session.getContext().getRealm())) {
             if (rawScopes.stream().filter(scope -> scope.startsWith(ORGANIZATION)).count() > 1) {
                 return false;
             }

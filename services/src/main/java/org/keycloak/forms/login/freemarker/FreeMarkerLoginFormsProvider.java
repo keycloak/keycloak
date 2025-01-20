@@ -69,6 +69,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.OrganizationUtil;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.rar.AuthorizationDetails;
@@ -488,7 +489,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
-            if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && realm.isOrganizationsEnabled()) {
+            if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
                 idpBean = new OrganizationAwareIdentityProviderBean(idpBean);
             }
 
@@ -553,7 +554,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 lang = localeBean.getCurrentLanguageTag();
             }
 
-            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
                 OrganizationModel organization = resolveOrganization(session, user);
 
                 if (organization != null) {
@@ -662,7 +663,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
         }
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (OrganizationUtil.isOrganizationsFeatureEnabled(realm)) {
             String email = (String) attributes.get(RegistrationPage.FIELD_EMAIL);
             if (this.formData == null) {
                 this.formData = new MultivaluedHashMap<>();
