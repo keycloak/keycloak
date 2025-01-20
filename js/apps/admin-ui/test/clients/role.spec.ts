@@ -1,6 +1,13 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
+import {
+  assertAttributeLength,
+  clickAttributeSaveButton,
+  deleteAttribute,
+  fillAttributeData,
+  goToAttributesTab,
+} from "../utils/attributes";
 import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
 import {
@@ -20,14 +27,9 @@ import {
 } from "../utils/table";
 import {
   addAssociatedRoles,
-  assertAttributeLength,
   assertDescriptionValue,
-  clickAttributeSaveButton,
-  deleteAttribute,
-  fillAttributeData,
   fillRoleData,
   goToAssociatedRolesTab,
-  goToAttributesTab,
   goToCreateRoleFromEmptyState,
   goToRolesTab,
 } from "./role";
