@@ -126,6 +126,24 @@ public interface RealmResource {
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 
+    @Path("events")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("direction") String direction);
+
+    @Path("events")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+            @QueryParam("user") String user, @QueryParam("dateFrom") long dateFrom, @QueryParam("dateTo") long dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("direction") String direction);
+
     @DELETE
     @Path("admin-events")
     void clearAdminEvents();
@@ -152,6 +170,24 @@ public interface RealmResource {
             @QueryParam("resourcePath") String resourcePath, @QueryParam("resourceTypes") List<String> resourceTypes, @QueryParam("dateFrom") String dateFrom,
             @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Path("admin-events")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<AdminEventRepresentation> getAdminEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("resourceTypes") List<String> resourceTypes, @QueryParam("dateFrom") String dateFrom,
+            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults, @QueryParam("direction") String direction);
+
+    @GET
+    @Path("admin-events")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<AdminEventRepresentation> getAdminEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("resourceTypes") List<String> resourceTypes, @QueryParam("dateFrom") long dateFrom,
+            @QueryParam("dateTo") long dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults, @QueryParam("direction") String direction);
 
     @GET
     @Path("events/config")

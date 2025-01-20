@@ -17,11 +17,14 @@
 
 package org.keycloak.testsuite.admin.event;
 
+import org.hamcrest.MatcherAssert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +74,7 @@ public class LoginEventsTest extends AbstractEventTest {
         List<EventRepresentation> events = events();
         assertEquals(1, events.size());
         EventRepresentation event = events.get(0);
+        MatcherAssert.assertThat(event.getId(), AssertEvents.isUUID());
         assertTrue(event.getTime() > 0);
         assertNotNull(event.getIpAddress());
         assertEquals("LOGIN_ERROR", event.getType());
@@ -155,15 +159,41 @@ public class LoginEventsTest extends AbstractEventTest {
         secondEvent.setType(EventType.LOGOUT.toString());
         secondEvent.setTime(System.currentTimeMillis());
 
-
         testingClient.testing("test").onEvent(firstEvent);
         testingClient.testing("test").onEvent(secondEvent);
 
-        List<EventRepresentation> events = realm.getEvents(null, null, null, null, null, null, null, null);
+        List<EventRepresentation> events = realm.getEvents(null, null, null, null, null, null, null, null, "desc");
         assertEquals(2, events.size());
         assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
         assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
 
+        events = realm.getEvents(null, null, null, null, null, null, null, null, "asc");
+        assertEquals(2, events.size());
+        assertEquals(EventType.LOGOUT.toString(), events.get(1).getType());
+        assertEquals(EventType.LOGIN.toString(), events.get(0).getType());
+    }
+
+
+    @Test
+    public void filterByEpochTimeStamp() {
+        RealmResource realm = adminClient.realms().realm("test");
+        EventRepresentation event = new EventRepresentation();
+        event.setType(EventType.LOGIN.toString());
+        event.setRealmId(realm.toRepresentation().getId());
+
+        long currentTime = System.currentTimeMillis();
+
+        event.setTime(currentTime - 1000);
+        testingClient.testing("test").onEvent(event);
+        event.setTime(currentTime);
+        testingClient.testing("test").onEvent(event);
+        event.setTime(currentTime + 1000);
+        testingClient.testing("test").onEvent(event);
+
+        List<EventRepresentation> events = realm.getEvents(null, null, null, currentTime, currentTime, null, null, null, null);
+        Assert.assertEquals(1, events.size());
+        events = realm.getEvents(null, null, null, currentTime - 1000, currentTime + 1000, null, null, null, null);
+        Assert.assertEquals(3, events.size());
     }
 
     @Test
