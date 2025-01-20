@@ -1032,7 +1032,7 @@ function Keycloak (config) {
         return oauth;
     }
 
-    function parseCallbackUrl(url) {
+    function parseCallbackUrl(rawUrl) {
         var supportedParams;
         switch (kc.flow) {
             case 'standard':
@@ -1053,43 +1053,40 @@ function Keycloak (config) {
         var queryIndex = url.indexOf('?');
         var fragmentIndex = url.indexOf('#');
 
-        var newUrl;
-        var parsed;
+        const url = new URL(rawUrl);
+        let parsed;
 
-        if (kc.responseMode === 'query' && queryIndex !== -1) {
-            newUrl = url.substring(0, queryIndex);
-            var urlObject = new URL(url);
+        if (kc.responseMode === 'query') {
+            // Probably SPA with hash routes, the urlObject's searchParams has been ignored
+            if (url.hash.includes('?')) {
+                const [path, searchParams] = url.hash.split('?');
+                url.hash = path;
 
-            // Probably SPA with hash routes, the urlObject's searchParams has been ignored 
-            if (fragmentIndex < queryIndex) {
-                var paramsString = url.substring(queryIndex);
-                urlObject = new URL(window.location.origin + paramsString)
-            }
+                parsed = parseCallbackParams(searchParams, supportedParams);
 
-            parsed = parseCallbackParams(urlObject.searchParams.toString(), supportedParams);
-            if (parsed.paramsString !== '') {
-                newUrl += '?' + parsed.paramsString;
+                if (parsed.paramsString) {
+                    url.hash += '?' + parsed.paramsString;
+                }
+            } else {
+                parsed = parseCallbackParams(url.searchParams.toString(), supportedParams);
+
+                url.search = '?' + parsed.paramsString;
             }
-            if (urlObject.hash) {
-                newUrl += urlObject.hash;
-            }
-        } else if (kc.responseMode === 'fragment' && fragmentIndex !== -1) {
-            newUrl = url.substring(0, fragmentIndex);
-            parsed = parseCallbackParams(url.substring(fragmentIndex + 1), supportedParams);
-            if (parsed.paramsString !== '') {
-                newUrl += '#' + parsed.paramsString;
-            }
+        } else if (kc.responseMode === 'fragment') {
+            parsed = parseCallbackParams(url.hash.substring(1), supportedParams);
+
+            url.hash = "";
         }
 
         if (parsed && parsed.oauthParams) {
             if (kc.flow === 'standard' || kc.flow === 'hybrid') {
                 if ((parsed.oauthParams.code || parsed.oauthParams.error) && parsed.oauthParams.state) {
-                    parsed.oauthParams.newUrl = newUrl;
+                    parsed.oauthParams.newUrl = url.toString();
                     return parsed.oauthParams;
                 }
             } else if (kc.flow === 'implicit') {
                 if ((parsed.oauthParams.access_token || parsed.oauthParams.error) && parsed.oauthParams.state) {
-                    parsed.oauthParams.newUrl = newUrl;
+                    parsed.oauthParams.newUrl = url.toString();
                     return parsed.oauthParams;
                 }
             }
@@ -1097,26 +1094,20 @@ function Keycloak (config) {
     }
 
     function parseCallbackParams(paramsString, supportedParams) {
-        var result = {
-            paramsString: '',
-            oauthParams: {}
-        }
+        const params = new URLSearchParams(paramsString);
+        const oauthParams = {};
 
-        var urlSearchParams = new URLSearchParams(paramsString);
-
-        for (var key of supportedParams) {
-            var param = urlSearchParams.get(key);
-
-            if (param) {
-                result.oauthParams[key] = param;
-                urlSearchParams.delete(key);
-
+        for (const param of supportedParams) {
+            if (params.has(param)) {
+                oauthParams[param] = params.get(param);
+                params.delete(param);
             }
         }
 
-        result.paramsString = urlSearchParams.toString();
-
-        return result;
+        return {
+            paramsString: params.toString(),
+            oauthParams
+        };
     }
 
     function createPromise() {
