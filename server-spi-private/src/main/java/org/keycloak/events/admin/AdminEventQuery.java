@@ -18,8 +18,6 @@
 package org.keycloak.events.admin;
 
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -96,20 +94,38 @@ public interface AdminEventQuery {
     AdminEventQuery resourcePath(String resourcePath);
 
     /**
-     * Search by events after the specified time
+     * Search by events on or after the specified time
      * 
      * @param fromTime from date
      * @return <code>this</code> for method chaining
      */
+    @Deprecated
     AdminEventQuery fromTime(Date fromTime);
 
     /**
-     * Search by events before the specified time
+     * Search by events on or after the specified timestamp
+     *
+     * @param fromTime from timestamp
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery fromTime(long fromTime);
+
+    /**
+     * Search by events on or before the specified time
      * 
      * @param toTime to date
      * @return <code>this</code> for method chaining
      */
+    @Deprecated
     AdminEventQuery toTime(Date toTime);
+
+    /**
+     * Search by events on or before the specified timestamp
+     *
+     * @param toTime to timestamp
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery toTime(long toTime);
 
     /**
      * Used for pagination

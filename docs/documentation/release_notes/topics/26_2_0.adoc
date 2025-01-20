@@ -1,0 +1,10 @@
+= Additional query parameters in Admin Events API
+
+The Admin Events API now supports filtering for events based on Epoc timestamps in addition to the previous
+`yyyy-MM-dd` format. This provides more fine-grained control of the window of events to retrieve.
+
+A `direction` query parameter was also added, allowing controlling the order of returned items as `asc` or
+`desc`. In the past the events where always returned in `desc` order (most recent events first).
+
+Finally, the returned event representations now also include the `id`, which provides a unique identifier for
+an event.

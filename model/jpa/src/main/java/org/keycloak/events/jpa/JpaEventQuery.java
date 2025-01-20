@@ -90,8 +90,14 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
+    @Deprecated
     public EventQuery fromDate(Date fromDate) {
-        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), fromDate.getTime()));
+        return fromDate(fromDate.getTime());
+    }
+
+    @Override
+    public EventQuery fromDate(long fromDate) {
+        predicates.add(cb.greaterThanOrEqualTo(root.get("time"), fromDate));
         return this;
     }
 
@@ -103,7 +109,12 @@ public class JpaEventQuery implements EventQuery {
         calendar.set(Calendar.MINUTE, 59);
         calendar.set(Calendar.SECOND, 59);
         calendar.set(Calendar.MILLISECOND, 999);
-        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), calendar.getTimeInMillis()));
+        return toDate(calendar.getTimeInMillis());
+    }
+
+    @Override
+    public EventQuery toDate(long toDate) {
+        predicates.add(cb.lessThanOrEqualTo(root.get("time"), toDate));
         return this;
     }
 
