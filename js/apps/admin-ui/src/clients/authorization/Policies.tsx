@@ -1,6 +1,5 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -41,7 +40,6 @@ import { MoreLabel } from "./MoreLabel";
 import { NewPolicyDialog } from "./NewPolicyDialog";
 import { SearchDropdown, SearchForm } from "./SearchDropdown";
 import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
-import { NewPermissionConfigurationDialog } from "../../permissions-configuration/NewPermissionConfigurationDialog";
 import { toCreatePermissionPolicy } from "../../permissions-configuration/routes/NewPermissionPolicy";
 
 type PoliciesProps = {
@@ -92,12 +90,6 @@ export const AuthorizationPolicies = ({
   const [search, setSearch] = useState<SearchForm>({});
   const [newDialog, toggleDialog] = useToggle();
   const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
-  const [resourceTypes, setResourceTypes] =
-    useState<ResourceServerRepresentation>();
-  const [
-    newPermissionConfigurationDialogOpen,
-    toggleNewPermissionConfigurationDialogOpen,
-  ] = useToggle();
 
   useFetch(
     async () => {
@@ -133,14 +125,6 @@ export const AuthorizationPolicies = ({
       setPolicies(policies);
     },
     [key, search, first, max],
-  );
-
-  useFetch(
-    () => adminClient.clients.getResourceServer({ id: clientId }),
-    (resource) => {
-      setResourceTypes(resource);
-    },
-    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -206,21 +190,6 @@ export const AuthorizationPolicies = ({
               toggleDialog={toggleDialog}
             />
           )}
-          {isAdminPermissionsClient && newPermissionConfigurationDialogOpen && (
-            <NewPermissionConfigurationDialog
-              resourceTypes={resourceTypes?.authorizationSchema?.resourceTypes}
-              onSelect={(resourceType) =>
-                navigate(
-                  toCreatePermissionPolicy({
-                    realm,
-                    permissionClientId: clientId,
-                    resourceType: resourceType.type!,
-                  }),
-                )
-              }
-              toggleDialog={toggleNewPermissionConfigurationDialogOpen}
-            />
-          )}
           <PaginatingTableToolbar
             count={policies.length}
             first={first}
@@ -244,11 +213,18 @@ export const AuthorizationPolicies = ({
                 <ToolbarItem>
                   <Button
                     data-testid="createPolicy"
-                    onClick={
-                      !isAdminPermissionsClient
-                        ? toggleDialog
-                        : toggleNewPermissionConfigurationDialogOpen
-                    }
+                    onClick={() => {
+                      if (!isAdminPermissionsClient) {
+                        toggleDialog();
+                      } else {
+                        navigate(
+                          toCreatePermissionPolicy({
+                            realm,
+                            permissionClientId: clientId,
+                          }),
+                        );
+                      }
+                    }}
                     isDisabled={isDisabled}
                   >
                     {t("createPolicy")}
@@ -355,7 +331,7 @@ export const AuthorizationPolicies = ({
                               <Th>{t("dependentPermission")}</Th>
                               {policy.dependentPolicies!.map(
                                 (dependentPolicy, index) => (
-                                  <Td>
+                                  <Td key={index}>
                                     <span style={{ marginLeft: "8px" }}>
                                       {dependentPolicy.name}
                                     </span>
@@ -397,21 +373,6 @@ export const AuthorizationPolicies = ({
               toggleDialog={toggleDialog}
             />
           )}
-          {isAdminPermissionsClient && newPermissionConfigurationDialogOpen && (
-            <NewPermissionConfigurationDialog
-              resourceTypes={resourceTypes?.authorizationSchema?.resourceTypes}
-              onSelect={(resourceType) =>
-                navigate(
-                  toCreatePermissionPolicy({
-                    realm,
-                    permissionClientId: clientId,
-                    resourceType: resourceType.type!,
-                  }),
-                )
-              }
-              toggleDialog={toggleNewPermissionConfigurationDialogOpen}
-            />
-          )}
           <ListEmptyState
             message={t("emptyPolicies")}
             instructions={t("emptyPoliciesInstructions")}
@@ -420,7 +381,12 @@ export const AuthorizationPolicies = ({
             onPrimaryAction={() =>
               !isAdminPermissionsClient
                 ? toggleDialog()
-                : toggleNewPermissionConfigurationDialogOpen()
+                : navigate(
+                    toCreatePermissionPolicy({
+                      realm,
+                      permissionClientId: clientId,
+                    }),
+                  )
             }
           />
         </>

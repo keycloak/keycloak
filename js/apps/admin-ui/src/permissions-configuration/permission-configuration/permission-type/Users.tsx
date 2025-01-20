@@ -24,7 +24,7 @@ export const Users = () => {
     (users) => {
       const usersIds = users.map((user: any) => user.id);
       setAllUses(usersIds);
-      form.setValue("users", usersIds);
+      form.setValue("resources", usersIds);
     },
     [realm],
   );
@@ -69,7 +69,7 @@ export const Users = () => {
       </FormGroup>
       {isSpecificUsers && (
         <UserSelect
-          name="users"
+          name="resources"
           helpText={t("permissionUsersHelpText")}
           defaultValue={[]}
           variant="typeaheadMulti"

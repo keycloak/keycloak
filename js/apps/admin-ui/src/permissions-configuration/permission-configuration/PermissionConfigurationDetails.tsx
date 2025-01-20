@@ -99,10 +99,9 @@ export default function PermissionConfigurationDetails() {
       const newPermission = {
         ...permission,
         policies: permission.policies?.map((policy: any) => policy.id),
+        scopes: permission.scopes?.map((scope: any) => scope.name),
+        resourceType: resourceType,
       };
-
-      delete newPermission.users;
-      delete newPermission.scopes;
 
       if (permissionId) {
         await adminClient.clients.updatePermission(

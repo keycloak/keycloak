@@ -38,6 +38,7 @@ import { JavaScript } from "../../clients/authorization/policy/JavaScript";
 import { LogicSelector } from "../../clients/authorization/policy/LogicSelector";
 import { Aggregate } from "./permission-policy/Aggregate";
 import { capitalize } from "lodash-es";
+import { type JSX } from "react";
 
 type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
@@ -125,7 +126,6 @@ export const NewPermissionPolicyDialog = ({
     policy.roles = policy.roles
       ?.filter((r) => r.id)
       .map((r) => ({ ...r, required: r.required || false }));
-    // policy.resourceType = resourceType;
 
     try {
       await adminClient.clients.createPolicy(

@@ -104,7 +104,7 @@ export const SearchDropdown = ({
           {type !== "policy" && type !== "adminPermission" && (
             <TextControl name="scope" label={t("scope")} />
           )}
-          {(type !== "resource" || "adminPermission") && (
+          {type !== "resource" && (
             <SelectControl
               name={type !== "adminPermission" ? "type" : "resourceType"}
               label={type !== "adminPermission" ? t("type") : t("resourceType")}
@@ -112,13 +112,13 @@ export const SearchDropdown = ({
                 defaultValue: "",
               }}
               options={[
-                ...(type !== "adminPermission"
-                  ? [{ key: "", value: t("allTypes") }]
+                { key: "", value: t("allTypes") },
+                ...(Array.isArray(types)
+                  ? types.map(({ type, name }) => ({
+                      key: type!,
+                      value: name!,
+                    }))
                   : []),
-                ...(types || []).map(({ type, name }) => ({
-                  key: type!,
-                  value: name!,
-                })),
               ]}
             />
           )}
@@ -161,7 +161,7 @@ export const SearchDropdown = ({
               }}
               options={[
                 ...(policies || []).map(({ type, name }) => ({
-                  key: name!,
+                  key: type!,
                   value: name!,
                 })),
               ]}
