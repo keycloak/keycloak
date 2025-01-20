@@ -19,7 +19,6 @@ import { BarsIcon, EllipsisVIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
-import { Banners } from "./Banners";
 import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useAccess } from "./context/access/Access";
@@ -196,70 +195,67 @@ export const Header = () => {
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
 
   return (
-    <>
-      <Banners />
-      <Masthead>
-        <MastheadToggle>
-          <PageToggleButton variant="plain" aria-label={t("navigation")}>
-            <BarsIcon />
-          </PageToggleButton>
-        </MastheadToggle>
-        <MastheadBrand href={logoUrl}>
-          <img
-            src={
-              logo.startsWith("/")
-                ? joinPath(environment.resourceUrl, logo)
-                : logo
-            }
-            id="masthead-logo"
-            alt={t("logo")}
-            aria-label={t("logo")}
-            className="keycloak__pageheader_brand"
-          />
-        </MastheadBrand>
-        <MastheadContent>
-          <Toolbar>
-            <ToolbarContent>
-              <ToolbarItem
-                align={{ default: "alignRight" }}
-                visibility={{
-                  default: "hidden",
-                  md: "visible",
-                }} /** the settings and help icon buttons are only visible on desktop sizes and replaced by a kebab dropdown for other sizes */
-              >
-                <HelpHeader />
-              </ToolbarItem>
-              <ToolbarItem
-                align={{ default: "alignLeft" }}
-                visibility={{
-                  md: "hidden",
-                }} /** this kebab dropdown replaces the icon buttons and is hidden for desktop sizes */
-              >
-                <KebabDropdown />
-              </ToolbarItem>
-              <ToolbarItem
-                visibility={{
-                  default: "hidden",
-                  md: "visible",
-                }} /** this user dropdown is hidden on mobile sizes */
-              >
-                <UserDropdown />
-              </ToolbarItem>
-              <ToolbarItem
-                variant="overflow-menu"
-                align={{ default: "alignRight" }}
-                className="pf-v5-u-m-0-on-lg"
-              >
-                <Avatar
-                  src={picture || environment.resourceUrl + "/img_avatar.svg"}
-                  alt={t("avatarImage")}
-                  aria-label={t("avatarImage")}
-                />
-              </ToolbarItem>
-            </ToolbarContent>
-          </Toolbar>
-        </MastheadContent>
-      </Masthead>
-    </>
+    <Masthead>
+      <MastheadToggle>
+        <PageToggleButton variant="plain" aria-label={t("navigation")}>
+          <BarsIcon />
+        </PageToggleButton>
+      </MastheadToggle>
+      <MastheadBrand href={logoUrl}>
+        <img
+          src={
+            logo.startsWith("/")
+              ? joinPath(environment.resourceUrl, logo)
+              : logo
+          }
+          id="masthead-logo"
+          alt={t("logo")}
+          aria-label={t("logo")}
+          className="keycloak__pageheader_brand"
+        />
+      </MastheadBrand>
+      <MastheadContent>
+        <Toolbar>
+          <ToolbarContent>
+            <ToolbarItem
+              align={{ default: "alignRight" }}
+              visibility={{
+                default: "hidden",
+                md: "visible",
+              }} /** the settings and help icon buttons are only visible on desktop sizes and replaced by a kebab dropdown for other sizes */
+            >
+              <HelpHeader />
+            </ToolbarItem>
+            <ToolbarItem
+              align={{ default: "alignLeft" }}
+              visibility={{
+                md: "hidden",
+              }} /** this kebab dropdown replaces the icon buttons and is hidden for desktop sizes */
+            >
+              <KebabDropdown />
+            </ToolbarItem>
+            <ToolbarItem
+              visibility={{
+                default: "hidden",
+                md: "visible",
+              }} /** this user dropdown is hidden on mobile sizes */
+            >
+              <UserDropdown />
+            </ToolbarItem>
+            <ToolbarItem
+              variant="overflow-menu"
+              align={{ default: "alignRight" }}
+              className="pf-v5-u-m-0-on-lg"
+            >
+              <Avatar
+                src={picture || environment.resourceUrl + "/img_avatar.svg"}
+                alt={t("avatarImage")}
+                aria-label={t("avatarImage")}
+              />
+            </ToolbarItem>
+          </ToolbarContent>
+        </Toolbar>
+      </MastheadContent>
+    </Masthead>
   );
 };
