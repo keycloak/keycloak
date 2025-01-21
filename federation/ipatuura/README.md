@@ -9,7 +9,7 @@ In this `README` we will explain how to setup the Ipa-Tuura keycloak federation 
 In our setup we will be using a Samba AD image to setup a directory service for realm `KEYCLOAK.ORG`:
 
 ```
-$ docker run -d --privileged  --restart=unless-stopped --network=host -e REALM='KEYCLOAK.ORG' -e DOMAIN='KEYCLOAK' -e ADMIN_PASS='Passw0rd' -e DNS_FORWARDER='8.8.8.8' -v dc1_etc:/usr/local/samba/etc -v dc1_private:/usr/local/samba/private -v dc1_var:/usr/local/samba/var --name dc1 --hostname DC1 diegogslomp/samba-ad-d
+$ docker run -d --privileged  --restart=unless-stopped --network=host -e REALM='KEYCLOAK.ORG' -e DOMAIN='KEYCLOAK' -e ADMIN_PASS='Passw0rd' -e DNS_FORWARDER='8.8.8.8' -v dc1_etc:/usr/local/samba/etc -v dc1_private:/usr/local/samba/private -v dc1_var:/usr/local/samba/var --name dc1 --hostname DC1 diegogslomp/samba-ad-dc
 ```
 
 Once the container is running, we need to add an entry to the host's `/etc/hosts` pointing to the AD container:
@@ -172,10 +172,16 @@ The `integrationdomain.json` file looks like this:
    "id_provider": "ad",
    "user_extra_attrs": "mail:mail, sn:sn, givenname:givenname",
    "user_object_classes": "user,organizationalPerson,person,top",
-   "users_dn": "CN=Keycloak,CN=Users,DC=keycloak,DC=org",
+   "users_dn": "CN=Users,DC=keycloak,DC=org",
    "ldap_tls_cacert": "/etc/openldap/certs/cacert.pem",
    "keycloak_hostname": "keycloak.ipa.test"
 }
+```
+
+Check to verify the integration domain was added with:
+
+```
+$ curl -k -X GET "https://ipa-bridge.keycloak.org/domains/v1/domain/" -H "accept:application/json" -H "X-CSRFToken: x1yU9RGPKs4mJdWIOzEc7wKbwbnJ0B6iTHuW6ja0gdBpEOBVacK1vIhSSYlfsnRw"
 ```
 
 ### Important observations:
@@ -187,12 +193,24 @@ The `integrationdomain.json` file looks like this:
 
 4- `"keycloak_hostname"` must resolve to the host running keycloak (see step above to ensure it was added to `/etc/hosts`)
 
-## Setup the IPA-Tuura user federation in keycloak
+## Setup outgoing certificates
 
-First start keycloak with the `ipa-tuura-federation` feature enabled:
+Retrieve the certificate from the bridge and add it to a keystore file.
 
 ```
-$ ./kc.sh start-dev --features=ipa-tuura-federation
+$ openssl s_client -connect bridge.ipa.test:443 2>/dev/null </dev/null |  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /opt/keycloak/bridge.crt
+
+$ keytool -importcert -alias bridge -file /opt/keycloak/bridge.crt -keystore /opt/keycloak/keystore.jks -trustcacerts -storepass redhat -noprompt
+```
+
+The `/opt/keycloak/keystore.jks` keystore file must be copied to the keycloak system or container.
+
+## Setup the IPA-Tuura user federation in keycloak
+
+First start keycloak with the `ipa-tuura-federation` feature enabled and truststore arguments:
+
+```
+$ ./kc.sh start-dev --features=ipa-tuura-federation --spi-truststore-file-file=/opt/keycloak/keystore.jks --spi-truststore-file-password=redhat --spi-truststore-file-hostname-verification-policy=ANY
 ```
 
 Log into the admin console, go to `User Federation`, then click on `Add new provider` and select `Ipatuura`
