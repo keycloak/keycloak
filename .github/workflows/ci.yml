@@ -341,6 +341,9 @@ jobs:
       - name: Prepare Quarkus distribution with current JDK
         run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
+      - name: Run new base tests
+        run: ./mvnw test -f tests/pom.xml -Dtest=JDKTestSuite
+
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`

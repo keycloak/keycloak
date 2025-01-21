@@ -147,22 +147,12 @@ public class KeycloakServerConfigBuilder {
                 option("log-console-format", format);
             }
 
-            StringBuilder logLevel = new StringBuilder();
             if (rootLevel != null) {
-                logLevel.append(rootLevel);
+                option("log-level", rootLevel);
             }
 
             for (Map.Entry<String, String> e : categoryLevels.entrySet()) {
-                if (!logLevel.isEmpty()) {
-                    logLevel.append(",");
-                }
-                logLevel.append(e.getKey());
-                logLevel.append(":");
-                logLevel.append(e.getValue());
-            }
-
-            if (!logLevel.isEmpty()) {
-                option("log-level", logLevel.toString());
+                option("log-level-" + e.getKey(), e.getValue());
             }
 
             if (color != null) {
