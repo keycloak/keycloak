@@ -2,7 +2,7 @@ import { Page } from "@playwright/test";
 import { clickSelectRow } from "./table";
 
 export type RoleType = "client" | "roles";
-const rolePickTableName = "Roles";
+const rolePickTableName = "Role list";
 
 export async function changeRoleTypeFilter(page: Page, roleType: RoleType) {
   const currentFilter = await page
@@ -23,8 +23,13 @@ export async function changeRoleTypeFilter(page: Page, roleType: RoleType) {
   await page.getByRole("menuitem", { name: filter, exact: true }).click();
 }
 
-export async function pickRole(page: Page, roleName: string) {
-  await clickSelectRow(page, rolePickTableName, roleName);
+export async function pickRole(
+  page: Page,
+  roleName: string,
+  dialog: boolean = false,
+) {
+  const name = dialog ? "Associated roles" : rolePickTableName;
+  await clickSelectRow(page, name, roleName);
 }
 
 export async function confirmModalAssign(page: Page) {
