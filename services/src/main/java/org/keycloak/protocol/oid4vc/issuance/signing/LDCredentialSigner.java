@@ -45,8 +45,8 @@ public class LDCredentialSigner extends AbstractCredentialSigner<VerifiableCrede
 
     private static final Logger LOGGER = Logger.getLogger(LDCredentialSigner.class);
 
-    private static final String PROOF_PURPOSE_ASSERTION = "assertionMethod";
-    private static final String PROOF_KEY = "proof";
+    public static final String PROOF_PURPOSE_ASSERTION = "assertionMethod";
+    public static final String PROOF_KEY = "proof";
 
     private final TimeProvider timeProvider;
 

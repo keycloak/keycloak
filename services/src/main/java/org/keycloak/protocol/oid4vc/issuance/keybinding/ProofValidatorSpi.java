@@ -22,7 +22,7 @@ import org.keycloak.provider.Spi;
 /**
  * Spi implementation of the creation of {@link ProofValidator}
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class ProofValidatorSpi implements Spi {
     private static final String NAME = "proofValidator";

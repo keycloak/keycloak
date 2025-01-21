@@ -157,7 +157,13 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .toList();
     }
 
-    private static List<String> getSupportedFormats(KeycloakSession keycloakSession) {
+    /**
+     * Returns credential formats supported.
+     * <p></p>
+     * Supported credential formats are identified on the criterion of a joint availability
+     * of a credential builder (as a configured component) AND a credential signer.
+     */
+    public static List<String> getSupportedFormats(KeycloakSession keycloakSession) {
         RealmModel realm = keycloakSession.getContext().getRealm();
         KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
 

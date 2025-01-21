@@ -45,9 +45,8 @@ public class SdJwtCredentialBody implements CredentialBody {
         claimSet.put(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
     }
 
-    @Deprecated
-    public void addCnfClaim(Object cnf) {
-        claimSet.put(CNF_CLAIM, cnf);
+    public Map<String, Object> getClaimSet() {
+        return claimSet;
     }
 
     public String sign(SignatureSignerContext signatureSignerContext) {

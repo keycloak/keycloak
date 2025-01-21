@@ -24,6 +24,9 @@ import org.keycloak.provider.ProviderFactory;
 
 public interface ProofValidatorFactory extends ProviderFactory<ProofValidator>, OID4VCEnvironmentProviderFactory {
 
+    // Most concrete factories wouldn't have to implement the methods below,
+    // hence we provide empty default implementations for convenience.
+
     @Override
     default void init(Config.Scope config) {
     }

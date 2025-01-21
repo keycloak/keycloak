@@ -61,6 +61,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
@@ -128,7 +129,14 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     /**
-     * Locatable credential builder map
+     * Credential builders are responsible for initiating the production of
+     * credentials in a specific format. Their output is an appropriate credential
+     * representation to be signed by a credential signer of the same format.
+     * <p></p>
+     * Due to technical constraints, we explicitly load credential builders into
+     * this map for they are configurable components. The key of the map is the
+     * credential {@link Format} associated with the builder. The matching credential
+     * signer is directly loaded from the Keycloak container.
      */
     private final Map<String, CredentialBuilder> credentialBuilders;
 
