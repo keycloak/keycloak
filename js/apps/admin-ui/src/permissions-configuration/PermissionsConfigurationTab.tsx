@@ -37,7 +37,7 @@ import {
 import { NewPermissionConfigurationDialog } from "./NewPermissionConfigurationDialog";
 import { toCreatePermissionConfiguration } from "./routes/NewPermissionConfiguration";
 import "../clients/authorization/permissions.css";
-import { capitalize } from "lodash-es";
+import { AuthorizationScopesDetails } from "./permission-configuration/AuthorizationScopesDetails";
 
 type PermissionsConfigurationProps = {
   clientId: string;
@@ -73,14 +73,23 @@ export const PermissionsConfigurationTab = ({
 
   useFetch(
     async () => {
-      const permissions = await adminClient.clients.findPermissions({
+      const resourceServerPromise = adminClient.clients.getResourceServer({
+        id: clientId,
+      });
+
+      const permissionsPromise = adminClient.clients.findPermissions({
         first,
         max: max + 1,
         id: clientId,
         ...search,
       });
 
-      return await Promise.all(
+      const [resourceServer, permissions] = await Promise.all([
+        resourceServerPromise,
+        permissionsPromise,
+      ]);
+
+      const processedPermissions = await Promise.all(
         permissions.map(async (permission) => {
           const associatedPolicies =
             await adminClient.clients.getAssociatedPolicies({
@@ -109,22 +118,14 @@ export const PermissionsConfigurationTab = ({
           };
         }),
       );
-    },
-    setPermissions,
-    [key, search, first, max],
-  );
 
-  useFetch(
-    async () => {
-      const resourceServer = adminClient.clients.getResourceServer({
-        id: clientId,
-      });
-      return resourceServer;
+      return { resourceServer, permissions: processedPermissions };
     },
-    (resourceServer) => {
-      setResourceServer(resourceServer);
+    (data) => {
+      setResourceServer(data.resourceServer);
+      setPermissions(data.permissions);
     },
-    [],
+    [key, search, first, max],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -253,13 +254,15 @@ export const PermissionsConfigurationTab = ({
                         {permission.name}
                       </Td>
                       <Td>{permission.resourceType}</Td>
-                      {permission.associatedScopes!.map((scope, index) => (
-                        <Td key={index}>
-                          <span style={{ marginLeft: "8px" }}>
-                            {capitalize(scope.name)}
-                          </span>
-                        </Td>
-                      ))}
+                      <Td>
+                        <AuthorizationScopesDetails
+                          row={{
+                            associatedScopes: permission.associatedScopes?.map(
+                              (scope) => ({ name: scope.name || "" }),
+                            ),
+                          }}
+                        />
+                      </Td>
                       <Td>{permission.description || "—"}</Td>
                       <Td
                         actions={{
