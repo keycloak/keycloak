@@ -10,6 +10,10 @@ export async function searchItem(
   await page.keyboard.press("Enter");
 }
 
+export async function clearAllFilters(page: Page) {
+  await page.getByTestId("clear-all-filters-empty-action").click();
+}
+
 export async function clickTableRowItem(page: Page, itemName: string) {
   await page.getByRole("link", { name: itemName }).click();
 }
