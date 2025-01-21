@@ -205,6 +205,25 @@ class AdminClient {
     });
   }
 
+  async addRealmRoleToGroup(
+    groupId: string,
+    roleName: string,
+    realmName: string = "master",
+  ) {
+    await this.#login();
+
+    const realmRole = await this.#client.roles.findOneByName({
+      name: roleName,
+      realm: realmName,
+    });
+
+    await this.#client.groups.addRealmRoleMappings({
+      id: groupId,
+      roles: [realmRole as RoleMappingPayload],
+      realm: realmName,
+    });
+  }
+
   async deleteUser(username: string, ignoreNonExisting: boolean = false) {
     await this.#login();
     const foundUsers = await this.#client.users.find({ username });

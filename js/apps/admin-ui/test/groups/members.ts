@@ -5,10 +5,6 @@ export async function goToMembersTab(page: Page) {
   await page.getByTestId("members").click();
 }
 
-export async function goToChildGroupsTab(page: Page) {
-  await page.getByTestId("groups").click();
-}
-
 export async function addMember(
   page: Page,
   usernames: string[],

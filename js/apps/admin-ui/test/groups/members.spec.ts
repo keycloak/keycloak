@@ -12,11 +12,11 @@ import {
 } from "../utils/table";
 import {
   addMember,
-  goToChildGroupsTab,
   goToMembersTab,
   leaveGroup,
   toggleIncludeSubGroupUsers,
 } from "./members";
+import { goToChildGroupsTab } from "./util";
 
 test.describe("Members", () => {
   const predefinedGroups = ["level", "level1", "level2", "level3"];

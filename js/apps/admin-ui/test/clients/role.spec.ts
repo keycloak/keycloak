@@ -20,6 +20,7 @@ import { goToClients, goToRealm } from "../utils/sidebar";
 import {
   assertNoResults,
   assertRowExists,
+  clearAllFilters,
   clickRowKebabItem,
   clickSelectRow,
   clickTableRowItem,
@@ -30,6 +31,7 @@ import {
   assertDescriptionValue,
   fillRoleData,
   goToAssociatedRolesTab,
+  goToCreateRole,
   goToCreateRoleFromEmptyState,
   goToRolesTab,
 } from "./role";
@@ -131,15 +133,15 @@ test.describe("Roles tab test", () => {
   });
 
   test("should fail to create duplicate client role", async ({ page }) => {
-    await clickTableRowItem(page, client);
+    await clickTableRowItem(page, oneRoleClient);
     await goToRolesTab(page);
 
-    await goToCreateRoleFromEmptyState(page);
-    await fillRoleData(page, itemId);
+    await goToCreateRole(page);
+    await fillRoleData(page, updatableItem);
     await clickSaveButton(page);
     await assertNotificationMessage(
       page,
-      `Could not create role: Role with name ${itemId} already exists`,
+      `Could not create role: Role with name ${updatableItem} already exists`,
     );
   });
 
@@ -154,6 +156,7 @@ test.describe("Roles tab test", () => {
     await assertNoResults(page);
 
     // Search existing
+    await clearAllFilters(page);
     await searchItem(page, placeHolder, updatableItem);
     await assertRowExists(page, updatableItem);
 
@@ -162,7 +165,7 @@ test.describe("Roles tab test", () => {
     await assertRowExists(page, updatableItem);
   });
 
-  test("should handle associated roles", async ({ page }) => {
+  test("should handle associated realm roles", async ({ page }) => {
     await clickTableRowItem(page, oneRoleClient);
     await goToRolesTab(page);
     await clickTableRowItem(page, updatableItem);
@@ -173,16 +176,23 @@ test.describe("Roles tab test", () => {
     await addAssociatedRoles(page, createRealmRoleName);
     await assertNotificationMessage(page, "Associated roles have been added");
 
-    // Add associated client roles
-    await page.getByTestId("assignRole").click();
-    await addAssociatedRoles(page, "accountmanage-account", "client");
-    await assertNotificationMessage(page, "Associated roles have been added");
-
     // Remove associated roles
-    await clickSelectRow(page, "Associated roles", createRealmRoleName);
+    await clickSelectRow(page, "Role list", createRealmRoleName);
     await clickUnassign(page);
     await confirmModal(page);
     await assertNotificationMessage(page, "Role mapping updated");
+  });
+
+  test("should handle associated client roles", async ({ page }) => {
+    await clickTableRowItem(page, oneRoleClient);
+    await goToRolesTab(page);
+    await clickTableRowItem(page, updatableItem);
+    await goToAssociatedRolesTab(page);
+
+    // Add associated client roles
+    await page.getByTestId("no-roles-in-this-realm-empty-action").click();
+    await addAssociatedRoles(page, "accountmanage-account", "client");
+    await assertNotificationMessage(page, "Associated roles have been added");
   });
 
   test("should delete client role", async ({ page }) => {

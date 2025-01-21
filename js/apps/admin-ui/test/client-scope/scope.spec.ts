@@ -24,7 +24,7 @@ import { assignRole, goToScopeTab } from "./scope";
 
 test.describe("Scope tab test", () => {
   const scopeName = `client-scope-mapper-${uuidv4()}`;
-  const tableName = "Client scopes";
+  const tableName = "Role list";
 
   test.beforeAll(async () =>
     adminClient.createClientScope({
