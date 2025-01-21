@@ -134,9 +134,17 @@ class AdminClient {
     return createdUser;
   }
 
-  async updateUser(id: string, payload: UserRepresentation) {
+  async updateUser(
+    id: string,
+    payload: UserRepresentation & { realm: string },
+  ) {
     await this.#login();
-    return this.#client.users.update({ id }, payload);
+    const { realm, ...rest } = payload;
+    const user = await this.#client.users.findOne({ id, realm });
+    return this.#client.users.update(
+      { id, realm: realm || this.#client.realmName },
+      { ...user, ...rest },
+    );
   }
 
   async getAdminUser() {
@@ -402,10 +410,15 @@ class AdminClient {
     });
   }
 
-  async addLocalizationText(locale: string, key: string, value: string) {
+  async addLocalizationText(
+    locale: string,
+    key: string,
+    value: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     await this.#client.realms.addLocalization(
-      { realm: this.#client.realmName, selectedLocale: locale, key: key },
+      { realm, selectedLocale: locale, key: key },
       value,
     );
   }
