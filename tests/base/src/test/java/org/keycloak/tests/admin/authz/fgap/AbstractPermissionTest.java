@@ -39,7 +39,7 @@ public abstract class AbstractPermissionTest {
     @InjectRealm(config = RealmAdminPermissionsConfig.class)
     ManagedRealm realm;
 
-    @InjectClient(ref = Constants.ADMIN_PERMISSIONS_CLIENT_ID, createClient = false)
+    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient client;
 
     protected PermissionsResource getPermissionsResource() {

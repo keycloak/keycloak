@@ -15,8 +15,6 @@ import org.keycloak.testframework.server.KeycloakServer;
 
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
-    private static final String REALM_NAME_KEY = "realmName";
-
     @Override
     public Class<InjectRealm> getAnnotationClass() {
         return InjectRealm.class;
@@ -32,36 +30,40 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class, "bootstrap-client");
 
-        RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+        String attachTo = instanceContext.getAnnotation().attachTo();
+        boolean managed = attachTo.isEmpty();
 
-        RealmConfigBuilder realmConfigBuilder = config.configure(RealmConfigBuilder.create());
+        RealmRepresentation realmRepresentation;
 
-        RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(instanceContext.getRegistry());
-        realmConfigBuilder = interceptor.intercept(realmConfigBuilder, instanceContext);
+        if (managed) {
+            RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+            RealmConfigBuilder realmConfigBuilder = config.configure(RealmConfigBuilder.create());
 
-        RealmRepresentation realmRepresentation = realmConfigBuilder.build();
+            RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(instanceContext.getRegistry());
+            realmConfigBuilder = interceptor.intercept(realmConfigBuilder, instanceContext);
 
-        if (realmRepresentation.getRealm() == null) {
-            String realmName = SupplierHelpers.createName(instanceContext);
-            realmRepresentation.setRealm(realmName);
-        }
+            realmRepresentation = realmConfigBuilder.build();
 
-        if (realmRepresentation.getId() == null) {
-            realmRepresentation.setId(realmRepresentation.getRealm());
-        }
+            if (realmRepresentation.getRealm() == null) {
+                realmRepresentation.setRealm(SupplierHelpers.createName(instanceContext));
+            }
 
-        String realmName = realmRepresentation.getRealm();
-        instanceContext.addNote(REALM_NAME_KEY, realmName);
+            if (realmRepresentation.getId() == null) {
+                realmRepresentation.setId(realmRepresentation.getRealm());
+            }
 
-        if (instanceContext.getAnnotation().createRealm()) {
             adminClient.realms().create(realmRepresentation);
+
+            // TODO Token needs to be invalidated after creating realm to have roles for new realm in the token. Maybe lightweight access tokens could help.
+            adminClient.tokenManager().invalidate(adminClient.tokenManager().getAccessTokenString());
+        } else {
+            realmRepresentation = adminClient.realm(attachTo).toRepresentation();
         }
 
-        // TODO Token needs to be invalidated after creating realm to have roles for new realm in the token. Maybe lightweight access tokens could help.
-        adminClient.tokenManager().invalidate(adminClient.tokenManager().getAccessTokenString());
+        instanceContext.addNote("managed", managed);
 
         RealmResource realmResource = adminClient.realm(realmRepresentation.getRealm());
-        return new ManagedRealm(server.getBaseUrl() + "/realms/" + realmName, realmRepresentation, realmResource);
+        return new ManagedRealm(server.getBaseUrl() + "/realms/" + realmRepresentation.getRealm(), realmRepresentation, realmResource);
     }
 
     @Override
@@ -76,7 +78,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
     public void close(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
-        if (instanceContext.getAnnotation().createRealm()) {
+        if (instanceContext.getNote("managed", Boolean.class)) {
             instanceContext.getValue().admin().remove();
         }
     }

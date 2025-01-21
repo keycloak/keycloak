@@ -19,7 +19,7 @@ public class AdminSignatureAlgorithmTest {
     @InjectAdminClient
     Keycloak admin;
 
-    @InjectRealm(ref = "master", createRealm = false)
+    @InjectRealm(attachTo = "master")
     ManagedRealm masterRealm;
 
     @Test
