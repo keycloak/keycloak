@@ -19,6 +19,12 @@ public @interface InjectRealm {
 
     String ref() default "";
 
-    boolean createRealm() default true;
+    /**
+     * Attach to an existing realm instead of creating one; when attaching to an existing realm the config will be ignored
+     * and the realm will not be deleted automatically.
+     *
+     * @return the name of the existing realm to attach to
+     */
+    String attachTo() default "";
 
 }

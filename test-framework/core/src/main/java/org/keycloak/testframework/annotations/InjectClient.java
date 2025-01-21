@@ -21,5 +21,12 @@ public @interface InjectClient {
 
     String realmRef() default "";
 
-    boolean createClient() default true;
+    /**
+     * Attach to an existing client instead of creating one; when attaching to an existing client the config will be ignored
+     * and the client will not be deleted automatically.
+     *
+     * @return the client-id of the existing client to attach to
+     */
+    String attachTo() default "";
+
 }

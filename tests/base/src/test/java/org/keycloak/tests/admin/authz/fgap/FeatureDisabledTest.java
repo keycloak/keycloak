@@ -28,7 +28,7 @@ import org.keycloak.testframework.realm.ManagedClient;
 @KeycloakIntegrationTest
 public class FeatureDisabledTest {
 
-    @InjectClient(ref = "test-client", config = AuthzClientConfig.class, createClient = true)
+    @InjectClient(config = AuthzClientConfig.class)
     private ManagedClient testClient;
 
     @Test
