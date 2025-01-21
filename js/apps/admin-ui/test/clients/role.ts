@@ -14,6 +14,10 @@ export async function goToCreateRoleFromEmptyState(page: Page) {
   await page.getByTestId("no-roles-for-this-client-empty-action").click();
 }
 
+export async function goToCreateRole(page: Page) {
+  await page.getByTestId("create-role").click();
+}
+
 function getDescription(page: Page) {
   return page.getByTestId("description");
 }
@@ -42,6 +46,6 @@ export async function addAssociatedRoles(
   roleType: RoleType = "roles",
 ) {
   await changeRoleTypeFilter(page, roleType);
-  await pickRole(page, roleName);
+  await pickRole(page, roleName, true);
   await confirmModalAssign(page);
 }
