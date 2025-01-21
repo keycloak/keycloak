@@ -60,7 +60,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   checkExpirationGreaterThanZeroError() {
     cy.get(this.#expirationText).should(
       "have.text",
-      "Value should should be greater or equal to 1",
+      "Value should be greater or equal to 1",
     );
     return this;
   }
