@@ -71,6 +71,7 @@ export const ScopePicker = ({
         <HelpItem helpText={t("clientScopesHelp")} fieldLabelId="scopes" />
       }
       fieldId="scopes"
+      isRequired={isAdminPermissionsClient}
     >
       <Controller
         name="scopes"

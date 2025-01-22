@@ -1,7 +1,7 @@
+import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import ResourceServerRepresentation, {
   ResourceTypesRepresentation,
 } from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
-import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -48,7 +48,7 @@ export default function PermissionConfigurationDetails() {
     useParams<PermissionConfigurationDetailsParams>();
   const navigate = useNavigate();
   const form = useForm();
-  const { handleSubmit } = form;
+  const { handleSubmit, reset } = form;
   const { addAlert, addError } = useAlerts();
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [providers, setProviders] = useState<PolicyProviderRepresentation[]>();
@@ -65,24 +65,32 @@ export default function PermissionConfigurationDetails() {
   }, [adminPermissionClient, resourceType]);
 
   useFetch(
-    () =>
-      Promise.all([
-        adminClient.clients.getResourceServer({
-          id: permissionClientId,
-        }),
-        adminClient.clients.listPolicyProviders({
-          id: permissionClientId,
-        }),
+    async () => {
+      if (!permissionClientId) {
+        return {};
+      }
+
+      const [adminClientData, providers, policies] = await Promise.all([
+        adminClient.clients.getResourceServer({ id: permissionClientId }),
+        adminClient.clients.listPolicyProviders({ id: permissionClientId }),
         adminClient.clients.listPolicies({
           id: permissionClientId,
           permission: "false",
         }),
-      ]),
-    ([adminClient, providers, policies]) => {
+      ]);
+
+      return { adminClientData, providers, policies };
+    },
+    ({ adminClientData, providers, policies }) => {
+      if (!adminClientData) {
+        throw new Error(t("notFound"));
+      }
+
       const filteredProviders = providers.filter(
         (p) => p.type !== "resource" && p.type !== "scope",
       );
-      setAdminPermissionClient(adminClient);
+
+      setAdminPermissionClient(adminClientData);
       setProviders(
         sortBy(
           filteredProviders,
@@ -92,6 +100,64 @@ export default function PermissionConfigurationDetails() {
       setPolicies(policies || []);
     },
     [permissionClientId],
+  );
+
+  useFetch(
+    async () => {
+      if (!permissionId) {
+        return {};
+      }
+      const [permission, resources, policies, scopes] = await Promise.all([
+        adminClient.clients.findOnePermission({
+          id: permissionClientId,
+          type: "scope",
+          permissionId,
+        }),
+        adminClient.clients.getAssociatedResources({
+          id: permissionClientId,
+          permissionId,
+        }),
+        adminClient.clients.getAssociatedPolicies({
+          id: permissionClientId,
+          permissionId,
+        }),
+        adminClient.clients.getAssociatedScopes({
+          id: permissionClientId,
+          permissionId,
+        }),
+      ]);
+
+      if (!permission) {
+        throw new Error(t("notFound"));
+      }
+
+      return {
+        permission,
+        resources,
+        policies,
+        scopes,
+      };
+    },
+    ({ permission, resources, policies, scopes }) => {
+      const resourceIds = resources?.map((resource) => resource._id!) || [];
+      const policyIds = policies?.map((policy) => policy.id!) || [];
+      const scopeNames = scopes?.map((scope) => scope.name) || [];
+
+      reset({
+        ...permission,
+        resources,
+        policies,
+        scopes,
+      });
+
+      setPermission({
+        ...permission,
+        resources: resourceIds!,
+        policies: policyIds,
+        scopes: scopeNames,
+      });
+    },
+    [permissionClientId, permissionId],
   );
 
   const save = async (permission: PolicyRepresentation) => {
@@ -155,7 +221,7 @@ export default function PermissionConfigurationDetails() {
     },
   });
 
-  if (permissionId && !permission) {
+  if (!permissionId && !permission) {
     return <KeycloakSpinner />;
   }
 

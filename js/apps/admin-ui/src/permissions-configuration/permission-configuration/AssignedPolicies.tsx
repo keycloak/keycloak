@@ -80,7 +80,7 @@ export const AssignedPolicies = ({
       const filteredPolicy = policies.filter((p) => p) as [];
       setSelectedPolicies(filteredPolicy);
     },
-    [],
+    [policies],
   );
 
   const sortedProviders = sortBy(
