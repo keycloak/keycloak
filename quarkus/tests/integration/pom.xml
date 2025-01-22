@@ -172,9 +172,9 @@
                             <systemPropertyVariables>
                                 <kc.test.storage.database>true</kc.test.storage.database>
                                 <!--DB Container -->
-                                <kc.db.postgresql.container.image>postgres:${postgresql.version}</kc.db.postgresql.container.image>
-                                <kc.db.mariadb.container.image>mariadb:${mariadb.version}</kc.db.mariadb.container.image>
-                                <kc.db.mysql.container.image>mysql:${mysql.version}</kc.db.mysql.container.image>
+                                <kc.db.postgresql.container.image>mirror.gcr.io/postgres:${postgresql.version}</kc.db.postgresql.container.image>
+                                <kc.db.mariadb.container.image>mirror.gcr.io/mariadb:${mariadb.version}</kc.db.mariadb.container.image>
+                                <kc.db.mysql.container.image>mirror.gcr.io/mysql:${mysql.version}</kc.db.mysql.container.image>
                                 <kc.infinispan.container.image>quay.io/infinispan/server:${infinispan.version}</kc.infinispan.container.image>
                                 <kc.db.mssql.container.image>mcr.microsoft.com/mssql/server:${mssql.version}</kc.db.mssql.container.image>
                             </systemPropertyVariables>
