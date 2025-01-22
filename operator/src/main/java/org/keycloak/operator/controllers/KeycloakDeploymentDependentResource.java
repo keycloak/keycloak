@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -31,7 +30,6 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -40,6 +38,7 @@ import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
@@ -131,32 +130,32 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         addEnvVars(baseDeployment, primary, allSecrets);
         addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
-                .ifPresent(c -> configureCache(primary, baseDeployment, kcContainer, c, context.getClient()));
+                .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, context.getClient()));
 
         if (!allSecrets.isEmpty()) {
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
         }
 
-        StatefulSet existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
-        if (existingDeployment == null) {
-            Log.debug("No existing Deployment found, using the default");
-        }
-        else {
-            Log.debug("Existing Deployment found, handling migration");
-
-            // version 22 changed the match labels, account for older versions
-            if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
-                context.getClient().resource(existingDeployment).lockResourceVersion().delete();
-                Log.info("Existing Deployment found with old label selector, it will be recreated");
-            }
-
-            migrateDeployment(existingDeployment, baseDeployment, context);
+        var upgradeType = ContextUtils.getUpgradeType(context);
+        // empty means no existing stateful set.
+        if (upgradeType.isEmpty()) {
+            return baseDeployment;
         }
 
-        return baseDeployment;
+        var existingDeployment = ContextUtils.getCurrentStatefulSet(context);
+
+        if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
+            context.getClient().resource(existingDeployment).lockResourceVersion().delete();
+            Log.info("Existing Deployment found with old label selector, it will be recreated");
+        }
+
+        return switch (upgradeType.get()) {
+            case ROLLING -> handleRollingUpdate(baseDeployment);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment);
+        };
     }
 
-    private void configureCache(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client) {
+    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client) {
         Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
             if (configFile.getName() == null || configFile.getKey() == null) {
                 throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
@@ -345,7 +344,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         // add in ports - there's no merging being done here
-        final StatefulSet baseDeployment = containerBuilder
+        return containerBuilder
             .addNewPort()
                 .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
                 .withContainerPort(Constants.KEYCLOAK_HTTPS_PORT)
@@ -362,8 +361,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
-
-        return baseDeployment;
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
@@ -477,7 +474,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
-            Set<String> inCr = keycloakCR.getSpec().getAdditionalOptions().stream().map(v -> v.getName()).collect(Collectors.toSet());
+            Set<String> inCr = keycloakCR.getSpec().getAdditionalOptions().stream().map(ValueOrSecret::getName).collect(Collectors.toSet());
             serverConfigsList.removeIf(v -> inCr.contains(v.getName()));
             serverConfigsList.addAll(keycloakCR.getSpec().getAdditionalOptions());
         }
@@ -514,28 +511,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return keycloak.getMetadata().getName();
     }
 
-    public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment, Context<Keycloak> context) {
-        var previousContainer = Optional.ofNullable(previousDeployment).map(StatefulSet::getSpec)
-                .map(StatefulSetSpec::getTemplate).map(PodTemplateSpec::getSpec).map(PodSpec::getContainers)
-                .flatMap(c -> c.stream().findFirst()).orElse(null);
-        if (previousContainer == null) {
-            return;
-        }
-        var reconciledContainer = reconciledDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-
-        if (!previousContainer.getImage().equals(reconciledContainer.getImage())
-                && previousDeployment.getStatus().getReplicas() > 0) {
-            // TODO Check if migration is really needed (e.g. based on actual KC version); https://github.com/keycloak/keycloak/issues/10441
-            Log.info("Detected changed Keycloak image, assuming Keycloak upgrade. Scaling down the deployment to one instance to perform a safe database migration");
-            Log.infof("original image: %s; new image: %s", previousContainer.getImage(), reconciledContainer.getImage());
-
-            reconciledContainer.setImage(previousContainer.getImage());
-            reconciledDeployment.getSpec().setReplicas(0);
-
-            reconciledDeployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
-        }
-    }
-
     protected Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<Keycloak> context) {
         return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getAdditionalOptions)
                 .flatMap(l -> l.stream().filter(sc -> sc.getName().equals(key)).findFirst().map(serverConfigValue -> {
@@ -555,6 +530,31 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
             throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
         }));
+    }
+
+    private static StatefulSet handleRollingUpdate(StatefulSet desired) {
+        // return the desired stateful set since Kubernetes does a rolling in-place upgrade by default.
+        Log.debug("Performing a rolling upgrade");
+        return desired;
+    }
+
+    private static StatefulSet  handleRecreateUpdate(StatefulSet actual, StatefulSet desired) {
+        if (actual.getStatus().getReplicas() == 0) {
+            Log.debug("Performing a recreate upgrade - scaling up the stateful set");
+            return desired;
+        }
+        Log.debug("Performing a recreate upgrade - scaling down the stateful set");
+        // return the existing stateful set, but set replicas to zero
+        var builder = actual.toBuilder();
+        builder.editSpec()
+                .withReplicas(0)
+                .endSpec();
+        // update metadata from the new stateful set, it is safe to do so.
+        builder.withMetadata(desired.getMetadata());
+        builder.editMetadata()
+                .addToAnnotations(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString())
+                .endMetadata();
+        return builder.build();
     }
 
 }

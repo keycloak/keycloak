@@ -124,6 +124,8 @@ spec:
     service:
       secret: else
   unsupported:
+    upgrade:
+      strategy: Recreate
     podTemplate:
       metadata:
         labels:
