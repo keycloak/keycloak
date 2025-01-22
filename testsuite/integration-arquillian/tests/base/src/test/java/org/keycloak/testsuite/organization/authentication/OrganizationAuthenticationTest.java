@@ -22,6 +22,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -31,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -167,6 +172,25 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         } finally {
             runOnServer(setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString()));
         }
+    }
+
+    @Test
+    public void testLoginHint() {
+        OrganizationRepresentation organization = createOrganization();
+        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        UserRepresentation member = addMember(organizationResource);
+
+        // login hint populates the username field
+        oauth.clientId("broker-app");
+        String expectedUsername = URLEncoder.encode(member.getEmail(), StandardCharsets.UTF_8);
+        oauth.realm(bc.consumerRealmName());
+        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=" + expectedUsername);
+        assertThat(loginPage.getUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
+
+        // continue authenticating without setting the username
+        loginPage.clickSignIn();
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
     }
 
     private void runOnServer(RunOnServer function) {
