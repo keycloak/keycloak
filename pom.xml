@@ -96,7 +96,7 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.11.Final</infinispan.version>
+        <infinispan.version>15.0.12.Final</infinispan.version>
         <protostream.plugin.version>5.0.12.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
