@@ -194,7 +194,7 @@ export default function ClientDetails() {
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm, realmRepresentation } = useRealm();
+  const { realm } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -683,37 +683,31 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
-            {hasAccess("view-events") &&
-              (realmRepresentation?.adminEventsEnabled ||
-                realmRepresentation?.eventsEnabled) && (
-                <Tab
-                  data-testid="events-tab"
-                  title={<TabTitleText>{t("events")}</TabTitleText>}
-                  {...eventsTab}
+            {hasAccess("view-events") && (
+              <Tab
+                data-testid="events-tab"
+                title={<TabTitleText>{t("events")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <Tabs
+                  activeKey={activeEventsTab}
+                  onSelect={(_, key) => setActiveEventsTab(key as string)}
                 >
-                  <Tabs
-                    activeKey={activeEventsTab}
-                    onSelect={(_, key) => setActiveEventsTab(key as string)}
+                  <Tab
+                    eventKey="userEvents"
+                    title={<TabTitleText>{t("userEvents")}</TabTitleText>}
                   >
-                    {realmRepresentation?.eventsEnabled && (
-                      <Tab
-                        eventKey="userEvents"
-                        title={<TabTitleText>{t("userEvents")}</TabTitleText>}
-                      >
-                        <UserEvents client={client.clientId} />
-                      </Tab>
-                    )}
-                    {realmRepresentation?.adminEventsEnabled && (
-                      <Tab
-                        eventKey="adminEvents"
-                        title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
-                      >
-                        <AdminEvents resourcePath={`clients/${client.id}`} />
-                      </Tab>
-                    )}
-                  </Tabs>
-                </Tab>
-              )}
+                    <UserEvents client={client.clientId} />
+                  </Tab>
+                  <Tab
+                    eventKey="adminEvents"
+                    title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                  >
+                    <AdminEvents resourcePath={`clients/${client.id}`} />
+                  </Tab>
+                </Tabs>
+              </Tab>
+            )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>
