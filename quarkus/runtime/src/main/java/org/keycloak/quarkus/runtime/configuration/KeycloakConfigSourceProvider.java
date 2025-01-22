@@ -91,6 +91,10 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
         return CONFIG_SOURCES;
     }
 
+    public static List<ConfigSource> getConfigSources() {
+        return CONFIG_SOURCES;
+    }
+
     @Override
     public SmallRyeConfigBuilder configBuilder(SmallRyeConfigBuilder builder) {
         return builder.withSources(CONFIG_SOURCES);

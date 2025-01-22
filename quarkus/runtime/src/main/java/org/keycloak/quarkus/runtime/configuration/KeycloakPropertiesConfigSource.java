@@ -64,21 +64,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        // a workaround for https://github.com/smallrye/smallrye-config/issues/1207
-        // replace by the following line when fixed:
-        // return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
-        var cs = new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal) {
-            private String name;
-            @Override
-            public String getName() {
-                return name;
-            }
-            public void setName(String name) {
-                this.name = name;
-            }
-        };
-        cs.setName(url.toString());
-        return cs;
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
     }
 
     public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {

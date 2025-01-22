@@ -61,7 +61,7 @@ public class Config {
             } else {
                 testConfig = Thread.currentThread().getContextClassLoader().getResource("keycloak-test.properties");
             }
-            return testConfig != null ? new PropertiesConfigSource(testConfig, "KeycloakTestConfig", 280) : null;
+            return testConfig != null ? new PropertiesConfigSource(testConfig, 280) : null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1976,7 +1976,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (Keycloak client = KeycloakBuilder.builder().serverUrl(loginPage.getAuthRoot()).realm(SAMLSERVLETDEMO)
                 .username(admin).password(adminPassword).clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .resteasyClient(ResteasyClientBuilder.newBuilder().build()).build();
+                .resteasyClient(AdminClientUtil.createResteasyClient()).build();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
             HttpUriRequest req = RequestBuilder.post()
                     .setUri(loginPage.getAuthRoot() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")

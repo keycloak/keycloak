@@ -115,12 +115,11 @@ public abstract class AbstractConfigurationTest {
             }
         });
 
-        SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
         Profile.reset();
-        ConfigProviderResolver.setInstance(null);
+        Configuration.resetConfig();
     }
 
     @After
@@ -134,14 +133,9 @@ public abstract class AbstractConfigurationTest {
     }
 
     static protected SmallRyeConfig createConfig() {
+        Configuration.resetConfig();
         KeycloakConfigSourceProvider.reload();
-        // older versions of quarkus implicitly picked up this config, now we
-        // must set it manually
-        SmallRyeConfig config = ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
-        SmallRyeConfigProviderResolver resolver = new SmallRyeConfigProviderResolver();
-        resolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
-        ConfigProviderResolver.setInstance(resolver);
-        return config;
+        return Configuration.getConfig();
     }
 
     protected void assertConfig(String key, String expectedValue, boolean isExternal) {

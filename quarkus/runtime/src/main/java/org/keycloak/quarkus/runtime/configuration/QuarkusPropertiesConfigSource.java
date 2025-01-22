@@ -43,7 +43,7 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
 public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
 
     private static final String FILE_NAME = "quarkus.properties";
-    public static final String NAME = "QuarkusProperties";
+    public static final String NAME = "KcQuarkusPropertiesConfigSource";
 
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
@@ -70,11 +70,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
         String name = loadingFile ? NAME : (NAME + " " + url);
         return new PropertiesConfigSource(ConfigSourceUtil.urlToMap(url), name, ordinal) {
-            @Override
-            public String getName() {
-                return name;
-            }
-
             @Override
             public String getValue(String propertyName) {
                 if (propertyName.startsWith(NS_QUARKUS)) {
