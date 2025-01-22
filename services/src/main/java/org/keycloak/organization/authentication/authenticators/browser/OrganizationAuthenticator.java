@@ -103,24 +103,26 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             if (shouldUserSelectOrganization(context, user)) {
                 return;
             }
+
+            if (isMembershipRequired(context, null, user)) {
+                return;
+            }
+
+            clearAuthenticationSession(context);
             // request does not map to any organization, go to the next step/sub-flow
             context.attempted();
             return;
         }
 
-        if (user != null && isRequiresMembership(context) && !organization.isMember(user)) {
-            String errorMessage = "notMemberOfOrganization";
-            // do not show try another way
-            context.setAuthenticationSelections(List.of());
-            Response challenge = context.form()
-                    .setError(errorMessage, organization.getName())
-                    .createErrorPage(Response.Status.FORBIDDEN);
-            context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, "User " + user.getUsername() + " not a member of organization " + organization.getAlias(), errorMessage);
-            return;
-        }
-
+        // remember the organization during the lifetime of the authentication session
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+        authenticationSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
         // make sure the organization is set to the session to make it available to templates
         session.getContext().setOrganization(organization);
+
+        if (isMembershipRequired(context, organization, user)) {
+            return;
+        }
 
         if (tryRedirectBroker(context, organization, user, username, domain)) {
             return;
@@ -137,7 +139,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        if (isSSOAuthentication(context.getAuthenticationSession())) {
+        if (isSSOAuthentication(authenticationSession)) {
             // if re-authenticating in the scope of an organization
             context.success();
         } else {
@@ -153,9 +155,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     private OrganizationModel resolveOrganization(UserModel user, String domain) {
         KeycloakContext context = session.getContext();
         HttpRequest request = context.getHttpRequest();
-        MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
-        List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
+        // parameter from the organization selection page
+        List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
 
         if (alias.isEmpty()) {
             OrganizationModel organization = Organizations.resolveOrganization(session, user, domain);
@@ -184,8 +187,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     private boolean shouldUserSelectOrganization(AuthenticationFlowContext context, UserModel user) {
         OrganizationProvider provider = getOrganizationProvider();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        String rawScope = authSession.getClientNote(OAuth2Constants.SCOPE);
-        OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScope);
+        OrganizationScope scope = OrganizationScope.valueOfScope(session);
 
         if (!OrganizationScope.ANY.equals(scope) || user == null) {
             return false;
@@ -210,6 +212,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                     return attributes;
                 }
             });
+            clearAuthenticationSession(context);
             context.challenge(form.createForm("select-organization.ftl"));
             return true;
         }
@@ -269,6 +272,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = Optional.ofNullable(users.getUserByEmail(realm, username)).orElseGet(() -> users.getUserByUsername(realm, username));
 
+        // make sure the organization will be resolved based on the username provided
+        clearAuthenticationSession(context);
         context.setUser(user);
 
         return user;
@@ -358,5 +363,51 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private Map<String, String> getConfig(AuthenticationFlowContext context) {
         return Optional.ofNullable(context.getAuthenticatorConfig()).map(AuthenticatorConfigModel::getConfig).orElse(Map.of());
+    }
+
+    private void clearAuthenticationSession(AuthenticationFlowContext context) {
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+        authenticationSession.removeAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+    }
+
+    private boolean isMembershipRequired(AuthenticationFlowContext context, OrganizationModel organization, UserModel user) {
+        if (user == null || !isRequiresMembership(context)) {
+            return false;
+        }
+
+        if (organization == null) {
+            OrganizationScope scope = OrganizationScope.valueOfScope(session);
+
+            if (OrganizationScope.SINGLE.equals(scope)) {
+                organization = scope.resolveOrganizations(session).findAny().orElse(null);
+            }
+        }
+
+        if (organization != null && organization.isMember(user)) {
+            return false;
+        }
+
+        // do not show try another way
+        context.setAuthenticationSelections(List.of());
+
+        LoginFormsProvider form = context.form();
+        String errorMessage;
+        String failureMessage;
+
+        if (organization == null) {
+            errorMessage = "notMemberOfAnyOrganization";
+            failureMessage = "User " + user.getUsername() + " not a member of any organization";
+            form.setError(errorMessage);
+        } else {
+            errorMessage = "notMemberOfOrganization";
+            failureMessage = "User " + user.getUsername() + " not a member of organization " + organization.getAlias();
+            form.setError(errorMessage, organization.getName());
+        }
+
+        context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
+                form.createErrorPage(Response.Status.FORBIDDEN),
+                failureMessage, errorMessage);
+
+        return true;
     }
 }

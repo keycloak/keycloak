@@ -19,8 +19,10 @@ package org.keycloak.testsuite.organization.broker;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -208,7 +210,6 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation idp = bc.setUpIdentityProvider();
         idp.setAlias("realm-level-idp");
         idp.setHideOnLogin(false);
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
         testRealm().identityProviders().create(idp).close();
 
         driver.navigate().refresh();
@@ -216,6 +217,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
     @Test
@@ -711,6 +713,63 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         } catch (BadRequestException expected) {
 
         }
+    }
+
+    @Test
+    public void testRememberOrganizationWhenReloadingLoginPage() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation org1 = organization.toRepresentation();
+        IdentityProviderRepresentation orgIdp = organization.identityProviders().getIdentityProviders().get(0);
+        orgIdp.setHideOnLogin(false);
+        orgIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().get(orgIdp.getAlias()).update(orgIdp);
+
+        IdentityProviderRepresentation realmIdp = bc.setUpIdentityProvider();
+        realmIdp.setAlias("second-idp");
+        realmIdp.setInternalId(null);
+        realmIdp.setHideOnLogin(false);
+        testRealm().identityProviders().create(realmIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("test@" + org1.getDomains().iterator().next().getName());
+        // only org idp
+        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+
+        driver.navigate().refresh();
+        // still only org idp
+        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+
+        driver.navigate().back();
+        // only org idp, back button won't reset the flow and the organization is the same
+        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+        loginPage.loginUsername("test");
+        // both realm and org idps because the user does not map to any organization
+        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertTrue(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("test@" + org1.getDomains().iterator().next().getName());
+        // only org idp
+        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+
+        String org2Name = "org-2";
+        OrganizationResource org2 = testRealm().organizations().get(createOrganization(org2Name).getId());
+        IdentityProviderRepresentation org2Idp = org2.identityProviders().getIdentityProviders().get(0);
+        org2Idp.setHideOnLogin(false);
+        org2Idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().get(org2Idp.getAlias()).update(org2Idp);
+        driver.navigate().back();
+        loginPage.loginUsername("test@" + org2.toRepresentation().getDomains().iterator().next().getName());
+        // resolves to brokers from another organization
+        assertFalse(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+        assertTrue(loginPage.isSocialButtonPresent(org2Idp.getAlias()));
     }
 
     private void assertIsNotMember(String userEmail, OrganizationResource organization) {

@@ -23,6 +23,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -39,8 +40,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -150,6 +153,7 @@ public enum OrganizationScope {
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
     private static final char VALUE_SEPARATOR = ':';
     private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*)" + VALUE_SEPARATOR + "(.*)");
+    private static final String EMPTY_SCOPE = "";
 
     /**
      * <p>Resolves the value of the scope from its raw format. For instance, {@code organization:<value>} will resolve to {@code <value>}.
@@ -159,7 +163,7 @@ public enum OrganizationScope {
     private final Predicate<String> valueMatcher;
 
     /**
-     * Resolves the organizations based on the values of the scope.
+     * Resolves the organizations of the user based on the values of the scope.
      */
     private final TriFunction<UserModel, String, KeycloakSession, Stream<OrganizationModel>> valueResolver;
 
@@ -186,13 +190,33 @@ public enum OrganizationScope {
      * @param user the user. Can be {@code null} depending on how the scope resolves its value.
      * @param scope the string referencing the scope
      * @param session the session
-     * @return the organizations mapped to the given {@code user}. Or an empty stream if no organizations were mapped from the {@code scope} parameter.
+     * @return the organizations mapped from the {@code scope} parameter. Or an empty stream if no organizations were mapped from the parameter.
      */
     public Stream<OrganizationModel> resolveOrganizations(UserModel user, String scope, KeycloakSession session) {
-        if (isBlank(scope)) {
-            return Stream.empty();
-        }
-        return valueResolver.apply(user, scope, session).filter(OrganizationModel::isEnabled);
+        return valueResolver.apply(user, Optional.ofNullable(scope).orElse(EMPTY_SCOPE), session).filter(OrganizationModel::isEnabled);
+    }
+
+    /**
+     * Returns a stream of {@link OrganizationScope} instances based on the scopes from the {@code AuthenticationSessionModel} associated
+     * with the given {@code session} and where the given {@code user} is a member.
+     *
+     * @param user the user. Can be {@code null} depending on how the scope resolves its value.
+     * @param session the session
+     * @return the organizations mapped from the {@code scope} parameter. Or an empty stream if no organizations were mapped from the parameter.
+     */
+    public Stream<OrganizationModel> resolveOrganizations(UserModel user, KeycloakSession session) {
+        return resolveOrganizations(user, getRequestedScopes(session), session);
+    }
+
+    /**
+     * Returns a stream of {@link OrganizationScope} instances based on the scopes from the {@code AuthenticationSessionModel} associated
+     * with the given {@code session}.
+     *
+     * @param session the session
+     * @return the organizations mapped from the {@code scope} parameter. Or an empty stream if no organizations were mapped from the parameter.
+     */
+    public Stream<OrganizationModel> resolveOrganizations(KeycloakSession session) {
+        return resolveOrganizations(null, session);
     }
 
     /**
@@ -251,11 +275,7 @@ public enum OrganizationScope {
      * @return the organization scope that maps the given {@code rawScope}
      */
     public static OrganizationScope valueOfScope(KeycloakSession session, String rawScope) {
-        if (isBlank(rawScope)) {
-            return null;
-        }
-
-        return parseScopeParameter(session, rawScope)
+        return parseScopeParameter(session, Optional.ofNullable(rawScope).orElse(EMPTY_SCOPE))
                 .map(s -> {
                     for (OrganizationScope scope : values()) {
                         if (scope.valueMatcher.test(parseScopeValue(session, s))) {
@@ -266,6 +286,41 @@ public enum OrganizationScope {
                 }).filter(Objects::nonNull)
                 .findAny()
                 .orElse(null);
+    }
+
+    /**
+     * Returns a {@link OrganizationScope} instance based on the scopes from the {@code AuthenticationSessionModel} associated
+     * with the given {@code session}.
+     *
+     * @param session the session
+     * @return the organization scope that maps the given {@code rawScope}
+     */
+    public static OrganizationScope valueOfScope(KeycloakSession session) {
+        OrganizationScope value = session.getAttribute(OrganizationScope.class.getName(), OrganizationScope.class);
+
+        if (value != null) {
+            return value;
+        }
+
+        value = valueOfScope(session, getRequestedScopes(session));
+
+        if (value != null) {
+            session.setAttribute(OrganizationScope.class.getName(), value);
+        }
+
+        return value;
+    }
+
+    private static String getRequestedScopes(KeycloakSession session) {
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession == null) {
+            return EMPTY_SCOPE;
+        }
+
+        String requestedScopes = authSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+
+        return Optional.ofNullable(requestedScopes).orElse(EMPTY_SCOPE);
     }
 
     private static String parseScopeValue(KeycloakSession session, String scope) {
