@@ -5,7 +5,7 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/keycloak-operator)](https://artifacthub.io/packages/olm/community-operators/keycloak-operator)
 ![GitHub Repo stars](https://img.shields.io/github/stars/keycloak/keycloak?style=flat)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/keycloak/keycloak)
-[![Translation status](https://hosted.weblate.org/widget/keycloak/svg-badge.svg)](https://hosted.weblate.org/engage/keycloak/)
+[![Translation status](https://hosted.weblate.org/widget/keycloak/svg-badge.svg)](docs/translation.md)
 
 # Open Source Identity and Access Management
 
