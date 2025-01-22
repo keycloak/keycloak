@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Update Compatibility Tool"
@@ -11,19 +12,22 @@ preview="true">
 The goal of this tool is to assist with modifying a {project_name} deployment, whether upgrading to a new version, enabling/disabling features, or changing configuration.
 The outcome will indicate whether a rolling upgrade is possible or if a recreate upgrade is required.
 
+This has been designed to be fully scriptable, so an update procedure can adapt to a rolling or recreate strategy depending on the configuration or version change.
+It is also GitOps friendly as it allows storing the metdata of a currently running configuration in a file. This file can be used in a CI/CD run with the new configuration to determine if a rolling upgrade is possible or if a recreate upgrade is needed.
+
 [NOTE]
 ====
 .Rolling Upgrade
 In the context of this guide, a rolling upgrade is an upgrade that can be performed with zero downtime for your deployment.
 Your {project_name} nodes must be updated one by one; in other words, shut down one of your old deployment nodes and start a new deployment node.
-Wait until the new node is operational before proceeding to the next {project_name} node.
+Wait until the new node's start-up probe returns success before proceeding to the next {project_name} node. See {section} <@links.observability id="health"/> for details on how to enable and use the start-up probe.
 ====
 
 [NOTE]
 ====
 .Recreate Upgrade
 A recreate upgrade is not compatible with zero-downtime and requires downtime to be applied.
-Your cluster must be shut down before applying the change.
+Shut down all nodes of the cluster running the old version before starting the nodes with the new version.
 ====
 
 The update compatibility tool involves two steps:
@@ -33,9 +37,16 @@ The update compatibility tool involves two steps:
 
 [WARNING]
 ====
-The tool is under development and may return an incorrect result.
+This command is under development. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
+If those are unchanged, it reports that a rolling update is possible.
 
-Use with caution and always try to upgrade your deployment in a staged environment first.
+The current version does not yet verify configuration changes and assumes all configuration changes are elegible for a rolling update.
+The same applies to changes to custom extensions and themes.
+
+A good use case when to use this is, for example, when you want to do a rolling update when you change the {project_name} theme or your custom extensions, and only want run recreate update when the version of {project_name} changes which does not yet allow a rolling update.
+
+While consumers of these commands should be aware of the limitations that exist today, they should not rely on the internal behavior or the structure of the metadata file as this is about to be enhanced in future versions.
+Instead, they should rely only on the exit code of the `check` command to benefit from future enhancements on the internal logic to determine when a rolling update is possible.
 ====
 
 == Generating the Metadata
@@ -46,9 +57,9 @@ To generate the metadata, execute the following command using the same {project_
 <@kc.updatecompatibility parameters="metadata --file=/path/to/file.json"/>
 
 This command accepts all options used by the `start` command.
-The metadata, in JSON format, is displayed in the console.
+The metadata, in JSON format, is displayed in the console for debugging purposes.
 The `--file` parameter allows you to save the metadata to a file.
-This file is then used by the subsequent command.
+This file is then used by the subsequent `check` command.
 
 [WARNING]
 ====
@@ -112,11 +123,5 @@ m|3
 |Rolling Upgrade is not possible.
 The deployment must be shut down before applying the new configuration.
 |===
-
-[WARNING]
-====
-This feature is under development.
-Always test upgrades in a staged environment before implementing them in production.
-====
 
 </@tmpl.guide>

@@ -77,7 +77,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     void printPreviewWarning() {
-        printError("Warning! This command is preview and may output an incorrect outcome. Use with caution!");
+        printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
     }
 
 }
