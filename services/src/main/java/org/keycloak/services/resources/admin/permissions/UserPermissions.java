@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import jakarta.ws.rs.ForbiddenException;
-import java.util.LinkedList;
 
 /**
  * Manages default policies for all users.
@@ -72,7 +71,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private static final String VIEW_PERMISSION_USERS = "view.permission.users";
     private static final String USERS_RESOURCE = "Users";
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
     private final AuthorizationProvider authz;
     protected final MgmtPermissions root;
     private final PolicyStore policyStore;
