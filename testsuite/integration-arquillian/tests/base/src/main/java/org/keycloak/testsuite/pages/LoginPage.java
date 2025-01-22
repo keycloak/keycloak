@@ -91,13 +91,13 @@ public class LoginPage extends LanguageComboboxAwarePage {
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
-        clickLink(submitButton);
+        clickSignIn();
     }
 
     public void loginUsername(String username) {
         clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);
-        clickLink(submitButton);
+        clickSignIn();
     }
 
     private void clearUsernameInputAndWaitIfNecessary() {
@@ -115,6 +115,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
+        clickSignIn();
+    }
+
+    public void clickSignIn() {
         clickLink(submitButton);
     }
 
@@ -122,12 +126,12 @@ public class LoginPage extends LanguageComboboxAwarePage {
         clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);
         passwordInput.clear();
-        clickLink(submitButton);
+        clickSignIn();
     }
 
     public void missingUsername() {
         clearUsernameInputAndWaitIfNecessary();
-        clickLink(submitButton);
+        clickSignIn();
     }
 
     public String getHtmlLanguage() {
