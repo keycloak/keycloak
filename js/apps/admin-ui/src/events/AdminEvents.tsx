@@ -38,7 +38,7 @@ import {
 } from "@patternfly/react-table";
 import CodeEditor from "@uiw/react-textarea-code-editor";
 import { pickBy } from "lodash-es";
-import { PropsWithChildren, useMemo, useState } from "react";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -175,6 +175,11 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
     },
     [],
   );
+
+  useEffect(() => {
+    const timer = setInterval(() => setKey((key) => key + 1), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
