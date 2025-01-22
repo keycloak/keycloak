@@ -136,12 +136,15 @@ export const RealmSelector = () => {
   );
 
   const sortedRealms = useMemo(
-    () => [
-      ...(first === 0 && !search
-        ? (recentRealms || []).map((name) => ({ name }))
-        : []),
-      ...realms.filter((r) => !(recentRealms || []).includes(r.name)),
-    ],
+    () =>
+      realms.sort((a, b) => {
+        if (a.name === realm) return -1;
+        if (b.name === realm) return 1;
+        if (recentRealms.includes(a.name)) return -1;
+        if (recentRealms.includes(b.name)) return 1;
+
+        return a.name.localeCompare(b.name, whoAmI.getLocale());
+      }),
     [recentRealms, realms, first, search],
   );
 
