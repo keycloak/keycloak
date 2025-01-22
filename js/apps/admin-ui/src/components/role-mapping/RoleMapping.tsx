@@ -19,7 +19,11 @@ import { translationFormatter } from "../../utils/translationFormatter";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
-import { AddRoleMappingModal } from "./AddRoleMappingModal";
+import {
+  AddRoleButton,
+  AddRoleMappingModal,
+  FilterType,
+} from "./AddRoleMappingModal";
 import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
 import { getEffectiveClientRoles } from "./resource";
 
@@ -99,6 +103,7 @@ export const RoleMapping = ({
 
   const [hide, setHide] = useState(true);
   const [showAssign, setShowAssign] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selected, setSelected] = useState<Row[]>([]);
 
   const assignRoles = async (rows: Row[]) => {
@@ -187,6 +192,7 @@ export const RoleMapping = ({
         <AddRoleMappingModal
           id={id}
           type={type}
+          filterType={filterType}
           name={name}
           onAssign={assignRoles}
           onClose={() => setShowAssign(false)}
@@ -221,12 +227,13 @@ export const RoleMapping = ({
             {isManager && (
               <>
                 <ToolbarItem>
-                  <Button
+                  <AddRoleButton
+                    onFilerTypeChange={(type) => {
+                      setFilterType(type);
+                      setShowAssign(true);
+                    }}
                     data-testid="assignRole"
-                    onClick={() => setShowAssign(true)}
-                  >
-                    {t("assignRole")}
-                  </Button>
+                  />
                 </ToolbarItem>
                 <ToolbarItem>
                   <Button
