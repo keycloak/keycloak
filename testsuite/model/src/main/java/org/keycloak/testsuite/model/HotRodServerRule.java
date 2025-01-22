@@ -2,7 +2,6 @@ package org.keycloak.testsuite.model;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -13,11 +12,6 @@ import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.container.versioning.IncrementableEntryVersion;
-import org.infinispan.container.versioning.NumericVersion;
-import org.infinispan.container.versioning.VersionGenerator;
-import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.server.hotrod.HotRodServer;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfiguration;
@@ -89,41 +83,11 @@ public class HotRodServerRule extends ExternalResource {
 
         // create remote keycloak caches
         createKeycloakCaches(config.getBoolean("async", false) ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
-        replaceVersionGenerator();
 
         // Use Keycloak time service in remote caches
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager);
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
     }
-
-    // ----- WORKAROUND FOR https://github.com/infinispan/infinispan/issues/13191 -----//
-    private void replaceVersionGenerator() {
-        CACHES_NAME.stream()
-                .flatMap(name -> Stream.of(hotRodCacheManager.getCache(name), hotRodCacheManager2.getCache(name)))
-                .map(ComponentRegistry::of)
-                .forEach(cr -> cr.registerComponent(RANDOM_GENERATOR, KnownComponentNames.HOT_ROD_VERSION_GENERATOR, false));
-    }
-
-    private static final NumericVersion NON_EXISTING = new NumericVersion(0);
-    private static final VersionGenerator RANDOM_GENERATOR = new VersionGenerator() {
-        @Override
-        public IncrementableEntryVersion generateNew() {
-            var version = ThreadLocalRandom.current().nextLong();
-            return version == 0 ? new NumericVersion(1L) : new NumericVersion(version);
-        }
-
-        @Override
-        public IncrementableEntryVersion increment(IncrementableEntryVersion initialVersion) {
-            // not used by hot rod
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public IncrementableEntryVersion nonExistingVersion() {
-            return NON_EXISTING;
-        }
-    };
-    // ----- END OF WORKAROUND -----//
 
     private void createKeycloakCaches(CacheMode cacheMode) {
         var builder = createCacheConfigurationBuilder();
