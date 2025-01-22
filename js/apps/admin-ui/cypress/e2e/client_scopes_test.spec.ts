@@ -34,7 +34,7 @@ const clientDetailsPage = new ClientDetailsPage();
 
 describe("Client Scopes test", () => {
   const modalMessageDeleteConfirmation =
-    "Are you sure you want to delete this client scope";
+    "Are you sure you want to delete this client scope?";
   const notificationMessageDeletionConfirmation =
     "The client scope has been deleted";
   const clientScopeName = "client-scope-test";
