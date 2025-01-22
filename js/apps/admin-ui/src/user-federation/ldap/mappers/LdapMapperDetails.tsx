@@ -26,8 +26,8 @@ import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../../admin-client";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import {
-  DynamicComponents,
   convertToName,
+  DynamicComponents,
 } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";

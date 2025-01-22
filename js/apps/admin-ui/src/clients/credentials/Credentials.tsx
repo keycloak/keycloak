@@ -184,7 +184,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             {clientAuthenticatorType === "client-x509" && <X509 />}
             {providerProperties && (
               <Form>
-                <DynamicComponents properties={providerProperties} />
+                <DynamicComponents
+                  properties={providerProperties}
+                  convertToName={(name) => `attributes.${name}`}
+                />
               </Form>
             )}
             <ActionGroup>

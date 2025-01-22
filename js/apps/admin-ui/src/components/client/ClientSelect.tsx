@@ -10,7 +10,9 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../dynamic/components";
 
-type ClientSelectProps = ComponentProps & { variant?: `${SelectVariant}` };
+type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
+  variant?: `${SelectVariant}`;
+};
 
 export const ClientSelect = ({
   name,
