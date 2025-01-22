@@ -24,6 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -49,18 +50,21 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
         try {
             client.admin().authorization().update(rep);
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
             client.admin().authorization().exportSettings();
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
             client.admin().authorization().importSettings(rep);
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
@@ -80,12 +84,14 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
         try {
             client.admin().authorization().scopes().scope(manage.getId()).update(manage);
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
             client.admin().authorization().scopes().scope(manage.getId()).remove();
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
@@ -106,6 +112,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         // updates to 'all resource type' resources not expected
         try {
             client.admin().authorization().resources().resource(usersResource.getId()).update(resourceRep);
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
@@ -113,6 +120,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         // deletes to 'all resource type' resources not expected
         try {
             client.admin().authorization().resources().resource(usersResource.getId()).remove();
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
@@ -132,6 +140,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         // updates not expected 
         try {
             client.admin().authorization().resources().resource(aliceResourceId).update(userAliceResourceRep);
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
@@ -139,6 +148,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         // delete not expected 
         try {
             client.admin().authorization().resources().resource(aliceResourceId).remove();
+            fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }

@@ -23,12 +23,16 @@ import java.util.Map;
 
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
+import org.keycloak.authorization.common.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -45,7 +49,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        boolean result = hasPermission(user, null, MgmtPermissions.VIEW_SCOPE, MgmtPermissions.MANAGE_SCOPE);
+        boolean result = hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
 
         if (!result) {
             return canViewByGroup(user);
@@ -60,7 +64,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        boolean result = hasPermission(user, null, MgmtPermissions.MANAGE_SCOPE);
+        boolean result = hasPermission(user, null, AdminPermissionsSchema.MANAGE);
 
         if (!result) {
             return canManageByGroup(user);
@@ -68,15 +72,49 @@ class UserPermissionsV2 extends UserPermissions {
 
         return result;
     }
-    
+
+    @Override
+    public boolean canImpersonate(UserModel user, ClientModel requester) {
+        if (root.hasOneAdminRole(ImpersonationConstants.IMPERSONATION_ROLE)) {
+            return true;
+        }
+
+        DefaultEvaluationContext context = requester == null ? null :
+                new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of("kc.client.id", List.of(requester.getClientId())), session);
+
+        return hasPermission(user, context, AdminPermissionsSchema.IMPERSONATE);
+    }
+
+    @Override
+    public boolean canMapRoles(UserModel user) {
+        if (canManage(user)) {
+            return true;
+        }
+
+        return hasPermission(user, null, AdminPermissionsSchema.MAP_ROLES);
+    }
+
+    @Override
+    public boolean canManageGroupMembership(UserModel user) {
+        if (canManage(user)) {
+            return true;
+        }
+
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+    }
+
     private boolean hasPermission(UserModel user, EvaluationContext context, String... scopes) {
+        if (!root.isAdminSameRealm()) {
+            return false;
+        }
+
         ResourceServer server = root.realmResourceServer();
 
         if (server == null) {
             return false;
         }
 
-        Resource resource =  resourceStore.findByName(server, user.getId());
+        Resource resource = user == null ? null : resourceStore.findByName(server, user.getId());
 
         if (resource == null) {
             resource = resourceStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE, server.getId());
@@ -97,6 +135,22 @@ class UserPermissionsV2 extends UserPermissions {
         }
 
         return false;
+    }
+
+    // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed
+    @Override
+    public boolean canClientImpersonate(ClientModel client, UserModel user) {
+        return canImpersonate(user, client);
+    }
+
+    @Override
+    public boolean isImpersonatable(UserModel user, ClientModel requester) {
+        throw new UnsupportedOperationException("Not supported in V2");
+    }
+
+    @Override
+    public boolean isImpersonatable(UserModel user) {
+        throw new UnsupportedOperationException("Not supported in V2");
     }
 
     @Override

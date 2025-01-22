@@ -27,7 +27,7 @@ import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -78,6 +78,10 @@ public abstract class AbstractPermissionTest {
         }
         ScopePermissionRepresentation build() {
             return permission;
+        }
+        PermissionBuilder logic(Logic logic) {
+            permission.setLogic(logic);
+            return this;
         }
         PermissionBuilder name(String name) {
             permission.setName(name);

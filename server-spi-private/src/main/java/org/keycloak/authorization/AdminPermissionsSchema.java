@@ -48,12 +48,16 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
 
-    public static final String MANAGE = "manage";
-    public static final String VIEW = "view";
-
     public static final String USERS_RESOURCE_TYPE = "Users";
 
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW));
+    //scopes
+    public static final String MANAGE = "manage";
+    public static final String VIEW = "view";
+    public static final String IMPERSONATE = "impersonate";
+    public static final String MAP_ROLES = "map-roles";
+    public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
+
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
 
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
