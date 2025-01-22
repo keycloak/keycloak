@@ -29,7 +29,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -123,9 +122,7 @@ public class CookieAuthenticator implements Authenticator {
         KeycloakSession session = context.getSession();
 
         if (Organizations.isEnabledAndOrganizationsPresent(session)) {
-            AuthenticationSessionModel authSession = context.getAuthenticationSession();
-            String requestedScopes = authSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
-            return OrganizationScope.valueOfScope(session, requestedScopes) != null;
+            return OrganizationScope.valueOfScope(session) != null;
         }
 
         return false;

@@ -151,14 +151,15 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         runOnServer(setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString()));
 
         try {
-            OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+            OrganizationRepresentation org = createOrganization();
+            OrganizationResource organization = testRealm().organizations().get(org.getId());
             UserRepresentation member = addMember(organization);
             organization.members().member(member.getId()).delete().close();
             oauth.clientId("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
             // user is not a member of any organization
-            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + organization.toRepresentation().getName()));
+            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + org.getName()));
 
             organization.members().addMember(member.getId()).close();
             OrganizationRepresentation orgB = createOrganization("org-b");
@@ -169,6 +170,26 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             // user is not a member of the organization selected by the client
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + orgB.getName()));
             errorPage.assertTryAnotherWayLinkAvailability(false);
+
+            organization.members().member(member.getId()).delete().close();
+            oauth.clientId("broker-app");
+            oauth.scope("organization:*");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            // user is not a member of any organization
+            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of any organization"));
+
+            organization.members().addMember(member.getId()).close();
+            testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+            oauth.clientId("broker-app");
+            oauth.scope("organization");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.assertCurrent();
+            organization.members().member(member.getId()).delete().close();
+            selectOrganizationPage.selectOrganization(org.getAlias());
+            // user is not a member of any organization
+            assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + org.getName()));
         } finally {
             runOnServer(setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString()));
         }
