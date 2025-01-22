@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
@@ -56,6 +57,7 @@ import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareI
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareRealmBean;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
@@ -306,6 +308,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private void initialChallenge(AuthenticationFlowContext context) {
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
         UserModel user = context.getUser();
 
         if (user == null) {
@@ -321,8 +324,14 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                         return attributes;
                     });
 
+            String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+            if (loginHint != null) {
+                form.setFormData(new MultivaluedHashMap<>(Map.of(UserModel.USERNAME, loginHint)));
+            }
+
             context.challenge(form.createLoginUsername());
-        } else if (isSSOAuthentication(context.getAuthenticationSession())) {
+        } else if (isSSOAuthentication(authenticationSession)) {
             if (shouldUserSelectOrganization(context, user)) {
                 return;
             }
