@@ -150,7 +150,7 @@ The benefit of this setup is that the number of Pods does not need to scale duri
 
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
 
-* OpenShift 4.16.x deployed on AWS via ROSA.
+* OpenShift 4.17.x deployed on AWS via ROSA.
 * Machine pool with `c7g.2xlarge` instances.^*^
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
 * OpenShift's reverse proxy runs in the passthrough mode where the TLS connection of the client is terminated at the Pod.
