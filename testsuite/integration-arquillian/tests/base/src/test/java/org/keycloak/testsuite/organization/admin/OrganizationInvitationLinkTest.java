@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.keycloak.services.messages.Messages.ORG_MEMBER_ALREADY;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -108,6 +109,31 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testRedirectAfterClickingSecondTimeOnInvitation() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+                OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
+                Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+
+            String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+            driver.navigate().to(link);
+
+            assertThat(driver.getPageSource(), containsString(ORG_MEMBER_ALREADY));
+
+            infoPage.clickBackToApplicationLink();
+            // redirect to the redirectUrl of the organization
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
         }
     }
 
