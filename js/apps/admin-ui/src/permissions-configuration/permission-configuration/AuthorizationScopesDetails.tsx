@@ -21,7 +21,7 @@ export const AuthorizationScopesDetails = ({
         position="top"
         hasAutoWidth
         bodyContent={
-          <div>
+          <>
             <p style={{ fontSize: "16px" }}>
               <strong>{t("authorizationScopeDetailsTitle")}</strong>
             </p>
@@ -48,7 +48,7 @@ export const AuthorizationScopesDetails = ({
                 </tr>
               </tbody>
             </table>
-          </div>
+          </>
         }
       >
         <Label color="blue">

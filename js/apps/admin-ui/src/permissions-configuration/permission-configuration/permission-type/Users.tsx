@@ -24,7 +24,7 @@ export const Users = () => {
     (users) => {
       const usersIds = users.map((user: any) => user.id);
       setAllUses(usersIds);
-      form.setValue("resources", usersIds);
+      if (!isSpecificUsers) form.setValue("resources", usersIds);
     },
     [realm],
   );
@@ -32,25 +32,26 @@ export const Users = () => {
   return (
     <>
       <FormGroup
-        label={t("resourceScope")}
+        label={t("applyPermissionTo")}
         labelIcon={
           <HelpItem
-            helpText={t("resourceScopeHelpText")}
-            fieldLabelId="resource-scope"
+            helpText={t("applyPermissionToHelpText")}
+            fieldLabelId="apply-permission-to"
           />
         }
-        fieldId="resourceScope"
+        fieldId="applyPermissionTo"
         hasNoPaddingTop
+        isRequired
       >
         <Radio
           id="allUsers"
           data-testid="allUsers"
           isChecked={!isSpecificUsers}
-          name="resourceScope"
+          name="applyPermissionTo"
           label={t("allUsers")}
           onChange={() => {
             setIsSpecificUsers(false);
-            form.setValue("users", allUses);
+            form.setValue("resources", allUses);
           }}
           className="pf-v5-u-mb-md"
         />
@@ -58,11 +59,11 @@ export const Users = () => {
           id="specificUsers"
           data-testid="specificUsers"
           isChecked={isSpecificUsers}
-          name="resourceScope"
+          name="applyPermissionTo"
           label={t("specificUsers")}
           onChange={() => {
             setIsSpecificUsers(true);
-            form.setValue("users", []);
+            form.setValue("resources", []);
           }}
           className="pf-v5-u-mb-md"
         />

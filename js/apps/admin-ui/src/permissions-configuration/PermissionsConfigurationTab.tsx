@@ -1,5 +1,7 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -24,7 +26,7 @@ import {
 } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
@@ -38,15 +40,16 @@ import { NewPermissionConfigurationDialog } from "./NewPermissionConfigurationDi
 import { toCreatePermissionConfiguration } from "./routes/NewPermissionConfiguration";
 import "../clients/authorization/permissions.css";
 import { AuthorizationScopesDetails } from "./permission-configuration/AuthorizationScopesDetails";
+import { toPermissionConfigurationDetails } from "./routes/PermissionConfigurationDetails";
 
 type PermissionsConfigurationProps = {
   clientId: string;
 };
 
 type ExpandablePolicyRepresentation = PolicyRepresentation & {
-  associatedPolicies?: PolicyRepresentation[];
-  associatedResources?: PolicyRepresentation[];
-  associatedScopes?: PolicyRepresentation[];
+  policies?: PolicyRepresentation[];
+  resources?: ResourceRepresentation[];
+  scopes?: ScopeRepresentation[];
   isExpanded: boolean;
 };
 
@@ -91,29 +94,26 @@ export const PermissionsConfigurationTab = ({
 
       const processedPermissions = await Promise.all(
         permissions.map(async (permission) => {
-          const associatedPolicies =
-            await adminClient.clients.getAssociatedPolicies({
-              id: clientId,
-              permissionId: permission.id!,
-            });
+          const policies = await adminClient.clients.getAssociatedPolicies({
+            id: clientId,
+            permissionId: permission.id!,
+          });
 
-          const associatedScopes =
-            await adminClient.clients.getAssociatedScopes({
-              id: clientId,
-              permissionId: permission.id!,
-            });
+          const scopes = await adminClient.clients.getAssociatedScopes({
+            id: clientId,
+            permissionId: permission.id!,
+          });
 
-          const associatedResources =
-            await adminClient.clients.getAssociatedResources({
-              id: clientId,
-              permissionId: permission.id!,
-            });
+          const resources = await adminClient.clients.getAssociatedResources({
+            id: clientId,
+            permissionId: permission.id!,
+          });
 
           return {
             ...permission,
-            associatedPolicies,
-            associatedScopes,
-            associatedResources,
+            policies,
+            scopes,
+            resources,
             isExpanded: false,
           };
         }),
@@ -123,7 +123,7 @@ export const PermissionsConfigurationTab = ({
     },
     (data) => {
       setResourceServer(data.resourceServer);
-      setPermissions(data.permissions);
+      setPermissions(data.permissions as any[]);
     },
     [key, search, first, max],
   );
@@ -251,14 +251,25 @@ export const PermissionsConfigurationTab = ({
                         }}
                       />
                       <Td data-testid={`name-column-${permission.name}`}>
-                        {permission.name}
+                        <Link
+                          to={toPermissionConfigurationDetails({
+                            realm,
+                            permissionClientId: clientId,
+                            permissionId: permission.id!,
+                            resourceType: permission.resourceType!,
+                          })}
+                        >
+                          {permission.name}
+                        </Link>
                       </Td>
                       <Td>{permission.resourceType}</Td>
                       <Td>
                         <AuthorizationScopesDetails
                           row={{
-                            associatedScopes: permission.associatedScopes?.map(
-                              (scope) => ({ name: scope.name || "" }),
+                            associatedScopes: permission.scopes?.map(
+                              (scope: ScopeRepresentation) => ({
+                                name: scope.name || "",
+                              }),
                             ),
                           }}
                         />
@@ -288,8 +299,8 @@ export const PermissionsConfigurationTab = ({
                           {permission.isExpanded && (
                             <>
                               <Th>{t("resources")}</Th>
-                              {permission.associatedResources!.map(
-                                (resource, index) => (
+                              {permission.resources!.map(
+                                (resource: ResourceRepresentation, index) => (
                                   <Td key={index}>
                                     <span style={{ marginLeft: "8px" }}>
                                       {resource.name}
@@ -299,8 +310,8 @@ export const PermissionsConfigurationTab = ({
                               )}
                               <br />
                               <Th>{t("assignedPolicies")}</Th>
-                              {permission.associatedPolicies!.map(
-                                (policy, index) => (
+                              {permission.policies!.map(
+                                (policy: PolicyRepresentation, index) => (
                                   <Td key={index}>
                                     <span style={{ marginLeft: "8px" }}>
                                       {policy.name}
