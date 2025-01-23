@@ -65,12 +65,13 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     }
 
     public void handleException(Throwable e) {
+        logger.debug(getDetailedMessage("Exception during transaction operation."), e);
+
         if (e instanceof RollbackException) {
             e = e.getCause() != null ? e.getCause() : e;
         }
         final Throwable finalE = e;
 
-        logger.error(getDetailedMessage("Exception during transaction operation."));
         session.getKeycloakSessionFactory().getProviderFactoriesStream(ExceptionConverter.class)
                 .map(factory -> ((ExceptionConverter) factory).convert(finalE))
                 .filter(Objects::nonNull)
