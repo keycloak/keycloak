@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
@@ -67,21 +68,29 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return null;
         }
 
+        StoreFactory storeFactory = getStoreFactory(session);
+        ResourceStore resourceStore = storeFactory.getResourceStore();
         String name = null;
 
         if (USERS.getType().equals(type)) {
             name = resolveUser(session, id);
+            if (name == null) {
+                Resource resource = resourceStore.findById(resourceServer, id);
+
+                if (resource != null) {
+                    name = resource.getName();
+                }
+            }
         }
 
         if (name == null) {
             throw new IllegalStateException("Could not map resource object with type [" + type + "] and id [" + id + "]");
         }
 
-        StoreFactory storeFactory = getStoreFactory(session);
-        Resource resource = storeFactory.getResourceStore().findByName(resourceServer, name);
+        Resource resource = resourceStore.findByName(resourceServer, name);
 
         if (resource == null) {
-            resource = storeFactory.getResourceStore().create(resourceServer, name, resourceServer.getClientId());
+            resource = resourceStore.create(resourceServer, name, resourceServer.getClientId());
             ScopeStore scopeStore = storeFactory.getScopeStore();
             resource.updateScopes(getResourceTypes().get(type).getScopes().stream().map(scopeName -> {
                 Scope findByName = scopeStore.findByName(resourceServer, scopeName);
