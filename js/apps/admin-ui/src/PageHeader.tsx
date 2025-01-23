@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
 import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
+import { RealmPanel } from "./components/realm-selector/RealmPanel";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
@@ -215,6 +216,13 @@ export const Header = () => {
         />
       </MastheadBrand>
       <MastheadContent>
+        <Toolbar id="toolbar">
+          <ToolbarContent>
+            <ToolbarItem align={{ default: "alignRight" }}>
+              <RealmPanel />
+            </ToolbarItem>
+          </ToolbarContent>
+        </Toolbar>
         <Toolbar>
           <ToolbarContent>
             <ToolbarItem
