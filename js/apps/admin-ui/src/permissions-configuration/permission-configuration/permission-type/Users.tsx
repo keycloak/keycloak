@@ -24,7 +24,7 @@ export const Users = () => {
     (users) => {
       const usersIds = users.map((user: any) => user.id);
       setAllUses(usersIds);
-      if (!isSpecificUsers) form.setValue("resources", usersIds);
+      if (isSpecificUsers) form.setValue("resources", usersIds);
     },
     [realm],
   );
