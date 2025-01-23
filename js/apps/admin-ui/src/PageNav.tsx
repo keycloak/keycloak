@@ -1,16 +1,12 @@
 import {
-  Divider,
   Nav,
   NavGroup,
-  NavItem,
-  NavList,
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch, useNavigate } from "react-router-dom";
-import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
@@ -100,12 +96,6 @@ export const PageNav = () => {
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
-          <NavList>
-            <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-              <RealmSelector />
-            </NavItem>
-          </NavList>
-          <Divider />
           {showManage && !isOnAddRealm && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&

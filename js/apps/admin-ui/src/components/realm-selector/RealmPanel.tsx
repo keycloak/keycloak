@@ -1,21 +1,15 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
-import {
-  KeycloakDataTable,
-  label,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable, label } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
-  Flex,
-  FlexItem,
-  Icon,
+  Label,
   Modal,
   ModalVariant,
-  Stack,
-  StackItem,
+  Split,
+  SplitItem,
+  Text,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { CaretDownIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,47 +17,90 @@ import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import {
+  RealmNameRepresentation,
+  useRecentRealms,
+} from "../../context/RecentRealms";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { translationFormatter } from "../../utils/translationFormatter";
-import { AddRealm, RealmNameRepresentation } from "./RealmSelector";
+import { CheckIcon } from "@patternfly/react-icons";
+import { toAddRealm } from "../../realm/routes/AddRealm";
+
+type RealmLinkProps = {
+  name: string;
+  recent?: boolean;
+  onNavigate: () => void;
+};
+
+const RealmLink = ({ name, recent, onNavigate }: RealmLinkProps) => {
+  const { t } = useTranslation();
+  const { realm } = useRealm();
+
+  return (
+    <Link to={toDashboard({ realm: name })} onClick={onNavigate}>
+      <Split>
+        <SplitItem isFilled>{name}</SplitItem>
+        <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
+        {recent ? (
+          <SplitItem>
+            <Label>{t("recent")}</Label>
+          </SplitItem>
+        ) : null}
+      </Split>
+    </Link>
+  );
+};
+
+type AddRealmProps = {
+  onClick: () => void;
+};
+
+const AddRealm = ({ onClick }: AddRealmProps) => {
+  const { realm } = useRealm();
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      data-testid="add-realm"
+      component={(props) => <Link {...props} to={toAddRealm({ realm })} />}
+      onClick={onClick}
+      isBlock
+    >
+      {t("createRealm")}
+    </Button>
+  );
+};
+
+type RealmResult = RealmNameRepresentation & { recent?: boolean };
 
 export const RealmPanel = () => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const { adminClient } = useAdminClient();
+  const recentRealms = useRecentRealms();
 
-  const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
-
-  useFetch(
-    async () => {
-      try {
-        return await fetchAdminUI<RealmNameRepresentation[]>(
-          adminClient,
-          "ui-ext/realms/names",
-          { first: "0", max: "11" },
-        );
-      } catch (error) {
-        if (error instanceof NetworkError && error.response.status < 500) {
-          return [];
-        }
-
-        throw error;
-      }
-    },
-    (realms) => setShow(realms.length === 11),
-    [realm?.realm],
-  );
 
   const loader = async (first?: number, max?: number, search?: string) => {
     try {
-      return await fetchAdminUI<RealmNameRepresentation[]>(
+      const result = await fetchAdminUI<RealmResult[]>(
         adminClient,
         "ui-ext/realms/names",
-        { first: `${first}`, max: `${max}`, search: search || "" },
+        {
+          first: `${first}`,
+          max: `${max}`,
+          search: search || "",
+        },
       );
+      if (first === 0) {
+        return [
+          ...recentRealms.map((r) => ({ recent: true, ...r })),
+          ...result,
+        ];
+      }
+      return result;
     } catch (error) {
       if (error instanceof NetworkError && error.response.status < 500) {
         return [];
@@ -73,30 +110,16 @@ export const RealmPanel = () => {
     }
   };
 
-  if (!show) {
-    return undefined;
-  }
-
   return (
     <>
-      <Button variant="control" onClick={() => setOpen((value) => !value)}>
-        <Flex alignItems={{ default: "alignItemsCenter" }}>
-          <FlexItem>
-            <Stack>
-              {realm?.displayName ? (
-                <StackItem className="pf-v5-u-font-weight-bold">
-                  {label(t, realm.displayName)}
-                </StackItem>
-              ) : null}
-              <StackItem isFilled>{realm?.realm}</StackItem>
-            </Stack>
-          </FlexItem>
-          <FlexItem>
-            <Icon>
-              <CaretDownIcon />
-            </Icon>
-          </FlexItem>
-        </Flex>
+      <Text style={{ marginRight: "1rem" }}>
+        {realm?.displayName ? (
+          <strong>{label(t, realm.displayName)}</strong>
+        ) : null}{" "}
+        {realm?.realm}
+      </Text>
+      <Button variant="primary" onClick={() => setOpen((value) => !value)}>
+        {t("selectRealm")}
       </Button>
       <Modal
         variant={ModalVariant.large}
@@ -120,13 +143,12 @@ export const RealmPanel = () => {
             {
               name: "name",
               transforms: [cellWidth(40)],
-              cellRenderer: ({ name }) => (
-                <Link
-                  to={toDashboard({ realm: name })}
-                  onClick={() => setOpen(false)}
-                >
-                  {name}
-                </Link>
+              cellRenderer: ({ name, recent }) => (
+                <RealmLink
+                  name={name}
+                  recent={recent}
+                  onNavigate={() => setOpen(false)}
+                />
               ),
             },
             {

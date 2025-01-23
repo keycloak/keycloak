@@ -111,7 +111,7 @@ export { ClickableCard } from "./components/keycloak-card/ClickableCard";
 export { KeycloakCard } from "./components/keycloak-card/KeycloakCard";
 export { MultiLineInput } from "./components/multi-line-input/MultiLineInput";
 export { PermissionsTab } from "./components/permission-tab/PermissionTab";
-export { RealmSelector } from "./components/realm-selector/RealmSelector";
+export { RealmPanel } from "./components/realm-selector/RealmPanel";
 export { RoleForm } from "./components/role-form/RoleForm";
 export { AddRoleMappingModal } from "./components/role-mapping/AddRoleMappingModal";
 export { RoleMapping } from "./components/role-mapping/RoleMapping";

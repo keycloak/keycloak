@@ -1,52 +1,44 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 
 import {
   createNamedContext,
-  useFetch,
   useRequiredContext,
   useStoredState,
 } from "@keycloak/keycloak-ui-shared";
-import { useAdminClient } from "../admin-client";
 import { useRealm } from "./realm-context/RealmContext";
 
-const MAX_REALMS = 4;
+const MAX_REALMS = 3;
 
-export const RecentRealmsContext = createNamedContext<string[] | undefined>(
-  "RecentRealmsContext",
-  undefined,
-);
+export const RecentRealmsContext = createNamedContext<
+  RealmNameRepresentation[] | undefined
+>("RecentRealmsContext", undefined);
+
+export type RealmNameRepresentation = {
+  name: string;
+  displayName?: string;
+};
 
 export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
-  const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
+  const { realmRepresentation: realm } = useRealm();
 
   const [storedRealms, setStoredRealms] = useStoredState(
     localStorage,
     "recentRealms",
-    [realm],
+    [{ name: "" }] as RealmNameRepresentation[],
   );
 
-  useFetch(
-    () => {
-      return Promise.all(
-        [...new Set([realm, ...storedRealms])].map(async (realm) => {
-          try {
-            const response = await adminClient.realms.findOne({ realm });
-            if (response) {
-              return response.realm;
-            }
-          } catch {
-            return undefined;
-          }
-        }),
-      );
-    },
-    (realms) => {
-      const newRealms = realms.filter((r) => r) as string[];
-      setStoredRealms(newRealms.slice(0, MAX_REALMS));
-    },
-    [realm],
-  );
+  useEffect(() => {
+    if (storedRealms.map((r) => r.name).includes(realm?.realm || "")) {
+      return;
+    }
+    const realms = [
+      { name: realm?.realm || "", displayName: realm?.displayName },
+      ...storedRealms.filter((r) => r.name !== ""),
+    ];
+    setStoredRealms(
+      realms.length > MAX_REALMS ? realms.slice(0, MAX_REALMS) : realms,
+    );
+  }, [realm]);
 
   return (
     <RecentRealmsContext.Provider value={storedRealms}>
