@@ -193,7 +193,43 @@ CONDITION: RollingUpdate
 
 === Accessing the {project_name} deployment
 
-The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  
+
+First, you create a reencrypt route using the Ingress certificate. The Ingress Controller negotiates its connection to the application independently of the connection from the client.
+
+[source,yaml]
+----
+$ oc create route reencrypt --service=<service-name> --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
+----
+
+The operator by default creates a passthrough route, so the route creation must be disabled on the Keycloak CR, setting `.spec.ingress.enabled: false:`
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak1
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db-w
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    tlsSecret: tls-secret-wildcard
+  hostname:
+    hostname: keycloak1.apps.<domain>
+  ingress:
+    enabled: false
+----
+
+On installations with multiple default IngressClass instances
 or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
 
 Edit YAML file `example-kc.yaml`:
