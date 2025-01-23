@@ -190,4 +190,13 @@ public final class Constants {
     public static final String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
 
     public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
+
+    // Note used to store the authentication flow requested
+    public static final String REQUESTED_AUTHENTICATION_FLOW = "requested-authentication-flow";
+
+    public static final String AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION = "authentication-flow-level-of-authentication";
+
+    // Note used to store the acr values if it is matched by client policy condition
+    public static final String CLIENT_POLICY_REQUESTED_ACR = "client-policy-requested-acr";
+
 }
