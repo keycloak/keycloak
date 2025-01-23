@@ -24,6 +24,7 @@ import java.util.Map;
  */
 public class AdminEventRepresentation {
 
+    private String id;
     private long time;
     private String realmId;
     private AuthDetailsRepresentation authDetails;
@@ -33,6 +34,14 @@ public class AdminEventRepresentation {
     private String representation;
     private String error;
     private Map<String, String> details;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTime() {
         return time;

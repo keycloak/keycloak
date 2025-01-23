@@ -45,7 +45,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -64,15 +63,16 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.BasicAuthHelper;
 
-@EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
-public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
+/**
+ * Test for identity-provider token exchange scenarios. Base for tests of token-exchange V1 as well as token-exchange-federated V2
+ */
+public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -111,6 +111,14 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
 
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+
+        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+        if (!representation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
+            representation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
+            identityProviderResource.update(representation);
+        }
+
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), null, brokerApp.getClientId(), brokerApp.getSecret());
@@ -123,7 +131,7 @@ public final class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBase
         Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
-            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+            WebTarget exchangeUrl = httpClient.target(ServerURLs.getAuthServerContextRoot() + "/auth")
                     .path("/realms")
                     .path(bc.consumerRealmName())
                     .path("protocol/openid-connect/token");

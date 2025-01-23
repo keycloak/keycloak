@@ -29,7 +29,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -39,6 +41,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +57,7 @@ import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareI
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareRealmBean;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
@@ -101,6 +105,17 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             }
             // request does not map to any organization, go to the next step/sub-flow
             context.attempted();
+            return;
+        }
+
+        if (user != null && isRequiresMembership(context) && !organization.isMember(user)) {
+            String errorMessage = "notMemberOfOrganization";
+            // do not show try another way
+            context.setAuthenticationSelections(List.of());
+            Response challenge = context.form()
+                    .setError(errorMessage, organization.getName())
+                    .createErrorPage(Response.Status.FORBIDDEN);
+            context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, "User " + user.getUsername() + " not a member of organization " + organization.getAlias(), errorMessage);
             return;
         }
 
@@ -170,7 +185,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationProvider provider = getOrganizationProvider();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         String rawScope = authSession.getClientNote(OAuth2Constants.SCOPE);
-        OrganizationScope scope = OrganizationScope.valueOfScope(rawScope);
+        OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScope);
 
         if (!OrganizationScope.ANY.equals(scope) || user == null) {
             return false;
@@ -293,6 +308,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private void initialChallenge(AuthenticationFlowContext context) {
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
         UserModel user = context.getUser();
 
         if (user == null) {
@@ -308,8 +324,14 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                         return attributes;
                     });
 
+            String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+            if (loginHint != null) {
+                form.setFormData(new MultivaluedHashMap<>(Map.of(UserModel.USERNAME, loginHint)));
+            }
+
             context.challenge(form.createLoginUsername());
-        } else if (isSSOAuthentication(context.getAuthenticationSession())) {
+        } else if (isSSOAuthentication(authenticationSession)) {
             if (shouldUserSelectOrganization(context, user)) {
                 return;
             }
@@ -328,5 +350,13 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private OrganizationProvider getOrganizationProvider() {
         return session.getProvider(OrganizationProvider.class);
+    }
+
+    private boolean isRequiresMembership(AuthenticationFlowContext context) {
+        return Boolean.parseBoolean(getConfig(context).getOrDefault(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString()));
+    }
+
+    private Map<String, String> getConfig(AuthenticationFlowContext context) {
+        return Optional.ofNullable(context.getAuthenticatorConfig()).map(AuthenticatorConfigModel::getConfig).orElse(Map.of());
     }
 }

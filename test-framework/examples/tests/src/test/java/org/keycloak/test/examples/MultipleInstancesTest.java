@@ -3,14 +3,14 @@ package org.keycloak.test.examples;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.annotations.InjectUser;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.realm.ManagedUser;
-import org.keycloak.test.framework.realm.RealmConfig;
-import org.keycloak.test.framework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 @KeycloakIntegrationTest
 public class MultipleInstancesTest {

@@ -31,6 +31,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.GreenMailRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,6 +47,9 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @Page
     protected AppPage appPage;

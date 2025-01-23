@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
@@ -549,6 +550,7 @@ public class RealmManager {
             session.getContext().setRealm(realm);
             ReservedCharValidator.validate(rep.getRealm());
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
             realm.setName(rep.getRealm());
 
             // setup defaults
@@ -567,7 +569,7 @@ public class RealmManager {
                     realm.setAdminPermissionsClient(client);
                     RepresentationToModel.createResourceServer(client, session, false);
                 } else if (Boolean.TRUE.equals(rep.isAdminPermissionsEnabled())) {
-                    KeycloakModelUtils.setupAdminPermissionsClient(session, realm);
+                    AdminPermissionsSchema.SCHEMA.init(session, realm);
                 }
             }
 

@@ -3,22 +3,25 @@ package org.keycloak.test.examples;
 import com.nimbusds.oauth2.sdk.GeneralException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.test.framework.annotations.InjectEvents;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.events.Events;
-import org.keycloak.test.framework.oauth.nimbus.OAuthClient;
-import org.keycloak.test.framework.oauth.nimbus.annotations.InjectOAuthClient;
-import org.keycloak.test.framework.ui.annotations.InjectPage;
-import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
-import org.keycloak.test.framework.ui.page.LoginPage;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.nimbus.OAuthClient;
+import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
 import java.io.IOException;
-import java.net.URL;
 
 @KeycloakIntegrationTest
 public class EventsTest {
+
+    @InjectRealm
+    private ManagedRealm realm;
 
     @InjectEvents
     private Events events;
@@ -26,20 +29,31 @@ public class EventsTest {
     @InjectOAuthClient
     private OAuthClient oAuthClient;
 
-    @InjectWebDriver
-    private WebDriver webDriver;
-
-    @InjectPage
-    private LoginPage loginPage;
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
-    public void testFailedLogin() throws GeneralException, IOException {
-        URL authorizationRequestURL = oAuthClient.authorizationRequest();
-        webDriver.navigate().to(authorizationRequestURL);
-        loginPage.fillLogin("invalid", "invalid");
-        loginPage.submit();
+    public void testFailedLogin() {
+        oAuthClient.resourceOwnerCredentialGrant("invalid", "invalid");
 
-        Assertions.assertEquals(EventType.LOGIN_ERROR, events.poll().getType());
+        Event event = events.poll();
+        Assertions.assertEquals(EventType.LOGIN_ERROR, event.getType());
+        Assertions.assertEquals("invalid", event.getDetails().get("username"));
+
+        oAuthClient.resourceOwnerCredentialGrant("invalid2", "invalid");
+
+        event = events.poll();
+        Assertions.assertEquals(EventType.LOGIN_ERROR, event.getType());
+        Assertions.assertEquals("invalid2", event.getDetails().get("username"));
+    }
+
+    @Test
+    public void testTimeOffset() throws GeneralException, IOException {
+        timeOffSet.set(60);
+
+        oAuthClient.clientCredentialGrant();
+
+        Assertions.assertEquals(EventType.CLIENT_LOGIN, events.poll().getType());
     }
 
     @Test

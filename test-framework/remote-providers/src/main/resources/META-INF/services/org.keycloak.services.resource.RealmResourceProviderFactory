@@ -1,1 +1,1 @@
-org.keycloak.test.framework.remote.providers.TimeOffSetRealmResourceProviderFactory
+org.keycloak.testframework.remote.providers.TimeOffSetRealmResourceProviderFactory

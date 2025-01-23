@@ -34,7 +34,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.keycloak.test</groupId>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-bom</artifactId>
                 <version>${project.version}</version>
                 <scope>import</scope>
@@ -45,39 +45,39 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mariadb</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mssql</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mysql</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-oracle</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-postgres</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-email-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.test</groupId>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
         </dependency>
         <dependency>

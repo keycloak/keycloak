@@ -161,6 +161,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public boolean getCrlAbortIfNonUpdated() {
+        return Boolean.parseBoolean(getConfig().get(CRL_ABORT_IF_NON_UPDATED));
+    }
+
+    public X509AuthenticatorConfigModel setCrlAbortIfNonUpdated(boolean crlAbortIfNonUpdated) {
+        getConfig().put(CRL_ABORT_IF_NON_UPDATED, Boolean.toString(crlAbortIfNonUpdated));
+        return this;
+    }
+
     public String getOCSPResponder() {
         return getConfig().getOrDefault(OCSPRESPONDER_URI, null);
     }

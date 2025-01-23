@@ -26,7 +26,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -58,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 
@@ -77,8 +75,7 @@ public class ResourceAdminManager {
     }
 
     public static String resolveUri(KeycloakSession session, String rootUrl, String uri) {
-        String absoluteURI = ResolveRelative.resolveRelativeUri(session, rootUrl, uri);
-        return StringPropertyReplacer.replaceProperties(absoluteURI);
+        return ResolveRelative.resolveRelativeUri(session, rootUrl, uri);
 
    }
 
@@ -88,10 +85,7 @@ public class ResourceAdminManager {
             return null;
         }
 
-        String absoluteURI = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), mgmtUrl);
-
-        // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine and avoid request to LB in cluster environment
-        return StringPropertyReplacer.replaceProperties(absoluteURI);
+        return ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), mgmtUrl);
     }
 
     // For non-cluster setup, return just single configured managementUrls
@@ -192,10 +186,7 @@ public class ResourceAdminManager {
             return null;
         }
 
-        String absoluteURI = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), backchannelLogoutUrl);
-        // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine
-        // and avoid request to LB in cluster environment
-        return StringPropertyReplacer.replaceProperties(absoluteURI);
+        return ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), backchannelLogoutUrl);
     }
 
     protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,

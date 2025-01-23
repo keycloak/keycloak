@@ -9,7 +9,8 @@ export type RealmRoleTab =
   | "associated-roles"
   | "attributes"
   | "users-in-role"
-  | "permissions";
+  | "permissions"
+  | "events";
 
 export type RealmRoleParams = {
   realm: string;

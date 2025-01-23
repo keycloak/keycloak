@@ -20,7 +20,6 @@ package org.keycloak.models.utils;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
-import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
@@ -1189,34 +1188,6 @@ public final class KeycloakModelUtils {
             if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
             realm.addDefaultGroup(found);
         });
-    }
-
-    public static boolean isAdminPermissionsEnabled(RealmModel realm) {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2) && realm.isAdminPermissionsEnabled();
-    }
-
-    public static void setupAdminPermissionsClient(KeycloakSession session, RealmModel realm) {
-        ClientModel client = session.clients().addClient(realm, Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        realm.setAdminPermissionsClient(client);
-
-        ResourceServer resourceServer = RepresentationToModel.createResourceServer(client, session, false);
-        ResourceServerRepresentation resourceServerRep = ModelToRepresentation.toRepresentation(resourceServer, client);
-
-        //create all scopes defined in the schema
-        //there is no way how to map scopes to the resourceType, we need to collect all scopes from all resourceTypes 
-        Set<ScopeRepresentation> scopes = AdminPermissionsSchema.SCHEMA.getResourceTypes().values().stream()
-                .flatMap((resourceType) -> resourceType.getScopes().stream())
-                .map(scope -> new ScopeRepresentation(scope))
-                .collect(Collectors.toSet());//collecting to set to get rid of duplicities
-
-        resourceServerRep.setScopes(List.copyOf(scopes));
-
-        //create 'all-resource' resources defined in the schema
-        resourceServerRep.setResources(AdminPermissionsSchema.SCHEMA.getResourceTypes().keySet().stream()
-                .map(type -> new ResourceRepresentation(type))
-                .collect(Collectors.toList()));
-
-        RepresentationToModel.toModel(resourceServerRep, session.getProvider(AuthorizationProvider.class), client);
     }
 
     /**

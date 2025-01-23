@@ -23,13 +23,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
-import java.util.Properties;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonConfigProvider;
 
 public class JsonConfigProviderFactory implements ConfigProviderFactory {
 
@@ -66,11 +64,6 @@ public class JsonConfigProviderFactory implements ConfigProviderFactory {
     }
 
     protected Optional<Config.ConfigProvider> createJsonProvider(JsonNode node) {
-        return Optional.ofNullable(node).map(n -> new JsonConfigProvider(n, getProperties()));
+        return Optional.ofNullable(node).map(n -> new JsonConfigProvider(n));
     }
-
-    protected Properties getProperties() {
-        return new SystemEnvProperties();
-    }
-
 }

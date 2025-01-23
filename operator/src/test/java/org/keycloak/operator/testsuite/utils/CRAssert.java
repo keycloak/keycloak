@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.netty.util.NetUtil;
 import io.quarkus.logging.Log;
 import org.assertj.core.api.ObjectAssert;
 import org.awaitility.Awaitility;
@@ -197,7 +198,7 @@ public final class CRAssert {
                 "--connect-timeout",
                 "2",
                 "-s",
-                "telnet://%s:%s".formatted(hostname, port));
+                "telnet://%s:%s".formatted(NetUtil.isValidIpV6Address(hostname)?"["+hostname+"]":hostname, port));
         // Relevant exit codes:
         // 28-Operation timeout.
         // 48-Unknown option specified to libcurl (BOGUS=1 is not a valid option, but the connection is successful).

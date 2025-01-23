@@ -284,7 +284,7 @@ export default class RealmSettingsPage extends CommonPage {
   disableRealm() {
     cy.get(this.#modalDialogTitle).contains("Disable realm?");
     cy.get(this.#modalDialogBodyText).contains(
-      "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
+      "Users and clients cannot access the realm if it is disabled. Are you sure you want to continue?",
     );
     cy.findByTestId(this.modalConfirm).click();
   }

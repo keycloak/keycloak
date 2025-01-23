@@ -10,6 +10,10 @@ export class Cache extends Resource<{ realm?: string }> {
     method: "POST",
     path: "/clear-keys-cache",
   });
+  public clearCrlCache = this.makeRequest<{}, void>({
+    method: "POST",
+    path: "/clear-crl-cache",
+  });
   public clearRealmCache = this.makeRequest<{}, void>({
     method: "POST",
     path: "/clear-realm-cache",

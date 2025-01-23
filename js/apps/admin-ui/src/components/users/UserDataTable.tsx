@@ -43,6 +43,7 @@ import { emptyFormatter } from "../../util";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 
 export type UserFilter = {
   exact: boolean;
@@ -141,8 +142,13 @@ export function UserDataTable() {
           fetchRealmInfo(adminClient),
           adminClient.users.getProfile(),
         ]);
-      } catch {
-        return [{}, {}] as [UiRealmInfo, UserProfileConfig];
+      } catch (error) {
+        if (error instanceof NetworkError && error?.response?.status === 403) {
+          // "User Profile" attributes not available for Users Attribute search, when admin user does not have view- or manage-realm realm-management role
+          return [{}, {}] as [UiRealmInfo, UserProfileConfig];
+        } else {
+          throw error;
+        }
       }
     },
     ([uiRealmInfo, profile]) => {

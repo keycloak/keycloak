@@ -12,12 +12,12 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.realm.RealmConfig;
-import org.keycloak.test.framework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 import java.util.List;
 

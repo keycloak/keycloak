@@ -121,14 +121,26 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
+    @Deprecated
     public AdminEventQuery fromTime(Date fromTime) {
-        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), fromTime.getTime()));
+        return fromTime(fromTime.getTime());
+    }
+
+    @Override
+    public AdminEventQuery fromTime(long fromTime) {
+        predicates.add(cb.greaterThanOrEqualTo(root.get("time"), fromTime));
         return this;
     }
 
     @Override
+    @Deprecated
     public AdminEventQuery toTime(Date toTime) {
-        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), toTime.getTime()));
+        return toTime(toTime.getTime());
+    }
+
+    @Override
+    public AdminEventQuery toTime(long toTime) {
+        predicates.add(cb.lessThanOrEqualTo(root.get("time"), toTime));
         return this;
     }
 

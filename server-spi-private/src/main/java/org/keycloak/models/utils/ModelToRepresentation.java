@@ -288,6 +288,7 @@ public class ModelToRepresentation {
 
     public static EventRepresentation toRepresentation(Event event) {
         EventRepresentation rep = new EventRepresentation();
+        rep.setId(event.getId());
         rep.setTime(event.getTime());
         rep.setType(event.getType().toString());
         rep.setRealmId(event.getRealmId());
@@ -302,6 +303,7 @@ public class ModelToRepresentation {
 
     public static AdminEventRepresentation toRepresentation(AdminEvent adminEvent) {
         AdminEventRepresentation rep = new AdminEventRepresentation();
+        rep.setId(adminEvent.getId());
         rep.setTime(adminEvent.getTime());
         rep.setRealmId(adminEvent.getRealmId());
         if (adminEvent.getAuthDetails() != null) {
@@ -1055,20 +1057,9 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
-        server.setAuthorizationSchema(getAuthorizationSchema(client));
+        server.setAuthorizationSchema(AdminPermissionsSchema.SCHEMA.getAuthorizationSchema(client));
 
         return server;
-    }
-
-    private static AuthorizationSchema getAuthorizationSchema(ClientModel client) {
-        if (!KeycloakModelUtils.isAdminPermissionsEnabled(client.getRealm())) {
-            return null;
-        }
-        ClientModel adminPermissionsClient = client.getRealm().getAdminPermissionsClient();
-        if (adminPermissionsClient == null || ! client.getClientId().equals(adminPermissionsClient.getClientId())) {
-            return null;
-        }
-        return AdminPermissionsSchema.SCHEMA;
     }
 
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {

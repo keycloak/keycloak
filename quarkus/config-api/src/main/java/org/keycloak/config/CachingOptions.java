@@ -26,7 +26,7 @@ public class CachingOptions {
     private static final String CACHE_METRICS_PREFIX = "cache-metrics";
     public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
 
-    public static final String[] LOCAL_MAX_COUNT_CACHES = new String[]{"authorization", "keys", "realms", "users", };
+    public static final String[] LOCAL_MAX_COUNT_CACHES = new String[]{"authorization", "crl", "keys", "realms", "users", };
 
     public static final String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{"clientSessions", "offlineSessions", "offlineClientSessions", "sessions"};
 

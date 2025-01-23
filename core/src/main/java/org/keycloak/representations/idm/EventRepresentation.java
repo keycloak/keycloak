@@ -24,6 +24,7 @@ import java.util.Map;
  */
 public class EventRepresentation {
 
+    private String id;
     private long time;
     private String type;
     private String realmId;
@@ -33,6 +34,14 @@ public class EventRepresentation {
     private String ipAddress;
     private String error;
     private Map<String, String> details;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTime() {
         return time;
@@ -128,6 +137,7 @@ public class EventRepresentation {
     @Override
     public int hashCode() {
         int result = (int) (time ^ (time >>> 32));
+        result = 31 * result + (id != null ? id.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (realmId != null ? realmId.hashCode() : 0);
         result = 31 * result + (clientId != null ? clientId.hashCode() : 0);
