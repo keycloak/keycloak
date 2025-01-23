@@ -33,6 +33,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -224,5 +225,29 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
                 }
             }
         }
+    }
+
+    public String getResourceName(KeycloakSession session, Policy policy, Resource resource) {
+        ResourceServer resourceServer = policy.getResourceServer();
+
+        if (supportsAuthorizationSchema(session, resourceServer)) {
+            String resourceType = policy.getResourceType();
+
+            if (USERS.getType().equals(resourceType)) {
+                if (resource.getName().equals(USERS_RESOURCE_TYPE)) {
+                    return "All users";
+                }
+
+                UserModel user = session.users().getUserById(session.getContext().getRealm(), resource.getName());
+
+                if (user == null) {
+                    throw new ModelIllegalStateException("User not found for resource [" + resource.getId() + "]");
+                }
+
+                return user.getUsername();
+            }
+        }
+
+        return resource.getDisplayName();
     }
 }

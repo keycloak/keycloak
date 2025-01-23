@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -39,6 +40,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -206,11 +208,14 @@ public class PolicyResourceService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
+        KeycloakSession session = authorization.getKeycloakSession();
+
         return Response.ok(policy.getResources().stream().map(resource -> {
             ResourceRepresentation representation = new ResourceRepresentation();
 
             representation.setId(resource.getId());
             representation.setName(resource.getName());
+            representation.setDisplayName(AdminPermissionsSchema.SCHEMA.getResourceName(session, policy, resource));
 
             return representation;
         }).collect(Collectors.toList())).build();

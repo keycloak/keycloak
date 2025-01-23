@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -31,7 +32,7 @@ import java.util.Set;
  */
 public interface Policy {
 
-    public static enum FilterOption {
+    enum FilterOption {
         ID("id"),
         PERMISSION("permission"),
         OWNER("owner"),
@@ -188,4 +189,8 @@ public interface Policy {
     void addResource(Resource resource);
 
     void removeResource(Resource resource);
+
+    default String getResourceType() {
+        return Optional.ofNullable(getConfig()).orElse(Map.of()).get("defaultResourceType");
+    }
 }
