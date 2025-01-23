@@ -23,68 +23,33 @@ import jakarta.ws.rs.core.Response.Status;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.JsonSerialization;
-
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Tests for standard token exchange. For now, this class provides set of same tests for token-exchange-v1 as well as for token-exchange-v2.
@@ -388,6 +353,34 @@ public abstract class AbstractStandardTokenExchangeTest extends AbstractKeycloak
 
         response = oauth.doTokenExchange(TEST, accessToken, "client-exchanger", "client-exchanger", "secret");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+    }
+
+    @Test
+    public void testClientExchangeToItselfWithConsents() throws Exception {
+        testingClient.server().run(TokenExchangeTestUtils::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "client-exchanger");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.setConsentRequired(Boolean.TRUE);
+        client.update(clientRepresentation);
+
+        response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+        assertEquals("Client requires user consent", response.getErrorDescription());
+
+        response = oauth.doTokenExchange(TEST, accessToken, "client-exchanger", "client-exchanger", "secret");
+        assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+        assertEquals("Client requires user consent", response.getErrorDescription());
     }
 
     @Test

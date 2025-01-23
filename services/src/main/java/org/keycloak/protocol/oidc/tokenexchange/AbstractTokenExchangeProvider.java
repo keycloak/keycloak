@@ -72,7 +72,6 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
-import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -81,8 +80,6 @@ import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -241,6 +238,11 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             }
         }
 
+        // Assume client itself is audience in case audience parameter not provided
+        if (targetAudienceClients.isEmpty()) {
+            targetAudienceClients.add(client);
+        }
+
         for (ClientModel targetClient : targetAudienceClients) {
             if (targetClient.isConsentRequired()) {
                 event.detail(Details.REASON, "audience requires consent");
@@ -254,12 +256,6 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 event.error(Errors.CLIENT_DISABLED);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
             }
-        }
-
-
-        // Assume client itself is audience in case audience parameter not provided
-        if (targetAudienceClients.isEmpty()) {
-            targetAudienceClients.add(client);
         }
 
         for (ClientModel targetClient : targetAudienceClients) {
