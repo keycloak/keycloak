@@ -193,4 +193,12 @@ public interface Policy {
     default String getResourceType() {
         return Optional.ofNullable(getConfig()).orElse(Map.of()).get("defaultResourceType");
     }
+
+    default void setResourceType(String resourceType) {
+        Map<String, String> config = getConfig();
+
+        if (config != null) {
+            putConfig("defaultResourceType", resourceType);
+        }
+    }
 }

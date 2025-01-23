@@ -1231,6 +1231,7 @@ public class RepresentationToModel {
         model.setDescription(representation.getDescription());
         model.setDecisionStrategy(representation.getDecisionStrategy());
         model.setLogic(representation.getLogic());
+        model.setResourceType(representation.getResourceType());
 
         Set resources = representation.getResources();
         Set scopes = representation.getScopes();
