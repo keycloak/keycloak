@@ -2,12 +2,10 @@ package org.keycloak.testframework.events;
 
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.injection.InstanceContext;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.injection.RequestedInstance;
-import org.keycloak.testframework.injection.Supplier;
-import org.keycloak.testframework.injection.SupplierOrder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
-public class EventsSupplier implements Supplier<Events, InjectEvents> {
+public class EventsSupplier extends AbstractEventsSupplier<Events, InjectEvents> {
 
     @Override
     public Class<InjectEvents> getAnnotationClass() {
@@ -20,35 +18,13 @@ public class EventsSupplier implements Supplier<Events, InjectEvents> {
     }
 
     @Override
-    public Events getValue(InstanceContext<Events, InjectEvents> instanceContext) {
-        Events events = new Events();
-        SysLogServer sysLogServer = instanceContext.getDependency(SysLogServer.class);
-        instanceContext.addNote("server", sysLogServer);
-        return events;
+    protected Events createValue(ManagedRealm realm) {
+        return new Events(realm);
     }
 
     @Override
-    public void onBeforeEach(InstanceContext<Events, InjectEvents> instanceContext) {
-        instanceContext.getNote("server", SysLogServer.class).addListener(instanceContext.getValue());
+    public RealmConfigBuilder intercept(RealmConfigBuilder realm, InstanceContext<Events, InjectEvents> instanceContext) {
+        return realm.eventsEnabled(true);
     }
 
-    @Override
-    public LifeCycle getDefaultLifecycle() {
-        return LifeCycle.METHOD;
-    }
-
-    @Override
-    public void close(InstanceContext<Events, InjectEvents> instanceContext) {
-        instanceContext.getNote("server", SysLogServer.class).removeListener(instanceContext.getValue());
-    }
-
-    @Override
-    public boolean compatible(InstanceContext<Events, InjectEvents> a, RequestedInstance<Events, InjectEvents> b) {
-        return true;
-    }
-
-    @Override
-    public int order() {
-        return SupplierOrder.BEFORE_KEYCLOAK_SERVER;
-    }
 }
