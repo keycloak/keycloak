@@ -4,25 +4,17 @@ import {
   Button,
   Divider,
   Dropdown,
-  DropdownGroup,
   DropdownItem,
   DropdownList,
   Label,
   MenuToggle,
-  SearchInput,
-  Spinner,
   Split,
   SplitItem,
   Stack,
   StackItem,
 } from "@patternfly/react-core";
-import {
-  AngleLeftIcon,
-  AngleRightIcon,
-  CheckIcon,
-} from "@patternfly/react-icons";
-import { debounce } from "lodash-es";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { CheckIcon } from "@patternfly/react-icons";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
@@ -41,7 +33,7 @@ type AddRealmProps = {
   onClick: () => void;
 };
 
-const AddRealm = ({ onClick }: AddRealmProps) => {
+export const AddRealm = ({ onClick }: AddRealmProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
 
@@ -89,7 +81,7 @@ const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
   );
 };
 
-type RealmNameRepresentation = {
+export type RealmNameRepresentation = {
   name: string;
   displayName?: string;
 };
@@ -104,24 +96,13 @@ export const RealmSelector = () => {
   const recentRealms = useRecentRealms();
   const navigate = useNavigate();
 
-  const [search, setSearch] = useState("");
-  const [first, setFirst] = useState(0);
-
-  const debounceFn = useCallback(
-    debounce((value: string) => {
-      setFirst(0);
-      setSearch(value);
-    }, 300),
-    [],
-  );
-
   useFetch(
     async () => {
       try {
         return await fetchAdminUI<RealmNameRepresentation[]>(
           adminClient,
           "ui-ext/realms/names",
-          { first: `${first}`, max: `${MAX_RESULTS + 1}`, search },
+          { first: "0", max: `${MAX_RESULTS + 1}` },
         );
       } catch (error) {
         if (error instanceof NetworkError && error.response.status < 500) {
@@ -132,7 +113,7 @@ export const RealmSelector = () => {
       }
     },
     setRealms,
-    [open, first, search],
+    [realm],
   );
 
   const sortedRealms = useMemo(
@@ -145,13 +126,17 @@ export const RealmSelector = () => {
 
         return a.name.localeCompare(b.name, whoAmI.getLocale());
       }),
-    [recentRealms, realms, first, search],
+    [recentRealms, realms],
   );
 
   const realmDisplayName = useMemo(
     () => realms.find((r) => r.name === realm)?.displayName,
     [realm, realms],
   );
+
+  if (realms.length > MAX_RESULTS) {
+    return undefined;
+  }
 
   return (
     <Dropdown
@@ -180,88 +165,30 @@ export const RealmSelector = () => {
       )}
     >
       <DropdownList>
-        {(realms.length > 5 || search || first !== 0) && (
+        {sortedRealms.map((realm) => (
+          <DropdownItem
+            key={realm.name}
+            onClick={() => {
+              navigate(toDashboard({ realm: realm.name }));
+              setOpen(false);
+            }}
+          >
+            <RealmText
+              {...realm}
+              showIsRecent={
+                realms.length > 5 && recentRealms?.includes(realm.name)
+              }
+            />
+          </DropdownItem>
+        ))}
+        {whoAmI.canCreateRealm() && (
           <>
-            <DropdownGroup>
-              <DropdownList>
-                <SearchInput
-                  value={search}
-                  onChange={(_, value) => debounceFn(value)}
-                  onClear={() => setSearch("")}
-                />
-              </DropdownList>
-            </DropdownGroup>
-            <Divider component="li" />
+            <Divider key="divider" />
+            <DropdownItem key="add" component="div">
+              <AddRealm onClick={() => setOpen(false)} />
+            </DropdownItem>
           </>
         )}
-        {(realms.length !== 0
-          ? [
-              first !== 0 ? (
-                <DropdownItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFirst(first - MAX_RESULTS);
-                  }}
-                >
-                  <AngleLeftIcon /> {t("previous")}
-                </DropdownItem>
-              ) : (
-                []
-              ),
-              ...sortedRealms.map((realm) => (
-                <DropdownItem
-                  key={realm.name}
-                  onClick={() => {
-                    navigate(toDashboard({ realm: realm.name }));
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <RealmText
-                    {...realm}
-                    showIsRecent={
-                      realms.length > 5 && recentRealms?.includes(realm.name)
-                    }
-                  />
-                </DropdownItem>
-              )),
-              realms.length > MAX_RESULTS ? (
-                <DropdownItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFirst(first + MAX_RESULTS);
-                  }}
-                >
-                  <AngleRightIcon />
-                  {t("next")}
-                </DropdownItem>
-              ) : (
-                []
-              ),
-            ]
-          : !search
-            ? [
-                <DropdownItem key="loader">
-                  <Spinner size="sm" /> {t("loadingRealms")}
-                </DropdownItem>,
-              ]
-            : [
-                <DropdownItem key="no-results">
-                  {t("noResultsFound")}
-                </DropdownItem>,
-              ]
-        ).concat([
-          <Fragment key="add-realm">
-            {whoAmI.canCreateRealm() && (
-              <>
-                <Divider key="divider" />
-                <DropdownItem key="add" component="div">
-                  <AddRealm onClick={() => setOpen(false)} />
-                </DropdownItem>
-              </>
-            )}
-          </Fragment>,
-        ])}
       </DropdownList>
     </Dropdown>
   );
