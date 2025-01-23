@@ -18,4 +18,4 @@ Check the `crl-storage` section in the link:https://www.keycloak.org/server/all-
 = Dynamic Authentication Flow selection using Client Policies
 
 Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
-This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-poliy-auth-flow[{adminguide_name}].
+This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].

@@ -235,7 +235,7 @@ Creating an advanced flow such as this can have side effects. For example, if yo
 * In the *Action* menu, select *Bind flow* and select *Reset credentials flow* from the dropdown and click *Save*
 ====
 
-[[_client-poliy-auth-flow]]
+[[_client-policy-auth-flow]]
 ==== Using Client Policies to Select an Authentication Flow
 <<_client_policies, Client Policies>> can be used to dynamically select an Authentication Flow based on specific conditions, such as requesting a particular scope or an ACR (Authentication Context Class Reference) using the `AuthenticationFlowSelectorExecutor` in combination with the condition you prefer.
 
@@ -243,7 +243,7 @@ The `AuthenticationFlowSelectorExecutor` allows you to select an appropriate aut
 
 A possible configuration involves using the `ACRCondition` in combination with the `AuthenticationFlowSelectorExecutor`. This setup enables you to select an authentication flow based on the requested ACR and have the ACR value included in the token using <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
 
-For more details on client policies, refer to the dedicated chapter: <<_client_policies, Client Policies>>.
+For more details, see <<_client_policies, Client Policies>>.
 
 
 [[_step-up-flow]]
@@ -402,9 +402,9 @@ NOTE: A conflict situation may arise when an admin specifies several flows, sets
 NOTE: Step-up authentication with Level of Authentication conditions is intended for use cases where each level
 requires all authentication methods from the preceding levels.
 For instance, level X must always include all authentication methods required by level X-1.
-For use cases where a specific level, such as level 3, requires a different authentication method than the previous levels,
-it may be more appropriate to use mapping of ACR to specific flow.
-For more information, see the dedicated section: <<_client-poliy-auth-flow, Using Client Policies to Select an Authentication Flow>>.
+For use cases where a specific level, such as level 3, requires a different authentication method from the previous levels,
+it may be more appropriate to use mapping of ACR to a specific flow.
+For more details, see <<_client-policy-auth-flow, Using Client Policies to Select an Authentication Flow>>.
 
 *Example scenario*
 

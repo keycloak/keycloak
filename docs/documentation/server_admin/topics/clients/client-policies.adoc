@@ -95,7 +95,7 @@ Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 
 ACR Condition::
-Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-poliy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
 
 
 === Executor
@@ -147,7 +147,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce a valid redirect URI that the OAuth 2.1 specification requires
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
 
-Another available executor is the `auth-flow-enforce` that can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-poliy-auth-flow, related documentation>>.
+Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
 
 [[_client_policy_profile]]
 === Profile
