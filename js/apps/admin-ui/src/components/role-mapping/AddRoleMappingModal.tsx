@@ -100,7 +100,7 @@ export const AddRoleButton = ({
         </DropdownItem>
         {canViewRealmRoles && (
           <DropdownItem
-            data-testid="client-role"
+            data-testid="roles-role"
             component="button"
             onClick={() => {
               onFilerTypeChange("roles");
