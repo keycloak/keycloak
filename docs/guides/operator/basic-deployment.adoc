@@ -193,41 +193,7 @@ CONDITION: RollingUpdate
 
 === Accessing the {project_name} deployment
 
-The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  
-
-First, you create a reencrypt route using the Ingress certificate. The Ingress Controller negotiates its connection to the application independently of the connection from the client.
-
-[source,yaml]
-----
-$ oc create route reencrypt --service=<service-name> --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
-----
-
-The operator by default creates a passthrough route, so the route creation must be disabled on the Keycloak CR, setting `.spec.ingress.enabled: false:`
-
-[source,yaml]
-----
-apiVersion: k8s.keycloak.org/v2alpha1
-kind: Keycloak
-metadata:
-  name: keycloak1
-spec:
-  instances: 1
-  db:
-    vendor: postgres
-    host: postgres-db-w
-    usernameSecret:
-      name: keycloak-db-secret
-      key: username
-    passwordSecret:
-      name: keycloak-db-secret
-      key: password
-  http:
-    tlsSecret: tls-secret-wildcard
-  hostname:
-    hostname: keycloak1.apps.<domain>
-  ingress:
-    enabled: false
-----
+The {project_name} deployment can be exposed through a basic Ingress accessible through the provided hostname.
 
 On installations with multiple default IngressClass instances
 or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
@@ -268,7 +234,12 @@ Apply the changes:
 ----
 kubectl apply -f example-kc.yaml
 ----
-You can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
+You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. Keycloak on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass will create such a Route. In this case you must disable KeyCloak's built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
+
+[source,yaml]
+----
+$ oc create route reencrypt --service=<keycloak-cr-name>-service --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
+----
 
 For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
 
