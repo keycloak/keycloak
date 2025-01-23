@@ -144,6 +144,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context);
 
+        // version 22 changed the match labels, account for older versions
         if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
             context.getClient().resource(existingDeployment).lockResourceVersion().delete();
             Log.info("Existing Deployment found with old label selector, it will be recreated");

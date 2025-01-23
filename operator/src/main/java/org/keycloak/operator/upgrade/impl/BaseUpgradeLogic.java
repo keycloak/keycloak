@@ -120,6 +120,7 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
         for (int i = 0; i < diff.size(); i++) {
             var path = diff.get(i).get(PATH).asText();
             for (var field : FIELDS) {
+                // status.podIP appends an `apiVersion` to the environment. We are ignoring that change here.
                 if (path.startsWith(field) && !path.endsWith("valueFrom/fieldRef/apiVersion")) {
                     Log.debugf("Found different value:%n%s", diff.get(i).toPrettyString());
                     return false;
