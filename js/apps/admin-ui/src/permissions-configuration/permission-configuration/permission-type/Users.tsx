@@ -13,7 +13,6 @@ export const Users = () => {
   const { adminClient } = useAdminClient();
   const { realm } = useParams<PermissionConfigurationDetailsParams>();
   const form = useFormContext();
-  const [allUses, setAllUses] = useState<string[]>([]);
   const [isSpecificUsers, setIsSpecificUsers] = useState(false);
 
   useFetch(
@@ -23,7 +22,6 @@ export const Users = () => {
       }),
     (users) => {
       const usersIds = users.map((user: any) => user.id);
-      setAllUses(usersIds);
       if (isSpecificUsers) form.setValue("resources", usersIds);
     },
     [realm],
@@ -51,7 +49,7 @@ export const Users = () => {
           label={t("allUsers")}
           onChange={() => {
             setIsSpecificUsers(false);
-            form.setValue("resources", allUses);
+            form.setValue("resources", []);
           }}
           className="pf-v5-u-mb-md"
         />
