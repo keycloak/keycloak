@@ -139,13 +139,13 @@ export default function PermissionConfigurationDetails() {
       };
     },
     ({ permission, resources, policies, scopes }) => {
-      const resourceIds = resources?.map((resource) => resource._id!) || [];
+      const resourceIds = resources?.map((resource) => resource.name!) || [];
       const policyIds = policies?.map((policy) => policy.id!) || [];
       const scopeNames = scopes?.map((scope) => scope.name) || [];
 
       reset({
         ...permission,
-        resources,
+        resources: resourceIds!,
         policies,
         scopes,
       });
@@ -221,7 +221,7 @@ export default function PermissionConfigurationDetails() {
     },
   });
 
-  if (!permissionId && !permission) {
+  if (!permission) {
     return <KeycloakSpinner />;
   }
 
