@@ -1,11 +1,10 @@
 export default class UserRegistration {
   #userRegistrationTab = "rs-userRegistration-tab";
   #defaultGroupTab = "#pf-tab-20-groups";
-  #addRoleBtn = "assignRole";
+  #addRoleBtn = "add-role-mapping-button";
   #addDefaultGroupBtn = "no-default-groups-empty-action";
   #namesColumn = "tbody td:visible";
   #addBtn = "assign";
-  #filterTypeDropdown = "filter-type-dropdown";
 
   goToTab() {
     cy.findByTestId(this.#userRegistrationTab).click({ force: true });
@@ -19,6 +18,7 @@ export default class UserRegistration {
 
   addRole() {
     cy.findByTestId(this.#addRoleBtn).click({ force: true });
+    cy.findByTestId("client-role").click();
     return this;
   }
 
@@ -29,9 +29,8 @@ export default class UserRegistration {
 
   changeRoleTypeFilter(filter: string) {
     // Invert the filter because the testid is the current selection
-    const option = filter == "roles" ? "clients" : "roles";
+    const option = filter === "roles" ? "roles-role" : "client-role";
 
-    cy.findByTestId(this.#filterTypeDropdown).click();
     cy.findByTestId(option).click();
 
     return this;

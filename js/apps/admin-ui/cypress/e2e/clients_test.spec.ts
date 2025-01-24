@@ -291,7 +291,7 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
-        .assignRole(false)
+        .assignRole()
         .changeRoleTypeFilter(createRealmRoleType)
         .selectRow(createRealmRoleName, true)
         .assign();
@@ -304,9 +304,7 @@ describe("Clients test", () => {
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
 
       //cy.intercept(`/admin/realms/${realmName}/users`).as("assignRoles");
-      serviceAccountTab
-        .checkRoles([createRealmRoleName], false)
-        .assignRole(false);
+      serviceAccountTab.checkRoles([createRealmRoleName], false).assignRole();
 
       //cy.wait("@assignRoles");
       commonPage.sidebar().waitForPageLoad();
