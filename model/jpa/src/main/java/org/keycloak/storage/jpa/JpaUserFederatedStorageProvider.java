@@ -36,18 +36,18 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.JpaUserCredentialStore;
+import org.keycloak.models.jpa.JpaUserFederatedCredentialStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.federated.UserFederatedUserCredentialStore;
 import org.keycloak.storage.jpa.entity.BrokerLinkEntity;
 import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentEntity;
-import org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity.Key;
@@ -72,16 +72,31 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider,
-        UserCredentialStore {
+        UserCredentialStore
+{
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
 
     private final KeycloakSession session;
-    protected EntityManager em;
 
+    protected final EntityManager em;
+
+    protected final UserFederatedUserCredentialStore credentialStore;
+
+    /**
+     * @param session
+     * @param em
+     * @deprecated use {@link JpaUserFederatedStorageProvider#JpaUserFederatedStorageProvider(KeycloakSession, EntityManager, UserFederatedUserCredentialStore)} instead
+     */
+    @Deprecated
     public JpaUserFederatedStorageProvider(KeycloakSession session, EntityManager em) {
+        this(session, em, new JpaUserFederatedCredentialStore(session, em));
+    }
+
+    public JpaUserFederatedStorageProvider(KeycloakSession session, EntityManager em, UserFederatedUserCredentialStore credentialStore) {
         this.session = session;
         this.em = em;
+        this.credentialStore = credentialStore;
     }
 
     @Override
@@ -91,7 +106,6 @@ public class JpaUserFederatedStorageProvider implements
 
     /**
      * We create an entry so that its easy to iterate over all things in the database.  Specifically useful for export
-     *
      */
     protected void createIndex(RealmModel realm, String userId) {
         if (em.find(FederatedUser.class, userId) == null) {
@@ -562,115 +576,37 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void updateCredential(RealmModel realm, String userId, CredentialModel cred) {
-        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
-        if (!checkCredentialEntity(entity, userId)) return;
-        createIndex(realm, userId);
-        entity.setCreatedDate(cred.getCreatedDate());
-        entity.setType(cred.getType());
-        entity.setCredentialData(cred.getCredentialData());
-        entity.setSecretData(cred.getSecretData());
-        entity.setUserLabel(cred.getUserLabel());
+        credentialStore.updateCredential(realm, userId, cred);
     }
 
     @Override
     public CredentialModel createCredential(RealmModel realm, String userId, CredentialModel cred) {
-        createIndex(realm, userId);
-        FederatedUserCredentialEntity entity = new FederatedUserCredentialEntity();
-        String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
-        entity.setId(id);
-        entity.setCreatedDate(cred.getCreatedDate());
-        entity.setType(cred.getType());
-        entity.setCredentialData(cred.getCredentialData());
-        entity.setSecretData(cred.getSecretData());
-        entity.setUserLabel(cred.getUserLabel());
-
-        entity.setUserId(userId);
-        entity.setRealmId(realm.getId());
-        entity.setStorageProviderId(new StorageId(userId).getProviderId());
-
-        //add in linkedlist to last position
-        List<FederatedUserCredentialEntity> credentials = getStoredCredentialEntitiesStream(userId).collect(Collectors.toList());
-        int priority = credentials.isEmpty() ? JpaUserCredentialStore.PRIORITY_DIFFERENCE : credentials.get(credentials.size() - 1).getPriority() + JpaUserCredentialStore.PRIORITY_DIFFERENCE;
-        entity.setPriority(priority);
-
-        em.persist(entity);
-        return toModel(entity);
+        return credentialStore.createCredential(realm, userId, cred);
     }
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, String userId, String id) {
-        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (!checkCredentialEntity(entity, userId)) return false;
-
-        int currentPriority = entity.getPriority();
-
-        this.getStoredCredentialEntitiesStream(userId).filter(credentialEntity -> credentialEntity.getPriority() > currentPriority)
-                .forEach(credentialEntity -> credentialEntity.setPriority(credentialEntity.getPriority() - JpaUserCredentialStore.PRIORITY_DIFFERENCE));
-
-        em.remove(entity);
-        return true;
+        return credentialStore.removeStoredCredential(realm, userId, id);
     }
 
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, String userId, String id) {
-        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id);
-        if (!checkCredentialEntity(entity, userId)) return null;
-        CredentialModel model = toModel(entity);
-        return model;
-    }
-
-    private boolean checkCredentialEntity(FederatedUserCredentialEntity entity, String userId) {
-        return entity != null && entity.getUserId() != null && entity.getUserId().equals(userId);
-    }
-
-    protected CredentialModel toModel(FederatedUserCredentialEntity entity) {
-        CredentialModel model = new CredentialModel();
-        model.setId(entity.getId());
-        model.setType(entity.getType());
-        model.setCreatedDate(entity.getCreatedDate());
-        model.setUserLabel(entity.getUserLabel());
-
-        // Backwards compatibility - users from previous version still have "salt" in the DB filled.
-        // We migrate it to new secretData format on-the-fly
-        if (entity.getSalt() != null) {
-            String newSecretData = entity.getSecretData().replace("__SALT__", Base64.encodeBytes(entity.getSalt()));
-            entity.setSecretData(newSecretData);
-            entity.setSalt(null);
-        }
-
-        model.setSecretData(entity.getSecretData());
-        model.setCredentialData(entity.getCredentialData());
-        return model;
+        return credentialStore.getStoredCredentialById(realm, userId, id);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, String userId) {
-        return this.getStoredCredentialEntitiesStream(userId).map(this::toModel);
-    }
-
-    private Stream<FederatedUserCredentialEntity> getStoredCredentialEntitiesStream(String userId) {
-        TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUser", FederatedUserCredentialEntity.class)
-                .setParameter("userId", userId);
-        return closing(query.getResultStream());
+        return credentialStore.getStoredCredentialsStream(realm, userId);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, String userId, String type) {
-        TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUserAndType", FederatedUserCredentialEntity.class)
-                .setParameter("type", type)
-                .setParameter("userId", userId);
-        return closing(query.getResultStream().map(this::toModel));
+        return credentialStore.getStoredCredentialsByTypeStream(realm, userId, type);
     }
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type) {
-        TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByNameAndType", FederatedUserCredentialEntity.class)
-                .setParameter("type", type)
-                .setParameter("userLabel", name)
-                .setParameter("userId", userId);
-        List<FederatedUserCredentialEntity> results = query.getResultList();
-        if (results.isEmpty()) return null;
-        return toModel(results.get(0));
+        return credentialStore.getStoredCredentialByNameAndType(realm, userId, name, type);
     }
 
     @Override
@@ -716,54 +652,13 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
-        // 1 - Create new list and move everything to it.
-        List<FederatedUserCredentialEntity> newList = this.getStoredCredentialEntitiesStream(user.getId()).collect(Collectors.toList());
+    public boolean moveCredentialTo(RealmModel realm, UserModel user, String credentialId, String newPreviousCredentialId) {
+        return moveCredentialTo(realm, user.getId(), credentialId, newPreviousCredentialId);
+    }
 
-        // 2 - Find indexes of our and newPrevious credential
-        int ourCredentialIndex = -1;
-        int newPreviousCredentialIndex = -1;
-        FederatedUserCredentialEntity ourCredential = null;
-        int i = 0;
-        for (FederatedUserCredentialEntity credential : newList) {
-            if (id.equals(credential.getId())) {
-                ourCredentialIndex = i;
-                ourCredential = credential;
-            } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
-                newPreviousCredentialIndex = i;
-            }
-            i++;
-        }
-
-        if (ourCredentialIndex == -1) {
-            logger.warnf("Not found credential with id [%s] of user [%s]", id, user.getUsername());
-            return false;
-        }
-
-        if (newPreviousCredentialId != null && newPreviousCredentialIndex == -1) {
-            logger.warnf("Can't move up credential with id [%s] of user [%s]", id, user.getUsername());
-            return false;
-        }
-
-        // 3 - Compute index where we move our credential
-        int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
-
-        // 4 - Insert our credential to new position, remove it from the old position
-        newList.add(toMoveIndex, ourCredential);
-        int indexToRemove = toMoveIndex < ourCredentialIndex ? ourCredentialIndex + 1 : ourCredentialIndex;
-        newList.remove(indexToRemove);
-
-        // 5 - newList contains credentials in requested order now. Iterate through whole list and change priorities accordingly.
-        int expectedPriority = 0;
-        for (FederatedUserCredentialEntity credential : newList) {
-            expectedPriority += JpaUserCredentialStore.PRIORITY_DIFFERENCE;
-            if (credential.getPriority() != expectedPriority) {
-                credential.setPriority(expectedPriority);
-
-                logger.tracef("Priority of credential [%s] of user [%s] changed to [%d]", credential.getId(), user.getUsername(), expectedPriority);
-            }
-        }
-        return true;
+    @Override
+    public boolean moveCredentialTo(RealmModel realm, String userId, String credentialId, String newPreviousCredentialId) {
+        return credentialStore.moveCredentialTo(realm, userId, credentialId, newPreviousCredentialId);
     }
 
     @Override
