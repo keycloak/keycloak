@@ -50,8 +50,9 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
-
+    
     public static final String USERS_RESOURCE_TYPE = "Users";
+    public static final String CLIENTS_RESOURCE_TYPE = "Clients";
 
     //scopes
     public static final String MANAGE = "manage";
@@ -59,13 +60,17 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String IMPERSONATE = "impersonate";
     public static final String MAP_ROLES = "map-roles";
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
+    public static final String CONFIGURE = "configure";
+    public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
+    public static final String MAP_ROLES_COMPOSITE = "map-roles-composite";
 
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
+    public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(CONFIGURE, MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
 
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
     private AdminPermissionsSchema() {
-        super(Map.of(USERS_RESOURCE_TYPE, USERS));
+        super(Map.of(USERS_RESOURCE_TYPE, USERS, CLIENTS_RESOURCE_TYPE, CLIENTS));
     }
 
     public Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String policyType, String resourceType, String id) {
@@ -85,6 +90,8 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
         if (USERS.getType().equals(resourceType)) {
             name = resolveUser(session, id);
+        } else if (CLIENTS.getType().equals(resourceType)) {
+            name = resolveClient(session, id);
         }
 
         if (name == null) {
@@ -163,6 +170,17 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return user == null ? null : user.getId();
+    }
+
+    private String resolveClient(KeycloakSession session, String id) {
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = session.clients().getClientById(realm, id);
+
+        if (client == null) {
+            client = session.clients().getClientByClientId(realm, id);
+        }
+
+        return client == null ? null : client.getId();
     }
 
     private StoreFactory getStoreFactory(KeycloakSession session) {

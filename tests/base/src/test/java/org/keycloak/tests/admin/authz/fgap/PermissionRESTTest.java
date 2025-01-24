@@ -126,7 +126,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         }
 
         // this should create a resource for userAlice
-        createPermission(PermissionBuilder.create()
+        createPermission(client, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of(userAlice.getUsername()))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
@@ -157,17 +157,17 @@ public class PermissionRESTTest extends AbstractPermissionTest {
     @Test
     public void permissionsTest() {
         // no resourceType, valid scopes
-        createPermission(PermissionBuilder.create()
+        createPermission(client, PermissionBuilder.create()
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
         // valid resourceType, no scopes
-        createPermission(PermissionBuilder.create()
+        createPermission(client, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .build(), Response.Status.BAD_REQUEST);
 
         // valid resourceType, non-existent scopes
-        createPermission(PermissionBuilder.create()
+        createPermission(client, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of("edit", "write", "token-exchange"))
                 .build(), Response.Status.BAD_REQUEST);

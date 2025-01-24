@@ -64,7 +64,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
 
     @AfterEach
     public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource();
+        ScopePermissionsResource permissions = getScopePermissionsResource(client);
 
         for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
             permissions.findById(permission.getId()).remove();
@@ -74,10 +74,10 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     @Test
     public void testCreateResourceTypePermission() {
         ScopePermissionRepresentation expected = createAllUserPermission();
-        List<ScopePermissionRepresentation> result = getScopePermissionsResource().findAll(null, null, null, -1, -1);
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
         assertEquals(1, result.size());
         ScopePermissionRepresentation permissionRep = result.get(0);
-        ScopePermissionResource permission = getScopePermissionsResource().findById(permissionRep.getId());
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
         assertEquals(AdminPermissionsSchema.USERS.getScopes().size(), permission.scopes().size());
         assertEquals(3, permission.associatedPolicies().size());
@@ -86,10 +86,10 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     @Test
     public void testCreateResourceObjectPermission() {
         ScopePermissionRepresentation expected = createUserPermission(userAlice);
-        List<ScopePermissionRepresentation> result = getScopePermissionsResource().findAll(null, null, null, -1, -1);
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
         assertEquals(1, result.size());
         ScopePermissionRepresentation permissionRep = result.get(0);
-        ScopePermissionResource permission = getScopePermissionsResource().findById(permissionRep.getId());
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
         assertEquals(AdminPermissionsSchema.USERS.getScopes().size(), permission.scopes().size());
         assertEquals(1, permission.resources().size());
@@ -100,9 +100,9 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     public void testFindByResourceObject() {
         createUserPermission(userAlice, userBob);
 
-        List<ScopePermissionRepresentation> existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
+        List<ScopePermissionRepresentation> existing = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), -1, -1);
         assertEquals(1, existing.size());
-        existing = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
+        existing = getScopePermissionsResource(client).findAll(null, null, userBob.getId(), -1, -1);
         assertEquals(1, existing.size());
     }
 
@@ -122,18 +122,18 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
         assertEquals(2 + AdminPermissionsSchema.SCHEMA.getResourceTypes().entrySet().size(), resources.size());
 
-        List<ScopePermissionRepresentation> existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
+        List<ScopePermissionRepresentation> existing = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), -1, -1);
         assertEquals(1, existing.size());
         // remove permission for Alice
-        getScopePermissionsResource().findById(existing.get(0).getId()).remove();
-        existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
+        getScopePermissionsResource(client).findById(existing.get(0).getId()).remove();
+        existing = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), -1, -1);
         assertThat(existing, nullValue());
 
-        existing = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
+        existing = getScopePermissionsResource(client).findAll(null, null, userBob.getId(), -1, -1);
         assertEquals(1, existing.size());
 
         // remove permission for Bob
-        getScopePermissionsResource().findById(existing.get(0).getId()).remove();
+        getScopePermissionsResource(client).findById(existing.get(0).getId()).remove();
 
         //resources for both Alice and Bob should be deleted, there should be only "all-resource" resources
         resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
@@ -144,9 +144,9 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     public void testUpdate() {
         createUserPermission(userAlice, userBob);
 
-        List<ScopePermissionRepresentation> searchByResourceAlice = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
+        List<ScopePermissionRepresentation> searchByResourceAlice = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), -1, -1);
         assertThat(searchByResourceAlice, hasSize(1));
-        List<ScopePermissionRepresentation> searchByResourceBob = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
+        List<ScopePermissionRepresentation> searchByResourceBob = getScopePermissionsResource(client).findAll(null, null, userBob.getId(), -1, -1);
         assertThat(searchByResourceBob, hasSize(1));
 
         ScopePermissionRepresentation permission = searchByResourceAlice.get(0);
@@ -162,7 +162,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         ResourceRepresentation toRemove = resources.get(1);
         resources.remove(toRemove);
         permission.setResources(resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet()));
-        getScopePermissionsResource().findById(permission.getId()).update(permission);
+        getScopePermissionsResource(client).findById(permission.getId()).update(permission);
 
         //permission should have only single resource
         assertThat(getPolicies().policy(permission.getId()).resources(), hasSize(1));
@@ -183,7 +183,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
                 .addPolicies(List.of("User Policy 0", "User Policy 1", "User Policy 2"))
                 .build();
 
-        createPermission(permission);
+        createPermission(client, permission);
 
         return permission;
     }
@@ -195,7 +195,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
                 .addPolicies(List.of("User Policy 0", "User Policy 1", "User Policy 2"))
                 .build();
 
-        createPermission(permission);
+        createPermission(client, permission);
 
         return permission;
     }
