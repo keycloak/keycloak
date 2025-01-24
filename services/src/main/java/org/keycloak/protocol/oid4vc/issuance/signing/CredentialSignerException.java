@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
-
-import org.keycloak.jose.jwk.JWK;
+package org.keycloak.protocol.oid4vc.issuance.signing;
 
 /**
- * Incomplete representations of format-specific credentials.
+ * Exception to be thrown if credentials signing does fail
  *
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public interface CredentialBody {
+public class CredentialSignerException extends RuntimeException {
 
-    /**
-     * Bind the credential to a public key prior to signing.
-     */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    public CredentialSignerException(String message) {
+        super(message);
+    }
+
+    public CredentialSignerException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

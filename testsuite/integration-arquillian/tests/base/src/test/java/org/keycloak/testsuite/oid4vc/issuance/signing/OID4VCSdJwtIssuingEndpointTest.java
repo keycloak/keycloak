@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.collections4.map.HashedMap;
@@ -33,23 +34,20 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService;
-import org.keycloak.protocol.oid4vc.model.CredentialConfigId;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredentialType;
+import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
@@ -67,7 +65,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -87,22 +84,67 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestTestCredential() {
         String token = getBearerToken(oauth);
-        String vct = "https://credentials.example.com/test-credential";
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run(session -> testRequestTestCredential(session, token, null));
+    }
+
+    @Test
+    public void testRequestTestCredentialWithKeybinding() {
+        String token = getBearerToken(oauth);
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
-                    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(token);
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    CredentialRequest credentialRequest = new CredentialRequest()
-                            .setFormat(Format.SD_JWT_VC)
-                            .setVct(vct);
-                    Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
-                    assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatus());
-                    assertNotNull("A credential should be responded.", credentialResponse.getEntity());
-                    CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
-                    new TestCredentialResponseHandler(vct).handleCredentialResponse(credentialResponseVO);
+                    Proof proof = new Proof()
+                            .setProofType(ProofType.JWT)
+                            .setJwt(generateJwtProof(getCredentialIssuer(session), null));
+
+                    SdJwtVP sdJwtVP = testRequestTestCredential(session, token, proof);
+                    assertNotNull("A cnf claim must be attached to the credential", sdJwtVP.getCnfClaim());
                 }));
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void testRequestTestCredentialWithInvalidKeybinding() throws Throwable {
+        String token = getBearerToken(oauth);
+        withCausePropagation(() ->
+                testingClient
+                        .server(TEST_REALM_NAME)
+                        .run((session -> {
+                                    Proof proof = new Proof()
+                                            .setProofType(ProofType.JWT)
+                                            .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), null));
+
+                                    testRequestTestCredential(session, token, proof);
+                                })
+                        )
+        );
+    }
+
+    private static String getCredentialIssuer(KeycloakSession session) {
+        return OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+    }
+
+    private static SdJwtVP testRequestTestCredential(KeycloakSession session, String token, Proof proof)
+            throws VerificationException {
+        String vct = "https://credentials.example.com/test-credential";
+
+        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+        authenticator.setTokenString(token);
+        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setFormat(Format.SD_JWT_VC)
+                .setVct(vct)
+                .setProof(proof);
+
+        Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
+        assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatus());
+        assertNotNull("A credential should be responded.", credentialResponse.getEntity());
+        CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+        new TestCredentialResponseHandler(vct).handleCredentialResponse(credentialResponseVO);
+
+        return SdJwtVP.of(credentialResponseVO.getCredential().toString());
     }
 
     // Tests the complete flow from
@@ -188,7 +230,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void getConfig() {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
-        String expectedAuthorizationServer = expectedIssuer;
+        final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -222,67 +264,15 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String issuerDid = "did:web:issuer.org";
         SdJwtCredentialBuilder testSdJwtCredentialBuilder = new SdJwtCredentialBuilder(issuerDid);
 
-        SdJwtSigningService testCredentialSigningService = new SdJwtSigningService(
-                session,
-                getKeyFromSession(session).getKid(),
-                Algorithm.ES256,
-                Optional.empty(),
-                VerifiableCredentialType.from("https://credentials.example.com/test-credential"),
-                CredentialConfigId.from("test-credential"));
-
-        SdJwtSigningService identityCredentialSigningService = new SdJwtSigningService(
-                session,
-                getKeyFromSession(session).getKid(),
-                Algorithm.ES256,
-                Optional.empty(),
-                VerifiableCredentialType.from("https://credentials.example.com/identity_credential"),
-                CredentialConfigId.from("IdentityCredential"));
-
         return new OID4VCIssuerEndpoint(
                 session,
                 Map.of(
                         testSdJwtCredentialBuilder.getSupportedFormat(), testSdJwtCredentialBuilder
                 ),
-                Map.of(
-                        testCredentialSigningService.locator(), testCredentialSigningService,
-                        identityCredentialSigningService.locator(), identityCredentialSigningService
-                ),
                 authenticator,
                 TIME_PROVIDER,
                 30,
                 true);
-    }
-
-    private ComponentExportRepresentation getIdCredentialSigningProvider() {
-        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
-        componentExportRepresentation.setName("sd-jwt-signing_identity_credential");
-        componentExportRepresentation.setId(UUID.randomUUID().toString());
-        componentExportRepresentation.setProviderId(Format.SD_JWT_VC);
-
-        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
-                Map.of(
-                        "algorithmType", List.of("ES256"),
-                        "vct", List.of("https://credentials.example.com/identity_credential"),
-                        "vcConfigId", List.of("IdentityCredential")
-                )
-        ));
-        return componentExportRepresentation;
-    }
-
-    private ComponentExportRepresentation getTestCredentialSigningProvider() {
-        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
-        componentExportRepresentation.setName("sd-jwt-signing_test-credential");
-        componentExportRepresentation.setId(UUID.randomUUID().toString());
-        componentExportRepresentation.setProviderId(Format.SD_JWT_VC);
-
-        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
-                Map.of(
-                        "algorithmType", List.of("ES256"),
-                        "vct", List.of("https://credentials.example.com/test-credential"),
-                        "vcConfigId", List.of("test-credential")
-                )
-        ));
-        return componentExportRepresentation;
     }
 
     @Override
@@ -332,11 +322,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Override
-    protected List<ComponentExportRepresentation> getSigningProviders() {
-        return List.of(getIdCredentialSigningProvider(), getTestCredentialSigningProvider());
-    }
-
-    @Override
     protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
         return List.of(getCredentialBuilderProvider(Format.SD_JWT_VC));
     }
@@ -349,11 +334,15 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 Map.entry("vc.test-credential.scope", "test-credential"),
                 Map.entry("vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }"),
                 Map.entry("vc.test-credential.vct", "https://credentials.example.com/test-credential"),
+                Map.entry("vc.test-credential.credential_signing_alg_values_supported", "ES256,ES384"),
                 Map.entry("vc.test-credential.display.0", "{\n  \"name\": \"Test Credential\"\n}"),
+                Map.entry("vc.test-credential.cryptographic_binding_methods_supported", "jwk"),
+                Map.entry("vc.test-credential.proof_types_supported", "{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"),
                 Map.entry("vc.test-credential.credential_build_config.token_jws_type", "example+sd-jwt"),
                 Map.entry("vc.test-credential.credential_build_config.hash_algorithm", "sha-256"),
                 Map.entry("vc.test-credential.credential_build_config.visible_claims", "iat,nbf,jti"),
-                Map.entry("vc.test-credential.credential_build_config.decoys", "2")
+                Map.entry("vc.test-credential.credential_build_config.decoys", "2"),
+                Map.entry("vc.test-credential.credential_build_config.signing_algorithm", "ES256")
         );
 
         Map<String, String> identityCredentialAttributes = Map.ofEntries(
@@ -362,13 +351,15 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 Map.entry("vc.IdentityCredential.scope", "identity_credential"),
                 Map.entry("vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential"),
                 Map.entry("vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk"),
+                Map.entry("vc.IdentityCredential.credential_signing_alg_values_supported", "ES256,ES384"),
                 Map.entry("vc.IdentityCredential.claims", "{\"given_name\":{\"display\":[{\"name\":\"الاسم الشخصي\",\"locale\":\"ar\"},{\"name\":\"Vorname\",\"locale\":\"de\"},{\"name\":\"Given Name\",\"locale\":\"en\"},{\"name\":\"Nombre\",\"locale\":\"es\"},{\"name\":\"نام\",\"locale\":\"fa\"},{\"name\":\"Etunimi\",\"locale\":\"fi\"},{\"name\":\"Prénom\",\"locale\":\"fr\"},{\"name\":\"पहचानी गई नाम\",\"locale\":\"hi\"},{\"name\":\"Nome\",\"locale\":\"it\"},{\"name\":\"名\",\"locale\":\"ja\"},{\"name\":\"Овог нэр\",\"locale\":\"mn\"},{\"name\":\"Voornaam\",\"locale\":\"nl\"},{\"name\":\"Nome Próprio\",\"locale\":\"pt\"},{\"name\":\"Förnamn\",\"locale\":\"sv\"},{\"name\":\"مسلمان نام\",\"locale\":\"ur\"}]},\"family_name\":{\"display\":[{\"name\":\"اسم العائلة\",\"locale\":\"ar\"},{\"name\":\"Nachname\",\"locale\":\"de\"},{\"name\":\"Family Name\",\"locale\":\"en\"},{\"name\":\"Apellido\",\"locale\":\"es\"},{\"name\":\"نام خانوادگی\",\"locale\":\"fa\"},{\"name\":\"Sukunimi\",\"locale\":\"fi\"},{\"name\":\"Nom de famille\",\"locale\":\"fr\"},{\"name\":\"परिवार का नाम\",\"locale\":\"hi\"},{\"name\":\"Cognome\",\"locale\":\"it\"},{\"name\":\"姓\",\"locale\":\"ja\"},{\"name\":\"өөрийн нэр\",\"locale\":\"mn\"},{\"name\":\"Achternaam\",\"locale\":\"nl\"},{\"name\":\"Sobrenome\",\"locale\":\"pt\"},{\"name\":\"Efternamn\",\"locale\":\"sv\"},{\"name\":\"خاندانی نام\",\"locale\":\"ur\"}]},\"birthdate\":{\"display\":[{\"name\":\"تاريخ الميلاد\",\"locale\":\"ar\"},{\"name\":\"Geburtsdatum\",\"locale\":\"de\"},{\"name\":\"Date of Birth\",\"locale\":\"en\"},{\"name\":\"Fecha de Nacimiento\",\"locale\":\"es\"},{\"name\":\"تاریخ تولد\",\"locale\":\"fa\"},{\"name\":\"Syntymäaika\",\"locale\":\"fi\"},{\"name\":\"Date de naissance\",\"locale\":\"fr\"},{\"name\":\"जन्म की तारीख\",\"locale\":\"hi\"},{\"name\":\"Data di nascita\",\"locale\":\"it\"},{\"name\":\"生年月日\",\"locale\":\"ja\"},{\"name\":\"төрсөн өдөр\",\"locale\":\"mn\"},{\"name\":\"Geboortedatum\",\"locale\":\"nl\"},{\"name\":\"Data de Nascimento\",\"locale\":\"pt\"},{\"name\":\"Födelsedatum\",\"locale\":\"sv\"},{\"name\":\"تاریخ پیدائش\",\"locale\":\"ur\"}]}}"),
                 Map.entry("vc.IdentityCredential.display.0", "{\"name\": \"Identity Credential\"}"),
                 Map.entry("vc.IdentityCredential.proof_types_supported", "{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"),
                 Map.entry("vc.IdentityCredential.credential_build_config.token_jws_type", "example+sd-jwt"),
                 Map.entry("vc.IdentityCredential.credential_build_config.hash_algorithm", "sha-256"),
                 Map.entry("vc.IdentityCredential.credential_build_config.visible_claims", "iat,nbf,jti"),
-                Map.entry("vc.IdentityCredential.credential_build_config.decoys", "0")
+                Map.entry("vc.IdentityCredential.credential_build_config.decoys", "0"),
+                Map.entry("vc.IdentityCredential.credential_build_config.signing_algorithm", "ES256")
         );
 
         HashedMap<String, String> allAttributes = new HashedMap<>();

@@ -15,19 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.jose.jwk.JWK;
+import org.keycloak.provider.Spi;
 
 /**
- * Incomplete representations of format-specific credentials.
+ * Spi implementation of the creation of {@link ProofValidator}
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public interface CredentialBody {
+public class ProofValidatorSpi implements Spi {
+    private static final String NAME = "proofValidator";
 
-    /**
-     * Bind the credential to a public key prior to signing.
-     */
-    void addKeyBinding(JWK jwk) throws CredentialBuilderException;
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public Class<ProofValidator> getProviderClass() {
+        return ProofValidator.class;
+    }
+
+    @Override
+    public Class<ProofValidatorFactory> getProviderFactoryClass() {
+        return ProofValidatorFactory.class;
+    }
 }
+

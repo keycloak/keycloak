@@ -17,18 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-/**
- * Exception to be thrown if credentials signing does fail
- *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
- */
-public class SigningServiceException extends RuntimeException {
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.model.Format;
 
-    public SigningServiceException(String message) {
-        super(message);
+public class JwtCredentialSignerFactory implements CredentialSignerFactory {
+
+    @Override
+    public String getSupportedFormat() {
+        return Format.JWT_VC;
     }
 
-    public SigningServiceException(String message, Throwable cause) {
-        super(message, cause);
+    @Override
+    public CredentialSigner<String> create(KeycloakSession session) {
+        return new JwtCredentialSigner(session);
     }
 }

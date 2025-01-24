@@ -52,19 +52,21 @@ import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
-import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.Proof;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
@@ -127,29 +129,21 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     /**
-     * Locatable credential builder map
+     * Credential builders are responsible for initiating the production of
+     * credentials in a specific format. Their output is an appropriate credential
+     * representation to be signed by a credential signer of the same format.
+     * <p></p>
+     * Due to technical constraints, we explicitly load credential builders into
+     * this map for they are configurable components. The key of the map is the
+     * credential {@link Format} associated with the builder. The matching credential
+     * signer is directly loaded from the Keycloak container.
      */
     private final Map<String, CredentialBuilder> credentialBuilders;
-
-    /**
-     * Key shall be strings, as configured credential of the same format can
-     * have different configs. Like decoy, visible claims,
-     * time requirements (iat, exp, nbf, ...).
-     * <p>
-     * Credentials with same configs can share a default entry with locator= format.
-     * <p>
-     * Credentials in need of special configuration can provide another signer with specific
-     * locator=format::type::vc_config_id
-     * <p>
-     * The providerId of the signing service factory is still the format.
-     */
-    private final Map<String, VerifiableCredentialsSigningService> signingServices;
 
     private final boolean isIgnoreScopeCheck;
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 Map<String, CredentialBuilder> credentialBuilders,
-                                Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
                                 boolean isIgnoreScopeCheck) {
@@ -157,7 +151,6 @@ public class OID4VCIssuerEndpoint {
         this.bearerTokenAuthenticator = authenticator;
         this.timeProvider = timeProvider;
         this.credentialBuilders = credentialBuilders;
-        this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
         this.isIgnoreScopeCheck = isIgnoreScopeCheck;
     }
@@ -170,26 +163,10 @@ public class OID4VCIssuerEndpoint {
         this.credentialBuilders = loadCredentialBuilders(session);
 
         RealmModel realm = keycloakSession.getContext().getRealm();
-        this.signingServices = new HashMap<>();
-        realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
-                .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
-
         this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
         this.isIgnoreScopeCheck = false;
-    }
-
-    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
-        ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
-                .getKeycloakSessionFactory()
-                .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
-        if (factory instanceof VCSigningServiceProviderFactory sspf) {
-            VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
-            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
-        } else {
-            throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
-        }
     }
 
     /**
@@ -497,22 +474,20 @@ public class OID4VCIssuerEndpoint {
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO);
 
-        String fullyQualifiedConfigKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.deriveType(), credentialConfig.deriveConfiId());
-        String formatAndTypeKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.deriveType(), null);
-        String formatOnlyKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), null, null);
+        // Enforce key binding prior to signing if necessary
+        enforceKeyBindingIfProofProvided(vcIssuanceContext);
 
-        // Search from specific to general config.
-        VerifiableCredentialsSigningService signingService = signingServices.getOrDefault(
-                fullyQualifiedConfigKey,
-                signingServices.getOrDefault(
-                        formatAndTypeKey,
-                        signingServices.get(formatOnlyKey))
-        );
+        // Retrieve matching credential signer
+        String format = credentialRequestVO.getFormat();
+        CredentialSigner<?> credentialSigner = session.getProvider(CredentialSigner.class, format);
 
-        return Optional.ofNullable(signingService)
-                .map(service -> service.signCredential(vcIssuanceContext))
+        return Optional.ofNullable(credentialSigner)
+                .map(signer -> signer.signCredential(
+                        vcIssuanceContext.getCredentialBody(),
+                        credentialConfig.getCredentialBuildConfig()
+                ))
                 .orElseThrow(() -> new BadRequestException(
-                        String.format("No signer found for specific config '%s' or '%s' or format '%s'.", fullyQualifiedConfigKey, formatAndTypeKey, formatOnlyKey)
+                        String.format("No signer found for format '%s'.", format)
                 ));
     }
 
@@ -627,6 +602,30 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialBody(credentialBody)
                 .setCredentialConfig(credentialConfig)
                 .setCredentialRequest(credentialRequestVO);
+    }
+
+    /**
+     * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
+     */
+    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
+        Proof proof = vcIssuanceContext.getCredentialRequest().getProof();
+        if (proof == null) {
+            LOGGER.debugf("No proof provided, skipping key binding");
+            return;
+        }
+
+        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proof.getProofType());
+        if (proofValidator == null) {
+            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proof.getProofType()));
+        }
+
+        // Validate proof and bind public key to credential
+        try {
+            Optional.ofNullable(proofValidator.validateProof(vcIssuanceContext))
+                    .ifPresent(jwk -> vcIssuanceContext.getCredentialBody().addKeyBinding(jwk));
+        } catch (VCIssuerException e) {
+            throw new BadRequestException("Could not validate provided proof", e);
+        }
     }
 
     private CredentialBuilder findCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
