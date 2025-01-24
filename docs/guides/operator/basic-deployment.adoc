@@ -234,7 +234,7 @@ Apply the changes:
 ----
 kubectl apply -f example-kc.yaml
 ----
-You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. Keycloak on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable KeyCloak's built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
+You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. A Keycloak CR on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable the built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
 
 [source,yaml]
 ----
