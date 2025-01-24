@@ -5,7 +5,9 @@
 <@tmpl.guide
 title="Update Compatibility Tool"
 summary="Learn how to use this tool before upgrade {project_name}"
-preview="true">
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/36785"
+>
 
 // TODO Link to discussion?
 
@@ -13,7 +15,7 @@ The goal of this tool is to assist with modifying a {project_name} deployment, w
 The outcome will indicate whether a rolling upgrade is possible or if a recreate upgrade is required.
 
 This has been designed to be fully scriptable, so an update procedure can adapt to a rolling or recreate strategy depending on the configuration or version change.
-It is also GitOps friendly as it allows storing the metdata of a currently running configuration in a file. This file can be used in a CI/CD run with the new configuration to determine if a rolling upgrade is possible or if a recreate upgrade is needed.
+It is also GitOps friendly as it allows storing the metadata of a currently running configuration in a file. This file can be used in a CI/CD run with the new configuration to determine if a rolling upgrade is possible or if a recreate upgrade is needed.
 
 [NOTE]
 ====
@@ -40,7 +42,7 @@ The update compatibility tool involves two steps:
 This command is under development. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
 If those are unchanged, it reports that a rolling update is possible.
 
-The current version does not yet verify configuration changes and assumes all configuration changes are elegible for a rolling update.
+The current version does not yet verify configuration changes and assumes all configuration changes are eligible for a rolling update.
 The same applies to changes to custom extensions and themes.
 
 A good use case when to use this is, for example, when you want to do a rolling update when you change the {project_name} theme or your custom extensions, and only want run recreate update when the version of {project_name} changes which does not yet allow a rolling update.

@@ -42,7 +42,7 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     @Override
     public void run() {
         printPreviewWarning();
-        validateInputFile();
+        validateConfig();
         var info = readServerInfo();
         var result = compatibilityManager.isCompatible(info);
         result.errorMessage().ifPresent(this::printError);
@@ -60,7 +60,13 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
         return true;
     }
 
-    private void validateInputFile() {
+    @Override
+    protected void validateConfig() {
+        super.validateConfig();
+        validateFileParameter();
+    }
+
+    private void validateFileParameter() {
         validateOptionIsPresent(inputFile, INPUT_OPTION_NAME);
         var file = new File(inputFile);
         if (!file.exists()) {

@@ -42,7 +42,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     @Override
     public void run() {
         printPreviewWarning();
-        validateOutputFile();
+        validateConfig();
         var info = compatibilityManager.current();
         printToConsole(info);
         writeToFile(info);
@@ -58,7 +58,13 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
         return true;
     }
 
-    private void validateOutputFile() {
+    @Override
+    protected void validateConfig() {
+        super.validateConfig();
+        validateFileParameter();
+    }
+
+    private void validateFileParameter() {
         if (noOutputFileSet()) {
             return;
         }
