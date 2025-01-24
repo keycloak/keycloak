@@ -299,14 +299,23 @@ export const PermissionsConfigurationTab = ({
                           {permission.isExpanded && (
                             <>
                               <Th>{t("resources")}</Th>
-                              {permission.resources!.map(
-                                (resource: ResourceRepresentation, index) => (
-                                  <Td key={index}>
-                                    <span style={{ marginLeft: "8px" }}>
-                                      {resource.displayName}
-                                    </span>
-                                  </Td>
-                                ),
+                              {permission.resources &&
+                              permission.resources?.length > 0 ? (
+                                permission.resources!.map(
+                                  (resource: ResourceRepresentation, index) => (
+                                    <Td key={index}>
+                                      <span style={{ marginLeft: "8px" }}>
+                                        {resource.displayName}
+                                      </span>
+                                    </Td>
+                                  ),
+                                )
+                              ) : (
+                                <Td>
+                                  <span style={{ marginLeft: "8px" }}>
+                                    {t("allResources")}
+                                  </span>
+                                </Td>
                               )}
                               <br />
                               <Th>{t("assignedPolicies")}</Th>
