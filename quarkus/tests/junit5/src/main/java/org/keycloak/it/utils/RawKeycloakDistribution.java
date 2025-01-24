@@ -99,7 +99,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private ExecutorService outputExecutor;
     private boolean inited = false;
     private final Map<String, String> envVars = new HashMap<>();
-    private OutputConsumer outputConsumer;
+    private final OutputConsumer outputConsumer;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
         this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
@@ -215,13 +215,16 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
                 keycloak.destroy();
                 keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
                 threadDump();
                 throw new RuntimeException("Failed to stop the server", cause);
             }
+        }
+
+        if (keycloak != null) {
+            exitCode = keycloak.exitValue();
         }
 
         shutdownOutputExecutor();
@@ -394,12 +397,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
@@ -511,7 +509,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private void readOutput(Process process, OutputConsumer outputConsumer) {
         try (
                 BufferedReader outStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()))
         ) {
             while (process.isAlive()) {
                 readStream(outStream, outputConsumer, false);
@@ -574,22 +572,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void removeProperty(String name) {
-        updateProperties(new Consumer<Properties>() {
-            @Override
-            public void accept(Properties properties) {
-                properties.remove(name);
-            }
-        }, distPath.resolve("conf").resolve("keycloak.conf").toFile());
+        updateProperties(properties -> properties.remove(name), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
 
     @Override
     public void setQuarkusProperty(String key, String value) {
-        updateProperties(new Consumer<Properties>() {
-            @Override
-            public void accept(Properties properties) {
-                properties.put(key, value);
-            }
-        }, getQuarkusPropertiesFile());
+        updateProperties(properties -> properties.put(key, value), getQuarkusPropertiesFile());
     }
 
     @Override
@@ -648,7 +636,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         if (propertiesFile.exists()) {
             try (
-                FileInputStream in = new FileInputStream(propertiesFile);
+                FileInputStream in = new FileInputStream(propertiesFile)
             ) {
 
                 properties.load(in);
@@ -709,7 +697,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (type.isInstance(this)) {
-            return (D) this;
+            return type.cast(type);
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");

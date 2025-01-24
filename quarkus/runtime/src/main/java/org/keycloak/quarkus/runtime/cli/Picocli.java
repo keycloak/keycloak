@@ -38,14 +38,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +61,7 @@ import org.keycloak.quarkus.runtime.cli.command.Completion;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
+import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
@@ -102,9 +101,9 @@ public class Picocli {
         boolean includeBuildTime;
     }
 
-    private ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+    private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
     private Set<PropertyMapper<?>> allowedMappers;
-    private List<String> unrecognizedArgs = new ArrayList<>();
+    private final List<String> unrecognizedArgs = new ArrayList<>();
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -255,7 +254,8 @@ public class Picocli {
                 || cliArgs.contains("--help-all")
                 || currentCommandName.equals(Build.NAME)
                 || currentCommandName.equals(ShowConfig.NAME)
-                || currentCommandName.equals(Completion.NAME);
+                || currentCommandName.equals(Completion.NAME)
+                || currentCommandName.equals(UpdateCompatibility.NAME);
     }
 
     private static boolean requiresReAugmentation(CommandLine cmdCommand) {
@@ -280,18 +280,13 @@ public class Picocli {
     private static List<String> getSanitizedRuntimeCliOptions() {
         List<String> properties = new ArrayList<>();
 
-        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), new BiConsumer<String, String>() {
-            @Override
-            public void accept(String key, String value) {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
-                if (mapper == null || mapper.isRunTime()) {
-                    properties.add(key + "=" + maskValue(key, value));
-                }
+            if (mapper == null || mapper.isRunTime()) {
+                properties.add(key + "=" + maskValue(key, value));
             }
-        }, arg -> {
-            properties.add(arg);
-        });
+        }, properties::add);
 
         return properties;
     }
@@ -429,10 +424,8 @@ public class Picocli {
 
                         mapper.validate(configValue);
 
-                        mapper.getDeprecatedMetadata().ifPresent(metadata -> {
-                            handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata);
-                        });
-                    });;
+                        mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
+                    });
                 }
             }
 
@@ -761,12 +754,7 @@ public class Picocli {
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(getDecoratedOptionDescription(mapper))
                         .paramLabel(mapper.getParamLabel())
-                        .completionCandidates(new Iterable<String>() {
-                            @Override
-                            public Iterator<String> iterator() {
-                                return mapper.getExpectedValues().iterator();
-                            }
-                        })
+                        .completionCandidates(() -> mapper.getExpectedValues().iterator())
                         .hidden(mapper.isHidden());
 
                 if (mapper.getDefaultValue().isPresent()) {
@@ -910,17 +898,18 @@ public class Picocli {
             }
         });
 
-        if (options.length() > 0) {
-            out.println(
-                    Ansi.AUTO.string(
-                            new StringBuilder("@|bold,red ")
-                                    .append("The previous optimized build will be overridden with the following build options:")
-                                    .append(options)
-                                    .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
-                                    .append("|@").toString()
-                    )
-            );
+        if (options.isEmpty()) {
+            return;
         }
+        out.println(
+                Ansi.AUTO.string(
+                        new StringBuilder("@|bold,red ")
+                                .append("The previous optimized build will be overridden with the following build options:")
+                                .append(options)
+                                .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
+                                .append("|@").toString()
+                )
+        );
     }
 
     private static void optionChanged(StringBuilder options, String key, String oldValue, String newValue) {
