@@ -232,7 +232,6 @@ export const RoleMapping = ({
                       setFilterType(type);
                       setShowAssign(true);
                     }}
-                    data-testid="assignRole"
                   />
                 </ToolbarItem>
                 <ToolbarItem>
@@ -285,8 +284,6 @@ export const RoleMapping = ({
           <ListEmptyState
             message={t(`noRoles-${type}`)}
             instructions={t(`noRolesInstructions-${type}`)}
-            primaryActionText={t("assignRole")}
-            onPrimaryAction={() => setShowAssign(true)}
             secondaryActions={[
               {
                 text: t("showInheritedRoles"),
@@ -296,7 +293,14 @@ export const RoleMapping = ({
                 },
               },
             ]}
-          />
+          >
+            <AddRoleButton
+              onFilerTypeChange={(type) => {
+                setFilterType(type);
+                setShowAssign(true);
+              }}
+            />
+          </ListEmptyState>
         }
       />
     </>
