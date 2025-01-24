@@ -429,7 +429,8 @@ describe("Realm settings tabs tests", () => {
 
     it("Check a11y violations on user registration tab/ default roles sub tab/ assigning role", () => {
       userRegistration.goToTab();
-      cy.findByTestId("assignRole").click();
+      cy.findByTestId("add-role-mapping-button").click();
+      cy.findByTestId("client-role").click();
       cy.checkA11y();
       modalUtils.cancelModal();
     });

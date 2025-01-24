@@ -563,7 +563,8 @@ describe("User creation", () => {
     it("Check a11y violations on user role mapping tab assigning a role dialog", () => {
       usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
       roleMappingTab.goToRoleMappingTab();
-      cy.findByTestId("assignRole").click();
+      cy.findByTestId("add-role-mapping-button").click();
+      cy.findByTestId("client-role").click();
       cy.checkA11y();
       roleMappingTab.changeRoleTypeFilter(roleType).selectRow(role).assign();
     });
