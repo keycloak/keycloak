@@ -17,7 +17,7 @@ export default class SidebarPage extends CommonElements {
   #identityProvidersBtn = "#nav-item-identity-providers";
   #userFederationBtn = "#nav-item-user-federation";
 
-  realmsElements = '[id="realm-select"] li';
+  realmsElements = 'a[data-testid="realmLink"]';
 
   showCurrentRealms(length: number) {
     cy.findByTestId(this.#realmsDrpDwn).click();

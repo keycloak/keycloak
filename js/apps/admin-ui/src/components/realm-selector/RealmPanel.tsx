@@ -38,7 +38,11 @@ const RealmLink = ({ name, recent, onNavigate }: RealmLinkProps) => {
   const { realm } = useRealm();
 
   return (
-    <Link to={toDashboard({ realm: name })} onClick={onNavigate}>
+    <Link
+      to={toDashboard({ realm: name })}
+      onClick={onNavigate}
+      data-testid="realmLink"
+    >
       <Split>
         <SplitItem isFilled>{name}</SplitItem>
         <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
@@ -118,7 +122,11 @@ export const RealmPanel = () => {
         ) : null}{" "}
         {realm?.realm}
       </Text>
-      <Button variant="primary" onClick={() => setOpen((value) => !value)}>
+      <Button
+        variant="primary"
+        onClick={() => setOpen((value) => !value)}
+        data-testid="realmSelector"
+      >
         {t("selectRealm")}
       </Button>
       <Modal
