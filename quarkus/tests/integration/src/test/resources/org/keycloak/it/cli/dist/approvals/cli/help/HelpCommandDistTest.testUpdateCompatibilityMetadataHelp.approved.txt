@@ -30,6 +30,8 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the
                        clientSessions cache. Available only when embedded Infinispan clusters
                        configured.
+--cache-embedded-crl-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the crl cache.
 --cache-embedded-keys-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
