@@ -24,13 +24,17 @@ import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -40,15 +44,21 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
+import org.keycloak.testsuite.util.oauth.ParResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.keycloak.common.constants.KerberosConstants.KERBEROS_PRINCIPAL;
 
@@ -226,5 +236,63 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
         // Change password back
         Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "theduke"));
+    }
+
+    @Test
+    public void spnegoLoginTestPar() throws Exception {
+        // http client spnego authentication does not send back cookies assigned in the 401 resonse
+        // so the re-login is done manually with a separate request
+        initHttpClient(false);
+
+        final RealmResource realm = testRealmResource();
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(realm)
+                        .setAttribute(ParConfig.PAR_REQUEST_URI_LIFESPAN, "45")
+                        .update();
+            ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, AuthRealm.TEST, "kerberos-app")
+                        .setAttribute(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, Boolean.TRUE.toString())
+                        .update()) {
+
+            // Pushed Authorization Request
+            oauth.client("kerberos-app", "password");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
+            Assert.assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            Assert.assertEquals(45, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            events.clear();
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            LoginUrlBuilder loginUrlBuilder = oauth.loginForm();
+            loginUrlBuilder.requestUri(requestUri);
+            loginUrlBuilder.state(KeycloakModelUtils.generateId());
+
+            // first request should be the 401 with negotiate header
+            Response response = client.target(loginUrlBuilder.build()).request().get();
+            Assert.assertEquals(401, response.getStatus());
+            Assert.assertEquals("Negotiate", response.getHeaderString("WWW-Authenticate"));
+
+            // send the authorization header with the kerberos token
+            response = client.target(loginUrlBuilder.build()).request()
+                    .header("Authorization", "Negotiate " + generateGSSAuthorization("hnelson", "secret"))
+                    .get();
+            Assert.assertEquals(302, response.getStatus());
+
+            List<UserRepresentation> users = testRealmResource().users().search("hnelson", 0, 1);
+            String userId = users.get(0).getId();
+            events.expectLogin()
+                    .client("kerberos-app")
+                    .user(userId)
+                    .detail(Details.USERNAME, "hnelson")
+                    .assertEvent();
+
+            oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
+            String codeUrl = response.getLocation().toString();
+            AccessTokenResponse tokenResponse = assertAuthenticationSuccess(codeUrl);
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            Assert.assertEquals(userId, token.getSubject());
+        }
     }
 }

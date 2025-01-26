@@ -34,11 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import jakarta.ws.rs.core.UriBuilder;
-
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
@@ -76,6 +73,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -168,7 +166,10 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.scope(null);
             oauth.responseType(null);
             String state = "testSuccessfulSinglePar";
-            AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            LoginUrlBuilder loginUrlBuilder = oauth.loginForm().requestUri(requestUri).state(state);
+            loginUrlBuilder.open();
+            loginUrlBuilder.open();
+            AuthorizationEndpointResponse loginResponse = loginUrlBuilder.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertEquals(state, loginResponse.getState());
             String code = loginResponse.getCode();
             String sessionId =loginResponse.getSessionState();
