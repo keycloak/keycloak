@@ -59,6 +59,7 @@ import java.util.UUID;
  */
 public class ParEndpoint extends AbstractParEndpoint {
 
+    public static final String PAR_REQUEST_KEY = "par.request_uri.key";
     public static final String PAR_CREATED_TIME = "par.created.time";
     public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
