@@ -26,8 +26,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -60,6 +58,7 @@ import java.util.UUID;
  */
 public class ParEndpoint extends AbstractParEndpoint {
 
+    public static final String PAR_REQUEST_KEY = "par.request_uri.key";
     public static final String PAR_CREATED_TIME = "par.created.time";
     public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
