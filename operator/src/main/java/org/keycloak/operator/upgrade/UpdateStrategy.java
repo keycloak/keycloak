@@ -20,7 +20,7 @@ package org.keycloak.operator.upgrade;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-public enum UpgradeStrategy {
+public enum UpdateStrategy {
     @JsonPropertyDescription("Shutdown the Keycloak cluster before applying the new changes.")
     @JsonProperty("Recreate")
     RECREATE

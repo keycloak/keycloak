@@ -31,8 +31,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpgradeSpec;
-import org.keycloak.operator.upgrade.UpgradeStrategy;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.upgrade.UpdateStrategy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
@@ -43,17 +43,17 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 @QuarkusTest
 public class UpgradeTest extends BaseOperatorTest {
 
-    private static Stream<UpgradeStrategy> upgradeStrategy() {
+    private static Stream<UpdateStrategy> upgradeStrategy() {
         return Stream.of(
                 null,
-                UpgradeStrategy.RECREATE
+                UpdateStrategy.RECREATE
         );
     }
 
     @ParameterizedTest(name = "testImageChange-{0}")
     @MethodSource("upgradeStrategy")
-    public void testImageChange(UpgradeStrategy upgradeStrategy) throws InterruptedException {
-        var kc = createInitialDeployment(upgradeStrategy);
+    public void testImageChange(UpdateStrategy updateStrategy) throws InterruptedException {
+        var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
 
         var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
@@ -81,14 +81,14 @@ public class UpgradeTest extends BaseOperatorTest {
 
     @ParameterizedTest(name = "testCacheMaxCount-{0}")
     @MethodSource("upgradeStrategy")
-    public void testCacheMaxCount(UpgradeStrategy upgradeStrategy) throws InterruptedException {
-        var kc = createInitialDeployment(upgradeStrategy);
+    public void testCacheMaxCount(UpdateStrategy updateStrategy) throws InterruptedException {
+        var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
 
         // changing the local cache max-count should never use the recreate upgrade type
         // except if forced by the Keycloak CR.
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("cache-embedded-authorization-max-count", "10"));
-        var upgradeCondition = upgradeStrategy == UpgradeStrategy.RECREATE ?
+        var upgradeCondition = updateStrategy == UpdateStrategy.RECREATE ?
                 eventuallyRecreateUpgradeStatus(k8sclient, kc) :
                 eventuallyRollingUpgradeStatus(k8sclient, kc);
 
@@ -97,19 +97,19 @@ public class UpgradeTest extends BaseOperatorTest {
         await(upgradeCondition);
     }
 
-    private static Keycloak createInitialDeployment(UpgradeStrategy upgradeStrategy) {
+    private static Keycloak createInitialDeployment(UpdateStrategy updateStrategy) {
         var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setInstances(3);
-        if (upgradeStrategy == null) {
+        if (updateStrategy == null) {
             return kc;
         }
-        var upgradeSpec = new UpgradeSpec();
-        upgradeSpec.setStrategy(upgradeStrategy);
+        var updateSpec = new UpdateSpec();
+        updateSpec.setStrategy(updateStrategy);
 
         if (kc.getSpec().getUnsupported() == null) {
             kc.getSpec().setUnsupported(new UnsupportedSpec());
         }
-        kc.getSpec().getUnsupported().setUpgrade(upgradeSpec);
+        kc.getSpec().setUpdateSpec(updateSpec);
         return kc;
     }
 

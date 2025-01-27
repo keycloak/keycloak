@@ -5,6 +5,5 @@ metadata:
 spec:
   instances: 3
   image: my-image
-  unsupported:
-    upgrade:
-      strategy: abc
+  update:
+    strategy: abc

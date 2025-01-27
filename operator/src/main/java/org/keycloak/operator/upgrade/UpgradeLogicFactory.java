@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpgradeSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.upgrade.impl.AlwaysRecreateUpgradeLogic;
 import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
 
@@ -33,7 +33,7 @@ public class UpgradeLogicFactory {
 
     @SuppressWarnings("removal")
     public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context, KeycloakDeploymentDependentResource dependentResource) {
-        var strategy = UpgradeSpec.findUpgradeStrategy(keycloak);
+        var strategy = UpdateSpec.findUpdateStrategy(keycloak);
         if (strategy.isEmpty()) {
             return new RecreateOnImageChangeUpgradeLogic(context, keycloak, dependentResource);
         }

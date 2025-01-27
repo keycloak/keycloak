@@ -17,13 +17,14 @@
 
 package org.keycloak.operator.upgrade.impl;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
@@ -41,11 +42,6 @@ import org.keycloak.operator.upgrade.UpgradeType;
  * number of replicas or annotations).
  */
 abstract class BaseUpgradeLogic implements UpgradeLogic {
-
-    // JSON path key in the diff.
-    private static final String PATH = "path";
-    // Container fields that may trigger an upgrade.
-    private static final Collection<String> FIELDS = List.of("/env", "/envFrom", "/image");
 
     protected final Context<Keycloak> context;
     protected final Keycloak keycloak;
@@ -110,23 +106,54 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
         return new IllegalStateException("Container not found in stateful set.");
     }
 
-    private boolean isContainerEquals(Container actual, Container desired) {
-        var actualJson = CRDUtils.toJsonNode(actual, context);
-        var desiredJson = CRDUtils.toJsonNode(desired, context);
-        var diff = JsonDiff.asJson(actualJson, desiredJson);
+    private static boolean isContainerEquals(Container actual, Container desired) {
+        return isImageEquals(actual, desired) &&
+                isArgsEquals(actual, desired) &&
+                isEnvEquals(actual, desired);
+    }
 
-        Log.debugf("Container diff outcome:%n%s", diff.toPrettyString());
+    private static boolean isImageEquals(Container actual, Container desired) {
+        return isEquals("image", actual.getImage(), desired.getImage());
+    }
 
-        for (int i = 0; i < diff.size(); i++) {
-            var path = diff.get(i).get(PATH).asText();
-            for (var field : FIELDS) {
-                // status.podIP appends an `apiVersion` to the environment. We are ignoring that change here.
-                if (path.startsWith(field) && !path.endsWith("valueFrom/fieldRef/apiVersion")) {
-                    Log.debugf("Found different value:%n%s", diff.get(i).toPrettyString());
-                    return false;
-                }
-            }
+    private static boolean isArgsEquals(Container actual, Container desired) {
+        var actualArgs = actual.getArgs().stream().sorted().toList();
+        var desiredArgs = desired.getArgs().stream().sorted().toList();
+        return isEquals("args", actualArgs, desiredArgs);
+    }
+
+    private static boolean isEnvEquals(Container actual, Container desired) {
+        var actualEnv = envVars(actual);
+        var desiredEnv = envVars(desired);
+        return isEquals("env", actualEnv, desiredEnv);
+    }
+
+    private static Map<String, String> envVars(Container container) {
+        // The operator only sets value or secrets. Any other combination is from unsupported pod template.
+        //noinspection DataFlowIssue
+        return container.getEnv().stream()
+                .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP))
+                .filter(envVar -> Objects.nonNull(valueOrSecret(envVar)))
+                .collect(Collectors.toMap(EnvVar::getName, BaseUpgradeLogic::valueOrSecret));
+    }
+
+    private static String valueOrSecret(EnvVar envVar) {
+        var value = envVar.getValue();
+        if (value != null) {
+            return value;
         }
-        return true;
+        var secret = envVar.getValueFrom().getSecretKeyRef();
+        if (secret != null) {
+            return secret.getName();
+        }
+        return null;
+    }
+
+    private static <T> boolean isEquals(String key, T actual, T desired) {
+        var isEquals = Objects.equals(actual, desired);
+        if (!isEquals) {
+            Log.debugf("Found difference in container's %s:%nactual:%s%ndesired:%s", key, actual, desired);
+        }
+        return isEquals;
     }
 }

@@ -37,7 +37,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.upgrade.UpgradeStrategy;
+import org.keycloak.operator.upgrade.UpdateStrategy;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -258,18 +258,18 @@ public class CRSerializationTest {
     @Test
     public void testUpgradeStrategy() {
         var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
-        var upgradeSpec = keycloak.getSpec().getUnsupported().getUpgrade();
-        assertNotNull(upgradeSpec);
-        var upgradeStrategy = upgradeSpec.getStrategy();
+        var updateSpec = keycloak.getSpec().getUpdateSpec();
+        assertNotNull(updateSpec);
+        var upgradeStrategy = updateSpec.getStrategy();
         assertNotNull(upgradeStrategy);
-        assertEquals(UpgradeStrategy.RECREATE, upgradeStrategy);
+        assertEquals(UpdateStrategy.RECREATE, upgradeStrategy);
     }
 
     @Test
     public void testInvalidUpgradeStrategy() {
         var thrown = assertThrows(IllegalArgumentException.class,
-                () -> Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-invalid-upgrade.yml"), Keycloak.class));
-        assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.upgrade.UpgradeStrategy` from String \"abc\""));
+                () -> Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-invalid-update.yml"), Keycloak.class));
+        assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.upgrade.UpdateStrategy` from String \"abc\""));
     }
 
     private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {

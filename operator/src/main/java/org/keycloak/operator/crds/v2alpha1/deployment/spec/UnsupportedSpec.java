@@ -37,9 +37,6 @@ public class UnsupportedSpec {
             Reference: https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates""")
     private PodTemplateSpec podTemplate;
 
-    @JsonPropertyDescription("Configuration related to Keycloak deployment upgrades.")
-    private UpgradeSpec upgrade;
-
     public UnsupportedSpec() {}
 
     public UnsupportedSpec(PodTemplateSpec podTemplate) {
@@ -54,11 +51,4 @@ public class UnsupportedSpec {
         this.podTemplate = podTemplate;
     }
 
-    public UpgradeSpec getUpgrade() {
-        return upgrade;
-    }
-
-    public void setUpgrade(UpgradeSpec upgrade) {
-        this.upgrade = upgrade;
-    }
 }

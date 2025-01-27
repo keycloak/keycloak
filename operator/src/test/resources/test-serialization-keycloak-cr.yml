@@ -123,9 +123,9 @@ spec:
       secret: something
     service:
       secret: else
+  update:
+    strategy: Recreate
   unsupported:
-    upgrade:
-      strategy: Recreate
     podTemplate:
       metadata:
         labels:
