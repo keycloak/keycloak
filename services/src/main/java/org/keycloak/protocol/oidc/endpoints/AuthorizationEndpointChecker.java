@@ -411,8 +411,8 @@ public class AuthorizationEndpointChecker {
         // explicit resource indicates were provided in the authorize request, check if all resource identifiers are allowed
         CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(
                 session, client, null, requestedResourceIndicators);
-        if (checkedResourceIndicators.hasUnsupported()) {
-            logger.debugf("Unsupported resource indicator(s) '%s'", checkedResourceIndicators.getUnsupported());
+        if (checkedResourceIndicators.hasUnsupportedResources()) {
+            logger.debugf("Unsupported resource indicator(s) '%s'", checkedResourceIndicators.getUnsupportedResources());
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, "Requested resource not supported");
         }
     }

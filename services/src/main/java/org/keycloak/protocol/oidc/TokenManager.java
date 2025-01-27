@@ -149,7 +149,7 @@ public class TokenManager {
     }
 
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm,
-                                         RefreshToken oldToken, HttpHeaders headers, String oldTokenScope) throws OAuthErrorException {
+                                         RefreshToken oldToken, HttpHeaders headers, String oldTokenScope, List<String> resourceParamValues) throws OAuthErrorException {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
 
@@ -244,6 +244,20 @@ public class TokenManager {
 
         if (oldToken.getNonce() != null) {
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
+        }
+
+        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
+            Set<String> requestedResourceIndicators = Set.copyOf(resourceParamValues);
+
+            CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, clientSession, requestedResourceIndicators);
+            if (checkedResourceIndicators.hasUnsupportedResources()) {
+                String errorMessage = "Unsupported resource indicators: " + checkedResourceIndicators.getUnsupportedResources();
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid resource", errorMessage);
+            }
+
+            if (checkedResourceIndicators.hasSupportedResources()) {
+                clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, checkedResourceIndicators.getSupportedResources());
+            }
         }
 
         // recreate token.
@@ -407,8 +421,8 @@ public class TokenManager {
                     .collect(Collectors.joining(" "));
         }
 
-
-        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
+        List<String> resourceParamValues = request.getDecodedFormParameters().get(OAuth2Constants.RESOURCE);
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope, resourceParamValues);
 
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
@@ -416,23 +430,6 @@ public class TokenManager {
         // validate authorizedClient is same as validated client
         if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
-        }
-
-        List<String> resourceParamValues = request.getDecodedFormParameters().get(OAuth2Constants.RESOURCE);
-        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
-            Set<String> requestedResourceIndicators = Set.copyOf(resourceParamValues);
-
-            CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, authorizedClient, clientSession, requestedResourceIndicators);
-            if (checkedResourceIndicators.hasUnsupported()) {
-                String errorMessage = "Unsupported resource indicators: " + checkedResourceIndicators.getUnsupported();
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid resource");
-            }
-
-            if (checkedResourceIndicators.hasSupported()) {
-                validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, checkedResourceIndicators.getSupported());
-            }
         }
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);

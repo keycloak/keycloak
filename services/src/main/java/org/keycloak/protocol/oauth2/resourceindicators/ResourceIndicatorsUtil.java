@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,8 +39,6 @@ public class ResourceIndicatorsUtil {
      * clients can use the OAUTH_2_RESOURCE_INDICATORS_PROVIDER_ATTRIBUTE client attribute to customize the resource indicator to use
      */
     public static final String OAUTH_2_RESOURCE_INDICATORS_PROVIDER_ATTRIBUTE = "oauth2.resource-indicators-provider";
-
-    public static final String DEFAULT_PROVIDER_ID = "default";
 
     /**
      * Encodes the given resource indicators to a string that can be stored in the client session.
@@ -82,7 +80,7 @@ public class ResourceIndicatorsUtil {
             return CheckedResourceIndicators.EMPTY;
         }
 
-        if (clientSession == null) {
+        if (clientSession == null || clientSession.getNote(OAuth2Constants.RESOURCE) == null) {
             // This is the initial request, check if client allows the given resource indicator
             Set<String> supported = provider.narrowResourceIndicators(client, resourceIndicatorCandidates);
             return new CheckedResourceIndicators(supported, resourceIndicatorCandidates);
@@ -92,8 +90,8 @@ public class ResourceIndicatorsUtil {
         String encodedClientResourceIndicators = clientSession.getNote(OAuth2Constants.RESOURCE);
 
         // extract already filtered resource indicators that were stored during initial request
-        Set<String> clientResourceIndicators = ResourceIndicatorsUtil.decodeResourceIndicators(encodedClientResourceIndicators);
-        return new CheckedResourceIndicators(clientResourceIndicators, resourceIndicatorCandidates);
+        Set<String> initiallyGrantedResourceIndicators = ResourceIndicatorsUtil.decodeResourceIndicators(encodedClientResourceIndicators);
+        return new CheckedResourceIndicators(initiallyGrantedResourceIndicators, resourceIndicatorCandidates);
     }
 
     private static OAuth2ResourceIndicatorResolver resolveProvider(KeycloakSession session, ClientModel client) {
@@ -102,13 +100,16 @@ public class ResourceIndicatorsUtil {
         String providerId = client.getAttribute(OAUTH_2_RESOURCE_INDICATORS_PROVIDER_ATTRIBUTE);
         if (providerId == null) {
             // fallback to the default provider
-            providerId = DEFAULT_PROVIDER_ID;
+            providerId = DefaultOAuth2ResourceIndicatorResolverFactory.PROVIDER_ID;
         }
 
         var provider = session.getProvider(OAuth2ResourceIndicatorResolver.class, providerId);
         if (provider == null) {
             LOG.debugf("No resource indicators provider found. providerId=%s", providerId);
+            return null;
         }
+
+        LOG.debugf("Found resource indicators provider. providerId=%s", providerId);
         return provider;
     }
 }
