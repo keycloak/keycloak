@@ -23,20 +23,12 @@ public class KeycloakAdminClientFactorySupplier implements Supplier<KeycloakAdmi
     public KeycloakAdminClientFactory getValue(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
-        KeycloakAdminClientFactoryBuilder adminClientFactoryBuilder = KeycloakAdminClientFactoryBuilder.builder()
-                .serverUrl(server.getBaseUrl())
-                .adminClientSettings(server.getAdminClientSettings())
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .dependencyFetcherRealm(instanceContext::getDependency)
-                .dependencyFetcherClient(instanceContext::getDependency)
-                .dependencyFetcherUser(instanceContext::getDependency);
-
-        return adminClientFactoryBuilder.build();
+        return new KeycloakAdminClientFactory(instanceContext, server.getBaseUrl(), OAuth2Constants.CLIENT_CREDENTIALS);
     }
 
     @Override
     public boolean compatible(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> a, RequestedInstance<KeycloakAdminClientFactory, InjectAdminClientFactory> b) {
-        return a.getRef().equals(b.getRef()); // todo is this ok?
+        return true;
     }
 
     @Override

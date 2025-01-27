@@ -8,7 +8,6 @@ import org.keycloak.testframework.config.Config;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +20,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private static final int REQUEST_PORT = 8080;
 
     private RawKeycloakDistribution keycloak;
-    private Map<String, String> adminClientSettings;
 
     private final boolean debug;
 
@@ -41,7 +39,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
         for (Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
         }
-        this.adminClientSettings = keycloakServerConfigBuilder.toAdminClientSettings();
+
         keycloak.run(keycloakServerConfigBuilder.toArgs());
     }
 
@@ -58,11 +56,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
     @Override
     public String getManagementBaseUrl() {
         return "http://localhost:9000";
-    }
-
-    @Override
-    public Map<String, String> getAdminClientSettings() {
-        return adminClientSettings;
     }
 
     private static final class LoggingOutputConsumer implements OutputConsumer {

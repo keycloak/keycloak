@@ -4,8 +4,6 @@ import io.quarkus.maven.dependency.Dependency;
 
 import java.net.ConnectException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -31,11 +29,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
     @Override
     public String getManagementBaseUrl() {
         return "http://localhost:9000";
-    }
-
-    @Override
-    public Map<String, String> getAdminClientSettings() {
-        return new HashMap<>();
     }
 
     private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
