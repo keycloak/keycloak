@@ -19,7 +19,9 @@
 
 package org.keycloak.protocol.oidc.tokenexchange;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -49,8 +51,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
-
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 
 /**
  * Provider for internal-internal token exchange, which is compliant with the token exchange specification https://datatracker.ietf.org/doc/html/rfc8693
@@ -122,12 +122,23 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
 
+    // For now, include "scope" parameter as is
     @Override
+    protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
+        return params.getScope();
+    }
+
+
+    protected void setClientToContext(List<ClientModel> targetAudienceClients) {
+        // The client requesting exchange is set in the context
+        session.getContext().setClient(client);
+    }
+
+
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope) {
-        ClientModel targetClient = getTargetClient(targetAudienceClients);
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
-        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
+        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
@@ -137,29 +148,14 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
-
-        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
-            // create the requester client session if needed
-            AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
-            TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
-        }
 
         updateUserSessionFromClientAuth(targetUserSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
-        responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
-        if (targetClient != null && !targetClient.equals(client)) {
-            responseBuilder.getAccessToken().addAudience(targetClient.getClientId());
-        }
-
-        if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
-            // if "impersonation", store the client that originated the impersonated user session
-            targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
-        }
+        updateTokenFromAudienceParameter(responseBuilder);
 
         if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.getAccessToken().setSessionId(null);
@@ -184,11 +180,46 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         AccessTokenResponse res = responseBuilder.build();
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
 
-        event.detail(Details.AUDIENCE, targetClient.getClientId())
-                .user(targetUser);
-
+        if (responseBuilder.getAccessToken().getAudience() != null) {
+            StringJoiner joiner = new StringJoiner(" ");
+            for (String s : List.of(responseBuilder.getAccessToken().getAudience())) {
+                joiner.add(s);
+            }
+            event.detail(Details.AUDIENCE, joiner.toString());
+        }
+        event.user(targetUser);
         event.success();
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    /**
+     * Update token audience. Default implementation removes the audiences, which were not provided in the "audience" parameter (in case "audience" parameter was provided)
+     *
+     * @param responseBuilder response builder
+     */
+    protected void updateTokenFromAudienceParameter(TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        if (params.getAudience() != null) {
+            AccessToken newToken = responseBuilder.getAccessToken();
+            List<String> newTokenAudiences = newToken.getAudience() == null ? new ArrayList<>() : new ArrayList<>(List.of(newToken.getAudience()));
+
+            List<String> audiencesToRemove = new ArrayList<>(newTokenAudiences);
+            for (String audienceParam : params.getAudience()) {
+                boolean removed = audiencesToRemove.remove(audienceParam);
+                // TODO: Should we reject the request if some audience requested by the "audience" parameter is not available in the token?
+//                if (!removed) {
+//                    event.detail(Details.REASON, "Requested audience not available");
+//                    event.error(Errors.INVALID_REQUEST);
+//                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Requested audience not available", Response.Status.BAD_REQUEST);
+//                }
+            }
+
+            // Filter audiences from the "aud" claim and from client roles
+            for (String audienceToRemove : audiencesToRemove) {
+                newToken.getResourceAccess().remove(audienceToRemove);
+            }
+            newTokenAudiences.removeAll(audiencesToRemove);
+            newToken.audience(newTokenAudiences.toArray(new String[] {}));
+        }
     }
 }
