@@ -9,12 +9,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
     private Path homeDir;
+    private Map<String, String> adminClientSettings;
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -47,6 +49,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         }
 
         builder.setHomeDir(homeDir);
+        this.adminClientSettings = keycloakServerConfigBuilder.toAdminClientSettings();
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 
@@ -67,5 +70,10 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
     @Override
     public String getManagementBaseUrl() {
         return "http://localhost:9000";
+    }
+
+    @Override
+    public Map<String, String> getAdminClientSettings() {
+        return adminClientSettings;
     }
 }
