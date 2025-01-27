@@ -121,6 +121,7 @@ public class PropertyMapper<T> {
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
             // if the property we want to map depends on another one, we use the value from the other property to call the mapper
+            // not getting the value directly from SmallRye Config to avoid the risk of infinite recursion when Config is initializing
             String mapFromWithPrefix = NS_KEYCLOAK_PREFIX + mapFrom;
             config = PropertyMappers.getMapper(mapFromWithPrefix).getConfigValue(mapFromWithPrefix, context);
             parentValue = true;
