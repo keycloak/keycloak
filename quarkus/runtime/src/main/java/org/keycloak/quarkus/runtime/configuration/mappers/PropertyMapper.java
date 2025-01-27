@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.Iterator;
 import java.util.List;
@@ -85,7 +86,7 @@ public class PropertyMapper<T> {
                    String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
                    String description, BooleanSupplier required, String requiredWhen, String from) {
         this.option = option;
-        this.from = from == null ? MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + this.option.getKey() : from;
+        this.from = from == null ? NS_KEYCLOAK_PREFIX + this.option.getKey() : from;
         this.to = to == null ? getFrom() : to;
         this.enabled = enabled;
         this.enabledWhen = enabledWhen;
@@ -114,18 +115,15 @@ public class PropertyMapper<T> {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
         }
 
-        if ((isRebuild() || Environment.isRebuildCheck()) && isRunTime()) {
-            // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
-            return ConfigValue.builder().withName(name).build();
-        }
-
         // try to obtain the value for the property we want to map first
         ConfigValue config = convertValue(context.proceed(from));
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
             // if the property we want to map depends on another one, we use the value from the other property to call the mapper
-            config = Configuration.getKcConfigValue(mapFrom);
+            // not getting the value directly from SmallRye Config to avoid the risk of infinite recursion when Config is initializing
+            String mapFromWithPrefix = NS_KEYCLOAK_PREFIX + mapFrom;
+            config = PropertyMappers.getMapper(mapFromWithPrefix).getConfigValue(mapFromWithPrefix, context);
             parentValue = true;
         }
 

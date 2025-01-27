@@ -63,6 +63,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.oauth.RefreshTokenTest;
 import org.keycloak.testsuite.util.ClientManager;
@@ -497,8 +498,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         events.expectCodeToToken(codeId, sessionId).assertEvent();
 
         // execute the access token to get UserInfo without token binded client certificate in mutual authentication TLS
-        ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-        Client client = clientBuilder.build();
+        Client client = KeycloakTestingClient.getRestEasyClientBuilder().build();
         WebTarget userInfoTarget = null;
         Response response = null;
         try {
@@ -506,7 +506,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             response = userInfoTarget.request().header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken()).get();
             assertEquals(401, response.getStatus());
         } finally {
-            response.close();
+            if (response != null) response.close();
             client.close();
         }
 

@@ -391,7 +391,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), accountRequest.asStatus());
 
         // Test admin REST not possible
-        try (Keycloak adminClient = Keycloak.getInstance(OAuthClient.AUTH_SERVER_ROOT, "test", "test-app", accessTokenString)) {
+        try (Keycloak adminClient = Keycloak.getInstance(OAuthClient.AUTH_SERVER_ROOT, "test", "test-app", accessTokenString, AdminClientUtil.getSSLContextWithTruststore())) {
             try {
                 adminClient.realms().realm("test").toRepresentation();
                 Assert.fail("Not expected to obtain realm");

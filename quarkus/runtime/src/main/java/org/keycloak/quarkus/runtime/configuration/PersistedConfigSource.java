@@ -68,11 +68,6 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
     public ConfigValue getConfigValue(String propertyName) {
         if (isEnabled()) {
             ConfigValue value = super.getConfigValue(propertyName);

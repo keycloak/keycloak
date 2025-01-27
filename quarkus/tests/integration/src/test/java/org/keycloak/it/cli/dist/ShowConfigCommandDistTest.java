@@ -93,4 +93,23 @@ public class ShowConfigCommandDistTest {
         assertThat(output, not(containsString("kc.db.password")));
         assertThat(output, not(containsString("secret-pass")));
     }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void testConfigSourceNames(KeycloakDistribution distribution) {
+        CLIResult result = distribution.run("build");
+        result.assertBuild();
+
+        distribution.setEnvVar("KC_LOG", "file");
+
+        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
+
+        result.assertMessage("(CLI)");
+        result.assertMessage("(ENV)");
+        result.assertMessage("(quarkus.properties)");
+        result.assertMessage("(Persisted)");
+        result.assertMessage("(config-keystore)");
+        result.assertMessage("(classpath keycloak.conf)");
+        result.assertMessage("(keycloak-keystore.conf)");
+    }
 }

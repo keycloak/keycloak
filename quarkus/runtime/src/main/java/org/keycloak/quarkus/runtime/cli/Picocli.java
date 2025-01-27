@@ -586,7 +586,7 @@ public class Picocli {
             }
             ConfigValue value = Configuration.getNonPersistedConfigValue(name);
             if (value.getValue() == null || value.getConfigSourceName() == null
-                    || (quarkus && !value.getConfigSourceName().equals(QuarkusPropertiesConfigSource.NAME))) {
+                    || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME))) {
                 // only persist build options resolved from config sources and not default values
                 return;
             }

@@ -56,12 +56,16 @@ public class KeycloakTestingClient implements AutoCloseable {
     public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
         ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
         resteasyClientBuilder.connectionPoolSize(10);
-        if (serverUrl.startsWith("https")) {
+        if ((serverUrl != null && serverUrl.startsWith("https")) || "true".equals(System.getProperty("auth.server.ssl.required"))) {
             // Disable PKIX path validation errors when running tests using SSL
             resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
         }
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
         return resteasyClientBuilder;
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder() {
+        return getRestEasyClientBuilder(null);
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {

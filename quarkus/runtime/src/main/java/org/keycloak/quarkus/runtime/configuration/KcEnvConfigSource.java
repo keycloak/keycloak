@@ -70,10 +70,4 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
 
         return properties;
     }
-
-    @Override
-    // a workaround for https://github.com/smallrye/smallrye-config/issues/1207
-    public String getName() {
-        return NAME;
-    }
 }

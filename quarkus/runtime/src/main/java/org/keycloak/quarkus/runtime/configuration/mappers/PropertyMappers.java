@@ -76,11 +76,18 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+        name = removeProfilePrefixIfNeeded(name);
         PropertyMapper<?> mapper = getMapper(name);
-        // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper)) {
+
+        // During re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source.
+        //
+        // The special handling of log properties is because some logging runtime properties are requested during build time
+        // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
+        // See https://github.com/quarkusio/quarkus/pull/42157
+        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
+
         if (mapper == null) {
             return context.proceed(name);
         }
