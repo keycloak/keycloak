@@ -29,7 +29,7 @@ import type { ComponentProps } from "../dynamic/components";
 
 type UserSelectVariant = "typeaheadMulti" | "typeahead";
 
-type UserSelectProps = ComponentProps & {
+type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: UserSelectVariant;
   isRequired?: boolean;
 };

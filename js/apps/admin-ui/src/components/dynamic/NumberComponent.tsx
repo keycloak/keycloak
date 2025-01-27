@@ -1,13 +1,12 @@
-import { useTranslation } from "react-i18next";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-
-import { convertToName } from "./DynamicComponents";
+import { useTranslation } from "react-i18next";
 import { NumberComponentProps } from "./components";
 
 export const NumberComponent = ({
   name,
   label,
   helpText,
+  convertToName,
   ...props
 }: NumberComponentProps) => {
   const { t } = useTranslation();

@@ -23,6 +23,7 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
   isNew?: boolean;
   stringify?: boolean;
+  convertToName: (name: string) => string;
 };
 
 export type NumberComponentProps = ComponentProps & {
