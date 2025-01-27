@@ -21,10 +21,11 @@ import org.keycloak.models.RealmModel;
 
 import jakarta.ws.rs.core.UriBuilder;
 
+import java.text.Bidi;
 import java.text.Collator;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -32,18 +33,16 @@ import java.util.stream.Collectors;
  */
 public class LocaleBean {
 
-    private static final Set<String> RTL_LANGUAGE_CODES =
-            Set.of("ar", "dv", "fa", "ha", "he", "iw", "ji", "ps", "sd", "ug", "ur", "yi");
-
-    private String current;
-    private String currentLanguageTag;
-    private boolean rtl; // right-to-left language
-    private List<Locale> supported;
+    private final String current;
+    private final String currentLanguageTag;
+    private final boolean rtl; // right-to-left language
+    private final List<Locale> supported;
+    private static final ConcurrentHashMap<java.util.Locale, Boolean> bidiMap = new ConcurrentHashMap<>();
 
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
-        this.rtl = RTL_LANGUAGE_CODES.contains(current.getLanguage());
+        this.rtl = isLeftToRight(current);
 
         Collator collator = Collator.getInstance(current);
         collator.setStrength(Collator.PRIMARY); // ignore case and accents
@@ -56,6 +55,18 @@ public class LocaleBean {
                 })
                 .sorted((o1, o2) -> collator.compare(o1.label, o2.label))
                 .collect(Collectors.toList());
+    }
+
+    protected static boolean isLeftToRight(java.util.Locale current) {
+        // Some languages that are RTL have an English name in Java locales, like 'dv' aka Divehi as stated in
+        // https://github.com/keycloak/keycloak/issues/33833#issuecomment-2446965307.
+        // Still, this solution seems to be good enough for now. Any exceptions would be added when those translations arise.
+        // Adding the ICU library was discarded at the time to avoid an additional dependency and due to its special license.
+        // This might be reconsidered in the future if there are more scenarios.
+        //
+        // As the most likely alternative, a translation could in the future define RTL, its language name, and then this can be used instead.
+
+        return bidiMap.computeIfAbsent(current, l -> new Bidi(l.getLanguage(), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).isLeftToRight());
     }
 
     public String getCurrent() {
@@ -79,9 +90,9 @@ public class LocaleBean {
 
     public static class Locale {
 
-        private String languageTag;
-        private String label;
-        private String url;
+        private final String languageTag;
+        private final String label;
+        private final String url;
 
         public Locale(String languageTag, String label, String url) {
             this.languageTag = languageTag;
