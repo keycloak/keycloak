@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +41,7 @@ public interface OAuth2ResourceIndicatorResolver extends Provider {
      * @param client client to find the resource indicators
      * @param resourceIndicatorCandidates resource indicators to check
      *
-     * @return Set of the resource indicators that are supported by the given client.
+     * @return Set of the resource indicators narrowed down to resource indicators that are supported by the given client.
      */
     Set<String> narrowResourceIndicators(ClientModel client, Set<String> resourceIndicatorCandidates);
 
