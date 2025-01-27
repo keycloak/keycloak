@@ -3,37 +3,32 @@ package org.keycloak.testframework.admin;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.TestFrameworkException;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.config.Config;
-import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
 public class KeycloakAdminClientFactory {
 
-    private List<Keycloak> adminClients = new ArrayList<>();
+    private final List<Keycloak> adminClients = new ArrayList<>();
 
+    private final InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext;
     private final String serverUrl;
     private final String grantType;
-    private Map<String, String> adminClientSettings; // todo
-    private KeycloakAdminClientFactory.DependencyFetcher<ManagedRealm> dependencyFetcherRealm;
-    private KeycloakAdminClientFactory.DependencyFetcher<ManagedClient> dependencyFetcherClient;
-    private KeycloakAdminClientFactory.DependencyFetcher<ManagedUser> dependencyFetcherUser;
 
-    public KeycloakAdminClientFactory(String serverUrl,
-                                      String grantType,
-                                      Map<String, String> adminClientSettings,
-                                      KeycloakAdminClientFactory.DependencyFetcher<ManagedRealm> dependencyFetcherRealm, DependencyFetcher<ManagedClient> dependencyFetcherClient, DependencyFetcher<ManagedUser> dependencyFetcherUser) {
+    public KeycloakAdminClientFactory(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext, String serverUrl, String grantType) {
+        this.instanceContext = instanceContext;
         this.serverUrl = serverUrl;
         this.grantType = grantType;
-        this.adminClientSettings = adminClientSettings;
-        this.dependencyFetcherRealm = dependencyFetcherRealm;
-        this.dependencyFetcherClient = dependencyFetcherClient;
-        this.dependencyFetcherUser = dependencyFetcherUser;
     }
 
     public Keycloak createMaster() {
@@ -47,48 +42,56 @@ public class KeycloakAdminClientFactory {
         return adminClient;
     }
 
-    public Keycloak create(String realmRef, String clientRef, String userRef) {
-        KeycloakBuilder clientBuilder = createBuilder(realmRef);
+    public Keycloak create(String realmRef, String clientId, String user) {
+        ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class, realmRef);
 
-        ManagedClient managedClient = dependencyFetcherClient.getDependency(ManagedClient.class, clientRef);
-        clientBuilder.clientId(managedClient.getClientId()).clientSecret(managedClient.getSecret());
+        KeycloakBuilder clientBuilder = createBuilder(managedRealm.getName());
+        RealmResource realmRes = managedRealm.admin();
 
-        ManagedUser managedUser = dependencyFetcherUser.getDependency(ManagedUser.class, userRef);
-        clientBuilder.username(managedUser.getUsername())
-                .password(managedUser.getPassword())
-                .grantType(OAuth2Constants.PASSWORD);
-
+        setClient(clientBuilder, realmRes, clientId);
+        setUser(clientBuilder, realmRes, user);
 
         Keycloak adminClient = clientBuilder.build();
         adminClients.add(adminClient);
         return adminClient;
     }
 
-    public Keycloak create(String realmRef, String clientRef) {
-        KeycloakBuilder clientBuilder = createBuilder(realmRef);
+    public Keycloak create(String realmRef, String clientId) {
+        ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class, realmRef);
 
-        ManagedClient managedClient = dependencyFetcherClient.getDependency(ManagedClient.class, clientRef);
-        clientBuilder.clientId(managedClient.getClientId()).clientSecret(managedClient.getSecret());
+        KeycloakBuilder clientBuilder = createBuilder(managedRealm.getName());
+        RealmResource realmRes = managedRealm.admin();
+
+        setClient(clientBuilder, realmRes, clientId);
 
         Keycloak adminClient = clientBuilder.build();
         adminClients.add(adminClient);
         return adminClient;
     }
 
-    private KeycloakBuilder createBuilder(String realmRef) {
-        ManagedRealm managedRealm = dependencyFetcherRealm.getDependency(ManagedRealm.class, realmRef);
-
+    private KeycloakBuilder createBuilder(String realm) {
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
                 .grantType(grantType)
-                .realm(managedRealm.getName());
+                .realm(realm);
+    }
+
+    private void setClient(KeycloakBuilder clientBuilder, RealmResource realmRes, String clientId) {
+        ClientRepresentation clientRep = realmRes.clients().findByClientId(clientId).stream()
+                .findFirst().orElseThrow(() -> new TestFrameworkException("Client " + clientId + " not found in managed realm"));
+        clientBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
+    }
+
+    private void setUser(KeycloakBuilder clientBuilder, RealmResource realmRes, String user) {
+        UserRepresentation userRep = realmRes.users().search(user).stream()
+                .findFirst().orElseThrow(() -> new TestFrameworkException("User " + user + " not found in managed realm"));
+        String password = ManagedUser.getPassword(userRep);
+        clientBuilder.username(userRep.getUsername()).password(password);
+        clientBuilder.grantType(OAuth2Constants.PASSWORD);
     }
 
     public void close() {
         adminClients.forEach(Keycloak::close);
     }
 
-    public interface DependencyFetcher<D> {
-        D getDependency(Class<D> clazz, String ref);
-    }
 }

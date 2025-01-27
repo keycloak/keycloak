@@ -204,11 +204,6 @@ public class KeycloakServerConfigBuilder {
         return configFiles;
     }
 
-    public Map<String, String> toAdminClientSettings() {
-        //todo
-        return new HashMap<>();
-    }
-
     private Set<String> toFeatureStrings(Profile.Feature... features) {
         return Arrays.stream(features).map(f -> {
             if (f.getVersion() > 1) {
