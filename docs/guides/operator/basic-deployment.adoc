@@ -189,7 +189,9 @@ CONDITION: RollingUpdate
 
 === Accessing the {project_name} deployment
 
-The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+The {project_name} deployment can be exposed through a basic Ingress accessible through the provided hostname.
+
+On installations with multiple default IngressClass instances
 or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
 
 Edit YAML file `example-kc.yaml`:
@@ -228,7 +230,12 @@ Apply the changes:
 ----
 kubectl apply -f example-kc.yaml
 ----
-You can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
+You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. A Keycloak CR on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable the built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
+
+[source,yaml]
+----
+$ oc create route reencrypt --service=<keycloak-cr-name>-service --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
+----
 
 For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
 
