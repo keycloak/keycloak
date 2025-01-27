@@ -36,6 +36,9 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.util.ObjectUtil;
@@ -163,30 +166,40 @@ public class GroupsResource {
     }
 
     /**
-     * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
+     * create or add a top level realm groupSet or create child.
+     * This will update the group and set the parent if it exists.
+     * Create it and set the parent if the group doesn't exist.
      *
-     * @param rep
+     * @param groupRepresentation
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "create or add a top level realm groupSet or create child.",
         description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
-    public Response addTopLevelGroup(GroupRepresentation rep) {
+    @APIResponses({
+        @APIResponse(
+            responseCode = "201", description = "Group created",
+            headers = @Header(name = "Location", description = "URL of the created group, including its id")
+        ),
+        @APIResponse(responseCode = "204", description = "Group updated"),
+        @APIResponse(responseCode = "400", description = "Bad request - Group name is missing"),
+        @APIResponse(responseCode = "403", description = "Forbidden - Insufficient permissions to create group"),
+        @APIResponse(responseCode = "409", description = "Conflict - Top level group named '...' already exists")
+    })
+    public Response addTopLevelGroup(GroupRepresentation groupRepresentation) {
         auth.groups().requireManage();
 
-        GroupModel child;
-        Response.ResponseBuilder builder = Response.status(204);
-        String groupName = rep.getName();
+        String groupName = groupRepresentation.getName();
 
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
+        Response.ResponseBuilder builder = Response.status(204);
         try {
-            if (rep.getId() != null) {
-                child = realm.getGroupById(rep.getId());
+            if (groupRepresentation.getId() != null) {
+                GroupModel child = realm.getGroupById(groupRepresentation.getId());
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
@@ -195,20 +208,20 @@ public class GroupsResource {
                 }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
             } else {
-                child = realm.createGroup(groupName);
-                GroupResource.updateGroup(rep, child, realm, session);
+                GroupModel child = realm.createGroup(groupName);
+                GroupResource.updateGroup(groupRepresentation, child, realm, session);
                 URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                         .path(child.getId()).build();
                 builder.status(201).location(uri);
 
-                rep.setId(child.getId());
+                groupRepresentation.setId(child.getId());
                 adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
             }
         } catch (ModelDuplicateException mde) {
             throw ErrorResponse.exists("Top level group named '" + groupName + "' already exists.");
         }
 
-        adminEvent.representation(rep).success();
+        adminEvent.representation(groupRepresentation).success();
         return builder.build();
     }
 }
