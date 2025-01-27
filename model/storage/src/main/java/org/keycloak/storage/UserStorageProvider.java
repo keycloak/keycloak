@@ -34,7 +34,6 @@ import org.keycloak.provider.Provider;
  *     <li>{@link org.keycloak.storage.user.UserRegistrationProvider UserRegistrationProvider} - Provide methods for adding users. After implementing it is possible to store registered users in the storage.</li>
  *     <li>{@link org.keycloak.storage.user.UserBulkUpdateProvider UserBulkUpdateProvider} - After implementing it is possible to perform bulk operations on all users from storage (for example, addition of a role to all users).</li>
  *     <li>{@link org.keycloak.storage.user.ImportedUserValidation ImportedUserValidation} - Provider method for validating users within Keycloak local storage that are imported from the storage.</li>
- *     <li>{@link org.keycloak.storage.user.ImportSynchronization ImportSynchronization} - Provider methods for synchronization of the storage with Keycloak local storage. After implementing it is possible to sync users in the Admin console.</li>
  * </ul>
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,8 +48,7 @@ public interface UserStorageProvider extends Provider {
      *
      * @param realm
      */
-    default
-    void preRemove(RealmModel realm) {
+    default void preRemove(RealmModel realm) {
 
     }
 
@@ -61,27 +59,24 @@ public interface UserStorageProvider extends Provider {
      * @param realm
      * @param group
      */
-    default
-    void preRemove(RealmModel realm, GroupModel group) {
+    default void preRemove(RealmModel realm, GroupModel group) {
 
     }
 
     /**
      * Callback when a role is removed.  Allows you to do things like remove a user
      * role mapping in your external store if appropriate
-
+     *
      * @param realm
      * @param role
      */
-    default
-    void preRemove(RealmModel realm, RoleModel role) {
+    default void preRemove(RealmModel realm, RoleModel role) {
 
     }
 
     /**
      * Optional type that can be used by implementations to
      * describe edit mode of user storage
-     *
      */
     enum EditMode {
         /**
@@ -90,12 +85,10 @@ public interface UserStorageProvider extends Provider {
         READ_ONLY,
         /**
          * user storage is writable
-         *
          */
         WRITABLE,
         /**
          * updates to user are stored locally and not synced with user storage.
-         *
          */
         UNSYNCED
     }
