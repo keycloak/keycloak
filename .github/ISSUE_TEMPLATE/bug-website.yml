@@ -1,0 +1,32 @@
+name: Website Problem Report
+description: Report a problem on Keycloak's website
+labels: ["kind/bug", "status/triage", "area/docs"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the problem
+      description: Provide a clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: behaviorExpected
+    attributes:
+      label: Expected behavior
+      description: Describe what content you were expecting.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: How to Reproduce?
+      description: Describe how you reached this site, for example by adding a link where this page was referenced.
+    validations:
+      required: false
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else?
+      description: Links? References? Anything that will give us more context about the issue you are encountering!
+    validations:
+      required: false
