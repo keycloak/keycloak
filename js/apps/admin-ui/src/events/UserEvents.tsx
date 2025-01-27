@@ -29,7 +29,7 @@ import {
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -172,6 +172,11 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
     },
     [],
   );
+
+  useEffect(() => {
+    const timer = setInterval(() => setKey((key) => key + 1), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findEvents({
