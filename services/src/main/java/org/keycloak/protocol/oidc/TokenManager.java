@@ -602,8 +602,24 @@ public class TokenManager {
         return token;
     }
 
-
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        // Retrieve client scopes from the "scope" parameter
+        Set<ClientScopeModel> clientScopes;
+        ClientModel client = authSession.getClient();
+        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            session.getContext().setClient(client);
+            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
+                    .collect(Collectors.toSet());
+        } else {
+            clientScopes = getRequestedClientScopes(session, scopeParam, client, userSession.getUser())
+                    .collect(Collectors.toSet());
+        }
+
+        return attachAuthenticationSession(session, userSession, authSession, clientScopes);
+    }
+
+    public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession, Set<ClientScopeModel> clientScopes) {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -617,18 +633,6 @@ public class TokenManager {
 
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
-
-        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
-        Set<ClientScopeModel> clientScopes;
-
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            session.getContext().setClient(client);
-            clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
-                    .collect(Collectors.toSet());
-        } else {
-            clientScopes = getRequestedClientScopes(session, scopeParam, client, userSession.getUser())
-                    .collect(Collectors.toSet());
-        }
 
         Map<String, String> transferredNotes = authSession.getClientNotes();
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {

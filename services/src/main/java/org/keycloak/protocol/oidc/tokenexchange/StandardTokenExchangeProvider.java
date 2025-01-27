@@ -20,6 +20,8 @@
 package org.keycloak.protocol.oidc.tokenexchange;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -31,6 +33,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -49,8 +52,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
-
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 
 /**
  * Provider for internal-internal token exchange, which is compliant with the token exchange specification https://datatracker.ietf.org/doc/html/rfc8693
@@ -122,12 +123,23 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
 
+    // For now, include "openid" as a scope if it was included as a request parameter. The rest of "scope" parameter ignored for now in V2 TODO: Need to be polished and properly implemented
     @Override
+    protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
+        return TokenUtil.isOIDCRequest(params.getScope()) ? OAuth2Constants.SCOPE_OPENID : "";
+    }
+
+
+    protected void setClientToContext(List<ClientModel> targetAudienceClients) {
+        // The client requesting exchange is set in the context
+        session.getContext().setClient(client);
+    }
+
+
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope) {
-        ClientModel targetClient = getTargetClient(targetAudienceClients);
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
-        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
+        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
@@ -137,28 +149,33 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(session, authSession);
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+        Set<String> requestedClientScopeIds = getRequestedClientScopesIds(targetAudienceClients, targetUser);
+        authSession.setClientScopes(requestedClientScopeIds);
 
-        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
-            // create the requester client session if needed
-            AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
-            TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
-        }
+        // TODO handle dynamic scopes...
+        Set<ClientScopeModel> clientScopes = authSession.getClientScopes().stream()
+                .map(clientScopeId -> {
+                    ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+                    if (clientScope == null) {
+                        clientScope = realm.getClientById(clientScopeId);
+                    }
+                    return clientScope;
+                })
+                .collect(Collectors.toSet());
+
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession, clientScopes);
 
         updateUserSessionFromClientAuth(targetUserSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
-        responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
-        if (targetClient != null && !targetClient.equals(client)) {
-            responseBuilder.getAccessToken().addAudience(targetClient.getClientId());
-        }
-
-        if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
-            // if "impersonation", store the client that originated the impersonated user session
-            targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
+        if (params.getAudience() != null) {
+            // Explicitly adding requested audiences (should be rather done by protocol mapper?)
+            // TODO Access token can have more audiences (based on roles of user and scopes of target clients etc). Should we have support for downscoping audiences and include just those explicitly requested by audience parameter?
+            for (String audience : params.getAudience()) {
+                responseBuilder.getAccessToken().addAudience(audience);
+            }
         }
 
         if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
@@ -184,11 +201,23 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         AccessTokenResponse res = responseBuilder.build();
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
 
-        event.detail(Details.AUDIENCE, targetClient.getClientId())
+        String audience = targetAudienceClients.stream()
+                .map(ClientModel::getClientId)
+                .collect(Collectors.joining(" "));
+        event.detail(Details.AUDIENCE, audience)
                 .user(targetUser);
 
         event.success();
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    // Return set of IDs of all requested client scopes. Take into account only "Scope" parameter sent (ignoring token scopes for now...)
+    protected Set<String> getRequestedClientScopesIds(List<ClientModel> targetAudienceClients, UserModel user) {
+        String scopeParam = params.getScope();
+        return targetAudienceClients.stream()
+                .flatMap(targetClient -> TokenManager.getRequestedClientScopes(session, scopeParam, targetClient, user))
+                .map(ClientScopeModel::getId)
+                .collect(Collectors.toSet());
     }
 }

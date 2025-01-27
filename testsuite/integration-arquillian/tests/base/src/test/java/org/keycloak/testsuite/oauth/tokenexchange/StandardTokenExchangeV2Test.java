@@ -28,4 +28,11 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true) // TODO: Replace with admin-fine-grained-authz V2
 public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTest {
+
+    // Don't automatically add "oidc" scope in case it was not included in the "scope" parameter of token-exchange request
+    @Override
+    protected boolean isOIDCScopeExpectedInDifferentScopesTest() {
+        return false;
+    }
+
 }

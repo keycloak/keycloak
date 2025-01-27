@@ -199,7 +199,8 @@ public abstract class AbstractStandardTokenExchangeTest extends AbstractKeycloak
             Assert.assertEquals("different-scope-client", exchangedToken.getIssuedFor());
             Assert.assertNull(exchangedToken.getAudience());
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
-            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),"profile","openid");
+            String[] expectedScopes = isOIDCScopeExpectedInDifferentScopesTest() ? new String[] { "profile", "openid" } : new String[] { "profile" };
+            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")), expectedScopes);
             Assert.assertNull(exchangedToken.getEmailVerified());
         }
 
@@ -212,10 +213,15 @@ public abstract class AbstractStandardTokenExchangeTest extends AbstractKeycloak
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
             Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
-            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),"profile","email","openid");
+            String[] expectedScopes = isOIDCScopeExpectedInDifferentScopesTest() ? new String[] { "profile", "email", "openid" } : new String[] { "profile", "email" };
+            Assert.assertNames(Arrays.asList(exchangedToken.getScope().split(" ")),expectedScopes);
             Assert.assertFalse(exchangedToken.getEmailVerified());
         }
 
+    }
+
+    protected boolean isOIDCScopeExpectedInDifferentScopesTest() {
+        return true;
     }
 
     @Test
