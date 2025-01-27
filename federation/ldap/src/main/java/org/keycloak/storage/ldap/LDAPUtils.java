@@ -27,10 +27,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import javax.naming.directory.SearchControls;
-
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
@@ -60,6 +60,25 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 public class LDAPUtils {
 
     private static final Logger log = Logger.getLogger(LDAPUtils.class);
+
+    private static final Pattern VARIABLES_PATTERN;
+
+    static
+    {
+        String variablesRegex = "\\{([^}]*)\\}";
+        VARIABLES_PATTERN = Pattern.compile(variablesRegex);
+    }
+
+    /**
+     * Method to create a matcher of an input string that matches tokens that are enclosed by curly brackets.
+     *
+     * @param input The input String to match the regex.
+     * @return the matcher corresponding to the input
+     */
+    public static Matcher matchVariableInString(String input)
+    {
+        return VARIABLES_PATTERN.matcher(input);
+    }
 
     /**
      * Method to create a user in the LDAP. The user will be created when all
@@ -162,11 +181,29 @@ public class LDAPUtils {
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
-        String ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
 
-        if (ldapUsername == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                    config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
+        Matcher matcher = matchVariableInString(usernameAttr);
+        String ldapUsername;
+        if (matcher.find())
+        {
+            ldapUsername = usernameAttr;
+
+            for (String attributeKey : ldapUser.getAttributes().keySet())
+            {
+                if (ldapUsername == null) {
+                    throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
+                        config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
+                }
+
+                Set<String> attributes = ldapUser.getAttributes().get(attributeKey);
+                if (attributes != null && !attributes.isEmpty())
+                {
+                    ldapUsername = ldapUsername.replace("{" + attributeKey + "}", attributes.stream().findFirst().get());
+                }
+            }
+        }
+        else {
+            ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
         }
 
         return ldapUsername;
