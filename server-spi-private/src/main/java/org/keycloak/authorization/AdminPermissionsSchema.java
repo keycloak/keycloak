@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.keycloak.authorization.model.Policy;
 
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -221,6 +221,18 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         return null;
     }
 
+    // for updates
+    public void removeResource(Resource resource, Policy policy, AuthorizationProvider authorization) {
+        if (getResourceTypes().get(resource.getName()) == null) {
+            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResource(resource.getResourceServer(), resource);
+            // if there is single resource remaining delete it
+            if (policies.size() == 1 && policy.equals(policies.get(0))) {
+                authorization.getStoreFactory().getResourceStore().delete(resource.getId());
+            }
+        }
+    }
+
+    //for deletion
     public void removeOrphanResources(Policy policy, AuthorizationProvider authorization) {
         if (isAdminPermissionClient(authorization.getRealm(), policy.getResourceServer().getId())) {
             Set<Resource> resources = policy.getResources();

@@ -18,9 +18,14 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -102,17 +108,71 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
 
     @Test
     public void testDelete() {
+        // only "all-resource" resources should be present
+        List<ResourceRepresentation> resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
+        assertEquals(AdminPermissionsSchema.SCHEMA.getResourceTypes().entrySet().size(), resources.size());
+
         createUserPermission(userAlice);
+        // resource for Alice should be created
+        resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
+        assertEquals(1 + AdminPermissionsSchema.SCHEMA.getResourceTypes().entrySet().size(), resources.size());
+
         createUserPermission(userBob);
+        // resource for Bob should be created
+        resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
+        assertEquals(2 + AdminPermissionsSchema.SCHEMA.getResourceTypes().entrySet().size(), resources.size());
 
         List<ScopePermissionRepresentation> existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
         assertEquals(1, existing.size());
+        // remove permission for Alice
         getScopePermissionsResource().findById(existing.get(0).getId()).remove();
         existing = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
         assertThat(existing, nullValue());
 
         existing = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
         assertEquals(1, existing.size());
+
+        // remove permission for Bob
+        getScopePermissionsResource().findById(existing.get(0).getId()).remove();
+
+        //resources for both Alice and Bob should be deleted, there should be only "all-resource" resources
+        resources = client.admin().authorization().resources().find(null, null, null, null, null, null, null);
+        assertEquals(AdminPermissionsSchema.SCHEMA.getResourceTypes().entrySet().size(), resources.size());
+    }
+
+    @Test
+    public void testUpdate() {
+        createUserPermission(userAlice, userBob);
+
+        List<ScopePermissionRepresentation> searchByResourceAlice = getScopePermissionsResource().findAll(null, null, userAlice.getId(), -1, -1);
+        assertThat(searchByResourceAlice, hasSize(1));
+        List<ScopePermissionRepresentation> searchByResourceBob = getScopePermissionsResource().findAll(null, null, userBob.getId(), -1, -1);
+        assertThat(searchByResourceBob, hasSize(1));
+
+        ScopePermissionRepresentation permission = searchByResourceAlice.get(0);
+
+        // verify it's the same permission
+        assertThat(permission.getId(), equalTo(searchByResourceBob.get(0).getId()));
+
+        // get resources assiciated with the permission
+        List<ResourceRepresentation> resources = getPolicies().policy(permission.getId()).resources();
+        assertThat(resources, hasSize(2));
+
+        // update permission so that contains single resource
+        ResourceRepresentation toRemove = resources.get(1);
+        resources.remove(toRemove);
+        permission.setResources(resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet()));
+        getScopePermissionsResource().findById(permission.getId()).update(permission);
+
+        //permission should have only single resource
+        assertThat(getPolicies().policy(permission.getId()).resources(), hasSize(1));
+        try {
+            // resource removed from permission should be removed from server as it is not assigned to any permission
+            client.admin().authorization().resources().resource(toRemove.getId()).toRepresentation();
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(NotFoundException.class));
+        }
     }
 
     private ScopePermissionRepresentation createUserPermission(ManagedUser... users) {
