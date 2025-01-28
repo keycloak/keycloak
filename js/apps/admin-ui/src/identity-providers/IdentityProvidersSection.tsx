@@ -135,7 +135,7 @@ export default function IdentityProvidersSection() {
       params.search = search;
     }
     const providers = await adminClient.identityProviders.find(params);
-    return sortBy(providers, "alias");
+    return providers;
   };
 
   const navigateToCreate = (providerId: string) =>
