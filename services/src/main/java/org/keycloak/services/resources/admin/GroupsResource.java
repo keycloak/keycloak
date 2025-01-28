@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.util.ObjectUtil;
@@ -170,6 +172,10 @@ public class GroupsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "204", description = "No Content")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "create or add a top level realm groupSet or create child.",
         description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
