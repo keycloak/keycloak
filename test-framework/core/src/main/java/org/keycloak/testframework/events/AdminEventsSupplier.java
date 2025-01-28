@@ -24,7 +24,7 @@ public class AdminEventsSupplier extends AbstractEventsSupplier<AdminEvents, Inj
 
     @Override
     public RealmConfigBuilder intercept(RealmConfigBuilder realm, InstanceContext<AdminEvents, InjectAdminEvents> instanceContext) {
-        return realm.adminEventsEnabled(true);
+        return realm.adminEventsEnabled(true).adminEventsDetailsEnabled(true);
     }
 
 }
