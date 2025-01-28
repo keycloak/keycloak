@@ -3,18 +3,21 @@ package org.keycloak.tests.admin;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-@KeycloakIntegrationTest
-public class AdminHeadersTest {
+@KeycloakIntegrationTest(config = AdminHeadersXSSHeaderEnabledTest.ServerConfig.class)
+public class AdminHeadersXSSHeaderEnabledTest {
 
     @InjectRealm
     private ManagedRealm realm;
@@ -31,11 +34,18 @@ public class AdminHeadersTest {
         assertDefaultValue(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, h);
         assertDefaultValue(BrowserSecurityHeaders.REFERRER_POLICY, h);
 
-        assertThat(h.containsKey(BrowserSecurityHeaders.X_XSS_PROTECTION.getKey()), is(false));
         response.close();
     }
 
     private void assertDefaultValue(BrowserSecurityHeaders header, MultivaluedMap<String, Object> h) {
         assertThat(h.getFirst(header.getHeaderName()), is(equalTo(header.getDefaultValue())));
+    }
+
+    public static class ServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.X_XSS_PROTECTION);
+        }
     }
 }
