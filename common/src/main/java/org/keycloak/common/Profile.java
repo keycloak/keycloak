@@ -131,7 +131,9 @@ public class Profile {
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.PREVIEW),
 
-        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL)
+        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
+
+        ROLLING_UPDATES("Rolling Updates", Type.PREVIEW),
         ;
 
         private final Type type;

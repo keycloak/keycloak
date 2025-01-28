@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.List;
 import java.util.function.Predicate;
 
+import org.keycloak.common.Profile;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.compatibility.CompatibilityManager;
@@ -78,6 +79,13 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
 
     void printPreviewWarning() {
         printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
+    }
+
+    static void assertFeatureEnabled() {
+        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
+            return;
+        }
+        throw new PropertyException("Unable to use this command. The preview feature '%s' is not enabled.".formatted(Profile.Feature.ROLLING_UPDATES.getKey()));
     }
 
 }

@@ -41,6 +41,7 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     @Override
     public void run() {
+        assertFeatureEnabled();
         printPreviewWarning();
         validateConfig();
         var info = readServerInfo();

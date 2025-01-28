@@ -443,6 +443,12 @@ Check the https://kubernetes.io/docs/concepts/services-networking/network-polici
 
 The Keycloak Operator offers updates strategies to control how the Operator handles changes to the Keycloak CR.
 
+[CAUTION]
+====
+While on preview stage, the feature `rolling-updates` must be enabled.
+Otherwise, the {project_name} Operator will fail.
+====
+
 **Supported Updates Types:**
 
 Rolling Updates:: Update the StatefulSet in a rolling fashion, minimizing downtime (requires multiple replicas).
@@ -466,11 +472,14 @@ kind: Keycloak
 metadata:
   name: example-kc
 spec:
+  features:
+    enabled:
+      - rolling-updates # <1>
   update:
-    strategy: Recreate|<not set> # <1>
+    strategy: Recreate|<not set> # <2>
 ----
-
-<1> Set the desired update strategy here (Recreate in this example).
+<1> Enable preview feature `rolling-updates`.
+<2> Set the desired update strategy here (Recreate in this example).
 
 [%autowidth]
 .Possible field values
