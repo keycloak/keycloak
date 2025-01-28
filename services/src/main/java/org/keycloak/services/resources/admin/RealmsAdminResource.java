@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -108,6 +109,10 @@ public class RealmsAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get accessible realms Returns a list of accessible realms. The list is filtered based on what realms the caller is allowed to view.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RealmRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
                 .map(realm -> toRealmRep(realm, briefRepresentation))
@@ -136,7 +141,13 @@ public class RealmsAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Import a realm. Imports a realm from a full representation of that realm.", description = "Realm name must be unique.")
-    @APIResponse(responseCode = "201", description = "Created")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response importRealm(InputStream requestBody) {
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
