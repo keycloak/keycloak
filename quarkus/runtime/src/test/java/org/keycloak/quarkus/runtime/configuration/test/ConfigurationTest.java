@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -207,7 +206,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
-    
+
     @Test
     public void testExpansionDisabled() {
         ConfigArgsConfigSource.setCliArgs("--db=mysql");
@@ -431,12 +430,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testResolveHealthOption() {
-        ConfigArgsConfigSource.setCliArgs("--health-enabled=true");
-        SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
         ConfigArgsConfigSource.setCliArgs("");
-        config = createConfig();
-        assertEquals("false", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
+        SmallRyeConfig config = createConfig();
+        // default to null when the extension is effectively removed
+        assertNull(config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
     }
 
     @Test
@@ -521,8 +518,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
               .collect(Collectors.toSet());
 
         StringBuilder sb = new StringBuilder();
-        for (String cache : maxCountCaches)
+        for (String cache : maxCountCaches) {
             sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
+        }
 
         String args = sb.toString();
         ConfigArgsConfigSource.setCliArgs(args.split(" "));
