@@ -30,10 +30,16 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.*;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -53,6 +59,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     private static final Logger logger = Logger.getLogger(ResetCredentialEmail.class);
 
     public static final String PROVIDER_ID = "reset-credential-email";
+    public static final String FORCE_LOGIN = "force-login";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -70,6 +77,11 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
         if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
             logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
+            if (context.getAuthenticatorConfig() != null
+                    && Boolean.parseBoolean(context.getAuthenticatorConfig().getConfig().get(FORCE_LOGIN))) {
+                // force end of auth session after the required actions
+                context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+            }
             context.success();
             return;
         }
@@ -160,7 +172,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public boolean isConfigurable() {
-        return false;
+        return true;
     }
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -184,7 +196,21 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(FORCE_LOGIN)
+                .label("Force login after reset")
+                .helpText(
+                        """
+                        If this property is true, the user needs to login again after the reset credentials.
+                        If this property is false, the user will be automatically logged in after the succesful
+                        reset credentials when the same authentication session is used.
+                        """
+                )
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(Boolean.FALSE.toString())
+                .add()
+                .build();
     }
 
     @Override
