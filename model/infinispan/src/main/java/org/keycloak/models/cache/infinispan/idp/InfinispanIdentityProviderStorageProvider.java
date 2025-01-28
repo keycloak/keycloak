@@ -17,6 +17,7 @@
 package org.keycloak.models.cache.infinispan.idp;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -191,13 +192,14 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
                 // there is a cache entry, but the current search is not yet cached
                 cache.invalidateObject(cacheKey);
                 Long loaded = cache.getCurrentRevision(cacheKey);
-                cached = idpDelegate.getByOrganization(orgId, first, max).map(IdentityProviderModel::getInternalId).collect(Collectors.toSet());
+                cached = idpDelegate.getByOrganization(orgId, first, max).map(IdentityProviderModel::getInternalId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
                 query = new IdentityProviderListQuery(loaded, cacheKey, realm, searchKey, cached, query);
                 cache.addRevisioned(query, cache.getCurrentCounter());
             }
         }
 
-        Set<IdentityProviderModel> identityProviders = new HashSet<>();
+        Set<IdentityProviderModel> identityProviders = new LinkedHashSet<>();
         for (String id : cached) {
             IdentityProviderModel idp = session.identityProviders().getById(id);
             if (idp == null) {
@@ -226,7 +228,8 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         if (query == null) {
             // not cached yet
             Long loaded = cache.getCurrentRevision(cacheKey);
-            cached = idpDelegate.getForLogin(mode, organizationId).map(IdentityProviderModel::getInternalId).collect(Collectors.toSet());
+            cached = idpDelegate.getForLogin(mode, organizationId).map(IdentityProviderModel::getInternalId)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
             query = new IdentityProviderListQuery(loaded, cacheKey, getRealm(), searchKey, cached);
             cache.addRevisioned(query, startupRevision);
         } else {
@@ -241,7 +244,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
             }
         }
 
-        Set<IdentityProviderModel> identityProviders = new HashSet<>();
+        Set<IdentityProviderModel> identityProviders = new LinkedHashSet<>();
         for (String id : cached) {
             IdentityProviderModel idp = session.identityProviders().getById(id);
             if (idp == null) {
