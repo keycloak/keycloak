@@ -220,7 +220,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Choose User", "reset-credentials-choose-user", false, 0, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
-        addExecInfo(execs, "Send Reset Email", "reset-credential-email", false, 0, 1, REQUIRED, null, new String[]{REQUIRED}, 20);
+        addExecInfo(execs, "Send Reset Email", "reset-credential-email", true, 0, 1, REQUIRED, null, new String[]{REQUIRED}, 20);
         addExecInfo(execs, "Reset Password", "reset-password", false, 0, 2, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
         addExecInfo(execs, "Reset - Conditional OTP", null, false, 0, 3, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 40);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
