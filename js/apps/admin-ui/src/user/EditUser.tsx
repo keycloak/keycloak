@@ -430,38 +430,31 @@ export default function EditUser() {
               >
                 <UserSessions />
               </Tab>
-              {hasAccess("view-events") &&
-                (realm?.adminEventsEnabled || realm?.eventsEnabled) && (
-                  <Tab
-                    data-testid="events-tab"
-                    title={<TabTitleText>{t("events")}</TabTitleText>}
-                    {...eventsTab}
+              {hasAccess("view-events") && (
+                <Tab
+                  data-testid="events-tab"
+                  title={<TabTitleText>{t("events")}</TabTitleText>}
+                  {...eventsTab}
+                >
+                  <Tabs
+                    activeKey={activeEventsTab}
+                    onSelect={(_, key) => setActiveEventsTab(key as string)}
                   >
-                    <Tabs
-                      activeKey={activeEventsTab}
-                      onSelect={(_, key) => setActiveEventsTab(key as string)}
+                    <Tab
+                      eventKey="userEvents"
+                      title={<TabTitleText>{t("userEvents")}</TabTitleText>}
                     >
-                      {realm.eventsEnabled && (
-                        <Tab
-                          eventKey="userEvents"
-                          title={<TabTitleText>{t("userEvents")}</TabTitleText>}
-                        >
-                          <UserEvents user={user.id} />
-                        </Tab>
-                      )}
-                      {realm.adminEventsEnabled && (
-                        <Tab
-                          eventKey="adminEvents"
-                          title={
-                            <TabTitleText>{t("adminEvents")}</TabTitleText>
-                          }
-                        >
-                          <AdminEvents resourcePath={`users/${user.id}`} />
-                        </Tab>
-                      )}
-                    </Tabs>
-                  </Tab>
-                )}
+                      <UserEvents user={user.id} />
+                    </Tab>
+                    <Tab
+                      eventKey="adminEvents"
+                      title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                    >
+                      <AdminEvents resourcePath={`users/${user.id}`} />
+                    </Tab>
+                  </Tabs>
+                </Tab>
+              )}
             </RoutableTabs>
           </FormProvider>
         </UserProfileProvider>
