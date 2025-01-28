@@ -254,7 +254,7 @@ There are a few options on how to configure the test framework, with the followi
 
 * System properties
 * Environment variables
-* `.env` file in the current working directory
+* `.env-test` file in the project hierarchy
 * A properties file specified with `kc.test.config` system property or `KC_TEST_CONFIG` environment variable
 
 ### Using system properties
@@ -291,16 +291,19 @@ KC_TEST_BROWSER=firefox mvn test
 
 As with system properties, using environment variables within the IDE can be cumbersome.
 
-### Using `.env` file
+### Using `.env-test` file
 
-When running tests from an IDE using the `.env` file is very convenient, especially as this can be added to `.gitignore`
+When running tests from an IDE using the `.env-test` file is very convenient, especially as this can be added to `.gitignore`
 allowing developers to quickly have their own personal preference when running tests.
 
-Example `.env` file:
+Example `.env-test` file:
 
 ```
 KC_TEST_BROWSER=firefox
 ```
+
+For multi-modal Maven projects the `.env-test` file can be located in the current module, or one of its parent modules.
+This allows sharing configuration across multiple test modules.
 
 ### Using a properties file
 
