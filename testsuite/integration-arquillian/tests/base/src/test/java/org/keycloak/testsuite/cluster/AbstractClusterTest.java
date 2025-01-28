@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.cluster;
 
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.AfterClass;
@@ -10,6 +11,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.arquillian.containers.RemoteContainer;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -19,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
@@ -184,7 +187,6 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     public void beforeClusterTest() {
         failback();
         logFailoverSetup();
-        pause(3000);
     }
 
     @Override

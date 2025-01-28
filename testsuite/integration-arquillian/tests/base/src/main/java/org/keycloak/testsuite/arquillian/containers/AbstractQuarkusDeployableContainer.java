@@ -417,7 +417,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         return socketFactory;
     }
 
-    private long getStartTimeout() {
+    protected long getStartTimeout() {
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
     }
 
