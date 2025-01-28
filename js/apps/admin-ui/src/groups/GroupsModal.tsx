@@ -134,7 +134,7 @@ export const GroupsModal = ({
         });
       }
 
-      if (isFeatureEnabled(Feature.AdminFineGrainedAuthzV2)) {
+      if (isFeatureEnabled(Feature.AdminFineGrainedAuthz)) {
         const permissions = await adminClient.groups.listPermissions({
           id: sourceGroup.id!,
         });
