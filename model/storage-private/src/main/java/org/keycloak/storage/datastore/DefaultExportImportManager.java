@@ -63,7 +63,6 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
@@ -420,7 +419,11 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getBrowserSecurityHeaders() != null) {
             newRealm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         } else {
-            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
+            Map<String, String> headers = BrowserSecurityHeaders.realmDefaultHeaders;
+            if (Profile.isFeatureEnabled(Feature.X_XSS_PROTECTION)) {
+                headers.put(BrowserSecurityHeaders.X_XSS_PROTECTION.getKey(), BrowserSecurityHeaders.X_XSS_PROTECTION.getDefaultValue());
+            }
+            newRealm.setBrowserSecurityHeaders(headers);
         }
 
         if (rep.getGroups() != null) {

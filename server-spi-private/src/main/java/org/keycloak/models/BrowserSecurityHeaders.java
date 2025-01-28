@@ -28,6 +28,7 @@ public enum BrowserSecurityHeaders {
     CONTENT_SECURITY_POLICY_REPORT_ONLY("contentSecurityPolicyReportOnly", "Content-Security-Policy-Report-Only", ""),
     X_CONTENT_TYPE_OPTIONS("xContentTypeOptions", "X-Content-Type-Options", "nosniff"),
     X_ROBOTS_TAG("xRobotsTag", "X-Robots-Tag", "none"),
+    @Deprecated // This header is deprecated and marked for removal. See: https://github.com/keycloak/keycloak/issues/21728
     X_XSS_PROTECTION("xXSSProtection", "X-XSS-Protection", "1; mode=block"),
     STRICT_TRANSPORT_SECURITY("strictTransportSecurity", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
     REFERRER_POLICY("referrerPolicy", "Referrer-Policy", "no-referrer");
@@ -65,7 +66,6 @@ public enum BrowserSecurityHeaders {
         dh.put(CONTENT_SECURITY_POLICY_REPORT_ONLY.getKey(), CONTENT_SECURITY_POLICY_REPORT_ONLY.getDefaultValue());
         dh.put(X_CONTENT_TYPE_OPTIONS.getKey(), X_CONTENT_TYPE_OPTIONS.getDefaultValue());
         dh.put(X_ROBOTS_TAG.getKey(), X_ROBOTS_TAG.getDefaultValue());
-        dh.put(X_XSS_PROTECTION.getKey(), X_XSS_PROTECTION.getDefaultValue());
         dh.put(STRICT_TRANSPORT_SECURITY.getKey(), STRICT_TRANSPORT_SECURITY.getDefaultValue());
         dh.put(REFERRER_POLICY.getKey(), REFERRER_POLICY.getDefaultValue());
 

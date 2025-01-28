@@ -67,6 +67,7 @@ import org.keycloak.services.clientregistration.policy.DefaultClientRegistration
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
@@ -252,7 +253,11 @@ public class RealmManager {
 
 
     protected void setupRealmDefaults(RealmModel realm) {
-        realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
+        Map<String, String> headers = BrowserSecurityHeaders.realmDefaultHeaders;
+        if (Profile.isFeatureEnabled(Profile.Feature.X_XSS_PROTECTION)) {
+            headers.put(BrowserSecurityHeaders.X_XSS_PROTECTION.getKey(), BrowserSecurityHeaders.X_XSS_PROTECTION.getDefaultValue());
+        }
+        realm.setBrowserSecurityHeaders(headers);
 
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
