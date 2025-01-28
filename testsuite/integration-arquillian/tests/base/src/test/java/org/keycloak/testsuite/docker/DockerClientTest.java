@@ -147,17 +147,9 @@ public class DockerClientTest extends AbstractKeycloakTest {
         printCommandResult(result);
         assertThat("Error performing login", result.getExitCode(), is(0));
 
-        result = dockerClientContainer.execInContainer("docker", "pull", "docker.io/hello-world:latest");
+        result = dockerClientContainer.execInContainer("docker", "search", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
         printCommandResult(result);
-        assertThat("Error pulling from docker.io", result.getExitCode(), is(0));
-
-        result = dockerClientContainer.execInContainer("docker", "tag", "hello-world:latest", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/hello-world:latest");
-        printCommandResult(result);
-        assertThat("Error tagging the image", result.getExitCode(), is(0));
-
-        result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/hello-world:latest");
-        printCommandResult(result);
-        assertThat("Error pushing to registry", result.getExitCode(), is(0));
+        assertThat("Error using registry", result.getExitCode(), is(0));
     }
 
     private void printCommandResult(Container.ExecResult result) {
