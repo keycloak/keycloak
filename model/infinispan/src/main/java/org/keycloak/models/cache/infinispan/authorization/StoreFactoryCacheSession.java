@@ -301,13 +301,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         ResourceServer resourceServer = getResourceServerStore().findById(serverId);
         return resources.stream().map(resourceId -> {
             Resource resource = getResourceStore().findById(resourceServer, resourceId);
-            String type = resource.getType();
 
-            if (type != null) {
-                return type;
+            if (resource == null) {
+                return null;
             }
+            return resource.getType();
 
-            return null;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
