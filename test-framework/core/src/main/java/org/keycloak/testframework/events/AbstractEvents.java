@@ -1,6 +1,7 @@
 package org.keycloak.testframework.events;
 
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.keycloak.common.util.Time;
 import org.keycloak.testframework.realm.ManagedRealm;
 
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractEvents<E, R> {
+public abstract class AbstractEvents<R> {
 
     protected final ManagedRealm realm;
     protected final LinkedList<R> events = new LinkedList<>();
@@ -21,11 +22,13 @@ public abstract class AbstractEvents<E, R> {
     protected long timeOffset;
     protected long lastFetch;
 
+    protected int skip = 0;
+
     public AbstractEvents(ManagedRealm realm) {
         this.realm = realm;
     }
 
-    public E poll() {
+    public R poll() {
         long currentTimeOffset = getCurrentTimeOffset();
         if (timeOffset != currentTimeOffset) {
             getLogger().debugv("Timeoffset changed to {0}, resetting events", timeOffset);
@@ -45,17 +48,36 @@ public abstract class AbstractEvents<E, R> {
             }
 
             getEvents(from, to)
-                    .stream().filter(e -> !processedEvents.contains(getId(e)))
+                    .stream().filter(e -> !processedEvents.contains(getEventId(e)))
                     .forEach(e -> {
-                        processedEvents.add(getId(e));
+                        Assertions.assertEquals(realm.getId(), getRealmId(e));
+                        processedEvents.add(getEventId(e));
                         this.events.add(e);
                     });
 
             lastFetch = to;
         }
 
-        R rep = events.poll();
-        return rep != null ? convert(rep) : null;
+        while(skip > 0) {
+            if (events.poll() == null) {
+                return null;
+            }
+            skip--;
+        }
+
+        return events.poll();
+    }
+
+    public void skip() {
+        skip(1);
+    }
+
+    public void skip(int events) {
+        skip += events;
+    }
+
+    public void skipAll() {
+        testStarted = getCurrentTime();
     }
 
     public void clear() {
@@ -71,17 +93,9 @@ public abstract class AbstractEvents<E, R> {
 
     protected abstract List<R> getEvents(long from, long to);
 
-    protected String getRealmName(String realmId) {
-        if (realm.getId().equals(realmId)) {
-            return realm.getName();
-        } else {
-            return null;
-        }
-    }
+    protected abstract String getEventId(R representation);
 
-    protected abstract String getId(R representation);
-
-    protected abstract E convert(R representation);
+    protected abstract String getRealmId(R representation);
 
     protected abstract void clearServerEvents();
 
