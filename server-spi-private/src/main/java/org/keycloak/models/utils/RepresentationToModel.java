@@ -1419,18 +1419,15 @@ public class RepresentationToModel {
             ResourceServer resourceServer = policy.getResourceServer();
             KeycloakSession session = authorization.getKeycloakSession();
 
-            resourceIds = resourceIds.stream().map(new Function<String, String>() {
-                @Override
-                public String apply(String id) {
-                    Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getResourceType(), id);
-
-                    if (resource == null) {
-                        return id;
-                    }
-
-                    return resource.getId();
+            resourceIds = resourceIds.stream().map(id -> {
+                Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getResourceType(), id);
+                
+                if (resource == null) {
+                    return id;
                 }
-            }).collect(Collectors.toSet());;
+                
+                return resource.getId();
+            }).collect(Collectors.toSet());
 
             for (String resourceId : resourceIds) {
                 boolean hasResource = false;
@@ -1463,7 +1460,12 @@ public class RepresentationToModel {
                 }
 
                 if (!hasResource) {
-                    policy.removeResource(resourceModel);
+                    // for admin permissions remove resource in the FGAP context (if resource is becoming on orphan, we remove the resource from DB)
+                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
+                        AdminPermissionsSchema.SCHEMA.removeResource(resourceModel, policy, authorization);
+                    } else {
+                        policy.removeResource(resourceModel);
+                    }
                 }
             }
         }
