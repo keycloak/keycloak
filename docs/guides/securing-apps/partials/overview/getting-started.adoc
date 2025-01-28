@@ -19,7 +19,7 @@ endif::[]
 * <@links.securingapps id="javascript-adapter"/>
 
 ==== Node.js (server-side)
-* [https://github.com/keycloak/keycloak/blob/main/docs/guides/securing-apps/nodejs-adapter.adoc][Keycloak Node.js adapter]
+* https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]
 
 ifeval::[{project_community}==true]
 ==== C#
