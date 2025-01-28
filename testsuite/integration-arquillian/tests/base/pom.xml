@@ -271,6 +271,7 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <runOrder>alphabetical</runOrder>
                     <excludes>
                         <exclude>${exclude.test}</exclude>
                         <exclude>${exclude.console}</exclude>
