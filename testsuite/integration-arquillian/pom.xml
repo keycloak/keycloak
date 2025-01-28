@@ -408,7 +408,7 @@
                 <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
-                <docker.database.image>mysql:${mysql.version}</docker.database.image>
+                <docker.database.image>mirror.gcr.io/mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>mysqld</docker.database.cmd>
@@ -430,7 +430,7 @@
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:${postgresql.version}</docker.database.image>
+                <docker.database.image>mirror.gcr.io/postgres:${postgresql.version}</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
@@ -470,7 +470,7 @@
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mariadb-jdbc.version}</jdbc.mvn.version>
-                <docker.database.image>docker.io/mariadb:${mariadb.version}</docker.database.image>
+                <docker.database.image>mirror.gcr.io/mariadb:${mariadb.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
