@@ -27,6 +27,8 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -89,7 +91,6 @@ public class ClientScopeEvaluateResource {
         this.clientConnection = clientConnection;
     }
 
-
     /**
      *
      * @param scopeParam
@@ -112,7 +113,6 @@ public class ClientScopeEvaluateResource {
         return new ClientScopeEvaluateScopeMappingsResource(session, roleContainer, auth, client, scopeParam);
     }
 
-
     /**
      * Return list of all protocol mappers, which will be used when generating tokens issued for particular client. This means
      * protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.
@@ -124,8 +124,12 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
+    @Operation(summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
             description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ProtocolMapperEvaluationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
@@ -134,7 +138,6 @@ public class ClientScopeEvaluateResource {
                     .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
                     .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
     }
-
 
     private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
                                                                                             ClientScopeModel mapperContainer) {
@@ -167,7 +170,11 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example user info")
+    @Operation(summary = "Create JSON with payload of example user info")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map<String, Object>.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -194,7 +201,12 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example id token")
+    @Operation(summary = "Create JSON with payload of example id token"),
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -220,7 +232,12 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example access token")
+    @Operation(summary = "Create JSON with payload of example access token")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AccessToken.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
