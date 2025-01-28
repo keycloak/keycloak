@@ -72,6 +72,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -111,6 +113,10 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
 public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
+    // Map with the default cache configuration if the cache is not present in the XML.
+    private static final Map<String, Supplier<ConfigurationBuilder>> DEFAULT_CONFIGS = Map.of(
+            InfinispanConnectionProvider.CRL_CACHE_NAME, InfinispanUtil::getCrlCacheConfig
+    );
 
     private final CompletableFuture<EmbeddedCacheManager> cacheManagerFuture;
     private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
@@ -600,15 +606,27 @@ public class CacheManagerFactory {
 
     private static void configureCacheMaxCount(ConfigurationBuilderHolder holder, String[] caches) {
         for (String cache : caches) {
+            var builder = retrieveCacheConfiguration(holder, cache);
+            if (builder == null) {
+                continue;
+            }
+            var memory = builder.memory();
             String propKey = CachingOptions.cacheMaxCountProperty(cache);
             Configuration.getOptionalKcValue(propKey)
                   .map(Integer::parseInt)
-                  .ifPresent(maxCount -> holder.getNamedConfigurationBuilders()
-                        .get(cache)
-                        .memory()
-                        .maxCount(maxCount)
-                  );
+                  .ifPresent(memory::maxCount);
         }
+    }
+
+    private static ConfigurationBuilder retrieveCacheConfiguration(ConfigurationBuilderHolder holder, String cache) {
+        var builder = holder.getNamedConfigurationBuilders().get(cache);
+        if (builder == null) {
+            builder = DEFAULT_CONFIGS.getOrDefault(cache, () -> null).get();
+            if (builder != null) {
+                holder.getNamedConfigurationBuilders().put(cache, builder);
+            }
+        }
+        return builder;
     }
 
     private static void validateWorkCacheConfiguration(ConfigurationBuilderHolder builder) {
