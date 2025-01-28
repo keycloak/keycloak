@@ -18,6 +18,7 @@ package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.Service;
@@ -50,6 +51,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
+import org.keycloak.operator.upgrade.UpgradeLogicFactory;
 
 @ControllerConfiguration(
     dependents = {
@@ -78,6 +81,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
+
+    @Inject
+    UpgradeLogicFactory upgradeLogicFactory;
 
     volatile KeycloakDeploymentDependentResource deploymentDependentResource;
 
@@ -132,6 +138,13 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         if (modifiedSpec) {
             return UpdateControl.updateResource(kc);
+        }
+
+        var upgradeLogicControl = upgradeLogicFactory.create(kc, context, deploymentDependentResource)
+                .decideUpgrade();
+        if (upgradeLogicControl.isPresent()) {
+            Log.debug("--- Reconciliation interrupted due to upgrade logic");
+            return upgradeLogicControl.get();
         }
 
         // after the spec has possibly been updated, reconcile the StatefulSet
@@ -263,11 +276,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .list().getItems().stream()
                 .filter(p -> !Readiness.isPodReady(p)
                         && Optional.ofNullable(p.getStatus()).map(PodStatus::getContainerStatuses).isPresent())
-                .sorted((p1, p2) -> p1.getMetadata().getName().compareTo(p2.getMetadata().getName()))
+                .sorted(Comparator.comparing(p -> p.getMetadata().getName()))
                 .forEachOrdered(p -> {
-                    Optional.of(p.getStatus()).map(s -> s.getContainerStatuses()).stream().flatMap(List::stream)
+                    Optional.of(p.getStatus()).map(PodStatus::getContainerStatuses).stream().flatMap(List::stream)
                             .filter(cs -> !Boolean.TRUE.equals(cs.getReady()))
-                            .sorted((cs1, cs2) -> cs1.getName().compareTo(cs2.getName())).forEachOrdered(cs -> {
+                            .sorted(Comparator.comparing(ContainerStatus::getName))
+                            .forEachOrdered(cs -> {
                                 if (Optional.ofNullable(cs.getState()).map(ContainerState::getWaiting)
                                         .map(ContainerStateWaiting::getReason).map(String::toLowerCase)
                                         .filter(s -> s.contains("err") || s.equals("crashloopbackoff")).isPresent()) {

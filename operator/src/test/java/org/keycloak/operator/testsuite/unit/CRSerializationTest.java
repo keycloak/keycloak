@@ -37,6 +37,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.keycloak.operator.upgrade.UpdateStrategy;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -49,6 +50,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -251,6 +253,23 @@ public class CRSerializationTest {
         assertNetworkPolicyRules(networkPolicySpec.getHttpRules());
         assertNetworkPolicyRules(networkPolicySpec.getHttpsRules());
         assertNetworkPolicyRules(networkPolicySpec.getManagementRules());
+    }
+
+    @Test
+    public void testUpgradeStrategy() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        var updateSpec = keycloak.getSpec().getUpdateSpec();
+        assertNotNull(updateSpec);
+        var upgradeStrategy = updateSpec.getStrategy();
+        assertNotNull(upgradeStrategy);
+        assertEquals(UpdateStrategy.RECREATE, upgradeStrategy);
+    }
+
+    @Test
+    public void testInvalidUpgradeStrategy() {
+        var thrown = assertThrows(IllegalArgumentException.class,
+                () -> Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-invalid-update.yml"), Keycloak.class));
+        assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.upgrade.UpdateStrategy` from String \"abc\""));
     }
 
     private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {

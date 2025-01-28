@@ -44,6 +44,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {
@@ -129,6 +130,10 @@ public class KeycloakSpec {
     @JsonProperty("tracing")
     @JsonPropertyDescription("In this section you can configure OpenTelemetry Tracing for Keycloak.")
     private TracingSpec tracingSpec;
+
+    @JsonProperty("update")
+    @JsonPropertyDescription("Configuration related to Keycloak deployment upgrades.")
+    private UpdateSpec updateSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -302,5 +307,13 @@ public class KeycloakSpec {
 
     public void setTracingSpec(TracingSpec tracingSpec) {
         this.tracingSpec = tracingSpec;
+    }
+
+    public UpdateSpec getUpdateSpec() {
+        return updateSpec;
+    }
+
+    public void setUpdateSpec(UpdateSpec updateSpec) {
+        this.updateSpec = updateSpec;
     }
 }
