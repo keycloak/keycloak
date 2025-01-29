@@ -96,7 +96,7 @@ public class RoleByIdResource extends RoleResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
     @Operation(summary = "Get a specific role's representation")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UPConfig.class))),
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public RoleRepresentation getRole(final @Parameter(description = "id of role") @PathParam("role-id") String id) {
